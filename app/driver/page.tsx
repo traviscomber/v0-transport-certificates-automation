@@ -10,8 +10,16 @@ export default async function DriverPage() {
     redirect("/auth/login")
   }
 
-  // Get user profile
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", data.user.id).single()
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", data.user.id)
+    .maybeSingle() // Use maybeSingle instead of single to handle 0 rows gracefully
+
+  if (profileError) {
+    console.error("Error fetching profile:", profileError)
+    redirect("/auth/login")
+  }
 
   if (!profile || profile.role !== "driver") {
     redirect("/auth/login")
@@ -29,7 +37,7 @@ export default async function DriverPage() {
     .from("notifications")
     .select("*")
     .eq("user_id", data.user.id)
-    .eq("is_read", false)
+    .eq("is_read", false) // Fixed column name from "read" to "is_read"
     .order("created_at", { ascending: false })
     .limit(5)
 

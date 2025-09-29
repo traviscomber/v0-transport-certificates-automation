@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import Link from "next/link"
 
 const CalendarIcon = () => (
   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -7,6 +8,12 @@ const CalendarIcon = () => (
     <path d="M16 2v4" />
     <rect width="18" height="18" x="3" y="4" rx="2" />
     <path d="M3 10h18" />
+  </svg>
+)
+
+const PlayIcon = () => (
+  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polygon points="5,3 19,12 5,21" />
   </svg>
 )
 
@@ -42,16 +49,30 @@ export function DemoTab() {
       {/* Demo Overview */}
       <div className="text-center max-w-4xl mx-auto">
         <h2 className="text-4xl md:text-5xl font-bold text-balance mb-6">
-          Comprueba el <span className="text-primary">Poder de la Automatización</span>
+          Prueba el <span className="text-primary">Sistema en Vivo</span>
         </h2>
         <p className="text-xl text-muted-foreground text-balance leading-relaxed">
-          Agenda una demostración personalizada y descubre cómo podemos transformar tu operación de transporte en 30
-          días.
+          Accede inmediatamente al sistema con cuentas de demostración o agenda una presentación personalizada.
         </p>
       </div>
 
-      {/* Demo Options */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <Card className="bg-primary/10 border-primary/30 hover:border-primary/50 transition-all duration-300">
+          <CardContent className="p-8 text-center">
+            <PlayIcon />
+            <h3 className="text-2xl font-bold mb-4">Demo Interactivo</h3>
+            <p className="text-muted-foreground mb-6">
+              Prueba el sistema inmediatamente con cuentas de demostración. Explora todas las funcionalidades sin
+              compromiso.
+            </p>
+            <Link href="/auth/login">
+              <Button size="lg" className="w-full">
+                Probar Ahora <ArrowRightIcon />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
         <Card className="bg-primary/5 border-primary/20 hover:border-primary/40 transition-all duration-300">
           <CardContent className="p-8 text-center">
             <CalendarIcon />
@@ -60,7 +81,7 @@ export function DemoTab() {
               30 minutos con nuestro equipo especializado. Verás tu operación automatizada con datos reales de tu
               empresa.
             </p>
-            <Button size="lg" className="w-full">
+            <Button size="lg" className="w-full bg-transparent" variant="outline">
               Agendar Demo <ArrowRightIcon />
             </Button>
           </CardContent>
@@ -78,6 +99,32 @@ export function DemoTab() {
             </Button>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="bg-muted/30 rounded-2xl p-8 max-w-4xl mx-auto">
+        <h3 className="text-2xl font-bold text-center mb-6">Cuentas de Demostración Disponibles</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+            <div className="w-3 h-3 bg-blue-500 rounded-full mx-auto mb-2"></div>
+            <h4 className="font-semibold mb-1">Conductor</h4>
+            <p className="text-sm text-muted-foreground">Sube y gestiona certificados</p>
+          </div>
+          <div className="text-center p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
+            <div className="w-3 h-3 bg-green-500 rounded-full mx-auto mb-2"></div>
+            <h4 className="font-semibold mb-1">Despachador</h4>
+            <p className="text-sm text-muted-foreground">Valida y gestiona conductores</p>
+          </div>
+          <div className="text-center p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+            <div className="w-3 h-3 bg-purple-500 rounded-full mx-auto mb-2"></div>
+            <h4 className="font-semibold mb-1">Administrador</h4>
+            <p className="text-sm text-muted-foreground">Acceso completo al sistema</p>
+          </div>
+        </div>
+        <div className="text-center mt-6">
+          <p className="text-sm text-muted-foreground">
+            Cada cuenta incluye datos de ejemplo realistas para una experiencia completa
+          </p>
+        </div>
       </div>
 
       {/* Contact Information */}
