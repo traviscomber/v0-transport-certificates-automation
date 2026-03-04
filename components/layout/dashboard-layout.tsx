@@ -92,25 +92,41 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const supabase = createClient()
 
     const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      setUser(user)
-
-      // Fetch user profile from profiles table
-      if (user?.id) {
-        const { data: profile, error } = await supabase
-          .from("profiles")
-          .select("full_name, email, role")
-          .eq("id", user.id)
-          .single()
-
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser()
+        
         if (process.env.NODE_ENV === "development") {
-          console.log("[v0] User profile fetched in dashboard-layout:", profile)
-          if (error) console.log("[v0] Profile fetch error:", error)
+          console.log("[v0] Dashboard-Layout - Auth user:", user?.email, "Error:", error)
         }
 
-        setUserProfile(profile)
+        setUser(user)
+
+        // Fetch user profile from profiles table
+        if (user?.id) {
+          try {
+            const { data: profile, error: profileError } = await supabase
+              .from("profiles")
+              .select("full_name, email, role")
+              .eq("id", user.id)
+              .maybeSingle()
+
+            if (process.env.NODE_ENV === "development") {
+              console.log("[v0] Dashboard-Layout - Profile fetched:", profile)
+              if (profileError) console.log("[v0] Profile fetch error:", profileError)
+            }
+
+            setUserProfile(profile || {})
+          } catch (err) {
+            if (process.env.NODE_ENV === "development") {
+              console.log("[v0] Profile fetch exception:", err)
+            }
+            setUserProfile({})
+          }
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV === "development") {
+          console.log("[v0] Auth user fetch error:", err)
+        }
       }
 
       setLoading(false)
@@ -118,23 +134,35 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
     getUser()
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const user = session?.user ?? null
       setUser(user)
-      setLoading(false)
 
-      // Also fetch profile when auth state changes
-      if (user?.id) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name, email, role")
-          .eq("id", user.id)
-          .single()
-
-        setUserProfile(profile)
+      if (process.env.NODE_ENV === "development") {
+        console.log("[v0] Dashboard-Layout - Auth state changed:", user?.email, "Event:", event)
       }
+
+      // Fetch profile when auth state changes
+      if (user?.id) {
+        try {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name, email, role")
+            .eq("id", user.id)
+            .maybeSingle()
+
+          setUserProfile(profile || {})
+        } catch (err) {
+          if (process.env.NODE_ENV === "development") {
+            console.log("[v0] Profile fetch on auth change failed:", err)
+          }
+          setUserProfile({})
+        }
+      } else {
+        setUserProfile(null)
+      }
+
+      setLoading(false)
     })
 
     return () => subscription.unsubscribe()
@@ -147,21 +175,25 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   const getUserDisplayName = () => {
-    if (!user && !userProfile) return "Usuario"
+    // Log current state for debugging
+    if (process.env.NODE_ENV === "development") {
+      console.log("[v0] getUserDisplayName - user:", user?.email, "userProfile:", userProfile)
+    }
 
     // First, try to use the full_name from profiles table
-    if (userProfile?.full_name) {
+    if (userProfile?.full_name && userProfile.full_name.trim()) {
       return userProfile.full_name
     }
 
-    // Then try metadata name
+    // Then try metadata name from auth
     if (user?.user_metadata?.name) {
       return user.user_metadata.name
     }
 
-    // Finally, use the part before @ from email
+    // Finally, use the part before @ from email (most reliable)
     if (user?.email) {
-      return user.email.split("@")[0].charAt(0).toUpperCase() + user.email.split("@")[0].slice(1)
+      const namePart = user.email.split("@")[0]
+      return namePart.charAt(0).toUpperCase() + namePart.slice(1)
     }
 
     return "Usuario"
