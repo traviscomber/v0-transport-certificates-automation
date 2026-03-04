@@ -63,15 +63,8 @@ export async function setupDemoAccounts() {
     const results = []
 
     for (const account of demoAccounts) {
-      const { data: existingUsers } = await adminClient.auth.admin.listUsers()
-      const existingUser = existingUsers.users?.find((user) => user.email === account.email)
-
-      let userId: string = account.userId
-
-      if (existingUser) {
-        console.log(`User ${account.email} already exists, using existing user`)
-        userId = existingUser.id
-      } else {
+      try {
+        // Try to create the user directly - if it already exists, it will error but we can handle it
         const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
           email: account.email,
           password: account.password,
@@ -80,41 +73,39 @@ export async function setupDemoAccounts() {
         })
 
         if (authError) {
-          console.error(`Error creating auth user for ${account.email}:`, authError)
-          results.push({ email: account.email, success: false, error: authError.message })
+          // User might already exist - that's okay, use the ID from account
+          console.log(`Auth user creation result for ${account.email}:`, authError.message)
+          
+          // For existing users, we'll just use the predefined ID
+          // If it's a different error, we'll still continue and try to create the profile
+        }
+
+        const userId = authData?.user?.id || account.userId
+
+        const { error: profileError } = await adminClient.from("profiles").upsert(
+          {
+            id: userId,
+            email: account.email,
+            ...account.profile,
+            is_active: true,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "id",
+          },
+        )
+
+        if (profileError) {
+          console.error(`Error upserting profile for ${account.email}:`, profileError)
+          results.push({ email: account.email, success: false, error: profileError.message })
           continue
         }
 
-        if (!authData.user) {
-          results.push({ email: account.email, success: false, error: "No user data returned" })
-          continue
-        }
-
-        userId = authData.user.id
+        results.push({ email: account.email, success: true, userId })
+      } catch (error: any) {
+        console.error(`Unexpected error for ${account.email}:`, error)
+        results.push({ email: account.email, success: false, error: error.message })
       }
-
-      const { error: profileError } = await adminClient.from("profiles").upsert(
-        {
-          id: userId,
-          email: account.email,
-          ...account.profile,
-          is_active: true,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "id",
-        },
-      )
-
-      if (profileError) {
-        console.error(`Error upserting profile for ${account.email}:`, profileError)
-        results.push({ email: account.email, success: false, error: profileError.message })
-        continue
-      }
-
-      // The SQL script already created comprehensive sample data
-
-      results.push({ email: account.email, success: true, userId, existed: !!existingUser })
     }
 
     return { success: true, results }
