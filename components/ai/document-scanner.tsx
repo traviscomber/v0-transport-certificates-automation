@@ -9,14 +9,9 @@ import { Camera, Upload, FileText, Zap, CheckCircle, AlertCircle } from "lucide-
 import { cn } from "@/lib/utils"
 
 interface ExtractedData {
-  documentType: string
-  expiryDate: string
-  issueDate: string
-  certificateNumber: string
-  vehicleId?: string
-  driverName?: string
-  confidence: number
-  rawData?: any
+  [key: string]: any
+  documentType?: string
+  confidence?: number | string
 }
 
 export function DocumentScanner() {
@@ -41,10 +36,11 @@ export function DocumentScanner() {
         })
       }, 300)
 
-      // Send file to the analyze-document API
+      // Auto-detect document type - default to generic if unsure
+      // The API will detect based on content
       const formData = new FormData()
       formData.append("file", file)
-      formData.append("documentType", "f30") // Default to F-30, can be extended for other types
+      formData.append("documentType", "default") // Let API detect type
 
       const response = await fetch("/api/analyze-document", {
         method: "POST",
@@ -60,21 +56,16 @@ export function DocumentScanner() {
       }
 
       const result = await response.json()
+      console.log("[v0] API Response:", result.extractedData)
 
-      // Transform API response to match ExtractedData interface
+      // Use all extracted data directly
       const apiData = result.extractedData
-      const extractedData: ExtractedData = {
-        documentType: apiData.documentType || apiData.numeroF30 ? "Certificado de Transporte" : "Documento",
-        expiryDate: apiData.fechaVencimiento || apiData.fechaVencimiento || "N/A",
-        issueDate: apiData.fechaEmision || "N/A",
-        certificateNumber: apiData.numeroF30 || apiData.numeroF30_1 || apiData.numeroPoliza || "N/A",
-        vehicleId: apiData.patenteVehiculo || apiData.patente || "N/A",
-        driverName: apiData.nombreTransportista || apiData.nombrePropietario || apiData.nombreConductor || "N/A",
-        confidence: apiData.confidence === "high" ? 0.95 : apiData.confidence === "medium" ? 0.75 : 0.5,
-        rawData: apiData, // Store raw data for reference
+      const extracted: ExtractedData = {
+        ...apiData, // Include ALL fields from API response
+        documentType: "Documento Chileno",
       }
 
-      setExtractedData(extractedData)
+      setExtractedData(extracted)
       setIsScanning(false)
     } catch (error) {
       clearInterval(progressInterval)
@@ -182,64 +173,70 @@ export function DocumentScanner() {
                   Datos Extraídos
                 </h3>
                 <Badge
-                  variant={extractedData.confidence > 0.9 ? "default" : "secondary"}
+                  variant={
+                    typeof extractedData.confidence === "string"
+                      ? extractedData.confidence === "high"
+                        ? "default"
+                        : "secondary"
+                      : extractedData.confidence > 0.9
+                        ? "default"
+                        : "secondary"
+                  }
                   className={cn(
-                    extractedData.confidence > 0.9 ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800",
+                    typeof extractedData.confidence === "string"
+                      ? extractedData.confidence === "high"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-yellow-100 text-yellow-800"
+                      : extractedData.confidence > 0.9
+                        ? "bg-green-100 text-green-800"
+                        : "bg-yellow-100 text-yellow-800",
                   )}
                 >
-                  {Math.round(extractedData.confidence * 100)}% confianza
+                  {typeof extractedData.confidence === "string"
+                    ? extractedData.confidence.charAt(0).toUpperCase() + extractedData.confidence.slice(1)
+                    : `${Math.round(extractedData.confidence * 100)}%`}{" "}
+                  confianza
                 </Badge>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Tipo de Documento</label>
-                  <div className="p-3 bg-muted rounded-md">{extractedData.documentType}</div>
-                </div>
+                {Object.entries(extractedData).map(([key, value]) => {
+                  // Skip internal fields
+                  if (key === "confidence" || key === "parseError" || key.endsWith("_warning")) return null
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Número de Certificado</label>
-                  <div className="p-3 bg-muted rounded-md">{extractedData.certificateNumber}</div>
-                </div>
+                  // Format the label
+                  const label = key
+                    .replace(/([A-Z])/g, " $1")
+                    .replace(/^./, (str) => str.toUpperCase())
+                    .trim()
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Fecha de Emisión</label>
-                  <div className="p-3 bg-muted rounded-md">{extractedData.issueDate}</div>
-                </div>
+                  // Handle different value types
+                  let displayValue = value
+                  if (value === null || value === undefined) displayValue = "N/A"
+                  if (typeof value === "object") displayValue = JSON.stringify(value)
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    Fecha de Vencimiento
-                    {new Date(extractedData.expiryDate) < new Date() && (
-                      <AlertCircle className="h-4 w-4 text-red-500" />
-                    )}
-                  </label>
-                  <div
-                    className={cn(
-                      "p-3 rounded-md",
-                      new Date(extractedData.expiryDate) < new Date()
-                        ? "bg-red-50 text-red-800 border border-red-200"
-                        : "bg-muted",
-                    )}
-                  >
-                    {extractedData.expiryDate}
-                  </div>
-                </div>
-
-                {extractedData.vehicleId && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">ID del Vehículo</label>
-                    <div className="p-3 bg-muted rounded-md">{extractedData.vehicleId}</div>
-                  </div>
-                )}
-
-                {extractedData.driverName && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Nombre del Conductor</label>
-                    <div className="p-3 bg-muted rounded-md">{extractedData.driverName}</div>
-                  </div>
-                )}
+                  return (
+                    <div key={key} className="space-y-2">
+                      <label className="text-sm font-medium">{label}</label>
+                      <div className="p-3 bg-muted rounded-md text-sm break-words">{String(displayValue)}</div>
+                    </div>
+                  )
+                })}
               </div>
+
+              {extractedData.parseError && (
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-sm text-yellow-800 flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    {extractedData.parseError}
+                  </p>
+                  {extractedData.rawAnalysis && (
+                    <p className="text-xs text-yellow-700 mt-2 p-2 bg-white rounded border border-yellow-100">
+                      {extractedData.rawAnalysis}
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="flex gap-3 pt-4">
                 <Button onClick={saveExtractedData} className="flex-1">
