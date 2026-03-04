@@ -1,6 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { generateText } from "ai"
-import { openai } from "@ai-sdk/openai"
 import fs from "fs"
 import path from "path"
 
@@ -84,102 +82,59 @@ export async function POST(request: NextRequest) {
     }
 
     const getPromptForDocumentType = (type: string) => {
-      const baseInstructions = `
-IMPORTANTE: Este es un documento oficial chileno. Presta especial atención a:
+      const baseInstructions = `IMPORTANTE: Este es un documento oficial chileno. Presta especial atención a:
 - Formatos de RUT chilenos (XX.XXX.XXX-X o XXXXXXXX-X)
 - Formatos de fecha chilenos (DD/MM/YYYY o DD-MM-YYYY)
 - Patentes chilenas (formato XXXX-XX para vehículos nuevos, XX-XXXX para antiguos)
 - Nombres de comunas chilenas
 - Terminología específica del transporte chileno
 
-Si no puedes leer claramente algún campo, indica "No legible" en lugar de inventar información.
-`
+Si no puedes leer claramente algún campo, indica "No legible" en lugar de inventar información.`
 
       switch (type) {
         case "f30":
           return `${baseInstructions}
-          
-Analiza este CERTIFICADO F-30 CHILENO (Certificado de Inscripción en el Registro Nacional de Servicios de Transporte de Carga) y extrae la siguiente información en JSON:
 
-{
-  "numeroF30": "string (formato: F30-YYYY-XXXXXX)",
-  "rutTransportista": "string",
-  "nombreTransportista": "string",
-  "fechaEmision": "string (DD/MM/YYYY)",
-  "fechaVencimiento": "string (DD/MM/YYYY)",
-  "patenteVehiculo": "string",
-  "tipoVehiculo": "string",
-  "estado": "string (vigente/vencido/suspendido)",
-  "observaciones": "string"
-}`
+Analiza este CERTIFICADO F-30 CHILENO (Certificado de Inscripción en el Registro Nacional de Servicios de Transporte de Carga) y extrae la siguiente información en JSON:
+{"numeroF30": "string", "rutTransportista": "string", "nombreTransportista": "string", "fechaEmision": "string", "fechaVencimiento": "string", "patenteVehiculo": "string", "tipoVehiculo": "string", "estado": "string", "observaciones": "string"}`
 
         case "licencia_conducir":
           return `${baseInstructions}
-          
-Analiza esta LICENCIA DE CONDUCIR CHILENA y extrae en JSON:
 
-{
-  "nombre": "string",
-  "rut": "string",
-  "clase": "string (A1-A5, B, C, D, E, F)",
-  "fechaEmision": "string (DD/MM/YYYY)",
-  "fechaVencimiento": "string (DD/MM/YYYY)",
-  "estado": "string (vigente/vencida)",
-  "restricciones": "string"
-}`
+Analiza esta LICENCIA DE CONDUCIR CHILENA y extrae en JSON:
+{"nombre": "string", "rut": "string", "clase": "string", "fechaEmision": "string", "fechaVencimiento": "string", "estado": "string", "restricciones": "string"}`
 
         case "revision_tecnica":
           return `${baseInstructions}
-          
-Analiza este CERTIFICADO DE REVISIÓN TÉCNICA CHILENO y extrae en JSON:
 
-{
-  "patente": "string",
-  "marca": "string",
-  "modelo": "string",
-  "ano": "string",
-  "fechaRevision": "string (DD/MM/YYYY)",
-  "fechaVencimiento": "string (DD/MM/YYYY)",
-  "estado": "string (aprobado/rechazado/condicionado)",
-  "observaciones": "string"
-}`
+Analiza este CERTIFICADO DE REVISIÓN TÉCNICA CHILENO y extrae en JSON:
+{"patente": "string", "marca": "string", "modelo": "string", "ano": "string", "fechaRevision": "string", "fechaVencimiento": "string", "estado": "string", "observaciones": "string"}`
 
         case "permiso_circulacion":
           return `${baseInstructions}
-          
-Analiza este PERMISO DE CIRCULACIÓN CHILENO y extrae en JSON:
 
-{
-  "patente": "string",
-  "rutPropietario": "string",
-  "nombrePropietario": "string",
-  "marca": "string",
-  "modelo": "string",
-  "ano": "string",
-  "fechaVencimiento": "string (DD/MM/YYYY)",
-  "comuna": "string",
-  "color": "string"
-}`
+Analiza este PERMISO DE CIRCULACIÓN CHILENO y extrae en JSON:
+{"patente": "string", "rutPropietario": "string", "nombrePropietario": "string", "marca": "string", "modelo": "string", "ano": "string", "fechaVencimiento": "string", "comuna": "string", "color": "string"}`
 
         default:
-          return `${baseInstructions}
-          
-Extrae toda la información legible de este documento chileno en formato JSON.`
+          return `${baseInstructions}\n\nExtrae toda la información legible de este documento chileno en formato JSON.`
       }
     }
 
     const prompt = getPromptForDocumentType(documentType)
 
     if (process.env.NODE_ENV === "development")
-      console.log("[v0] Sending request to OpenAI Vision API...")
+      console.log("[v0] Calling OpenAI Vision API directly...")
 
-    let text = ""
-    try {
-      if (process.env.NODE_ENV === "development")
-        console.log("[v0] Using model: gpt-4-turbo for Vision API")
-
-      const result = await generateText({
-        model: openai("gpt-4-turbo"),
+    // Call OpenAI API directly
+    const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4-vision-preview",
         messages: [
           {
             role: "user",
@@ -189,27 +144,36 @@ Extrae toda la información legible de este documento chileno en formato JSON.`
                 text: prompt
               },
               {
-                type: "image",
-                image: `data:${mimeType};base64,${base64}`
+                type: "image_url",
+                image_url: {
+                  url: `data:${mimeType};base64,${base64}`,
+                  detail: "high"
+                }
               }
             ]
           }
-        ]
+        ],
+        max_tokens: 1024
       })
-      text = result.text
-      
-      if (process.env.NODE_ENV === "development")
-        console.log("[v0] OpenAI response received:", text.substring(0, 200) + "...")
-    } catch (aiError) {
-      console.error("[v0] OpenAI API Error:", aiError instanceof Error ? aiError.message : JSON.stringify(aiError))
+    })
+
+    if (!openaiResponse.ok) {
+      const errorData = await openaiResponse.json()
+      console.error("[v0] OpenAI API Error:", errorData)
       return NextResponse.json(
         {
           error: "OpenAI Vision API error",
-          details: aiError instanceof Error ? aiError.message : "Failed to analyze image with AI"
+          details: errorData.error?.message || "Failed to analyze image"
         },
         { status: 500 }
       )
     }
+
+    const responseData = await openaiResponse.json()
+    const text = responseData.choices[0]?.message?.content || ""
+
+    if (process.env.NODE_ENV === "development")
+      console.log("[v0] OpenAI response received:", text.substring(0, 200) + "...")
 
     let extractedData: any = {}
     try {
