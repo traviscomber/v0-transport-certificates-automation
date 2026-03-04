@@ -16,6 +16,7 @@ interface ExtractedData {
   vehicleId?: string
   driverName?: string
   confidence: number
+  rawData?: any
 }
 
 export function DocumentScanner() {
@@ -28,36 +29,60 @@ export function DocumentScanner() {
     setIsScanning(true)
     setScanProgress(0)
 
-    // Simulate AI processing with progress updates
-    const progressInterval = setInterval(() => {
-      setScanProgress((prev) => {
-        if (prev >= 90) {
-          clearInterval(progressInterval)
-          return 90
-        }
-        return prev + 10
-      })
-    }, 200)
+    try {
+      // Simulate progress while file is being processed
+      const progressInterval = setInterval(() => {
+        setScanProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval)
+            return 90
+          }
+          return prev + 10
+        })
+      }, 300)
 
-    // Simulate AI OCR processing
-    setTimeout(() => {
+      // Send file to the analyze-document API
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("documentType", "f30") // Default to F-30, can be extended for other types
+
+      const response = await fetch("/api/analyze-document", {
+        method: "POST",
+        body: formData,
+      })
+
       clearInterval(progressInterval)
       setScanProgress(100)
 
-      // Mock extracted data - in real implementation, this would come from AI service
-      const mockData: ExtractedData = {
-        documentType: "Certificado de Transporte",
-        expiryDate: "2024-12-31",
-        issueDate: "2024-01-15",
-        certificateNumber: "CT-2024-001234",
-        vehicleId: "ABC-123",
-        driverName: "Juan Pérez",
-        confidence: 0.95,
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to analyze document")
       }
 
-      setExtractedData(mockData)
+      const result = await response.json()
+
+      // Transform API response to match ExtractedData interface
+      const apiData = result.extractedData
+      const extractedData: ExtractedData = {
+        documentType: apiData.documentType || apiData.numeroF30 ? "Certificado de Transporte" : "Documento",
+        expiryDate: apiData.fechaVencimiento || apiData.fechaVencimiento || "N/A",
+        issueDate: apiData.fechaEmision || "N/A",
+        certificateNumber: apiData.numeroF30 || apiData.numeroF30_1 || apiData.numeroPoliza || "N/A",
+        vehicleId: apiData.patenteVehiculo || apiData.patente || "N/A",
+        driverName: apiData.nombreTransportista || apiData.nombrePropietario || apiData.nombreConductor || "N/A",
+        confidence: apiData.confidence === "high" ? 0.95 : apiData.confidence === "medium" ? 0.75 : 0.5,
+        rawData: apiData, // Store raw data for reference
+      }
+
+      setExtractedData(extractedData)
       setIsScanning(false)
-    }, 2000)
+    } catch (error) {
+      clearInterval(progressInterval)
+      setIsScanning(false)
+      setScanProgress(0)
+      console.error("[v0] Error analyzing document:", error)
+      alert(error instanceof Error ? error.message : "Error al analizar el documento. Intenta de nuevo.")
+    }
   }
 
   const handleCameraCapture = () => {
