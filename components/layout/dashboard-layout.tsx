@@ -79,6 +79,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [user, setUser] = useState<User | null>(null)
   const [userProfile, setUserProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [isMounted, setIsMounted] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     "Panel Principal": true,
     "Funciones IA": true,
@@ -88,7 +89,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     Administración: false,
   })
 
+  // Mark component as mounted to prevent hydration mismatch
   useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!isMounted) return
+
     const supabase = createClient()
 
     const getUser = async () => {
@@ -166,7 +174,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [isMounted])
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -175,25 +183,29 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   const getUserDisplayName = () => {
-    // Log current state for debugging
-    if (process.env.NODE_ENV === "development") {
-      console.log("[v0] getUserDisplayName - user:", user?.email, "userProfile:", userProfile)
-    }
+    // Only after component is mounted to avoid hydration mismatch
+    if (!isMounted) return "Usuario"
+
+    console.log("[v0] getUserDisplayName - mounted, user:", user?.email, "userProfile:", userProfile)
 
     // First, try to use the full_name from profiles table
     if (userProfile?.full_name && userProfile.full_name.trim()) {
+      console.log("[v0] Using full_name:", userProfile.full_name)
       return userProfile.full_name
     }
 
     // Then try metadata name from auth
     if (user?.user_metadata?.name) {
+      console.log("[v0] Using metadata name:", user.user_metadata.name)
       return user.user_metadata.name
     }
 
     // Finally, use the part before @ from email (most reliable)
     if (user?.email) {
       const namePart = user.email.split("@")[0]
-      return namePart.charAt(0).toUpperCase() + namePart.slice(1)
+      const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1)
+      console.log("[v0] Using email part:", displayName)
+      return displayName
     }
 
     return "Usuario"
