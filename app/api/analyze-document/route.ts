@@ -1,6 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { generateText } from "ai"
-import { openai } from "@ai-sdk/openai"
 
 function validateChileanRUT(rut: string): boolean {
   if (!rut) return false
@@ -307,26 +305,46 @@ Responde ÚNICAMENTE en formato JSON válido con las claves más apropiadas para
       }
     }
 
-    console.log("[v0] Sending request to OpenAI...")
+    console.log("[v0] Calling OpenAI Vision API directly with gpt-4o...")
 
-    const { text } = await generateText({
-      model: openai("gpt-4-turbo"),
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: getPromptForDocumentType(documentType),
-            },
-            {
-              type: "image",
-              image: `data:${mimeType};base64,${base64}`,
-            },
-          ],
-        },
-      ],
+    const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: getPromptForDocumentType(documentType)
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:${mimeType};base64,${base64}`,
+                  detail: "high"
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 1024
+      })
     })
+
+    if (!openaiResponse.ok) {
+      const errorData = await openaiResponse.json()
+      console.error("[v0] OpenAI API Error:", errorData)
+      throw new Error(errorData.error?.message || "OpenAI API failed")
+    }
+
+    const responseData = await openaiResponse.json()
+    const text = responseData.choices[0]?.message?.content || ""
 
     if (process.env.NODE_ENV === 'development') console.log("[v0] OpenAI response received:", text.substring(0, 200) + "...")
 
