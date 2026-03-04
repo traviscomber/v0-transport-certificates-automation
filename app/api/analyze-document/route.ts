@@ -310,7 +310,7 @@ Responde ÚNICAMENTE en formato JSON válido con las claves más apropiadas para
     console.log("[v0] Sending request to OpenAI...")
 
     const { text } = await generateText({
-      model: openai("gpt-4o"),
+      model: openai("gpt-4-turbo"),
       messages: [
         {
           role: "user",

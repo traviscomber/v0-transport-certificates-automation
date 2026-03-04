@@ -175,8 +175,11 @@ Extrae toda la información legible de este documento chileno en formato JSON.`
 
     let text = ""
     try {
+      if (process.env.NODE_ENV === "development")
+        console.log("[v0] Using model: gpt-4-turbo for Vision API")
+
       const result = await generateText({
-        model: openai("gpt-4o"),
+        model: openai("gpt-4-turbo"),
         messages: [
           {
             role: "user",
@@ -198,11 +201,11 @@ Extrae toda la información legible de este documento chileno en formato JSON.`
       if (process.env.NODE_ENV === "development")
         console.log("[v0] OpenAI response received:", text.substring(0, 200) + "...")
     } catch (aiError) {
-      console.error("[v0] OpenAI API Error:", aiError instanceof Error ? aiError.message : aiError)
+      console.error("[v0] OpenAI API Error:", aiError instanceof Error ? aiError.message : JSON.stringify(aiError))
       return NextResponse.json(
         {
           error: "OpenAI Vision API error",
-          details: aiError instanceof Error ? aiError.message : "Failed to analyze image with AI",
+          details: aiError instanceof Error ? aiError.message : "Failed to analyze image with AI"
         },
         { status: 500 }
       )
