@@ -40,16 +40,16 @@ function validateChileanDate(dateStr: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("[v0] Starting document analysis...")
+    if (process.env.NODE_ENV === 'development') console.log("[v0] Starting document analysis...")
 
     const formData = await request.formData()
     const file = formData.get("file") as File
     const documentType = formData.get("documentType") as string
 
-    console.log("[v0] File received:", file?.name, "Type:", documentType)
+    if (process.env.NODE_ENV === 'development') console.log("[v0] File received:", file?.name, "Type:", documentType)
 
     if (!file) {
-      console.log("[v0] No file provided")
+      if (process.env.NODE_ENV === 'development') console.log("[v0] No file provided")
       return NextResponse.json({ error: "No file provided" }, { status: 400 })
     }
 
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     const base64 = Buffer.from(bytes).toString("base64")
     const mimeType = file.type
 
-    console.log("[v0] File converted to base64, size:", bytes.byteLength, "bytes")
+    if (process.env.NODE_ENV === 'development') console.log("[v0] File converted to base64, size:", bytes.byteLength, "bytes")
 
     const getPromptForDocumentType = (type: string) => {
       const baseInstructions = `
@@ -328,7 +328,7 @@ Responde ÚNICAMENTE en formato JSON válido con las claves más apropiadas para
       ],
     })
 
-    console.log("[v0] OpenAI response received:", text.substring(0, 200) + "...")
+    if (process.env.NODE_ENV === 'development') console.log("[v0] OpenAI response received:", text.substring(0, 200) + "...")
 
     // Parse the JSON response
     let extractedData
@@ -357,7 +357,7 @@ Responde ÚNICAMENTE en formato JSON válido con las claves más apropiadas para
         extractedData.confidence = warnings.length === 0 ? "high" : warnings.length <= 2 ? "medium" : "low"
       }
     } catch (parseError) {
-      console.log("[v0] JSON parsing failed, using raw text")
+      if (process.env.NODE_ENV === 'development') console.log("[v0] JSON parsing failed, using raw text")
       // If JSON parsing fails, return the raw text
       extractedData = {
         rawAnalysis: text,
@@ -366,7 +366,7 @@ Responde ÚNICAMENTE en formato JSON válido con las claves más apropiadas para
       }
     }
 
-    console.log("[v0] Analysis completed successfully")
+    if (process.env.NODE_ENV === 'development') console.log("[v0] Analysis completed successfully")
 
     return NextResponse.json({
       success: true,
