@@ -58,56 +58,18 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      console.log("[v0] Attempting login for:", email)
-
-      const { error, data } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
-      
-      if (error) {
-        console.log("[v0] Login auth error:", error)
-        throw error
-      }
+      if (error) throw error
 
-      console.log("[v0] Login successful, user:", data.user?.id)
-
-      // Get the current user to ensure session is established
-      const { data: { user } } = await supabase.auth.getUser()
-      console.log("[v0] Current user after login:", user?.id, user?.email)
-
-      if (!user) {
-        throw new Error("Usuario no encontrado después del login")
-      }
-
-      // Get user profile to determine redirect
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single()
-
-      console.log("[v0] User profile fetched:", profile, "error:", profileError)
-
-      // Redirect based on role
-      if (profile?.role === "admin") {
-        console.log("[v0] Redirecting to admin")
-        // Small delay to ensure session is fully established
-        await new Promise(resolve => setTimeout(resolve, 500))
-        router.push("/admin")
-      } else if (profile?.role === "dispatcher") {
-        console.log("[v0] Redirecting to dispatcher")
-        await new Promise(resolve => setTimeout(resolve, 500))
-        router.push("/dispatcher")
-      } else {
-        console.log("[v0] Redirecting to driver")
-        await new Promise(resolve => setTimeout(resolve, 500))
-        router.push("/driver")
-      }
+      // Wait a moment for session to establish
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 300)
     } catch (error: unknown) {
-      console.log("[v0] Login error:", error)
       setError(error instanceof Error ? error.message : "An error occurred")
-    } finally {
       setIsLoading(false)
     }
   }
@@ -118,48 +80,19 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      console.log("[v0] Attempting demo login for:", demoAccount.email)
-
-      const { error, data } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: demoAccount.email,
         password: demoAccount.password,
       })
 
-      if (error) {
-        console.log("[v0] Demo login auth error:", error)
-        throw error
-      }
+      if (error) throw error
 
-      console.log("[v0] Demo login successful, user:", data.user?.id)
-
-      // Get the current user to ensure session is established
-      const { data: { user } } = await supabase.auth.getUser()
-      console.log("[v0] Current demo user after login:", user?.id, user?.email)
-
-      if (!user) {
-        throw new Error("Usuario demo no encontrado después del login")
-      }
-
-      // Redirect based on role (we know the role from demoAccount)
-      console.log("[v0] Demo user role:", demoAccount.role)
-      
-      // Small delay to ensure session is fully established
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      if (demoAccount.role === "admin") {
-        console.log("[v0] Redirecting demo admin to /admin")
-        router.push("/admin")
-      } else if (demoAccount.role === "dispatcher") {
-        console.log("[v0] Redirecting demo dispatcher to /dispatcher")
-        router.push("/dispatcher")
-      } else {
-        console.log("[v0] Redirecting demo driver to /driver")
-        router.push("/driver")
-      }
+      // Wait a moment for session to establish
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 300)
     } catch (error: unknown) {
-      console.log("[v0] Demo login failed:", error)
       setError(error instanceof Error ? error.message : "Error en login demo")
-    } finally {
       setDemoLoading(null)
     }
   }
