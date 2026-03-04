@@ -3,12 +3,12 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("[v0] API: Starting document save to Supabase...")
+    if (process.env.NODE_ENV === 'development') console.log("[v0] API: Starting document save to Supabase...")
 
     const supabase = await createClient()
     const body = await request.json()
 
-    console.log("[v0] API: Received document data:", body)
+    if (process.env.NODE_ENV === 'development') console.log("[v0] API: Received document data:", body)
 
     const { documents } = body
 
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      console.log("[v0] API: Document saved:", documentData)
+      if (process.env.NODE_ENV === 'development') console.log("[v0] API: Document saved:", documentData)
 
       // Then, save to appropriate table based on document type
       if (doc.documentType === "Licencia de Conducir") {
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
         if (transporterError) {
           console.error("[v0] API: Error saving transporter:", transporterError)
         } else {
-          console.log("[v0] API: Transporter saved:", transporterData)
+          if (process.env.NODE_ENV === 'development') console.log("[v0] API: Transporter saved:", transporterData)
         }
       } else {
         // Save to machines table for vehicle-related documents
@@ -92,14 +92,14 @@ export async function POST(request: NextRequest) {
         if (machineError) {
           console.error("[v0] API: Error saving machine:", machineError)
         } else {
-          console.log("[v0] API: Machine saved:", machineData)
+          if (process.env.NODE_ENV === 'development') console.log("[v0] API: Machine saved:", machineData)
         }
       }
 
       savedDocuments.push(documentData)
     }
 
-    console.log("[v0] API: All documents processed successfully")
+    if (process.env.NODE_ENV === 'development') console.log("[v0] API: All documents processed successfully")
 
     return NextResponse.json({
       success: true,
