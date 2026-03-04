@@ -49,7 +49,7 @@ export function LoginForm() {
 
       router.push("/dashboard")
     } catch (error: any) {
-      console.error("Login error:", error)
+      if (process.env.NODE_ENV === 'development') console.error("[v0] Login error:", error)
       setError(error.message || "Error al iniciar sesión")
     } finally {
       setIsLoading(false)
@@ -90,7 +90,7 @@ export function LoginForm() {
         description: "Revisa tu email para confirmar tu cuenta",
       })
     } catch (error: any) {
-      console.error("Registration error:", error)
+      if (process.env.NODE_ENV === 'development') console.error("[v0] Registration error:", error)
       setError(error.message || "Error al registrarse")
     } finally {
       setIsLoading(false)

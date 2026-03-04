@@ -92,7 +92,7 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      console.log("[v0] Attempting demo login for:", demoAccount.email)
+      if (process.env.NODE_ENV === 'development') console.log("[v0] Attempting demo login for:", demoAccount.email)
 
       const { error } = await supabase.auth.signInWithPassword({
         email: demoAccount.email,
@@ -100,11 +100,11 @@ export default function LoginPage() {
       })
 
       if (error) {
-        console.log("[v0] Demo login error:", error)
+        if (process.env.NODE_ENV === 'development') console.log("[v0] Demo login error:", error)
         throw error
       }
 
-      console.log("[v0] Demo login successful, redirecting...")
+      if (process.env.NODE_ENV === 'development') console.log("[v0] Demo login successful, redirecting...")
 
       // Redirect based on role
       if (demoAccount.role === "admin") {
@@ -115,7 +115,7 @@ export default function LoginPage() {
         router.push("/driver")
       }
     } catch (error: unknown) {
-      console.log("[v0] Demo login failed:", error)
+      if (process.env.NODE_ENV === 'development') console.log("[v0] Demo login failed:", error)
       setError(error instanceof Error ? error.message : "Error en login demo")
     } finally {
       setDemoLoading(null)
