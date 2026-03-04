@@ -78,7 +78,7 @@ export default function TestExtractionPage() {
     try {
       if (process.env.NODE_ENV === "development") console.log("[v0] Analyzing sample:", selectedSample.name)
 
-      const response = await fetch("/api/analyze-document", {
+      const response = await fetch("/api/analyze-url", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -98,7 +98,7 @@ export default function TestExtractionPage() {
       setResult(data)
     } catch (err) {
       if (process.env.NODE_ENV === "development") console.error("[v0] Error:", err)
-      setError(err instanceof Error ? err.message : "Unknown error")
+      setError(err instanceof Error ? err.message : "Failed to analyze document")
     } finally {
       setLoading(false)
     }
