@@ -36,6 +36,48 @@ export function DocumentScanner() {
         })
       }, 300)
 
+      // Auto-detect document type based on common characteristics
+      // For identity documents, we default to "cedula-identidad" for better results
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("documentType", "cedula-identidad") // Default to Chilean ID for best results
+
+      const response = await fetch("/api/analyze-document", {
+        method: "POST",
+        body: formData,
+      })
+
+      clearInterval(progressInterval)
+      setScanProgress(100)
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to analyze document")
+      }
+
+      const result = await response.json()
+      console.log("[v0] API Response:", result.extractedData)
+
+      // Use all extracted data directly
+      const apiData = result.extractedData
+      const extracted: ExtractedData = {
+        ...apiData, // Include ALL fields from API response
+      }
+
+      setExtractedData(extracted)
+      setIsScanning(false)
+    } catch (error) {
+      clearInterval(progressInterval)
+      setIsScanning(false)
+      setScanProgress(0)
+      console.error("[v0] Error analyzing document:", error)
+      alert(error instanceof Error ? error.message : "Error al analizar el documento. Intenta de nuevo.")
+    }
+  }
+          return prev + 10
+        })
+      }, 300)
+
       // Auto-detect document type - default to generic if unsure
       // The API will detect based on content
       const formData = new FormData()
@@ -204,8 +246,69 @@ export function DocumentScanner() {
                   // Skip internal fields
                   if (key === "confidence" || key === "parseError" || key.endsWith("_warning")) return null
 
-                  // Format the label
-                  const label = key
+                  // Format the label with proper Spanish labels for Chilean documents
+                  const labelMap: Record<string, string> = {
+                    rut: "RUT",
+                    nombreCompleto: "Nombre Completo",
+                    nombre: "Nombre",
+                    apellidos: "Apellidos",
+                    fechaNacimiento: "Fecha de Nacimiento",
+                    sexo: "Sexo",
+                    fechaEmision: "Fecha de Emisión",
+                    fechaVencimiento: "Fecha de Vencimiento",
+                    numeroCedula: "Número de Cédula",
+                    lugarNacimiento: "Lugar de Nacimiento",
+                    comunaResidencia: "Comuna de Residencia",
+                    estadoCivil: "Estado Civil",
+                    profesion: "Profesión",
+                    altura: "Altura",
+                    senaParticular: "Seña Particular",
+                    numeroPasaporte: "Número de Pasaporte",
+                    nacionalidad: "Nacionalidad",
+                    numeroF30: "Número F-30",
+                    rutTransportista: "RUT Transportista",
+                    nombreTransportista: "Nombre Transportista",
+                    patenteVehiculo: "Patente Vehículo",
+                    tipoVehiculo: "Tipo de Vehículo",
+                    estado: "Estado",
+                    observaciones: "Observaciones",
+                    numeroResolucion: "Número de Resolución",
+                    region: "Región",
+                    numeroF30_1: "Número F-30-1",
+                    capacidadCarga: "Capacidad de Carga",
+                    tipoCarga: "Tipo de Carga",
+                    patente: "Patente",
+                    rutPropietario: "RUT Propietario",
+                    nombrePropietario: "Nombre Propietario",
+                    marca: "Marca",
+                    modelo: "Modelo",
+                    ano: "Año",
+                    color: "Color",
+                    numeroMotor: "Número de Motor",
+                    numeroChasis: "Número de Chasis",
+                    uso: "Uso del Vehículo",
+                    numeroLicencia: "Número de Licencia",
+                    claseLicencia: "Clase de Licencia",
+                    rutConductor: "RUT Conductor",
+                    nombreConductor: "Nombre Conductor",
+                    restricciones: "Restricciones",
+                    municipalidad: "Municipalidad",
+                    donante: "Donante de Órganos",
+                    numeroF30_1: "Número F-30-1",
+                    companiaSeguro: "Compañía de Seguros",
+                    numeroPoliza: "Número de Póliza",
+                    rutContratante: "RUT Contratante",
+                    nombreContratante: "Nombre Contratante",
+                    fechaInicio: "Fecha de Inicio",
+                    prima: "Prima",
+                    agente: "Agente o Corredor",
+                    sucursal: "Sucursal",
+                    plantaRevisora: "Planta Revisora",
+                    fechaRevision: "Fecha de Revisión",
+                    kilometraje: "Kilometraje",
+                  }
+
+                  const label = labelMap[key] || key
                     .replace(/([A-Z])/g, " $1")
                     .replace(/^./, (str) => str.toUpperCase())
                     .trim()
@@ -217,8 +320,8 @@ export function DocumentScanner() {
 
                   return (
                     <div key={key} className="space-y-2">
-                      <label className="text-sm font-medium">{label}</label>
-                      <div className="p-3 bg-muted rounded-md text-sm break-words">{String(displayValue)}</div>
+                      <label className="text-sm font-medium text-foreground">{label}</label>
+                      <div className="p-3 bg-muted rounded-md text-sm break-words font-mono">{String(displayValue)}</div>
                     </div>
                   )
                 })}

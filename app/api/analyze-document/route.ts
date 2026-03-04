@@ -82,6 +82,76 @@ Si no puedes leer claramente algún campo, indica "No legible" en lugar de inven
 `
 
       switch (type) {
+        case "cedula-identidad":
+          return `${baseInstructions}
+          
+Analiza esta CÉDULA DE IDENTIDAD CHILENA y extrae:
+
+CAMPOS OBLIGATORIOS:
+- RUT del titular (formato chileno con puntos y guión: XX.XXX.XXX-X)
+- Nombre completo del titular (nombre y apellidos)
+- Fecha de nacimiento (DD/MM/YYYY)
+- Sexo (Masculino/Femenino/Otro)
+- Fecha de emisión (DD/MM/YYYY)
+- Fecha de vencimiento (DD/MM/YYYY)
+- Número de cédula (si aparece en el documento)
+
+CAMPOS ADICIONALES:
+- Lugar de nacimiento (ciudad/región)
+- Comuna de residencia
+- Estado civil (si aparece)
+- Profesión u ocupación (si aparece)
+- Altura del titular (si aparece)
+- Seña particular (si aparece)
+
+Responde ÚNICAMENTE en formato JSON válido:
+{
+  "rut": "string",
+  "nombreCompleto": "string",
+  "nombre": "string",
+  "apellidos": "string",
+  "fechaNacimiento": "string",
+  "sexo": "string",
+  "fechaEmision": "string",
+  "fechaVencimiento": "string",
+  "numeroCedula": "string",
+  "lugarNacimiento": "string",
+  "comunaResidencia": "string",
+  "estadoCivil": "string",
+  "profesion": "string",
+  "altura": "string",
+  "senaParticular": "string"
+}`
+
+        case "pasaporte":
+          return `${baseInstructions}
+          
+Analiza este PASAPORTE CHILENO y extrae:
+
+CAMPOS OBLIGATORIOS:
+- Número de pasaporte
+- RUT del titular (formato chileno)
+- Nombre completo
+- Nacionalidad
+- Fecha de nacimiento (DD/MM/YYYY)
+- Sexo
+- Fecha de emisión (DD/MM/YYYY)
+- Fecha de vencimiento (DD/MM/YYYY)
+- Lugar de emisión
+
+Responde ÚNICAMENTE en formato JSON válido:
+{
+  "numeroPasaporte": "string",
+  "rut": "string",
+  "nombreCompleto": "string",
+  "nacionalidad": "string",
+  "fechaNacimiento": "string",
+  "sexo": "string",
+  "fechaEmision": "string",
+  "fechaVencimiento": "string",
+  "lugarEmision": "string"
+}`
+
         case "f30":
           return `${baseInstructions}
           
