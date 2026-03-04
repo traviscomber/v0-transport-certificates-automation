@@ -186,24 +186,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     // Only after component is mounted to avoid hydration mismatch
     if (!isMounted) return "Usuario"
 
-    console.log("[v0] getUserDisplayName - mounted, user:", user?.email, "userProfile:", userProfile)
-
     // Check if it's a demo account
     const demoEmails = ["conductor@demo.cl", "despachador@demo.cl", "admin@demo.cl"]
     if (user?.email && demoEmails.includes(user.email)) {
-      console.log("[v0] Demo account detected")
       return "Demo"
     }
 
     // First, try to use the full_name from profiles table
     if (userProfile?.full_name && userProfile.full_name.trim()) {
-      console.log("[v0] Using full_name:", userProfile.full_name)
       return userProfile.full_name
     }
 
     // Then try metadata name from auth
     if (user?.user_metadata?.name) {
-      console.log("[v0] Using metadata name:", user.user_metadata.name)
       return user.user_metadata.name
     }
 
@@ -211,7 +206,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     if (user?.email) {
       const namePart = user.email.split("@")[0]
       const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1)
-      console.log("[v0] Using email part:", displayName)
       return displayName
     }
 
@@ -287,17 +281,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
               <div className="flex flex-1"></div>
               <div className="flex items-center gap-x-4 lg:gap-x-6">
-                <div className="flex flex-col items-end text-sm">
-                  <span className="font-medium text-foreground">
-                    {loading ? "Cargando..." : `Bienvenido, ${getUserDisplayName()}`}
-                  </span>
-                  {userProfile?.email && (
-                    <span className="text-xs text-muted-foreground">{userProfile.email}</span>
-                  )}
-                  {userProfile?.role && (
-                    <span className="text-xs text-muted-foreground capitalize">{userProfile.role}</span>
-                  )}
-                </div>
+                {/* Only show user info when mounted to avoid hydration mismatch */}
+                {isMounted ? (
+                  <div className="flex flex-col items-end text-sm">
+                    <span className="font-medium text-foreground">
+                      Bienvenido, {loading ? "Cargando..." : getUserDisplayName()}
+                    </span>
+                    {userProfile?.email && (
+                      <span className="text-xs text-muted-foreground">{userProfile.email}</span>
+                    )}
+                    {userProfile?.role && (
+                      <span className="text-xs text-muted-foreground capitalize">{userProfile.role}</span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-sm font-medium text-foreground">Bienvenido</span>
+                )}
               </div>
             </div>
           </div>

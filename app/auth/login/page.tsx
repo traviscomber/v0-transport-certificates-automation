@@ -92,12 +92,16 @@ export default function LoginPage() {
       // Redirect based on role
       if (profile?.role === "admin") {
         console.log("[v0] Redirecting to admin")
+        // Small delay to ensure session is fully established
+        await new Promise(resolve => setTimeout(resolve, 500))
         router.push("/admin")
       } else if (profile?.role === "dispatcher") {
         console.log("[v0] Redirecting to dispatcher")
+        await new Promise(resolve => setTimeout(resolve, 500))
         router.push("/dispatcher")
       } else {
         console.log("[v0] Redirecting to driver")
+        await new Promise(resolve => setTimeout(resolve, 500))
         router.push("/driver")
       }
     } catch (error: unknown) {
@@ -138,6 +142,9 @@ export default function LoginPage() {
 
       // Redirect based on role (we know the role from demoAccount)
       console.log("[v0] Demo user role:", demoAccount.role)
+      
+      // Small delay to ensure session is fully established
+      await new Promise(resolve => setTimeout(resolve, 500))
       
       if (demoAccount.role === "admin") {
         console.log("[v0] Redirecting demo admin to /admin")
