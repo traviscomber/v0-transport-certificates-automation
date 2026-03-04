@@ -99,11 +99,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       // Fetch user profile from profiles table
       if (user?.id) {
-        const { data: profile } = await supabase
+        const { data: profile, error } = await supabase
           .from("profiles")
-          .select("full_name, email")
+          .select("full_name, email, role")
           .eq("id", user.id)
           .single()
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("[v0] User profile fetched:", profile)
+          if (error) console.log("[v0] Profile fetch error:", error)
+        }
 
         setUserProfile(profile)
       }
@@ -219,9 +224,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
               <div className="flex flex-1"></div>
               <div className="flex items-center gap-x-4 lg:gap-x-6">
-                <span className="text-sm text-muted-foreground">
-                  {loading ? "Cargando..." : `Bienvenido, ${getUserDisplayName()}`}
-                </span>
+                <div className="flex flex-col items-end text-sm">
+                  <span className="font-medium text-foreground">
+                    {loading ? "Cargando..." : `Bienvenido, ${getUserDisplayName()}`}
+                  </span>
+                  {userProfile?.email && (
+                    <span className="text-xs text-muted-foreground">{userProfile.email}</span>
+                  )}
+                  {userProfile?.role && (
+                    <span className="text-xs text-muted-foreground capitalize">{userProfile.role}</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
