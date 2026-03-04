@@ -21,9 +21,11 @@ import {
   Plus,
   Shield,
   BarChart3,
+  Upload,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { UserManagementModal } from "./user-management-modal"
 import { SystemStatsCard } from "./system-stats-card"
 import { AuditLogTable } from "./audit-log-table"
@@ -244,6 +246,10 @@ export function AdminDashboard({ profile, users, certificates, auditLog, notific
         <Tabs defaultValue="users" className="space-y-6">
           <TabsList>
             <TabsTrigger value="users">Gestión de Usuarios</TabsTrigger>
+            <TabsTrigger value="upload">
+              <Upload className="h-4 w-4 mr-2" />
+              Carga de Documentos
+            </TabsTrigger>
             <TabsTrigger value="certificates">Certificados</TabsTrigger>
             <TabsTrigger value="processing">
               Procesamiento IA
@@ -264,6 +270,35 @@ export function AdminDashboard({ profile, users, certificates, auditLog, notific
             <TabsTrigger value="audit">Auditoría</TabsTrigger>
             <TabsTrigger value="analytics">Analíticas</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="upload" className="space-y-6">
+            {/* Upload Page Redirect */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Carga de Documentos</CardTitle>
+                <CardDescription>Sube y analiza documentos chilenos con OCR</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-muted-foreground">
+                  Accede a la herramienta dedicada de carga de documentos para analizar certificados F-30, licencias de conducir y otros documentos con análisis automático basado en IA.
+                </p>
+                <div className="flex gap-4">
+                  <Link href="/admin/upload">
+                    <Button className="gap-2">
+                      <Upload className="h-4 w-4" />
+                      Ir a Carga de Documentos
+                    </Button>
+                  </Link>
+                  <Link href="/test-extraction">
+                    <Button variant="outline" className="gap-2">
+                      <Eye className="h-4 w-4" />
+                      Ver Pruebas
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
             {/* User Management */}
