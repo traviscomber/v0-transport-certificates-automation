@@ -77,6 +77,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
+  const [userProfile, setUserProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     "Panel Principal": true,
@@ -95,6 +96,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         data: { user },
       } = await supabase.auth.getUser()
       setUser(user)
+
+      // Fetch user profile from profiles table
+      if (user?.id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, email")
+          .eq("id", user.id)
+          .single()
+
+        setUserProfile(profile)
+      }
+
       setLoading(false)
     }
 
@@ -117,14 +130,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   const getUserDisplayName = () => {
-    if (!user) return "Usuario"
+    if (!user && !userProfile) return "Usuario"
 
-    if (user.user_metadata?.name) {
+    // First, try to use the full_name from profiles table
+    if (userProfile?.full_name) {
+      return userProfile.full_name
+    }
+
+    // Then try metadata name
+    if (user?.user_metadata?.name) {
       return user.user_metadata.name
     }
 
-    if (user.email) {
-      return user.email.split("@")[0]
+    // Finally, use the part before @ from email
+    if (user?.email) {
+      return user.email.split("@")[0].charAt(0).toUpperCase() + user.email.split("@")[0].slice(1)
     }
 
     return "Usuario"
