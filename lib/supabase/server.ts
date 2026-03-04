@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js"
+import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
 
 /**
@@ -13,7 +13,8 @@ export async function createServerClient() {
     throw new Error("Missing Supabase URL or Key. Please check your environment variables.")
   }
 
-  return createClient(url, key)
+  return createSupabaseClient(url, key)
 }
 
-export { createServerClient }
+// Re-export for compatibility with existing imports
+export const createClient = createServerClient
