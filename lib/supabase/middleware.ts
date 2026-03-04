@@ -27,6 +27,7 @@ export async function updateSession(request: NextRequest) {
         "/auth/login",
         "/auth/register",
         "/setup-demo",
+        "/login",
         "/_next",
         "/api",
       ]
