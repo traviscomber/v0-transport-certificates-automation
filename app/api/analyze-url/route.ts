@@ -173,27 +173,40 @@ Extrae toda la información legible de este documento chileno en formato JSON.`
     if (process.env.NODE_ENV === "development")
       console.log("[v0] Sending request to OpenAI Vision API...")
 
-    const { text } = await generateText({
-      model: openai("gpt-4o"),
-      messages: [
+    let text = ""
+    try {
+      const result = await generateText({
+        model: openai("gpt-4o"),
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: prompt
+              },
+              {
+                type: "image",
+                image: `data:${mimeType};base64,${base64}`
+              }
+            ]
+          }
+        ]
+      })
+      text = result.text
+      
+      if (process.env.NODE_ENV === "development")
+        console.log("[v0] OpenAI response received:", text.substring(0, 200) + "...")
+    } catch (aiError) {
+      console.error("[v0] OpenAI API Error:", aiError instanceof Error ? aiError.message : aiError)
+      return NextResponse.json(
         {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: prompt
-            },
-            {
-              type: "image",
-              image: `data:${mimeType};base64,${base64}`
-            }
-          ]
-        }
-      ]
-    })
-
-    if (process.env.NODE_ENV === "development")
-      console.log("[v0] OpenAI response received:", text.substring(0, 200) + "...")
+          error: "OpenAI Vision API error",
+          details: aiError instanceof Error ? aiError.message : "Failed to analyze image with AI",
+        },
+        { status: 500 }
+      )
+    }
 
     let extractedData: any = {}
     try {

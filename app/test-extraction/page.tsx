@@ -87,15 +87,28 @@ export default function TestExtractionPage() {
         })
       })
 
-      const data = await response.json()
+      if (process.env.NODE_ENV === "development") console.log("[v0] Response status:", response.status)
+
+      let data
+      try {
+        data = await response.json()
+      } catch (jsonError) {
+        if (process.env.NODE_ENV === "development") console.error("[v0] Failed to parse JSON:", jsonError)
+        const text = await response.text()
+        if (process.env.NODE_ENV === "development") console.error("[v0] Response text:", text)
+        setError("Server returned invalid response: " + text.substring(0, 100))
+        return
+      }
+
       setRawResponse(JSON.stringify(data, null, 2))
 
       if (!response.ok) {
-        setError(data.error || "Failed to analyze document")
+        setError(data.error || "Failed to analyze document: " + (data.details || "Unknown error"))
         return
       }
 
       setResult(data)
+      if (process.env.NODE_ENV === "development") console.log("[v0] Analysis successful:", data)
     } catch (err) {
       if (process.env.NODE_ENV === "development") console.error("[v0] Error:", err)
       setError(err instanceof Error ? err.message : "Failed to analyze document")
