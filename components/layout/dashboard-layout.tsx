@@ -106,7 +106,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           .single()
 
         if (process.env.NODE_ENV === "development") {
-          console.log("[v0] User profile fetched:", profile)
+          console.log("[v0] User profile fetched in dashboard-layout:", profile)
           if (error) console.log("[v0] Profile fetch error:", error)
         }
 
@@ -120,9 +120,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null)
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const user = session?.user ?? null
+      setUser(user)
       setLoading(false)
+
+      // Also fetch profile when auth state changes
+      if (user?.id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, email, role")
+          .eq("id", user.id)
+          .single()
+
+        setUserProfile(profile)
+      }
     })
 
     return () => subscription.unsubscribe()
