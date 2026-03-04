@@ -188,6 +188,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
     console.log("[v0] getUserDisplayName - mounted, user:", user?.email, "userProfile:", userProfile)
 
+    // Check if it's a demo account
+    const demoEmails = ["conductor@demo.cl", "despachador@demo.cl", "admin@demo.cl"]
+    if (user?.email && demoEmails.includes(user.email)) {
+      console.log("[v0] Demo account detected")
+      return "Demo"
+    }
+
     // First, try to use the full_name from profiles table
     if (userProfile?.full_name && userProfile.full_name.trim()) {
       console.log("[v0] Using full_name:", userProfile.full_name)
