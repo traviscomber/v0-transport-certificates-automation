@@ -74,49 +74,6 @@ export function DocumentScanner() {
       alert(error instanceof Error ? error.message : "Error al analizar el documento. Intenta de nuevo.")
     }
   }
-          return prev + 10
-        })
-      }, 300)
-
-      // Auto-detect document type - default to generic if unsure
-      // The API will detect based on content
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("documentType", "default") // Let API detect type
-
-      const response = await fetch("/api/analyze-document", {
-        method: "POST",
-        body: formData,
-      })
-
-      clearInterval(progressInterval)
-      setScanProgress(100)
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to analyze document")
-      }
-
-      const result = await response.json()
-      console.log("[v0] API Response:", result.extractedData)
-
-      // Use all extracted data directly
-      const apiData = result.extractedData
-      const extracted: ExtractedData = {
-        ...apiData, // Include ALL fields from API response
-        documentType: "Documento Chileno",
-      }
-
-      setExtractedData(extracted)
-      setIsScanning(false)
-    } catch (error) {
-      clearInterval(progressInterval)
-      setIsScanning(false)
-      setScanProgress(0)
-      console.error("[v0] Error analyzing document:", error)
-      alert(error instanceof Error ? error.message : "Error al analizar el documento. Intenta de nuevo.")
-    }
-  }
 
   const handleCameraCapture = () => {
     // In real implementation, this would open camera
