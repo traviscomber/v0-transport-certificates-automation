@@ -84,72 +84,34 @@ Si no puedes leer claramente algún campo, indica "No legible" en lugar de inven
       switch (type) {
         case "cedula-identidad":
           return `${baseInstructions}
-          
-Analiza esta CÉDULA DE IDENTIDAD CHILENA y extrae:
 
-CAMPOS OBLIGATORIOS:
-- RUT del titular (formato chileno con puntos y guión: XX.XXX.XXX-X)
-- Nombre completo del titular (nombre y apellidos)
-- Fecha de nacimiento (DD/MM/YYYY)
-- Sexo (Masculino/Femenino/Otro)
-- Fecha de emisión (DD/MM/YYYY)
-- Fecha de vencimiento (DD/MM/YYYY)
-- Número de cédula (si aparece en el documento)
+Analiza esta CÉDULA DE IDENTIDAD CHILENA y extrae los datos. 
 
-CAMPOS ADICIONALES:
-- Lugar de nacimiento (ciudad/región)
-- Comuna de residencia
-- Estado civil (si aparece)
-- Profesión u ocupación (si aparece)
-- Altura del titular (si aparece)
-- Seña particular (si aparece)
+IMPORTANTE: Responde ÚNICAMENTE con un JSON válido, sin backticks, sin explicaciones adicionales.
 
-Responde ÚNICAMENTE en formato JSON válido:
+CAMPOS A EXTRAER:
+- rut: RUT del titular en formato XX.XXX.XXX-X
+- nombreCompleto: Nombre completo (nombre y apellidos)
+- nombre: Solo el nombre de pila
+- apellidos: Apellidos completos
+- fechaNacimiento: Fecha en formato DD/MM/YYYY
+- sexo: Masculino, Femenino u Otro
+- fechaEmision: Fecha en formato DD/MM/YYYY
+- fechaVencimiento: Fecha en formato DD/MM/YYYY
+- numeroCedula: Número de serie si aparece
+
+Si no puedes leer un campo claramente, OMÍTELO del JSON en lugar de poner "No legible".
+
+Responde solo con JSON válido:
 {
-  "rut": "string",
-  "nombreCompleto": "string",
-  "nombre": "string",
-  "apellidos": "string",
-  "fechaNacimiento": "string",
-  "sexo": "string",
-  "fechaEmision": "string",
-  "fechaVencimiento": "string",
-  "numeroCedula": "string",
-  "lugarNacimiento": "string",
-  "comunaResidencia": "string",
-  "estadoCivil": "string",
-  "profesion": "string",
-  "altura": "string",
-  "senaParticular": "string"
-}`
-
-        case "pasaporte":
-          return `${baseInstructions}
-          
-Analiza este PASAPORTE CHILENO y extrae:
-
-CAMPOS OBLIGATORIOS:
-- Número de pasaporte
-- RUT del titular (formato chileno)
-- Nombre completo
-- Nacionalidad
-- Fecha de nacimiento (DD/MM/YYYY)
-- Sexo
-- Fecha de emisión (DD/MM/YYYY)
-- Fecha de vencimiento (DD/MM/YYYY)
-- Lugar de emisión
-
-Responde ÚNICAMENTE en formato JSON válido:
-{
-  "numeroPasaporte": "string",
-  "rut": "string",
-  "nombreCompleto": "string",
-  "nacionalidad": "string",
-  "fechaNacimiento": "string",
-  "sexo": "string",
-  "fechaEmision": "string",
-  "fechaVencimiento": "string",
-  "lugarEmision": "string"
+  "rut": "valor",
+  "nombreCompleto": "valor",
+  "nombre": "valor",
+  "apellidos": "valor",
+  "fechaNacimiento": "valor",
+  "sexo": "valor",
+  "fechaEmision": "valor",
+  "fechaVencimiento": "valor"
 }`
 
         case "f30":
@@ -418,40 +380,108 @@ Responde ÚNICAMENTE en formato JSON válido con las claves más apropiadas para
 
     if (process.env.NODE_ENV === 'development') console.log("[v0] OpenAI response received:", text.substring(0, 200) + "...")
 
-    // Parse the JSON response
+    // Parse the JSON response with robust error handling
     let extractedData
     try {
-      extractedData = JSON.parse(text)
+      // Clean up the response text - sometimes OpenAI returns escaped JSON or extra formatting
+      let cleanedText = text.trim()
+      
+      console.log("[v0] Raw response:", cleanedText.substring(0, 100))
+      
+      // Remove markdown code blocks if present (multiple patterns)
+      // Handle: ```json { ... }```, ```{ ... }```, or just ``json
+      cleanedText = cleanedText.replace(/```(json)?\s*/g, "").replace(/\s*```/g, "")
+      
+      // Remove any leading/trailing quotes that might wrap the entire JSON
+      cleanedText = cleanedText.replace(/^["']/, "").replace(/["']$/, "")
+      
+      // Try to find JSON object in the text
+      const jsonMatch = cleanedText.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        cleanedText = jsonMatch[0]
+      }
+      
+      console.log("[v0] Cleaned response:", cleanedText.substring(0, 100))
+      
+      // Parse the cleaned JSON
+      extractedData = JSON.parse(cleanedText)
 
       if (extractedData) {
+        // Count how many critical fields are present and valid
+        const criticalFields = ["rut", "nombreCompleto", "nombre", "apellidos", "fechaNacimiento"]
+        const presentFields = criticalFields.filter(field => extractedData[field] && String(extractedData[field]).trim())
+        
         // Validate RUTs if present
-        const rutFields = ["rutTransportista", "rutPropietario", "rutConductor", "rutContratante"]
+        const rutFields = ["rutTransportista", "rutPropietario", "rutConductor", "rutContratante", "rut"]
+        let validRUTs = 0
+        let invalidRUTs = 0
         rutFields.forEach((field) => {
-          if (extractedData[field] && !validateChileanRUT(extractedData[field])) {
-            extractedData[`${field}_warning`] = "Formato de RUT inválido"
+          if (extractedData[field]) {
+            if (validateChileanRUT(extractedData[field])) {
+              validRUTs++
+            } else {
+              invalidRUTs++
+              extractedData[`${field}_warning`] = "Formato de RUT inválido"
+            }
           }
         })
 
         // Validate dates if present
         const dateFields = ["fechaEmision", "fechaVencimiento", "fechaRevision", "fechaInicio", "fechaNacimiento"]
+        let validDates = 0
+        let invalidDates = 0
         dateFields.forEach((field) => {
-          if (extractedData[field] && !validateChileanDate(extractedData[field])) {
-            extractedData[`${field}_warning`] = "Formato de fecha inválido"
+          if (extractedData[field]) {
+            if (validateChileanDate(extractedData[field])) {
+              validDates++
+            } else {
+              invalidDates++
+              extractedData[`${field}_warning`] = "Formato de fecha inválido"
+            }
           }
         })
 
-        // Add confidence score based on validation
-        const warnings = Object.keys(extractedData).filter((key) => key.endsWith("_warning"))
-        extractedData.confidence = warnings.length === 0 ? "high" : warnings.length <= 2 ? "medium" : "low"
+        // Calculate confidence based on data completeness and validity
+        const fieldCoverage = presentFields.length / criticalFields.length
+        const hasInvalidData = invalidRUTs > 0 || invalidDates > 0
+        
+        if (fieldCoverage >= 0.8 && !hasInvalidData && validDates >= 2) {
+          extractedData.confidence = "high"
+        } else if (fieldCoverage >= 0.5 && invalidRUTs === 0) {
+          extractedData.confidence = "medium"
+        } else {
+          extractedData.confidence = "low"
+        }
+        
+        console.log("[v0] Confidence calculation:", { fieldCoverage, hasInvalidData, validDates, confidence: extractedData.confidence })
       }
     } catch (parseError) {
-      if (process.env.NODE_ENV === 'development') console.log("[v0] JSON parsing failed, using raw text")
-      // If JSON parsing fails, return the raw text
+      if (process.env.NODE_ENV === 'development') console.log("[v0] JSON parsing failed, attempting text extraction")
+      
+      // If JSON parsing fails, try to extract key-value pairs manually
       extractedData = {
         rawAnalysis: text,
         confidence: "low",
-        parseError: "No se pudo parsear la respuesta como JSON válido",
+        parseError: "Respuesta parseada con baja confianza - verificar manualmente",
       }
+      
+      // Try to extract common fields manually from text
+      const commonPatterns: Record<string, RegExp> = {
+        rut: /["\s]rut[":]?\s*[":]*([0-9]{1,2}\.[0-9]{3}\.[0-9]{3}-[0-9kK])/i,
+        nombreCompleto: /["\s]nombreCompleto[":]?\s*[":]*([^",}]+)/i,
+        nombre: /["\s]nombre[":]?\s*[":]*([^",}]+)/i,
+        apellidos: /["\s]apellidos[":]?\s*[":]*([^",}]+)/i,
+        fechaNacimiento: /["\s]fechaNacimiento[":]?\s*[":]*([0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4})/i,
+        fechaVencimiento: /["\s]fechaVencimiento[":]?\s*[":]*([0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4})/i,
+        fechaEmision: /["\s]fechaEmision[":]?\s*[":]*([0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4})/i,
+      }
+      
+      Object.entries(commonPatterns).forEach(([field, pattern]) => {
+        const match = text.match(pattern)
+        if (match && match[1]) {
+          extractedData[field] = match[1].trim()
+        }
+      })
     }
 
     if (process.env.NODE_ENV === 'development') console.log("[v0] Analysis completed successfully")
