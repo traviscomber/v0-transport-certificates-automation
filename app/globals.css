@@ -1,10 +1,9 @@
 @import "tailwindcss";
-@import "tw-animate-css";
+@import "./tailwind-components.css";
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Chilean Transport Portal Theme - Dark with Orange/Blue Accents */
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -77,10 +76,24 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: oklch(0.922 0 0);
+    outline-color: oklch(0.708 0 0 / 0.5);
   }
+  
+  .dark * {
+    border-color: oklch(0.269 0 0);
+    outline-color: oklch(0.439 0 0 / 0.5);
+  }
+  
   body {
-    @apply bg-background text-foreground font-sans;
+    background-color: oklch(1 0 0);
+    color: oklch(0.145 0 0);
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+  
+  .dark body {
+    background-color: oklch(0.145 0 0);
+    color: oklch(0.985 0 0);
   }
 }
 

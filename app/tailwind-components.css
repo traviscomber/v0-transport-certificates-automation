@@ -1,0 +1,25 @@
+@layer components {
+  .border-border {
+    border-color: var(--border);
+  }
+
+  .bg-background {
+    background-color: var(--background);
+  }
+
+  .bg-card {
+    background-color: var(--card);
+  }
+
+  .bg-popover {
+    background-color: var(--popover);
+  }
+
+  .text-foreground {
+    color: var(--foreground);
+  }
+
+  .outline-ring {
+    outline-color: var(--ring);
+  }
+}

@@ -1,7 +1,11 @@
 /** @type {import('postcss-load-config').Config} */
 const config = {
   plugins: {
-    '@tailwindcss/postcss': {},
+    '@tailwindcss/postcss': {
+      // Only load essential plugins, block tw-animate-css
+      corePlugins: {},
+      plugins: [],
+    },
   },
 }
 
