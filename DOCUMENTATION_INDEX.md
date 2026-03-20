@@ -110,31 +110,31 @@ Portal con 99% accuracy = Market leader en Chile
 ## 📱 ARCHIVOS PENDIENTES A CREAR
 
 ### FASE 1 (AHORA)
-```
+\`\`\`
 lib/chilean-validators.ts                    ← CREAR
 lib/chilean-public-records.ts                ← CREAR
 app/api/v2/documents/validate-multi-layer/route.ts  ← CREAR
 tests/chilean-validators.test.ts             ← CREAR
-```
+\`\`\`
 
 ### FASE 2 (SEMANA 2)
-```
+\`\`\`
 app/compliance/review-queue/page.tsx         ← CREAR
 lib/ml-feedback-loop.ts                      ← CREAR
 scripts/enable-rls.sql                       ← CREAR
-```
+\`\`\`
 
 ### FASE 3 (SEMANA 3)
-```
+\`\`\`
 lib/alert-system.ts                          ← CREAR
 app/api/v2/notifications/route.ts            ← CREAR
 lib/predictive-alerts.ts                     ← CREAR
-```
+\`\`\`
 
 ### FASE 4-7 (Futuro)
-```
+\`\`\`
 (Ver IMPLEMENTATION_ROADMAP.md para detalle completo)
-```
+\`\`\`
 
 ---
 

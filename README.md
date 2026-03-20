@@ -38,17 +38,17 @@ Sistema de reconocimiento OCR inteligente para 35+ tipos de documentos de transp
 
 ### 1. Clonar Repositorio
 
-```bash
+\`\`\`bash
 git clone <repository-url>
 cd v0-transport-certificates-automation
 npm install
-```
+\`\`\`
 
 ### 2. Configurar Variables de Entorno
 
 Crea `.env.local`:
 
-```bash
+\`\`\`bash
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -58,13 +58,13 @@ OPENAI_API_KEY=sk-...
 
 # Vercel Blob (opcional, para almacenar documentos)
 BLOB_READ_WRITE_TOKEN=
-```
+\`\`\`
 
 ### 3. Crear Tablas en Supabase
 
 En Supabase SQL Editor, copia y ejecuta:
 
-```sql
+\`\`\`sql
 -- Crear tabla document_types
 CREATE TABLE IF NOT EXISTS document_types (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -128,25 +128,25 @@ SELECT
 FROM uploaded_documents ud
 LEFT JOIN document_types dt ON ud.document_type_id = dt.id
 GROUP BY ud.transporter_id, ud.document_type_id, dt.code, dt.name, dt.category;
-```
+\`\`\`
 
 ### 4. Seedear Documentos
 
-```bash
+\`\`\`bash
 npm run seed:documents
-```
+\`\`\`
 
 O manualmente ejecuta `scripts/seed-document-types.ts`:
 
-```bash
+\`\`\`bash
 npx ts-node scripts/seed-document-types.ts
-```
+\`\`\`
 
 ### 5. Iniciar Desarrollo
 
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 Accede a:
 - **Portal OCR**: http://localhost:3000/walmart-ocr
@@ -154,7 +154,7 @@ Accede a:
 
 ## Estructura de Carpetas
 
-```
+\`\`\`
 app/
 ├── api/v2/                              # APIs versión 2
 │   ├── documents/
@@ -177,20 +177,20 @@ lib/
 scripts/
 ├── create-document-types-tables.sql     # Migración BD
 └── seed-document-types.ts               # Seeder de 35 documentos
-```
+\`\`\`
 
 ## APIs Disponibles
 
 ### 1. Analizar Documento
 
-```bash
+\`\`\`bash
 curl -X POST http://localhost:3000/api/v2/documents/analyze \
   -F "file=@documento.jpg" \
   -F "documentType=CEDULA-IDENTIDAD"
-```
+\`\`\`
 
 **Response:**
-```json
+\`\`\`json
 {
   "success": true,
   "documentId": "uuid",
@@ -207,17 +207,17 @@ curl -X POST http://localhost:3000/api/v2/documents/analyze \
   "confidence": 0.95,
   "missingFields": []
 }
-```
+\`\`\`
 
 ### 2. Listar Documentos
 
-```bash
+\`\`\`bash
 curl "http://localhost:3000/api/v2/documents/list?transporterId=xxx&category=conductor&status=pending"
-```
+\`\`\`
 
 ### 3. Actualizar Documento
 
-```bash
+\`\`\`bash
 curl -X POST http://localhost:3000/api/v2/documents/list \
   -H "Content-Type: application/json" \
   -d '{
@@ -226,16 +226,16 @@ curl -X POST http://localhost:3000/api/v2/documents/list \
     "validationNotes": "Verificado manualmente",
     "expirationDate": "2025-12-31"
   }'
-```
+\`\`\`
 
 ### 4. Estado de Cumplimiento
 
-```bash
+\`\`\`bash
 curl "http://localhost:3000/api/v2/compliance/status?transporterId=xxx"
-```
+\`\`\`
 
 **Response:**
-```json
+\`\`\`json
 {
   "success": true,
   "transporterId": "xxx",
@@ -256,17 +256,17 @@ curl "http://localhost:3000/api/v2/compliance/status?transporterId=xxx"
     }
   }
 }
-```
+\`\`\`
 
 ### 5. Generar Reporte
 
-```bash
+\`\`\`bash
 # JSON
 curl "http://localhost:3000/api/v2/compliance/report?transporterId=xxx&format=json"
 
 # CSV
 curl "http://localhost:3000/api/v2/compliance/report?transporterId=xxx&format=csv" > reporte.csv
-```
+\`\`\`
 
 ## Documentos Soportados (35+)
 
@@ -321,10 +321,10 @@ curl "http://localhost:3000/api/v2/compliance/report?transporterId=xxx&format=cs
 
 ### 1. Conectar GitHub
 
-```bash
+\`\`\`bash
 git remote add origin <github-repo-url>
 git push -u origin main
-```
+\`\`\`
 
 ### 2. Importar en Vercel
 
@@ -337,47 +337,47 @@ git push -u origin main
 
 En Vercel Settings → Environment Variables:
 
-```
+\`\`\`
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 OPENAI_API_KEY=sk-...
-```
+\`\`\`
 
 ### 4. Deploy
 
-```bash
+\`\`\`bash
 git push origin main
 # Vercel desplegará automáticamente
-```
+\`\`\`
 
 O manualmente:
-```bash
+\`\`\`bash
 vercel deploy --prod
-```
+\`\`\`
 
 ## Desarrollo Local
 
 ### Ejecutar en modo desarrollo
-```bash
+\`\`\`bash
 npm run dev
 # http://localhost:3000
-```
+\`\`\`
 
 ### Build para producción
-```bash
+\`\`\`bash
 npm run build
 npm run start
-```
+\`\`\`
 
 ### Linting
-```bash
+\`\`\`bash
 npm run lint
-```
+\`\`\`
 
 ### Seedear nuevamente
-```bash
+\`\`\`bash
 npm run seed:documents
-```
+\`\`\`
 
 ## Características Próximas
 

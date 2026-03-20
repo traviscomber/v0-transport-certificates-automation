@@ -41,11 +41,11 @@
 - Logs errors to console for debugging
 
 **Usage:**
-```tsx
+\`\`\`tsx
 <ErrorBoundary>
   <YourComponent />
 </ErrorBoundary>
-```
+\`\`\`
 
 ---
 
@@ -57,13 +57,13 @@
 - Prepared for future Sentry integration
 
 **Usage:**
-```tsx
+\`\`\`tsx
 import { logger } from '@/lib/logger'
 
 logger.debug('User action completed', { userId: '123' })
 logger.error('Database connection failed', error)
 logger.warn('Certificate expiring soon', { certId: 'abc' })
-```
+\`\`\`
 
 ---
 

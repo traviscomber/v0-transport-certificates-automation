@@ -19,7 +19,7 @@ El certificado de antecedentes chileno es un documento emitido por Carabineros q
 **Tiempo**: 100ms
 **Confianza**: 70-80%
 
-```typescript
+\`\`\`typescript
 // Valida:
 ✅ Formato de RUT (dígito verificador)
 ✅ Fechas válidas (DD/MM/YYYY)
@@ -31,10 +31,10 @@ El certificado de antecedentes chileno es un documento emitido por Carabineros q
 ❌ Si el documento es auténtico
 ❌ Si los datos fueron modificados
 ❌ Si realmente está registrado en Carabineros
-```
+\`\`\`
 
 **Código**:
-```typescript
+\`\`\`typescript
 import { validateBackgroundCertificate } from '@/lib/background-certificate-validator'
 
 const result = validateBackgroundCertificate({
@@ -54,7 +54,7 @@ const result = validateBackgroundCertificate({
 //   confidence: 95,
 //   requiresHumanReview: false
 // }
-```
+\`\`\`
 
 ---
 
@@ -79,7 +79,7 @@ const result = validateBackgroundCertificate({
 - ⚠️ Nombre no coincide con RUT
 
 **Código**:
-```typescript
+\`\`\`typescript
 import { processOCRBackgroundCertificate } from '@/lib/background-certificate-validator'
 
 // Datos extraídos por OCR
@@ -100,7 +100,7 @@ if (validation.requiresHumanReview) {
   // Mostrar UI para que revisor apruebe/rechace
   // Guardar decisión y timestamp en BD
 }
-```
+\`\`\`
 
 **UI de revisión** (implementar en admin panel):
 - Mostrar imagen del documento
@@ -123,7 +123,7 @@ if (validation.requiresHumanReview) {
 - ❌ Requiere subscription y credenciales
 - ❌ API lenta para volúmenes altos
 
-```typescript
+\`\`\`typescript
 // Pseudocódigo - No implementado
 async function validateWithCertisur(rut: string) {
   const result = await fetch('https://api.certisur.cl/antecedentes', {
@@ -133,7 +133,7 @@ async function validateWithCertisur(rut: string) {
   })
   return result.json()
 }
-```
+\`\`\`
 
 #### Opción 3B: GetAPI
 - ✅ Tiene múltiples validaciones

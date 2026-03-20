@@ -122,12 +122,12 @@ Nuestro portal combina lo mejor de:
 - [ ] Validación por OCR + IA + validación de datos (3 capas)
 
 **Implementación:**
-```typescript
+\`\`\`typescript
 // Validación multi-layer
 1. OCR confidence score (Google Vision/OpenAI)
 2. Data validation (RUT válido? Fecha real? Patente formato correcto?)
 3. Cross-reference (¿Datos existen en registros públicos chilenos?)
-```
+\`\`\`
 
 ---
 

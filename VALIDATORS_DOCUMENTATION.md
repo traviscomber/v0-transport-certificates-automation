@@ -5,38 +5,38 @@ Este módulo proporciona validaciones específicas para documentos chilenos.
 ## Validadores Incluidos
 
 ### 1. RUT (Rol Único Tributario)
-```
+\`\`\`
 Formato: XX.XXX.XXX-K
 Donde K = dígito verificador (0-9 o K)
-```
+\`\`\`
 
 ### 2. Fecha Chilena
-```
+\`\`\`
 Formato: DD/MM/YYYY o DD-MM-YYYY
 Validación: Fecha real, coherente, no futura
-```
+\`\`\`
 
 ### 3. Patente Vehículo
-```
+\`\`\`
 Antiguas: LLLNNN (Letra-Letra-Letra-Número-Número-Número)
 Nuevas:   NNNLLL (Número-Número-Número-Letra-Letra-Letra)
-```
+\`\`\`
 
 ### 4. Licencia de Conducir
-```
+\`\`\`
 Formato: 8 dígitos
 Validación: Número válido SII
-```
+\`\`\`
 
 ### 5. Certificados F-30 / F-30-1
-```
+\`\`\`
 Formato: Número único SII
 Validación: Existe en registros SII
-```
+\`\`\`
 
 ## Uso
 
-```typescript
+\`\`\`typescript
 import {
   validarRUT,
   validarFechaChilena,
@@ -47,7 +47,7 @@ import {
 // Ejemplo
 const esValido = validarRUT('12.345.678-9')
 const fechaOK = validarFechaChilena('15/06/1990')
-```
+\`\`\`
 
 ---
 

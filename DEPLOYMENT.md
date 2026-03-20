@@ -46,11 +46,11 @@ Instrucciones paso a paso para desplegar el portal OCR en Vercel con Supabase.
 
 Ejecuta en tu terminal local:
 
-```bash
+\`\`\`bash
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co \
 SUPABASE_SERVICE_ROLE_KEY=eyJ... \
 npm run seed:documents
-```
+\`\`\`
 
 Verifica en Supabase que se crearon 35 documento types.
 
@@ -76,23 +76,23 @@ Verifica en Supabase que se crearon 35 documento types.
 
 ### 3.1 Sincronizar repositorio
 
-```bash
+\`\`\`bash
 # En tu proyecto local
 git remote add origin https://github.com/tu-usuario/v0-transport-certificates-automation.git
 git branch -M main
 git push -u origin main
-```
+\`\`\`
 
 ### 3.2 Verificar archivos importantes
 
-```bash
+\`\`\`bash
 # Verifica que NO estén committeados:
 cat .gitignore
 # Debe incluir:
 # .env.local
 # node_modules/
 # .next/
-```
+\`\`\`
 
 ## Paso 4: Vercel
 
@@ -112,11 +112,11 @@ Vercel automáticamente detectará:
 
 En Vercel, Project Settings → Environment Variables:
 
-```
+\`\`\`
 NEXT_PUBLIC_SUPABASE_URL = https://xxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY = eyJ...
 OPENAI_API_KEY = sk-...
-```
+\`\`\`
 
 ✓ Selecciona que aplique a: **Production, Preview, Development**
 
@@ -158,34 +158,34 @@ En Vercel Dashboard:
 
 ### Error: "Supabase connection refused"
 
-```bash
+\`\`\`bash
 # Verifica credenciales
 curl -X GET https://xxx.supabase.co/rest/v1/ \
   -H "Authorization: Bearer eyJ..."
 
 # Comprueba en Vercel que vars están correctas
 vercel env list
-```
+\`\`\`
 
 ### Error: "OpenAI API key invalid"
 
-```bash
+\`\`\`bash
 # Test la API key localmente
 curl https://api.openai.com/v1/models \
   -H "Authorization: Bearer sk-..."
 
 # Verifica que no tiene espacios o caracteres extras
 echo $OPENAI_API_KEY | wc -c  # Debe ser ~48 caracteres
-```
+\`\`\`
 
 ### App lenta o timeout
 
 1. En Vercel Functions, aumenta timeout:
-   ```
+   \`\`\`
    export const config = {
      maxDuration: 60, // 60 segundos para análisis OCR
    };
-   ```
+   \`\`\`
 
 2. Revisa Supabase performance:
    - Logs: Infraestructure → Logs
@@ -201,7 +201,7 @@ echo $OPENAI_API_KEY | wc -c  # Debe ser ~48 caracteres
 
 Si algo sale mal:
 
-```bash
+\`\`\`bash
 # Vercel guarda todas las deployments
 vercel deployments
 
@@ -210,7 +210,7 @@ vercel rollback
 
 # O especificar deployment anterior
 vercel promote <deployment-id>
-```
+\`\`\`
 
 ## Monitoreo Continuo
 
@@ -224,17 +224,17 @@ En Vercel Project → Settings → Notifications:
 
 Crea endpoint de health check:
 
-```bash
+\`\`\`bash
 curl https://tu-app.vercel.app/api/health
 # Response: { "status": "ok" }
-```
+\`\`\`
 
 ### 3. Logs
 
 Ver logs en real-time:
-```bash
+\`\`\`bash
 vercel logs <project-name> --follow
-```
+\`\`\`
 
 ## Escalabilidad Futura
 

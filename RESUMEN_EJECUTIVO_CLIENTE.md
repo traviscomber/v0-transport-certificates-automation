@@ -47,7 +47,7 @@ DocuFleet es una plataforma SaaS que automatiza la gestion de documentos de comp
 
 ### 3.1 Flujo de Trabajo
 
-```
+\`\`\`
 USUARIO SUBE DOCUMENTO (foto o PDF)
            |
            v
@@ -73,7 +73,7 @@ USUARIO SUBE DOCUMENTO (foto o PDF)
            v
 [5. ALMACENAMIENTO Y ALERTAS]
     Documento guardado + alertas de vencimiento configuradas
-```
+\`\`\`
 
 ### 3.2 Funcionalidades Principales
 
@@ -204,12 +204,12 @@ USUARIO SUBE DOCUMENTO (foto o PDF)
 - PVVS: Verificar estado de patente (futuro)
 
 **Resultado Final**
-```
+\`\`\`
 Confianza 99%+ --> AUTO-APROBADO (0 intervencion humana)
 Confianza 85-98% --> REVISION RAPIDA (1-2 min)
 Confianza 70-84% --> REVISION DETALLADA (5 min)
 Confianza <70% --> RECHAZADO (solicitar nuevo documento)
-```
+\`\`\`
 
 #### E. HUMAN-IN-THE-LOOP (Revision Manual)
 
@@ -286,7 +286,7 @@ Confianza <70% --> RECHAZADO (solicitar nuevo documento)
 
 ### Modelo de Datos
 
-```
+\`\`\`
 mandantes (Walmart, Falabella, etc.)
     |
     |-- mandante_transportista (N:N)
@@ -307,7 +307,7 @@ document_types (35 tipos de documentos)
             |-- extracted_data (JSON)
             |-- confidence_score
             |-- expiration_date
-```
+\`\`\`
 
 ### Seguridad
 

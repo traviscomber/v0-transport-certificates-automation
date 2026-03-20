@@ -10,14 +10,14 @@ Llegar a 99% accuracy en extracción de datos (vs actual 85%)
 #### 1.1 Validación de Datos Chilenos
 **Archivo: `lib/chilean-validators.ts`**
 
-```typescript
+\`\`\`typescript
 // Validadores específicos para Chile
 - validarRUT(rut: string): boolean
 - validarFechaChilena(fecha: string): boolean  
 - validarPatente(patente: string): boolean
 - validarCertificadoF30(numero: string): boolean
 - validarLicenciaConducir(numero: string): boolean
-```
+\`\`\`
 
 #### 1.2 Cross-Reference con Registros Públicos
 **Archivo: `lib/chilean-public-records.ts`**
@@ -31,7 +31,7 @@ Integración con APIs públicas chilenas:
 #### 1.3 Pipeline de 3-Layer Validation
 **Archivo: `app/api/v2/documents/validate-multi-layer/route.ts`**
 
-```
+\`\`\`
 Layer 1: OCR Confidence
 ├─ Si >= 90% → Layer 2
 ├─ Si 70-89% → Flag para revisión
@@ -48,7 +48,7 @@ Layer 3: Cross-Reference
 ├─ ¿Datos coinciden?
 ├─ ¿Documento está activo/vigente?
 └─ Si falla → Rechazar o Flag
-```
+\`\`\`
 
 **Salida:** Confidence score final (0-1) + flags + recomendación
 
@@ -79,7 +79,7 @@ Vista para usuarios "reviewer":
 #### 2.2 Cola de Revisión
 **BD:** Nueva tabla `document_review_queue`
 
-```sql
+\`\`\`sql
 CREATE TABLE document_review_queue (
   id UUID PRIMARY KEY,
   document_id UUID REFERENCES uploaded_documents,
@@ -92,7 +92,7 @@ CREATE TABLE document_review_queue (
   reviewed_at TIMESTAMP,
   review_duration_minutes INT
 );
-```
+\`\`\`
 
 #### 2.3 Feedback Loop
 **Archivo: `lib/ml-feedback-loop.ts`**
@@ -127,14 +127,14 @@ Prevenir multas Walmart por vencimientos sorpresa
 #### 3.1 Sistema de Alertas
 **Archivo: `lib/alert-system.ts`**
 
-```typescript
+\`\`\`typescript
 // Alertas configurables
 - 30 días antes de vencimiento (AMARILLO)
 - 14 días antes (NARANJA)
 - 7 días antes (ROJO)
 - 1 día antes de vencimiento (CRÍTICO)
 - Vencido (CRÍTICO)
-```
+\`\`\`
 
 #### 3.2 Canales de Notificación
 **Archivo: `app/api/v2/notifications/route.ts`**
@@ -156,7 +156,7 @@ Generar reportes:
 ### Implementación
 
 **DB: Nueva tabla**
-```sql
+\`\`\`sql
 CREATE TABLE alert_subscriptions (
   id UUID PRIMARY KEY,
   transporter_id UUID REFERENCES auth.users,
@@ -174,7 +174,7 @@ CREATE TABLE alert_logs (
   status VARCHAR(50), -- 'sent', 'failed', 'bounced'
   sent_at TIMESTAMP
 );
-```
+\`\`\`
 
 ### Beneficio
 - 0 documentos vencidos sorpresa
@@ -194,7 +194,7 @@ Conectar nuestro portal con sistemas del transporte
 **Archivo: `app/api/v2/webhooks/route.ts`**
 
 Eventos que disparan webhooks:
-```
+\`\`\`
 POST /webhooks/events
 Events:
 - document.uploaded
@@ -203,17 +203,17 @@ Events:
 - document.expires_soon (7 días)
 - document.expired
 - compliance_score.updated
-```
+\`\`\`
 
 Permitir que sistemas externos se suscriban:
-```typescript
+\`\`\`typescript
 POST /api/v2/webhooks/subscribe
 {
   url: "https://sistema.transportista.com/webhook",
   events: ["document.validated", "document.expired"],
   secret: "webhook_secret_key"
 }
-```
+\`\`\`
 
 #### 4.2 API Key Management
 **Archivo: `app/api/v2/auth/api-keys/route.ts`**
@@ -227,13 +227,13 @@ POST /api/v2/webhooks/subscribe
 **Archivo: `lib/edi-formatter.ts`**
 
 Si Walmart Chile requiere EDI 856/855:
-```
+\`\`\`
 EDI 856 (ASN - Advance Shipment Notice)
 ├─ Documentos: 35 tipos
 ├─ Status: Validado/Pendiente/Vencido
 ├─ Formato: XML o EDIFACT
 └─ Envío: Automático o manual
-```
+\`\`\`
 
 ### Beneficio
 - 3rd party integrations
@@ -293,7 +293,7 @@ Enterprise-grade security para ganar confianza Walmart
 #### 6.1 Row Level Security (RLS)
 **Archivo: `scripts/enable-rls.sql`**
 
-```sql
+\`\`\`sql
 -- Habilitar RLS en tablas críticas
 ALTER TABLE document_types ENABLE ROW LEVEL SECURITY;
 ALTER TABLE uploaded_documents ENABLE ROW LEVEL SECURITY;
@@ -304,11 +304,11 @@ CREATE POLICY "Transporters see own documents"
   ON uploaded_documents
   FOR SELECT
   USING (auth.uid() = transporter_id);
-```
+\`\`\`
 
 #### 6.2 Audit Trail Completo
 **DB: Nueva tabla**
-```sql
+\`\`\`sql
 CREATE TABLE audit_logs (
   id UUID PRIMARY KEY,
   user_id UUID REFERENCES auth.users,
@@ -321,7 +321,7 @@ CREATE TABLE audit_logs (
   user_agent TEXT,
   created_at TIMESTAMP
 );
-```
+\`\`\`
 
 **Middleware:** Loguear cada cambio automáticamente
 
@@ -382,7 +382,7 @@ Captura desde celular de conductores
 
 ## TIMELINE COMPLETO
 
-```
+\`\`\`
 Semana 1-2: Validación Multi-Layer (HIGH PRIORITY)
 Semana 2-3: Human-in-the-Loop (HIGH PRIORITY)  
 Semana 3:   Alertas Proactivas (MEDIUM PRIORITY)
@@ -390,7 +390,7 @@ Semana 4:   Integración Externa (MEDIUM PRIORITY)
 Semana 4:   Reportes Avanzados (MEDIUM PRIORITY)
 Semana 5:   Seguridad y Auditoría (HIGH PRIORITY)
 Semana 6-8: Mobile App (LOW PRIORITY - Future release)
-```
+\`\`\`
 
 **Total: 5 semanas para MVP mejorado, 8 semanas para v1.0 completa**
 

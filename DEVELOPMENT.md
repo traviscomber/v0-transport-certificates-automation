@@ -6,7 +6,7 @@ Instrucciones para desarrollar el portal OCR localmente.
 
 ### 1. Clonar y Instalar
 
-```bash
+\`\`\`bash
 # Clonar repositorio
 git clone https://github.com/tu-usuario/v0-transport-certificates-automation.git
 cd v0-transport-certificates-automation
@@ -15,21 +15,21 @@ cd v0-transport-certificates-automation
 npm install
 # o si usas pnpm
 pnpm install
-```
+\`\`\`
 
 ### 2. Configurar Variables de Entorno
 
 Copia el archivo de ejemplo:
-```bash
+\`\`\`bash
 cp .env.example .env.local
-```
+\`\`\`
 
 Edita `.env.local` con tus valores:
-```bash
+\`\`\`bash
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 OPENAI_API_KEY=sk-...
-```
+\`\`\`
 
 ### 3. Setup Supabase
 
@@ -40,9 +40,9 @@ OPENAI_API_KEY=sk-...
 
 ### 4. Iniciar Desarrollo
 
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 Accede a:
 - App: http://localhost:3000
@@ -53,19 +53,19 @@ Accede a:
 
 ### Frontend Pages
 
-```
+\`\`\`
 app/walmart-ocr/
 ├── page.tsx                  # Upload de documentos
 ├── compliance/page.tsx       # Dashboard de compliance
 ├── layout.tsx                # Layout principal
 └── index-page.tsx            # Homepage
-```
+\`\`\`
 
 **Modificar**: Agregua nuevas páginas en `/app/walmart-ocr/*`
 
 ### Backend APIs
 
-```
+\`\`\`
 app/api/v2/
 ├── documents/
 │   ├── analyze/route.ts      # Procesar con OCR
@@ -73,27 +73,27 @@ app/api/v2/
 └── compliance/
     ├── status/route.ts       # Estado compliance
     └── report/route.ts       # Generar reportes
-```
+\`\`\`
 
 **Modificar**: Agrega nuevas rutas en `/app/api/v2/*`
 
 ### Librerías Compartidas
 
-```
+\`\`\`
 lib/
 ├── document-types.ts         # Definición de 35 documentos
 ├── document-detection.ts     # Lógica de auto-detección
 └── ...
-```
+\`\`\`
 
 ### Componentes
 
-```
+\`\`\`
 components/
 ├── ui/                       # Componentes shadcn/ui
 ├── document-upload/          # Componentes de upload
 └── compliance/               # Componentes del dashboard
-```
+\`\`\`
 
 ## Flujo de Desarrollo
 
@@ -101,7 +101,7 @@ components/
 
 En `lib/document-types.ts`:
 
-```typescript
+\`\`\`typescript
 {
   code: "MI-DOCUMENTO",
   name: "Mi Documento",
@@ -113,7 +113,7 @@ En `lib/document-types.ts`:
   expiration_days: 365,
   sort_order: 36,
 }
-```
+\`\`\`
 
 Luego seedea: `npm run seed:documents`
 
@@ -121,7 +121,7 @@ Luego seedea: `npm run seed:documents`
 
 En `lib/document-types.ts`, actualiza el campo `ai_prompt`:
 
-```typescript
+\`\`\`typescript
 ai_prompt: `
 Instrucciones mejoradas para extraer datos...
 Responde SOLO con JSON válido:
@@ -130,24 +130,24 @@ Responde SOLO con JSON válido:
   "campo2": "valor"
 }
 `
-```
+\`\`\`
 
 ### 3. Agregar validación personalizada
 
 En `lib/document-detection.ts`, crea una función de validación:
 
-```typescript
+\`\`\`typescript
 export function validateCustomDocument(data: any): boolean {
   // Tu lógica de validación
   return true
 }
-```
+\`\`\`
 
 ### 4. Crear nueva página
 
 Crea `/app/walmart-ocr/nueva-pagina/page.tsx`:
 
-```typescript
+\`\`\`typescript
 'use client'
 
 export default function NuevaPagina() {
@@ -157,13 +157,13 @@ export default function NuevaPagina() {
     </div>
   )
 }
-```
+\`\`\`
 
 ### 5. Crear nuevo API
 
 Crea `/app/api/v2/nueva-ruta/route.ts`:
 
-```typescript
+\`\`\`typescript
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
@@ -177,13 +177,13 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-```
+\`\`\`
 
 ## Testing Local
 
 ### 1. Test API con curl
 
-```bash
+\`\`\`bash
 # Upload documento
 curl -X POST http://localhost:3000/api/v2/documents/analyze \
   -F "file=@documento.jpg" \
@@ -197,7 +197,7 @@ curl "http://localhost:3000/api/v2/compliance/status?transporterId=demo-user-001
 
 # Generar reporte
 curl "http://localhost:3000/api/v2/compliance/report?transporterId=demo-user-001&format=json"
-```
+\`\`\`
 
 ### 2. Test en el navegador
 
@@ -211,7 +211,7 @@ curl "http://localhost:3000/api/v2/compliance/report?transporterId=demo-user-001
 
 Agrega `.vscode/launch.json`:
 
-```json
+\`\`\`json
 {
   "version": "0.2.0",
   "configurations": [
@@ -226,7 +226,7 @@ Agrega `.vscode/launch.json`:
     }
   ]
 }
-```
+\`\`\`
 
 Presiona F5 para debuggear.
 
@@ -236,10 +236,10 @@ Presiona F5 para debuggear.
 
 Agrega en tus componentes:
 
-```typescript
+\`\`\`typescript
 console.log("[v0] Documento detectado:", document)
 console.log("[v0] Datos extraídos:", extractedData)
-```
+\`\`\`
 
 ### 2. Network tab
 
@@ -267,11 +267,11 @@ En https://platform.openai.com:
 
 ### 1. Analizar performance
 
-```bash
+\`\`\`bash
 npm run build
 npm run start
 # Mide tiempo de carga
-```
+\`\`\`
 
 ### 2. Lighthouse score
 
@@ -282,7 +282,7 @@ En DevTools (F12):
 
 ### 3. Ver tamaño bundles
 
-```bash
+\`\`\`bash
 # Instala
 npm install --save-dev @next/bundle-analyzer
 
@@ -291,15 +291,15 @@ npm install --save-dev @next/bundle-analyzer
 
 npm run build
 # Se abre análisis en navegador
-```
+\`\`\`
 
 ## Errores Comunes
 
 ### "Cannot find module '@supabase/supabase-js'"
 
-```bash
+\`\`\`bash
 npm install @supabase/supabase-js
-```
+\`\`\`
 
 ### "OPENAI_API_KEY is undefined"
 
@@ -323,32 +323,32 @@ npm install @supabase/supabase-js
 
 ### 1. Crear rama para feature
 
-```bash
+\`\`\`bash
 git checkout -b feature/mi-feature
-```
+\`\`\`
 
 ### 2. Hacer cambios y commit
 
-```bash
+\`\`\`bash
 git add .
 git commit -m "feat: agregar mi feature"
-```
+\`\`\`
 
 ### 3. Push y crear PR
 
-```bash
+\`\`\`bash
 git push origin feature/mi-feature
 # Ve a GitHub y abre Pull Request
-```
+\`\`\`
 
 ### 4. Merge después de review
 
-```bash
+\`\`\`bash
 git checkout main
 git pull origin main
 git merge feature/mi-feature
 git push origin main
-```
+\`\`\`
 
 ## Recursos Útiles
 
@@ -367,7 +367,7 @@ git push origin main
 ### 1. Recargar datos en el cliente
 
 Usa SWR para caché automático:
-```typescript
+\`\`\`typescript
 import useSWR from 'swr'
 
 const { data, mutate } = useSWR(
@@ -376,21 +376,21 @@ const { data, mutate } = useSWR(
 
 // Recargar cuando necesites
 mutate()
-```
+\`\`\`
 
 ### 2. Optimizar imágenes
 
 Usa Next.js Image component:
-```typescript
+\`\`\`typescript
 import Image from 'next/image'
 
 <Image src="/image.jpg" alt="..." width={300} height={300} />
-```
+\`\`\`
 
 ### 3. Pre-cargar datos
 
 En pages RSC (Server Components):
-```typescript
+\`\`\`typescript
 async function getData() {
   const res = await fetch('...')
   return res.json()
@@ -400,7 +400,7 @@ export default async function Page() {
   const data = await getData()
   return ...
 }
-```
+\`\`\`
 
 ## Contacting Support
 

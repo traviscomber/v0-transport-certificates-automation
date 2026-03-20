@@ -2,7 +2,7 @@
 
 ## 🎯 POSICIONAMIENTO EN MERCADO
 
-```
+\`\`\`
                           MERCADO DISPONIBLE
                     (OCR + Compliance Documental)
                                 |
@@ -16,7 +16,7 @@
      solo SII               Docs (5 tipos)       Transporte 
      (1 tipo)                                    (35 tipos)
                                                  → WALMART
-```
+\`\`\`
 
 ---
 
@@ -61,12 +61,12 @@
 
 ### Proyección MRR (Monthly Recurring Revenue)
 
-```
+\`\`\`
 Mes 1-3:    100 clientes × $150 promedio = $15K MRR
 Mes 4-6:    500 clientes × $150 promedio = $75K MRR
 Mes 7-12:  2000 clientes × $150 promedio = $300K MRR
 Año 2:     8000 clientes × $150 promedio = $1.2M MRR
-```
+\`\`\`
 
 ### CAC (Customer Acquisition Cost)
 - Digital: $50-100/cliente
@@ -146,7 +146,7 @@ Año 2:     8000 clientes × $150 promedio = $1.2M MRR
 ## 🎓 BEST PRACTICES A IMPLEMENTAR
 
 ### Validación Multi-Layer (Google Cloud + AWS pattern)
-```
+\`\`\`
 Layer 1: OCR Confidence (Modelo IA)
          ↓
 Layer 2: Data Validation (Reglas de negocio)
@@ -154,31 +154,31 @@ Layer 2: Data Validation (Reglas de negocio)
 Layer 3: Cross-Reference (Registros públicos)
          ↓
 RESULTADO: 99% accuracy
-```
+\`\`\`
 
 ### Human-in-the-Loop (IDP Enterprise pattern)
-```
+\`\`\`
 Documento ↓
 Auto-Procesado ↓
 Si Confianza < 90% ↓
 Cola de Revisión ↓
 Revisor Aprueba/Rechaza ↓
 Feedback Loop → Mejora IA
-```
+\`\`\`
 
 ### Alertas Proactivas (FleetBlox pattern)
-```
+\`\`\`
 Documento Vencido = Problema
 ↓
 SOLUCIÓN: 30/14/7/1 días antes
 Email + SMS + Push Notifications
-```
+\`\`\`
 
 ### Enterprise Security (Valuetech pattern)
-```
+\`\`\`
 RLS + Audit Trail + Encryption
 + Backup/Disaster Recovery
-```
+\`\`\`
 
 ---
 
