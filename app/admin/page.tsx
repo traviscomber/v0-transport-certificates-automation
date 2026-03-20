@@ -38,77 +38,78 @@ export default async function AdminDashboard() {
       value: stats.mandantes, 
       icon: Building2, 
       href: "/admin/mandantes",
-      color: "text-blue-600",
-      bgColor: "bg-blue-100"
+      color: "text-[#0066FF]",
+      bgColor: "bg-blue-50"
     },
     { 
       label: "Transportistas", 
       value: stats.transportistas, 
       icon: Truck, 
       href: "/admin/transportistas",
-      color: "text-green-600",
-      bgColor: "bg-green-100"
+      color: "text-[#00C853]",
+      bgColor: "bg-green-50"
     },
     { 
-      label: "Vehiculos", 
+      label: "Vehículos", 
       value: stats.vehiculos, 
       icon: Car, 
       href: "/admin/vehiculos",
-      color: "text-orange-600",
-      bgColor: "bg-orange-100"
+      color: "text-[#FF9500]",
+      bgColor: "bg-orange-50"
     },
     { 
       label: "Conductores", 
       value: stats.conductores, 
       icon: Users, 
       href: "/admin/conductores",
-      color: "text-purple-600",
-      bgColor: "bg-purple-100"
+      color: "text-[#0066FF]",
+      bgColor: "bg-blue-50"
     },
     { 
       label: "Documentos Subidos", 
       value: stats.documentos, 
       icon: FileText, 
       href: "/admin/documentos",
-      color: "text-teal-600",
-      bgColor: "bg-teal-100"
+      color: "text-[#00C853]",
+      bgColor: "bg-green-50"
     },
     { 
       label: "Tipos de Documento", 
       value: stats.tiposDocumento, 
       icon: FileText, 
       href: "/walmart-ocr/compliance",
-      color: "text-gray-600",
-      bgColor: "bg-gray-100"
+      color: "text-[#71717A]",
+      bgColor: "bg-gray-50"
     },
   ]
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Resumen general del sistema de gestion documental
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold text-[#18181B]">Dashboard</h1>
+        <p className="text-[#71717A]">
+          Resumen general del sistema de gestión documental
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {statCards.map((stat) => {
           const Icon = stat.icon
           return (
             <Link key={stat.label} href={stat.href}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
+              <Card className="border-[#E4E4E7] hover:shadow-lg hover:border-[#0066FF]/20 transition-all duration-200 cursor-pointer">
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                  <CardTitle className="text-sm font-medium text-[#71717A]">
                     {stat.label}
                   </CardTitle>
-                  <div className={`rounded-full p-2 ${stat.bgColor}`}>
-                    <Icon className={`h-4 w-4 ${stat.color}`} />
+                  <div className={`rounded-lg p-2.5 ${stat.bgColor}`}>
+                    <Icon className={`h-5 w-5 ${stat.color}`} />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{stat.value}</div>
+                  <div className="text-4xl font-bold text-[#18181B]">{stat.value}</div>
                 </CardContent>
               </Card>
             </Link>
