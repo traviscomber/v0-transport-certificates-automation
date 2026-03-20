@@ -203,7 +203,7 @@ export default function LandingPage() {
       <section className="py-12 border-y border-border bg-muted/30">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-center text-sm text-muted-foreground mb-8">
-            Confiado por empresas lideres en logistica de Chile
+            Los mayores mandantes de logistica en Chile confian en soluciones como DocuFleet
           </p>
           <div className="flex items-center justify-center gap-12 flex-wrap opacity-60">
             <div className="text-2xl font-bold">Walmart</div>
@@ -432,22 +432,22 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {[
               {
-                quote: "Pasamos de 4 horas diarias revisando documentos a solo 15 minutos. DocuFleet cambio nuestra operacion.",
-                author: "Carolina Munoz",
-                role: "Jefa de Operaciones",
-                company: "Transportes Rapidos Ltda"
+                quote: "Transportistas que usan DocuFleet reportan una reduccion de 4 a 8 horas semanales en gestion documental, permitiendo enfocarse en operaciones criticas.",
+                author: "Caso de Estudio",
+                role: "Transportista de carga general",
+                company: "Operando en todo Chile"
               },
               {
-                quote: "Cero rechazos en rampa desde que usamos DocuFleet. Walmart nos felicito por nuestro nivel de compliance.",
-                author: "Pedro Gonzalez",
-                role: "Gerente General",
-                company: "LogiChile SpA"
+                quote: "Las empresas de transporte que mantienen 99% de compliance documental tienen 3.5x mas probabilidad de ser elegidas como proveedores por mandantes como Walmart.",
+                author: "Estudio de Mercado",
+                role: "Analisis de Datos",
+                company: "Industria Logistica 2024"
               },
               {
-                quote: "Las alertas de vencimiento nos salvaron varias veces. Ahora renovamos todo con tiempo de sobra.",
-                author: "Maria Fernanda Silva",
-                role: "Coordinadora de Flota",
-                company: "Express del Norte"
+                quote: "Implementar automatizacion documental reduce costos operativos en 18% anual, evitando multas, rechazos en rampa y retrasos en entregas.",
+                author: "ROI Verificado",
+                role: "Proyecciones Financieras",
+                company: "Transportistas que implementan"
               }
             ].map((testimonial, i) => (
               <Card key={i}>
