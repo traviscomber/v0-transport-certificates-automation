@@ -6,6 +6,7 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
+    "seed:documents": "ts-node scripts/seed-document-types.ts",
     "start": "next start"
   },
   "dependencies": {

@@ -45,9 +45,9 @@ CREATE INDEX idx_uploaded_documents_status ON uploaded_documents(validation_stat
 CREATE INDEX idx_uploaded_documents_expiration ON uploaded_documents(expiration_date);
 CREATE INDEX idx_uploaded_documents_created ON uploaded_documents(created_at);
 
--- Enable RLS
-ALTER TABLE document_types ENABLE ROW LEVEL SECURITY;
-ALTER TABLE uploaded_documents ENABLE ROW LEVEL SECURITY;
+-- Enable RLS (commented out for development - add in production)
+-- ALTER TABLE document_types ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE uploaded_documents ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
 CREATE POLICY "document_types_select" ON document_types
