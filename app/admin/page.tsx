@@ -6,6 +6,8 @@ import { RiskMatrix } from "@/components/admin/risk-matrix"
 import { calculateConductorRisk, calculateTransportistaRisk } from "@/lib/risk-matrix-calculator"
 import { SmartAlertsDisplay } from "@/components/admin/smart-alerts-display"
 import { generateSmartAlerts } from "@/lib/smart-alerts-generator"
+import { CrossVerificationDisplay } from "@/components/admin/cross-verification-display"
+import { verifyConductorData } from "@/lib/cross-verification"
 
 export default async function AdminDashboard() {
   const supabase = await createClient()
@@ -43,6 +45,24 @@ export default async function AdminDashboard() {
   const conductoresList = conductoresListResult.data || []
   const vehiculosList = vehiculosListResult.data || []
   const smartAlerts = generateSmartAlerts(conductoresList, vehiculosList)
+
+  // Ejemplo de verificación cruzada (en producción, esto vendría del OCR)
+  // Por ahora mostramos un ejemplo con datos ficticios
+  const verificationExamples = conductoresList.slice(0, 3).map(conductor => 
+    verifyConductorData(
+      {
+        id: conductor.id,
+        nombres: conductor.nombres,
+        apellido_paterno: conductor.apellido_paterno,
+        rut: conductor.rut || '12.345.678-9',
+      },
+      {
+        nombres: conductor.nombres,
+        apellido_paterno: conductor.apellido_paterno,
+        rut: conductor.rut || '12.345.678-9', // En producción: OCR extracted data
+      }
+    )
+  )
   const riskyConductores = conductoresList.map(conductor => {
     const riskData = calculateConductorRisk({
       id: conductor.id,
@@ -172,6 +192,9 @@ export default async function AdminDashboard() {
 
       {/* Alertas Inteligentes */}
       <SmartAlertsDisplay alerts={smartAlerts} />
+
+      {/* Verificación Cruzada */}
+      <CrossVerificationDisplay results={verificationExamples} />
 
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2">
