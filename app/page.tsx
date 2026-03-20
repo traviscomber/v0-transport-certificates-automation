@@ -314,9 +314,9 @@ export default function LandingPage() {
                   <Shield className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg mb-1">Validacion multi-capa</h3>
+                  <h3 className="font-semibold text-lg mb-1">Validación multi-capa</h3>
                   <p className="text-muted-foreground">
-                    Verificamos RUT con el SII, patentes con el Registro Civil, licencias con CONASET. Si algo no cuadra, lo sabras al instante.
+                    OCR inteligente + validadores locales (RUT, patentes, fechas, licencias) + integración con APIs públicas (SII, Registro Civil, CONASET). Todo validado con 99% de precision.
                   </p>
                 </div>
               </div>
@@ -555,7 +555,7 @@ export default function LandingPage() {
             <Card>
               <CardContent className="pt-6">
                 <h3 className="font-semibold text-lg mb-2">Enterprise</h3>
-                <p className="text-sm text-muted-foreground mb-4">Para grandes flotas</p>
+                <p className="text-sm text-muted-foreground mb-4">Para grandes flotas y mandantes</p>
                 <div className="mb-6">
                   <span className="text-4xl font-bold">Custom</span>
                 </div>
@@ -570,11 +570,11 @@ export default function LandingPage() {
                   </li>
                   <li className="flex items-center gap-2 text-sm">
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    API de integracion
+                    Integraciones avanzadas (SII, CONASET, Registro Civil)
                   </li>
                   <li className="flex items-center gap-2 text-sm">
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    SSO / SAML
+                    API REST completa
                   </li>
                   <li className="flex items-center gap-2 text-sm">
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
