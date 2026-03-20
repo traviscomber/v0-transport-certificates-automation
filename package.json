@@ -7,7 +7,12 @@
     "dev": "next dev",
     "lint": "next lint",
     "seed:documents": "ts-node scripts/seed-document-types.ts",
-    "start": "next start"
+    "start": "next start",
+    "test": "ts-node scripts/test-suite.ts",
+    "test:flags": "ts-node -e \"require('./scripts/test-suite.ts').testConfidenceFlags().then(r => console.log(r))\"",
+    "test:multi-layer": "ts-node -e \"require('./scripts/test-suite.ts').testMultiLayerValidation().then(r => console.log(r))\"",
+    "test:performance": "ts-node -e \"require('./scripts/test-suite.ts').testPerformance().then(r => console.log(r))\"",
+    "test:validators": "ts-node -e \"require('./scripts/test-suite.ts').testChileanValidators().then(r => console.log(r))\""
   },
   "dependencies": {
     "@ai-sdk/openai": "latest",
