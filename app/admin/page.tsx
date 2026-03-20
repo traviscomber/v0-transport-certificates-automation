@@ -4,12 +4,14 @@ import { Building2, Truck, Users, Car, FileText, AlertTriangle } from "lucide-re
 import Link from "next/link"
 import { RiskMatrix } from "@/components/admin/risk-matrix"
 import { calculateConductorRisk, calculateTransportistaRisk } from "@/lib/risk-matrix-calculator"
+import { SmartAlertsDisplay } from "@/components/admin/smart-alerts-display"
+import { generateSmartAlerts } from "@/lib/smart-alerts-generator"
 
 export default async function AdminDashboard() {
   const supabase = await createClient()
   
   // Execute all queries with a single client instance
-  const [mandantes, transportistas, vehiculos, conductores, documentos, docTypes, recentDocsResult, conductoresListResult, transportistasListResult] = await Promise.all([
+  const [mandantes, transportistas, vehiculos, conductores, documentos, docTypes, recentDocsResult, conductoresListResult, transportistasListResult, vehiculosListResult] = await Promise.all([
     supabase.from("mandantes").select("id", { count: "exact", head: true }),
     supabase.from("transportistas").select("id", { count: "exact", head: true }),
     supabase.from("vehiculos").select("id", { count: "exact", head: true }),
@@ -23,6 +25,7 @@ export default async function AdminDashboard() {
       .limit(5),
     supabase.from("conductores").select("id, nombres, apellido_paterno, vencimiento_licencia, is_active"),
     supabase.from("transportistas").select("id, razon_social, is_active, vehiculos(id), conductores(id)"),
+    supabase.from("vehiculos").select("id, patente, vencimiento_permiso_circulacion, vencimiento_revision_tecnica"),
   ])
 
   const stats = {
@@ -36,8 +39,10 @@ export default async function AdminDashboard() {
 
   const recentActivity = recentDocsResult.data || []
 
-  // Calcular matriz de riesgos para conductores
+  // Generar alertas inteligentes
   const conductoresList = conductoresListResult.data || []
+  const vehiculosList = vehiculosListResult.data || []
+  const smartAlerts = generateSmartAlerts(conductoresList, vehiculosList)
   const riskyConductores = conductoresList.map(conductor => {
     const riskData = calculateConductorRisk({
       id: conductor.id,
@@ -164,6 +169,9 @@ export default async function AdminDashboard() {
 
       {/* Matriz de Riesgos */}
       <RiskMatrix items={allRiskItems} />
+
+      {/* Alertas Inteligentes */}
+      <SmartAlertsDisplay alerts={smartAlerts} />
 
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2">
