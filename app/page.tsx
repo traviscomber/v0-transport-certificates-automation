@@ -110,9 +110,9 @@ export default function LandingPage() {
               <Link href="/admin">
                 <Button variant="ghost" size="sm">Iniciar Sesion</Button>
               </Link>
-              <Link href="/walmart-ocr">
+              <Link href="#contact">
                 <Button size="sm" className="bg-primary hover:bg-primary/90">
-                  Probar Gratis
+                  Contactar Ventas
                 </Button>
               </Link>
             </div>
@@ -360,9 +360,9 @@ export default function LandingPage() {
                   <p className="text-sm text-muted-foreground mb-4">
                     Licencia, permiso, revision tecnica...
                   </p>
-                  <Link href="/walmart-ocr">
+                  <Link href="#contact">
                     <Button>
-                      Probar Ahora
+                      Solicitar Demo
                       <ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
                   </Link>
@@ -598,13 +598,13 @@ export default function LandingPage() {
             Unete a las empresas de transporte que ya automatizaron su compliance documental.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/walmart-ocr">
-              <Button size="lg" variant="secondary" className="text-lg px-8 h-14">
-                Probar Gratis por 14 Dias
+            <Link href="#contact">
+              <Button size="lg" className="text-lg px-8 h-14">
+                Contactar Ventas
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
-            <Link href="/admin">
+            <Link href="#contact">
               <Button size="lg" variant="outline" className="text-lg px-8 h-14 bg-transparent border-white text-white hover:bg-white/10">
                 Agendar Demo
               </Button>
