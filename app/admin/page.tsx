@@ -8,6 +8,8 @@ import { SmartAlertsDisplay } from "@/components/admin/smart-alerts-display"
 import { generateSmartAlerts } from "@/lib/smart-alerts-generator"
 import { CrossVerificationDisplay } from "@/components/admin/cross-verification-display"
 import { verifyConductorData } from "@/lib/cross-verification"
+import { ContractorPreQualification } from "@/components/admin/contractor-pre-qualification"
+import { qualifyMultipleContractors } from "@/lib/contractor-pre-qualification"
 
 export default async function AdminDashboard() {
   const supabase = await createClient()
@@ -63,25 +65,21 @@ export default async function AdminDashboard() {
       }
     )
   )
-  const riskyConductores = conductoresList.map(conductor => {
-    const riskData = calculateConductorRisk({
-      id: conductor.id,
-      nombres: conductor.nombres,
-      apellido_paterno: conductor.apellido_paterno,
-      vencimiento_licencia: conductor.vencimiento_licencia,
-      is_active: conductor.is_active,
-    })
-    return {
-      id: conductor.id,
-      name: `${conductor.nombres} ${conductor.apellido_paterno}`,
-      type: 'conductor' as const,
-      href: `/admin/conductores`,
-      ...riskData,
-    }
-  })
 
-  // Calcular matriz de riesgos para transportistas
+  // Pre-calificación de transportistas
   const transportistasList = transportistasListResult.data || []
+  const qualificationResults = qualifyMultipleContractors(
+    transportistasList.map(t => ({
+      id: t.id,
+      razon_social: t.razon_social,
+      rut: t.rut,
+      conductores: t.conductores,
+      vehiculos: t.vehiculos,
+      documentos: [], // TODO: Fetch from documentos table
+      outstandingIssues: 0, // TODO: Calculate from verification results
+    }))
+  )
+
   const riskyTransportistas = transportistasList.map(t => {
     const riskData = calculateTransportistaRisk({
       id: t.id,
@@ -195,6 +193,9 @@ export default async function AdminDashboard() {
 
       {/* Verificación Cruzada */}
       <CrossVerificationDisplay results={verificationExamples} />
+
+      {/* Pre-calificación de Contratistas */}
+      <ContractorPreQualification results={qualificationResults} />
 
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2">
