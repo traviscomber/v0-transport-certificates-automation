@@ -80,11 +80,26 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-border mt-8 pt-8 text-center text-sm text-muted-foreground">
-          <p>
-            Desarrollado con ❤️ para revolucionar el transporte chileno. Cumplimos con todas las normativas de protección
-            de datos de Chile.
-          </p>
+        <div className="border-t border-border mt-8 pt-8">
+          <div className="text-center text-sm text-muted-foreground mb-4">
+            <p>
+              Desarrollado con ❤️ para revolucionar el transporte chileno. Cumplimos con todas las normativas de protección
+              de datos de Chile.
+            </p>
+          </div>
+          <div className="text-center text-sm">
+            <p className="text-muted-foreground">
+              <span className="font-semibold text-foreground">DocuFleet</span> powered by{' '}
+              <a 
+                href="https://n3uralia.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="font-semibold text-primary hover:text-primary/80 transition-colors"
+              >
+                n3uralia
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </footer>
