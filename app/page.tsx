@@ -316,7 +316,7 @@ export default function LandingPage() {
                 <div>
                   <h3 className="font-semibold text-lg mb-1">Validación multi-capa</h3>
                   <p className="text-muted-foreground">
-                    OCR inteligente + validadores locales (RUT, patentes, fechas, licencias) + integración con APIs públicas (SII, Registro Civil, CONASET). Todo validado con 99% de precision.
+                    OCR inteligente + validación completa de RUT, patentes, fechas y licencias. 99% de precisión sin depender de terceros.
                   </p>
                 </div>
               </div>
@@ -570,7 +570,7 @@ export default function LandingPage() {
                   </li>
                   <li className="flex items-center gap-2 text-sm">
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    Integraciones avanzadas (SII, CONASET, Registro Civil)
+                    IA avanzada para validación automática
                   </li>
                   <li className="flex items-center gap-2 text-sm">
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
