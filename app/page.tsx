@@ -218,11 +218,11 @@ export default function LandingPage() {
           </p>
           <div className="flex items-center justify-center gap-8 flex-wrap opacity-70">
             <div className="text-lg font-bold text-slate-300 hover:text-foreground transition-colors">Walmart</div>
-            <div className="w-px h-6 bg-slate-600"></div>
+            <div className="w-px h-6 bg-slate-600" />
             <div className="text-lg font-bold text-slate-300 hover:text-foreground transition-colors">Falabella</div>
-            <div className="w-px h-6 bg-slate-600"></div>
+            <div className="w-px h-6 bg-slate-600" />
             <div className="text-lg font-bold text-slate-300 hover:text-foreground transition-colors">Cencosud</div>
-            <div className="w-px h-6 bg-slate-600"></div>
+            <div className="w-px h-6 bg-slate-600" />
             <div className="text-lg font-bold text-slate-300 hover:text-foreground transition-colors">LATAM Cargo</div>
           </div>
         </div>
