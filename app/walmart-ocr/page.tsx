@@ -174,8 +174,9 @@ export default function WalmartOCRPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="upload">Cargar Documento</TabsTrigger>
+            <TabsTrigger value="guia">Guía de Documentos</TabsTrigger>
             <TabsTrigger value="results">Resultados</TabsTrigger>
           </TabsList>
 
@@ -286,6 +287,20 @@ export default function WalmartOCRPage() {
                 </Button>
               </CardContent>
             </Card>
+
+          <TabsContent value="guia" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Guía de Documentos de Referencia</CardTitle>
+                <CardDescription>
+                  Ejemplos visuales de los 35+ documentos aceptados. Usa estos como referencia al subir tus documentos.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <DocumentReferenceGallery />
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="results" className="space-y-6">
             {result ? (
