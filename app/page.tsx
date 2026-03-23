@@ -1,7 +1,6 @@
 "use client"
 
-// Cache invalidation fix - updated design
-import Link from "next/link"
+// v2.1 - Rebuild cache
 import { useEffect, useState } from "react"
 import { 
   FileCheck, 
