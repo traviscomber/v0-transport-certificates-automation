@@ -64,9 +64,11 @@ export default function LoginPage() {
       if (error) throw error
 
       // Get user profile to determine their role
+      const { data: { user }, } = await supabase.auth.getUser()
       const { data: profileData } = await supabase
         .from('profiles')
         .select('role')
+        .eq('id', user?.id)
         .single()
 
       // Small delay to ensure session is established
