@@ -29,7 +29,7 @@ export default async function AdminDashboard() {
       .limit(5),
     supabase.from("conductores").select("id, nombres, apellido_paterno, vencimiento_licencia, is_active"),
     supabase.from("transportistas").select("id, razon_social, is_active, vehiculos(id), conductores(id)"),
-    supabase.from("vehiculos").select("id, patente, vencimiento_permiso_circulacion, vencimiento_revision_tecnica"),
+    supabase.from("vehiculos").select("id, patente"),
   ])
 
   const stats = {
