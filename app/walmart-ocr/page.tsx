@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Upload, CheckCircle, AlertCircle, Loader2, FileText, ArrowRight, BookOpen } from 'lucide-react'
 import Link from 'next/link'
 import { DocumentReferenceGallery } from '@/components/documents/document-reference-gallery'
+import { DocumentRequirements } from '@/components/documents/document-requirements'
 
 export default function WalmartOCRPage() {
   const [activeTab, setActiveTab] = useState('upload')
@@ -67,11 +68,15 @@ export default function WalmartOCRPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="upload">Cargar Documento</TabsTrigger>
           <TabsTrigger value="guia" className="flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
-            Guía de Documentos
+            Galería
+          </TabsTrigger>
+          <TabsTrigger value="requisitos" className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            Requisitos
           </TabsTrigger>
           <TabsTrigger value="results">Resultados</TabsTrigger>
         </TabsList>
@@ -144,14 +149,27 @@ export default function WalmartOCRPage() {
         <TabsContent value="guia" className="space-y-6">
           <Card className="border-[#E4E4E7]">
             <CardHeader>
-              <CardTitle>Guía de Documentos de Referencia</CardTitle>
+              <CardTitle>Galería de Documentos Chilenos</CardTitle>
               <CardDescription>
-                Aquí puedes ver ejemplos visuales de todos los 35+ documentos de transporte chileno que soportamos. 
-                Usa estos como referencia al subir tus documentos.
+                Ejemplos visuales de los documentos de transporte más comunes en Chile. Haz clic en cualquiera para ampliar.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <DocumentReferenceGallery />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="requisitos" className="space-y-6">
+          <Card className="border-[#E4E4E7]">
+            <CardHeader>
+              <CardTitle>Información de Documentos</CardTitle>
+              <CardDescription>
+                Requisitos detallados para cada documento obligatorio en transporte chileno.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DocumentRequirements />
             </CardContent>
           </Card>
         </TabsContent>

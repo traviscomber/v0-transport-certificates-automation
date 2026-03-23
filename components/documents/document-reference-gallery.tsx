@@ -15,14 +15,14 @@ interface DocumentRef {
 }
 
 const DOCUMENT_REFERENCES: DocumentRef[] = [
-  { id: '01', name: 'Licencia A4', category: 'Conductor', image: '/document-examples/01-licencia-conduccion-a4.jpg', description: 'Licencia de conducción categoría A4' },
-  { id: '02', name: 'RTV', category: 'Vehículo', image: '/document-examples/02-rtv-revision-tecnica.jpg', description: 'Revisión técnica vehicular' },
-  { id: '03', name: 'Tarjeta Circulación', category: 'Vehículo', image: '/document-examples/03-tarjeta-circulacion.jpg', description: 'Tarjeta de circulación' },
-  { id: '04', name: 'RUT', category: 'Identidad', image: '/document-examples/04-rut-certificate.jpg', description: 'Certificado de RUT' },
-  { id: '05', name: 'Seguro RC', category: 'Vehículo', image: '/document-examples/05-seguro-rc.jpg', description: 'Seguro responsabilidad civil' },
-  { id: '06', name: 'Permiso Circulación', category: 'Vehículo', image: '/document-examples/06-permiso-circulacion.jpg', description: 'Permiso de circulación mensual' },
-  { id: '07', name: 'Ley 20.123', category: 'Cumplimiento', image: '/document-examples/07-ley-20123-capacitacion.jpg', description: 'Capacitación Ley 20.123' },
-  { id: '08', name: 'ADR', category: 'Especializado', image: '/document-examples/08-adr-certificate.jpg', description: 'Certificado ADR' },
+  { id: '01', name: 'Cédula de Identidad (Nuevo 2024)', category: 'Identidad', image: '/document-examples/01-cedula-identidad-nuevo.jpg', description: 'Nueva cédula de identidad chilena con chip, código QR, 32 medidas de seguridad. Diseño con copihue, huemul, cóndor y cordillera de los Andes. Obligatoria para todos.' },
+  { id: '02', name: 'Licencia Clase B', category: 'Conductor', image: '/document-examples/02-licencia-conducir-claseb.jpg', description: 'Licencia de conducir clase B para vehículos particulares. Obligatoria para conducir. Vencimiento en cumpleaños del conductor.' },
+  { id: '03', name: 'Licencia Clase D', category: 'Conductor', image: '/document-examples/03-licencia-conducir-claseD.jpg', description: 'Licencia de conducir clase D para conductores profesionales de transporte de carga. Requiere capacitación especial.' },
+  { id: '04', name: 'Licencia Clase E', category: 'Conductor', image: '/document-examples/04-licencia-conducir-claseE.jpg', description: 'Licencia de conducir clase E para transporte profesional de pasajeros. Requerimientos de salud más estrictos.' },
+  { id: '05', name: 'RTV (Revisión Técnica)', category: 'Vehículo', image: '/document-examples/05-rtv-revision-tecnica.jpg', description: 'Certificado de revisión técnica vehicular. Obligatorio anualmente. Verifica estado de frenos, luces, suspensión y más.' },
+  { id: '06', name: 'Certificado RUT', category: 'Empresa', image: '/document-examples/06-certificado-rut.jpg', description: 'Certificado de RUT del SII. Formato XX.XXX.XXX-K. Obligatorio para todos. Descargable desde sii.cl' },
+  { id: '07', name: 'Tarjeta de Circulación (Verde)', category: 'Vehículo', image: '/document-examples/07-tarjeta-circulacion-verde.jpg', description: 'Tarjeta de circulación anual del MTT. Documento verde que acredita validez del vehículo. Obligatoria tener a bordo.' },
+  { id: '08', name: 'Seguro RC (Responsabilidad Civil)', category: 'Vehículo', image: '/document-examples/08-seguro-rc-responsabilidad.jpg', description: 'Póliza de seguro de responsabilidad civil. Obligatorio para todos los vehículos. Cubre daños a terceros.' },
 ]
 
 export function DocumentReferenceGallery() {
