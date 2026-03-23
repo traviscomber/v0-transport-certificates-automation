@@ -1,6 +1,6 @@
-# Portal OCR Walmart Chile
+# Portal de Validación Documental para Transporte
 
-Sistema de reconocimiento OCR inteligente para 35+ tipos de documentos de transporte. Extrae datos automáticamente con validación chilena completa.
+Sistema de reconocimiento OCR inteligente para 35+ tipos de documentos de transporte. Extrae datos automáticamente con validación normativa completa.
 
 [![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/travis-projects-c14a785a/v0-transport-certificates-automation)
 [![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app)
@@ -9,9 +9,9 @@ Sistema de reconocimiento OCR inteligente para 35+ tipos de documentos de transp
 
 ✅ **Auto-Detección de Documentos**: IA reconoce automáticamente qué documento es sin intervención del usuario  
 ✅ **Extracción Precisa**: GPT-4 Vision extrae datos estructurados con 85%+ precisión  
-✅ **Validación Chilena**: Valida RUT, fechas, patentes según normas locales  
+✅ **Validación Normativa**: Valida datos según estándares internacionales de transporte  
 ✅ **Dashboard Ejecutivo**: Visualiza cumplimiento documental en tiempo real  
-✅ **Reportes Walmart**: Genera reportes CSV de compliance para auditorías  
+✅ **Reportes de Compliance**: Genera reportes de auditoría y cumplimiento  
 ✅ **35+ Documentos Soportados**: Empresa, Conductor, Vehículo, Seguridad, Operacional, Subcontratación  
 ✅ **API RESTful**: Integración fácil con sistemas terceros
 

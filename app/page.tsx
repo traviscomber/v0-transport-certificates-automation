@@ -151,7 +151,7 @@ export default function LandingPage() {
               </h1>
 
               <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto text-pretty leading-relaxed">
-                Gestiona todos los documentos que exige Walmart y otros mandantes.
+                Gestiona todos los documentos que exige el compliance logístico y tus clientes.
                 Sube una foto, la IA extrae los datos, cero errores, cero multas.
               </p>
             </div>
@@ -218,13 +218,13 @@ export default function LandingPage() {
             Confiado por los principales mandantes de logistica en Chile
           </p>
           <div className="flex items-center justify-center gap-8 flex-wrap opacity-70">
-            <div className="text-lg font-bold text-slate-300 hover:text-foreground transition-colors">Walmart</div>
+            <div className="text-lg font-bold text-slate-300 hover:text-foreground transition-colors">Cliente Premium 1</div>
             <div className="w-px h-6 bg-slate-600" />
-            <div className="text-lg font-bold text-slate-300 hover:text-foreground transition-colors">Falabella</div>
+            <div className="text-lg font-bold text-slate-300 hover:text-foreground transition-colors">Cliente Premium 2</div>
             <div className="w-px h-6 bg-slate-600" />
-            <div className="text-lg font-bold text-slate-300 hover:text-foreground transition-colors">Cencosud</div>
+            <div className="text-lg font-bold text-slate-300 hover:text-foreground transition-colors">Cliente Premium 3</div>
             <div className="w-px h-6 bg-slate-600" />
-            <div className="text-lg font-bold text-slate-300 hover:text-foreground transition-colors">LATAM Cargo</div>
+            <div className="text-lg font-bold text-slate-300 hover:text-foreground transition-colors">Cliente Premium 4</div>
           </div>
         </div>
       </section>
@@ -469,7 +469,7 @@ export default function LandingPage() {
               {stats.documentTypes || 35} tipos de documentos
             </h2>
             <p className="text-lg text-muted-foreground">
-              Soportamos todos los documentos que exigen Walmart y otros mandantes, 
+              Soportamos todos los documentos y normativas que exigen tus clientes en compliance logístico, 
               organizados por categoria para tu facilidad.
             </p>
           </div>
@@ -527,7 +527,7 @@ export default function LandingPage() {
                 company: "Operando en todo Chile"
               },
               {
-                quote: "Las empresas de transporte que mantienen 99% de compliance documental tienen 3.5x mas probabilidad de ser elegidas como proveedores por mandantes como Walmart.",
+                quote: "Las empresas de transporte que mantienen 99% de compliance documental tienen 3.5x más probabilidad de ser elegidas como proveedores por mandantes empresariales.",
                 author: "Estudio de Mercado",
                 role: "Analisis de Datos",
                 company: "Industria Logistica 2024"

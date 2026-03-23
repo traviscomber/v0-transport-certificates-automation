@@ -13,7 +13,7 @@ import { DocumentReferenceGallery } from '@/components/documents/document-refere
 import { DocumentRequirements } from '@/components/documents/document-requirements'
 import { HelpBox, QuickHelp } from '@/components/ui/help-box'
 
-export default function WalmartOCRPage() {
+export default function DocumentValidatorPage() {
   const [activeTab, setActiveTab] = useState('upload')
   const [loading, setLoading] = useState(false)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
@@ -62,9 +62,9 @@ export default function WalmartOCRPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-[#18181B]">OCR - Validacion Documental</h1>
+        <h1 className="text-3xl font-bold text-[#18181B]">Validación Documental con IA</h1>
         <p className="text-[#71717A]">
-          Carga documentos de transporte para validar automaticamente con IA
+          Carga documentos de transporte para validar automáticamente con IA
         </p>
       </div>
 
@@ -196,9 +196,9 @@ export default function WalmartOCRPage() {
         <TabsContent value="guia" className="space-y-6">
           <Card className="border-[#E4E4E7]">
             <CardHeader>
-              <CardTitle>Galería de Documentos Chilenos</CardTitle>
+              <CardTitle>Galería de Documentos Logísticos</CardTitle>
               <CardDescription>
-                Ejemplos visuales de los documentos de transporte más comunes en Chile. Haz clic en cualquiera para ampliar.
+                Ejemplos visuales de los documentos de transporte más comunes. Haz clic en cualquiera para ampliar.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -212,7 +212,7 @@ export default function WalmartOCRPage() {
             <CardHeader>
               <CardTitle>Información de Documentos</CardTitle>
               <CardDescription>
-                Requisitos detallados para cada documento obligatorio en transporte chileno.
+                Requisitos detallados para cada documento obligatorio en normativas de transporte.
               </CardDescription>
             </CardHeader>
             <CardContent>
