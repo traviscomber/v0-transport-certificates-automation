@@ -1,6 +1,3 @@
-"use client"
-
-import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -8,7 +5,6 @@ import { FileText, AlertTriangle, CheckCircle, Calendar, Upload, Download, User 
 import Link from "next/link"
 
 export default function ConductorDashboard() {
-
   const documentos = [
     {
       id: "1",
@@ -40,7 +36,9 @@ export default function ConductorDashboard() {
     },
   ]
 
-  const content = (
+  return (
+    <div className="min-h-screen bg-gradient-dark p-4 sm:p-6 lg:p-8">
+      <div className="space-y-8">
         {/* Header */}
         <div className="space-y-2">
           <h1 className="text-3xl font-bold text-foreground">Mi Perfil Conductor</h1>
@@ -259,7 +257,6 @@ export default function ConductorDashboard() {
           </CardContent>
         </Card>
       </div>
-    )
-
-  return <DashboardLayout>{content}</DashboardLayout>
+    </div>
+  )
 }

@@ -1,7 +1,10 @@
-"use client"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Truck, Users, FileText, AlertTriangle, CheckCircle, Clock, Upload, Plus } from "lucide-react"
+import Link from "next/link"
 
-import { DashboardLayout } from "@/components/dashboard-layout"
-
+export default function TransportistaDashboard() {
   const stats = {
     conductores: 5,
     vehiculos: 3,
@@ -45,20 +48,18 @@ import { DashboardLayout } from "@/components/dashboard-layout"
     },
   ]
 
-  const content = (
-        {/* Header */}
+  return (
+    <div className="min-h-screen bg-gradient-dark p-4 sm:p-6 lg:p-8">
+      <div className="space-y-8">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold text-foreground">Mi Dashboard Transportista</h1>
           <p className="text-muted-foreground">Bienvenido a tu panel de gestión de conductores y vehículos</p>
         </div>
 
-        {/* Stats */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <Card className="border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-transparent">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-blue-300">
-                Conductores
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-blue-300">Conductores</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-4xl font-bold text-blue-400">{stats.conductores}</div>
@@ -66,9 +67,7 @@ import { DashboardLayout } from "@/components/dashboard-layout"
           </Card>
           <Card className="border-green-500/30 bg-gradient-to-br from-green-500/10 to-transparent">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-green-300">
-                Vehículos
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-green-300">Vehículos</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-4xl font-bold text-green-400">{stats.vehiculos}</div>
@@ -76,9 +75,7 @@ import { DashboardLayout } from "@/components/dashboard-layout"
           </Card>
           <Card className="border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-transparent">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-orange-300">
-                Documentos Pendientes
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-orange-300">Documentos Pendientes</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-4xl font-bold text-orange-400">{stats.documentosPendientes}</div>
@@ -86,9 +83,7 @@ import { DashboardLayout } from "@/components/dashboard-layout"
           </Card>
           <Card className="border-red-500/30 bg-gradient-to-br from-red-500/10 to-transparent">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-red-300">
-                Alertas Activas
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-red-300">Alertas Activas</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-4xl font-bold text-red-400">{stats.alertasActivas}</div>
@@ -96,7 +91,6 @@ import { DashboardLayout } from "@/components/dashboard-layout"
           </Card>
         </div>
 
-        {/* Conductores */}
         <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -148,7 +142,6 @@ import { DashboardLayout } from "@/components/dashboard-layout"
           </CardContent>
         </Card>
 
-        {/* Vehículos */}
         <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -197,7 +190,6 @@ import { DashboardLayout } from "@/components/dashboard-layout"
           </CardContent>
         </Card>
 
-        {/* Alertas */}
         <Card className="border-red-500/30 bg-gradient-to-br from-red-500/10 to-transparent">
           <CardHeader>
             <CardTitle className="text-red-300">Alertas Importantes</CardTitle>
@@ -236,7 +228,6 @@ import { DashboardLayout } from "@/components/dashboard-layout"
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
         <div className="grid gap-4 md:grid-cols-2">
           <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900 hover:border-slate-600 transition-all cursor-pointer">
             <CardHeader>
@@ -269,54 +260,6 @@ import { DashboardLayout } from "@/components/dashboard-layout"
           </Card>
         </div>
       </div>
-    )
-
-  return <DashboardLayout>{content}</DashboardLayout>
-}
-
-export default function TransportistaDashboard() {
-  const stats = {
-    conductores: 5,
-    vehiculos: 3,
-    documentosPendientes: 8,
-    alertasActivas: 3,
-  }
-
-  const conductores = [
-    {
-      id: "1",
-      nombres: "Juan",
-      apellido: "García",
-      licencia: "A4",
-      estado: "vigente",
-      vencimiento: "2025-06-15",
-    },
-    {
-      id: "2",
-      nombres: "Carlos",
-      apellido: "López",
-      licencia: "A5",
-      estado: "vencida",
-      vencimiento: "2024-03-10",
-    },
-  ]
-
-  const vehiculos = [
-    {
-      id: "1",
-      patente: "SXYZ-12",
-      tipo: "Camión",
-      rtv: "vigente",
-      permiso: "vigente",
-    },
-    {
-      id: "2",
-      patente: "WXYZ-34",
-      tipo: "Furgoneta",
-      rtv: "vencida",
-      permiso: "vigente",
-    },
-  ]
-
-  return <DashboardLayout>{content}</DashboardLayout>
+    </div>
+  )
 }
