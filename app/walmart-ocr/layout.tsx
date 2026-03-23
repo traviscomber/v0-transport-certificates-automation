@@ -22,15 +22,21 @@ export default function WalmartOCRLayout({
           <nav className="flex items-center gap-6">
             <Link
               href="/walmart-ocr"
-              className="text-sm font-medium hover:text-blue-600 transition-colors"
+              className="text-sm font-medium px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-600 transition-colors"
             >
-              Upload
+              Cargar Documentos
             </Link>
             <Link
               href="/walmart-ocr/compliance"
-              className="text-sm font-medium hover:text-blue-600 transition-colors"
+              className="text-sm font-medium px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-600 transition-colors"
             >
-              Dashboard
+              Dashboard de Compliance
+            </Link>
+            <Link
+              href="/walmart-ocr/review"
+              className="text-sm font-medium px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-600 transition-colors"
+            >
+              Revisar
             </Link>
             <Button variant="outline" size="sm">
               Salir
