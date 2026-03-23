@@ -63,9 +63,22 @@ export default function LoginPage() {
       })
       if (error) throw error
 
+      // Get user profile to determine their role
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('role')
+        .single()
+
       // Small delay to ensure session is established
       setTimeout(() => {
-        router.push('/admin')
+        // Route based on role
+        const roleRoute: Record<string, string> = {
+          'admin': '/admin',
+          'dispatcher': '/dispatcher',
+          'driver': '/driver',
+        }
+        const route = roleRoute[profileData?.role] || '/admin'
+        router.push(route)
       }, 100)
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')
@@ -88,7 +101,14 @@ export default function LoginPage() {
 
       // Small delay to ensure session is established
       setTimeout(() => {
-        router.push('/admin')
+        // Route based on demo account role
+        const roleRoute: Record<string, string> = {
+          'admin': '/admin',
+          'dispatcher': '/dispatcher',
+          'driver': '/driver',
+        }
+        const route = roleRoute[demoAccount.role] || '/admin'
+        router.push(route)
       }, 100)
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'Error en login demo')
