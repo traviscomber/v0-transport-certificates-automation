@@ -363,6 +363,8 @@ export default function LandingPage() {
                   <p className="text-muted-foreground">
                     Reportes automaticos para auditorias internas y externas. Evidencia total de cumplimiento.
                   </p>
+                </div>
+              </div>
             </div>
 
             {/* Right: Demo preview */}
