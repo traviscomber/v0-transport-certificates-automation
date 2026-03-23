@@ -1,24 +1,24 @@
 -- ============================================================
--- FASE 2: HUMAN-IN-THE-LOOP - REVIEW QUEUE TABLES
+-- FASE 2: HUMAN-IN-THE-LOOP - REVIEW QUEUE TABLES (SIMPLIFIED)
 -- Portal OCR Walmart Chile
 -- ============================================================
 
 -- Tabla de cola de revisión manual
 CREATE TABLE IF NOT EXISTS review_queue (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  document_id UUID NOT NULL REFERENCES uploaded_documents(id) ON DELETE CASCADE,
+  document_id TEXT NOT NULL,
   
   -- Prioridad y estado
-  priority VARCHAR(20) NOT NULL DEFAULT 'medium', -- critical, high, medium, low
-  status VARCHAR(30) NOT NULL DEFAULT 'pending', -- pending, in_review, completed, escalated
+  priority VARCHAR(20) NOT NULL DEFAULT 'medium',
+  status VARCHAR(30) NOT NULL DEFAULT 'pending',
   
   -- Razón de revisión
-  review_reason VARCHAR(100) NOT NULL, -- low_confidence, validation_failed, manual_request, random_audit
+  review_reason VARCHAR(100) NOT NULL,
   confidence_score FLOAT,
   flags JSONB DEFAULT '[]'::jsonb,
   
   -- Asignación
-  assigned_to UUID REFERENCES auth.users(id),
+  assigned_to UUID,
   assigned_at TIMESTAMP WITH TIME ZONE,
   
   -- Tiempos
@@ -35,15 +35,15 @@ CREATE TABLE IF NOT EXISTS review_queue (
 CREATE TABLE IF NOT EXISTS review_decisions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   queue_id UUID NOT NULL REFERENCES review_queue(id) ON DELETE CASCADE,
-  reviewer_id UUID NOT NULL REFERENCES auth.users(id),
+  reviewer_id UUID NOT NULL,
   
   -- Decisión
-  decision VARCHAR(30) NOT NULL, -- approved, rejected, needs_correction, escalated
+  decision VARCHAR(30) NOT NULL,
   
   -- Datos corregidos (si aplica)
   original_data JSONB,
   corrected_data JSONB,
-  corrections_made JSONB DEFAULT '[]'::jsonb, -- lista de campos corregidos
+  corrections_made JSONB DEFAULT '[]'::jsonb,
   
   -- Notas y razón
   notes TEXT,
@@ -68,10 +68,10 @@ CREATE TABLE IF NOT EXISTS ocr_feedback (
   
   -- Contexto
   ocr_confidence FLOAT,
-  error_type VARCHAR(50), -- misread, missing, extra_text, format_error
+  error_type VARCHAR(50),
   
   -- Para entrenamiento
-  image_region JSONB, -- coordenadas del campo en la imagen
+  image_region JSONB,
   used_for_training BOOLEAN DEFAULT false,
   
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS ocr_feedback (
 -- Tabla de métricas de revisores
 CREATE TABLE IF NOT EXISTS reviewer_metrics (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  reviewer_id UUID NOT NULL REFERENCES auth.users(id),
+  reviewer_id UUID NOT NULL,
   period_start DATE NOT NULL,
   period_end DATE NOT NULL,
   
@@ -147,13 +147,6 @@ SELECT
   rq.sla_deadline,
   rq.sla_breached,
   rq.created_at,
-  ud.document_type_id,
-  dt.code as document_type_code,
-  dt.name as document_type_name,
-  dt.category as document_category,
-  ud.extracted_data,
-  ud.original_filename,
-  ud.file_url,
   CASE 
     WHEN rq.sla_deadline < NOW() THEN 'breached'
     WHEN rq.sla_deadline < NOW() + INTERVAL '1 hour' THEN 'urgent'
@@ -162,8 +155,6 @@ SELECT
   END as sla_status,
   EXTRACT(EPOCH FROM (rq.sla_deadline - NOW())) / 3600 as hours_remaining
 FROM review_queue rq
-LEFT JOIN uploaded_documents ud ON rq.document_id = ud.id
-LEFT JOIN document_types dt ON ud.document_type_id = dt.id
 WHERE rq.status IN ('pending', 'in_review')
 ORDER BY 
   CASE rq.priority 
@@ -191,7 +182,7 @@ ORDER BY review_date DESC;
 
 -- Función para agregar documento a cola de revisión
 CREATE OR REPLACE FUNCTION add_to_review_queue(
-  p_document_id UUID,
+  p_document_id TEXT,
   p_review_reason VARCHAR(100),
   p_confidence_score FLOAT DEFAULT NULL,
   p_flags JSONB DEFAULT '[]'::jsonb,
