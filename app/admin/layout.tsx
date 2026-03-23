@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Building2, Truck, Users, Car, FileText, LayoutDashboard, Settings, LogOut, Shield } from "lucide-react"
+import { Building2, Truck, Users, Car, FileText, LayoutDashboard, Settings, LogOut, Shield, BarChart3 } from "lucide-react"
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -13,6 +13,7 @@ const navItems = [
   { href: "/admin/conductores", label: "Conductores", icon: Users },
   { href: "/admin/documentos", label: "Documentos", icon: FileText },
   { href: "/admin/roles", label: "Roles y Permisos", icon: Shield },
+  { href: "/admin/reportes", label: "Reportes", icon: BarChart3 },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
