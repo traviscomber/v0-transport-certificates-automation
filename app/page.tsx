@@ -87,6 +87,7 @@ export default function LandingPage() {
     loadStats()
   }, [])
 
+  // Force rebuild
   return (
     <div className="min-h-screen bg-gradient-dark">
       {/* Navigation */}
