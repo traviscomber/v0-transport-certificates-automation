@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Building2, Truck, Users, Car, FileText, AlertTriangle, HelpCircle } from "lucide-react"
 import Link from "next/link"
@@ -14,6 +15,23 @@ import { qualifyMultipleContractors } from "@/lib/contractor-pre-qualification"
 
 export default async function AdminDashboard() {
   const supabase = await createClient()
+  
+  // Check user authentication and role
+  const { data: authData, error: authError } = await supabase.auth.getUser()
+  if (authError || !authData?.user) {
+    redirect("/auth/login")
+  }
+
+  // Get user profile to check role
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", authData.user.id)
+    .maybeSingle()
+
+  if (!profile || profile.role !== "admin") {
+    redirect("/auth/login")
+  }
   
   // Execute all queries with a single client instance
   const [mandantes, transportistas, vehiculos, conductores, documentos, docTypes, recentDocsResult, conductoresListResult, transportistasListResult, vehiculosListResult] = await Promise.all([

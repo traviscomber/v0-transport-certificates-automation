@@ -101,7 +101,7 @@ export default function LoginPage() {
 
       if (error) throw error
 
-      // Small delay to ensure session is established
+      // Wait longer for session to be established
       setTimeout(() => {
         // Route based on demo account role
         const roleRoute: Record<string, string> = {
@@ -111,7 +111,8 @@ export default function LoginPage() {
         }
         const route = roleRoute[demoAccount.role] || '/admin'
         router.push(route)
-      }, 100)
+        setDemoLoading(null)
+      }, 500)
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'Error en login demo')
       setDemoLoading(null)
