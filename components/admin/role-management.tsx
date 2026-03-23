@@ -19,17 +19,17 @@ const ROLE_ICONS: Record<UserRole, React.ReactNode> = {
 }
 
 const ROLE_COLORS: Record<UserRole, string> = {
-  admin: 'bg-red-50 border-red-200',
-  mandante: 'bg-blue-50 border-blue-200',
-  transportista: 'bg-green-50 border-green-200',
-  conductor: 'bg-purple-50 border-purple-200',
+  admin: 'bg-gradient-to-br from-red-500/20 to-red-600/10 border-red-500/30',
+  mandante: 'bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-500/30',
+  transportista: 'bg-gradient-to-br from-green-500/20 to-green-600/10 border-green-500/30',
+  conductor: 'bg-gradient-to-br from-purple-500/20 to-purple-600/10 border-purple-500/30',
 }
 
 const ROLE_BADGE_COLORS: Record<UserRole, string> = {
-  admin: 'bg-red-100 text-red-700',
-  mandante: 'bg-blue-100 text-blue-700',
-  transportista: 'bg-green-100 text-green-700',
-  conductor: 'bg-purple-100 text-purple-700',
+  admin: 'bg-red-500/30 text-red-200 border border-red-500/50',
+  mandante: 'bg-blue-500/30 text-blue-200 border border-blue-500/50',
+  transportista: 'bg-green-500/30 text-green-200 border border-green-500/50',
+  conductor: 'bg-purple-500/30 text-purple-200 border border-purple-500/50',
 }
 
 export function RoleManagement({ currentUserRole = 'admin' }: RoleManagementProps) {
@@ -59,12 +59,12 @@ export function RoleManagement({ currentUserRole = 'admin' }: RoleManagementProp
                 </div>
                 <div className="space-y-2">
                   <div>
-                    <p className="text-sm text-muted-foreground">Recursos</p>
-                    <p className="text-2xl font-bold">{summary.resources.length}</p>
+                    <p className="text-sm text-slate-400">Recursos</p>
+                    <p className="text-2xl font-bold text-white">{summary.resources.length}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Permisos</p>
-                    <p className="text-lg font-semibold">{summary.totalPermissions}</p>
+                    <p className="text-sm text-slate-400">Permisos</p>
+                    <p className="text-lg font-semibold text-white">{summary.totalPermissions}</p>
                   </div>
                 </div>
               </CardContent>
@@ -114,30 +114,30 @@ export function RoleManagement({ currentUserRole = 'admin' }: RoleManagementProp
                               <TableCell className="font-medium capitalize">{resource}</TableCell>
                               <TableCell>
                                 {hasRead ? (
-                                  <Badge className="bg-green-100 text-green-700">✓</Badge>
+                                  <Badge className="bg-green-500/30 text-green-200 border border-green-500/50">✓</Badge>
                                 ) : (
-                                  <Badge className="bg-gray-100 text-gray-500">-</Badge>
+                                  <Badge className="bg-slate-700/50 text-slate-400 border border-slate-600/50">-</Badge>
                                 )}
                               </TableCell>
                               <TableCell>
                                 {hasWrite ? (
-                                  <Badge className="bg-green-100 text-green-700">✓</Badge>
+                                  <Badge className="bg-green-500/30 text-green-200 border border-green-500/50">✓</Badge>
                                 ) : (
-                                  <Badge className="bg-gray-100 text-gray-500">-</Badge>
+                                  <Badge className="bg-slate-700/50 text-slate-400 border border-slate-600/50">-</Badge>
                                 )}
                               </TableCell>
                               <TableCell>
                                 {hasDelete ? (
-                                  <Badge className="bg-red-100 text-red-700">✓</Badge>
+                                  <Badge className="bg-red-500/30 text-red-200 border border-red-500/50">✓</Badge>
                                 ) : (
-                                  <Badge className="bg-gray-100 text-gray-500">-</Badge>
+                                  <Badge className="bg-slate-700/50 text-slate-400 border border-slate-600/50">-</Badge>
                                 )}
                               </TableCell>
                               <TableCell>
                                 {hasManage ? (
-                                  <Badge className="bg-orange-100 text-orange-700">✓</Badge>
+                                  <Badge className="bg-orange-500/30 text-orange-200 border border-orange-500/50">✓</Badge>
                                 ) : (
-                                  <Badge className="bg-gray-100 text-gray-500">-</Badge>
+                                  <Badge className="bg-slate-700/50 text-slate-400 border border-slate-600/50">-</Badge>
                                 )}
                               </TableCell>
                             </TableRow>
@@ -156,16 +156,16 @@ export function RoleManagement({ currentUserRole = 'admin' }: RoleManagementProp
 
       {/* Role Descriptions */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="bg-red-50 border-red-200">
+        <Card className="bg-gradient-to-br from-red-500/20 to-red-600/10 border-red-500/30">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-red-600" />
-              <CardTitle>Administrador</CardTitle>
+              <Shield className="w-5 h-5 text-red-400" />
+              <CardTitle className="text-red-100">Administrador</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <p className="text-sm">Acceso total al sistema</p>
-            <ul className="text-sm space-y-1 text-muted-foreground">
+            <p className="text-sm text-slate-300">Acceso total al sistema</p>
+            <ul className="text-sm space-y-1 text-slate-400">
               <li>• Gestionar transportistas, mandantes</li>
               <li>• Crear conductores y vehículos</li>
               <li>• Validar y rechazar documentos</li>
@@ -174,16 +174,16 @@ export function RoleManagement({ currentUserRole = 'admin' }: RoleManagementProp
           </CardContent>
         </Card>
 
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-500/30">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-blue-600" />
-              <CardTitle>Mandante</CardTitle>
+              <Building2 className="w-5 h-5 text-blue-400" />
+              <CardTitle className="text-blue-100">Mandante</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <p className="text-sm">Gestiona sus transportistas</p>
-            <ul className="text-sm space-y-1 text-muted-foreground">
+            <p className="text-sm text-slate-300">Gestiona sus transportistas</p>
+            <ul className="text-sm space-y-1 text-slate-400">
               <li>• Ver transportistas asignados</li>
               <li>• Descargar documentos</li>
               <li>• Ver alertas de vencimiento</li>
@@ -192,16 +192,16 @@ export function RoleManagement({ currentUserRole = 'admin' }: RoleManagementProp
           </CardContent>
         </Card>
 
-        <Card className="bg-green-50 border-green-200">
+        <Card className="bg-gradient-to-br from-green-500/20 to-green-600/10 border-green-500/30">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Truck className="w-5 h-5 text-green-600" />
-              <CardTitle>Transportista</CardTitle>
+              <Truck className="w-5 h-5 text-green-400" />
+              <CardTitle className="text-green-100">Transportista</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <p className="text-sm">Gestiona conductores y vehículos</p>
-            <ul className="text-sm space-y-1 text-muted-foreground">
+            <p className="text-sm text-slate-300">Gestiona conductores y vehículos</p>
+            <ul className="text-sm space-y-1 text-slate-400">
               <li>• Registrar conductores</li>
               <li>• Subir documentos</li>
               <li>• Ver estado de documentos</li>
@@ -210,16 +210,16 @@ export function RoleManagement({ currentUserRole = 'admin' }: RoleManagementProp
           </CardContent>
         </Card>
 
-        <Card className="bg-purple-50 border-purple-200">
+        <Card className="bg-gradient-to-br from-purple-500/20 to-purple-600/10 border-purple-500/30">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <User className="w-5 h-5 text-purple-600" />
-              <CardTitle>Conductor</CardTitle>
+              <User className="w-5 h-5 text-purple-400" />
+              <CardTitle className="text-purple-100">Conductor</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <p className="text-sm">Gestiona sus documentos</p>
-            <ul className="text-sm space-y-1 text-muted-foreground">
+            <p className="text-sm text-slate-300">Gestiona sus documentos</p>
+            <ul className="text-sm space-y-1 text-slate-400">
               <li>• Subir documentos propios</li>
               <li>• Ver estado de documentos</li>
               <li>• Recibir alertas de vencimiento</li>
@@ -230,11 +230,11 @@ export function RoleManagement({ currentUserRole = 'admin' }: RoleManagementProp
       </div>
 
       {/* Access Control Tips */}
-      <Card className="bg-blue-50 border-blue-200">
+      <Card className="bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border-cyan-500/30">
         <CardHeader>
-          <CardTitle className="text-base">Notas sobre Control de Acceso</CardTitle>
+          <CardTitle className="text-base text-cyan-100">Notas sobre Control de Acceso</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm">
+        <CardContent className="space-y-2 text-sm text-slate-300">
           <p>• Los permisos se aplican automáticamente según el rol del usuario</p>
           <p>• Los transportistas solo ven sus conductores y vehículos</p>
           <p>• Los mandantes solo ven sus transportistas asignados</p>
