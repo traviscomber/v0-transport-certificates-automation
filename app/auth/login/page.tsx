@@ -193,6 +193,12 @@ export default function LoginPage() {
                 </Button>
               )
             })}
+            <div className='mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded text-sm text-blue-300'>
+              <p className='mb-2'>¿Primera vez? Primero necesitas crear las cuentas de demo.</p>
+              <Link href="/setup-demo" className='text-blue-400 hover:text-blue-300 font-semibold'>
+                → Crear cuentas de demo
+              </Link>
+            </div>
           </CardContent>
         </Card>
 
