@@ -6,22 +6,18 @@ import { Users, Truck, FileText, AlertTriangle, CheckCircle } from "lucide-react
 export default async function AdminDashboard() {
   const supabase = await createClient()
   
-  // Check user authentication and role
+  // Check user authentication
   const { data: authData, error: authError } = await supabase.auth.getUser()
   if (authError || !authData?.user) {
     redirect("/auth/login")
   }
 
-  // Get user profile to check role
-  const { data: profile, error: profileError } = await supabase
+  // Get user profile (optional for demo)
+  const { data: profile } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", authData.user.id)
     .maybeSingle()
-
-  if (profileError || !profile || profile.role !== "admin") {
-    redirect("/auth/login")
-  }
   
   return (
     <div className="min-h-screen bg-gradient-dark p-4 sm:p-6 lg:p-8">

@@ -8,25 +8,18 @@ import { Truck, Users, FileText, AlertTriangle, CheckCircle, BarChart3 } from "l
 export default async function DispatcherPage() {
   const supabase = await createClient()
 
+  // Check user authentication
   const { data, error } = await supabase.auth.getUser()
   if (error || !data?.user) {
     redirect("/auth/login")
   }
 
-  const { data: profile, error: profileError } = await supabase
+  // Get user profile (optional for demo)
+  const { data: profile } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", data.user.id)
     .maybeSingle()
-
-  if (profileError) {
-    console.error("Error fetching profile:", profileError)
-    redirect("/auth/login")
-  }
-
-  if (!profile || profile.role !== "dispatcher") {
-    redirect("/auth/login")
-  }
 
   return (
     <div className="min-h-screen bg-gradient-dark p-4 sm:p-6 lg:p-8">
