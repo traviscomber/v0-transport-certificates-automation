@@ -208,15 +208,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-              <div className="text-sm text-muted-foreground mt-1">Tiempo de analisis</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-foreground">0</div>
-              <div className="text-sm text-muted-foreground mt-1">Multas con DocuFleet</div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Logos Section */}
       <section className="py-16 border-y border-slate-700/30 bg-slate-900/30">
