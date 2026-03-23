@@ -97,56 +97,66 @@ export default function LoginPage() {
   }
 
   return (
-    <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4'>
-      <div className='w-full max-w-md'>
-        <div className='flex flex-col items-center mb-6'>
-          <div className='flex items-center gap-2 mb-4'>
-            <Truck className='h-8 w-8 text-primary' />
-            <span className='text-2xl font-bold'>DocuFleet</span>
+    <div className='min-h-screen bg-gradient-dark flex flex-col items-center justify-center p-4 relative overflow-hidden'>
+      {/* Background effects */}
+      <div className="absolute inset-0 bg-grid opacity-20" />
+      <div className="absolute top-20 left-10 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-10 right-10 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl" />
+
+      <div className='w-full max-w-md relative z-10'>
+        <div className='flex flex-col items-center mb-8'>
+          <div className='w-12 h-12 rounded-lg gradient-accent flex items-center justify-center shadow-lg glow-orange mb-4'>
+            <Truck className='h-7 w-7 text-white' />
           </div>
-          <p className='text-muted-foreground text-center'>Sistema de Gestion de Documentos de Transporte</p>
+          <h1 className='text-3xl font-black text-foreground'>DocuFleet</h1>
+          <p className='text-muted-foreground text-center mt-2'>Compliance documental 100% automatizado</p>
         </div>
 
         {/* Ayuda Educativa */}
         <HelpBox
           variant="info"
           title="Como usar esta pagina"
-          description="Esta es la pagina de inicio de sesion. Aqui puedes entrar al sistema de dos formas:"
+          description="Elige una de las dos opciones para acceder:"
           steps={[
             {
               step: 1,
               title: "Opcion rapida: Cuentas de demostracion",
-              description: "Haz clic en uno de los botones de colores de abajo para probar el sistema como Conductor, Despachador o Administrador."
+              description: "Haz clic en uno de los botones para probar el sistema como Conductor, Despachador o Administrador."
             },
             {
               step: 2,
               title: "Opcion normal: Iniciar sesion",
-              description: "Si ya tienes una cuenta, escribe tu correo y contraseña en el formulario de abajo y presiona el boton azul 'Iniciar Sesion'."
+              description: "Si ya tienes una cuenta, escribe tu correo y contraseña en el formulario."
             }
           ]}
         />
 
-        <Card className='mb-6'>
+        <Card className='mb-6 glass-dark border-slate-700/50'>
           <CardHeader>
-            <CardTitle className='text-xl text-center flex items-center justify-center gap-2'>
-              <Play className='h-5 w-5' />
-              Cuentas de Demostración
+            <CardTitle className='text-xl text-center flex items-center justify-center gap-2 text-foreground'>
+              <Play className='h-5 w-5 text-orange-500' />
+              Prueba Rapida
             </CardTitle>
-            <CardDescription className='text-center'>
-              Haz clic en cualquier boton de color para entrar automaticamente al sistema. 
-              Cada boton te permite ver el sistema desde un rol diferente.
+            <CardDescription className='text-center text-muted-foreground'>
+              Haz clic en cualquier boton para acceder al sistema con una cuenta de demo.
             </CardDescription>
           </CardHeader>
-          <CardContent className='space-y-3'>
+          <CardContent className='space-y-2'>
             {demoAccounts.map((account) => {
               const Icon = account.icon
               const isLoading = demoLoading === account.role
+              const colorMap: Record<string, string> = {
+                driver: 'gradient-accent glow-orange',
+                dispatcher: 'bg-cyan-500/20 border-cyan-500/30 text-cyan-300',
+                admin: 'bg-green-500/20 border-green-500/30 text-green-300',
+              }
 
               return (
                 <Button
                   key={account.role}
-                  variant='outline'
-                  className={`w-full h-auto p-4 justify-start ${account.color} text-white border-0 hover:text-white`}
+                  className={`w-full h-auto p-4 justify-start text-white border ${
+                    account.role === 'driver' ? 'btn-orange' : `border ${colorMap[account.role]}`
+                  } hover:opacity-90 transition-all`}
                   onClick={() => handleDemoLogin(account)}
                   disabled={!!demoLoading || isLoading}
                 >
@@ -154,9 +164,9 @@ export default function LoginPage() {
                     <Icon className='h-5 w-5 flex-shrink-0' />
                     <div className='text-left flex-1'>
                       <div className='font-semibold'>{account.name}</div>
-                      <div className='text-sm opacity-90'>{account.description}</div>
+                      <div className='text-xs opacity-80'>{account.description}</div>
                     </div>
-                    {isLoading && <div className='animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent' />}
+                    {isLoading && <div className='animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent' />}
                   </div>
                 </Button>
               )
@@ -165,24 +175,23 @@ export default function LoginPage() {
         </Card>
 
         <div className='relative mb-6'>
-          <Separator />
+          <Separator className='bg-slate-700/30' />
           <div className='absolute inset-0 flex items-center justify-center'>
-            <span className='bg-background px-2 text-sm text-muted-foreground'>o</span>
+            <span className='bg-gradient-dark px-2 text-sm text-muted-foreground font-semibold'>O</span>
           </div>
         </div>
 
-        <Card>
+        <Card className='glass-dark border-slate-700/50'>
           <CardHeader>
-            <CardTitle className='text-2xl text-center'>Iniciar Sesión</CardTitle>
-            <CardDescription className='text-center'>
-              Escribe tu correo electronico y tu contraseña para entrar a tu cuenta.
-              Si no recuerdas tu contraseña, contacta al administrador.
+            <CardTitle className='text-2xl text-center text-foreground'>Iniciar Sesion</CardTitle>
+            <CardDescription className='text-center text-muted-foreground'>
+              Ingresa tu correo y contraseña para acceder a tu cuenta.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className='space-y-4'>
               <div className='space-y-2'>
-                <Label htmlFor='email'>Correo Electrónico</Label>
+                <Label htmlFor='email' className='text-foreground font-semibold'>Correo Electronico</Label>
                 <Input
                   id='email'
                   type='email'
@@ -190,23 +199,42 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className='bg-slate-800/50 border-slate-700 text-foreground placeholder:text-muted-foreground'
                 />
               </div>
               <div className='space-y-2'>
-                <Label htmlFor='password'>Contraseña</Label>
+                <Label htmlFor='password' className='text-foreground font-semibold'>Contraseña</Label>
                 <Input
                   id='password'
                   type='password'
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className='bg-slate-800/50 border-slate-700 text-foreground'
                 />
               </div>
-              {error && <div className='text-sm text-destructive bg-destructive/10 p-3 rounded-md'>{error}</div>}
-              <Button type='submit' className='w-full' disabled={isLoading || !!demoLoading}>
-                {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+              {error && (
+                <div className='text-sm text-red-400 bg-red-500/10 p-3 rounded-lg border border-red-500/20'>
+                  {error}
+                </div>
+              )}
+              <Button 
+                type='submit' 
+                className='w-full btn-orange font-semibold h-11' 
+                disabled={isLoading || !!demoLoading}
+              >
+                {isLoading ? 'Iniciando sesion...' : 'Iniciar Sesion'}
               </Button>
             </form>
+
+            <div className='mt-6 text-center'>
+              <p className='text-sm text-muted-foreground'>
+                No tienes cuenta?{' '}
+                <Link href='/' className='text-orange-500 hover:text-orange-400 font-semibold transition-colors'>
+                  Contacta con nosotros
+                </Link>
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
