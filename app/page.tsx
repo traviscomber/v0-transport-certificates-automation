@@ -1,5 +1,6 @@
 "use client"
 
+// Cache invalidation fix - updated design
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { 
