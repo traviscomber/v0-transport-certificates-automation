@@ -80,6 +80,24 @@ export default async function AdminDashboard() {
     }))
   )
 
+  // Calcular matriz de riesgos para conductores
+  const riskyConductores = conductoresList.map(conductor => {
+    const riskData = calculateConductorRisk({
+      id: conductor.id,
+      nombres: conductor.nombres,
+      apellido_paterno: conductor.apellido_paterno,
+      vencimiento_licencia: conductor.vencimiento_licencia,
+      is_active: conductor.is_active,
+    })
+    return {
+      id: conductor.id,
+      name: `${conductor.nombres} ${conductor.apellido_paterno}`,
+      type: 'conductor' as const,
+      href: `/admin/conductores`,
+      ...riskData,
+    }
+  })
+
   const riskyTransportistas = transportistasList.map(t => {
     const riskData = calculateTransportistaRisk({
       id: t.id,
