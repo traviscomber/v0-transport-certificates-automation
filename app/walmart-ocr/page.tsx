@@ -287,6 +287,7 @@ export default function WalmartOCRPage() {
                 </Button>
               </CardContent>
             </Card>
+          </TabsContent>
 
           <TabsContent value="guia" className="space-y-6">
             <Card>
