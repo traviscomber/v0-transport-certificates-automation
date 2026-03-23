@@ -125,48 +125,48 @@ export default async function AdminDashboard() {
       value: stats.mandantes, 
       icon: Building2, 
       href: "/admin/mandantes",
-      color: "text-[#0066FF]",
-      bgColor: "bg-blue-50"
+      color: "text-blue-400",
+      bgColor: "bg-blue-500/20 border border-blue-500/30"
     },
     { 
       label: "Transportistas", 
       value: stats.transportistas, 
       icon: Truck, 
       href: "/admin/transportistas",
-      color: "text-[#00C853]",
-      bgColor: "bg-green-50"
+      color: "text-green-400",
+      bgColor: "bg-green-500/20 border border-green-500/30"
     },
     { 
       label: "Vehículos", 
       value: stats.vehiculos, 
       icon: Car, 
       href: "/admin/vehiculos",
-      color: "text-[#FF9500]",
-      bgColor: "bg-orange-50"
+      color: "text-orange-400",
+      bgColor: "bg-orange-500/20 border border-orange-500/30"
     },
     { 
       label: "Conductores", 
       value: stats.conductores, 
       icon: Users, 
       href: "/admin/conductores",
-      color: "text-[#0066FF]",
-      bgColor: "bg-blue-50"
+      color: "text-purple-400",
+      bgColor: "bg-purple-500/20 border border-purple-500/30"
     },
     { 
       label: "Documentos Subidos", 
       value: stats.documentos, 
       icon: FileText, 
       href: "/admin/documentos",
-      color: "text-[#00C853]",
-      bgColor: "bg-green-50"
+      color: "text-cyan-400",
+      bgColor: "bg-cyan-500/20 border border-cyan-500/30"
     },
     { 
       label: "Tipos de Documento", 
       value: stats.tiposDocumento, 
       icon: FileText, 
       href: "/walmart-ocr/compliance",
-      color: "text-[#71717A]",
-      bgColor: "bg-gray-50"
+      color: "text-slate-300",
+      bgColor: "bg-slate-500/20 border border-slate-500/30"
     },
   ]
 
@@ -174,8 +174,8 @@ export default async function AdminDashboard() {
     <div className="space-y-8">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-[#18181B]">Panel de Control</h1>
-        <p className="text-[#71717A]">
+        <h1 className="text-3xl font-bold text-foreground">Panel de Control</h1>
+        <p className="text-muted-foreground">
           Resumen general del sistema de gestion documental
         </p>
       </div>
@@ -199,9 +199,9 @@ export default async function AdminDashboard() {
           const Icon = stat.icon
           return (
             <Link key={stat.label} href={stat.href}>
-              <Card className="border-[#E4E4E7] hover:shadow-lg hover:border-[#0066FF]/20 transition-all duration-200 cursor-pointer">
+              <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900 hover:border-orange-500/30 hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-200 cursor-pointer">
                 <CardHeader className="flex flex-row items-center justify-between pb-3">
-                  <CardTitle className="text-sm font-medium text-[#71717A]">
+                  <CardTitle className="text-sm font-medium text-slate-300">
                     {stat.label}
                   </CardTitle>
                   <div className={`rounded-lg p-2.5 ${stat.bgColor}`}>
@@ -209,7 +209,7 @@ export default async function AdminDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-4xl font-bold text-[#18181B]">{stat.value}</div>
+                  <div className="text-4xl font-bold text-white">{stat.value}</div>
                 </CardContent>
               </Card>
             </Link>
