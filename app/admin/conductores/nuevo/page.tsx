@@ -7,8 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, Loader2, HelpCircle } from "lucide-react"
 import Link from "next/link"
+import { HelpBox, QuickHelp } from "@/components/ui/help-box"
 
 export default function NuevoConductorPage() {
   const router = useRouter()
@@ -71,17 +72,46 @@ export default function NuevoConductorPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Link href="/admin/conductores">
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" title="Volver a la lista de conductores">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Nuevo Conductor</h1>
           <p className="text-muted-foreground">
-            Registra un nuevo conductor
+            Registra un nuevo conductor (chofer) en el sistema
           </p>
         </div>
       </div>
+
+      {/* Ayuda Educativa */}
+      <HelpBox
+        variant="steps"
+        title="Como registrar un conductor"
+        description="Un conductor es la persona que maneja los vehiculos. Aqui registras sus datos y licencia:"
+        steps={[
+          {
+            step: 1,
+            title: "Selecciona el transportista",
+            description: "Primero elige a que empresa pertenece este conductor usando el menu desplegable."
+          },
+          {
+            step: 2,
+            title: "Datos personales",
+            description: "Ingresa el RUT, nombres y apellidos del conductor. El RUT es obligatorio."
+          },
+          {
+            step: 3,
+            title: "Licencia de conducir",
+            description: "Registra la clase de licencia, numero y fecha de vencimiento. Es muy importante para el cumplimiento."
+          },
+          {
+            step: 4,
+            title: "Datos de contacto",
+            description: "Agrega telefono y email para poder comunicarte con el conductor."
+          }
+        ]}
+      />
 
       <form onSubmit={handleSubmit}>
         <div className="grid gap-6 md:grid-cols-2">
@@ -92,6 +122,7 @@ export default function NuevoConductorPage() {
               <CardDescription>Informacion del conductor</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <QuickHelp text="Primero selecciona la empresa de transporte a la que pertenece este conductor. Si no aparece, debes registrarla primero." />
               <div className="space-y-2">
                 <Label htmlFor="transportista_id">Transportista *</Label>
                 <select 
@@ -100,13 +131,14 @@ export default function NuevoConductorPage() {
                   required
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                 >
-                  <option value="">Seleccionar transportista...</option>
+                  <option value="">Haz clic aqui y elige una empresa...</option>
                   {transportistas.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.razon_social} ({t.rut})
                     </option>
                   ))}
                 </select>
+                <p className="text-xs text-muted-foreground">La empresa donde trabaja este conductor</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="rut">RUT *</Label>
@@ -160,9 +192,10 @@ export default function NuevoConductorPage() {
           <Card>
             <CardHeader>
               <CardTitle>Licencia de Conducir</CardTitle>
-              <CardDescription>Datos de la licencia profesional</CardDescription>
+              <CardDescription>Datos de la licencia profesional del conductor</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <QuickHelp text="La licencia es muy importante. Revisa que la clase sea la correcta para el tipo de vehiculo que maneja y que la fecha de vencimiento este al dia." />
               <div className="space-y-2">
                 <Label htmlFor="clase_licencia">Clase de Licencia</Label>
                 <select 

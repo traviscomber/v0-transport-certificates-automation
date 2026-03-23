@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Building2, Truck, Users, Car, FileText, AlertTriangle } from "lucide-react"
+import { Building2, Truck, Users, Car, FileText, AlertTriangle, HelpCircle } from "lucide-react"
 import Link from "next/link"
+import { HelpBox } from "@/components/ui/help-box"
 import { RiskMatrix } from "@/components/admin/risk-matrix"
 import { calculateConductorRisk, calculateTransportistaRisk } from "@/lib/risk-matrix-calculator"
 import { SmartAlertsDisplay } from "@/components/admin/smart-alerts-display"
@@ -173,11 +174,24 @@ export default async function AdminDashboard() {
     <div className="space-y-8">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-[#18181B]">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-[#18181B]">Panel de Control</h1>
         <p className="text-[#71717A]">
-          Resumen general del sistema de gestión documental
+          Resumen general del sistema de gestion documental
         </p>
       </div>
+
+      {/* Ayuda Educativa */}
+      <HelpBox
+        variant="info"
+        title="Bienvenido al Panel de Control"
+        description="Desde aqui puedes administrar todo el sistema. Aqui te explicamos que puedes hacer:"
+        tips={[
+          "Los cuadros de colores muestran cuantos registros tienes (mandantes, transportistas, vehiculos, conductores). Haz clic en cualquiera para ver la lista completa.",
+          "En 'Acciones Rapidas' encontraras botones para crear nuevos registros rapidamente. Solo haz clic en la accion que necesites.",
+          "La seccion 'Actividad Reciente' muestra los ultimos documentos que se han procesado en el sistema.",
+          "Si ves alertas en amarillo o rojo, significa que hay algo que requiere tu atencion (documentos por vencer, datos faltantes, etc.)."
+        ]}
+      />
 
       {/* Stats Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -220,7 +234,9 @@ export default async function AdminDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Acciones Rapidas</CardTitle>
-            <CardDescription>Operaciones frecuentes</CardDescription>
+            <CardDescription>
+              Haz clic en cualquier opcion para realizar esa accion. Cada boton te llevara a un formulario simple.
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-2">
             <Link 
@@ -228,28 +244,40 @@ export default async function AdminDashboard() {
               className="flex items-center gap-2 rounded-lg border p-3 hover:bg-accent transition-colors"
             >
               <Truck className="h-5 w-5 text-green-600" />
-              <span>Registrar nuevo transportista</span>
+              <div className="flex-1">
+                <span className="font-medium">Registrar nuevo transportista</span>
+                <p className="text-xs text-muted-foreground">Agrega una empresa de transporte al sistema</p>
+              </div>
             </Link>
             <Link 
               href="/admin/vehiculos/nuevo"
               className="flex items-center gap-2 rounded-lg border p-3 hover:bg-accent transition-colors"
             >
               <Car className="h-5 w-5 text-orange-600" />
-              <span>Agregar vehiculo</span>
+              <div className="flex-1">
+                <span className="font-medium">Agregar vehiculo</span>
+                <p className="text-xs text-muted-foreground">Registra un camion, tracto o remolque nuevo</p>
+              </div>
             </Link>
             <Link 
               href="/admin/conductores/nuevo"
               className="flex items-center gap-2 rounded-lg border p-3 hover:bg-accent transition-colors"
             >
               <Users className="h-5 w-5 text-purple-600" />
-              <span>Registrar conductor</span>
+              <div className="flex-1">
+                <span className="font-medium">Registrar conductor</span>
+                <p className="text-xs text-muted-foreground">Da de alta a un nuevo chofer con su licencia</p>
+              </div>
             </Link>
             <Link 
               href="/walmart-ocr"
               className="flex items-center gap-2 rounded-lg border p-3 hover:bg-accent transition-colors"
             >
               <FileText className="h-5 w-5 text-teal-600" />
-              <span>Subir documento OCR</span>
+              <div className="flex-1">
+                <span className="font-medium">Subir documento con IA</span>
+                <p className="text-xs text-muted-foreground">Sube una foto y la IA extrae los datos automaticamente</p>
+              </div>
             </Link>
           </CardContent>
         </Card>

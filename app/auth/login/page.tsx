@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import Link from 'next/link'
-import { Truck, User, Users, Shield, Play } from 'lucide-react'
+import { Truck, User, Users, Shield, Play, HelpCircle } from 'lucide-react'
+import { HelpBox } from '@/components/ui/help-box'
 
 const demoAccounts = [
   {
@@ -98,13 +99,32 @@ export default function LoginPage() {
   return (
     <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4'>
       <div className='w-full max-w-md'>
-        <div className='flex flex-col items-center mb-8'>
+        <div className='flex flex-col items-center mb-6'>
           <div className='flex items-center gap-2 mb-4'>
             <Truck className='h-8 w-8 text-primary' />
-            <span className='text-2xl font-bold'>Cleaner.cl</span>
+            <span className='text-2xl font-bold'>DocuFleet</span>
           </div>
-          <p className='text-muted-foreground text-center'>Sistema de Gestión de Certificados</p>
+          <p className='text-muted-foreground text-center'>Sistema de Gestion de Documentos de Transporte</p>
         </div>
+
+        {/* Ayuda Educativa */}
+        <HelpBox
+          variant="info"
+          title="Como usar esta pagina"
+          description="Esta es la pagina de inicio de sesion. Aqui puedes entrar al sistema de dos formas:"
+          steps={[
+            {
+              step: 1,
+              title: "Opcion rapida: Cuentas de demostracion",
+              description: "Haz clic en uno de los botones de colores de abajo para probar el sistema como Conductor, Despachador o Administrador."
+            },
+            {
+              step: 2,
+              title: "Opcion normal: Iniciar sesion",
+              description: "Si ya tienes una cuenta, escribe tu correo y contraseña en el formulario de abajo y presiona el boton azul 'Iniciar Sesion'."
+            }
+          ]}
+        />
 
         <Card className='mb-6'>
           <CardHeader>
@@ -112,7 +132,10 @@ export default function LoginPage() {
               <Play className='h-5 w-5' />
               Cuentas de Demostración
             </CardTitle>
-            <CardDescription className='text-center'>Haz clic para probar el sistema con diferentes roles</CardDescription>
+            <CardDescription className='text-center'>
+              Haz clic en cualquier boton de color para entrar automaticamente al sistema. 
+              Cada boton te permite ver el sistema desde un rol diferente.
+            </CardDescription>
           </CardHeader>
           <CardContent className='space-y-3'>
             {demoAccounts.map((account) => {
@@ -151,7 +174,10 @@ export default function LoginPage() {
         <Card>
           <CardHeader>
             <CardTitle className='text-2xl text-center'>Iniciar Sesión</CardTitle>
-            <CardDescription className='text-center'>Ingresa tus credenciales para acceder al sistema</CardDescription>
+            <CardDescription className='text-center'>
+              Escribe tu correo electronico y tu contraseña para entrar a tu cuenta.
+              Si no recuerdas tu contraseña, contacta al administrador.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className='space-y-4'>

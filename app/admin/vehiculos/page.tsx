@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, Search, MoreHorizontal, Car, Building2, Calendar, Gauge } from "lucide-react"
+import { Plus, Search, MoreHorizontal, Car, Building2, Calendar, Gauge, HelpCircle } from "lucide-react"
 import Link from "next/link"
+import { HelpBox, QuickHelp } from "@/components/ui/help-box"
 
 async function getVehiculos() {
   const supabase = await createClient()
@@ -32,10 +33,10 @@ export default async function VehiculosPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Vehiculos</h1>
           <p className="text-muted-foreground">
-            Gestiona la flota de vehiculos registrados
+            Lista de camiones, tractos y remolques registrados
           </p>
         </div>
-        <Link href="/admin/vehiculos/nuevo">
+        <Link href="/admin/vehiculos/nuevo" title="Haz clic para agregar un nuevo vehiculo">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Nuevo Vehiculo
@@ -43,19 +44,34 @@ export default async function VehiculosPage() {
         </Link>
       </div>
 
+      {/* Ayuda Educativa */}
+      <HelpBox
+        variant="info"
+        title="Que es un vehiculo?"
+        description="Aqui se registran todos los camiones, tractos, remolques, camionetas y furgones que usa tu empresa de transporte."
+        tips={[
+          "Haz clic en 'Nuevo Vehiculo' para agregar un camion, tracto o remolque nuevo.",
+          "Cada tarjeta muestra la PATENTE grande y destacada para identificar rapidamente el vehiculo.",
+          "VERDE 'Activo' significa que el vehiculo puede operar. ROJO 'Inactivo' significa que esta fuera de servicio.",
+          "GPS Activo en verde significa que el vehiculo tiene rastreo satelital instalado.",
+          "Haz clic en 'Ver detalles' para ver toda la informacion del vehiculo."
+        ]}
+      />
+
       {/* Search */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 space-y-3">
+          <QuickHelp text="Escribe la patente del vehiculo para encontrarlo rapidamente. Por ejemplo: BBGG12 o JK1234" />
           <div className="flex gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Buscar por patente..."
+                placeholder="Escribe aqui la patente para buscar..."
                 className="w-full rounded-md border bg-background pl-10 pr-4 py-2 text-sm"
               />
             </div>
-            <Button variant="outline">Filtros</Button>
+            <Button variant="outline" title="Ver opciones de filtrado">Filtros</Button>
           </div>
         </CardContent>
       </Card>

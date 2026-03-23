@@ -7,8 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, Loader2, HelpCircle } from "lucide-react"
 import Link from "next/link"
+import { HelpBox, QuickHelp } from "@/components/ui/help-box"
 
 export default function NuevoVehiculoPage() {
   const router = useRouter()
@@ -70,17 +71,46 @@ export default function NuevoVehiculoPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Link href="/admin/vehiculos">
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" title="Volver a la lista de vehiculos">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Nuevo Vehiculo</h1>
           <p className="text-muted-foreground">
-            Agrega un nuevo vehiculo a la flota
+            Agrega un nuevo vehiculo a la flota (camion, tracto, remolque, etc.)
           </p>
         </div>
       </div>
+
+      {/* Ayuda Educativa */}
+      <HelpBox
+        variant="steps"
+        title="Como registrar un vehiculo"
+        description="Aqui registras los camiones, tractos, remolques y otros vehiculos de la flota:"
+        steps={[
+          {
+            step: 1,
+            title: "Selecciona el transportista",
+            description: "Elige la empresa duena del vehiculo. Si no aparece, registrala primero."
+          },
+          {
+            step: 2,
+            title: "Ingresa la patente",
+            description: "Escribe la patente del vehiculo (puede ser formato antiguo AB-1234 o nuevo ABCD-12)."
+          },
+          {
+            step: 3,
+            title: "Elige el tipo de vehiculo",
+            description: "Selecciona si es camion, tracto camion, semi remolque, camioneta, furgon o rampla."
+          },
+          {
+            step: 4,
+            title: "Completa los detalles",
+            description: "Agrega marca, modelo, ano, color y numeros de chasis/motor si los tienes."
+          }
+        ]}
+      />
 
       <form onSubmit={handleSubmit}>
         <div className="grid gap-6 md:grid-cols-2">
@@ -91,6 +121,7 @@ export default function NuevoVehiculoPage() {
               <CardDescription>Informacion basica del vehiculo</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <QuickHelp text="Selecciona la empresa duena del vehiculo y luego completa los datos basicos." />
               <div className="space-y-2">
                 <Label htmlFor="transportista_id">Transportista *</Label>
                 <select 
@@ -99,13 +130,14 @@ export default function NuevoVehiculoPage() {
                   required
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                 >
-                  <option value="">Seleccionar transportista...</option>
+                  <option value="">Haz clic aqui y elige una empresa...</option>
                   {transportistas.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.razon_social} ({t.rut})
                     </option>
                   ))}
                 </select>
+                <p className="text-xs text-muted-foreground">La empresa propietaria de este vehiculo</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="patente">Patente *</Label>
@@ -116,6 +148,7 @@ export default function NuevoVehiculoPage() {
                   className="uppercase"
                   required 
                 />
+                <p className="text-xs text-muted-foreground">Escribe la patente sin guion. Ejemplo: BBGG12 o JK1234</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="tipo">Tipo de Vehiculo *</Label>

@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, Search, MoreHorizontal, Building2, Car, Users } from "lucide-react"
+import { Plus, Search, MoreHorizontal, Building2, Car, Users, HelpCircle } from "lucide-react"
 import Link from "next/link"
+import { HelpBox, QuickHelp } from "@/components/ui/help-box"
 
 async function getTransportistas() {
   const supabase = await createClient()
@@ -33,10 +34,10 @@ export default async function TransportistasPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Transportistas</h1>
           <p className="text-muted-foreground">
-            Gestiona las empresas de transporte registradas
+            Lista de empresas de transporte registradas en el sistema
           </p>
         </div>
-        <Link href="/admin/transportistas/nuevo">
+        <Link href="/admin/transportistas/nuevo" title="Haz clic para agregar una nueva empresa">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Nuevo Transportista
@@ -44,19 +45,33 @@ export default async function TransportistasPage() {
         </Link>
       </div>
 
+      {/* Ayuda Educativa */}
+      <HelpBox
+        variant="info"
+        title="Que es un transportista?"
+        description="Un transportista es una empresa de transporte que presta servicios de carga. Aqui puedes ver todas las empresas registradas y administrarlas."
+        tips={[
+          "Haz clic en el boton azul 'Nuevo Transportista' para registrar una nueva empresa.",
+          "Cada tarjeta muestra el nombre de la empresa, su RUT, y cuantos vehiculos y conductores tiene.",
+          "El estado 'Activo' en verde significa que la empresa puede operar. 'Inactivo' en rojo significa que esta suspendida.",
+          "Haz clic en los tres puntos (...) de cada tarjeta para ver mas opciones."
+        ]}
+      />
+
       {/* Search and filters */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 space-y-3">
+          <QuickHelp text="Escribe el RUT o el nombre de la empresa en el cuadro de busqueda para encontrarla rapidamente." />
           <div className="flex gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Buscar por RUT o razon social..."
+                placeholder="Escribe aqui para buscar por RUT o nombre..."
                 className="w-full rounded-md border bg-background pl-10 pr-4 py-2 text-sm"
               />
             </div>
-            <Button variant="outline">Filtros</Button>
+            <Button variant="outline" title="Haz clic para ver opciones de filtrado">Filtros</Button>
           </div>
         </CardContent>
       </Card>

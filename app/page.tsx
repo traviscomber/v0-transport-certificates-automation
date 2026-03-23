@@ -107,10 +107,10 @@ export default function LandingPage() {
             </nav>
 
             <div className="flex items-center gap-3">
-              <Link href="/admin">
+              <Link href="/auth/login" title="Haz clic aqui para entrar a tu cuenta">
                 <Button variant="ghost" size="sm">Iniciar Sesion</Button>
               </Link>
-              <Link href="#contact">
+              <Link href="#contact" title="Haz clic para contactar al equipo de ventas">
                 <Button size="sm" className="bg-primary hover:bg-primary/90">
                   Contactar Ventas
                 </Button>
@@ -145,8 +145,8 @@ export default function LandingPage() {
               Sube una foto, la IA extrae los datos. Cero errores, cero multas.
             </p>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+            {/* CTA Buttons con ayuda */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
               <Link href="/walmart-ocr">
                 <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg px-8 h-14">
                   Comenzar Ahora
@@ -158,6 +158,15 @@ export default function LandingPage() {
                   Ver Dashboard
                 </Button>
               </Link>
+            </div>
+            
+            {/* Ayuda educativa */}
+            <div className="max-w-md mx-auto bg-muted/50 rounded-xl p-4 mb-8">
+              <p className="text-sm text-muted-foreground text-center">
+                <strong>Haz clic en "Comenzar Ahora"</strong> para ir directamente a subir tu primer documento.
+                <br />
+                <span className="text-xs">O presiona "Ver Dashboard" para administrar transportistas, conductores y vehiculos.</span>
+              </p>
             </div>
 
             {/* Trust badges */}

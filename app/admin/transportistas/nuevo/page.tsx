@@ -7,8 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, Loader2, HelpCircle } from "lucide-react"
 import Link from "next/link"
+import { HelpBox, QuickHelp } from "@/components/ui/help-box"
 
 export default function NuevoTransportistaPage() {
   const router = useRouter()
@@ -54,7 +55,7 @@ export default function NuevoTransportistaPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Link href="/admin/transportistas">
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" title="Volver a la lista de transportistas">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
@@ -66,23 +67,54 @@ export default function NuevoTransportistaPage() {
         </div>
       </div>
 
+      {/* Ayuda Educativa */}
+      <HelpBox
+        variant="steps"
+        title="Como registrar un transportista"
+        description="Un transportista es una empresa de transporte que presta servicios. Sigue estos pasos:"
+        steps={[
+          {
+            step: 1,
+            title: "Completa los datos obligatorios",
+            description: "Los campos marcados con asterisco (*) son obligatorios: RUT de la empresa y Razon Social."
+          },
+          {
+            step: 2,
+            title: "Agrega informacion de contacto",
+            description: "Llena la direccion, telefono y email para poder comunicarte con la empresa."
+          },
+          {
+            step: 3,
+            title: "Datos del representante legal",
+            description: "Ingresa el nombre y RUT de la persona que representa legalmente a la empresa."
+          },
+          {
+            step: 4,
+            title: "Presiona 'Registrar Transportista'",
+            description: "Cuando termines, haz clic en el boton verde para guardar los datos."
+          }
+        ]}
+      />
+
       <form onSubmit={handleSubmit}>
         <div className="grid gap-6 md:grid-cols-2">
           {/* Datos de la empresa */}
           <Card>
             <CardHeader>
               <CardTitle>Datos de la Empresa</CardTitle>
-              <CardDescription>Informacion legal del transportista</CardDescription>
+              <CardDescription>Informacion legal del transportista (los campos con * son obligatorios)</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <QuickHelp text="El RUT es el numero unico que identifica a la empresa ante el SII. Se escribe con puntos y guion, por ejemplo: 76.123.456-7" />
               <div className="space-y-2">
                 <Label htmlFor="rut">RUT Empresa *</Label>
                 <Input 
                   id="rut" 
                   name="rut" 
-                  placeholder="12.345.678-9"
+                  placeholder="76.123.456-7"
                   required 
                 />
+                <p className="text-xs text-muted-foreground">Escribe el RUT con puntos y guion</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="razon_social">Razon Social *</Label>
@@ -92,6 +124,7 @@ export default function NuevoTransportistaPage() {
                   placeholder="Transportes ABC Ltda."
                   required 
                 />
+                <p className="text-xs text-muted-foreground">El nombre legal de la empresa tal como aparece en el SII</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="nombre_fantasia">Nombre Fantasia</Label>
@@ -100,6 +133,7 @@ export default function NuevoTransportistaPage() {
                   name="nombre_fantasia" 
                   placeholder="Transportes ABC"
                 />
+                <p className="text-xs text-muted-foreground">El nombre comercial o como se conoce la empresa (opcional)</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="giro">Giro</Label>
@@ -108,6 +142,7 @@ export default function NuevoTransportistaPage() {
                   name="giro" 
                   placeholder="Transporte de carga por carretera"
                 />
+                <p className="text-xs text-muted-foreground">La actividad economica principal de la empresa</p>
               </div>
             </CardContent>
           </Card>

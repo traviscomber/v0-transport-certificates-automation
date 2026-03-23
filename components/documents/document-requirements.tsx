@@ -3,22 +3,31 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, AlertCircle, Info } from "lucide-react"
+import { CheckCircle, AlertCircle, Info, HelpCircle } from "lucide-react"
 
 export function DocumentRequirements() {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-[#18181B]">Requisitos de Documentos Chilenos</h2>
-        <p className="text-[#71717A]">Información detallada sobre cada documento obligatorio para transporte en Chile</p>
+        <p className="text-[#71717A]">Informacion detallada sobre cada documento obligatorio para transporte en Chile</p>
+      </div>
+
+      {/* Ayuda educativa */}
+      <div className="flex items-start gap-2 p-4 rounded-lg bg-green-50 border border-green-200">
+        <HelpCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+        <div className="text-sm text-green-800">
+          <p className="font-semibold mb-1">Como usar esta seccion:</p>
+          <p>Haz clic en las pestañas de abajo (Identidad, Conductor, Vehiculo, Seguro) para ver los requisitos de cada tipo de documento. Cada tarjeta te explica que informacion debe contener el documento y por que es importante.</p>
+        </div>
       </div>
 
       <Tabs defaultValue="identidad" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="identidad">Identidad</TabsTrigger>
-          <TabsTrigger value="conductor">Conductor</TabsTrigger>
-          <TabsTrigger value="vehiculo">Vehículo</TabsTrigger>
-          <TabsTrigger value="seguro">Seguro</TabsTrigger>
+          <TabsTrigger value="identidad" title="Documentos de identificacion personal">Identidad</TabsTrigger>
+          <TabsTrigger value="conductor" title="Licencias y permisos de conducir">Conductor</TabsTrigger>
+          <TabsTrigger value="vehiculo" title="Documentos del camion o vehiculo">Vehiculo</TabsTrigger>
+          <TabsTrigger value="seguro" title="Polizas de seguro obligatorias">Seguro</TabsTrigger>
         </TabsList>
 
         {/* IDENTIDAD */}
@@ -256,28 +265,47 @@ export function DocumentRequirements() {
 
       <Card className="border-blue-200 bg-blue-50">
         <CardHeader>
-          <CardTitle className="text-base">Checklist Antes de Subir Documentos</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-blue-600" />
+            Lista de Verificacion Antes de Subir
+          </CardTitle>
+          <p className="text-sm text-blue-700">Marca cada casilla para asegurarte de que tus documentos estan listos:</p>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" className="rounded" />
-            <span>Todos los documentos están vigentes (no vencidos)</span>
+        <CardContent className="space-y-3 text-sm">
+          <label className="flex items-start gap-2 cursor-pointer p-2 rounded hover:bg-blue-100 transition-colors">
+            <input type="checkbox" className="rounded mt-0.5" />
+            <div>
+              <span className="font-medium">Todos los documentos estan vigentes</span>
+              <p className="text-xs text-blue-600">Revisa que ninguno este vencido mirando las fechas de vencimiento</p>
+            </div>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" className="rounded" />
-            <span>Los RUT coinciden entre documentos (mismo formato XX.XXX.XXX-K)</span>
+          <label className="flex items-start gap-2 cursor-pointer p-2 rounded hover:bg-blue-100 transition-colors">
+            <input type="checkbox" className="rounded mt-0.5" />
+            <div>
+              <span className="font-medium">Los RUT coinciden entre documentos</span>
+              <p className="text-xs text-blue-600">El RUT debe estar en formato XX.XXX.XXX-K y ser el mismo en todos los documentos de una persona</p>
+            </div>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" className="rounded" />
-            <span>Las imágenes son legibles y claras</span>
+          <label className="flex items-start gap-2 cursor-pointer p-2 rounded hover:bg-blue-100 transition-colors">
+            <input type="checkbox" className="rounded mt-0.5" />
+            <div>
+              <span className="font-medium">Las fotos estan claras y legibles</span>
+              <p className="text-xs text-blue-600">Sin sombras, bien iluminadas y con todo el texto visible</p>
+            </div>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" className="rounded" />
-            <span>Se incluyen frente y reverso cuando aplica</span>
+          <label className="flex items-start gap-2 cursor-pointer p-2 rounded hover:bg-blue-100 transition-colors">
+            <input type="checkbox" className="rounded mt-0.5" />
+            <div>
+              <span className="font-medium">Incluyo frente y reverso cuando aplica</span>
+              <p className="text-xs text-blue-600">La cedula y licencia tienen informacion importante en ambos lados</p>
+            </div>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" className="rounded" />
-            <span>El vehículo en tarjeta coincide con el de RTV y seguro</span>
+          <label className="flex items-start gap-2 cursor-pointer p-2 rounded hover:bg-blue-100 transition-colors">
+            <input type="checkbox" className="rounded mt-0.5" />
+            <div>
+              <span className="font-medium">La patente coincide en todos los documentos del vehiculo</span>
+              <p className="text-xs text-blue-600">La tarjeta de circulacion, RTV y seguro deben tener la misma patente</p>
+            </div>
           </label>
         </CardContent>
       </Card>

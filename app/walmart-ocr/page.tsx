@@ -7,10 +7,11 @@ import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Upload, CheckCircle, AlertCircle, Loader2, FileText, ArrowRight, BookOpen } from 'lucide-react'
+import { Upload, CheckCircle, AlertCircle, Loader2, FileText, ArrowRight, BookOpen, HelpCircle } from 'lucide-react'
 import Link from 'next/link'
 import { DocumentReferenceGallery } from '@/components/documents/document-reference-gallery'
 import { DocumentRequirements } from '@/components/documents/document-requirements'
+import { HelpBox, QuickHelp } from '@/components/ui/help-box'
 
 export default function WalmartOCRPage() {
   const [activeTab, setActiveTab] = useState('upload')
@@ -61,11 +62,40 @@ export default function WalmartOCRPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-[#18181B]">OCR - Validación Documental</h1>
+        <h1 className="text-3xl font-bold text-[#18181B]">OCR - Validacion Documental</h1>
         <p className="text-[#71717A]">
-          Carga documentos de transporte para validar automáticamente con IA
+          Carga documentos de transporte para validar automaticamente con IA
         </p>
       </div>
+
+      {/* Ayuda Educativa Principal */}
+      <HelpBox
+        variant="steps"
+        title="Como subir y validar un documento"
+        description="Sigue estos pasos simples para que el sistema lea tu documento automaticamente:"
+        steps={[
+          {
+            step: 1,
+            title: "Selecciona la pestaña 'Cargar Documento'",
+            description: "Haz clic en la primera pestaña de arriba si no esta seleccionada."
+          },
+          {
+            step: 2,
+            title: "Sube tu archivo",
+            description: "Haz clic en el area gris con lineas punteadas, o arrastra tu documento ahi. Puede ser una foto (JPG, PNG) o un PDF."
+          },
+          {
+            step: 3,
+            title: "Presiona 'Procesar Documento'",
+            description: "El boton azul enviara tu documento a nuestra IA que leera los datos automaticamente."
+          },
+          {
+            step: 4,
+            title: "Revisa los resultados",
+            description: "Veras los datos extraidos en la pestaña 'Resultados'. Verifica que esten correctos."
+          }
+        ]}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
@@ -86,18 +116,24 @@ export default function WalmartOCRPage() {
             <CardHeader>
               <CardTitle>Subir Documento</CardTitle>
               <CardDescription>
-                Soporta PDF, JPG, PNG. Máximo 10MB.
+                Archivos aceptados: PDF, JPG, PNG. Tamaño maximo: 10MB.
               </CardDescription>
             </CardHeader>
+            
+            {/* Ayuda contextual para subir */}
+            <div className="px-6 pb-2">
+              <QuickHelp text="Haz clic en el cuadro gris de abajo para buscar tu archivo, o simplemente arrastralo desde tu computador hacia el cuadro." />
+            </div>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-center w-full">
                 <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 border-[#E4E4E7]">
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <Upload className="w-8 h-8 text-[#71717A] mb-2" />
                     <p className="mb-2 text-sm text-[#71717A]">
-                      <span className="font-semibold">Click para subir</span> o arrastra un documento
+                      <span className="font-semibold">Haz clic aqui para elegir tu archivo</span>
                     </p>
-                    <p className="text-xs text-[#A1A1A1]">PDF, JPG, PNG (MAX. 10MB)</p>
+                    <p className="text-sm text-[#71717A] mb-1">o arrastra el documento hacia este cuadro</p>
+                    <p className="text-xs text-[#A1A1A1]">Formatos: PDF, JPG, PNG (Tamaño maximo: 10MB)</p>
                   </div>
                   <input 
                     type="file" 
@@ -125,23 +161,34 @@ export default function WalmartOCRPage() {
                 </Alert>
               )}
 
+              {/* Ayuda antes del boton */}
+              {uploadedFile && (
+                <QuickHelp text="Perfecto, tu archivo esta listo. Ahora presiona el boton azul de abajo para que la IA lea los datos del documento." />
+              )}
+
               <Button
                 onClick={handleUpload}
                 disabled={!uploadedFile || loading}
-                className="w-full bg-[#0066FF] text-white hover:bg-[#0052CC]"
+                className="w-full bg-[#0066FF] text-white hover:bg-[#0052CC] h-12 text-base"
               >
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Procesando...
+                    Procesando documento... espera un momento
                   </>
                 ) : (
                   <>
                     <Upload className="w-4 h-4 mr-2" />
-                    Procesar Documento
+                    Procesar Documento con IA
                   </>
                 )}
               </Button>
+              
+              {!uploadedFile && (
+                <p className="text-center text-sm text-muted-foreground">
+                  Primero selecciona un archivo arriba para activar este boton
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -232,19 +279,18 @@ export default function WalmartOCRPage() {
         </TabsContent>
       </Tabs>
 
-      <Card className="border-[#E4E4E7] bg-blue-50">
-        <CardHeader>
-          <CardTitle className="text-blue-900">Información</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-blue-800 space-y-2">
-          <p>
-            Soportamos validación de 35+ tipos de documentos de transporte chileno usando IA y OCR avanzado.
-          </p>
-          <p>
-            Los documentos se procesan de forma segura y se mantiene un registro de auditoría de todos los cambios.
-          </p>
-        </CardContent>
-      </Card>
+      <HelpBox
+        variant="tip"
+        title="Consejos para mejores resultados"
+        tips={[
+          "Asegurate de que la foto del documento este bien iluminada y no tenga sombras.",
+          "El documento debe verse completo en la imagen, sin partes cortadas.",
+          "Si el documento tiene varias paginas, sube cada pagina por separado.",
+          "Los formatos aceptados son: PDF, JPG y PNG. El tamaño maximo es 10MB.",
+          "Puedes usar la pestaña 'Galeria' para ver ejemplos de como se ven los documentos chilenos.",
+          "La pestaña 'Requisitos' te explica que informacion debe tener cada tipo de documento."
+        ]}
+      />
     </div>
   )
 }

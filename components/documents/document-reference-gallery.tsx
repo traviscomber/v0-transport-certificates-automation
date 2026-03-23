@@ -3,8 +3,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Grid3x3, Eye } from "lucide-react"
+import { Grid3x3, Eye, HelpCircle } from "lucide-react"
 import Image from "next/image"
+import { QuickHelp } from "@/components/ui/help-box"
 
 interface DocumentRef {
   id: string
@@ -31,10 +32,12 @@ export function DocumentReferenceGallery() {
       <div className="space-y-2">
         <h3 className="text-2xl font-bold text-[#18181B] flex items-center gap-2">
           <Grid3x3 className="w-6 h-6" />
-          Ejemplos de Documentos
+          Galeria de Documentos de Ejemplo
         </h3>
-        <p className="text-[#71717A]">Consulta los documentos que necesitas subir. Haz clic en cualquiera para ampliar.</p>
+        <p className="text-[#71717A]">Aqui puedes ver como se ven los documentos chilenos mas comunes. Usa esta galeria como referencia.</p>
       </div>
+
+      <QuickHelp text="Haz clic en cualquier imagen para verla en grande. Esto te ayudara a identificar si tu documento es del tipo correcto antes de subirlo." />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {DOCUMENT_REFERENCES.map((doc) => (

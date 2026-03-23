@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, Search, Users, Building2, AlertTriangle, Calendar } from "lucide-react"
+import { Plus, Search, Users, Building2, AlertTriangle, Calendar, HelpCircle } from "lucide-react"
 import Link from "next/link"
+import { HelpBox, QuickHelp } from "@/components/ui/help-box"
 
 async function getConductores() {
   const supabase = await createClient()
@@ -45,10 +46,10 @@ export default async function ConductoresPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Conductores</h1>
           <p className="text-muted-foreground">
-            Gestiona los conductores registrados
+            Lista de choferes registrados en el sistema
           </p>
         </div>
-        <Link href="/admin/conductores/nuevo">
+        <Link href="/admin/conductores/nuevo" title="Haz clic para registrar un nuevo conductor">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Nuevo Conductor
@@ -56,19 +57,34 @@ export default async function ConductoresPage() {
         </Link>
       </div>
 
+      {/* Ayuda Educativa */}
+      <HelpBox
+        variant="info"
+        title="Que es un conductor?"
+        description="Un conductor (o chofer) es la persona que maneja los vehiculos de transporte. Aqui puedes ver todos los conductores registrados y sus licencias."
+        tips={[
+          "Haz clic en 'Nuevo Conductor' para registrar un nuevo chofer con su licencia.",
+          "Las etiquetas de colores te ayudan a identificar rapidamente el estado de cada conductor.",
+          "ROJO 'Licencia Vencida' significa que el conductor NO puede operar hasta renovar su licencia.",
+          "AMARILLO 'Por Vencer' significa que la licencia vencera pronto (en menos de 30 dias).",
+          "VERDE 'Activo' significa que el conductor esta habilitado para trabajar."
+        ]}
+      />
+
       {/* Search */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 space-y-3">
+          <QuickHelp text="Escribe el RUT o el nombre del conductor para encontrarlo rapidamente en la lista." />
           <div className="flex gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Buscar por RUT o nombre..."
+                placeholder="Escribe aqui para buscar por RUT o nombre..."
                 className="w-full rounded-md border bg-background pl-10 pr-4 py-2 text-sm"
               />
             </div>
-            <Button variant="outline">Filtros</Button>
+            <Button variant="outline" title="Ver opciones de filtrado">Filtros</Button>
           </div>
         </CardContent>
       </Card>
