@@ -51,20 +51,25 @@ export async function GET(request: NextRequest) {
       status: searchParams.get('status') || undefined
     }
     
-    const { items, total, error } = await getPendingReviews(options)
+    // Obtener items y estadisticas en paralelo
+    const [reviewsResult, statsResult] = await Promise.all([
+      getPendingReviews(options),
+      getQueueStats()
+    ])
     
-    if (error) {
-      return NextResponse.json({ success: false, error }, { status: 500 })
+    if (reviewsResult.error) {
+      return NextResponse.json({ success: false, error: reviewsResult.error }, { status: 500 })
     }
     
     return NextResponse.json({
       success: true,
-      items,
-      total,
+      items: reviewsResult.items,
+      total: reviewsResult.total,
+      stats: statsResult.stats,
       pagination: {
         limit: options.limit,
         offset: options.offset,
-        hasMore: options.offset + items.length < total
+        hasMore: options.offset + reviewsResult.items.length < reviewsResult.total
       }
     })
   } catch (err) {
