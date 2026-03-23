@@ -1,4 +1,12 @@
-import { differenceInDays, parseISO, isPast } from 'date-fns'
+// Helper functions to replace date-fns
+function differenceInDays(date1: Date, date2: Date): number {
+  const MS_PER_DAY = 1000 * 60 * 60 * 24
+  return Math.floor((date1.getTime() - date2.getTime()) / MS_PER_DAY)
+}
+
+function parseISO(dateString: string): Date {
+  return new Date(dateString)
+}
 
 export interface SmartAlert {
   id: string

@@ -1,4 +1,8 @@
-import { differenceInDays } from 'date-fns'
+// Helper function to replace date-fns
+function differenceInDays(date1: Date, date2: Date): number {
+  const MS_PER_DAY = 1000 * 60 * 60 * 24
+  return Math.floor((date1.getTime() - date2.getTime()) / MS_PER_DAY)
+}
 
 export interface ContractorQualificationChecklist {
   hasValidRUT: boolean
