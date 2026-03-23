@@ -1,24 +1,7 @@
-import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, Truck, FileText, AlertTriangle, CheckCircle } from "lucide-react"
 
-export default async function AdminDashboard() {
-  const supabase = await createClient()
-  
-  // Check user authentication
-  const { data: authData, error: authError } = await supabase.auth.getUser()
-  if (authError || !authData?.user) {
-    redirect("/auth/login")
-  }
-
-  // Get user profile (optional for demo)
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", authData.user.id)
-    .maybeSingle()
-  
+export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gradient-dark p-4 sm:p-6 lg:p-8">
       <div className="space-y-8">

@@ -1,26 +1,10 @@
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Truck, Users, FileText, AlertTriangle, CheckCircle, BarChart3 } from "lucide-react"
 
-export default async function DispatcherPage() {
-  const supabase = await createClient()
-
-  // Check user authentication
-  const { data, error } = await supabase.auth.getUser()
-  if (error || !data?.user) {
-    redirect("/auth/login")
-  }
-
-  // Get user profile (optional for demo)
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", data.user.id)
-    .maybeSingle()
-
+export default function DispatcherPage() {
+  // Demo data - no authentication needed
   return (
     <div className="min-h-screen bg-gradient-dark p-4 sm:p-6 lg:p-8">
       <div className="space-y-8">
