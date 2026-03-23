@@ -11,6 +11,7 @@ import { Upload, CheckCircle, AlertCircle, Loader2, FileText, ArrowRight } from 
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useSearchParams } from 'next/navigation'
+import { DocumentReferenceGallery } from '@/components/documents/document-reference-gallery'
 
 interface DocumentType {
   id: string
@@ -285,14 +286,6 @@ export default function WalmartOCRPage() {
                 </Button>
               </CardContent>
             </Card>
-
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-          </TabsContent>
 
           <TabsContent value="results" className="space-y-6">
             {result ? (
