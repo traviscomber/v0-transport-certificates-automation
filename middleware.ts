@@ -1,6 +1,7 @@
 import { updateSession } from "@/lib/supabase/middleware"
 import type { NextRequest } from "next/server"
 
+// v1.2 - Force rebuild
 export async function middleware(request: NextRequest) {
   return await updateSession(request)
 }
