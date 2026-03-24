@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
 const ArrowRightIcon = () => (
@@ -61,12 +62,14 @@ export function HeroSection() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
-            <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg px-8 py-4">
-              Comenzar Gratis
-              <ArrowRightIcon />
+            <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg px-8 py-4" asChild>
+              <Link href="/auth/login">
+                Iniciar Sesion
+                <ArrowRightIcon />
+              </Link>
             </Button>
-            <Button variant="outline" size="lg" className="text-lg px-8 py-4 bg-transparent">
-              Ver Demo
+            <Button variant="outline" size="lg" className="text-lg px-8 py-4 bg-transparent" asChild>
+              <Link href="/auth/register">Crear Cuenta</Link>
             </Button>
           </div>
 

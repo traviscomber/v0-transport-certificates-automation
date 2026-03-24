@@ -59,10 +59,10 @@ export function Header() {
 
           <div className="hidden md:flex items-center space-x-4">
             <Button variant="ghost" size="sm" asChild>
-              <a href="/dashboard">Iniciar Sesión</a>
+              <a href="/auth/login">Iniciar Sesion</a>
             </Button>
             <Button size="sm" className="bg-primary hover:bg-primary/90" asChild>
-              <a href="#demo">Comenzar Ahora</a>
+              <a href="/auth/register">Crear Cuenta</a>
             </Button>
           </div>
 
@@ -100,10 +100,10 @@ export function Header() {
               </a>
               <div className="flex flex-col space-y-2 pt-4">
                 <Button variant="ghost" size="sm" asChild>
-                  <a href="/dashboard">Iniciar Sesión</a>
+                  <a href="/auth/login">Iniciar Sesion</a>
                 </Button>
                 <Button size="sm" className="bg-primary hover:bg-primary/90" asChild>
-                  <a href="#demo">Comenzar Ahora</a>
+                  <a href="/auth/register">Crear Cuenta</a>
                 </Button>
               </div>
             </nav>
