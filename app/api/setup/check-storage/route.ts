@@ -10,22 +10,35 @@ export async function GET() {
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     
-    // List buckets to check if 'documents' exists
-    const { data: buckets, error } = await supabase.storage.listBuckets()
+    // Check bucket using direct SQL query (more reliable)
+    const { data, error } = await supabase
+      .from('buckets')
+      .select('id, name')
+      .eq('id', 'documents')
+      .schema('storage')
+      .maybeSingle()
 
     if (error) {
+      // Fallback: try listBuckets API
+      const { data: buckets, error: listError } = await supabase.storage.listBuckets()
+      
+      if (listError) {
+        return NextResponse.json({ 
+          exists: false, 
+          message: `Error al verificar storage: ${listError.message}` 
+        })
+      }
+      
+      const documentsBucket = buckets?.find(b => b.name === 'documents')
       return NextResponse.json({ 
-        exists: false, 
-        message: `Error al verificar storage: ${error.message}` 
+        exists: !!documentsBucket, 
+        message: documentsBucket ? 'Bucket "documents" existe' : 'Bucket "documents" no existe'
       })
     }
 
-    const documentsBucket = buckets?.find(b => b.name === 'documents')
-    
     return NextResponse.json({ 
-      exists: !!documentsBucket, 
-      message: documentsBucket ? 'Bucket "documents" existe' : 'Bucket "documents" no existe',
-      buckets: buckets?.map(b => b.name) || []
+      exists: !!data, 
+      message: data ? 'Bucket "documents" existe' : 'Bucket "documents" no existe'
     })
   } catch (error) {
     return NextResponse.json({ 
