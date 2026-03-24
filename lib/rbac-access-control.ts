@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'dispatcher' | 'mandante' | 'transportista' | 'conductor'
+export type UserRole = 'administrador' | 'despachador' | 'mandante' | 'transportista' | 'conductor'
 
 export interface Permission {
   resource: string
@@ -10,8 +10,8 @@ export interface RolePermissions {
 }
 
 export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
-  admin: {
-    // Admin tiene acceso total
+  administrador: {
+    // Administrador tiene acceso total
     transportistas: [
       { resource: 'transportistas', action: 'read' },
       { resource: 'transportistas', action: 'write' },
@@ -48,8 +48,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     ],
   },
   
-  dispatcher: {
-    // Dispatcher puede gestionar conductores, vehiculos y documentos
+  despachador: {
+    // Despachador puede gestionar conductores, vehiculos y documentos
     transportistas: [
       { resource: 'transportistas', action: 'read' },
     ],
@@ -136,23 +136,23 @@ export function hasPermission(userRole: UserRole, resource: string, action: 'rea
 export function getNavigationItems(userRole: UserRole) {
   const navItems: { href: string; label: string; icon: string }[] = []
 
-  if (userRole === 'admin') {
+  if (userRole === 'administrador') {
     navItems.push(
-      { href: '/admin', label: 'Dashboard', icon: 'LayoutDashboard' },
-      { href: '/admin/mandantes', label: 'Mandantes', icon: 'Building2' },
-      { href: '/admin/transportistas', label: 'Transportistas', icon: 'Truck' },
-      { href: '/admin/vehiculos', label: 'Vehículos', icon: 'Car' },
-      { href: '/admin/conductores', label: 'Conductores', icon: 'Users' },
-      { href: '/admin/documentos', label: 'Documentos', icon: 'FileText' },
+      { href: '/administrador', label: 'Dashboard', icon: 'LayoutDashboard' },
+      { href: '/administrador/mandantes', label: 'Mandantes', icon: 'Building2' },
+      { href: '/administrador/transportistas', label: 'Transportistas', icon: 'Truck' },
+      { href: '/administrador/vehiculos', label: 'Vehiculos', icon: 'Car' },
+      { href: '/administrador/conductores', label: 'Conductores', icon: 'Users' },
+      { href: '/administrador/documentos', label: 'Documentos', icon: 'FileText' },
     )
-  } else if (userRole === 'dispatcher') {
+  } else if (userRole === 'despachador') {
     navItems.push(
-      { href: '/dispatcher', label: 'Dashboard', icon: 'LayoutDashboard' },
-      { href: '/dispatcher/conductores', label: 'Conductores', icon: 'Users' },
-      { href: '/dispatcher/vehiculos', label: 'Vehículos', icon: 'Car' },
-      { href: '/dispatcher/documentos', label: 'Documentos', icon: 'FileText' },
-      { href: '/dispatcher/alertas', label: 'Alertas', icon: 'AlertCircle' },
-      { href: '/dispatcher/reportes', label: 'Reportes', icon: 'BarChart3' },
+      { href: '/despachador', label: 'Dashboard', icon: 'LayoutDashboard' },
+      { href: '/despachador/conductores', label: 'Conductores', icon: 'Users' },
+      { href: '/despachador/vehiculos', label: 'Vehiculos', icon: 'Car' },
+      { href: '/despachador/documentos', label: 'Documentos', icon: 'FileText' },
+      { href: '/despachador/alertas', label: 'Alertas', icon: 'AlertCircle' },
+      { href: '/despachador/reportes', label: 'Reportes', icon: 'BarChart3' },
     )
   } else if (userRole === 'mandante') {
     navItems.push(
@@ -181,24 +181,22 @@ export function getNavigationItems(userRole: UserRole) {
 }
 
 export function canAccessRoute(userRole: UserRole, route: string): boolean {
-  // Admin siempre puede acceder
-  if (userRole === 'admin') return true
+  // Administrador siempre puede acceder
+  if (userRole === 'administrador') return true
 
   // Mapeo de rutas a roles permitidos
   const routeAccessMap: Record<string, UserRole[]> = {
-    '/admin': ['admin'],
-    '/admin/': ['admin'],
-    '/dispatcher': ['dispatcher', 'admin'],
-    '/dispatcher/': ['dispatcher', 'admin'],
+    '/administrador': ['administrador'],
+    '/administrador/': ['administrador'],
+    '/despachador': ['despachador', 'administrador'],
+    '/despachador/': ['despachador', 'administrador'],
     '/mandante': ['mandante'],
     '/mandante/': ['mandante'],
     '/transportista': ['transportista'],
     '/transportista/': ['transportista'],
     '/conductor': ['conductor'],
     '/conductor/': ['conductor'],
-    '/driver': ['conductor', 'admin'],
-    '/driver/': ['conductor', 'admin'],
-    '/dashboard': ['admin', 'dispatcher', 'mandante', 'transportista', 'conductor'],
+    '/dashboard': ['administrador', 'despachador', 'mandante', 'transportista', 'conductor'],
   }
 
   // Verificar acceso a ruta
@@ -218,8 +216,8 @@ export function canAccessRoute(userRole: UserRole, route: string): boolean {
 
 export function getUserRoleDisplay(role: UserRole): string {
   const displayNames: Record<UserRole, string> = {
-    admin: 'Administrador',
-    dispatcher: 'Despachador',
+    administrador: 'Administrador',
+    despachador: 'Despachador',
     mandante: 'Mandante',
     transportista: 'Transportista',
     conductor: 'Conductor',

@@ -83,8 +83,8 @@
 
 | Rol | Descripcion | Dashboard |
 |-----|-------------|-----------|
-| `admin` | Administrador del sistema | `/admin` |
-| `dispatcher` | Despachador/Operador | `/dispatcher` |
+| `administrador` | Administrador del sistema | `/administrador` |
+| `despachador` | Despachador/Operador | `/despachador` |
 | `mandante` | Empresa contratante | `/mandante` |
 | `transportista` | Empresa de transporte | `/transportista` |
 | `conductor` | Conductor | `/conductor` |
