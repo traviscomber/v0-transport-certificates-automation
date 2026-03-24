@@ -8,39 +8,34 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 export async function GET() {
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false }
+    })
     
-    // Check bucket using direct SQL query (more reliable)
-    const { data, error } = await supabase
-      .from('buckets')
-      .select('id, name')
-      .eq('id', 'documents')
-      .schema('storage')
-      .maybeSingle()
+    // Use storage API to list buckets
+    const { data: buckets, error } = await supabase.storage.listBuckets()
+    
+    console.log('[v0] listBuckets result:', { buckets, error })
 
     if (error) {
-      // Fallback: try listBuckets API
-      const { data: buckets, error: listError } = await supabase.storage.listBuckets()
-      
-      if (listError) {
-        return NextResponse.json({ 
-          exists: false, 
-          message: `Error al verificar storage: ${listError.message}` 
-        })
-      }
-      
-      const documentsBucket = buckets?.find(b => b.name === 'documents')
       return NextResponse.json({ 
-        exists: !!documentsBucket, 
-        message: documentsBucket ? 'Bucket "documents" existe' : 'Bucket "documents" no existe'
+        exists: false, 
+        message: `Error al verificar storage: ${error.message}`,
+        debug: error
       })
     }
 
+    const documentsBucket = buckets?.find(b => b.name === 'documents')
+    
+    console.log('[v0] documentsBucket:', documentsBucket)
+    
     return NextResponse.json({ 
-      exists: !!data, 
-      message: data ? 'Bucket "documents" existe' : 'Bucket "documents" no existe'
+      exists: !!documentsBucket, 
+      message: documentsBucket ? 'Bucket "documents" existe' : 'Bucket "documents" no existe',
+      allBuckets: buckets?.map(b => b.name) || []
     })
   } catch (error) {
+    console.log('[v0] check-storage error:', error)
     return NextResponse.json({ 
       exists: false, 
       message: `Error: ${error}` 
