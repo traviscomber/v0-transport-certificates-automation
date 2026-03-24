@@ -18,13 +18,16 @@ export function Footer() {
               <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg">
                 <TruckIcon />
               </div>
-              <span className="text-xl font-bold text-foreground">TransporteCL</span>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold text-foreground leading-tight">DocuFleet</span>
+                <span className="text-xs text-muted-foreground leading-tight">by Segur-ia</span>
+              </div>
             </div>
             <p className="text-muted-foreground mb-4 max-w-md">
-              La plataforma líder en automatización de certificados F-30 y gestión integral de transporte en Chile.
-              Transformando la industria desde 2024.
+              La plataforma lider en gestion documental y certificados para flotas de transporte en Chile.
+              Automatiza el cumplimiento normativo de tu flota.
             </p>
-            <div className="text-sm text-muted-foreground">© 2025 TransporteCL. Todos los derechos reservados.</div>
+            <div className="text-sm text-muted-foreground">© 2025 DocuFleet by Segur-ia. Todos los derechos reservados.</div>
           </div>
 
           <div>

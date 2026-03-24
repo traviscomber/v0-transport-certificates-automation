@@ -39,7 +39,10 @@ export function Header() {
             <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg">
               <TruckIcon />
             </div>
-            <span className="text-xl font-bold text-foreground">TransporteCL</span>
+            <div className="flex flex-col">
+              <span className="text-xl font-bold text-foreground leading-tight">DocuFleet</span>
+              <span className="text-[10px] text-muted-foreground leading-tight">by Segur-ia</span>
+            </div>
           </div>
 
           <nav className="hidden md:flex items-center space-x-8">

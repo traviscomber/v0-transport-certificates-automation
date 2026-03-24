@@ -16,10 +16,10 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "DocuFleet - Compliance Documental con IA para Transporte",
+  title: "DocuFleet by Segur-ia - Compliance Documental con IA para Transporte",
   description:
-    "Automatiza la gestion de 35+ documentos de transporte con IA. Validacion instantanea, 99% accuracy, cero multas. Usado por Walmart Chile y +500 transportistas.",
-  generator: "DocuFleet",
+    "Automatiza la gestion de 35+ documentos de transporte con IA. Validacion instantanea, 99% accuracy, cero multas. La solucion de Segur-ia para flotas de transporte.",
+  generator: "DocuFleet by Segur-ia",
 }
 
 export default function RootLayout({
