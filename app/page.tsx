@@ -558,121 +558,172 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-24 bg-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Pricing Section - Cobro por Vehiculo */}
+      <section id="pricing" className="py-28 relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid opacity-30" />
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="max-w-3xl mx-auto text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Precios simples y transparentes
+            <h2 className="text-4xl sm:text-5xl font-black text-balance mb-6">
+              Precio por <span className="text-gradient">vehiculo</span>
             </h2>
             <p className="text-lg text-muted-foreground">
-              Sin costos ocultos. Cancela cuando quieras.
+              Paga solo por los vehiculos que tienes. Sin costos ocultos. Descuentos por volumen.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* Starter */}
-            <Card>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-12">
+            {/* Carga General */}
+            <Card className="card-hover bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700/50">
               <CardContent className="pt-6">
-                <h3 className="font-semibold text-lg mb-2">Starter</h3>
-                <p className="text-sm text-muted-foreground mb-4">Para pequenos transportistas</p>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold">$49.990</span>
-                  <span className="text-muted-foreground">/mes</span>
+                <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center mb-4 border border-blue-500/30">
+                  <Truck className="w-6 h-6 text-blue-400" />
                 </div>
-                <ul className="space-y-3 mb-6">
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    Hasta 5 vehiculos
+                <h3 className="font-bold text-lg mb-1">Carga General</h3>
+                <p className="text-xs text-muted-foreground mb-4">Camiones, furgones, pickups</p>
+                <div className="mb-4">
+                  <span className="text-3xl font-black text-gradient">$29.990</span>
+                  <span className="text-muted-foreground text-sm">/vehiculo/mes</span>
+                </div>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                    12 tipos de documentos
                   </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    Hasta 10 conductores
-                  </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
                     OCR ilimitado
                   </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    Alertas por email
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                    Alertas de vencimiento
                   </li>
                 </ul>
-                <Button className="w-full" variant="outline">Comenzar</Button>
               </CardContent>
             </Card>
 
-            {/* Pro - Featured */}
-            <Card className="border-primary shadow-lg relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full">
-                Mas popular
+            {/* Carga Refrigerada */}
+            <Card className="card-hover bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700/50">
+              <CardContent className="pt-6">
+                <div className="w-12 h-12 rounded-lg bg-cyan-500/20 flex items-center justify-center mb-4 border border-cyan-500/30">
+                  <Truck className="w-6 h-6 text-cyan-400" />
+                </div>
+                <h3 className="font-bold text-lg mb-1">Carga Refrigerada</h3>
+                <p className="text-xs text-muted-foreground mb-4">Termos, frigorificos</p>
+                <div className="mb-4">
+                  <span className="text-3xl font-black text-gradient-cyan">$49.990</span>
+                  <span className="text-muted-foreground text-sm">/vehiculo/mes</span>
+                </div>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                    18 tipos de documentos
+                  </li>
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                    Cert. sanitarios incluidos
+                  </li>
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                    Reportes cadena de frio
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* Transporte Pasajeros */}
+            <Card className="card-hover bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700/50">
+              <CardContent className="pt-6">
+                <div className="w-12 h-12 rounded-lg bg-green-500/20 flex items-center justify-center mb-4 border border-green-500/30">
+                  <Users className="w-6 h-6 text-green-400" />
+                </div>
+                <h3 className="font-bold text-lg mb-1">Transporte Pasajeros</h3>
+                <p className="text-xs text-muted-foreground mb-4">Buses, minibuses, taxis</p>
+                <div className="mb-4">
+                  <span className="text-3xl font-black text-gradient">$59.990</span>
+                  <span className="text-muted-foreground text-sm">/vehiculo/mes</span>
+                </div>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                    22 tipos de documentos
+                  </li>
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                    Licencias clase A incluidas
+                  </li>
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                    Cert. antecedentes
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* Carga Peligrosa - Featured */}
+            <Card className="card-hover bg-gradient-to-br from-orange-500/20 to-slate-900 border-orange-500/50 relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                Mas completo
               </div>
               <CardContent className="pt-6">
-                <h3 className="font-semibold text-lg mb-2">Profesional</h3>
-                <p className="text-sm text-muted-foreground mb-4">Para flotas medianas</p>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold">$149.990</span>
-                  <span className="text-muted-foreground">/mes</span>
+                <div className="w-12 h-12 rounded-lg gradient-accent flex items-center justify-center mb-4 glow-orange">
+                  <AlertTriangle className="w-6 h-6 text-white" />
                 </div>
-                <ul className="space-y-3 mb-6">
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    Hasta 25 vehiculos
+                <h3 className="font-bold text-lg mb-1">Carga Peligrosa</h3>
+                <p className="text-xs text-muted-foreground mb-4">HAZMAT, combustibles, quimicos</p>
+                <div className="mb-4">
+                  <span className="text-3xl font-black text-gradient">$149.990</span>
+                  <span className="text-muted-foreground text-sm">/vehiculo/mes</span>
+                </div>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                    35+ tipos de documentos
                   </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    Hasta 50 conductores
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                    Hojas seguridad MSDS
                   </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    Validacion multi-capa
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                    Capacitaciones SEC
                   </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    Reportes para mandantes
-                  </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    Soporte prioritario
+                  <li className="flex items-center gap-2 text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                    Soporte prioritario 24/7
                   </li>
                 </ul>
-                <Button className="w-full">Comenzar</Button>
               </CardContent>
             </Card>
+          </div>
 
-            {/* Enterprise */}
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="font-semibold text-lg mb-2">Enterprise</h3>
-                <p className="text-sm text-muted-foreground mb-4">Para grandes flotas y mandantes</p>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold">Custom</span>
-                </div>
-                <ul className="space-y-3 mb-6">
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    Vehiculos ilimitados
-                  </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    Conductores ilimitados
-                  </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    IA avanzada para validación automática
-                  </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    API REST completa
-                  </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    Gerente de cuenta dedicado
-                  </li>
-                </ul>
-                <Button className="w-full" variant="outline">Contactar Ventas</Button>
-              </CardContent>
-            </Card>
+          {/* Descuentos por volumen */}
+          <div className="glass-dark p-8 rounded-2xl max-w-4xl mx-auto border border-slate-700/50">
+            <h3 className="font-bold text-xl mb-6 text-center">Descuentos por volumen</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div className="p-4">
+                <div className="text-2xl font-black text-gradient mb-1">5-9</div>
+                <div className="text-sm text-muted-foreground">vehiculos</div>
+                <div className="text-lg font-bold text-green-400 mt-2">10% OFF</div>
+              </div>
+              <div className="p-4">
+                <div className="text-2xl font-black text-gradient-cyan mb-1">10-24</div>
+                <div className="text-sm text-muted-foreground">vehiculos</div>
+                <div className="text-lg font-bold text-green-400 mt-2">15% OFF</div>
+              </div>
+              <div className="p-4">
+                <div className="text-2xl font-black text-gradient mb-1">25-49</div>
+                <div className="text-sm text-muted-foreground">vehiculos</div>
+                <div className="text-lg font-bold text-green-400 mt-2">20% OFF</div>
+              </div>
+              <div className="p-4">
+                <div className="text-2xl font-black text-gradient-cyan mb-1">50+</div>
+                <div className="text-sm text-muted-foreground">vehiculos</div>
+                <div className="text-lg font-bold text-green-400 mt-2">30% OFF</div>
+              </div>
+            </div>
+            <p className="text-center text-sm text-muted-foreground mt-6">
+              Ejemplo: 20 camiones de carga general = $29.990 x 20 x 0.85 = <span className="text-foreground font-bold">$509.830/mes</span>
+            </p>
           </div>
         </div>
       </section>
