@@ -12,7 +12,7 @@
 |-----------|--------|-------|
 | Base de Datos | COMPLETADO | 19 tablas creadas |
 | Storage | COMPLETADO | Bucket "documents" (50MB, privado) |
-| Autenticacion | COMPLETADO | 6 roles definidos |
+| Autenticacion | COMPLETADO | 5 roles definidos |
 | RLS Policies | COMPLETADO | Policies para alerts, reports, storage |
 | APIs | COMPLETADO | CRUD para todas las entidades |
 
@@ -79,16 +79,15 @@
 | Supabase middleware | OK | `middleware.ts` |
 | RBAC definitions | OK | `lib/rbac-access-control.ts` |
 
-### Roles Definidos (6)
+### Roles Definidos (5)
 
 | Rol | Descripcion | Dashboard |
 |-----|-------------|-----------|
 | `admin` | Administrador del sistema | `/admin` |
 | `dispatcher` | Despachador/Operador | `/dispatcher` |
-| `driver` | Conductor (ingles) | `/driver` |
-| `mandante` | Empresa contratante | Dashboard mandante |
-| `transportista` | Empresa de transporte | Dashboard transportista |
-| `conductor` | Conductor (alias de driver) | `/driver` |
+| `mandante` | Empresa contratante | `/mandante` |
+| `transportista` | Empresa de transporte | `/transportista` |
+| `conductor` | Conductor | `/conductor` |
 
 ---
 

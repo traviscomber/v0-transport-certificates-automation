@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'dispatcher' | 'driver' | 'mandante' | 'transportista' | 'conductor'
+export type UserRole = 'admin' | 'dispatcher' | 'mandante' | 'transportista' | 'conductor'
 
 export interface Permission {
   resource: string
@@ -71,14 +71,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     reportes: [
       { resource: 'reportes', action: 'read' },
       { resource: 'reportes', action: 'write' },
-    ],
-  },
-
-  driver: {
-    // Driver solo ve y sube sus documentos (alias de conductor)
-    documentos: [
-      { resource: 'documentos', action: 'read' },
-      { resource: 'documentos', action: 'write' },
     ],
   },
 
@@ -162,12 +154,6 @@ export function getNavigationItems(userRole: UserRole) {
       { href: '/dispatcher/alertas', label: 'Alertas', icon: 'AlertCircle' },
       { href: '/dispatcher/reportes', label: 'Reportes', icon: 'BarChart3' },
     )
-  } else if (userRole === 'driver') {
-    navItems.push(
-      { href: '/driver', label: 'Mi Dashboard', icon: 'LayoutDashboard' },
-      { href: '/driver/documentos', label: 'Mis Documentos', icon: 'FileText' },
-      { href: '/driver/alertas', label: 'Alertas', icon: 'AlertCircle' },
-    )
   } else if (userRole === 'mandante') {
     navItems.push(
       { href: '/mandante/dashboard', label: 'Mi Dashboard', icon: 'LayoutDashboard' },
@@ -204,15 +190,15 @@ export function canAccessRoute(userRole: UserRole, route: string): boolean {
     '/admin/': ['admin'],
     '/dispatcher': ['dispatcher', 'admin'],
     '/dispatcher/': ['dispatcher', 'admin'],
-    '/driver': ['driver', 'conductor', 'admin'],
-    '/driver/': ['driver', 'conductor', 'admin'],
     '/mandante': ['mandante'],
     '/mandante/': ['mandante'],
     '/transportista': ['transportista'],
     '/transportista/': ['transportista'],
-    '/conductor': ['conductor', 'driver'],
-    '/conductor/': ['conductor', 'driver'],
-    '/dashboard': ['admin', 'dispatcher', 'driver', 'mandante', 'transportista', 'conductor'],
+    '/conductor': ['conductor'],
+    '/conductor/': ['conductor'],
+    '/driver': ['conductor', 'admin'],
+    '/driver/': ['conductor', 'admin'],
+    '/dashboard': ['admin', 'dispatcher', 'mandante', 'transportista', 'conductor'],
   }
 
   // Verificar acceso a ruta
@@ -234,7 +220,6 @@ export function getUserRoleDisplay(role: UserRole): string {
   const displayNames: Record<UserRole, string> = {
     admin: 'Administrador',
     dispatcher: 'Despachador',
-    driver: 'Conductor',
     mandante: 'Mandante',
     transportista: 'Transportista',
     conductor: 'Conductor',

@@ -58,14 +58,13 @@ export async function getUserRoles(userId: string): Promise<UserRoleRecord[]> {
 export async function getUserPrimaryRole(userId: string): Promise<UserRole | null> {
   const roles = await getUserRoles(userId)
   
-  // Priority: admin > dispatcher > mandante > transportista > driver/conductor
+  // Priority: admin > dispatcher > mandante > transportista > conductor
   const rolePriority: Record<UserRole, number> = {
     admin: 0,
     dispatcher: 1,
     mandante: 2,
     transportista: 3,
-    driver: 4,
-    conductor: 5,
+    conductor: 4,
   }
   
   if (roles.length === 0) return null
