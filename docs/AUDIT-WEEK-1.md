@@ -12,7 +12,7 @@
 |-----------|--------|-------|
 | Base de Datos | COMPLETADO | 19 tablas creadas |
 | Storage | COMPLETADO | Bucket "documents" (50MB, privado) |
-| Autenticacion | COMPLETADO | 5 roles definidos |
+| Autenticacion | COMPLETADO | 6 roles definidos |
 | RLS Policies | COMPLETADO | Policies para alerts, reports, storage |
 | APIs | COMPLETADO | CRUD para todas las entidades |
 
@@ -71,21 +71,24 @@
 |------|--------|---------|
 | Login page | OK | `app/auth/login/page.tsx` |
 | Register page | OK | `app/auth/register/page.tsx` |
+| Verify page | OK | `app/auth/verify/page.tsx` |
+| Auth Callback | OK | `app/auth/callback/route.ts` |
 | Role Guard component | OK | `components/auth/role-guard.tsx` |
 | Role middleware | OK | `lib/supabase/role-middleware.ts` |
 | User roles service | OK | `lib/supabase/user-roles-service.ts` |
 | Supabase middleware | OK | `middleware.ts` |
 | RBAC definitions | OK | `lib/rbac-access-control.ts` |
 
-### Roles Definidos (5)
+### Roles Definidos (6)
 
 | Rol | Descripcion | Dashboard |
 |-----|-------------|-----------|
 | `admin` | Administrador del sistema | `/admin` |
 | `dispatcher` | Despachador/Operador | `/dispatcher` |
-| `driver` | Conductor | `/driver` |
+| `driver` | Conductor (ingles) | `/driver` |
 | `mandante` | Empresa contratante | Dashboard mandante |
 | `transportista` | Empresa de transporte | Dashboard transportista |
+| `conductor` | Conductor (alias de driver) | `/driver` |
 
 ---
 
