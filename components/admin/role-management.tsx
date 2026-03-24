@@ -12,28 +12,31 @@ interface RoleManagementProps {
 }
 
 const ROLE_ICONS: Record<UserRole, React.ReactNode> = {
-  admin: <Shield className="w-5 h-5 text-red-600" />,
+  administrador: <Shield className="w-5 h-5 text-red-600" />,
+  despachador: <Users className="w-5 h-5 text-orange-600" />,
   mandante: <Building2 className="w-5 h-5 text-blue-600" />,
   transportista: <Truck className="w-5 h-5 text-green-600" />,
   conductor: <User className="w-5 h-5 text-purple-600" />,
 }
 
 const ROLE_COLORS: Record<UserRole, string> = {
-  admin: 'bg-gradient-to-br from-red-500/20 to-red-600/10 border-red-500/30',
+  administrador: 'bg-gradient-to-br from-red-500/20 to-red-600/10 border-red-500/30',
+  despachador: 'bg-gradient-to-br from-orange-500/20 to-orange-600/10 border-orange-500/30',
   mandante: 'bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-500/30',
   transportista: 'bg-gradient-to-br from-green-500/20 to-green-600/10 border-green-500/30',
   conductor: 'bg-gradient-to-br from-purple-500/20 to-purple-600/10 border-purple-500/30',
 }
 
 const ROLE_BADGE_COLORS: Record<UserRole, string> = {
-  admin: 'bg-red-500/30 text-red-200 border border-red-500/50',
+  administrador: 'bg-red-500/30 text-red-200 border border-red-500/50',
+  despachador: 'bg-orange-500/30 text-orange-200 border border-orange-500/50',
   mandante: 'bg-blue-500/30 text-blue-200 border border-blue-500/50',
   transportista: 'bg-green-500/30 text-green-200 border border-green-500/50',
   conductor: 'bg-purple-500/30 text-purple-200 border border-purple-500/50',
 }
 
-export function RoleManagement({ currentUserRole = 'admin' }: RoleManagementProps) {
-  const roles: UserRole[] = ['admin', 'mandante', 'transportista', 'conductor']
+export function RoleManagement({ currentUserRole = 'administrador' }: RoleManagementProps) {
+  const roles: UserRole[] = ['administrador', 'despachador', 'mandante', 'transportista', 'conductor']
 
   return (
     <div className="space-y-6">
@@ -103,7 +106,7 @@ export function RoleManagement({ currentUserRole = 'admin' }: RoleManagementProp
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {Object.entries(permissions).map(([resource, perms]) => {
+                        {permissions && Object.entries(permissions).map(([resource, perms]) => {
                           const hasRead = perms.some(p => p.action === 'read')
                           const hasWrite = perms.some(p => p.action === 'write')
                           const hasDelete = perms.some(p => p.action === 'delete')
