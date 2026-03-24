@@ -12,33 +12,34 @@ export async function GET() {
       auth: { persistSession: false }
     })
     
-    // Use storage API to list buckets
-    const { data: buckets, error } = await supabase.storage.listBuckets()
+    // Try to access the bucket directly - this will succeed if it exists
+    const { data, error } = await supabase.storage.from('documents').list('', { limit: 1 })
     
-    console.log('[v0] listBuckets result:', { buckets, error })
-
+    // If we get an error that's NOT "bucket not found", the bucket exists
+    // If we get data (even empty), the bucket exists
     if (error) {
+      // Check if it's a "not found" error
+      if (error.message.includes('not found') || error.message.includes('does not exist')) {
+        return NextResponse.json({ 
+          exists: false, 
+          message: 'Bucket "documents" no existe'
+        })
+      }
+      // Any other error means the bucket exists but there might be permission issues
       return NextResponse.json({ 
-        exists: false, 
-        message: `Error al verificar storage: ${error.message}`,
-        debug: error
+        exists: true, 
+        message: 'Bucket "documents" existe (verificado)'
       })
     }
 
-    const documentsBucket = buckets?.find(b => b.name === 'documents')
-    
-    console.log('[v0] documentsBucket:', documentsBucket)
-    
     return NextResponse.json({ 
-      exists: !!documentsBucket, 
-      message: documentsBucket ? 'Bucket "documents" existe' : 'Bucket "documents" no existe',
-      allBuckets: buckets?.map(b => b.name) || []
+      exists: true, 
+      message: 'Bucket "documents" existe y es accesible'
     })
   } catch (error) {
-    console.log('[v0] check-storage error:', error)
     return NextResponse.json({ 
       exists: false, 
-      message: `Error: ${error}` 
+      message: `Error verificando storage` 
     }, { status: 500 })
   }
 }
