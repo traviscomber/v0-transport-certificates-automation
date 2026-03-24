@@ -30,26 +30,26 @@ export async function POST() {
     logs.push('Verificando tipos de documentos...')
     
     const documentTypes = [
-      { code: 'LIC_CONDUCIR', name: 'Licencia de Conducir', category: 'conductor', is_mandatory: true, validity_days: 365 },
-      { code: 'CERT_ANTECEDENTES', name: 'Certificado de Antecedentes', category: 'conductor', is_mandatory: true, validity_days: 90 },
-      { code: 'HOJA_VIDA', name: 'Hoja de Vida del Conductor', category: 'conductor', is_mandatory: true, validity_days: null },
-      { code: 'REVISION_TECNICA', name: 'Revision Tecnica', category: 'vehiculo', is_mandatory: true, validity_days: 365 },
-      { code: 'SOAP', name: 'Seguro Obligatorio (SOAP)', category: 'vehiculo', is_mandatory: true, validity_days: 365 },
-      { code: 'PERMISO_CIRCULACION', name: 'Permiso de Circulacion', category: 'vehiculo', is_mandatory: true, validity_days: 365 },
-      { code: 'PADRON', name: 'Padron Vehicular', category: 'vehiculo', is_mandatory: true, validity_days: null },
-      { code: 'POLIZA_RC', name: 'Poliza Responsabilidad Civil', category: 'empresa', is_mandatory: true, validity_days: 365 },
-      { code: 'CERT_EMPRESA', name: 'Certificado de Empresa', category: 'empresa', is_mandatory: true, validity_days: 365 },
-      { code: 'CONTRATO_TRABAJO', name: 'Contrato de Trabajo', category: 'conductor', is_mandatory: true, validity_days: null },
-      { code: 'F30', name: 'Formulario F30 (Previred)', category: 'subcontratacion', is_mandatory: true, validity_days: 30 },
-      { code: 'F30_1', name: 'Formulario F30-1', category: 'subcontratacion', is_mandatory: true, validity_days: 30 },
-      { code: 'CERT_AFP', name: 'Certificado de AFP', category: 'subcontratacion', is_mandatory: true, validity_days: 30 },
-      { code: 'CERT_ISAPRE', name: 'Certificado de Isapre/Fonasa', category: 'subcontratacion', is_mandatory: true, validity_days: 30 },
-      { code: 'GUIA_DESPACHO', name: 'Guia de Despacho', category: 'operacional', is_mandatory: true, validity_days: null },
-      { code: 'MANIFIESTO_CARGA', name: 'Manifiesto de Carga', category: 'operacional', is_mandatory: false, validity_days: null },
-      { code: 'CARTA_PORTE', name: 'Carta Porte', category: 'operacional', is_mandatory: false, validity_days: null },
-      { code: 'CERT_FUMIGACION', name: 'Certificado de Fumigacion', category: 'seguridad', is_mandatory: false, validity_days: 180 },
-      { code: 'PLAN_EMERGENCIA', name: 'Plan de Emergencia', category: 'seguridad', is_mandatory: false, validity_days: 365 },
-      { code: 'CERT_CAPACITACION', name: 'Certificado de Capacitacion', category: 'conductor', is_mandatory: false, validity_days: 365 },
+      { code: 'LIC_CONDUCIR', name: 'Licencia de Conducir', category: 'conductor', is_mandatory: true, expiration_days: 365 },
+      { code: 'CERT_ANTECEDENTES', name: 'Certificado de Antecedentes', category: 'conductor', is_mandatory: true, expiration_days: 90 },
+      { code: 'HOJA_VIDA', name: 'Hoja de Vida del Conductor', category: 'conductor', is_mandatory: true, expiration_days: null },
+      { code: 'REVISION_TECNICA', name: 'Revision Tecnica', category: 'vehiculo', is_mandatory: true, expiration_days: 365 },
+      { code: 'SOAP', name: 'Seguro Obligatorio (SOAP)', category: 'vehiculo', is_mandatory: true, expiration_days: 365 },
+      { code: 'PERMISO_CIRCULACION', name: 'Permiso de Circulacion', category: 'vehiculo', is_mandatory: true, expiration_days: 365 },
+      { code: 'PADRON', name: 'Padron Vehicular', category: 'vehiculo', is_mandatory: true, expiration_days: null },
+      { code: 'POLIZA_RC', name: 'Poliza Responsabilidad Civil', category: 'empresa', is_mandatory: true, expiration_days: 365 },
+      { code: 'CERT_EMPRESA', name: 'Certificado de Empresa', category: 'empresa', is_mandatory: true, expiration_days: 365 },
+      { code: 'CONTRATO_TRABAJO', name: 'Contrato de Trabajo', category: 'conductor', is_mandatory: true, expiration_days: null },
+      { code: 'F30', name: 'Formulario F30 (Previred)', category: 'subcontratacion', is_mandatory: true, expiration_days: 30 },
+      { code: 'F30_1', name: 'Formulario F30-1', category: 'subcontratacion', is_mandatory: true, expiration_days: 30 },
+      { code: 'CERT_AFP', name: 'Certificado de AFP', category: 'subcontratacion', is_mandatory: true, expiration_days: 30 },
+      { code: 'CERT_ISAPRE', name: 'Certificado de Isapre/Fonasa', category: 'subcontratacion', is_mandatory: true, expiration_days: 30 },
+      { code: 'GUIA_DESPACHO', name: 'Guia de Despacho', category: 'operacional', is_mandatory: true, expiration_days: null },
+      { code: 'MANIFIESTO_CARGA', name: 'Manifiesto de Carga', category: 'operacional', is_mandatory: false, expiration_days: null },
+      { code: 'CARTA_PORTE', name: 'Carta Porte', category: 'operacional', is_mandatory: false, expiration_days: null },
+      { code: 'CERT_FUMIGACION', name: 'Certificado de Fumigacion', category: 'seguridad', is_mandatory: false, expiration_days: 180 },
+      { code: 'PLAN_EMERGENCIA', name: 'Plan de Emergencia', category: 'seguridad', is_mandatory: false, expiration_days: 365 },
+      { code: 'CERT_CAPACITACION', name: 'Certificado de Capacitacion', category: 'conductor', is_mandatory: false, expiration_days: 365 },
     ]
 
     const { error: insertError } = await supabase
@@ -66,33 +66,30 @@ export async function POST() {
       logs.push(`${documentTypes.length} tipos de documentos insertados/actualizados`)
     }
 
-    // 3. Create demo organization
-    logs.push('Creando organizacion demo...')
+    // 3. Create demo transportista
+    logs.push('Creando transportista demo...')
     const { error: orgError } = await supabase
-      .from('organizations')
+      .from('transportistas')
       .upsert([
         { 
-          name: 'Empresa Demo', 
+          razon_social: 'Transportes Demo SpA', 
           rut: '76.123.456-7', 
-          type: 'transportista',
-          address: 'Av. Principal 123',
-          city: 'Santiago',
-          region: 'Metropolitana',
-          phone: '+56 2 1234 5678',
-          email: 'contacto@empresademo.cl',
-          is_active: true,
-          compliance_score: 85
+          direccion: 'Av. Principal 123',
+          ciudad: 'Santiago',
+          telefono: '+56 2 1234 5678',
+          email: 'contacto@transportesdemo.cl',
+          activo: true
         }
       ], { onConflict: 'rut' })
 
     if (orgError) {
       if (orgError.message.includes('does not exist')) {
-        logs.push('Tabla organizations no existe - ejecuta el SQL manualmente')
+        logs.push('Tabla transportistas no existe')
       } else {
-        logs.push(`Error creando org demo: ${orgError.message}`)
+        logs.push(`Error creando transportista demo: ${orgError.message}`)
       }
     } else {
-      logs.push('Organizacion demo creada')
+      logs.push('Transportista demo creado')
     }
 
     return NextResponse.json({ 
