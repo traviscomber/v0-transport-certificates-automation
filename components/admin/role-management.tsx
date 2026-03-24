@@ -87,7 +87,22 @@ export function RoleManagement({ currentUserRole = 'administrador' }: RoleManage
         <CardContent>
           <div className="space-y-6">
             {roles.map(role => {
-              const permissions = ROLE_PERMISSIONS[role as UserRole]
+              const permissions = ROLE_PERMISSIONS[role as UserRole] || {}
+              const permissionEntries = Object.entries(permissions)
+              
+              if (permissionEntries.length === 0) {
+                return (
+                  <div key={role} className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      {ROLE_ICONS[role as UserRole]}
+                      <h3 className="font-semibold">{getUserRoleDisplay(role as UserRole)}</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">Sin permisos definidos</p>
+                    <div className="border-t pt-4" />
+                  </div>
+                )
+              }
+              
               return (
                 <div key={role} className="space-y-3">
                   <div className="flex items-center gap-2">
@@ -106,7 +121,7 @@ export function RoleManagement({ currentUserRole = 'administrador' }: RoleManage
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {permissions && Object.entries(permissions).map(([resource, perms]) => {
+                        {permissionEntries.map(([resource, perms]) => {
                           const hasRead = perms.some(p => p.action === 'read')
                           const hasWrite = perms.some(p => p.action === 'write')
                           const hasDelete = perms.some(p => p.action === 'delete')
