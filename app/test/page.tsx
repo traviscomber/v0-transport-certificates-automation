@@ -151,12 +151,23 @@ export default function TestPage() {
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="text-sm font-medium">Confianza de Extracción</label>
-                  <span className="text-lg font-bold text-primary">{result.confidence}%</span>
+                  <span className="text-lg font-bold text-primary">
+                    {typeof result.confidence === 'string' 
+                      ? (result.confidence === 'high' ? 85 : result.confidence === 'medium' ? 60 : 35)
+                      : result.confidence}%
+                  </span>
                 </div>
                 <div className="w-full bg-slate-700 rounded-full h-2">
                   <div
                     className="bg-gradient-to-r from-blue-500 to-cyan-400 h-2 rounded-full transition-all"
-                    style={{ width: `${result.confidence}%` }}
+                    style={{ 
+                      width: `${typeof result.confidence === 'string' 
+                        ? (result.confidence === 'high' ? 85 : result.confidence === 'medium' ? 60 : 35)
+                        : result.confidence}%` 
+                    }}
+                  />
+                </div>
+              </div>
                   />
                 </div>
               </div>
@@ -165,9 +176,18 @@ export default function TestPage() {
               <div>
                 <h3 className="font-medium mb-3">Datos Extraídos</h3>
                 <div className="bg-slate-900/50 rounded-lg p-4 space-y-2 max-h-96 overflow-y-auto">
-                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono">
-                    {JSON.stringify(result.data, null, 2)}
-                  </pre>
+                  {/* Filter out confidence, validation, and raw properties to show only extracted data */}
+                  {Object.entries(result).map(([key, value]: [string, any]) => {
+                    // Skip metadata fields
+                    if (['confidence', 'validation', 'raw'].includes(key)) return null
+                    
+                    return (
+                      <div key={key} className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{key}:</span>
+                        <span className="text-foreground font-medium">{String(value)}</span>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
 
