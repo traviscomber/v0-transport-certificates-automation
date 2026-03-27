@@ -168,9 +168,6 @@ export default function TestPage() {
                   />
                 </div>
               </div>
-                  />
-                </div>
-              </div>
 
               {/* Extracted Data */}
               <div>
