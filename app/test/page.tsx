@@ -55,9 +55,12 @@ export default function TestPage() {
       }
 
       const data = await response.json()
+      console.log('[v0] Result received:', data)
       setResult(data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido')
+      const errorMsg = err instanceof Error ? err.message : 'Error desconocido'
+      console.log('[v0] Error:', errorMsg)
+      setError(errorMsg)
     } finally {
       setLoading(false)
     }
@@ -173,14 +176,15 @@ export default function TestPage() {
               <div>
                 <h3 className="font-medium mb-3">Datos Extraídos</h3>
                 <div className="bg-slate-900/50 rounded-lg p-4 space-y-2 max-h-96 overflow-y-auto">
-                  {/* Filter out confidence, validation, and raw properties to show only extracted data */}
                   {Object.entries(result).map(([key, value]: [string, any]) => {
                     // Skip metadata fields
-                    if (['confidence', 'validation', 'raw'].includes(key)) return null
+                    if (['confidence', 'validation', 'raw', 'success', 'documentType', 'fileName', 'extractedData'].includes(key)) {
+                      return null
+                    }
                     
                     return (
-                      <div key={key} className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{key}:</span>
+                      <div key={key} className="flex justify-between text-sm border-b border-slate-700 pb-2">
+                        <span className="text-muted-foreground capitalize">{key}:</span>
                         <span className="text-foreground font-medium">{String(value)}</span>
                       </div>
                     )
@@ -189,7 +193,7 @@ export default function TestPage() {
               </div>
 
               {/* Validation Results */}
-              {result.validation && (
+              {result.validation && Object.keys(result.validation).length > 0 && (
                 <div>
                   <h3 className="font-medium mb-3">Validación</h3>
                   <div className="space-y-2">
@@ -207,7 +211,7 @@ export default function TestPage() {
                         ) : (
                           <AlertCircle className="w-4 h-4" />
                         )}
-                        <span className="text-sm font-medium">
+                        <span className="text-sm font-medium capitalize">
                           {key}: {value === true ? 'Válido' : 'Inválido'}
                         </span>
                       </div>
