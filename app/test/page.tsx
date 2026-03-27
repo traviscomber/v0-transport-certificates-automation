@@ -1,3 +1,4 @@
+// Version 3 - Fixed OCR Display
 'use client'
 
 import { useState } from 'react'
