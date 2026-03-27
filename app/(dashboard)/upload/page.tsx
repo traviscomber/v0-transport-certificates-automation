@@ -57,6 +57,7 @@ export default function UploadPage() {
   const [isDragging, setIsDragging] = useState(false)
   const [selectedType, setSelectedType] = useState<string>('cedula-identidad')
   const [expandedFile, setExpandedFile] = useState<string | null>(null)
+  const [savingFileId, setSavingFileId] = useState<string | null>(null)
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -218,6 +219,51 @@ export default function UploadPage() {
         return 'bg-red-500/20 text-red-300 border-red-500/30'
       default:
         return 'bg-slate-500/20 text-slate-300 border-slate-500/30'
+    }
+  }
+
+  const handleSaveDocument = async (file: UploadedFile) => {
+    if (!file.extractedData) return
+    
+    try {
+      setSavingFileId(file.id)
+      
+      // Get auth token from session storage or local storage
+      const token = localStorage.getItem('sb-auth-token')
+      if (!token) {
+        alert('Debes iniciar sesion para guardar documentos')
+        return
+      }
+
+      const response = await fetch('/api/documents/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          documentType: file.documentType,
+          fileName: file.name,
+          extractedData: file.extractedData,
+          confidence: file.confidence,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Error saving document')
+      }
+
+      const data = await response.json()
+      
+      // Show success message
+      alert('Documento guardado correctamente')
+      
+      // Remove file from list
+      removeFile(file.id)
+    } catch (error) {
+      alert('Error al guardar documento: ' + (error instanceof Error ? error.message : 'Error desconocido'))
+    } finally {
+      setSavingFileId(null)
     }
   }
 
@@ -394,7 +440,7 @@ export default function UploadPage() {
                 {expandedFile === file.id && file.extractedData && (
                   <div className="pl-12 pr-4 py-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
                     <h4 className="text-sm font-medium text-foreground mb-3">Datos Extraidos:</h4>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3 mb-4">
                       {Object.entries(file.extractedData)
                         .filter(([key]) => !['success', 'confidence', 'validation', 'documentType', 'fileName'].includes(key))
                         .map(([key, value]) => (
@@ -403,6 +449,25 @@ export default function UploadPage() {
                             <p className="text-foreground font-medium truncate">{String(value || '-')}</p>
                           </div>
                         ))}
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 pt-3 border-t border-slate-600">
+                      <Button
+                        size="sm"
+                        className="flex-1 bg-green-600 hover:bg-green-700"
+                        onClick={() => handleSaveDocument(file)}
+                        disabled={savingFileId === file.id}
+                      >
+                        {savingFileId === file.id ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Guardando...
+                          </>
+                        ) : (
+                          'Guardar Documento'
+                        )}
+                      </Button>
                     </div>
                   </div>
                 )}
