@@ -55,11 +55,9 @@ export default function TestPage() {
       }
 
       const data = await response.json()
-      console.log('[v0] Result received:', data)
       setResult(data)
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Error desconocido'
-      console.log('[v0] Error:', errorMsg)
       setError(errorMsg)
     } finally {
       setLoading(false)
@@ -80,7 +78,6 @@ export default function TestPage() {
             <CardDescription>Selecciona un tipo de documento y sube una imagen o PDF</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Document Type Selection */}
             <div>
               <label className="block text-sm font-medium mb-3">Tipo de Documento</label>
               <div className="grid grid-cols-2 gap-2">
@@ -100,7 +97,6 @@ export default function TestPage() {
               </div>
             </div>
 
-            {/* File Upload */}
             <div>
               <label className="block text-sm font-medium mb-3">Archivo</label>
               <input
@@ -116,7 +112,6 @@ export default function TestPage() {
               )}
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="flex gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
                 <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
@@ -127,7 +122,6 @@ export default function TestPage() {
               </div>
             )}
 
-            {/* Analyze Button */}
             <Button
               onClick={handleAnalyze}
               disabled={!selectedFile || loading}
@@ -140,7 +134,6 @@ export default function TestPage() {
           </CardContent>
         </Card>
 
-        {/* Results */}
         {result && (
           <Card className="bg-slate-800/50 border-slate-700">
             <CardHeader>
@@ -150,7 +143,6 @@ export default function TestPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Confidence */}
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="text-sm font-medium">Confianza de Extracción</label>
@@ -172,16 +164,13 @@ export default function TestPage() {
                 </div>
               </div>
 
-              {/* Extracted Data */}
               <div>
                 <h3 className="font-medium mb-3">Datos Extraídos</h3>
                 <div className="bg-slate-900/50 rounded-lg p-4 space-y-2 max-h-96 overflow-y-auto">
                   {Object.entries(result).map(([key, value]: [string, any]) => {
-                    // Skip metadata fields
                     if (['confidence', 'validation', 'raw', 'success', 'documentType', 'fileName', 'extractedData'].includes(key)) {
                       return null
                     }
-                    
                     return (
                       <div key={key} className="flex justify-between text-sm border-b border-slate-700 pb-2">
                         <span className="text-muted-foreground capitalize">{key}:</span>
@@ -192,7 +181,6 @@ export default function TestPage() {
                 </div>
               </div>
 
-              {/* Validation Results */}
               {result.validation && Object.keys(result.validation).length > 0 && (
                 <div>
                   <h3 className="font-medium mb-3">Validación</h3>
