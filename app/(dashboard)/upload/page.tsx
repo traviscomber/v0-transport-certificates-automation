@@ -14,6 +14,8 @@ import {
   Loader2,
   File,
   Trash2,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 import {
   Select,
@@ -22,6 +24,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+
+interface ExtractedData {
+  [key: string]: any
+}
 
 interface UploadedFile {
   id: string
@@ -32,6 +38,408 @@ interface UploadedFile {
   progress: number
   documentType?: string
   error?: string
+  extractedData?: ExtractedData
+  confidence?: string
+}
+
+const documentTypes = [
+  { value: 'cedula-identidad', label: 'Cedula de Identidad', category: 'Conductor' },
+  { value: 'licencia-conducir', label: 'Licencia de Conducir', category: 'Conductor' },
+  { value: 'f30', label: 'Formulario F30', category: 'Vehiculo' },
+  { value: 'f30-1', label: 'Formulario F30-1', category: 'Vehiculo' },
+  { value: 'permiso-circulacion', label: 'Permiso de Circulacion', category: 'Vehiculo' },
+  { value: 'revision-tecnica', label: 'Revision Tecnica', category: 'Vehiculo' },
+  { value: 'seguro-obligatorio', label: 'Seguro Obligatorio', category: 'Vehiculo' },
+]
+
+export default function UploadPage() {
+  const [files, setFiles] = useState<UploadedFile[]>([])
+  const [isDragging, setIsDragging] = useState(false)
+  const [selectedType, setSelectedType] = useState<string>('cedula-identidad')
+  const [expandedFile, setExpandedFile] = useState<string | null>(null)
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }, [])
+
+  const processFileWithOCR = async (file: File, documentType: string, fileId: string) => {
+    try {
+      // Convert file to base64
+      const reader = new FileReader()
+      reader.onload = async (e) => {
+        const base64 = (e.target?.result as string).split(',')[1]
+        
+        // Update status to processing
+        setFiles(prev => prev.map(f => 
+          f.id === fileId ? { ...f, status: 'processing' } : f
+        ))
+
+        // Call OCR API
+        const response = await fetch('/api/analyze-document', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileBase64: base64,
+            documentType: documentType,
+            fileName: file.name,
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error('OCR processing failed')
+        }
+
+        const data = await response.json()
+
+        // Update file with extracted data
+        setFiles(prev => prev.map(f => 
+          f.id === fileId ? {
+            ...f,
+            status: 'success',
+            extractedData: data.extractedData || data,
+            confidence: data.confidence || 'unknown'
+          } : f
+        ))
+      }
+      reader.readAsDataURL(file)
+    } catch (error) {
+      setFiles(prev => prev.map(f => 
+        f.id === fileId ? {
+          ...f,
+          status: 'error',
+          error: error instanceof Error ? error.message : 'Error al procesar documento'
+        } : f
+      ))
+    }
+  }
+
+  const processFile = (file: File, documentType: string): UploadedFile => {
+    return {
+      id: Math.random().toString(36).substring(7),
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      status: 'uploading',
+      progress: 0,
+      documentType: documentType,
+    }
+  }
+
+  const simulateUpload = (fileId: string, file: File, documentType: string) => {
+    let progress = 0
+    const interval = setInterval(() => {
+      progress += 15
+      if (progress > 100) progress = 100
+      
+      setFiles(prev => prev.map(f => 
+        f.id === fileId ? { ...f, progress } : f
+      ))
+      
+      if (progress >= 100) {
+        clearInterval(interval)
+        // Start OCR processing
+        processFileWithOCR(file, documentType, fileId)
+      }
+    }, 150)
+  }
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    
+    const droppedFiles = Array.from(e.dataTransfer.files)
+    const newFiles = droppedFiles.map(f => processFile(f, selectedType))
+    setFiles(prev => [...prev, ...newFiles])
+    
+    // Start uploads and OCR
+    newFiles.forEach((file, idx) => {
+      simulateUpload(file.id, droppedFiles[idx], selectedType)
+    })
+  }, [selectedType])
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const selectedFiles = Array.from(e.target.files)
+      const newFiles = selectedFiles.map(f => processFile(f, selectedType))
+      setFiles(prev => [...prev, ...newFiles])
+      
+      // Start uploads and OCR
+      newFiles.forEach((file, idx) => {
+        simulateUpload(file.id, selectedFiles[idx], selectedType)
+      })
+    }
+  }
+
+  const removeFile = (id: string) => {
+    setFiles(prev => prev.filter(f => f.id !== id))
+    if (expandedFile === id) setExpandedFile(null)
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B'
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+  }
+
+  const getFileIcon = (type: string) => {
+    if (type.startsWith('image/')) return <Image className="h-8 w-8 text-blue-400" />
+    if (type === 'application/pdf') return <FileText className="h-8 w-8 text-red-400" />
+    return <File className="h-8 w-8 text-slate-400" />
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'uploading':
+        return <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
+      case 'processing':
+        return <Loader2 className="h-5 w-5 text-orange-400 animate-spin" />
+      case 'success':
+        return <CheckCircle className="h-5 w-5 text-green-400" />
+      case 'error':
+        return <AlertCircle className="h-5 w-5 text-red-400" />
+      default:
+        return null
+    }
+  }
+
+  const getConfidenceColor = (confidence: string) => {
+    switch (confidence) {
+      case 'high':
+        return 'bg-green-500/20 text-green-300 border-green-500/30'
+      case 'medium':
+        return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
+      case 'low':
+        return 'bg-red-500/20 text-red-300 border-red-500/30'
+      default:
+        return 'bg-slate-500/20 text-slate-300 border-slate-500/30'
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+          <Upload className="h-8 w-8 text-orange-400" />
+          Subir Documentos
+        </h1>
+        <p className="text-muted-foreground">Carga documentos para validacion automatica con IA (OpenAI Vision)</p>
+      </div>
+
+      {/* Document Type Selection */}
+      <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900">
+        <CardHeader>
+          <CardTitle className="text-foreground">Tipo de Documento</CardTitle>
+          <CardDescription>Selecciona el tipo de documento que vas a subir para extraccion optima de datos</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Select value={selectedType} onValueChange={setSelectedType}>
+            <SelectTrigger className="w-full sm:w-96 bg-slate-900 border-slate-700">
+              <SelectValue placeholder="Seleccionar tipo de documento..." />
+            </SelectTrigger>
+            <SelectContent>
+              {documentTypes.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  <span className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs">{type.category}</Badge>
+                    {type.label}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      {/* Upload Zone */}
+      <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900">
+        <CardContent className="p-6">
+          <div
+            className={`relative border-2 border-dashed rounded-xl p-12 text-center transition-all ${
+              isDragging 
+                ? 'border-orange-500 bg-orange-500/10' 
+                : 'border-slate-600 hover:border-slate-500'
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <input
+              type="file"
+              multiple
+              accept="image/*,application/pdf"
+              onChange={handleFileSelect}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+            <div className="space-y-4">
+              <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center transition-all ${
+                isDragging ? 'bg-orange-500/20' : 'bg-slate-700'
+              }`}>
+                <Upload className={`h-8 w-8 ${isDragging ? 'text-orange-400' : 'text-slate-400'}`} />
+              </div>
+              <div>
+                <p className="text-lg font-medium text-foreground">
+                  {isDragging ? 'Suelta los archivos aqui' : 'Arrastra y suelta archivos'}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  o haz clic para seleccionar archivos
+                </p>
+              </div>
+              <p className="text-xs text-slate-500">
+                Formatos soportados: PDF, JPG, PNG | Maximo 10MB por archivo
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Uploaded Files List */}
+      {files.length > 0 && (
+        <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900">
+          <CardHeader>
+            <CardTitle className="text-foreground">Archivos ({files.length})</CardTitle>
+            <CardDescription>Documentos en proceso de carga y extraccion con IA</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {files.map((file) => (
+              <div key={file.id} className="space-y-2">
+                {/* File Row */}
+                <div
+                  className="flex items-center gap-4 p-4 rounded-lg bg-slate-800/50 border border-slate-700/50"
+                >
+                  {/* File Icon */}
+                  <div className="flex-shrink-0">
+                    {getFileIcon(file.type)}
+                  </div>
+                  
+                  {/* File Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground truncate">{file.name}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-2">
+                      {formatFileSize(file.size)}
+                      {file.documentType && (
+                        <>
+                          <span>·</span>
+                          <Badge variant="outline" className="text-xs">{file.documentType}</Badge>
+                        </>
+                      )}
+                    </p>
+                    
+                    {/* Progress Bar */}
+                    {file.status === 'uploading' && (
+                      <div className="mt-2 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-blue-500 transition-all duration-300"
+                          style={{ width: `${file.progress}%` }}
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Status Text */}
+                    {file.status === 'processing' && (
+                      <p className="text-xs text-orange-400 mt-1">Extrayendo datos con IA...</p>
+                    )}
+                    {file.status === 'success' && file.confidence && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs text-green-400">Datos extraidos</p>
+                        <Badge className={`text-xs font-medium border ${getConfidenceColor(file.confidence)}`}>
+                          Confianza: {file.confidence}
+                        </Badge>
+                      </div>
+                    )}
+                    {file.status === 'error' && (
+                      <p className="text-xs text-red-400 mt-1">{file.error || 'Error al procesar'}</p>
+                    )}
+                  </div>
+                  
+                  {/* Status Icon */}
+                  <div className="flex-shrink-0">
+                    {getStatusIcon(file.status)}
+                  </div>
+
+                  {/* Expand Button */}
+                  {file.extractedData && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setExpandedFile(expandedFile === file.id ? null : file.id)}
+                      className="flex-shrink-0 text-slate-400 hover:text-slate-200"
+                    >
+                      {expandedFile === file.id ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
+                  
+                  {/* Remove Button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeFile(file.id)}
+                    className="flex-shrink-0 text-slate-400 hover:text-red-400"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Expanded Data */}
+                {expandedFile === file.id && file.extractedData && (
+                  <div className="pl-12 pr-4 py-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                    <h4 className="text-sm font-medium text-foreground mb-3">Datos Extraidos:</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {Object.entries(file.extractedData)
+                        .filter(([key]) => !['success', 'confidence', 'validation', 'documentType', 'fileName'].includes(key))
+                        .map(([key, value]) => (
+                          <div key={key} className="text-xs">
+                            <p className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').toLowerCase()}</p>
+                            <p className="text-foreground font-medium truncate">{String(value || '-')}</p>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tips */}
+      <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900">
+        <CardHeader>
+          <CardTitle className="text-foreground text-sm">Consejos para mejores resultados</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-2 text-sm text-muted-foreground">
+            <li className="flex items-start gap-2">
+              <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+              <span>Asegurate de que el documento sea legible y este bien iluminado</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+              <span>Evita fotos borrosas o con reflejos</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+              <span>Incluye todos los bordes del documento en la imagen</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+              <span>La IA (OpenAI Vision) extrae automaticamente los datos</span>
+            </li>
+          </ul>
+        </CardContent>
+      </Card>
+    </div>
+  )
 }
 
 const documentTypes = [
