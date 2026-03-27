@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
 
-export default function TestPage() {
+export default function TestOCRPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [documentType, setDocumentType] = useState('cedula-identidad')
   const [loading, setLoading] = useState(false)
@@ -55,9 +55,11 @@ export default function TestPage() {
       }
 
       const data = await response.json()
+      console.log('[v0] Test page received data:', data)
       setResult(data)
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Error desconocido'
+      console.log('[v0] Test page error:', errorMsg)
       setError(errorMsg)
     } finally {
       setLoading(false)
@@ -67,17 +69,20 @@ export default function TestPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 to-slate-900 py-12 px-4">
       <div className="max-w-4xl mx-auto space-y-8">
+        {/* Header */}
         <div>
           <h1 className="text-4xl font-bold text-white mb-2">Test OCR con OpenAI Vision</h1>
           <p className="text-muted-foreground">Prueba el sistema de escaneo de documentos con IA</p>
         </div>
 
+        {/* Upload Card */}
         <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader>
             <CardTitle>Subir Documento</CardTitle>
             <CardDescription>Selecciona un tipo de documento y sube una imagen o PDF</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Document Type Selection */}
             <div>
               <label className="block text-sm font-medium mb-3">Tipo de Documento</label>
               <div className="grid grid-cols-2 gap-2">
@@ -97,6 +102,7 @@ export default function TestPage() {
               </div>
             </div>
 
+            {/* File Upload */}
             <div>
               <label className="block text-sm font-medium mb-3">Archivo</label>
               <input
@@ -112,6 +118,7 @@ export default function TestPage() {
               )}
             </div>
 
+            {/* Error Message */}
             {error && (
               <div className="flex gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
                 <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
@@ -122,6 +129,7 @@ export default function TestPage() {
               </div>
             )}
 
+            {/* Analyze Button */}
             <Button
               onClick={handleAnalyze}
               disabled={!selectedFile || loading}
@@ -134,6 +142,7 @@ export default function TestPage() {
           </CardContent>
         </Card>
 
+        {/* Results Card */}
         {result && (
           <Card className="bg-slate-800/50 border-slate-700">
             <CardHeader>
@@ -143,6 +152,7 @@ export default function TestPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Confidence */}
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="text-sm font-medium">Confianza de Extracción</label>
@@ -152,7 +162,7 @@ export default function TestPage() {
                       : result.confidence}%
                   </span>
                 </div>
-                <div className="w-full bg-slate-700 rounded-full h-2">
+                <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
                   <div
                     className="bg-gradient-to-r from-blue-500 to-cyan-400 h-2 rounded-full transition-all"
                     style={{ 
@@ -164,23 +174,29 @@ export default function TestPage() {
                 </div>
               </div>
 
+              {/* Extracted Data */}
               <div>
                 <h3 className="font-medium mb-3">Datos Extraídos</h3>
                 <div className="bg-slate-900/50 rounded-lg p-4 space-y-2 max-h-96 overflow-y-auto">
-                  {Object.entries(result).map(([key, value]: [string, any]) => {
-                    if (['confidence', 'validation', 'raw', 'success', 'documentType', 'fileName', 'extractedData'].includes(key)) {
-                      return null
-                    }
-                    return (
-                      <div key={key} className="flex justify-between text-sm border-b border-slate-700 pb-2">
-                        <span className="text-muted-foreground capitalize">{key}:</span>
-                        <span className="text-foreground font-medium">{String(value)}</span>
-                      </div>
-                    )
-                  })}
+                  {Object.entries(result).length > 0 ? (
+                    Object.entries(result).map(([key, value]: [string, any]) => {
+                      if (['confidence', 'validation', 'raw', 'success', 'documentType', 'fileName', 'extractedData'].includes(key)) {
+                        return null
+                      }
+                      return (
+                        <div key={key} className="flex justify-between text-sm border-b border-slate-700 pb-2">
+                          <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
+                          <span className="text-foreground font-medium text-right max-w-xs">{String(value)}</span>
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <p className="text-muted-foreground text-sm">No se extrajeron datos</p>
+                  )}
                 </div>
               </div>
 
+              {/* Validation */}
               {result.validation && Object.keys(result.validation).length > 0 && (
                 <div>
                   <h3 className="font-medium mb-3">Validación</h3>
