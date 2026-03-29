@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
+import { validatePlate, validateVIN } from "@/lib/validations"
 
 export const dynamic = 'force-dynamic'
 
@@ -27,7 +28,7 @@ export async function GET(
   }
 }
 
-// PUT update vehicle
+// PUT update vehicle with validation
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -36,6 +37,18 @@ export async function PUT(
     const supabase = await createClient()
     const { id } = await params
     const body = await request.json()
+    
+    // Validate plate if provided
+    if (body.plate) {
+      const plateValidation = validatePlate(body.plate)
+      if (!plateValidation.valid) return NextResponse.json({ error: plateValidation.error }, { status: 400 })
+    }
+    
+    // Validate VIN if provided
+    if (body.vin) {
+      const vinValidation = validateVIN(body.vin)
+      if (!vinValidation.valid) return NextResponse.json({ error: vinValidation.error }, { status: 400 })
+    }
     
     const { data, error } = await supabase
       .from('vehicles')
@@ -83,3 +96,4 @@ export async function DELETE(
     return NextResponse.json({ error: 'Failed to delete vehicle' }, { status: 500 })
   }
 }
+

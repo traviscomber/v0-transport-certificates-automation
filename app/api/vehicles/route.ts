@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
+import { validatePlate, validateVIN } from "@/lib/validations"
 
 export const dynamic = 'force-dynamic'
 
@@ -34,12 +35,26 @@ export async function GET(request: Request) {
   }
 }
 
-// POST create new vehicle
+// POST create new vehicle with validation
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
     const body = await request.json()
     
+    // Validate required fields
+    if (!body.organization_id) return NextResponse.json({ error: 'organization_id es requerido' }, { status: 400 })
+    if (!body.plate) return NextResponse.json({ error: 'plate es requerido' }, { status: 400 })
+    
+    // Validate plate format
+    const plateValidation = validatePlate(body.plate)
+    if (!plateValidation.valid) return NextResponse.json({ error: plateValidation.error }, { status: 400 })
+    
+    // Validate VIN if provided
+    if (body.vin) {
+      const vinValidation = validateVIN(body.vin)
+      if (!vinValidation.valid) return NextResponse.json({ error: vinValidation.error }, { status: 400 })
+    }
+    
+    const supabase = await createClient()
     const { data, error } = await supabase
       .from('vehicles')
       .insert({
