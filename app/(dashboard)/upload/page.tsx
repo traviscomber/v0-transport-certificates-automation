@@ -303,11 +303,11 @@ export default function UploadPage() {
         </CardContent>
       </Card>
 
-      {/* Upload Zone */}
+      {/* Upload Zone - Mobile Optimized */}
       <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div
-            className={`relative border-2 border-dashed rounded-xl p-12 text-center transition-all ${
+            className={`relative border-2 border-dashed rounded-lg sm:rounded-xl p-6 sm:p-12 text-center transition-all ${
               isDragging 
                 ? 'border-orange-500 bg-orange-500/10' 
                 : 'border-slate-600 hover:border-slate-500'
@@ -323,17 +323,17 @@ export default function UploadPage() {
               onChange={handleFileSelect}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
-            <div className="space-y-4">
-              <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center transition-all ${
+            <div className="space-y-2 sm:space-y-4">
+              <div className={`mx-auto w-12 sm:w-16 h-12 sm:h-16 rounded-full flex items-center justify-center transition-all ${
                 isDragging ? 'bg-orange-500/20' : 'bg-slate-700'
               }`}>
-                <Upload className={`h-8 w-8 ${isDragging ? 'text-orange-400' : 'text-slate-400'}`} />
+                <Upload className={`h-6 sm:h-8 w-6 sm:w-8 ${isDragging ? 'text-orange-400' : 'text-slate-400'}`} />
               </div>
               <div>
-                <p className="text-lg font-medium text-foreground">
+                <p className="text-base sm:text-lg font-medium text-foreground">
                   {isDragging ? 'Suelta los archivos aqui' : 'Arrastra y suelta archivos'}
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
                   o haz clic para seleccionar archivos
                 </p>
               </div>
@@ -345,63 +345,65 @@ export default function UploadPage() {
         </CardContent>
       </Card>
 
-      {/* Uploaded Files List */}
+      {/* Uploaded Files List - Mobile Optimized */}
       {files.length > 0 && (
         <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900">
-          <CardHeader>
-            <CardTitle className="text-foreground">Archivos ({files.length})</CardTitle>
-            <CardDescription>Documentos en proceso de carga y extraccion con IA</CardDescription>
+          <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-3">
+            <CardTitle className="text-foreground text-lg sm:text-xl">Archivos ({files.length})</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Documentos en proceso de carga y extraccion con IA</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0 space-y-2 sm:space-y-3">
             {files.map((file) => (
-              <div key={file.id} className="space-y-2">
-                {/* File Row */}
+              <div key={file.id} className="space-y-1 sm:space-y-2">
+                {/* File Row - Mobile Optimized */}
                 <div
-                  className="flex items-center gap-4 p-4 rounded-lg bg-slate-800/50 border border-slate-700/50"
+                  className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg bg-slate-800/50 border border-slate-700/50"
                 >
-                  {/* File Icon */}
-                  <div className="flex-shrink-0">
-                    {getFileIcon(file.type)}
-                  </div>
-                  
-                  {/* File Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground truncate">{file.name}</p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-2">
-                      {formatFileSize(file.size)}
-                      {file.documentType && (
-                        <>
-                          <span>·</span>
-                          <Badge variant="outline" className="text-xs">{file.documentType}</Badge>
-                        </>
+                  {/* File Icon and Info */}
+                  <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                    <div className="flex-shrink-0 mt-0.5">
+                      {getFileIcon(file.type)}
+                    </div>
+                    
+                    {/* File Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground text-sm sm:text-base truncate">{file.name}</p>
+                      <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1 sm:gap-2 mt-0.5">
+                        {formatFileSize(file.size)}
+                        {file.documentType && (
+                          <>
+                            <span className="hidden sm:inline">·</span>
+                            <Badge variant="outline" className="text-xs">{file.documentType}</Badge>
+                          </>
+                        )}
+                      </p>
+                      
+                      {/* Progress Bar */}
+                      {file.status === 'uploading' && (
+                        <div className="mt-1.5 sm:mt-2 h-1 sm:h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-blue-500 transition-all duration-300"
+                            style={{ width: `${file.progress}%` }}
+                          />
+                        </div>
                       )}
-                    </p>
-                    
-                    {/* Progress Bar */}
-                    {file.status === 'uploading' && (
-                      <div className="mt-2 h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-500 transition-all duration-300"
-                          style={{ width: `${file.progress}%` }}
-                        />
-                      </div>
-                    )}
-                    
-                    {/* Status Text */}
-                    {file.status === 'processing' && (
-                      <p className="text-xs text-orange-400 mt-1">Extrayendo datos con IA...</p>
-                    )}
-                    {file.status === 'success' && file.confidence && (
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-xs text-green-400">Datos extraidos</p>
-                        <Badge className={`text-xs font-medium border ${getConfidenceColor(file.confidence)}`}>
-                          Confianza: {file.confidence}
-                        </Badge>
-                      </div>
-                    )}
-                    {file.status === 'error' && (
-                      <p className="text-xs text-red-400 mt-1">{file.error || 'Error al procesar'}</p>
-                    )}
+                      
+                      {/* Status Text */}
+                      {file.status === 'processing' && (
+                        <p className="text-xs text-orange-400 mt-1">Extrayendo datos con IA...</p>
+                      )}
+                      {file.status === 'success' && file.confidence && (
+                        <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-1">
+                          <p className="text-xs text-green-400">Datos extraidos</p>
+                          <Badge className={`text-xs font-medium border ${getConfidenceColor(file.confidence)}`}>
+                            Confianza: {file.confidence}
+                          </Badge>
+                        </div>
+                      )}
+                      {file.status === 'error' && (
+                        <p className="text-xs text-red-400 mt-1">{file.error || 'Error al procesar'}</p>
+                      )}
+                    </div>
                   </div>
                   
                   {/* Status Icon */}
@@ -409,60 +411,62 @@ export default function UploadPage() {
                     {getStatusIcon(file.status)}
                   </div>
 
-                  {/* Expand Button */}
-                  {file.extractedData && (
+                  {/* Action Buttons - Mobile Optimized */}
+                  <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                    {file.extractedData && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setExpandedFile(expandedFile === file.id ? null : file.id)}
+                        className="h-8 w-8 p-0 text-slate-400 hover:text-slate-200"
+                      >
+                        {expandedFile === file.id ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
+                    
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setExpandedFile(expandedFile === file.id ? null : file.id)}
-                      className="flex-shrink-0 text-slate-400 hover:text-slate-200"
+                      onClick={() => removeFile(file.id)}
+                      className="h-8 w-8 p-0 text-slate-400 hover:text-red-400"
                     >
-                      {expandedFile === file.id ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
+                      <Trash2 className="h-4 w-4" />
                     </Button>
-                  )}
-                  
-                  {/* Remove Button */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeFile(file.id)}
-                    className="flex-shrink-0 text-slate-400 hover:text-red-400"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  </div>
                 </div>
 
-                {/* Expanded Data */}
+                {/* Expanded Data - Mobile Optimized */}
                 {expandedFile === file.id && file.extractedData && (
-                  <div className="pl-12 pr-4 py-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
-                    <h4 className="text-sm font-medium text-foreground mb-3">Datos Extraidos:</h4>
-                    <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="pl-3 sm:pl-12 pr-3 sm:pr-4 py-2 sm:py-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                    <h4 className="text-xs sm:text-sm font-medium text-foreground mb-2 sm:mb-3">Datos Extraidos:</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
                       {Object.entries(file.extractedData)
                         .filter(([key]) => !['success', 'confidence', 'validation', 'documentType', 'fileName'].includes(key))
                         .map(([key, value]) => (
-                          <div key={key} className="text-xs">
-                            <p className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').toLowerCase()}</p>
+                          <div key={key} className="text-xs sm:text-sm">
+                            <p className="text-muted-foreground capitalize text-xs">{key.replace(/([A-Z])/g, ' $1').toLowerCase()}</p>
                             <p className="text-foreground font-medium truncate">{String(value || '-')}</p>
                           </div>
                         ))}
                     </div>
                     
                     {/* Action Buttons */}
-                    <div className="flex gap-2 pt-3 border-t border-slate-600">
+                    <div className="flex gap-2 pt-2 sm:pt-3 border-t border-slate-600">
                       <Button
                         size="sm"
-                        className="flex-1 bg-green-600 hover:bg-green-700"
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-xs sm:text-sm h-8 sm:h-9"
                         onClick={() => handleSaveDocument(file)}
                         disabled={savingFileId === file.id}
                       >
                         {savingFileId === file.id ? (
                           <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Guardando...
+                            <Loader2 className="h-3 sm:h-4 w-3 sm:w-4 mr-1 sm:mr-2 animate-spin" />
+                            <span className="hidden sm:inline">Guardando...</span>
+                            <span className="sm:hidden">...</span>
                           </>
                         ) : (
                           'Guardar Documento'

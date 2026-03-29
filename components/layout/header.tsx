@@ -33,79 +33,91 @@ export function Header() {
 
   return (
     <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+      <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-16">
           <div className="flex items-center space-x-2">
-            <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg">
+            <div className="flex items-center justify-center w-8 sm:w-10 h-8 sm:h-10 bg-primary rounded-lg">
               <TruckIcon />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-bold text-foreground leading-tight">DocuFleet</span>
-              <span className="text-[10px] text-muted-foreground leading-tight">by Segur-ia</span>
+              <span className="text-base sm:text-xl font-bold text-foreground leading-tight">DocuFleet</span>
+              <span className="text-[8px] sm:text-[10px] text-muted-foreground leading-tight">by Segur-ia</span>
             </div>
           </div>
 
-          <nav className="hidden md:flex items-center space-x-8">
-            <a href="#problema" className="text-muted-foreground hover:text-foreground transition-colors">
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-6 lg:space-x-8">
+            <a href="#problema" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               El Problema
             </a>
-            <a href="#solucion" className="text-muted-foreground hover:text-foreground transition-colors">
+            <a href="#solucion" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               La Solución
             </a>
-            <a href="#demo" className="text-muted-foreground hover:text-foreground transition-colors">
+            <a href="#demo" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Ver Demo
             </a>
-            <a href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
+            <a href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Dashboard
             </a>
           </nav>
 
-          <div className="hidden md:flex items-center space-x-4">
+          {/* Desktop Auth Buttons */}
+          <div className="hidden md:flex items-center space-x-3">
             <Button variant="ghost" size="sm" asChild>
-              <a href="/auth/login">Iniciar Sesion</a>
+              <a href="/auth/login" className="text-sm">Iniciar Sesion</a>
             </Button>
-            <Button size="sm" className="bg-primary hover:bg-primary/90" asChild>
+            <Button size="sm" className="bg-primary hover:bg-primary/90 text-xs sm:text-sm" asChild>
               <a href="/auth/register">Crear Cuenta</a>
             </Button>
           </div>
 
-          <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            {isMenuOpen ? <XIcon /> : <MenuIcon />}
+          {/* Mobile Menu Button */}
+          <button 
+            className="md:hidden p-1.5 hover:bg-slate-800/50 rounded-lg transition-colors" 
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Menu"
+          >
+            {isMenuOpen ? <XIcon className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
           </button>
         </div>
 
+        {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border">
-            <nav className="flex flex-col space-y-4">
+          <div className="md:hidden py-3 sm:py-4 border-t border-border bg-background/95 backdrop-blur-sm">
+            <nav className="flex flex-col space-y-2 px-2">
               <a
                 href="#problema"
                 onClick={() => setIsMenuOpen(false)}
-                className="text-left text-muted-foreground hover:text-foreground transition-colors"
+                className="text-left px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-slate-800/50 rounded-lg transition-colors"
               >
                 El Problema
               </a>
               <a
                 href="#solucion"
                 onClick={() => setIsMenuOpen(false)}
-                className="text-left text-muted-foreground hover:text-foreground transition-colors"
+                className="text-left px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-slate-800/50 rounded-lg transition-colors"
               >
                 La Solución
               </a>
               <a
                 href="#demo"
                 onClick={() => setIsMenuOpen(false)}
-                className="text-left text-muted-foreground hover:text-foreground transition-colors"
+                className="text-left px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-slate-800/50 rounded-lg transition-colors"
               >
                 Ver Demo
               </a>
-              <a href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
+              <a 
+                href="/dashboard" 
+                onClick={() => setIsMenuOpen(false)}
+                className="text-left px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-slate-800/50 rounded-lg transition-colors"
+              >
                 Dashboard
               </a>
-              <div className="flex flex-col space-y-2 pt-4">
-                <Button variant="ghost" size="sm" asChild>
+              <div className="flex flex-col space-y-2 pt-2 px-2 border-t border-border">
+                <Button variant="ghost" size="sm" asChild className="text-xs sm:text-sm w-full justify-start">
                   <a href="/auth/login">Iniciar Sesion</a>
                 </Button>
-                <Button size="sm" className="bg-primary hover:bg-primary/90" asChild>
+                <Button size="sm" className="bg-primary hover:bg-primary/90 text-xs sm:text-sm w-full justify-start" asChild>
                   <a href="/auth/register">Crear Cuenta</a>
                 </Button>
               </div>
