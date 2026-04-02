@@ -180,11 +180,20 @@ export default function RegisterPage() {
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-sm">
-              ¿Ya tienes cuenta?{" "}
-              <Link href="/auth/login" className="text-primary hover:underline">
-                Iniciar Sesión
-              </Link>
+            <div className="mt-6 space-y-3">
+              <div className="text-center text-sm">
+                ¿Ya tienes cuenta?{" "}
+                <Link href="/auth/login" className="text-primary hover:underline">
+                  Iniciar Sesión
+                </Link>
+              </div>
+              
+              <div className="text-center text-xs text-muted-foreground pt-3 border-t border-slate-700">
+                <p className="mb-2">¿Quieres conocer el sistema primero antes de registrarte?</p>
+                <Link href="/test" className="text-cyan-400 hover:text-cyan-300 font-semibold">
+                  → Ir a la Prueba Interactiva Gratuita
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>

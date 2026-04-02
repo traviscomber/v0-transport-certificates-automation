@@ -158,15 +158,15 @@ export default function LandingPage() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/walmart-ocr">
-                <Button size="lg" className="btn-orange text-base px-8 h-14 w-full sm:w-auto font-semibold">
-                  Comenzar Ahora
+              <Link href="/test">
+                <Button size="lg" className="btn-cyan text-base px-8 h-14 w-full sm:w-auto font-semibold">
+                  🎯 Prueba Interactiva
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-              <Link href="/admin">
+              <Link href="/auth/login">
                 <Button size="lg" variant="outline" className="btn-orange-outline text-base px-8 h-14 w-full sm:w-auto font-semibold">
-                  Ver Dashboard
+                  Iniciar Sesion
                   <ChevronRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
@@ -206,6 +206,35 @@ export default function LandingPage() {
             <div className="p-6 rounded-xl glass-dark text-center hover:bg-slate-800/50 transition-all duration-300 group">
               <div className="text-4xl font-black text-gradient mb-2">24/7</div>
               <div className="text-sm text-muted-foreground group-hover:text-cyan-300 transition-colors">Disponibilidad</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Quick Demo Callout Section */}
+      <section className="py-16 bg-gradient-to-r from-cyan-500/10 via-transparent to-orange-500/10 border-y border-cyan-500/20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto">
+            <div className="glass-dark p-10 rounded-2xl border border-cyan-500/30">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <HelpCircle className="w-8 h-8 text-cyan-400 mt-1" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold text-foreground mb-3">
+                    Antes de registrarte, ¿quieres ver cómo funciona?
+                  </h3>
+                  <p className="text-muted-foreground mb-6 leading-relaxed">
+                    Visita nuestra <strong>Prueba Rápida Interactiva</strong> para explorar los 3 roles principales del sistema (Conductor, Despachador, Administrador) sin necesidad de crear una cuenta. Entenderás exactamente qué puedes hacer en cada rol.
+                  </p>
+                  <Link href="/test">
+                    <Button size="lg" className="btn-cyan font-semibold">
+                      Ir a la Prueba Interactiva
+                      <ArrowRight className="ml-2 w-5 h-5" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </div>

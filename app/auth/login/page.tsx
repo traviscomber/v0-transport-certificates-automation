@@ -143,63 +143,41 @@ export default function LoginPage() {
           steps={[
             {
               step: 1,
-              title: "Opcion rapida: Cuentas de demostracion",
-              description: "Haz clic en uno de los botones para probar el sistema como Conductor, Despachador o Administrador."
+              title: "Opcion 1: Ver demostracion interactiva",
+              description: "Haz clic aqui para explorar los 3 roles del sistema sin necesidad de login."
             },
             {
               step: 2,
-              title: "Opcion normal: Iniciar sesion",
-              description: "Si ya tienes una cuenta, escribe tu correo y contraseña en el formulario."
+              title: "Opcion 2: Usar cuentas de demo",
+              description: "Prueba los dashboards con credenciales de demostración."
+            },
+            {
+              step: 3,
+              title: "Opcion 3: Iniciar sesion",
+              description: "Si ya tienes una cuenta, escribe tu correo y contraseña."
             }
           ]}
         />
 
-        <Card className='mb-6 glass-dark border-slate-700/50'>
+        {/* Demo Interactive Link */}
+        <Card className='mb-6 glass-dark border-cyan-500/50 bg-gradient-to-br from-cyan-500/10 to-transparent'>
           <CardHeader>
-            <CardTitle className='text-xl text-center flex items-center justify-center gap-2 text-foreground'>
-              <Play className='h-5 w-5 text-orange-500' />
-              Prueba Rapida
+            <CardTitle className='text-xl text-center flex items-center justify-center gap-2 text-cyan-300'>
+              <HelpCircle className='h-5 w-5 text-cyan-500' />
+              Prueba Rapida Interactiva
             </CardTitle>
             <CardDescription className='text-center text-muted-foreground'>
-              Haz clic en cualquier boton para acceder al sistema con una cuenta de demo.
+              Aprende como funciona DocuFleet antes de registrarte. Explora los 3 roles principales con datos simulados.
             </CardDescription>
           </CardHeader>
-          <CardContent className='space-y-2'>
-            {demoAccounts.map((account) => {
-              const Icon = account.icon
-              const isLoading = demoLoading === account.role
-              const colorMap: Record<string, string> = {
-                driver: 'gradient-accent glow-orange',
-                dispatcher: 'bg-cyan-500/20 border-cyan-500/30 text-cyan-300',
-                admin: 'bg-green-500/20 border-green-500/30 text-green-300',
-              }
-
-              return (
-                <Button
-                  key={account.role}
-                  className={`w-full h-auto p-4 justify-start text-white border ${
-                    account.role === 'driver' ? 'btn-orange' : `border ${colorMap[account.role]}`
-                  } hover:opacity-90 transition-all`}
-                  onClick={() => handleDemoLogin(account)}
-                  disabled={!!demoLoading || isLoading}
-                >
-                  <div className='flex items-center gap-3 w-full'>
-                    <Icon className='h-5 w-5 flex-shrink-0' />
-                    <div className='text-left flex-1'>
-                      <div className='font-semibold'>{account.name}</div>
-                      <div className='text-xs opacity-80'>{account.description}</div>
-                    </div>
-                    {isLoading && <div className='animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent' />}
-                  </div>
-                </Button>
-              )
-            })}
-            <div className='mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded text-sm text-blue-300'>
-              <p className='mb-2'>¿Primera vez? Primero necesitas crear las cuentas de demo.</p>
-              <Link href="/setup-demo" className='text-blue-400 hover:text-blue-300 font-semibold'>
-                → Crear cuentas de demo
-              </Link>
-            </div>
+          <CardContent>
+            <Link href="/test" className='w-full block'>
+              <Button className='w-full btn-cyan font-semibold h-12' variant="default">
+                <Play className='h-5 w-5 mr-2' />
+                Ir a Prueba Rápida
+                <ChevronRight className='h-5 w-5 ml-2' />
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 
