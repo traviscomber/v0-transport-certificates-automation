@@ -1,7 +1,6 @@
 'use client'
 
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 import { useAuth } from '@/lib/auth-context'
 import AdminDashboard from '@/components/admin/admin-dashboard'

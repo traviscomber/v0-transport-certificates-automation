@@ -1,7 +1,6 @@
 'use client'
 
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar'
 import { useAuth } from '@/lib/auth-context'
