@@ -13,13 +13,11 @@ const nextConfig = {
     maxInactiveAge: 60 * 1000,
     pagesBufferLength: 5,
   },
-  webpack: (config, { dev }) => {
-    // Suppress webpack cache performance warning about large strings
-    if (config.cache) {
-      config.cache = {
-        type: 'memory',
-      }
-    }
+  webpack: (config, { dev, isServer }) => {
+    // Disable webpack cache entirely to prevent serialization warnings
+    config.cache = false
     return config
   },
 };
+
+module.exports = nextConfig;
