@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'url'
-import { dirname } from 'path'
+import { dirname, join } from 'path'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -15,7 +15,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config) => {
     // Optimize webpack caching to avoid serialization warnings
     if (config.cache) {
       config.cache = {
@@ -24,7 +24,7 @@ const nextConfig = {
           config: [__filename],
         },
         maxAge: 1000 * 60 * 60 * 24,
-        cacheDirectory: require('path').join(process.cwd(), '.next/cache/webpack'),
+        cacheDirectory: join(process.cwd(), '.next/cache/webpack'),
       }
     }
 
