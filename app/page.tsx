@@ -158,15 +158,9 @@ export default function LandingPage() {
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/test">
-                <Button size="lg" className="btn-cyan text-base px-8 h-14 w-full sm:w-auto font-semibold">
-                  🎯 Prueba Interactiva
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
-              </Link>
+            <div className="flex items-center justify-center">
               <Link href="/auth/login">
-                <Button size="lg" variant="outline" className="btn-orange-outline text-base px-8 h-14 w-full sm:w-auto font-semibold">
+                <Button size="lg" className="btn-orange text-base px-8 h-14 font-semibold">
                   Iniciar Sesion
                   <ChevronRight className="ml-2 w-5 h-5" />
                 </Button>
