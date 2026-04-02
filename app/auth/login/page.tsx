@@ -210,9 +210,9 @@ export default function LoginPage() {
 
             <div className='mt-6 text-center'>
               <p className='text-sm text-muted-foreground'>
-                No tienes cuenta?{' '}
-                <Link href='/' className='text-orange-500 hover:text-orange-400 font-semibold transition-colors'>
-                  Contacta con nosotros
+                ¿No tienes cuenta?{' '}
+                <Link href='/auth/register' className='text-orange-500 hover:text-orange-400 font-semibold transition-colors'>
+                  Regístrate aquí
                 </Link>
               </p>
             </div>
