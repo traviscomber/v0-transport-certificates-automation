@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/lib/auth-context'
+import { validateLogin, parseAuthError } from '@/lib/auth-validation'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -48,73 +49,41 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [demoLoading, setDemoLoading] = useState<string | null>(null)
+  const { login, loading: authLoading } = useAuth()
   const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
+    
+    // Validate form
+    const validation = validateLogin(email, password)
+    if (!validation.isValid) {
+      const firstError = validation.errors[0]
+      setError(firstError.message)
+      return
+    }
+
     setIsLoading(true)
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      if (error) throw error
-
-      // Get user profile to determine their role
-      const { data: { user }, } = await supabase.auth.getUser()
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user?.id)
-        .single()
-
-      // Small delay to ensure session is established
-      setTimeout(() => {
-        // Route based on role
-        const roleRoute: Record<string, string> = {
-          'admin': '/admin',
-          'dispatcher': '/dispatcher',
-          'driver': '/driver',
-        }
-        const route = roleRoute[profileData?.role] || '/admin'
-        router.push(route)
-      }, 100)
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+      await login(email, password)
+    } catch (err) {
+      setError(parseAuthError(err))
+    } finally {
       setIsLoading(false)
     }
   }
 
-  const handleDemoLogin = async (demoAccount: (typeof demoAccounts)[0]) => {
-    const supabase = createClient()
-    setDemoLoading(demoAccount.role)
+  const handleDemoLogin = async (account: typeof demoAccounts[0]) => {
+    setDemoLoading(account.role)
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: demoAccount.email,
-        password: demoAccount.password,
-      })
-
-      if (error) throw error
-
-      // Wait longer for session to be established
-      setTimeout(() => {
-        // Route based on demo account role
-        const roleRoute: Record<string, string> = {
-          'admin': '/admin',
-          'dispatcher': '/dispatcher',
-          'driver': '/driver',
-        }
-        const route = roleRoute[demoAccount.role] || '/admin'
-        router.push(route)
-        setDemoLoading(null)
-      }, 500)
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'Error en login demo')
+      await login(account.email, account.password)
+    } catch (err) {
+      setError(parseAuthError(err))
+    } finally {
       setDemoLoading(null)
     }
   }
@@ -210,7 +179,12 @@ export default function LoginPage() {
                 />
               </div>
               <div className='space-y-2'>
-                <Label htmlFor='password' className='text-foreground font-semibold'>Contraseña</Label>
+                <div className='flex items-center justify-between'>
+                  <Label htmlFor='password' className='text-foreground font-semibold'>Contraseña</Label>
+                  <Link href='/auth/password-reset' className='text-xs text-orange-500 hover:text-orange-400 font-semibold'>
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
                 <Input
                   id='password'
                   type='password'

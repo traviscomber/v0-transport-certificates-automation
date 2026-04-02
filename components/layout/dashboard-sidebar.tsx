@@ -49,6 +49,10 @@ const adminItems: NavItem[] = [
   { label: 'Admin', href: '/admin', icon: <Settings className="h-5 w-5" />, roles: ['admin'] },
 ]
 
+const settingsItems: NavItem[] = [
+  { label: 'Mi Perfil', href: '/settings/profile', icon: <User className="h-5 w-5" /> },
+]
+
 export function DashboardSidebar() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
@@ -193,6 +197,24 @@ export function DashboardSidebar() {
                 ))}
               </>
             )}
+
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-3">Configuracion</p>
+            {settingsItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setIsOpen(false)}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all',
+                  pathname === item.href
+                    ? 'bg-orange-500/20 text-orange-400 font-medium'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                )}
+              >
+                {item.icon}
+                {item.label}
+              </Link>
+            ))}
           </nav>
 
           {/* Logout */}

@@ -4,7 +4,7 @@ import { Inter, JetBrains_Mono } from "next/font/google"
 import { Suspense } from "react"
 import "./globals.css"
 import { RoleProvider } from "./providers"
-// Cache buster: Force rebuild to clear webpack cache
+import { AuthProvider } from "@/lib/auth-context"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -31,9 +31,11 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark">
       <body className={`font-sans ${inter.variable} ${jetbrainsMono.variable} antialiased`}>
-        <RoleProvider>
-          <Suspense fallback={null}>{children}</Suspense>
-        </RoleProvider>
+        <AuthProvider>
+          <RoleProvider>
+            <Suspense fallback={null}>{children}</Suspense>
+          </RoleProvider>
+        </AuthProvider>
       </body>
     </html>
   )

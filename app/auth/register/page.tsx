@@ -2,14 +2,14 @@
 
 import type React from "react"
 
-import { createClient } from "@/lib/supabase/client"
+import { useAuth } from "@/lib/auth-context"
+import { validateRegister, parseAuthError } from "@/lib/auth-validation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { Truck } from "lucide-react"
 
@@ -19,46 +19,44 @@ export default function RegisterPage() {
     password: "",
     confirmPassword: "",
     fullName: "",
-    role: "driver",
-    companyName: "",
-    rut: "",
-    phone: "",
+    role: "driver" as const,
+    organizationId: "",
   })
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const { register } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
-    setIsLoading(true)
-    setError(null)
-
-    if (formData.password !== formData.confirmPassword) {
-      setError("Las contraseñas no coinciden")
-      setIsLoading(false)
+    
+    // Validate form
+    const validation = validateRegister(
+      formData.email,
+      formData.password,
+      formData.confirmPassword,
+      formData.fullName,
+      formData.role
+    )
+    
+    if (!validation.isValid) {
+      const firstError = validation.errors[0]
+      setError(firstError.message)
       return
     }
 
+    setIsLoading(true)
+    setError(null)
+
     try {
-      const { error } = await supabase.auth.signUp({
+      await register({
         email: formData.email,
         password: formData.password,
-        options: {
-          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/verify`,
-          data: {
-            full_name: formData.fullName,
-            role: formData.role,
-            company_name: formData.companyName,
-            rut: formData.rut,
-            phone: formData.phone,
-          },
-        },
+        full_name: formData.fullName,
+        role: formData.role,
+        organization_id: formData.organizationId || "default",
       })
-      if (error) throw error
-      router.push("/auth/verify")
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
+      setError(parseAuthError(error))
     } finally {
       setIsLoading(false)
     }
@@ -106,49 +104,27 @@ export default function RegisterPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="role">Tipo de Usuario</Label>
-                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value as 'driver' | 'dispatcher' | 'admin' })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="driver">Conductor</SelectItem>
                     <SelectItem value="dispatcher">Despachador</SelectItem>
+                    <SelectItem value="admin">Administrador</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="companyName">Empresa</Label>
+                <Label htmlFor="organizationId">Organización (ID)</Label>
                 <Input
-                  id="companyName"
+                  id="organizationId"
                   type="text"
-                  required
-                  value={formData.companyName}
-                  onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                  value={formData.organizationId}
+                  onChange={(e) => setFormData({ ...formData, organizationId: e.target.value })}
+                  placeholder="Dejar vacío para crear nueva"
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="rut">RUT</Label>
-                  <Input
-                    id="rut"
-                    type="text"
-                    placeholder="12.345.678-9"
-                    value={formData.rut}
-                    onChange={(e) => setFormData({ ...formData, rut: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Teléfono</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+56 9 1234 5678"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  />
-                </div>
               </div>
 
               <div className="space-y-2">
