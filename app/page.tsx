@@ -118,11 +118,7 @@ export default function LandingPage() {
                   Iniciar Sesion
                 </Button>
               </Link>
-              <Link href="/contact">
-                <Button size="sm" className="btn-orange">
-                  Contactar
-                </Button>
-              </Link>
+              {/* Botón Contactar deshabilitado - usar chat flotante en su lugar */}
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { Suspense } from "react"
 import "./globals.css"
 import { RoleProvider } from "./providers"
 import { AuthProvider } from "@/lib/auth-context"
+import { FloatingChatWidget } from "@/components/floating-chat-widget"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -34,6 +35,7 @@ export default function RootLayout({
         <AuthProvider>
           <RoleProvider>
             <Suspense fallback={null}>{children}</Suspense>
+            <FloatingChatWidget />
           </RoleProvider>
         </AuthProvider>
       </body>
