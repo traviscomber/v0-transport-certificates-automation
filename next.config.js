@@ -9,9 +9,17 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  onDemandEntries: {
+    maxInactiveAge: 60 * 1000,
+    pagesBufferLength: 5,
+  },
+  webpack: (config, { dev }) => {
+    // Suppress webpack cache performance warning about large strings
+    if (config.cache) {
+      config.cache = {
+        type: 'memory',
+      }
+    }
+    return config
+  },
 };
-
-// Force cache invalidation - v0 dev server cache buster - build v3
-console.log('[v0-config] Using clean next.config.js - v3 - all orphaned code removed');
-
-module.exports = nextConfig;
