@@ -211,9 +211,6 @@ export function DashboardSidebar() {
     </>
   )
 }
-          </div>
-
-          {/* User info */}
           <div className="p-4 border-b border-slate-700/50 hover:bg-slate-800/50 transition-colors cursor-pointer">
             <Link href="/profile" className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold">
