@@ -600,7 +600,7 @@ export default function UploadPage() {
     }
   }
 }
-          <Upload className="h-8 w-8 text-orange-400" />
+
           Subir Documentos
         </h1>
         <p className="text-muted-foreground">Carga documentos para validacion automatica con IA</p>
