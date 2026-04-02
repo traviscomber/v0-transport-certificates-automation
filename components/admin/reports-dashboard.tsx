@@ -9,24 +9,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Download, Filter, Calendar, Eye } from 'lucide-react'
+import { MOCK_AUDIT_LOGS, MOCK_COMPLIANCE_DATA } from '@/lib/constants/mock-data'
 
 export function ReportsDashboard() {
   const [selectedReport, setSelectedReport] = useState('audit')
   const [dateRange, setDateRange] = useState('30days')
-
-  // Mock data
-  const mockAuditLogs = [
-    { id: 1, user: 'admin@docufleet.com', action: 'Document Validated', entity: 'RTV-2024-001', timestamp: '2024-03-20 14:30', status: 'success' },
-    { id: 2, user: 'transportista@example.com', action: 'Document Uploaded', entity: 'Licencia-001', timestamp: '2024-03-20 13:15', status: 'success' },
-    { id: 3, user: 'conductor@example.com', action: 'Role Assigned', entity: 'User-123', timestamp: '2024-03-20 12:00', status: 'success' },
-  ]
-
-  const mockComplianceData = [
-    { name: 'Semana 1', compliant: 85, noncompliant: 15 },
-    { name: 'Semana 2', compliant: 90, noncompliant: 10 },
-    { name: 'Semana 3', compliant: 88, noncompliant: 12 },
-    { name: 'Semana 4', compliant: 92, noncompliant: 8 },
-  ]
 
   return (
     <div className="space-y-8">
@@ -79,7 +66,7 @@ export function ReportsDashboard() {
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={mockComplianceData}>
+            <BarChart data={MOCK_COMPLIANCE_DATA}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
@@ -110,7 +97,7 @@ export function ReportsDashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockAuditLogs.map((log) => (
+                    {MOCK_AUDIT_LOGS.map((log) => (
                 <TableRow key={log.id} className="border-[#E4E4E7]">
                   <TableCell className="font-medium">{log.user}</TableCell>
                   <TableCell>{log.action}</TableCell>

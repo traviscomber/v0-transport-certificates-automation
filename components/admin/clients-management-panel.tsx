@@ -14,62 +14,23 @@ import {
   MoreVertical,
   FileSpreadsheet,
 } from 'lucide-react'
+import { MOCK_CLIENTS } from '@/lib/constants/mock-data'
 import { ClientsXlsImporter } from './clients-xls-importer'
-
-// Mock data
-const mockClients = [
-  {
-    id: '1',
-    rut: '76.123.456-7',
-    razonSocial: 'Transportes Santiago SpA',
-    email: 'contacto@transantiago.com',
-    telefono: '+56912345678',
-    ciudad: 'Santiago',
-    estado: 'activo',
-    totalVehiculos: 24,
-    totalConductores: 18,
-    complianceScore: 92,
-  },
-  {
-    id: '2',
-    rut: '76.234.567-8',
-    razonSocial: 'Logística Express Ltda',
-    email: 'info@logexp.com',
-    telefono: '+56923456789',
-    ciudad: 'Valparaíso',
-    estado: 'activo',
-    totalVehiculos: 15,
-    totalConductores: 12,
-    complianceScore: 88,
-  },
-  {
-    id: '3',
-    rut: '76.345.678-9',
-    razonSocial: 'Transportes del Sur SA',
-    email: 'contacto@transur.com',
-    telefono: '+56934567890',
-    ciudad: 'Concepción',
-    estado: 'pendiente',
-    totalVehiculos: 8,
-    totalConductores: 6,
-    complianceScore: 75,
-  },
-]
 
 export function ClientsManagementPanel() {
   const [activeTab, setActiveTab] = useState('list')
   const [searchTerm, setSearchTerm] = useState('')
 
-  const filteredClients = mockClients.filter(client =>
+  const filteredClients = MOCK_CLIENTS.filter(client =>
     client.razonSocial.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.rut.includes(searchTerm)
   )
 
   const stats = {
-    totalClientes: mockClients.length,
-    activos: mockClients.filter(c => c.estado === 'activo').length,
-    totalVehiculos: mockClients.reduce((sum, c) => sum + c.totalVehiculos, 0),
-    totalConductores: mockClients.reduce((sum, c) => sum + c.totalConductores, 0),
+    totalClientes: MOCK_CLIENTS.length,
+    activos: MOCK_CLIENTS.filter(c => c.estado === 'activo').length,
+    totalVehiculos: MOCK_CLIENTS.reduce((sum, c) => sum + c.totalVehiculos, 0),
+    totalConductores: MOCK_CLIENTS.reduce((sum, c) => sum + c.totalConductores, 0),
   }
 
   return (
