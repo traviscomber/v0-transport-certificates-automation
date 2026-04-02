@@ -1,4 +1,4 @@
-import { CHILEAN_DOCUMENTS_REFERENCE } from '@/lib/chilean-documents-reference'
+import { CHILEAN_DOCUMENTS } from '@/lib/chilean-documents'
 
 export interface OcrValidationResult {
   document_type: string
@@ -78,7 +78,7 @@ export function validateOcrData(
   document_type: string,
   extracted_data: Record<string, string | null>
 ): OcrValidationResult {
-  const docReference = CHILEAN_DOCUMENTS_REFERENCE[document_type]
+  const docReference = CHILEAN_DOCUMENTS[document_type]
 
   if (!docReference) {
     return {
