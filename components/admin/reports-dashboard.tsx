@@ -101,7 +101,13 @@ export function ReportsDashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-                    {MOCK_AUDIT_LOGS.map((log) => (
+              {[
+                { id: 1, user: 'Carlos López', action: 'Subió documento', entity: 'Licencia de Conducir', timestamp: 'Hoy, 14:32', status: 'Completado' },
+                { id: 2, user: 'María García', action: 'Validó documento', entity: 'Permiso de Circulación', timestamp: 'Hoy, 13:15', status: 'Completado' },
+                { id: 3, user: 'Juan Pérez', action: 'Rechazó documento', entity: 'Revision Técnica', timestamp: 'Ayer, 16:45', status: 'Completado' },
+                { id: 4, user: 'Ana Rodríguez', action: 'Exportó reporte', entity: 'Auditoría', timestamp: 'Ayer, 10:20', status: 'Completado' },
+                { id: 5, user: 'Carlos López', action: 'Subió documento', entity: 'Seguro Responsabilidad', timestamp: 'Hace 2 días', status: 'Completado' },
+              ].map((log) => (
                 <TableRow key={log.id} className="border-[#E4E4E7]">
                   <TableCell className="font-medium">{log.user}</TableCell>
                   <TableCell>{log.action}</TableCell>
