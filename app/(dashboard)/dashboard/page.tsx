@@ -46,11 +46,6 @@ export default function DashboardPage() {
       )
   }
 }
-        </div>
-      </div>
-
-      {/* Main Content Grid - Mobile Optimized */}
-      <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-3">
         {/* Left Column - Alerts */}
         <div className="lg:col-span-2">
           <div className="rounded-lg sm:rounded-xl border border-slate-700/50 bg-gradient-to-br from-slate-800/30 to-slate-900/30 backdrop-blur overflow-hidden">
