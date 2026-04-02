@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import Link from 'next/link'
-import { Truck, User, Users, Shield, Play, HelpCircle } from 'lucide-react'
+import { Truck, User, Users, Shield, Play, HelpCircle, ChevronRight } from 'lucide-react'
 import { HelpBox } from '@/components/ui/help-box'
 
 const demoAccounts = [
