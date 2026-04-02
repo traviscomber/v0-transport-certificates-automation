@@ -600,8 +600,6 @@ export default function UploadPage() {
     }
   }
 }
-
-      {/* Document Type Selection */}
       <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900">
         <CardHeader>
           <CardTitle className="text-foreground">Tipo de Documento</CardTitle>
