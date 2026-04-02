@@ -1,6 +1,7 @@
-/** @type {import('next').NextConfig} */
-// Cache buster v2: Force webpack rebuild to clear old cache
-const nextConfig = {
+// Next.js configuration - Production Ready
+// Cleaned and optimized for deployment
+
+export default {
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -11,5 +12,3 @@ const nextConfig = {
     unoptimized: true,
   },
 }
-
-export default nextConfig
