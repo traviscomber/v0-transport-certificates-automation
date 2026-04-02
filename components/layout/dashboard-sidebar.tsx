@@ -211,10 +211,7 @@ export function DashboardSidebar() {
     </>
   )
 }
-              <FileText className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="font-bold text-white">DocuFleet</h1>
+
               <p className="text-xs text-slate-400">by Segur-ia</p>
             </div>
           </div>
