@@ -212,7 +212,6 @@ export function DashboardSidebar() {
   )
 }
 
-          'bg-slate-900 border-r border-slate-700/50',
           isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         )}
       >

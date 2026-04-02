@@ -601,7 +601,6 @@ export default function UploadPage() {
   }
 }
 
-          Subir Documentos
         </h1>
         <p className="text-muted-foreground">Carga documentos para validacion automatica con IA</p>
       </div>
