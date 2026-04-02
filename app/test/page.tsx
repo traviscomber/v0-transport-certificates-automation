@@ -1,203 +1,278 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Truck, Users, Shield, Zap, Clock, CheckCircle2 } from 'lucide-react'
+import { Zap, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useAuth } from '@/lib/auth-context'
-
-type UserRole = 'conductor' | 'despachador' | 'administrador'
-
-interface DemoAccount {
-  role: UserRole
-  email: string
-  password: string
-  name: string
-  company: string
-  icon: React.ReactNode
-}
-
-const demoAccounts: DemoAccount[] = [
-  {
-    role: 'conductor',
-    email: 'driver@demo.cl',
-    password: 'demo123',
-    name: 'Juan Pérez',
-    company: 'Transportista Independiente',
-    icon: <Truck className="w-8 h-8" />,
-  },
-  {
-    role: 'despachador',
-    email: 'dispatcher@demo.cl',
-    password: 'demo123',
-    name: 'María García',
-    company: 'Logística Express',
-    icon: <Users className="w-8 h-8" />,
-  },
-  {
-    role: 'administrador',
-    email: 'admin@demo.cl',
-    password: 'demo123',
-    name: 'Carlos López',
-    company: 'Administrador del Sistema',
-    icon: <Shield className="w-8 h-8" />,
-  },
-]
+import Link from 'next/link'
 
 export default function TestPage() {
-  const [activeTab, setActiveTab] = useState<UserRole>('conductor')
-  const [loadingRole, setLoadingRole] = useState<UserRole | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const { login } = useAuth()
-  const router = useRouter()
+  const [activeTab, setActiveTab] = useState('roles')
+  const [expandedFaq, setExpandedFaq] = useState<string | null>(null)
 
-  const filteredAccounts = demoAccounts.filter((acc) => acc.role === activeTab)
-  const selectedAccount = filteredAccounts[0]
-
-  const handleQuickLogin = async (account: DemoAccount) => {
-    setError(null)
-    setLoadingRole(account.role)
-
-    try {
-      await login(account.email, account.password)
-      // Redirigir al dashboard correcto según el rol
-      const dashboardMap: Record<UserRole, string> = {
-        conductor: '/conductor',
-        despachador: '/despachador',
-        administrador: '/admin',
-      }
-      router.push(dashboardMap[account.role])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesión')
-      setLoadingRole(null)
-    }
+  const toggleFaq = (id: string) => {
+    setExpandedFaq(expandedFaq === id ? null : id)
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
-      <div className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
+      <div className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Página de Pruebas</h1>
-              <p className="text-slate-400">Selecciona un rol para acceder directamente al sistema</p>
+              <h1 className="text-4xl font-bold text-white mb-2">Centro Educativo DocuFleet</h1>
+              <p className="text-slate-400">
+                Aprende cómo usar DocuFleet explorando los 3 roles principales, features avanzadas y documentación
+              </p>
             </div>
-            <Zap className="w-12 h-12 text-orange-500 opacity-20" />
+          </div>
+
+          {/* Tabs */}
+          <div className="flex gap-3 border-b border-slate-700 -mb-px">
+            {[
+              { id: 'roles', label: 'Los 3 Roles' },
+              { id: 'features', label: 'Features Avanzadas' },
+              { id: 'learning', label: 'Centro de Aprendizaje' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-3 font-semibold transition-all border-b-2 ${
+                  activeTab === tab.id
+                    ? 'text-orange-500 border-orange-500'
+                    : 'text-slate-400 border-transparent hover:text-slate-300'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Content */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Tabs */}
-        <div className="mb-8 flex gap-3">
-          {(['conductor', 'despachador', 'administrador'] as UserRole[]).map((role) => {
-            const roleLabel: Record<UserRole, string> = {
-              conductor: 'Conductor',
-              despachador: 'Despachador',
-              administrador: 'Administrador',
-            }
-            const isActive = activeTab === role
+        {/* Los 3 Roles Tab */}
+        {activeTab === 'roles' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="border-slate-700 bg-slate-800/50 hover:bg-slate-800/80 transition-all">
+              <CardHeader>
+                <CardTitle className="text-orange-500 text-lg">Compliance Dashboard</CardTitle>
+                <CardDescription>Monitoreo de cumplimiento normativo</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-slate-300">
+                  Visualiza el estado de compliance de todos los documentos en tiempo real.
+                </p>
+                <Link href="/auth/login">
+                  <Button className="btn-orange">Ver Dashboard</Button>
+                </Link>
+              </CardContent>
+            </Card>
 
-            return (
-              <button
-                key={role}
-                onClick={() => setActiveTab(role)}
-                className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                  isActive
-                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/50'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
-                }`}
-              >
-                {roleLabel[role]}
-              </button>
-            )
-          })}
-        </div>
+            <Card className="border-slate-700 bg-slate-800/50 hover:bg-slate-800/80 transition-all">
+              <CardHeader>
+                <CardTitle className="text-orange-500 text-lg">Reportes Avanzados</CardTitle>
+                <CardDescription>Análisis detallado y exportación</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-slate-300">
+                  Genera reportes personalizados y gráficos analíticos.
+                </p>
+                <Button className="btn-orange">Ver Reportes</Button>
+              </CardContent>
+            </Card>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-900/20 border border-red-500/50 rounded-lg text-red-200">
-            {error}
+            <Card className="border-slate-700 bg-slate-800/50 hover:bg-slate-800/80 transition-all">
+              <CardHeader>
+                <CardTitle className="text-orange-500 text-lg">Analytics</CardTitle>
+                <CardDescription>Métricas e indicadores KPI</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-slate-300">
+                  Análisis de tendencias y comportamiento de usuarios.
+                </p>
+                <Button className="btn-orange">Ver Analytics</Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-700 bg-slate-800/50 hover:bg-slate-800/80 transition-all">
+              <CardHeader>
+                <CardTitle className="text-orange-500 text-lg">Extracción OCR</CardTitle>
+                <CardDescription>Análisis inteligente de documentos</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-slate-300">
+                  La IA extrae automáticamente datos de documentos.
+                </p>
+                <Button className="btn-orange">Subir Documento</Button>
+              </CardContent>
+            </Card>
           </div>
         )}
 
-        {/* Profile Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {filteredAccounts.map((account) => (
-            <Card
-              key={account.email}
-              className="border-slate-700 bg-slate-800/50 hover:bg-slate-800/80 cursor-pointer transition-all hover:shadow-xl hover:shadow-orange-500/10"
-              onClick={() => handleQuickLogin(account)}
-            >
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-orange-500">{account.icon}</div>
-                  <CheckCircle2 className="w-5 h-5 text-green-500" />
-                </div>
-                <CardTitle className="text-xl text-white">{account.name}</CardTitle>
-                <CardDescription className="text-slate-400">{account.company}</CardDescription>
+        {/* Features Avanzadas Tab */}
+        {activeTab === 'features' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="border-slate-700 bg-slate-800/50">
+              <CardHeader>
+                <CardTitle className="text-orange-500">Reportes Avanzados</CardTitle>
+                <CardDescription>Análisis detallado y exportación</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <p className="text-xs text-slate-500 uppercase tracking-wide">Email</p>
-                  <p className="text-sm font-mono text-slate-300">{account.email}</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-xs text-slate-500 uppercase tracking-wide">Contraseña</p>
-                  <p className="text-sm font-mono text-slate-300">•••••••••</p>
-                </div>
-                <Button
-                  onClick={() => handleQuickLogin(account)}
-                  disabled={loadingRole === account.role}
-                  className="w-full btn-orange mt-4"
-                >
-                  {loadingRole === account.role ? (
-                    <span className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Accediendo...
-                    </span>
-                  ) : (
-                    'Acceder Directamente'
-                  )}
-                </Button>
+                <p className="text-slate-300">
+                  Genera reportes personalizados y gráficos analíticos.
+                </p>
+                <Button className="btn-orange">Ver Reportes</Button>
               </CardContent>
             </Card>
-          ))}
-        </div>
 
-        {/* Features Info */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="border-slate-700 bg-slate-800/30">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Clock className="w-5 h-5 text-orange-500" />
-                Acceso Rápido
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-slate-300">
-              <p>
-                Haz clic en cualquier perfil para acceder directamente al dashboard con los datos demo ya
-                cargados. Perfecto para pruebas y demostraciones.
-              </p>
-            </CardContent>
-          </Card>
+            <Card className="border-slate-700 bg-slate-800/50">
+              <CardHeader>
+                <CardTitle className="text-orange-500">Extracción OCR</CardTitle>
+                <CardDescription>Análisis inteligente de documentos</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-slate-300">
+                  La IA extrae automáticamente datos de documentos.
+                </p>
+                <Button className="btn-orange">Subir Documento</Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-          <Card className="border-slate-700 bg-slate-800/30">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Zap className="w-5 h-5 text-orange-500" />
-                Tres Roles
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-slate-300">
-              <p>
-                Prueba diferentes funcionalidades según el rol: Conductor, Despachador y Administrador.
-                Cada uno con permisos y vistas diferentes.
-              </p>
-            </CardContent>
-          </Card>
+        {/* Centro de Aprendizaje Tab */}
+        {activeTab === 'learning' && (
+          <div className="space-y-6 max-w-4xl">
+            <Card className="border-slate-700 bg-slate-800/50">
+              <CardHeader>
+                <CardTitle className="text-white text-xl">Comenzar</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-slate-300">
+                <div className="space-y-2">
+                  <p className="font-semibold">1. Crea una cuenta en /auth/register</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="font-semibold">2. Selecciona el rol (Conductor, Despachador, Admin)</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="font-semibold">3. Configura tu perfil y organización</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="font-semibold">4. Invita a otros usuarios a tu equipo</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-700 bg-slate-800/50">
+              <CardHeader>
+                <CardTitle className="text-white text-xl">Gestión de Documentos</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-slate-300">
+                <div className="flex gap-3">
+                  <span className="text-orange-500">•</span>
+                  <span>Los conductores suben certificados automáticamente</span>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-orange-500">•</span>
+                  <span>El sistema extrae datos usando IA</span>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-orange-500">•</span>
+                  <span>Los administradores validan y aprueban</span>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-orange-500">•</span>
+                  <span>Recibe alertas de vencimiento</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-700 bg-slate-800/50">
+              <CardHeader>
+                <CardTitle className="text-white text-xl">Cumplimiento y Auditoría</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-slate-300">
+                <div className="flex gap-3">
+                  <span className="text-orange-500">•</span>
+                  <span>Todas las acciones quedan registradas</span>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-orange-500">•</span>
+                  <span>Genera reportes de compliance</span>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-orange-500">•</span>
+                  <span>Monitorea estado de documentos en tiempo real</span>
+                </div>
+                <div className="flex gap-3">
+                  <span className="text-orange-500">•</span>
+                  <span>Exporta datos para análisis</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-700 bg-slate-800/50">
+              <CardHeader>
+                <CardTitle className="text-white text-xl">Preguntas Frecuentes</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {[
+                  {
+                    id: 'q1',
+                    q: '¿Qué documentos puedo subir?',
+                    a: 'Licencia, Permiso, Revisión Técnica, Seguro, y más.',
+                  },
+                  {
+                    id: 'q2',
+                    q: '¿Cuánto tarda la validación?',
+                    a: 'Segundos con IA automática en tiempo real.',
+                  },
+                  {
+                    id: 'q3',
+                    q: '¿Es seguro?',
+                    a: 'Sí. Encriptación, servidores seguros y cumplimiento normativo.',
+                  },
+                ].map((faq) => (
+                  <div key={faq.id} className="border border-slate-700 rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => toggleFaq(faq.id)}
+                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-700/50 transition-colors"
+                    >
+                      <span className="text-left font-semibold text-slate-300">{faq.q}</span>
+                      <ChevronDown
+                        className={`w-5 h-5 text-orange-500 transition-transform ${
+                          expandedFaq === faq.id ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
+                    {expandedFaq === faq.id && (
+                      <div className="px-4 py-3 bg-slate-900/50 border-t border-slate-700 text-slate-300">
+                        {faq.a}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Footer Notice */}
+        <div className="mt-12 p-6 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+          <p className="text-slate-300">
+            Este es un entorno de demostración con datos simulados. Para acceso real, por favor{' '}
+            <Link href="/auth/login" className="text-orange-500 hover:text-orange-400 font-semibold">
+              inicia sesión
+            </Link>{' '}
+            o{' '}
+            <Link href="/auth/register" className="text-orange-500 hover:text-orange-400 font-semibold">
+              regístrate aquí
+            </Link>
+            .
+          </p>
         </div>
       </div>
     </div>
