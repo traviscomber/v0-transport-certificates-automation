@@ -600,8 +600,6 @@ export default function UploadPage() {
     }
   }
 }
-
-        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <Upload className="h-8 w-8 text-orange-400" />
           Subir Documentos
         </h1>
