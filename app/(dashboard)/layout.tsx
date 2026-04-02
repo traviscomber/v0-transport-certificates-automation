@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar'
 import { useAuth } from '@/lib/auth-context'
 import { useEffect, useState } from 'react'
