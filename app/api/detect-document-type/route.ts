@@ -1,9 +1,25 @@
 import { Anthropic } from '@anthropic-ai/sdk'
-import { DOCUMENT_DETECTION_PROMPT } from '@/lib/document-detection'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 })
+
+const DOCUMENT_DETECTION_PROMPT = `Eres un experto en documentos chilenos de transporte.
+
+Tu tarea es identificar qué tipo de documento es esta imagen.
+
+RESPONDE EN JSON CON ESTE FORMATO EXACTO:
+{
+  "primaryDocument": {
+    "code": "codigo_documento",
+    "name": "Nombre Documento",
+    "confidence": 0.95
+  },
+  "alternatives": [
+    {"code": "alt1", "name": "Alternativa 1", "confidence": 0.05}
+  ],
+  "reasoning": "Breve explicación de por qué es este documento"
+}`
 
 export async function POST(request: Request) {
   try {
@@ -53,11 +69,10 @@ export async function POST(request: Request) {
     }
 
     const detectionResult = JSON.parse(jsonMatch[0])
-    console.log('[v0] Detection result:', detectionResult.primaryDocument.code)
 
     return Response.json(detectionResult)
   } catch (error) {
-    console.error('[v0] Document detection error:', error)
+    console.error('Document detection error:', error)
     return Response.json(
       {
         error: 'Failed to detect document type',
