@@ -211,7 +211,7 @@ export function DashboardSidebar() {
     </>
   )
 }
-        className={cn(
+
           'fixed top-0 left-0 z-40 h-screen w-64 transition-transform duration-300 ease-in-out',
           'bg-slate-900 border-r border-slate-700/50',
           isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
