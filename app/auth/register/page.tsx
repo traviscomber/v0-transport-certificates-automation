@@ -20,7 +20,7 @@ export default function RegisterPage() {
     confirmPassword: "",
     fullName: "",
     role: "driver" as const,
-    organizationId: "",
+    companyName: "",
   })
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -53,7 +53,7 @@ export default function RegisterPage() {
         password: formData.password,
         full_name: formData.fullName,
         role: formData.role,
-        organization_id: formData.organizationId || "default",
+        company_name: formData.companyName || undefined,
       })
     } catch (error: unknown) {
       setError(parseAuthError(error))
@@ -117,13 +117,13 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="organizationId">Organización (ID)</Label>
+                <Label htmlFor="companyName">Empresa / Organización (Opcional)</Label>
                 <Input
-                  id="organizationId"
+                  id="companyName"
                   type="text"
-                  value={formData.organizationId}
-                  onChange={(e) => setFormData({ ...formData, organizationId: e.target.value })}
-                  placeholder="Dejar vacío para crear nueva"
+                  value={formData.companyName}
+                  onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                  placeholder="Nombre de tu empresa o flota"
                 />
               </div>
 

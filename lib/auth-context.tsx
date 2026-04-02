@@ -10,8 +10,8 @@ export interface User {
   id: string
   email: string
   role: UserRole
-  organization_id: string
   full_name: string
+  company_name?: string
   avatar_url?: string
 }
 
@@ -29,7 +29,7 @@ export interface RegisterData {
   password: string
   full_name: string
   role: UserRole
-  organization_id: string
+  company_name?: string
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Obtener perfil del usuario
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('id, email, role, organization_id, full_name, avatar_url')
+          .select('id, email, role, full_name, company_name, avatar_url')
           .eq('id', session.user.id)
           .single()
 
@@ -70,8 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: profile.id,
           email: profile.email || session.user.email || '',
           role: profile.role as UserRole,
-          organization_id: profile.organization_id,
           full_name: profile.full_name,
+          company_name: profile.company_name,
           avatar_url: profile.avatar_url,
         })
       } catch (error) {
@@ -92,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Re-fetch profile cuando cambia auth state
         const { data: profile } = await supabase
           .from('profiles')
-          .select('id, email, role, organization_id, full_name, avatar_url')
+          .select('id, email, role, full_name, company_name, avatar_url')
           .eq('id', session.user.id)
           .single()
 
@@ -101,8 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             id: profile.id,
             email: profile.email || session.user.email || '',
             role: profile.role as UserRole,
-            organization_id: profile.organization_id,
             full_name: profile.full_name,
+            company_name: profile.company_name,
             avatar_url: profile.avatar_url,
           })
         }
@@ -157,13 +157,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (authError || !authData.user) throw authError
 
-      // Crear perfil
+      // Crear perfil con solo los campos que existen en la tabla
       const { error: profileError } = await supabase.from('profiles').insert({
         id: authData.user.id,
         email: data.email,
         full_name: data.full_name,
         role: data.role,
-        organization_id: data.organization_id,
+        company_name: data.company_name || null,
       })
 
       if (profileError) throw profileError
