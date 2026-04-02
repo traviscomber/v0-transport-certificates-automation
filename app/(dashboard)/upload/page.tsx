@@ -600,8 +600,6 @@ export default function UploadPage() {
     }
   }
 }
-        <CardHeader>
-          <CardTitle className="text-foreground">Tipo de Documento</CardTitle>
           <CardDescription>Selecciona el tipo de documento que vas a subir (opcional - la IA lo detectara automaticamente)</CardDescription>
         </CardHeader>
         <CardContent>

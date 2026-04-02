@@ -211,7 +211,6 @@ export function DashboardSidebar() {
     </>
   )
 }
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
               <FileText className="h-6 w-6 text-white" />
             </div>
             <div>

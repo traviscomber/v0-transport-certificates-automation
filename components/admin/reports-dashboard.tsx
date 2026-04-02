@@ -9,7 +9,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Download, Filter, Calendar, Eye } from 'lucide-react'
-import { MOCK_AUDIT_LOGS, MOCK_COMPLIANCE_DATA } from '@/lib/constants/mock-data'
 
 export function ReportsDashboard() {
   const [selectedReport, setSelectedReport] = useState('audit')
