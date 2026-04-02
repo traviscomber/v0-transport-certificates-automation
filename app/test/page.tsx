@@ -4,6 +4,10 @@ import { useState } from 'react'
 import AdminDashboard from '@/components/admin/admin-dashboard'
 import DispatcherDashboard from '@/components/dispatcher/dispatcher-dashboard'
 import DriverDashboard from '@/components/driver/driver-dashboard'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import Link from 'next/link'
 
 // SVG Icons aligned to brandbook
 const DriverIcon = () => (
@@ -210,6 +214,7 @@ const MOCK_STATS = {
 
 export default function TestPage() {
   const [activeRole, setActiveRole] = useState<'admin' | 'dispatcher' | 'driver' | null>(null)
+  const [activeTab, setActiveTab] = useState<'roles' | 'features' | 'learn'>('roles')
 
   if (activeRole === 'admin') {
     return (
@@ -265,8 +270,39 @@ export default function TestPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 sm:p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* Main Container with Tabs */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="inline-block p-3 bg-orange-500/10 rounded-lg mb-4">
+            <svg className="w-8 h-8 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">Centro Educativo DocuFleet</h1>
+          <p className="text-slate-300 text-lg max-w-2xl mx-auto">
+            Aprende cómo usar DocuFleet explorando los 3 roles principales, features avanzadas y documentación completa
+          </p>
+        </div>
+
+        {/* Tabs Navigation */}
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'roles' | 'features' | 'learn')} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-8 bg-slate-800/50 border border-slate-700/50 p-1">
+            <TabsTrigger value="roles" className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-300">
+              Los 3 Roles
+            </TabsTrigger>
+            <TabsTrigger value="features" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-300">
+              Features Avanzadas
+            </TabsTrigger>
+            <TabsTrigger value="learn" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300">
+              Centro de Aprendizaje
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Tab 1: Roles */}
+          <TabsContent value="roles" className="space-y-8">
+            <div className="max-w-4xl mx-auto">
         {/* Hero Section */}
         <div className="text-center mb-16">
           <div className="inline-block p-3 bg-orange-500/10 rounded-lg mb-4">
@@ -283,17 +319,17 @@ export default function TestPage() {
           </p>
         </div>
 
-        {/* What is DocuFleet Section */}
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6 mb-12">
-          <h2 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
-            <span className="text-orange-500">●</span> ¿Qué es DocuFleet?
-          </h2>
-          <p className="text-slate-300 text-sm leading-relaxed">
-            DocuFleet es una plataforma de automatización y validación de documentos empresariales. Utiliza inteligencia artificial (OCR + Visión Computacional) para extraer, verificar y digitalizar certificados, permisos y documentos de transporte en tiempo real. Reduce errores manuales, acelera procesos de cumplimiento normativo y centraliza toda la información en un dashboard intuitivo.
-          </p>
-        </div>
+            {/* What is DocuFleet Section */}
+            <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6 mb-12">
+              <h2 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
+                <span className="text-orange-500">●</span> ¿Qué es DocuFleet?
+              </h2>
+              <p className="text-slate-300 text-sm leading-relaxed">
+                DocuFleet es una plataforma de automatización y validación de documentos empresariales. Utiliza inteligencia artificial (OCR + Visión Computacional) para extraer, verificar y digitalizar certificados, permisos y documentos de transporte en tiempo real. Reduce errores manuales, acelera procesos de cumplimiento normativo y centraliza toda la información en un dashboard intuitivo.
+              </p>
+            </div>
 
-        {/* Role Cards Grid */}
+            {/* Role Cards Grid */}
         <div className="grid gap-6 mb-12">
           {/* Conductor Card */}
           <button
@@ -416,41 +452,204 @@ export default function TestPage() {
                 Explorar dashboard <span>→</span>
               </div>
             </div>
-          </button>
-        </div>
-
-        {/* How It Works */}
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6 mb-12">
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            <span className="text-cyan-500">●</span> ¿Cómo funciona?
-          </h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="flex gap-3">
-              <div className="flex-shrink-0 w-8 h-8 bg-cyan-500/20 rounded-lg flex items-center justify-center text-cyan-400 font-bold">1</div>
-              <div>
-                <h4 className="font-semibold text-white mb-1">Cargar Documento</h4>
-                <p className="text-xs text-slate-400">Los conductores suben sus certificados en formato PDF o imagen</p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <div className="flex-shrink-0 w-8 h-8 bg-cyan-500/20 rounded-lg flex items-center justify-center text-cyan-400 font-bold">2</div>
-              <div>
-                <h4 className="font-semibold text-white mb-1">Validar Automáticamente</h4>
-                <p className="text-xs text-slate-400">La IA extrae datos y verifica autenticidad en segundos</p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <div className="flex-shrink-0 w-8 h-8 bg-cyan-500/20 rounded-lg flex items-center justify-center text-cyan-400 font-bold">3</div>
-              <div>
-                <h4 className="font-semibold text-white mb-1">Monitorear</h4>
-                <p className="text-xs text-slate-400">Los despachadores y admins reciben alertas de vencimiento</p>
-              </div>
-            </div>
           </div>
         </div>
+          </TabsContent>
 
-        {/* Important Notice */}
-        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-6">
+          {/* Tab 2: Features Avanzadas */}
+          <TabsContent value="features" className="space-y-8">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-white mb-3">Features Avanzadas</h2>
+                <p className="text-slate-400">Explora las herramientas de nivel empresarial para gestión completa</p>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Compliance Dashboard */}
+                <Card className="bg-slate-800/50 border-cyan-500/30">
+                  <CardHeader>
+                    <CardTitle className="text-cyan-300 flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                      </svg>
+                      Compliance Dashboard
+                    </CardTitle>
+                    <CardDescription>Monitoreo de cumplimiento normativo en tiempo real</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-slate-300 mb-4">Visualiza el estado de compliance de todos los documentos, certificados vencidos, alertas críticas y métricas de cumplimiento por transportista.</p>
+                    <Link href="/admin/reportes">
+                      <Badge className="bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 cursor-pointer">Ver Dashboard</Badge>
+                    </Link>
+                  </CardContent>
+                </Card>
+
+                {/* Reports Dashboard */}
+                <Card className="bg-slate-800/50 border-orange-500/30">
+                  <CardHeader>
+                    <CardTitle className="text-orange-300 flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2V17zm4 0h-2V7h2V17zm4 0h-2v-4h2V17z" />
+                      </svg>
+                      Reportes Avanzados
+                    </CardTitle>
+                    <CardDescription>Análisis detallado y exportación de datos</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-slate-300 mb-4">Genera reportes personalizados, gráficos analíticos, auditoría de acciones y exporta datos en múltiples formatos.</p>
+                    <Link href="/admin/reportes">
+                      <Badge className="bg-orange-500/20 text-orange-300 hover:bg-orange-500/30 cursor-pointer">Ver Reportes</Badge>
+                    </Link>
+                  </CardContent>
+                </Card>
+
+                {/* Analytics */}
+                <Card className="bg-slate-800/50 border-green-500/30">
+                  <CardHeader>
+                    <CardTitle className="text-green-300 flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z" />
+                      </svg>
+                      Analytics
+                    </CardTitle>
+                    <CardDescription>Métricas e indicadores de desempeño</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-slate-300 mb-4">Análisis de tendencias, KPIs de cumplimiento, tasas de validación y comportamiento de usuarios.</p>
+                    <Link href="/analytics">
+                      <Badge className="bg-green-500/20 text-green-300 hover:bg-green-500/30 cursor-pointer">Ver Analytics</Badge>
+                    </Link>
+                  </CardContent>
+                </Card>
+
+                {/* OCR Processing */}
+                <Card className="bg-slate-800/50 border-purple-500/30">
+                  <CardHeader>
+                    <CardTitle className="text-purple-300 flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                      </svg>
+                      Extracción OCR
+                    </CardTitle>
+                    <CardDescription>Análisis inteligente de documentos</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-slate-300 mb-4">Sube documentos y la IA extrae automáticamente datos, valida formatos y detecta anomalías.</p>
+                    <Link href="/app/upload">
+                      <Badge className="bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 cursor-pointer">Subir Documento</Badge>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Important Notice */}
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-6 mt-8">
+                <p className="text-sm text-blue-200">
+                  Estos dashboards muestran datos simulados. Para acceso a features reales con tus datos, por favor{' '}
+                  <a href="/auth/login" className="text-blue-300 hover:text-blue-200 underline font-semibold">
+                    inicia sesión
+                  </a>.
+                </p>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Tab 3: Centro de Aprendizaje */}
+          <TabsContent value="learn" className="space-y-8">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-white mb-3">Centro de Aprendizaje</h2>
+                <p className="text-slate-400">Todo lo que necesitas saber para usar DocuFleet</p>
+              </div>
+
+              <div className="space-y-6">
+                {/* Getting Started */}
+                <Card className="bg-slate-800/50 border-slate-700/50">
+                  <CardHeader>
+                    <CardTitle className="text-white">Comenzar</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm text-slate-300">
+                    <p>• Crea una cuenta en /auth/register</p>
+                    <p>• Selecciona tu rol (Conductor, Despachador, Admin, etc.)</p>
+                    <p>• Configura tu organización y perfil</p>
+                    <p>• Invita a otros usuarios a tu equipo</p>
+                  </CardContent>
+                </Card>
+
+                {/* Documentos */}
+                <Card className="bg-slate-800/50 border-slate-700/50">
+                  <CardHeader>
+                    <CardTitle className="text-white">Gestión de Documentos</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm text-slate-300">
+                    <p>• Los conductores suben certificados (Licencia, Permiso, Revisión Técnica, etc.)</p>
+                    <p>• El sistema usa IA para extraer datos automáticamente</p>
+                    <p>• Los administradores validan y aprueban documentos</p>
+                    <p>• Recibe alertas cuando los documentos estén próximos a vencer</p>
+                  </CardContent>
+                </Card>
+
+                {/* Cumplimiento */}
+                <Card className="bg-slate-800/50 border-slate-700/50">
+                  <CardHeader>
+                    <CardTitle className="text-white">Cumplimiento y Auditoría</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm text-slate-300">
+                    <p>• Todas las acciones quedan registradas en auditoría</p>
+                    <p>• Genera reportes de compliance para reguladores</p>
+                    <p>• Monitorea en tiempo real el estado de documentos</p>
+                    <p>• Exporta datos para análisis externo</p>
+                  </CardContent>
+                </Card>
+
+                {/* Roles y Permisos */}
+                <Card className="bg-slate-800/50 border-slate-700/50">
+                  <CardHeader>
+                    <CardTitle className="text-white">Roles y Permisos</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm text-slate-300">
+                    <div>
+                      <p className="font-semibold text-orange-300">Conductor</p>
+                      <p>Subir y gestionar sus propios documentos</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-cyan-300">Despachador</p>
+                      <p>Supervisar flota, asignar tareas, ver alertas</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-green-300">Administrador</p>
+                      <p>Control total del sistema, usuario management, auditoría</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* FAQ */}
+                <Card className="bg-slate-800/50 border-slate-700/50">
+                  <CardHeader>
+                    <CardTitle className="text-white">Preguntas Frecuentes</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm text-slate-300">
+                    <div>
+                      <p className="font-semibold text-white">¿Qué documentos puedo subir?</p>
+                      <p>Licencia de Conducir, Permiso de Circulación, Revisión Técnica, Seguro de Responsabilidad, y más.</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white">¿Cuánto tiempo tarda la validación?</p>
+                      <p>Segundos con IA automática. Los documentos se validan en tiempo real.</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white">¿Es seguro mi información?</p>
+                      <p>Sí. Usamos encriptación, servidores seguros en Supabase y cumplimos regulaciones.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Final Important Notice - Outside Tabs */}
+        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-6 mt-8">
           <div className="flex gap-3">
             <svg className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
@@ -472,5 +671,4 @@ export default function TestPage() {
         </div>
       </div>
     </div>
-  )
 }
