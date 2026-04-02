@@ -211,7 +211,6 @@ export function DashboardSidebar() {
     </>
   )
 }
-            </div>
           </div>
 
           {/* User info */}

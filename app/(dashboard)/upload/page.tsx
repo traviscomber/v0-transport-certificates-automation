@@ -600,7 +600,6 @@ export default function UploadPage() {
     }
   }
 }
-        </CardHeader>
         <CardContent>
           <Select value={selectedType} onValueChange={setSelectedType}>
             <SelectTrigger className="w-full sm:w-80 bg-slate-900 border-slate-700">
