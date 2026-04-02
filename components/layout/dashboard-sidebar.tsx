@@ -211,8 +211,6 @@ export function DashboardSidebar() {
     </>
   )
 }
-
-              <p className="text-xs text-slate-400">by Segur-ia</p>
             </div>
           </div>
 

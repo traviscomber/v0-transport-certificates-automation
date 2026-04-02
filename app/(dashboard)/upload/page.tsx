@@ -600,7 +600,6 @@ export default function UploadPage() {
     }
   }
 }
-          <CardDescription>Selecciona el tipo de documento que vas a subir (opcional - la IA lo detectara automaticamente)</CardDescription>
         </CardHeader>
         <CardContent>
           <Select value={selectedType} onValueChange={setSelectedType}>
