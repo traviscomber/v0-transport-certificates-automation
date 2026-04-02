@@ -45,19 +45,7 @@ export default function DashboardPage() {
         </div>
       )
   }
-
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-3 sm:mb-4">
-                <div className="p-2 rounded-lg bg-cyan-500/20 group-hover:bg-cyan-500/30 transition-colors">
-                  <Shield className="h-4 sm:h-5 w-4 sm:w-5 text-cyan-400" />
-                </div>
-                <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 text-xs">Premium</Badge>
-              </div>
-              <p className="text-slate-400 text-xs sm:text-sm mb-2">Compliance Score</p>
-              <p className="text-2xl sm:text-3xl font-bold text-white">{stats.complianceScore}<span className="text-lg sm:text-xl">%</span></p>
-              <p className="text-xs text-cyan-400 mt-2">Excelente estado</p>
-            </div>
-          </div>
+}
         </div>
       </div>
 

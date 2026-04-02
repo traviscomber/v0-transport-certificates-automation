@@ -509,36 +509,7 @@ export default function UploadPage() {
       </Card>
     </div>
   )
-}
-
-const documentTypes = [
-  { value: 'licencia_conducir', label: 'Licencia de Conducir', category: 'Conductor' },
-  { value: 'cedula_identidad', label: 'Cedula de Identidad', category: 'Conductor' },
-  { value: 'hoja_vida_conductor', label: 'Hoja de Vida Conductor', category: 'Conductor' },
-  { value: 'revision_tecnica', label: 'Revision Tecnica', category: 'Vehiculo' },
-  { value: 'permiso_circulacion', label: 'Permiso de Circulacion', category: 'Vehiculo' },
-  { value: 'soap', label: 'SOAP', category: 'Vehiculo' },
-  { value: 'seguro_responsabilidad', label: 'Seguro Responsabilidad Civil', category: 'Vehiculo' },
-  { value: 'rut_empresa', label: 'RUT Empresa', category: 'Empresa' },
-  { value: 'patente_comercial', label: 'Patente Comercial', category: 'Empresa' },
-]
-
-export default function UploadPage() {
-  const [files, setFiles] = useState<UploadedFile[]>([])
-  const [isDragging, setIsDragging] = useState(false)
-  const [selectedType, setSelectedType] = useState<string>('')
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }, [])
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-  }, [])
-
-  const processFile = (file: File): UploadedFile => {
+}  const processFile = (file: File): UploadedFile => {
     return {
       id: Math.random().toString(36).substring(7),
       name: file.name,
