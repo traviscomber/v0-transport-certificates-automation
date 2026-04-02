@@ -600,8 +600,6 @@ export default function UploadPage() {
     }
   }
 }
-
-        </h1>
         <p className="text-muted-foreground">Carga documentos para validacion automatica con IA</p>
       </div>
 

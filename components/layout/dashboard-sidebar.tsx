@@ -211,8 +211,6 @@ export function DashboardSidebar() {
     </>
   )
 }
-
-          isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         )}
       >
         <div className="flex flex-col h-full">
