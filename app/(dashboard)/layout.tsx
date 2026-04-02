@@ -1,7 +1,5 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar'
 import { useAuth } from '@/lib/auth-context'
 import { useEffect, useState } from 'react'
@@ -17,6 +15,19 @@ export default function DashboardLayout({
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Skip rendering sidebar during prerender/build - only show on client
+  if (typeof window === 'undefined') {
+    return (
+      <div className="min-h-screen bg-gradient-dark">
+        <main className="md:ml-64 min-h-screen">
+          <div className="p-4 sm:p-6 lg:p-8">
+            {children}
+          </div>
+        </main>
+      </div>
+    )
+  }
 
   // Show loading state during hydration
   if (!mounted || loading) {
