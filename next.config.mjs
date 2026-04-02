@@ -1,3 +1,9 @@
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -17,19 +23,9 @@ const nextConfig = {
         buildDependencies: {
           config: [__filename],
         },
-        maxAge: 1000 * 60 * 60 * 24, // 1 day
+        maxAge: 1000 * 60 * 60 * 24,
         cacheDirectory: require('path').join(process.cwd(), '.next/cache/webpack'),
       }
-    }
-    
-    // Suppress PackFileCacheStrategy warnings for large strings
-    if (config.plugins) {
-      config.plugins = config.plugins.map(plugin => {
-        if (plugin.constructor.name === 'WebpackError') {
-          return null
-        }
-        return plugin
-      }).filter(Boolean)
     }
 
     return config
