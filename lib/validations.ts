@@ -1,6 +1,43 @@
-// Validation utilities for DocuFleet compliance system
+/**
+ * Validates email format
+ */
+export function validateEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
+}
 
 /**
+ * Validates phone number format for Chile
+ * Accepts formats: +56 9 1234 5678, 09 1234 5678, +569 1234 5678
+ */
+export function validatePhone(phone: string): boolean {
+  const phoneRegex = /^(\+56|0)9\d{8}$/
+  const cleaned = phone.replace(/\s|-/g, '')
+  return phoneRegex.test(cleaned)
+}
+
+/**
+ * Validates vehicle license plate format for Chile
+ * Format: XX-XX-## or XXXX##
+ */
+export function validatePlate(plate: string): boolean {
+  const plateRegex = /^[A-Z]{2}-?[A-Z]{2}-?\d{2}$|^[A-Z]{4}\d{2}$/
+  const cleaned = plate.toUpperCase()
+  return plateRegex.test(cleaned)
+}
+
+/**
+ * Validates VIN (Vehicle Identification Number) format
+ * Must be 17 characters alphanumeric
+ */
+export function validateVIN(vin: string): boolean {
+  const vinRegex = /^[A-HJ-NPR-Z0-9]{17}$/
+  return vinRegex.test(vin?.toUpperCase() || '')
+}
+
+/**
+ * Validation utilities for DocuFleet compliance system
+
  * Validates Chilean RUT format and checksum
  * Format: XX.XXX.XXX-X or XXXXXXXX-X
  */

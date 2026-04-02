@@ -110,7 +110,7 @@ interface AdminDashboardProps {
   stats: SystemStats
 }
 
-export function AdminDashboard({ profile, users, certificates, auditLog, notifications, stats }: AdminDashboardProps) {
+export default function AdminDashboard({ profile, users, certificates, auditLog, notifications, stats }: AdminDashboardProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [roleFilter, setRoleFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")

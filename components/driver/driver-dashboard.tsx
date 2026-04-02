@@ -55,7 +55,7 @@ interface DriverDashboardProps {
   notifications: Notification[]
 }
 
-export function DriverDashboard({ profile, certificates, notifications }: DriverDashboardProps) {
+export default function DriverDashboard({ profile, certificates, notifications }: DriverDashboardProps) {
   const [showUpload, setShowUpload] = useState(false)
   const router = useRouter()
   const supabase = createClient()

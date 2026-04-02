@@ -65,7 +65,12 @@ export function ReportsDashboard() {
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={MOCK_COMPLIANCE_DATA}>
+            <BarChart data={[
+              { name: 'Semana 1', compliant: 45, noncompliant: 5 },
+              { name: 'Semana 2', compliant: 52, noncompliant: 3 },
+              { name: 'Semana 3', compliant: 58, noncompliant: 2 },
+              { name: 'Semana 4', compliant: 65, noncompliant: 1 },
+            ]}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
