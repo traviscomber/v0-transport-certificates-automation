@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useAuth } from '@/lib/auth-context'
 import AdminDashboard from '@/components/admin/admin-dashboard'
 import DispatcherDashboard from '@/components/dispatcher/dispatcher-dashboard'
