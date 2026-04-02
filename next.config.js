@@ -11,4 +11,7 @@ const nextConfig = {
   },
 };
 
+// Force cache invalidation - v0 dev server cache buster
+console.log('[v0-config] Using clean next.config.js - v2');
+
 module.exports = nextConfig;
