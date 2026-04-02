@@ -1,7 +1,5 @@
-// Next.js configuration - Production Ready
-// Cleaned and optimized for deployment
-
-export default {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -11,4 +9,6 @@ export default {
   images: {
     unoptimized: true,
   },
-}
+};
+
+module.exports = nextConfig;
