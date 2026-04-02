@@ -17,7 +17,8 @@ import {
   FileText,
   Building2,
   ChevronRight,
-  Star
+  Star,
+  HelpCircle
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
