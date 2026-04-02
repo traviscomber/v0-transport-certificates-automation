@@ -2,46 +2,12 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
-import { validateLogin, parseAuthError } from '@/lib/auth-validation'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
 import Link from 'next/link'
-import { Truck, User, Users, Shield, Play, HelpCircle, ChevronRight } from 'lucide-react'
-import { HelpBox } from '@/components/ui/help-box'
-
-const demoAccounts = [
-  {
-    role: 'driver',
-    email: 'conductor@demo.cl',
-    password: 'demo123',
-    name: 'Conductor',
-    description: 'Acceso como conductor para subir certificados',
-    icon: User,
-    color: 'bg-blue-500 hover:bg-blue-600',
-  },
-  {
-    role: 'dispatcher',
-    email: 'despachador@demo.cl',
-    password: 'demo123',
-    name: 'Despachador',
-    description: 'Acceso como despachador para gestionar conductores',
-    icon: Users,
-    color: 'bg-green-500 hover:bg-green-600',
-  },
-  {
-    role: 'admin',
-    email: 'admin@demo.cl',
-    password: 'demo123',
-    name: 'Administrador',
-    description: 'Acceso completo al sistema',
-    icon: Shield,
-    color: 'bg-purple-500 hover:bg-purple-600',
-  },
-]
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -49,28 +15,25 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [demoLoading, setDemoLoading] = useState<string | null>(null)
-  const { login, loading: authLoading } = useAuth()
+  const { login } = useAuth()
   const router = useRouter()
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    // Validate form
-    const validation = validateLogin(email, password)
-    if (!validation.isValid) {
-      const firstError = validation.errors[0]
-      setError(firstError.message)
-      return
-    }
+  const demoAccounts = [
+    { role: 'driver', email: 'conductor@demo.cl', password: 'demo123', name: 'Conductor' },
+    { role: 'dispatcher', email: 'despachador@demo.cl', password: 'demo123', name: 'Despachador' },
+    { role: 'admin', email: 'admin@demo.cl', password: 'demo123', name: 'Administrador' },
+  ]
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     setIsLoading(true)
     setError(null)
 
     try {
       await login(email, password)
+      router.push('/dashboard')
     } catch (err) {
-      setError(parseAuthError(err))
-    } finally {
+      setError(err instanceof Error ? err.message : 'Error al iniciar sesión')
       setIsLoading(false)
     }
   }
@@ -81,137 +44,90 @@ export default function LoginPage() {
 
     try {
       await login(account.email, account.password)
+      router.push('/dashboard')
     } catch (err) {
-      setError(parseAuthError(err))
-    } finally {
+      setError(err instanceof Error ? err.message : 'Error al iniciar sesión')
       setDemoLoading(null)
     }
   }
 
   return (
-    <div className='min-h-screen bg-gradient-dark flex flex-col items-center justify-center p-4 relative overflow-hidden'>
-      {/* Background effects */}
-      <div className="absolute inset-0 bg-grid opacity-20" />
-      <div className="absolute top-20 left-10 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-10 right-10 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl" />
-
-      <div className='w-full max-w-md relative z-10'>
-        <div className='flex flex-col items-center mb-8'>
-          <div className='w-12 h-12 rounded-lg gradient-accent flex items-center justify-center shadow-lg glow-orange mb-4'>
-            <Truck className='h-7 w-7 text-white' />
-          </div>
-          <h1 className='text-3xl font-black text-foreground'>DocuFleet</h1>
-          <p className='text-muted-foreground text-center mt-2'>Compliance documental 100% automatizado</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-white mb-2">Iniciar Sesión</h1>
+          <p className="text-slate-400">Ingresa tu correo y contraseña para acceder a tu cuenta</p>
         </div>
 
-        {/* Ayuda Educativa */}
-        <HelpBox
-          variant="info"
-          title="Como usar esta pagina"
-          description="Elige una de las dos opciones para acceder:"
-          steps={[
-            {
-              step: 1,
-              title: "Opcion 1: Ver demostracion interactiva",
-              description: "Haz clic aqui para explorar los 3 roles del sistema sin necesidad de login."
-            },
-            {
-              step: 2,
-              title: "Opcion 2: Usar cuentas de demo",
-              description: "Prueba los dashboards con credenciales de demostración."
-            },
-            {
-              step: 3,
-              title: "Opcion 3: Iniciar sesion",
-              description: "Si ya tienes una cuenta, escribe tu correo y contraseña."
-            }
-          ]}
-        />
-
-        {/* Demo Interactive Link */}
-        <Card className='mb-6 glass-dark border-cyan-500/50 bg-gradient-to-br from-cyan-500/10 to-transparent'>
+        <Card className="border-slate-700 bg-slate-900/50">
           <CardHeader>
-            <CardTitle className='text-xl text-center flex items-center justify-center gap-2 text-cyan-300'>
-              <HelpCircle className='h-5 w-5 text-cyan-500' />
-              Prueba Rapida Interactiva
-            </CardTitle>
-            <CardDescription className='text-center text-muted-foreground'>
-              Aprende como funciona DocuFleet antes de registrarte. Explora los 3 roles principales con datos simulados.
-            </CardDescription>
+            <CardTitle>Login</CardTitle>
+            <CardDescription>Ingresa tus credenciales</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Link href="/test" className='w-full block'>
-              <Button className='w-full btn-cyan font-semibold h-12' variant="default">
-                <Play className='h-5 w-5 mr-2' />
-                Ir a Prueba Rápida
-                <ChevronRight className='h-5 w-5 ml-2' />
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+          <CardContent className="space-y-4">
+            {error && (
+              <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm">
+                {error}
+              </div>
+            )}
 
-        <div className='relative mb-6'>
-          <Separator className='bg-slate-700/30' />
-          <div className='absolute inset-0 flex items-center justify-center'>
-            <span className='bg-gradient-dark px-2 text-sm text-muted-foreground font-semibold'>O</span>
-          </div>
-        </div>
-
-        <Card className='glass-dark border-slate-700/50'>
-          <CardHeader>
-            <CardTitle className='text-2xl text-center text-foreground'>Iniciar Sesion</CardTitle>
-            <CardDescription className='text-center text-muted-foreground'>
-              Ingresa tu correo y contraseña para acceder a tu cuenta.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className='space-y-4'>
-              <div className='space-y-2'>
-                <Label htmlFor='email' className='text-foreground font-semibold'>Correo Electronico</Label>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="email">Correo Electrónico</Label>
                 <Input
-                  id='email'
-                  type='email'
-                  placeholder='usuario@empresa.cl'
-                  required
+                  id="email"
+                  type="email"
+                  placeholder="usuario@ejemplo.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className='bg-slate-800/50 border-slate-700 text-foreground placeholder:text-muted-foreground'
+                  required
                 />
               </div>
-              <div className='space-y-2'>
-                <div className='flex items-center justify-between'>
-                  <Label htmlFor='password' className='text-foreground font-semibold'>Contraseña</Label>
-                  <Link href='/auth/password-reset' className='text-xs text-orange-500 hover:text-orange-400 font-semibold'>
-                    ¿Olvidaste tu contraseña?
-                  </Link>
-                </div>
+
+              <div>
+                <Label htmlFor="password">Contraseña</Label>
                 <Input
-                  id='password'
-                  type='password'
-                  required
+                  id="password"
+                  type="password"
+                  placeholder="Tu contraseña"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className='bg-slate-800/50 border-slate-700 text-foreground'
+                  required
                 />
               </div>
-              {error && (
-                <div className='text-sm text-red-400 bg-red-500/10 p-3 rounded-lg border border-red-500/20'>
-                  {error}
-                </div>
-              )}
-              <Button 
-                type='submit' 
-                className='w-full btn-orange font-semibold h-11' 
-                disabled={isLoading || !!demoLoading}
-              >
-                {isLoading ? 'Iniciando sesion...' : 'Iniciar Sesion'}
+
+              <Button type="submit" disabled={isLoading} className="w-full btn-orange">
+                {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
               </Button>
             </form>
 
-            <div className='mt-6 text-center'>
-              <p className='text-sm text-muted-foreground'>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-700"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-slate-900 text-slate-400">O prueba con una cuenta demo</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {demoAccounts.map((account) => (
+                <Button
+                  key={account.role}
+                  onClick={() => handleDemoLogin(account)}
+                  disabled={demoLoading === account.role}
+                  variant="outline"
+                  className="w-full"
+                >
+                  {demoLoading === account.role ? 'Entrando...' : `Demo: ${account.name}`}
+                </Button>
+              ))}
+            </div>
+
+            <div className="text-center text-sm">
+              <p className="text-slate-400">
                 ¿No tienes cuenta?{' '}
-                <Link href='/auth/register' className='text-orange-500 hover:text-orange-400 font-semibold transition-colors'>
+                <Link href="/auth/register" className="text-orange-500 hover:text-orange-400 font-semibold">
                   Regístrate aquí
                 </Link>
               </p>

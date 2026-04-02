@@ -1,12 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { Zap, ChevronDown, Users, Shield, Truck, LogIn } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Truck, Users, Shield, ChevronDown, LogIn } from 'lucide-react'
 
 export default function TestPage() {
   const [activeTab, setActiveTab] = useState('roles')
@@ -66,11 +65,13 @@ export default function TestPage() {
 
   const handleQuickLogin = async (profile: typeof demoProfiles[0]) => {
     setLoadingRole(profile.role)
+    console.log('[v0] Attempting login with:', profile.email)
     try {
       await login(profile.email, profile.password)
+      console.log('[v0] Login successful, redirecting to dashboard')
       router.push('/dashboard')
     } catch (error) {
-      console.error('Login error:', error)
+      console.error('[v0] Login error:', error)
       setLoadingRole(null)
     }
   }
@@ -119,6 +120,7 @@ export default function TestPage() {
               <Card
                 key={profile.role}
                 className="border-slate-700 bg-slate-800/50 hover:bg-slate-800/80 transition-all cursor-pointer group"
+                onClick={() => handleQuickLogin(profile)}
               >
                 <CardHeader>
                   <div className="flex items-center gap-3 mb-4">
@@ -147,7 +149,10 @@ export default function TestPage() {
                   </div>
 
                   <Button
-                    onClick={() => handleQuickLogin(profile)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleQuickLogin(profile)
+                    }}
                     disabled={loadingRole === profile.role}
                     className="w-full btn-orange mt-4"
                   >
@@ -299,13 +304,13 @@ export default function TestPage() {
       <div className="border-t border-slate-700 bg-slate-900/50 backdrop-blur-sm py-6">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-slate-400">
           Este es un entorno de demostración con datos simulados. Para acceso real, por favor{' '}
-          <Link href="/auth/login" className="text-orange-500 hover:text-orange-400 font-semibold">
+          <a href="/auth/login" className="text-orange-500 hover:text-orange-400 font-semibold">
             inicia sesión
-          </Link>
+          </a>
           {' '}o{' '}
-          <Link href="/auth/register" className="text-orange-500 hover:text-orange-400 font-semibold">
+          <a href="/auth/register" className="text-orange-500 hover:text-orange-400 font-semibold">
             registrate aquí
-          </Link>
+          </a>
           .
         </div>
       </div>
