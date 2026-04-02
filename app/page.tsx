@@ -118,7 +118,7 @@ export default function LandingPage() {
                   Iniciar Sesion
                 </Button>
               </Link>
-              <Link href="#contacto">
+              <Link href="/contact">
                 <Button size="sm" className="btn-orange">
                   Contactar
                 </Button>
@@ -762,13 +762,13 @@ export default function LandingPage() {
             Unete a las empresas de transporte que ya automatizaron su compliance documental.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="#contact">
+            <Link href="/contact">
               <Button size="lg" className="text-lg px-8 h-14">
                 Contactar Ventas
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
-            <Link href="#contact">
+            <Link href="/contact">
               <Button size="lg" variant="outline" className="text-lg px-8 h-14 bg-transparent border-white text-white hover:bg-white/10">
                 Agendar Demo
               </Button>
