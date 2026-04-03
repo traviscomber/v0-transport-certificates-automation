@@ -108,12 +108,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_OUT' || !session) {
         setUser(null)
       } else if (session) {
-        // Re-fetch profile cuando cambia auth state
-        const { data: profile } = await supabase
+        // Re-fetch profile cuando cambia auth state - con fallback a columnas esenciales
+        const { data: fullProfile, error: fullError } = await supabase
           .from('profiles')
           .select('id, email, role, full_name, company_name, avatar_url')
           .eq('id', session.user.id)
           .single()
+
+        let profile = fullProfile
+        let profileError = fullError
+
+        // Si falla, intentar solo con columnas esenciales
+        if (fullError && fullError.code === '42703') {
+          const { data: basicProfile, error: basicError } = await supabase
+            .from('profiles')
+            .select('id, email, role, full_name')
+            .eq('id', session.user.id)
+            .single()
+          
+          profile = basicProfile
+          profileError = basicError
+        }
 
         if (profile) {
           setUser({
@@ -121,8 +136,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: profile.email || session.user.email || '',
             role: profile.role as UserRole,
             full_name: profile.full_name,
-            company_name: profile.company_name,
-            avatar_url: profile.avatar_url,
+            company_name: profile.company_name || undefined,
+            avatar_url: profile.avatar_url || undefined,
           })
         }
       }
