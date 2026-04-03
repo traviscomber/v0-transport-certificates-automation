@@ -50,19 +50,28 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/auth/login', request.url))
     }
 
-    // Obtener rol del usuario
+    // Obtener rol del usuario desde profile o desde email
+    let userRole = 'driver' // rol por defecto
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', session.user.id)
       .single()
 
-    if (profileError || !profile) {
-      console.error('[v0] Error fetching user profile:', profileError)
-      return NextResponse.redirect(new URL('/auth/login', request.url))
+    if (profile && profile.role) {
+      userRole = profile.role as string
+    } else {
+      // Si no hay profile, extraer rol del email (para demo accounts)
+      const email = session.user.email || ''
+      const emailPrefix = email.split('@')[0].toLowerCase()
+      if (emailPrefix === 'admin') userRole = 'admin'
+      else if (emailPrefix === 'despachador') userRole = 'dispatcher'
+      else if (emailPrefix === 'transportista') userRole = 'transportista'
+      else if (emailPrefix === 'mandante') userRole = 'mandante'
+      else userRole = 'driver'
+      
+      console.log('[v0] No profile found, using role from email:', { email, userRole })
     }
-
-    const userRole = profile.role as string
 
     // Verificar si el usuario tiene permiso para esta ruta
     const allowedRoutes = ROLE_ROUTES[userRole] || []
