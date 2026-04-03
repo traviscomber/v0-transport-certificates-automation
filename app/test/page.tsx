@@ -17,7 +17,6 @@ export default function TestPage() {
   const { login } = useAuth()
   const { addToast } = useToast()
   const router = useRouter()
-  const { addToast } = useToast()
   
   // Tabs configuration
   const tabs = [
@@ -25,6 +24,22 @@ export default function TestPage() {
     { id: 'features' as const, label: 'Features Avanzadas', icon: Shield },
     { id: 'learning' as const, label: 'Centro Educativo', icon: ChevronDown },
   ]
+
+  // Demo profiles for login
+  const demoProfiles = [
+    {
+      role: 'conductor',
+      title: 'Conductor',
+      email: 'conductor@demo.cl',
+      password: 'demo123',
+      icon: <Truck className="w-8 h-8" />,
+      description: 'Sube tus documentos y monitorea tu cumplimiento',
+      features: [
+        'Subir documentos (licencia, certificados médicos, etc)',
+        'Ver estado en tiempo real',
+        'Recibir alertas de vencimiento',
+        'Generar reportes personales'
+      ]
     },
     {
       role: 'dispatcher',
