@@ -1,9 +1,13 @@
 'use client'
 
 import { useAuth } from '@/lib/auth-context'
+import { REBUILD_TRIGGER } from '@/lib/build-cache-buster'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { BarChart3, FileText, Users, Truck, Shield, AlertTriangle } from 'lucide-react'
+
+// Force production rebuild
+console.log('[v0] Production rebuild trigger:', REBUILD_TRIGGER)
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
