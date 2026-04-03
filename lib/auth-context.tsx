@@ -49,7 +49,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
+  const [supabaseClient, setSupabaseClient] = useState<ReturnType<typeof createClient> | null>(null)
+
+  // Initialize Supabase client once
+  useEffect(() => {
+    try {
+      const client = createClient()
+      setSupabaseClient(client)
+    } catch (err) {
+      console.error('[v0] Failed to initialize Supabase:', err)
+      setError('Error de configuración: Supabase no está disponible')
+      setLoading(false)
+    }
+  }, [])
 
   // Función para extraer rol del email
   const getRoleFromEmail = (email: string): UserRole => {
@@ -61,36 +73,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return 'driver'
   }
 
-  // Función para formatear errores de Supabase
-  const getErrorMessage = (error: any): string => {
-    if (!error) return 'Error desconocido'
-    
-    // Errores de autenticación comunes
-    if (error.message?.includes('Invalid login credentials')) {
-      return 'Credenciales inválidas. Verifica email y contraseña.'
-    }
-    if (error.message?.includes('Email not confirmed')) {
-      return 'Por favor confirma tu email para continuar.'
-    }
-    if (error.message?.includes('User already registered')) {
-      return 'Este email ya está registrado.'
-    }
-    if (error.message?.includes('Network request failed')) {
-      return 'Error de conexión. Verifica tu internet.'
-    }
-    if (error.message?.includes('Password')) {
-      return 'La contraseña no cumple los requisitos.'
-    }
-    
-    return error.message || 'Error durante la autenticación'
-  }
-
-  // Verificar sesión al montar el componente
+  // Verificar sesión cuando Supabase está listo
   useEffect(() => {
+    if (!supabaseClient) {
+      console.log('[v0] Supabase client not ready yet')
+      return
+    }
+
     const checkSession = async () => {
       logStep('INIT: Verificando sesión existente')
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession()
         
         if (sessionError) {
           logStep('ERROR: Fallo al obtener sesión', sessionError.message)
@@ -113,8 +106,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           logStep('INFO: No hay sesión activa')
           setUser(null)
         }
-      } catch (error) {
-        logStep('ERROR: Excepción al verificar sesión', error)
+      } catch (err) {
+        logStep('ERROR: Excepción al verificar sesión', err)
         setError('Error al verificar sesión')
         setUser(null)
       } finally {
@@ -126,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Escuchar cambios de autenticación
     logStep('INIT: Configurando listener de autenticación')
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event, session) => {
       logStep(`AUTH_EVENT: ${event}`)
       
       if (event === 'SIGNED_OUT' || !session) {
@@ -150,9 +143,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logStep('CLEANUP: Removiendo listener de autenticación')
       subscription?.unsubscribe()
     }
-  }, [supabase])
+  }, [supabaseClient])
 
   const login = async (email: string, password: string) => {
+    if (!supabaseClient) {
+      throw new Error('Supabase no está disponible')
+    }
+
     const loginId = `login-${Date.now()}`
     try {
       logStep(`LOGIN_START [${loginId}]: Iniciando login`, { email })
@@ -160,7 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null)
       
       logStep(`LOGIN_AUTH [${loginId}]: Llamando a signInWithPassword`, { email })
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
         password,
       })
@@ -227,10 +224,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = async () => {
+    if (!supabaseClient) {
+      throw new Error('Supabase no está disponible')
+    }
+
     try {
       logStep('LOGOUT_START: Iniciando cierre de sesión')
       setLoading(true)
-      const { error } = await supabase.auth.signOut()
+      const { error } = await supabaseClient.auth.signOut()
       if (error) {
         logStep('LOGOUT_ERROR: Error al cerrar sesión', error.message)
         throw error
@@ -247,12 +248,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const register = async (data: RegisterData) => {
+    if (!supabaseClient) {
+      throw new Error('Supabase no está disponible')
+    }
+
     try {
       logStep('REGISTER_START: Iniciando registro', { email: data.email })
       setLoading(true)
       setError(null)
       
-      const { error } = await supabase.auth.signUp({
+      const { error } = await supabaseClient.auth.signUp({
         email: data.email,
         password: data.password,
       })
