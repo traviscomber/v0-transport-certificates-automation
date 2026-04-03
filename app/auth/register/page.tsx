@@ -1,30 +1,43 @@
-"use client"
+'use client'
 
-import type React from "react"
-
-import { useAuth } from "@/lib/auth-context"
-import { validateRegister, parseAuthError } from "@/lib/auth-validation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import Link from "next/link"
-import { useState } from "react"
-import { Truck } from "lucide-react"
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { Truck } from 'lucide-react'
+import { useAuth } from '@/lib/auth-context'
+import { parseAuthError } from '@/lib/auth-validation'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 export default function RegisterPage() {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    confirmPassword: "",
-    fullName: "",
-    role: "driver" as const,
-    companyName: "",
-  })
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
   const { register } = useAuth()
+
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    role: 'driver' as 'driver' | 'dispatcher' | 'admin',
+    companyName: '',
+    password: '',
+    confirmPassword: '',
+  })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,6 +51,13 @@ export default function RegisterPage() {
       return
     }
 
+    // Validate password length
+    if (formData.password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres')
+      setIsLoading(false)
+      return
+    }
+
     try {
       await register({
         email: formData.email,
@@ -46,9 +66,9 @@ export default function RegisterPage() {
         role: formData.role,
         company_name: formData.companyName || undefined,
       })
-    } catch (error: unknown) {
-      setError(parseAuthError(error))
-    } finally {
+      // Registration successful - router will redirect after auth state changes
+    } catch (err) {
+      setError(parseAuthError(err))
       setIsLoading(false)
     }
   }
@@ -67,7 +87,9 @@ export default function RegisterPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl text-center">Crear Cuenta</CardTitle>
-            <CardDescription className="text-center">Completa los datos para registrarte en el sistema</CardDescription>
+            <CardDescription className="text-center">
+              Completa los datos para registrarte en el sistema
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -78,7 +100,10 @@ export default function RegisterPage() {
                   type="text"
                   required
                   value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fullName: e.target.value })
+                  }
+                  placeholder="Juan Vial"
                 />
               </div>
 
@@ -89,13 +114,24 @@ export default function RegisterPage() {
                   type="email"
                   required
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  placeholder="juan@example.com"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="role">Tipo de Usuario</Label>
-                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value as 'driver' | 'dispatcher' | 'admin' })}>
+                <Select
+                  value={formData.role}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      role: value as 'driver' | 'dispatcher' | 'admin',
+                    })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -108,12 +144,16 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="companyName">Empresa / Organización (Opcional)</Label>
+                <Label htmlFor="companyName">
+                  Empresa / Organización (Opcional)
+                </Label>
                 <Input
                   id="companyName"
                   type="text"
                   value={formData.companyName}
-                  onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, companyName: e.target.value })
+                  }
                   placeholder="Nombre de tu empresa o flota"
                 />
               </div>
@@ -125,7 +165,10 @@ export default function RegisterPage() {
                   type="password"
                   required
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  placeholder="Mínimo 6 caracteres"
                 />
               </div>
 
@@ -136,28 +179,46 @@ export default function RegisterPage() {
                   type="password"
                   required
                   value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      confirmPassword: e.target.value,
+                    })
+                  }
+                  placeholder="Repite tu contraseña"
                 />
               </div>
 
-              {error && <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
+              {error && (
+                <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+                  {error}
+                </div>
+              )}
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creando cuenta..." : "Crear Cuenta"}
+                {isLoading ? 'Creando cuenta...' : 'Crear Cuenta'}
               </Button>
             </form>
 
             <div className="mt-6 space-y-3">
               <div className="text-center text-sm">
-                ¿Ya tienes cuenta?{" "}
-                <Link href="/auth/login" className="text-primary hover:underline">
+                ¿Ya tienes cuenta?{' '}
+                <Link
+                  href="/auth/login"
+                  className="text-primary hover:underline"
+                >
                   Iniciar Sesión
                 </Link>
               </div>
-              
+
               <div className="text-center text-xs text-muted-foreground pt-3 border-t border-slate-700">
-                <p className="mb-2">¿Quieres conocer el sistema primero antes de registrarte?</p>
-                <Link href="/test" className="text-cyan-400 hover:text-cyan-300 font-semibold">
+                <p className="mb-2">
+                  ¿Quieres conocer el sistema primero antes de registrarte?
+                </p>
+                <Link
+                  href="/test"
+                  className="text-cyan-400 hover:text-cyan-300 font-semibold"
+                >
                   → Ir a la Prueba Interactiva Gratuita
                 </Link>
               </div>
