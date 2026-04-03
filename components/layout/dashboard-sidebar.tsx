@@ -23,6 +23,7 @@ import {
   Upload,
   CheckCircle,
   AlertTriangle,
+  User,
 } from 'lucide-react'
 
 interface NavItem {
