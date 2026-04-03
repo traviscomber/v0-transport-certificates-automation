@@ -45,6 +45,36 @@ const logStep = (step: string, details?: any) => {
   }
 }
 
+// Función helper para obtener mensaje de error amigable
+const getErrorMessage = (error: any): string => {
+  if (typeof error === 'string') return error
+  
+  if (error?.message) {
+    const msg = error.message.toLowerCase()
+    
+    // Errores de Supabase Auth
+    if (msg.includes('invalid login credentials') || msg.includes('wrong password')) {
+      return 'Correo o contraseña incorrectos'
+    }
+    if (msg.includes('user already registered')) {
+      return 'El correo ya está registrado'
+    }
+    if (msg.includes('invalid email')) {
+      return 'El correo electrónico no es válido'
+    }
+    if (msg.includes('password')) {
+      return 'La contraseña no cumple con los requisitos de seguridad'
+    }
+    if (msg.includes('network')) {
+      return 'Error de conexión. Por favor intenta de nuevo'
+    }
+    
+    return error.message
+  }
+  
+  return 'Ha ocurrido un error. Por favor intenta de nuevo'
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
