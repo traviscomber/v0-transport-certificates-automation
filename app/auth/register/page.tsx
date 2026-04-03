@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Truck } from 'lucide-react'
 
-type Role = 'driver' | 'dispatcher' | 'admin'
+type Role = 'driver' | 'dispatcher' | 'admin' // v2
 
 interface FormData {
   fullName: string
