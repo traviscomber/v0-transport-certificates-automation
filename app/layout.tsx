@@ -2,10 +2,14 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter, JetBrains_Mono } from "next/font/google"
 import { Suspense } from "react"
+import dynamic from "next/dynamic"
 import "./globals.css"
 import { RoleProvider } from "./providers"
 import { AuthProvider } from "@/lib/auth-context"
-import { FloatingChatWidget } from "@/components/floating-chat-widget"
+
+const FloatingChatWidget = dynamic(() => import('@/components/floating-chat-widget').then(mod => ({ default: mod.FloatingChatWidget })), {
+  ssr: false,
+})
 
 const inter = Inter({
   subsets: ["latin"],
