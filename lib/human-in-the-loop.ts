@@ -9,7 +9,7 @@
  * - Feedback loop para mejorar OCR
  */
 
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 // Types
 export interface ReviewQueueItem {
@@ -93,17 +93,8 @@ export interface QueueStats {
   avgWaitTimeMinutes: number
 }
 
-// Supabase client factory
-function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase credentials not configured')
-  }
-  
-  return createClient(supabaseUrl, supabaseKey)
-}
+// Use shared admin client (reads NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY)
+const getSupabaseAdmin = () => createAdminClient()
 
 /**
  * Determina la prioridad basada en múltiples factores
