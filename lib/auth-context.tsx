@@ -1,7 +1,6 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export type UserRole = 'admin' | 'dispatcher' | 'driver' | 'mandante' | 'transportista'
@@ -35,7 +34,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
   const supabase = createClient()
 
   // Función para extraer rol del email
@@ -61,9 +59,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: getRoleFromEmail(session.user.email || ''),
             full_name: session.user.email?.split('@')[0] || '',
           })
+        } else {
+          setUser(null)
         }
       } catch (error) {
         console.error('[v0] Error checking session:', error)
+        setUser(null)
       } finally {
         setLoading(false)
       }
@@ -75,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT' || !session) {
         setUser(null)
-      } else if (session?.user && event === 'SIGNED_IN') {
+      } else if (session?.user) {
         setUser({
           id: session.user.id,
           email: session.user.email || '',
@@ -85,8 +86,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })
 
-    return () => subscription?.unsubscribe()
-  }, [])
+    return () => {
+      subscription?.unsubscribe()
+    }
+  }, [supabase])
 
   const login = async (email: string, password: string) => {
     try {
@@ -96,35 +99,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
       })
 
-      if (error) throw error
+      if (error) {
+        console.error('[v0] Auth error:', error.message)
+        throw error
+      }
 
       if (data.session?.user) {
-        setUser({
+        const userData: User = {
           id: data.session.user.id,
-          email: data.session.user.email || '',
-          role: getRoleFromEmail(data.session.user.email || ''),
-          full_name: data.session.user.email?.split('@')[0] || '',
-        })
+          email: data.session.user.email || email,
+          role: getRoleFromEmail(data.session.user.email || email),
+          full_name: (data.session.user.email || email).split('@')[0],
+        }
+        setUser(userData)
+        console.log('[v0] Login successful:', userData)
+        return
+      } else {
+        throw new Error('No session returned from login')
       }
     } catch (error) {
       console.error('[v0] Login error:', error)
-      throw error
-    } finally {
       setLoading(false)
+      throw error
     }
   }
 
   const logout = async () => {
     try {
       setLoading(true)
-      await supabase.auth.signOut()
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
       setUser(null)
-      router.push('/auth/login')
+      setLoading(false)
     } catch (error) {
       console.error('[v0] Logout error:', error)
-      throw error
-    } finally {
       setLoading(false)
+      throw error
     }
   }
 
@@ -137,11 +147,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
 
       if (error) throw error
+      setLoading(false)
     } catch (error) {
       console.error('[v0] Register error:', error)
-      throw error
-    } finally {
       setLoading(false)
+      throw error
     }
   }
 
@@ -168,3 +178,4 @@ export function useAuth() {
   }
   return context
 }
+
