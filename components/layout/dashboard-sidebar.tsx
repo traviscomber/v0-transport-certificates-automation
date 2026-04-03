@@ -1,6 +1,6 @@
 'use client'
 
-// Cache buster v4: Force webpack module reload
+// Cache buster v5: Force webpack module reload for User icon fix
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
