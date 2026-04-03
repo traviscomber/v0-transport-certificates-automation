@@ -69,7 +69,7 @@ export default function TestPage() {
       await login(profile.email, profile.password)
       // Wait for auth state to update then redirect
       setTimeout(() => {
-        router.push('/dashboard')
+        router.push('/dashboard').catch(() => {})
       }, 200)
     } catch (error) {
       console.error('[v0] Login error:', error)
@@ -152,7 +152,7 @@ export default function TestPage() {
                   <Button
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleQuickLogin(profile)
+                      handleQuickLogin(profile).catch(() => {})
                     }}
                     disabled={loadingRole === profile.role}
                     className="w-full btn-orange mt-4"
@@ -185,7 +185,7 @@ export default function TestPage() {
             <Card className="border-slate-700 bg-slate-800/50 hover:bg-slate-800/80 transition-all">
               <CardHeader>
                 <CardTitle className="text-orange-500 text-lg">Reportes Avanzados</CardTitle>
-                <CardDescription>Análisis detallado y exportación</CardDescription>
+                <CardDescription>An��lisis detallado y exportación</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-slate-300">
