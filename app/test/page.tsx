@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
+import { useToast } from '@/lib/toast-context'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,7 +12,9 @@ export default function TestPage() {
   const [activeTab, setActiveTab] = useState('roles')
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null)
   const [loadingRole, setLoadingRole] = useState<string | null>(null)
+  const [loginStep, setLoginStep] = useState<string | null>(null)
   const { login } = useAuth()
+  const { addToast } = useToast()
   const router = useRouter()
 
   const toggleFaq = (id: string) => {
@@ -65,15 +68,32 @@ export default function TestPage() {
 
   const handleQuickLogin = async (profile: typeof demoProfiles[0]) => {
     setLoadingRole(profile.role)
+    setLoginStep('Verificando credenciales...')
+    console.log(`[v0] [QUICK_LOGIN] Iniciando login para ${profile.title}`)
+    
     try {
+      console.log(`[v0] [QUICK_LOGIN] Llamando función login`)
+      setLoginStep('Autenticando...')
       await login(profile.email, profile.password)
+      
+      console.log(`[v0] [QUICK_LOGIN] Autenticación exitosa, preparando redirección`)
+      setLoginStep('Redirigiendo al dashboard...')
+      addToast(`Bienvenido, ${profile.title}!`, 'success', 2000)
+      
       // Wait for auth state to update then redirect
       setTimeout(() => {
+        console.log(`[v0] [QUICK_LOGIN] Redirigiendo a /dashboard`)
         router.push('/dashboard')
-      }, 200)
+      }, 500)
     } catch (error) {
-      console.error('[v0] Login error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      console.error(`[v0] [QUICK_LOGIN] Error en login:`, errorMessage)
+      
       setLoadingRole(null)
+      setLoginStep(null)
+      
+      // Show error toast
+      addToast(`Error: No se pudo iniciar sesión como ${profile.title}. Verifica las credenciales.`, 'error', 5000)
     }
   }
 
@@ -158,7 +178,10 @@ export default function TestPage() {
                     className="w-full btn-orange mt-4"
                   >
                     <LogIn className="w-4 h-4 mr-2" />
-                    {loadingRole === profile.role ? 'Entrando...' : 'Entrar como ' + profile.title}
+                    {loadingRole === profile.role 
+                      ? loginStep || 'Entrando...'
+                      : 'Entrar como ' + profile.title
+                    }
                   </Button>
                 </CardContent>
               </Card>
@@ -185,7 +208,7 @@ export default function TestPage() {
             <Card className="border-slate-700 bg-slate-800/50 hover:bg-slate-800/80 transition-all">
               <CardHeader>
                 <CardTitle className="text-orange-500 text-lg">Reportes Avanzados</CardTitle>
-                <CardDescription>An��lisis detallado y exportación</CardDescription>
+                <CardDescription>An����lisis detallado y exportación</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-slate-300">

@@ -17,6 +17,7 @@ export interface User {
 export interface AuthContextType {
   user: User | null
   loading: boolean
+  error: string | null
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
   register: (data: RegisterData) => Promise<void>
@@ -31,9 +32,23 @@ export interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Función helper para obtener timestamp formateado
+const getTimestamp = () => new Date().toLocaleTimeString('es-ES', { hour12: false })
+
+// Función helper para loguear con contexto
+const logStep = (step: string, details?: any) => {
+  const timestamp = getTimestamp()
+  if (details) {
+    console.log(`[v0] [${timestamp}] ${step}`, details)
+  } else {
+    console.log(`[v0] [${timestamp}] ${step}`)
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
   // Función para extraer rol del email
@@ -46,24 +61,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return 'driver'
   }
 
+  // Función para formatear errores de Supabase
+  const getErrorMessage = (error: any): string => {
+    if (!error) return 'Error desconocido'
+    
+    // Errores de autenticación comunes
+    if (error.message?.includes('Invalid login credentials')) {
+      return 'Credenciales inválidas. Verifica email y contraseña.'
+    }
+    if (error.message?.includes('Email not confirmed')) {
+      return 'Por favor confirma tu email para continuar.'
+    }
+    if (error.message?.includes('User already registered')) {
+      return 'Este email ya está registrado.'
+    }
+    if (error.message?.includes('Network request failed')) {
+      return 'Error de conexión. Verifica tu internet.'
+    }
+    if (error.message?.includes('Password')) {
+      return 'La contraseña no cumple los requisitos.'
+    }
+    
+    return error.message || 'Error durante la autenticación'
+  }
+
   // Verificar sesión al montar el componente
   useEffect(() => {
     const checkSession = async () => {
+      logStep('INIT: Verificando sesión existente')
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          logStep('ERROR: Fallo al obtener sesión', sessionError.message)
+          setError('Error al verificar sesión')
+          setUser(null)
+          return
+        }
         
         if (session?.user) {
-          setUser({
+          const userData: User = {
             id: session.user.id,
             email: session.user.email || '',
             role: getRoleFromEmail(session.user.email || ''),
             full_name: session.user.email?.split('@')[0] || '',
-          })
+          }
+          logStep('SUCCESS: Sesión existente recuperada', { email: userData.email, role: userData.role })
+          setUser(userData)
+          setError(null)
         } else {
+          logStep('INFO: No hay sesión activa')
           setUser(null)
         }
       } catch (error) {
-        console.error('[v0] Error checking session:', error)
+        logStep('ERROR: Excepción al verificar sesión', error)
+        setError('Error al verificar sesión')
         setUser(null)
       } finally {
         setLoading(false)
@@ -73,52 +125,102 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkSession()
 
     // Escuchar cambios de autenticación
+    logStep('INIT: Configurando listener de autenticación')
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      logStep(`AUTH_EVENT: ${event}`)
+      
       if (event === 'SIGNED_OUT' || !session) {
+        logStep('INFO: Usuario cerró sesión')
         setUser(null)
+        setError(null)
       } else if (session?.user) {
-        setUser({
+        const userData: User = {
           id: session.user.id,
           email: session.user.email || '',
           role: getRoleFromEmail(session.user.email || ''),
           full_name: session.user.email?.split('@')[0] || '',
-        })
+        }
+        logStep('INFO: Estado de auth cambió - usuario establecido', { email: userData.email, role: userData.role })
+        setUser(userData)
+        setError(null)
       }
     })
 
     return () => {
+      logStep('CLEANUP: Removiendo listener de autenticación')
       subscription?.unsubscribe()
     }
   }, [supabase])
 
   const login = async (email: string, password: string) => {
+    const loginId = `login-${Date.now()}`
     try {
+      logStep(`LOGIN_START [${loginId}]: Iniciando login`, { email })
       setLoading(true)
+      setError(null)
+      
+      logStep(`LOGIN_AUTH [${loginId}]: Llamando a signInWithPassword`, { email })
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (error) {
-        console.error('[v0] Auth error:', error.message)
+        const errorMessage = getErrorMessage(error)
+        logStep(`LOGIN_ERROR [${loginId}]: Error de autenticación`, { 
+          code: error.status, 
+          message: error.message,
+          userMessage: errorMessage 
+        })
+        setError(errorMessage)
+        setLoading(false)
         throw error
       }
 
-      if (data.session?.user) {
+      if (!data.session) {
+        logStep(`LOGIN_ERROR [${loginId}]: No se retornó sesión`, {})
+        setError('No se recibió sesión del servidor')
+        setLoading(false)
+        throw new Error('No session returned from login')
+      }
+
+      logStep(`LOGIN_SESSION [${loginId}]: Sesión creada exitosamente`, { 
+        userId: data.session.user.id,
+        email: data.session.user.email 
+      })
+
+      if (data.session.user) {
         const userData: User = {
           id: data.session.user.id,
           email: data.session.user.email || email,
           role: getRoleFromEmail(data.session.user.email || email),
           full_name: (data.session.user.email || email).split('@')[0],
         }
+        
+        logStep(`LOGIN_USER [${loginId}]: Usuario establecido`, { 
+          id: userData.id,
+          email: userData.email,
+          role: userData.role 
+        })
+        
         setUser(userData)
-        console.log('[v0] Login successful:', userData)
+        setError(null)
+        
+        logStep(`LOGIN_SUCCESS [${loginId}]: Login completado exitosamente`, { 
+          email: userData.email, 
+          role: userData.role 
+        })
         return
       } else {
-        throw new Error('No session returned from login')
+        throw new Error('User data not found in session')
       }
     } catch (error) {
-      console.error('[v0] Login error:', error)
+      const errorMessage = getErrorMessage(error)
+      logStep(`LOGIN_EXCEPTION [${loginId}]: Excepción no manejada`, { 
+        error: error instanceof Error ? error.message : String(error),
+        userMessage: errorMessage
+      })
+      setError(errorMessage)
       setLoading(false)
       throw error
     }
@@ -126,13 +228,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
+      logStep('LOGOUT_START: Iniciando cierre de sesión')
       setLoading(true)
       const { error } = await supabase.auth.signOut()
-      if (error) throw error
+      if (error) {
+        logStep('LOGOUT_ERROR: Error al cerrar sesión', error.message)
+        throw error
+      }
+      logStep('LOGOUT_SUCCESS: Sesión cerrada exitosamente')
       setUser(null)
+      setError(null)
       setLoading(false)
     } catch (error) {
-      console.error('[v0] Logout error:', error)
+      logStep('LOGOUT_EXCEPTION: Excepción en logout', error)
       setLoading(false)
       throw error
     }
@@ -140,16 +248,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (data: RegisterData) => {
     try {
+      logStep('REGISTER_START: Iniciando registro', { email: data.email })
       setLoading(true)
+      setError(null)
+      
       const { error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
       })
 
-      if (error) throw error
+      if (error) {
+        const errorMessage = getErrorMessage(error)
+        logStep('REGISTER_ERROR: Error en registro', { message: error.message })
+        setError(errorMessage)
+        setLoading(false)
+        throw error
+      }
+      
+      logStep('REGISTER_SUCCESS: Registro completado', { email: data.email })
       setLoading(false)
     } catch (error) {
-      console.error('[v0] Register error:', error)
+      logStep('REGISTER_EXCEPTION: Excepción en registro', error)
       setLoading(false)
       throw error
     }
@@ -160,6 +279,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         loading,
+        error,
         login,
         logout,
         register,

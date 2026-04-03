@@ -6,6 +6,8 @@ import dynamic from "next/dynamic"
 import "./globals.css"
 import { RoleProvider } from "./providers"
 import { AuthProvider } from "@/lib/auth-context"
+import { ToastProvider } from "@/lib/toast-context"
+import { ToastContainer } from "@/components/toast-container"
 
 const FloatingChatWidget = dynamic(() => import('@/components/floating-chat-widget').then(mod => ({ default: mod.FloatingChatWidget })), {
   ssr: false,
@@ -37,10 +39,13 @@ export default function RootLayout({
     <html lang="es" className="dark">
       <body className={`font-sans ${inter.variable} ${jetbrainsMono.variable} antialiased`}>
         <AuthProvider>
-          <RoleProvider>
-            <Suspense fallback={null}>{children}</Suspense>
-            <FloatingChatWidget />
-          </RoleProvider>
+          <ToastProvider>
+            <RoleProvider>
+              <Suspense fallback={null}>{children}</Suspense>
+              <ToastContainer />
+              <FloatingChatWidget />
+            </RoleProvider>
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>
