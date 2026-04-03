@@ -146,8 +146,19 @@ export const parseAuthError = (error: unknown): string => {
     if (message.includes('network')) {
       return 'Error de conexión. Intenta nuevamente.'
     }
+    if (message.includes('database error') || message.includes('finding user') || message.includes('profile not found')) {
+      return 'Error al procesar tu registro. Por favor intenta nuevamente en unos momentos.'
+    }
 
     return error.message
+  }
+
+  if (typeof error === 'string') {
+    const msg = error.toLowerCase()
+    if (msg.includes('database') || msg.includes('finding user') || msg.includes('profile')) {
+      return 'Error al procesar tu registro. Por favor intenta nuevamente en unos momentos.'
+    }
+    return error
   }
 
   return 'Ocurrió un error. Intenta nuevamente.'

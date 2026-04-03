@@ -25,10 +25,16 @@ export async function verifyAuth(request: NextRequest): Promise<{ user: AuthUser
       .from('profiles')
       .select('role, organization_id')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
-    if (profileError || !profile) {
-      return { user: null, error: 'User profile not found' }
+    if (profileError) {
+      return { user: null, error: 'Failed to fetch user profile' }
+    }
+
+    // If profile doesn't exist yet, it will be null (which is expected for newly registered users)
+    // The profile should be created by a database trigger during auth.signUp()
+    if (!profile) {
+      return { user: null, error: 'User profile not yet initialized' }
     }
 
     return {
