@@ -10,6 +10,7 @@ const PUBLIC_ROUTES = [
   '/auth/forgot-password',
   '/test',
   '/setup-demo',
+  '/contact',
   '/api/health',
   '/api/docs',
 ]
@@ -20,6 +21,12 @@ export async function middleware(request: NextRequest) {
   // Skip API routes and static files
   if (path.startsWith('/api') || path.startsWith('/_next') || path.includes('.')) {
     return await updateSession(request)
+  }
+
+  // Redirect old walmart-ocr routes to new /ocr routes
+  if (path.startsWith('/walmart-ocr')) {
+    const newPath = path.replace('/walmart-ocr', '/ocr')
+    return NextResponse.redirect(new URL(newPath, request.url), { status: 308 })
   }
 
   // Public routes - no auth needed
