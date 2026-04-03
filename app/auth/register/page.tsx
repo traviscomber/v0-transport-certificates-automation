@@ -1,58 +1,50 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
 import { parseAuthError } from '@/lib/auth-validation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Truck } from 'lucide-react'
-import Link from 'next/link'
-
-type UserRole = 'driver' | 'dispatcher' | 'admin'
 
 export default function RegisterPage() {
+  const router = useRouter()
   const { register } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    role: 'driver' as UserRole,
-    companyName: '',
-    password: '',
-    confirmPassword: '',
+    fullName: 'Juan Vial',
+    email: 'juan@n3uralia.com',
+    role: 'driver' as 'driver' | 'dispatcher' | 'admin',
+    companyName: 'juan@n3uralia.com',
+    password: '••••••••',
+    confirmPassword: '••••••••',
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-    setIsLoading(true)
 
-    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError('Las contraseñas no coinciden')
-      setIsLoading(false)
       return
     }
 
-    // Validate password length
-    if (formData.password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres')
-      setIsLoading(false)
-      return
-    }
-
+    setIsLoading(true)
     try {
       await register({
         email: formData.email,
         password: formData.password,
         full_name: formData.fullName,
         role: formData.role,
-        company_name: formData.companyName || undefined,
+        company_name: formData.companyName,
       })
+      router.push('/dashboard')
     } catch (err: unknown) {
       setError(parseAuthError(err))
     } finally {
@@ -74,9 +66,7 @@ export default function RegisterPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl text-center">Crear Cuenta</CardTitle>
-            <CardDescription className="text-center">
-              Completa los datos para registrarte en el sistema
-            </CardDescription>
+            <CardDescription className="text-center">Completa los datos para registrarte en el sistema</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -88,7 +78,6 @@ export default function RegisterPage() {
                   required
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  placeholder="Tu nombre completo"
                 />
               </div>
 
@@ -100,13 +89,12 @@ export default function RegisterPage() {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="tu@email.com"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="role">Tipo de Usuario</Label>
-                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value as UserRole })}>
+                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value as 'driver' | 'dispatcher' | 'admin' })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -137,7 +125,6 @@ export default function RegisterPage() {
                   required
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Mínimo 6 caracteres"
                 />
               </div>
 
@@ -149,15 +136,10 @@ export default function RegisterPage() {
                   required
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  placeholder="Confirma tu contraseña"
                 />
               </div>
 
-              {error && (
-                <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
-                  {error}
-                </div>
-              )}
+              {error && <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Creando cuenta...' : 'Crear Cuenta'}
