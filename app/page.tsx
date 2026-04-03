@@ -46,7 +46,6 @@ function useCountUp(end: number, duration: number = 2000) {
 }
 
 export default function LandingPage() {
-  // Force rebuild - v2
   const docsCounter = useCountUp(35, 1500)
   const transportistasCounter = useCountUp(120, 1500)
   const vehiculosCounter = useCountUp(450, 1500)
