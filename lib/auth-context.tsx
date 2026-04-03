@@ -52,12 +52,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return
         }
 
-        // Obtener perfil del usuario
-        const { data: profile, error: profileError } = await supabase
+        // Obtener perfil del usuario - intenta con todas las columnas primero
+        let profile = null
+        let profileError = null
+        
+        // Intentar obtener todas las columnas
+        const { data: fullProfile, error: fullError } = await supabase
           .from('profiles')
           .select('id, email, role, full_name, company_name, avatar_url')
           .eq('id', session.user.id)
           .single()
+
+        if (fullError) {
+          // Si falla, intentar solo con columnas esenciales
+          const { data: basicProfile, error: basicError } = await supabase
+            .from('profiles')
+            .select('id, email, role, full_name')
+            .eq('id', session.user.id)
+            .single()
+          
+          profile = basicProfile
+          profileError = basicError
+        } else {
+          profile = fullProfile
+          profileError = fullError
+        }
 
         if (profileError || !profile) {
           console.error('Error fetching profile:', profileError)
@@ -71,8 +90,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: profile.email || session.user.email || '',
           role: profile.role as UserRole,
           full_name: profile.full_name,
-          company_name: profile.company_name,
-          avatar_url: profile.avatar_url,
+          company_name: profile.company_name || undefined,
+          avatar_url: profile.avatar_url || undefined,
         })
       } catch (error) {
         console.error('Error checking user:', error)
