@@ -372,7 +372,7 @@ export default function LandingPage() {
                 <p className="text-sm text-muted-foreground mb-6">
                   Licencia, permiso, revision tecnica o cualquier documento de transporte
                 </p>
-                <Link href="/walmart-ocr">
+                <Link href="/ocr">
                   <Button className="btn-orange">
                     Probar Ahora Gratis
                     <ChevronRight className="w-4 h-4 ml-2" />
@@ -762,29 +762,29 @@ export default function LandingPage() {
             <div>
               <h4 className="font-semibold mb-4">Producto</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">Caracteristicas</a></li>
+                <li><a href="#problema" className="hover:text-foreground">Caracteristicas</a></li>
                 <li><a href="#pricing" className="hover:text-foreground">Precios</a></li>
-                <li><a href="#" className="hover:text-foreground">Integraciones</a></li>
-                <li><a href="#" className="hover:text-foreground">API</a></li>
+                <li><a href="#solucion" className="hover:text-foreground">Integraciones</a></li>
+                <li><a href="/api/docs" className="hover:text-foreground">API</a></li>
               </ul>
             </div>
 
             <div>
               <h4 className="font-semibold mb-4">Empresa</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">Sobre nosotros</a></li>
-                <li><a href="#" className="hover:text-foreground">Blog</a></li>
-                <li><a href="#" className="hover:text-foreground">Contacto</a></li>
-                <li><a href="#" className="hover:text-foreground">Trabaja con nosotros</a></li>
+                <li><a href="#beneficios" className="hover:text-foreground">Sobre nosotros</a></li>
+                <li><span className="text-slate-600 cursor-not-allowed">Blog</span></li>
+                <li><a href="/contact" className="hover:text-foreground">Contacto</a></li>
+                <li><span className="text-slate-600 cursor-not-allowed">Trabaja con nosotros</span></li>
               </ul>
             </div>
 
             <div>
               <h4 className="font-semibold mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">Terminos de servicio</a></li>
-                <li><a href="#" className="hover:text-foreground">Politica de privacidad</a></li>
-                <li><a href="#" className="hover:text-foreground">Seguridad</a></li>
+                <li><span className="text-slate-600 cursor-not-allowed">Terminos de servicio</span></li>
+                <li><span className="text-slate-600 cursor-not-allowed">Politica de privacidad</span></li>
+                <li><span className="text-slate-600 cursor-not-allowed">Seguridad</span></li>
               </ul>
             </div>
           </div>
