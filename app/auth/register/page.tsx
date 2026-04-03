@@ -28,21 +28,33 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    // Validate form
-    const validation = validateRegister(
-      formData.email,
-      formData.password,
-      formData.confirmPassword,
-      formData.fullName,
-      formData.role
-    )
-    
-    if (!validation.isValid) {
-      const firstError = validation.errors[0]
-      setError(firstError.message)
+    setError(null)
+    setIsLoading(true)
+
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setError('Las contraseñas no coinciden')
+      setIsLoading(false)
       return
     }
+
+    try {
+      console.log("[v0] Register form submitted:", { email: formData.email, role: formData.role })
+      await register({
+        email: formData.email,
+        password: formData.password,
+        full_name: formData.fullName,
+        role: formData.role,
+        company_name: formData.companyName || undefined,
+      })
+      console.log("[v0] Register succeeded")
+    } catch (error: unknown) {
+      console.log("[v0] Register caught error:", error)
+      setError(parseAuthError(error))
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
     setIsLoading(true)
     setError(null)
