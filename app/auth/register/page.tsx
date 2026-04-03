@@ -56,24 +56,6 @@ export default function RegisterPage() {
     }
   }
 
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      await register({
-        email: formData.email,
-        password: formData.password,
-        full_name: formData.fullName,
-        role: formData.role,
-        company_name: formData.companyName || undefined,
-      })
-    } catch (error: unknown) {
-      setError(parseAuthError(error))
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
       <div className="w-full max-w-md">
