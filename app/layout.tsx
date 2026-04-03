@@ -9,7 +9,7 @@ import { AuthProvider } from "@/lib/auth-context"
 import { ToastProvider } from "@/lib/toast-context"
 import { ToastContainer } from "@/components/toast-container"
 
-// Cache buster: Route conflict resolution - 2024-04-02
+// Cache buster: Clean webpack cache from old demo-login API - 2026-04-03T22:24
 const FloatingChatWidget = dynamic(() => import('@/components/floating-chat-widget').then(mod => ({ default: mod.FloatingChatWidget })), {
   ssr: false,
 })
