@@ -1,15 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
 import { parseAuthError } from '@/lib/auth-validation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Truck } from 'lucide-react'
+import Link from 'next/link'
+
+type UserRole = 'driver' | 'dispatcher' | 'admin'
 
 export default function RegisterPage() {
   const { register } = useAuth()
@@ -18,7 +20,7 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
-    role: 'driver' as 'driver' | 'dispatcher' | 'admin',
+    role: 'driver' as UserRole,
     companyName: '',
     password: '',
     confirmPassword: '',
@@ -32,6 +34,13 @@ export default function RegisterPage() {
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError('Las contraseñas no coinciden')
+      setIsLoading(false)
+      return
+    }
+
+    // Validate password length
+    if (formData.password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres')
       setIsLoading(false)
       return
     }
@@ -65,7 +74,9 @@ export default function RegisterPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl text-center">Crear Cuenta</CardTitle>
-            <CardDescription className="text-center">Completa los datos para registrarte en el sistema</CardDescription>
+            <CardDescription className="text-center">
+              Completa los datos para registrarte en el sistema
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -75,9 +86,9 @@ export default function RegisterPage() {
                   id="fullName"
                   type="text"
                   required
-                  placeholder="Juan Vial"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  placeholder="Tu nombre completo"
                 />
               </div>
 
@@ -87,15 +98,15 @@ export default function RegisterPage() {
                   id="email"
                   type="email"
                   required
-                  placeholder="correo@ejemplo.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="tu@email.com"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="role">Tipo de Usuario</Label>
-                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value as 'driver' | 'dispatcher' | 'admin' })}>
+                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value as UserRole })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -112,9 +123,9 @@ export default function RegisterPage() {
                 <Input
                   id="companyName"
                   type="text"
-                  placeholder="Nombre de tu empresa o flota"
                   value={formData.companyName}
                   onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                  placeholder="Nombre de tu empresa o flota"
                 />
               </div>
 
@@ -126,6 +137,7 @@ export default function RegisterPage() {
                   required
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="Mínimo 6 caracteres"
                 />
               </div>
 
@@ -137,6 +149,7 @@ export default function RegisterPage() {
                   required
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  placeholder="Confirma tu contraseña"
                 />
               </div>
 
