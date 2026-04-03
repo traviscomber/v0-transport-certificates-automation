@@ -90,7 +90,26 @@ export default function TestPage() {
   }
 
   const handleFeatureClick = (feature: string) => {
-    addToast(`Funcionalidad: ${feature}`, 'success', 2000)
+    switch (feature) {
+      case 'dashboard':
+        addToast('Accediendo al Compliance Dashboard...', 'info', 1500)
+        setTimeout(() => router.push('/dashboard/compliance'), 800)
+        break
+      case 'reports':
+        addToast('Cargando Reportes Avanzados...', 'info', 1500)
+        setTimeout(() => router.push('/dashboard/reports'), 800)
+        break
+      case 'analytics':
+        addToast('Cargando Analytics...', 'info', 1500)
+        setTimeout(() => router.push('/dashboard/analytics'), 800)
+        break
+      case 'ocr':
+        addToast('Abriendo cargador de documentos...', 'info', 1500)
+        setTimeout(() => router.push('/dashboard/upload'), 800)
+        break
+      default:
+        addToast('Función disponible en breve', 'warning', 2000)
+    }
   }
 
   return (
@@ -195,7 +214,7 @@ export default function TestPage() {
                 </p>
                 <Button 
                   className="btn-orange"
-                  onClick={() => handleFeatureClick('Compliance Dashboard')}
+                  onClick={() => handleFeatureClick('dashboard')}
                 >
                   Ver Dashboard
                 </Button>
@@ -213,7 +232,7 @@ export default function TestPage() {
                 </p>
                 <Button 
                   className="btn-orange"
-                  onClick={() => handleFeatureClick('Reportes Avanzados')}
+                  onClick={() => handleFeatureClick('reports')}
                 >
                   Ver Reportes
                 </Button>
@@ -231,7 +250,7 @@ export default function TestPage() {
                 </p>
                 <Button 
                   className="btn-orange"
-                  onClick={() => handleFeatureClick('Analytics')}
+                  onClick={() => handleFeatureClick('analytics')}
                 >
                   Ver Analytics
                 </Button>
@@ -249,7 +268,7 @@ export default function TestPage() {
                 </p>
                 <Button 
                   className="btn-orange"
-                  onClick={() => handleFeatureClick('Extracción OCR')}
+                  onClick={() => handleFeatureClick('ocr')}
                 >
                   Subir Documento
                 </Button>
