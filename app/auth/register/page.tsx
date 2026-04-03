@@ -39,7 +39,6 @@ export default function RegisterPage() {
     }
 
     try {
-      console.log("[v0] Register form submitted:", { email: formData.email, role: formData.role })
       await register({
         email: formData.email,
         password: formData.password,
@@ -47,9 +46,7 @@ export default function RegisterPage() {
         role: formData.role,
         company_name: formData.companyName || undefined,
       })
-      console.log("[v0] Register succeeded")
     } catch (error: unknown) {
-      console.log("[v0] Register caught error:", error)
       setError(parseAuthError(error))
     } finally {
       setIsLoading(false)

@@ -151,7 +151,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logStep('INIT: Configurando listener de autenticación')
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
       logStep(`AUTH_EVENT: ${event}`)
-      console.log("[v0] Auth event:", event, "session:", session?.user?.id)
       
       if (event === 'SIGNED_OUT' || !session) {
         logStep('INFO: Usuario cerró sesión')
@@ -161,7 +160,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else if (session?.user) {
         try {
           // Try to fetch profile from database
-          console.log("[v0] Fetching profile for user:", session.user.id)
           const { data: profile, error: profileError } = await supabaseClient
             .from('profiles')
             .select('id, email, full_name, role, company_name, is_active')
@@ -169,20 +167,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .maybeSingle()
 
           if (profileError) {
-            console.log("[v0] Profile fetch error:", profileError)
             logStep('PROFILE_ERROR: Error fetching profile', { error: profileError.message })
+            // Still set user even if profile fetch fails
+            const userData: User = {
+              id: session.user.id,
+              email: session.user.email || '',
+              role: 'driver',
+              full_name: session.user.email?.split('@')[0] || 'Usuario',
+            }
+            setUser(userData)
+            setError(null)
+            setLoading(false)
+            return
           }
 
           let role = 'driver'
           let fullName = session.user.email?.split('@')[0] || 'Usuario'
 
           if (profile) {
-            console.log("[v0] Profile found:", profile)
             role = profile.role || 'driver'
             fullName = profile.full_name || fullName
             logStep('PROFILE_LOADED: Perfil recuperado de BD', { role, fullName })
           } else {
-            console.log("[v0] No profile found, using defaults")
             logStep('PROFILE_NOT_FOUND: Usando datos por defecto', {})
           }
 
@@ -194,14 +200,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             profile: profile,
           }
           logStep('INFO: Estado de auth cambió - usuario establecido', { email: userData.email, role: userData.role })
-          console.log("[v0] Setting user:", userData)
           setUser(userData)
           setError(null)
           setLoading(false)
         } catch (error) {
-          console.log("[v0] Error in auth listener:", error)
           logStep('AUTH_LISTENER_ERROR: Excepción en listener', error)
-          // Still set user even if profile fetch fails
+          // Still set user even if profile fetch fails completely
           const userData: User = {
             id: session.user.id,
             email: session.user.email || '',
@@ -330,7 +334,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       logStep('REGISTER_START: Iniciando registro', { email: data.email })
-      console.log("[v0] Registering user:", data.email)
       setLoading(true)
       setError(null)
       
@@ -349,29 +352,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) {
         const errorMessage = getErrorMessage(error)
         logStep('REGISTER_ERROR: Error en registro', { message: error.message })
-        console.log("[v0] Signup error:", error)
         setError(errorMessage)
         setLoading(false)
         throw error
       }
 
       if (!authData.user?.id) {
-        console.log("[v0] No user ID returned from signup")
         throw new Error('No user ID returned from signup')
       }
 
       logStep('REGISTER_AUTH_SUCCESS: Cuenta de auth creada', { userId: authData.user.id })
-      console.log("[v0] User created successfully:", authData.user.id)
-      
-      // The auth listener will trigger SIGNED_UP event and handle the profile
-      // Wait a bit for the profile to be created by the trigger
-      logStep('REGISTER_WAITING: Esperando creación de perfil por trigger', { userId: authData.user.id })
-      
-      // Don't throw on success - just set loading to false
       setLoading(false)
       logStep('REGISTER_SUCCESS: Registro completado', { email: data.email })
     } catch (error) {
-      console.log("[v0] Register exception:", error)
       logStep('REGISTER_EXCEPTION: Excepción en registro', error)
       setLoading(false)
       throw error
