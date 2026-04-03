@@ -25,9 +25,12 @@ export default function SetupDemoPage() {
       })
       const result = await response.json()
 
-      if (result.success) {
+      console.log('[v0] Setup demo response:', { status: response.status, result })
+
+      // 200 = all success, 207 = partial success (some already exist), others = error
+      if (response.status === 200 || response.status === 207) {
         setStatus("success")
-        setMessage("Cuentas demo creadas exitosamente.")
+        setMessage(result.message || "Cuentas demo listas.")
         setResults(result.results || [])
         localStorage.setItem('demo_accounts_setup_completed', 'true')
       } else {
@@ -38,6 +41,7 @@ export default function SetupDemoPage() {
     } catch (error: any) {
       setStatus("error")
       setMessage(error.message || "Error de conexion. Verifica la configuracion.")
+      console.error('[v0] Setup demo error:', error)
     } finally {
       setIsLoading(false)
     }
