@@ -67,63 +67,30 @@ export default function TestPage() {
     }
   ]
 
-  const handleFeatureClick = (feature: string) => {
-    console.log(`[v0] Feature clicked: ${feature}`)
-    switch (feature) {
-      case 'dashboard':
-        addToast('Accediendo al Dashboard de Compliance...', 'info', 2000)
-        setTimeout(() => router.push('/dashboard'), 800)
-        break
-      case 'reports':
-        addToast('Generando reportes avanzados...', 'info', 2000)
-        setTimeout(() => {
-          alert('Reportes: Esta sección mostará análisis detallado y opciones de exportación en CSV, PDF y Excel.')
-        }, 800)
-        break
-      case 'analytics':
-        addToast('Cargando Analytics...', 'info', 2000)
-        setTimeout(() => {
-          alert('Analytics: Dashboard de KPIs, tendencias, y visualización de métricas en tiempo real.')
-        }, 800)
-        break
-      case 'ocr':
-        addToast('Abriendo cargador de documentos...', 'info', 2000)
-        setTimeout(() => {
-          alert('OCR: Carga un documento para que la IA extraiga automáticamente datos de certificados, licencias, permisos, etc.')
-        }, 800)
-        break
-      default:
-        addToast('Función disponible en breve', 'warning', 2000)
-    }
-  }
+  const handleQuickLogin = async (profile: typeof demoProfiles[0]) => {
     setLoadingRole(profile.role)
     setLoginStep('Verificando credenciales...')
-    console.log(`[v0] [QUICK_LOGIN] Iniciando login para ${profile.title}`)
     
     try {
-      console.log(`[v0] [QUICK_LOGIN] Llamando performDemoLogin`)
       setLoginStep('Autenticando...')
       await performDemoLogin(profile.email, profile.password, login)
       
-      console.log(`[v0] [QUICK_LOGIN] Autenticación exitosa, preparando redirección`)
       setLoginStep('Redirigiendo al dashboard...')
       addToast(`Bienvenido, ${profile.title}!`, 'success', 2000)
       
-      // Wait for auth state to update then redirect
       setTimeout(() => {
-        console.log(`[v0] [QUICK_LOGIN] Redirigiendo a /dashboard`)
         router.push('/dashboard')
       }, 500)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
-      console.error(`[v0] [QUICK_LOGIN] Error en login:`, errorMessage)
-      
       setLoadingRole(null)
       setLoginStep(null)
-      
-      // Show error toast
       addToast(`Error: No se pudo iniciar sesión como ${profile.title}. Verifica las credenciales.`, 'error', 5000)
     }
+  }
+
+  const handleFeatureClick = (feature: string) => {
+    addToast(`Funcionalidad: ${feature}`, 'success', 2000)
   }
 
   return (
@@ -170,7 +137,6 @@ export default function TestPage() {
               <Card
                 key={profile.role}
                 className="border-slate-700 bg-slate-800/50 hover:bg-slate-800/80 transition-all cursor-pointer group"
-                onClick={() => handleQuickLogin(profile)}
               >
                 <CardHeader>
                   <div className="flex items-center gap-3 mb-4">
@@ -199,10 +165,7 @@ export default function TestPage() {
                   </div>
 
                   <Button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleQuickLogin(profile)
-                    }}
+                    onClick={() => handleQuickLogin(profile)}
                     disabled={loadingRole === profile.role}
                     className="w-full btn-orange mt-4"
                   >
@@ -232,7 +195,7 @@ export default function TestPage() {
                 </p>
                 <Button 
                   className="btn-orange"
-                  onClick={() => handleFeatureClick('dashboard')}
+                  onClick={() => handleFeatureClick('Compliance Dashboard')}
                 >
                   Ver Dashboard
                 </Button>
@@ -250,7 +213,7 @@ export default function TestPage() {
                 </p>
                 <Button 
                   className="btn-orange"
-                  onClick={() => handleFeatureClick('reports')}
+                  onClick={() => handleFeatureClick('Reportes Avanzados')}
                 >
                   Ver Reportes
                 </Button>
@@ -268,7 +231,7 @@ export default function TestPage() {
                 </p>
                 <Button 
                   className="btn-orange"
-                  onClick={() => handleFeatureClick('analytics')}
+                  onClick={() => handleFeatureClick('Analytics')}
                 >
                   Ver Analytics
                 </Button>
@@ -286,7 +249,7 @@ export default function TestPage() {
                 </p>
                 <Button 
                   className="btn-orange"
-                  onClick={() => handleFeatureClick('ocr')}
+                  onClick={() => handleFeatureClick('Extracción OCR')}
                 >
                   Subir Documento
                 </Button>
@@ -382,7 +345,7 @@ export default function TestPage() {
           </a>
           {' '}o{' '}
           <a href="/auth/register" className="text-orange-500 hover:text-orange-400 font-semibold">
-            registrate aquí
+            regístrate aquí
           </a>
           .
         </div>
