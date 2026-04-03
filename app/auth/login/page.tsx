@@ -9,14 +9,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
-import { DEMO_ACCOUNTS, performDemoLogin } from '@/lib/demo-login'
+import { DEMO_ACCOUNTS } from '@/lib/demo-login'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [demoLoading, setDemoLoading] = useState<string | null>(null)
   const { login } = useAuth()
   const { addToast } = useToast()
   const router = useRouter()
@@ -38,22 +37,11 @@ export default function LoginPage() {
     }
   }
 
-  const handleDemoLogin = async (account: typeof DEMO_ACCOUNTS[0]) => {
-    setDemoLoading(account.role)
+  const handleDemoLogin = (account: typeof DEMO_ACCOUNTS[0]) => {
+    // Just fill in the fields
+    setEmail(account.email)
+    setPassword(account.password)
     setError(null)
-
-    try {
-      await performDemoLogin(account.email, account.password, login)
-      addToast(`Bienvenido, ${account.title}!`, 'success', 2000)
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 300)
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error al iniciar sesión'
-      setError(errorMessage)
-      addToast(errorMessage, 'error', 5000)
-      setDemoLoading(null)
-    }
   }
 
   return (
@@ -120,11 +108,11 @@ export default function LoginPage() {
                 <Button
                   key={account.role}
                   onClick={() => handleDemoLogin(account)}
-                  disabled={demoLoading === account.role || isLoading}
+                  disabled={isLoading}
                   variant="outline"
                   className="w-full"
                 >
-                  {demoLoading === account.role ? 'Entrando...' : `Demo: ${account.name}`}
+                  {`Demo: ${account.name}`}
                 </Button>
               ))}
             </div>
