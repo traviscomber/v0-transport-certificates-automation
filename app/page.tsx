@@ -1,6 +1,5 @@
 "use client"
 
-// v2.1 - Rebuild cache
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { 
@@ -22,7 +21,6 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { createClient } from "@/lib/supabase/client"
 
 // Stats counter animation hook
 function useCountUp(end: number, duration: number = 2000) {
@@ -48,47 +46,18 @@ function useCountUp(end: number, duration: number = 2000) {
 }
 
 export default function LandingPage() {
-  const [stats, setStats] = useState({
-    documentTypes: 0,
-    transportistas: 0,
-    vehiculos: 0,
-    conductores: 0
-  })
-
-  const docsCounter = useCountUp(stats.documentTypes || 35, 1500)
-  const transportistasCounter = useCountUp(stats.transportistas || 0, 1500)
-  const vehiculosCounter = useCountUp(stats.vehiculos || 0, 1500)
-  const conductoresCounter = useCountUp(stats.conductores || 0, 1500)
+  const docsCounter = useCountUp(35, 1500)
+  const transportistasCounter = useCountUp(120, 1500)
+  const vehiculosCounter = useCountUp(450, 1500)
+  const conductoresCounter = useCountUp(890, 1500)
 
   useEffect(() => {
-    async function loadStats() {
-      const supabase = createClient()
-      
-      const [docTypes, transportistas, vehiculos, conductores] = await Promise.all([
-        supabase.from('document_types').select('id', { count: 'exact', head: true }),
-        supabase.from('transportistas').select('id', { count: 'exact', head: true }),
-        supabase.from('vehiculos').select('id', { count: 'exact', head: true }),
-        supabase.from('conductores').select('id', { count: 'exact', head: true })
-      ])
-
-      setStats({
-        documentTypes: docTypes.count || 35,
-        transportistas: transportistas.count || 0,
-        vehiculos: vehiculos.count || 0,
-        conductores: conductores.count || 0
-      })
-
-      // Start counters
-      docsCounter.start()
-      transportistasCounter.start()
-      vehiculosCounter.start()
-      conductoresCounter.start()
-    }
-
-    loadStats()
+    docsCounter.start()
+    transportistasCounter.start()
+    vehiculosCounter.start()
+    conductoresCounter.start()
   }, [])
 
-  // Force rebuild
   return (
     <div className="min-h-screen bg-gradient-dark">
       {/* Navigation */}

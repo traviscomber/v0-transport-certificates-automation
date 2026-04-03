@@ -34,19 +34,6 @@ export interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Función helper para obtener timestamp formateado
-const getTimestamp = () => new Date().toLocaleTimeString('es-ES', { hour12: false })
-
-// Función helper para loguear con contexto
-const logStep = (step: string, details?: any) => {
-  const timestamp = getTimestamp()
-  if (details) {
-    console.log(`[v0] [${timestamp}] ${step}`, details)
-  } else {
-    console.log(`[v0] [${timestamp}] ${step}`)
-  }
-}
-
 // Función helper para obtener mensaje de error amigable
 const getErrorMessage = (error: any): string => {
   if (typeof error === 'string') return error
@@ -95,37 +82,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return 'driver'
   }
 
-  // Verificar sesión al montar
   useEffect(() => {
     const checkSession = async () => {
-      logStep('INIT: Verificando sesión existente')
       try {
         const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession()
-        
         if (sessionError) {
-          logStep('ERROR: Fallo al obtener sesión', sessionError.message)
-          setError('Error al verificar sesión')
           setUser(null)
           return
         }
-        
         if (session?.user) {
-          const userData: User = {
+          const meta = session.user.user_metadata || {}
+          setUser({
             id: session.user.id,
             email: session.user.email || '',
-            role: getRoleFromEmail(session.user.email || ''),
-            full_name: session.user.email?.split('@')[0] || '',
-          }
-          logStep('SUCCESS: Sesión existente recuperada', { email: userData.email, role: userData.role })
-          setUser(userData)
-          setError(null)
+            role: (meta.role as UserRole) || getRoleFromEmail(session.user.email || ''),
+            full_name: meta.full_name || session.user.email?.split('@')[0] || '',
+            company_name: meta.company_name,
+          })
         } else {
-          logStep('INFO: No hay sesión activa')
           setUser(null)
         }
-      } catch (err) {
-        logStep('ERROR: Excepción al verificar sesión', err)
-        setError('Error al verificar sesión')
+      } catch {
         setUser(null)
       } finally {
         setLoading(false)
@@ -134,106 +111,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     checkSession()
 
-    // Escuchar cambios de autenticación
-    logStep('INIT: Configurando listener de autenticación')
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
-      logStep(`AUTH_EVENT: ${event}`)
-      
-      if (event === 'SIGNED_OUT' || !session) {
-        logStep('INFO: Usuario cerró sesión')
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
         setUser(null)
         setError(null)
         setLoading(false)
-      } else if (session?.user) {
-        // For new users (just signed up), don't fetch profile - trigger creates it
-        // For existing users (just logged in), fetch profile data
-        const userData: User = {
+      } else if (session.user) {
+        const meta = session.user.user_metadata || {}
+        setUser({
           id: session.user.id,
           email: session.user.email || '',
-          role: 'driver',
-          full_name: session.user.email?.split('@')[0] || 'Usuario',
-        }
-        logStep('INFO: Estado de auth cambió - usuario establecido', { email: userData.email })
-        setUser(userData)
+          role: (meta.role as UserRole) || getRoleFromEmail(session.user.email || ''),
+          full_name: meta.full_name || session.user.email?.split('@')[0] || 'Usuario',
+          company_name: meta.company_name,
+        })
         setError(null)
         setLoading(false)
       }
     })
 
-    return () => {
-      logStep('CLEANUP: Removiendo listener de autenticación')
-      subscription?.unsubscribe()
-    }
+    return () => subscription?.unsubscribe()
   }, [])
 
   const login = async (email: string, password: string) => {
-    const loginId = `login-${Date.now()}`
     try {
-      logStep(`LOGIN_START [${loginId}]: Iniciando login`, { email })
       setLoading(true)
       setError(null)
-      
-      logStep(`LOGIN_AUTH [${loginId}]: Llamando a signInWithPassword`, { email })
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password,
-      })
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password })
 
       if (error) {
         const errorMessage = getErrorMessage(error)
-        logStep(`LOGIN_ERROR [${loginId}]: Error de autenticación`, { 
-          code: error.status, 
-          message: error.message,
-          userMessage: errorMessage 
-        })
         setError(errorMessage)
         setLoading(false)
         throw error
       }
 
-      if (!data.session) {
-        logStep(`LOGIN_ERROR [${loginId}]: No se retornó sesión`, {})
+      if (!data.session?.user) {
         setError('No se recibió sesión del servidor')
         setLoading(false)
         throw new Error('No session returned from login')
       }
 
-      logStep(`LOGIN_SESSION [${loginId}]: Sesión creada exitosamente`, { 
-        userId: data.session.user.id,
-        email: data.session.user.email 
+      const meta = data.session.user.user_metadata || {}
+      setUser({
+        id: data.session.user.id,
+        email: data.session.user.email || email,
+        role: (meta.role as UserRole) || getRoleFromEmail(data.session.user.email || email),
+        full_name: meta.full_name || (data.session.user.email || email).split('@')[0],
+        company_name: meta.company_name,
       })
-
-      if (data.session.user) {
-        const userData: User = {
-          id: data.session.user.id,
-          email: data.session.user.email || email,
-          role: getRoleFromEmail(data.session.user.email || email),
-          full_name: (data.session.user.email || email).split('@')[0],
-        }
-        
-        logStep(`LOGIN_USER [${loginId}]: Usuario establecido`, { 
-          id: userData.id,
-          email: userData.email,
-          role: userData.role 
-        })
-        
-        setUser(userData)
-        setError(null)
-        
-        logStep(`LOGIN_SUCCESS [${loginId}]: Login completado exitosamente`, { 
-          email: userData.email, 
-          role: userData.role 
-        })
-        return
-      } else {
-        throw new Error('User data not found in session')
-      }
+      setError(null)
     } catch (error) {
       const errorMessage = getErrorMessage(error)
-      logStep(`LOGIN_EXCEPTION [${loginId}]: Excepción no manejada`, { 
-        error: error instanceof Error ? error.message : String(error),
-        userMessage: errorMessage
-      })
       setError(errorMessage)
       setLoading(false)
       throw error
@@ -242,19 +172,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      logStep('LOGOUT_START: Iniciando cierre de sesión')
       setLoading(true)
       const { error } = await supabaseClient.auth.signOut()
-      if (error) {
-        logStep('LOGOUT_ERROR: Error al cerrar sesión', error.message)
-        throw error
-      }
-      logStep('LOGOUT_SUCCESS: Sesión cerrada exitosamente')
+      if (error) throw error
       setUser(null)
       setError(null)
       setLoading(false)
     } catch (error) {
-      logStep('LOGOUT_EXCEPTION: Excepción en logout', error)
       setLoading(false)
       throw error
     }
@@ -262,10 +186,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (data: RegisterData) => {
     try {
-      logStep('REGISTER_START: Iniciando registro', { email: data.email })
       setLoading(true)
       setError(null)
-      
+
       const { data: authData, error } = await supabaseClient.auth.signUp({
         email: data.email,
         password: data.password,
@@ -280,7 +203,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         const errorMessage = getErrorMessage(error)
-        logStep('REGISTER_ERROR: Error en registro', { message: error.message })
         setError(errorMessage)
         setLoading(false)
         throw error
@@ -290,9 +212,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('No user ID returned from signup')
       }
 
-      logStep('REGISTER_AUTH_SUCCESS: Cuenta de auth creada', { userId: authData.user.id })
-
-      // Set user immediately so dashboard sees authenticated session right away
       setUser({
         id: authData.user.id,
         email: authData.user.email || data.email,
@@ -302,9 +221,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       setError(null)
       setLoading(false)
-      logStep('REGISTER_SUCCESS: Registro completado', { email: data.email })
     } catch (error) {
-      logStep('REGISTER_EXCEPTION: Excepción en registro', error)
       setLoading(false)
       throw error
     }

@@ -1,32 +1,14 @@
 'use client'
 
 import { useAuth } from '@/lib/auth-context'
-import { REBUILD_TRIGGER } from '@/lib/build-cache-buster'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { BarChart3, FileText, Users, Truck, Shield, AlertTriangle } from 'lucide-react'
-
-// Force production rebuild
-console.log('[v0] Production rebuild trigger:', REBUILD_TRIGGER)
+import { BarChart3, FileText, Users, AlertTriangle } from 'lucide-react'
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth()
+  const { user } = useAuth()
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-slate-400">Cargando tu dashboard...</div>
-      </div>
-    )
-  }
-
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-500">No autenticado. Redirigiendo...</div>
-      </div>
-    )
-  }
+  if (!user) return null
 
   const roleLabels: Record<string, string> = {
     admin: 'Administrador',
