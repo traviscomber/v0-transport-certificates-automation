@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { useToast } from '@/lib/toast-context'
 import { useRouter } from 'next/navigation'
@@ -15,9 +15,35 @@ export default function TestPage() {
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null)
   const [loadingRole, setLoadingRole] = useState<string | null>(null)
   const [loginStep, setLoginStep] = useState<string | null>(null)
+  const [showSetupBanner, setShowSetupBanner] = useState(false)
+  const [checkingSetup, setCheckingSetup] = useState(true)
   const { login } = useAuth()
   const { addToast } = useToast()
   const router = useRouter()
+
+  // Check if demo accounts have been set up
+  useEffect(() => {
+    const checkDemoAccounts = async () => {
+      try {
+        // Try to verify if demo accounts exist by checking localStorage or a flag
+        const setupCompleted = localStorage.getItem('demo_accounts_setup_completed')
+        if (!setupCompleted) {
+          // Check if at least one demo account can be found
+          const response = await fetch('/api/check-demo-accounts', { method: 'GET' })
+          const data = await response.json()
+          setShowSetupBanner(!data.accountsExist)
+        } else {
+          setShowSetupBanner(false)
+        }
+      } catch (error) {
+        console.log('[v0] Could not check demo accounts, showing banner by default')
+        setShowSetupBanner(true)
+      } finally {
+        setCheckingSetup(false)
+      }
+    }
+    checkDemoAccounts()
+  }, [])
 
   const tabs = [
     { id: 'roles' as const, label: 'Los 3 Roles', icon: Truck },
@@ -178,31 +204,33 @@ export default function TestPage() {
         {/* Los 3 Roles Tab */}
         {activeTab === 'roles' && (
           <div className="space-y-6">
-            {/* Setup Notice */}
+          {/* Setup notice - only show if banner should be displayed */}
+          {showSetupBanner && (
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl border border-orange-500/30 bg-orange-500/10">
               <div className="flex items-start gap-3">
                 <Settings className="w-5 h-5 text-orange-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-semibold text-foreground">Primera vez aqui?</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Los botones requieren demo accounts. Si no estan configuradas, te redirigiremos automaticamente.
+                    Los botones de acceso rapido requieren cuentas demo. Si no estan configuradas, te redirigiremos automaticamente.
+                    Tambien puedes crear tu propia cuenta gratis.
                   </p>
                 </div>
               </div>
               <div className="flex gap-2 flex-shrink-0">
                 <Button size="sm" variant="outline" className="text-xs" onClick={() => router.push('/setup-demo')}>
                   <Settings className="w-3 h-3 mr-1" />
-                  Configurar
+                  Configurar demos
                 </Button>
                 <Button size="sm" className="btn-orange text-xs" onClick={() => router.push('/auth/register')}>
-                  Crear Cuenta
+                  Crear cuenta
                   <ArrowRight className="w-3 h-3 ml-1" />
                 </Button>
               </div>
             </div>
+          )}
 
-            {/* Role Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {demoProfiles.map((profile) => (
                 <Card key={profile.role} className="bg-slate-800 border-slate-700 hover:border-orange-500/50 transition-colors">
                   <CardHeader>

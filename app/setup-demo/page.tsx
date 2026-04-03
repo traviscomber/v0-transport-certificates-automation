@@ -122,7 +122,10 @@ export default function SetupDemoPage() {
                   ))}
                 </ul>
               )}
-              <Button className="w-full btn-orange" onClick={() => router.push('/test')}>
+              <Button className="w-full btn-orange" onClick={() => {
+                localStorage.setItem('demo_accounts_setup_completed', 'true')
+                router.push('/test')
+              }}>
                 Ir a la Prueba Interactiva
               </Button>
             </div>
