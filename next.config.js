@@ -18,12 +18,6 @@ const nextConfig = {
     config.cache = false
     return config
   },
-  experimental: {
-    isrMemoryCacheSize: 0,
-  },
-  // Skip prerendering for dashboard routes that require auth context
-  // This prevents "User is not defined" errors during build
-  skipTrailingSlashRedirect: true,
 };
 
 module.exports = nextConfig;
