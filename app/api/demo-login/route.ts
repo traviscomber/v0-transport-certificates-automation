@@ -1,8 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { v5 as uuidv5 } from 'uuid'
+
+// Demo account namespace for deterministic UUID generation
+const DEMO_NAMESPACE = '550e8400-e29b-41d4-a716-446655440000'
 
 // Direct verification of demo account credentials
-// This bypasses Supabase auth and uses direct DB query since demo accounts were created via SQL
 const DEMO_CREDENTIALS = {
   'conductor@demo.cl': 'demo123',
   'despachador@demo.cl': 'demo123',
@@ -56,7 +59,7 @@ export async function POST(request: Request) {
     if (existingProfile) {
       profile = existingProfile
     } else if (profileError?.code === 'PGRST116') {
-      // No rows found - create the profile
+      // No rows found - create the profile with deterministic UUID
       console.log(`[v0] Creating missing profile for ${email}`)
       
       // Map email to role and name
@@ -68,26 +71,16 @@ export async function POST(request: Request) {
       
       const accountInfo = roleMap[email] || { role: 'user', name: 'Demo User' }
       
-      // Get the auth user ID from auth.users table
-      const { data: authUsers, error: authError } = await supabase
-        .from('auth.users')
-        .select('id')
-        .eq('email', email)
-        .single()
+      // Generate deterministic UUID for this demo account
+      const userId = uuidv5(email, DEMO_NAMESPACE)
+      
+      console.log(`[v0] Generated UUID for ${email}: ${userId}`)
 
-      if (authError || !authUsers) {
-        console.error(`[v0] Could not find auth user for ${email}`)
-        return NextResponse.json(
-          { error: 'User not found in auth system' },
-          { status: 404 }
-        )
-      }
-
-      // Create the profile
+      // Create the profile with deterministic ID
       const { data: newProfile, error: createError } = await supabase
         .from('profiles')
         .insert({
-          id: authUsers.id,
+          id: userId,
           email,
           full_name: accountInfo.name,
           role: accountInfo.role,
