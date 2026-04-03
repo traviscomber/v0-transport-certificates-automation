@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,8 +24,10 @@ interface FormData {
 
 export default function RegisterPage() {
   const { register } = useAuth()
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
     email: '',
@@ -59,6 +62,10 @@ export default function RegisterPage() {
         role: formData.role,
         company_name: formData.companyName || undefined,
       })
+      setSuccess(true)
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 2000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al procesar tu registro')
     } finally {
@@ -154,6 +161,12 @@ export default function RegisterPage() {
               </div>
 
               {error && <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
+
+              {success && (
+                <div className="text-sm text-green-400 bg-green-400/10 border border-green-400/20 p-3 rounded-md text-center">
+                  Cuenta creada exitosamente. Redirigiendo al panel...
+                </div>
+              )}
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Creando cuenta...' : 'Crear Cuenta'}
