@@ -29,23 +29,8 @@ export async function POST(request: Request) {
 
     for (const account of DEMO_ACCOUNTS) {
       try {
-        // First, check if user already exists
-        const { data: existingUser, error: checkError } = await supabase.auth.admin.getUserByEmail(account.email)
-        
-        console.log(`[v0] Checking ${account.email}:`, { exists: !!existingUser?.user, checkError })
-        
-        if (existingUser?.user) {
-          console.log(`[v0] ${account.email} already exists`)
-          results.push({
-            email: account.email,
-            success: true,
-            message: 'User already exists',
-          })
-          continue
-        }
-
-        // Create user via auth
-        console.log(`[v0] Creating user ${account.email}`)
+        // Try to create user via auth - if exists, catch the error and treat as success
+        console.log(`[v0] Creating/checking user ${account.email}`)
         const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
           email: account.email,
           password: account.password,
@@ -58,7 +43,18 @@ export async function POST(request: Request) {
 
         console.log(`[v0] Create auth response for ${account.email}:`, { userId: authUser?.user?.id, authError })
 
-        if (authError) {
+        // If user already exists, query the database to get the ID
+        let userId = authUser?.user?.id
+        if (authError && authError.message?.includes('already exists')) {
+          console.log(`[v0] ${account.email} already exists, fetching from database`)
+          // User already exists, get from profiles table
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', account.email)
+            .single()
+          userId = profile?.id
+        } else if (authError) {
           console.error(`[v0] Auth error for ${account.email}:`, authError)
           results.push({
             email: account.email,
@@ -68,11 +64,20 @@ export async function POST(request: Request) {
           continue
         }
 
-        // Create profile for the user
+        if (!userId) {
+          results.push({
+            email: account.email,
+            success: false,
+            error: 'Could not get user ID',
+          })
+          continue
+        }
+
+        // Create or update profile for the user
         const { error: profileError } = await supabase
           .from('profiles')
           .upsert({
-            id: authUser?.user?.id,
+            id: userId,
             email: account.email,
             full_name: account.name,
             role: account.role,
@@ -91,7 +96,7 @@ export async function POST(request: Request) {
           results.push({
             email: account.email,
             success: true,
-            message: 'Account created successfully',
+            message: authError ? 'User already existed' : 'Account created successfully',
           })
         }
       } catch (error: any) {
