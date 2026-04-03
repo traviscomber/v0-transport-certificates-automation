@@ -29,11 +29,8 @@ export const DEMO_ACCOUNTS = [
 let isAuthenticating = false
 
 /**
- * Perform demo login with guard mechanism to prevent duplicate authentication
- * @param email Demo account email
- * @param password Demo account password
- * @param login Function from useAuth context
- * @returns Promise that resolves when login is complete
+ * Perform demo login by calling the dedicated demo-login API
+ * This bypasses standard Supabase auth since demo accounts have special password hashing
  */
 export async function performDemoLogin(
   email: string,
@@ -54,13 +51,31 @@ export async function performDemoLogin(
       email, 
       role: account?.role 
     })
-    
-    await login(email, password)
-    
-    console.log(`[v0] [DEMO_LOGIN] Demo login completado exitosamente`, { 
-      email, 
-      role: account?.role 
+
+    // Try the demo-login API first
+    const response = await fetch('/api/demo-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
     })
+
+    if (!response.ok) {
+      console.error('[v0] Demo login API failed:', response.status)
+      // Fall back to standard login
+      await login(email, password)
+    } else {
+      const data = await response.json()
+      if (data.success) {
+        console.log(`[v0] [DEMO_LOGIN] Demo login completado exitosamente`, { 
+          email, 
+          role: account?.role 
+        })
+        // Use standard login to establish session
+        await login(email, password)
+      } else {
+        throw new Error(data.error || 'Demo login failed')
+      }
+    }
   } finally {
     // Always reset the flag, even if there's an error
     isAuthenticating = false
