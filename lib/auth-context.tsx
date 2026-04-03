@@ -108,36 +108,72 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_OUT' || !session) {
         setUser(null)
       } else if (session) {
-        // Re-fetch profile cuando cambia auth state - con fallback a columnas esenciales
-        const { data: fullProfile, error: fullError } = await supabase
-          .from('profiles')
-          .select('id, email, role, full_name, company_name, avatar_url')
-          .eq('id', session.user.id)
-          .single()
-
-        let profile = fullProfile
-        let profileError = fullError
-
-        // Si falla, intentar solo con columnas esenciales
-        if (fullError && fullError.code === '42703') {
-          const { data: basicProfile, error: basicError } = await supabase
+        // Try to fetch profile, but don't fail if it doesn't exist
+        try {
+          const { data: fullProfile, error: fullError } = await supabase
             .from('profiles')
-            .select('id, email, role, full_name')
+            .select('id, email, role, full_name, company_name, avatar_url')
             .eq('id', session.user.id)
             .single()
-          
-          profile = basicProfile
-          profileError = basicError
-        }
 
-        if (profile) {
+          if (fullProfile) {
+            setUser({
+              id: fullProfile.id,
+              email: fullProfile.email || session.user.email || '',
+              role: fullProfile.role as UserRole,
+              full_name: fullProfile.full_name,
+              company_name: fullProfile.company_name || undefined,
+              avatar_url: fullProfile.avatar_url || undefined,
+            })
+          } else if (fullError && fullError.code === '42703') {
+            // Try with basic columns if avatar_url doesn't exist
+            const { data: basicProfile } = await supabase
+              .from('profiles')
+              .select('id, email, role, full_name')
+              .eq('id', session.user.id)
+              .single()
+            
+            if (basicProfile) {
+              setUser({
+                id: basicProfile.id,
+                email: basicProfile.email || session.user.email || '',
+                role: basicProfile.role as UserRole,
+                full_name: basicProfile.full_name,
+                company_name: undefined,
+                avatar_url: undefined,
+              })
+            }
+          } else if (fullError?.code === 'PGRST116') {
+            // Profile not found - use auth data only
+            const emailPrefix = session.user.email?.split('@')[0] || ''
+            let role: UserRole = 'driver'
+            if (emailPrefix === 'despachador') role = 'dispatcher'
+            if (emailPrefix === 'admin') role = 'admin'
+            
+            setUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              role: role,
+              full_name: emailPrefix,
+              company_name: undefined,
+              avatar_url: undefined,
+            })
+          }
+        } catch (err) {
+          console.error('[v0] Error in auth listener:', err)
+          // Fallback: set user from session if profile fetch fails
+          const emailPrefix = session.user.email?.split('@')[0] || ''
+          let role: UserRole = 'driver'
+          if (emailPrefix === 'despachador') role = 'dispatcher'
+          if (emailPrefix === 'admin') role = 'admin'
+          
           setUser({
-            id: profile.id,
-            email: profile.email || session.user.email || '',
-            role: profile.role as UserRole,
-            full_name: profile.full_name,
-            company_name: profile.company_name || undefined,
-            avatar_url: profile.avatar_url || undefined,
+            id: session.user.id,
+            email: session.user.email || '',
+            role: role,
+            full_name: emailPrefix,
+            company_name: undefined,
+            avatar_url: undefined,
           })
         }
       }
