@@ -69,7 +69,7 @@ export default function TestPage() {
       await login(profile.email, profile.password)
       // Wait for auth state to update then redirect
       setTimeout(() => {
-        router.push('/dashboard').catch(() => {})
+        router.push('/dashboard')
       }, 200)
     } catch (error) {
       console.error('[v0] Login error:', error)
@@ -152,7 +152,7 @@ export default function TestPage() {
                   <Button
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleQuickLogin(profile).catch(() => {})
+                      handleQuickLogin(profile)
                     }}
                     disabled={loadingRole === profile.role}
                     className="w-full btn-orange mt-4"
