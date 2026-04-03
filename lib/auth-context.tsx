@@ -158,64 +158,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setError(null)
         setLoading(false)
       } else if (session?.user) {
-        try {
-          // Try to fetch profile from database
-          const { data: profile, error: profileError } = await supabaseClient
-            .from('profiles')
-            .select('id, email, full_name, role, company_name, is_active')
-            .eq('id', session.user.id)
-            .maybeSingle()
-
-          if (profileError) {
-            logStep('PROFILE_ERROR: Error fetching profile', { error: profileError.message })
-            // Still set user even if profile fetch fails
-            const userData: User = {
-              id: session.user.id,
-              email: session.user.email || '',
-              role: 'driver',
-              full_name: session.user.email?.split('@')[0] || 'Usuario',
-            }
-            setUser(userData)
-            setError(null)
-            setLoading(false)
-            return
-          }
-
-          let role = 'driver'
-          let fullName = session.user.email?.split('@')[0] || 'Usuario'
-
-          if (profile) {
-            role = profile.role || 'driver'
-            fullName = profile.full_name || fullName
-            logStep('PROFILE_LOADED: Perfil recuperado de BD', { role, fullName })
-          } else {
-            logStep('PROFILE_NOT_FOUND: Usando datos por defecto', {})
-          }
-
-          const userData: User = {
-            id: session.user.id,
-            email: session.user.email || '',
-            role: role,
-            full_name: fullName,
-            profile: profile,
-          }
-          logStep('INFO: Estado de auth cambió - usuario establecido', { email: userData.email, role: userData.role })
-          setUser(userData)
-          setError(null)
-          setLoading(false)
-        } catch (error) {
-          logStep('AUTH_LISTENER_ERROR: Excepción en listener', error)
-          // Still set user even if profile fetch fails completely
-          const userData: User = {
-            id: session.user.id,
-            email: session.user.email || '',
-            role: 'driver',
-            full_name: session.user.email?.split('@')[0] || 'Usuario',
-          }
-          setUser(userData)
-          setError(null)
-          setLoading(false)
+        // For new users (just signed up), don't fetch profile - trigger creates it
+        // For existing users (just logged in), fetch profile data
+        const userData: User = {
+          id: session.user.id,
+          email: session.user.email || '',
+          role: 'driver',
+          full_name: session.user.email?.split('@')[0] || 'Usuario',
         }
+        logStep('INFO: Estado de auth cambió - usuario establecido', { email: userData.email })
+        setUser(userData)
+        setError(null)
+        setLoading(false)
       }
     })
 

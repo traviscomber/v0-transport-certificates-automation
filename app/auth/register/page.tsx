@@ -1,35 +1,34 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
 import { parseAuthError } from '@/lib/auth-validation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Truck } from 'lucide-react'
 
 export default function RegisterPage() {
-  const router = useRouter()
   const { register } = useAuth()
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
-    fullName: 'Juan Vial',
-    email: 'juan@n3uralia.com',
+    fullName: '',
+    email: '',
     role: 'driver' as 'driver' | 'dispatcher' | 'admin',
-    companyName: 'juan@n3uralia.com',
-    password: '••••••••',
-    confirmPassword: '••••••••',
+    companyName: '',
+    password: '',
+    confirmPassword: '',
   })
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
 
+    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError('Las contraseñas no coinciden')
       return
@@ -42,9 +41,11 @@ export default function RegisterPage() {
         password: formData.password,
         full_name: formData.fullName,
         role: formData.role,
-        company_name: formData.companyName,
+        company_name: formData.companyName || undefined,
       })
-      router.push('/dashboard')
+      
+      // Registration successful - user will be logged in automatically
+      // Redirect happens via auth listener
     } catch (err: unknown) {
       setError(parseAuthError(err))
     } finally {
@@ -78,6 +79,7 @@ export default function RegisterPage() {
                   required
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  placeholder="Juan Vial"
                 />
               </div>
 
@@ -89,6 +91,7 @@ export default function RegisterPage() {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="juan@n3uralia.com"
                 />
               </div>
 
@@ -153,7 +156,7 @@ export default function RegisterPage() {
                   Iniciar Sesión
                 </Link>
               </div>
-
+              
               <div className="text-center text-xs text-muted-foreground pt-3 border-t border-slate-700">
                 <p className="mb-2">¿Quieres conocer el sistema primero antes de registrarte?</p>
                 <Link href="/test" className="text-cyan-400 hover:text-cyan-300 font-semibold">
