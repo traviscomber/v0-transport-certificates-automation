@@ -1,9 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-import { v5 as uuidv5 } from 'uuid'
+import { createHash } from 'crypto'
 
 // Demo account namespace for deterministic UUID generation
 const DEMO_NAMESPACE = '550e8400-e29b-41d4-a716-446655440000'
+
+// Function to generate deterministic UUID from email
+function generateDemoUserId(email: string): string {
+  const hash = createHash('md5').update(DEMO_NAMESPACE + email).digest('hex')
+  // Format as UUID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`
+}
 
 // Direct verification of demo account credentials
 const DEMO_CREDENTIALS = {
@@ -72,7 +79,7 @@ export async function POST(request: Request) {
       const accountInfo = roleMap[email] || { role: 'user', name: 'Demo User' }
       
       // Generate deterministic UUID for this demo account
-      const userId = uuidv5(email, DEMO_NAMESPACE)
+      const userId = generateDemoUserId(email)
       
       console.log(`[v0] Generated UUID for ${email}: ${userId}`)
 
