@@ -17,25 +17,14 @@ export default function TestPage() {
   const { login } = useAuth()
   const { addToast } = useToast()
   const router = useRouter()
-
-  const toggleFaq = (id: string): void => {
-    setExpandedFaq(prev => prev === id ? null : id)
-  }
-
-  const demoProfiles = [
-    {
-      role: 'driver',
-      title: 'Conductor',
-      email: 'conductor@demo.cl',
-      password: 'demo123',
-      icon: <Truck className="w-8 h-8" />,
-      description: 'Gestiona tus documentos, certificados y permisos',
-      features: [
-        'Subir certificados (licencia, revisión técnica, seguros)',
-        'Seguimiento de validaciones en tiempo real',
-        'Alertas de vencimiento',
-        'Estado de cumplimiento personal'
-      ]
+  const { addToast } = useToast()
+  
+  // Tabs configuration
+  const tabs = [
+    { id: 'roles' as const, label: 'Los 3 Roles', icon: Truck },
+    { id: 'features' as const, label: 'Features Avanzadas', icon: Shield },
+    { id: 'learning' as const, label: 'Centro Educativo', icon: ChevronDown },
+  ]
     },
     {
       role: 'dispatcher',
