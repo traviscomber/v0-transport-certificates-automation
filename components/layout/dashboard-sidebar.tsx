@@ -23,7 +23,6 @@ import {
   Upload,
   CheckCircle,
   AlertTriangle,
-  User,
 } from 'lucide-react'
 
 interface NavItem {
@@ -51,7 +50,7 @@ const adminItems: NavItem[] = [
 ]
 
 const settingsItems: NavItem[] = [
-  { label: 'Mi Perfil', href: '/settings/profile', icon: <User className="h-5 w-5" /> },
+  // Settings will be added here later
 ]
 
 export function DashboardSidebar() {
