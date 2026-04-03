@@ -93,19 +93,20 @@ export default function TestPage() {
     switch (feature) {
       case 'dashboard':
         addToast('Accediendo al Compliance Dashboard...', 'info', 1500)
-        setTimeout(() => router.push('/dashboard/compliance'), 800)
+        // Try direct path first, fallback to dashboard group
+        setTimeout(() => router.push('/compliance'), 800)
         break
       case 'reports':
         addToast('Cargando Reportes Avanzados...', 'info', 1500)
-        setTimeout(() => router.push('/dashboard/reports'), 800)
+        setTimeout(() => router.push('/reports'), 800)
         break
       case 'analytics':
         addToast('Cargando Analytics...', 'info', 1500)
-        setTimeout(() => router.push('/dashboard/analytics'), 800)
+        setTimeout(() => router.push('/analytics'), 800)
         break
       case 'ocr':
         addToast('Abriendo cargador de documentos...', 'info', 1500)
-        setTimeout(() => router.push('/dashboard/upload'), 800)
+        setTimeout(() => router.push('/upload'), 800)
         break
       default:
         addToast('Función disponible en breve', 'warning', 2000)
