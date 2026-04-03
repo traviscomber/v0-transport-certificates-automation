@@ -292,6 +292,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: authData, error } = await supabaseClient.auth.signUp({
         email: data.email,
         password: data.password,
+        options: {
+          data: {
+            full_name: data.full_name,
+            role: data.role || 'driver',
+            company_name: data.company_name,
+          }
+        }
       })
 
       if (error) {
@@ -307,36 +314,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       logStep('REGISTER_AUTH_SUCCESS: Cuenta de auth creada', { userId: authData.user.id })
-
-      // Create profile in profiles table
-      try {
-        const { error: profileError } = await supabaseClient
-          .from('profiles')
-          .insert([
-            {
-              id: authData.user.id,
-              email: data.email,
-              full_name: data.full_name,
-              role: data.role || 'driver',
-              company_name: data.company_name,
-              is_active: true,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            }
-          ])
-
-        if (profileError) {
-          logStep('REGISTER_PROFILE_WARNING: Aviso al crear perfil', { message: profileError.message })
-          // Don't throw - profile creation is secondary to auth
-        } else {
-          logStep('REGISTER_PROFILE_SUCCESS: Perfil creado exitosamente', { userId: authData.user.id })
-        }
-      } catch (profileError: any) {
-        logStep('REGISTER_PROFILE_EXCEPTION: Excepción al crear perfil', { message: profileError.message })
-        // Don't throw - let registration continue even if profile creation fails
-      }
       
-      logStep('REGISTER_SUCCESS: Registro completado', { email: data.email })
+      logStep('REGISTER_SUCCESS: Registro completado - perfil será creado por trigger de BD', { email: data.email })
       setLoading(false)
     } catch (error) {
       logStep('REGISTER_EXCEPTION: Excepción en registro', error)
