@@ -289,7 +289,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true)
       setError(null)
       
-      const { error } = await supabaseClient.auth.signUp({
+      const { data: authData, error } = await supabaseClient.auth.signUp({
         email: data.email,
         password: data.password,
       })
@@ -300,6 +300,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setError(errorMessage)
         setLoading(false)
         throw error
+      }
+
+      if (!authData.user?.id) {
+        throw new Error('No user ID returned from signup')
+      }
+
+      logStep('REGISTER_AUTH_SUCCESS: Cuenta de auth creada', { userId: authData.user.id })
+
+      // Create profile in profiles table
+      try {
+        const { error: profileError } = await supabaseClient
+          .from('profiles')
+          .insert([
+            {
+              id: authData.user.id,
+              email: data.email,
+              full_name: data.full_name,
+              role: data.role || 'driver',
+              company_name: data.company_name,
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }
+          ])
+
+        if (profileError) {
+          logStep('REGISTER_PROFILE_WARNING: Aviso al crear perfil', { message: profileError.message })
+          // Don't throw - profile creation is secondary to auth
+        } else {
+          logStep('REGISTER_PROFILE_SUCCESS: Perfil creado exitosamente', { userId: authData.user.id })
+        }
+      } catch (profileError: any) {
+        logStep('REGISTER_PROFILE_EXCEPTION: Excepción al crear perfil', { message: profileError.message })
+        // Don't throw - let registration continue even if profile creation fails
       }
       
       logStep('REGISTER_SUCCESS: Registro completado', { email: data.email })
