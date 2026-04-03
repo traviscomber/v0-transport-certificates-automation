@@ -33,21 +33,25 @@ interface UploadedDocument {
 }
 
 const categoryIcons: Record<string, any> = {
-  empresa: Building2,
+  transportista: Building2,
   conductor: User,
   vehiculo: Truck,
   seguridad: Shield,
   operacional: Package,
   subcontratacion: FileCheck,
+  empresa: Building2,
+  documento: FileText,
 }
 
 const categoryLabels: Record<string, string> = {
-  empresa: 'Empresa',
+  empresa: 'Empresa/Transportista',
   conductor: 'Conductor',
   vehiculo: 'Vehículo',
   seguridad: 'Seguridad',
   operacional: 'Operacional',
   subcontratacion: 'Subcontratación',
+  transportista: 'Transportista',
+  documento: 'Documentos de Operación',
 }
 
 const statusConfig: Record<string, { label: string; className: string; icon: any }> = {
@@ -93,7 +97,7 @@ export default function ComplianceDashboardPage() {
     return uploaded.validation_status
   }
 
-  const categories = ['empresa', 'conductor', 'vehiculo', 'seguridad', 'operacional', 'subcontratacion']
+  const categories = ['transportista', 'conductor', 'vehiculo', 'documento']
   const getCategoryStats = () => {
     return categories.reduce<Record<string, any>>((acc, cat) => {
       const typesIn = documentTypes.filter(dt => dt.category === cat)
@@ -206,6 +210,31 @@ export default function ComplianceDashboardPage() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* Category grid */}
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground mb-3">Documentos Requeridos por Categoría</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <div className="p-3 rounded-lg bg-secondary/40 border border-border">
+              <p className="font-medium text-orange-400 mb-1">📦 Transportista</p>
+              <p className="text-muted-foreground text-xs">RUT Empresa, Patente Comercial, Seguro de Carga</p>
+            </div>
+            <div className="p-3 rounded-lg bg-secondary/40 border border-border">
+              <p className="font-medium text-cyan-400 mb-1">👤 Conductor</p>
+              <p className="text-muted-foreground text-xs">Licencia de Conducir, Certificado Médico, Hoja de Vida, Contrato de Trabajo, Antecedentes</p>
+            </div>
+            <div className="p-3 rounded-lg bg-secondary/40 border border-border">
+              <p className="font-medium text-green-400 mb-1">🚛 Vehículo</p>
+              <p className="text-muted-foreground text-xs">Revisión Técnica, Seguro Obligatorio, Permiso de Circulación, Certificado de Pesaje</p>
+            </div>
+            <div className="p-3 rounded-lg bg-secondary/40 border border-border">
+              <p className="font-medium text-violet-400 mb-1">📄 Operacional</p>
+              <p className="text-muted-foreground text-xs">Guía de Despacho, Carta de Porte, Declaración Jurada</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Category grid */}
