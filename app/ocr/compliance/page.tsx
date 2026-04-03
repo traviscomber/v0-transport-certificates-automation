@@ -33,25 +33,21 @@ interface UploadedDocument {
 }
 
 const categoryIcons: Record<string, any> = {
-  transportista: Building2,
+  empresa: Building2,
   conductor: User,
   vehiculo: Truck,
   seguridad: Shield,
   operacional: Package,
   subcontratacion: FileCheck,
-  empresa: Building2,
-  documento: FileText,
 }
 
 const categoryLabels: Record<string, string> = {
-  empresa: 'Empresa/Transportista',
+  empresa: 'Empresa',
   conductor: 'Conductor',
   vehiculo: 'Vehículo',
   seguridad: 'Seguridad',
   operacional: 'Operacional',
   subcontratacion: 'Subcontratación',
-  transportista: 'Transportista',
-  documento: 'Documentos de Operación',
 }
 
 const statusConfig: Record<string, { label: string; className: string; icon: any }> = {
@@ -97,7 +93,7 @@ export default function ComplianceDashboardPage() {
     return uploaded.validation_status
   }
 
-  const categories = ['transportista', 'conductor', 'vehiculo', 'documento']
+  const categories = ['empresa', 'conductor', 'vehiculo', 'seguridad', 'operacional', 'subcontratacion']
   const getCategoryStats = () => {
     return categories.reduce<Record<string, any>>((acc, cat) => {
       const typesIn = documentTypes.filter(dt => dt.category === cat)
@@ -212,26 +208,104 @@ export default function ComplianceDashboardPage() {
         ))}
       </div>
 
-      {/* Category grid */}
+      {/* Requirements Guide */}
       <div className="space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-foreground mb-3">Documentos Requeridos por Categoría</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-            <div className="p-3 rounded-lg bg-secondary/40 border border-border">
-              <p className="font-medium text-orange-400 mb-1">📦 Transportista</p>
-              <p className="text-muted-foreground text-xs">RUT Empresa, Patente Comercial, Seguro de Carga</p>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Documentos Requeridos - Cumplimiento Walmart Chile</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* EMPRESA */}
+            <div className="p-4 rounded-lg bg-secondary/40 border border-border">
+              <div className="flex items-center gap-2 mb-2">
+                <Building2 className="h-5 w-5 text-orange-400" />
+                <p className="font-semibold text-foreground">Empresa (5 documentos)</p>
+              </div>
+              <ul className="space-y-1 text-xs text-muted-foreground">
+                <li>• RUT Empresa</li>
+                <li>• Escritura de Constitución</li>
+                <li>• Certificado de Vigencia</li>
+                <li>• Poder del Representante</li>
+                <li>• Cédula Representante Legal</li>
+              </ul>
             </div>
-            <div className="p-3 rounded-lg bg-secondary/40 border border-border">
-              <p className="font-medium text-cyan-400 mb-1">👤 Conductor</p>
-              <p className="text-muted-foreground text-xs">Licencia de Conducir, Certificado Médico, Hoja de Vida, Contrato de Trabajo, Antecedentes</p>
+
+            {/* CONDUCTOR */}
+            <div className="p-4 rounded-lg bg-secondary/40 border border-border">
+              <div className="flex items-center gap-2 mb-2">
+                <User className="h-5 w-5 text-cyan-400" />
+                <p className="font-semibold text-foreground">Conductor (9 documentos)</p>
+              </div>
+              <ul className="space-y-1 text-xs text-muted-foreground">
+                <li>• Cédula de Identidad</li>
+                <li>• Licencia Profesional A-4/A-5</li>
+                <li>• Hoja de Vida</li>
+                <li>• Certificado de Antecedentes</li>
+                <li>• Inhabilidades Menores</li>
+                <li>• Contrato de Trabajo</li>
+                <li>• Certificado AFP</li>
+                <li>• Certificado de Salud</li>
+                <li>• Examen Preocupacional</li>
+              </ul>
             </div>
-            <div className="p-3 rounded-lg bg-secondary/40 border border-border">
-              <p className="font-medium text-green-400 mb-1">🚛 Vehículo</p>
-              <p className="text-muted-foreground text-xs">Revisión Técnica, Seguro Obligatorio, Permiso de Circulación, Certificado de Pesaje</p>
+
+            {/* VEHICULO */}
+            <div className="p-4 rounded-lg bg-secondary/40 border border-border">
+              <div className="flex items-center gap-2 mb-2">
+                <Truck className="h-5 w-5 text-green-400" />
+                <p className="font-semibold text-foreground">Vehículo (8 documentos)</p>
+              </div>
+              <ul className="space-y-1 text-xs text-muted-foreground">
+                <li>• Padrón/Inscripción Vehicular</li>
+                <li>• Permiso de Circulación</li>
+                <li>• Revisión Técnica</li>
+                <li>• Certificado de Emisiones</li>
+                <li>• Seguro SOAP</li>
+                <li>• Seguro de Carga</li>
+                <li>• Seguro Responsabilidad Civil</li>
+                <li>• Fotografía + GPS</li>
+              </ul>
             </div>
-            <div className="p-3 rounded-lg bg-secondary/40 border border-border">
-              <p className="font-medium text-violet-400 mb-1">📄 Operacional</p>
-              <p className="text-muted-foreground text-xs">Guía de Despacho, Carta de Porte, Declaración Jurada</p>
+
+            {/* SEGURIDAD */}
+            <div className="p-4 rounded-lg bg-secondary/40 border border-border">
+              <div className="flex items-center gap-2 mb-2">
+                <Shield className="h-5 w-5 text-red-400" />
+                <p className="font-semibold text-foreground">Seguridad (5 documentos)</p>
+              </div>
+              <ul className="space-y-1 text-xs text-muted-foreground">
+                <li>• Reglamento Interno</li>
+                <li>• Procedimientos Trabajo Seguro</li>
+                <li>• Matriz de Riesgos</li>
+                <li>• Capacitaciones</li>
+                <li>• Protocolos de Accidentes</li>
+              </ul>
+            </div>
+
+            {/* OPERACIONAL */}
+            <div className="p-4 rounded-lg bg-secondary/40 border border-border">
+              <div className="flex items-center gap-2 mb-2">
+                <Package className="h-5 w-5 text-violet-400" />
+                <p className="font-semibold text-foreground">Operacional (5 documentos)</p>
+              </div>
+              <ul className="space-y-1 text-xs text-muted-foreground">
+                <li>• Guía de Despacho</li>
+                <li>• Orden de Transporte</li>
+                <li>• Carta de Porte</li>
+                <li>• Documentos de Carga</li>
+                <li>• Registro de Entrega</li>
+              </ul>
+            </div>
+
+            {/* SUBCONTRATACION */}
+            <div className="p-4 rounded-lg bg-secondary/40 border border-border">
+              <div className="flex items-center gap-2 mb-2">
+                <FileCheck className="h-5 w-5 text-pink-400" />
+                <p className="font-semibold text-foreground">Subcontratación (3 documentos)</p>
+              </div>
+              <ul className="space-y-1 text-xs text-muted-foreground">
+                <li>• Contratos de Subcontratación</li>
+                <li>• F-30-1 Actualizado</li>
+                <li>• Cumplimiento Previsional</li>
+              </ul>
             </div>
           </div>
         </div>

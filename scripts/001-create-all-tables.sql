@@ -362,21 +362,52 @@ CREATE TABLE IF NOT EXISTS public.notification_jobs (
 -- SEED: Default document types for Chile transport compliance
 -- ============================================================
 INSERT INTO public.document_types (code, name, description, category, applies_to, is_mandatory, validity_days) VALUES
-  ('LICENCIA_CONDUCIR', 'Licencia de Conducir', 'Licencia profesional del conductor', 'conductor', ARRAY['conductor'], true, 365),
-  ('REVISION_TECNICA', 'Revisión Técnica', 'Revisión técnica del vehículo', 'vehiculo', ARRAY['vehiculo'], true, 365),
-  ('SEGURO_OBLIGATORIO', 'Seguro Obligatorio (SOAP)', 'Seguro obligatorio de accidentes personales', 'vehiculo', ARRAY['vehiculo'], true, 365),
-  ('PERMISO_CIRCULACION', 'Permiso de Circulación', 'Permiso municipal de circulación', 'vehiculo', ARRAY['vehiculo'], true, 365),
-  ('CERTIFICADO_PESAJE', 'Certificado de Pesaje', 'Certificado de peso máximo autorizado', 'vehiculo', ARRAY['vehiculo'], false, 365),
-  ('HOJA_VIDA_CONDUCTOR', 'Hoja de Vida del Conductor', 'Registro de infracciones y accidentes', 'conductor', ARRAY['conductor'], true, 90),
-  ('CONTRATO_TRABAJO', 'Contrato de Trabajo', 'Contrato laboral del conductor', 'conductor', ARRAY['conductor'], true, NULL),
-  ('CERTIFICADO_SALUD', 'Certificado Médico', 'Certificado de aptitud médica para conducir', 'conductor', ARRAY['conductor'], true, 365),
-  ('SEGURO_CARGA', 'Seguro de Carga', 'Seguro para la mercancía transportada', 'transportista', ARRAY['transportista'], false, 365),
-  ('PATENTE_COMERCIAL', 'Patente Comercial', 'Patente de funcionamiento de la empresa', 'transportista', ARRAY['transportista'], true, 365),
-  ('RUT_EMPRESA', 'RUT Empresa / Inicio de Actividades', 'Certificado SII de inicio de actividades', 'transportista', ARRAY['transportista'], true, NULL),
-  ('CERTIFICADO_ANTECEDENTES', 'Certificado de Antecedentes', 'Certificado de antecedentes penales del conductor', 'conductor', ARRAY['conductor'], true, 90),
-  ('GUIA_DESPACHO', 'Guía de Despacho', 'Documento de despacho de mercancía', 'documento', ARRAY['operacion'], false, NULL),
-  ('CARTA_PORTE', 'Carta de Porte', 'Contrato de transporte de mercancías', 'documento', ARRAY['operacion'], false, NULL),
-  ('DECLARACION_JURADA', 'Declaración Jurada', 'Declaración jurada del conductor o empresa', 'documento', ARRAY['conductor', 'transportista'], false, NULL)
+  -- EMPRESA (5)
+  ('RUT_EMPRESA', 'RUT Empresa', 'Registro Único Tributario de la empresa transportista', 'empresa', ARRAY['empresa'], true, NULL),
+  ('ESCRITURA_CONSTITUCION', 'Escritura de Constitución', 'Documento notarial de constitución de la empresa', 'empresa', ARRAY['empresa'], true, 365),
+  ('CERTIFICADO_VIGENCIA', 'Certificado de Vigencia', 'Certificado de vigencia del registro comercial', 'empresa', ARRAY['empresa'], true, 90),
+  ('PODER_REPRESENTANTE', 'Poder del Representante', 'Documento notarial otorgando poderes al representante legal', 'empresa', ARRAY['empresa'], true, 365),
+  ('CEDULA_REPRESENTANTE', 'Cédula Representante Legal', 'Cédula de identidad del representante legal', 'empresa', ARRAY['empresa'], true, NULL),
+
+  -- CONDUCTOR (9)
+  ('CEDULA_IDENTIDAD', 'Cédula de Identidad', 'Cédula de identidad chilena del conductor', 'conductor', ARRAY['conductor'], true, NULL),
+  ('LICENCIA_CONDUCIR', 'Licencia de Conducir Profesional', 'Licencia profesional A-4 o A-5 para transporte', 'conductor', ARRAY['conductor'], true, 365),
+  ('HOJA_VIDA_CONDUCTOR', 'Hoja de Vida', 'Curriculum vitae del conductor', 'conductor', ARRAY['conductor'], true, NULL),
+  ('CERTIFICADO_ANTECEDENTES', 'Certificado de Antecedentes', 'Certificado de antecedentes penales', 'conductor', ARRAY['conductor'], true, 365),
+  ('INHABILIDADES_MENORES', 'Inhabilidades Menores', 'Certificado de no tener inhabilidades para conducir', 'conductor', ARRAY['conductor'], true, 180),
+  ('CONTRATO_TRABAJO', 'Contrato de Trabajo', 'Contrato laboral entre empresa y conductor', 'conductor', ARRAY['conductor'], true, 365),
+  ('CERTIFICADO_AFP', 'Certificado AFP', 'Certificado de afiliación a fondo de pensiones', 'conductor', ARRAY['conductor'], true, 180),
+  ('CERTIFICADO_SALUD', 'Certificado de Salud', 'Certificado médico válido para conducir', 'conductor', ARRAY['conductor'], true, 365),
+  ('EXAMEN_PREOCUPACIONAL', 'Examen Preocupacional', 'Examen médico ocupacional requerido por ley', 'conductor', ARRAY['conductor'], true, 365),
+
+  -- VEHICULO (8)
+  ('PADRON_INSCRIPCION', 'Padrón/Certificado Inscripción', 'Certificado de inscripción en registro de vehículos', 'vehiculo', ARRAY['vehiculo'], true, NULL),
+  ('PERMISO_CIRCULACION', 'Permiso de Circulación', 'Permiso municipal de circulación del vehículo', 'vehiculo', ARRAY['vehiculo'], true, 365),
+  ('REVISION_TECNICA', 'Revisión Técnica', 'Certificado de revisión técnica', 'vehiculo', ARRAY['vehiculo'], true, 365),
+  ('CERTIFICADO_EMISIONES', 'Certificado de Emisiones', 'Certificado de control de emisiones', 'vehiculo', ARRAY['vehiculo'], true, 365),
+  ('SEGURO_OBLIGATORIO', 'Seguro SOAP', 'Póliza de Seguro Obligatorio de Accidentes Personales', 'vehiculo', ARRAY['vehiculo'], true, 365),
+  ('SEGURO_CARGA', 'Seguro de Carga', 'Seguro de responsabilidad civil para carga', 'vehiculo', ARRAY['vehiculo'], true, 365),
+  ('SEGURO_RESPONSABILIDAD', 'Seguro Responsabilidad Civil', 'Seguro de responsabilidad civil del vehículo', 'vehiculo', ARRAY['vehiculo'], true, 365),
+  ('FOTOGRAFIA_GPS', 'Fotografía + GPS', 'Fotografía frontal/lateral + coordenadas GPS', 'vehiculo', ARRAY['vehiculo'], false, NULL),
+
+  -- SEGURIDAD (5)
+  ('REGLAMENTO_INTERNO', 'Reglamento Interno', 'Reglamento interno de la empresa transportista', 'seguridad', ARRAY['seguridad'], true, 365),
+  ('PROCEDIMIENTOS_SEGURIDAD', 'Procedimientos Trabajo Seguro', 'Procedimientos documentados de trabajo seguro', 'seguridad', ARRAY['seguridad'], true, 365),
+  ('MATRIZ_RIESGOS', 'Matriz de Riesgos', 'Matriz de identificación y evaluación de riesgos', 'seguridad', ARRAY['seguridad'], true, 365),
+  ('CAPACITACIONES', 'Capacitaciones', 'Registros de capacitaciones de seguridad', 'seguridad', ARRAY['seguridad'], true, 180),
+  ('PROTOCOLOS_ACCIDENTES', 'Protocolos de Accidentes', 'Procedimientos ante accidentes', 'seguridad', ARRAY['seguridad'], true, 365),
+
+  -- OPERACIONAL (5)
+  ('GUIA_DESPACHO', 'Guía de Despacho', 'Guía de despacho de carga transportada', 'operacional', ARRAY['operacional'], false, NULL),
+  ('ORDEN_TRANSPORTE', 'Orden de Transporte', 'Orden de transporte emitida por cliente', 'operacional', ARRAY['operacional'], false, NULL),
+  ('CARTA_PORTE', 'Carta de Porte', 'Documento que acredita aceptación de transporte', 'operacional', ARRAY['operacional'], false, NULL),
+  ('DOCUMENTOS_CARGA', 'Documentos de Carga', 'Manifiestos y declaraciones de carga', 'operacional', ARRAY['operacional'], false, NULL),
+  ('REGISTRO_ENTREGA', 'Registro de Entrega', 'Comprobante de entrega firmado por destinatario', 'operacional', ARRAY['operacional'], false, NULL),
+
+  -- SUBCONTRATACION (3)
+  ('CONTRATOS_SUBCONTRATACION', 'Contratos de Subcontratación', 'Contratos de subcontratación de servicios', 'subcontratacion', ARRAY['subcontratacion'], true, 365),
+  ('F30_1', 'F-30-1 Actualizado', 'Certificado F-30-1 de capacidad de carga', 'subcontratacion', ARRAY['subcontratacion'], true, 365),
+  ('CUMPLIMIENTO_PREVISIONAL', 'Cumplimiento Previsional', 'Certificado de cumplimiento previsional', 'subcontratacion', ARRAY['subcontratacion'], true, 90)
 ON CONFLICT (code) DO NOTHING;
 
 -- ============================================================
