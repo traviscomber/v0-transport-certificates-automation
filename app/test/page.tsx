@@ -129,7 +129,7 @@ export default function TestPage() {
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => setActiveTab(tab.id as 'roles' | 'features' | 'learning')}
                 className={`px-4 py-3 font-semibold transition-all border-b-2 ${
                   activeTab === tab.id
                     ? 'text-orange-500 border-orange-500'
