@@ -2,12 +2,14 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
+import { useToast } from '@/lib/toast-context'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
+import { DEMO_ACCOUNTS, performDemoLogin } from '@/lib/demo-login'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -16,13 +18,8 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [demoLoading, setDemoLoading] = useState<string | null>(null)
   const { login } = useAuth()
+  const { addToast } = useToast()
   const router = useRouter()
-
-  const demoAccounts = [
-    { role: 'driver', email: 'conductor@demo.cl', password: 'demo123', name: 'Conductor' },
-    { role: 'dispatcher', email: 'despachador@demo.cl', password: 'demo123', name: 'Despachador' },
-    { role: 'admin', email: 'admin@demo.cl', password: 'demo123', name: 'Administrador' },
-  ]
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,22 +28,30 @@ export default function LoginPage() {
 
     try {
       await login(email, password)
+      addToast('Sesión iniciada correctamente', 'success', 2000)
       router.push('/dashboard')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesión')
+      const errorMessage = err instanceof Error ? err.message : 'Error al iniciar sesión'
+      setError(errorMessage)
+      addToast(errorMessage, 'error', 5000)
       setIsLoading(false)
     }
   }
 
-  const handleDemoLogin = async (account: typeof demoAccounts[0]) => {
+  const handleDemoLogin = async (account: typeof DEMO_ACCOUNTS[0]) => {
     setDemoLoading(account.role)
     setError(null)
 
     try {
-      await login(account.email, account.password)
-      router.push('/dashboard')
+      await performDemoLogin(account.email, account.password, login)
+      addToast(`Bienvenido, ${account.title}!`, 'success', 2000)
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 300)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesión')
+      const errorMessage = err instanceof Error ? err.message : 'Error al iniciar sesión'
+      setError(errorMessage)
+      addToast(errorMessage, 'error', 5000)
       setDemoLoading(null)
     }
   }
@@ -111,11 +116,11 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              {demoAccounts.map((account) => (
+              {DEMO_ACCOUNTS.map((account) => (
                 <Button
                   key={account.role}
                   onClick={() => handleDemoLogin(account)}
-                  disabled={demoLoading === account.role}
+                  disabled={demoLoading === account.role || isLoading}
                   variant="outline"
                   className="w-full"
                 >
@@ -138,3 +143,4 @@ export default function LoginPage() {
     </div>
   )
 }
+

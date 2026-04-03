@@ -1,0 +1,82 @@
+'use client'
+
+// Single source of truth for demo accounts
+export const DEMO_ACCOUNTS = [
+  {
+    role: 'driver',
+    title: 'Conductor',
+    name: 'Conductor',
+    email: 'conductor@demo.cl',
+    password: 'demo123',
+  },
+  {
+    role: 'dispatcher',
+    title: 'Despachador',
+    name: 'Despachador',
+    email: 'despachador@demo.cl',
+    password: 'demo123',
+  },
+  {
+    role: 'admin',
+    title: 'Administrador',
+    name: 'Administrador',
+    email: 'admin@demo.cl',
+    password: 'demo123',
+  },
+]
+
+// Global flag to prevent simultaneous login attempts
+let isAuthenticating = false
+
+/**
+ * Perform demo login with guard mechanism to prevent duplicate authentication
+ * @param email Demo account email
+ * @param password Demo account password
+ * @param login Function from useAuth context
+ * @returns Promise that resolves when login is complete
+ */
+export async function performDemoLogin(
+  email: string,
+  password: string,
+  login: (email: string, password: string) => Promise<void>
+): Promise<void> {
+  // Guard: prevent simultaneous authentication attempts
+  if (isAuthenticating) {
+    console.warn('[v0] [DEMO_LOGIN] Login already in progress, ignoring duplicate request')
+    throw new Error('Ya hay un login en progreso')
+  }
+
+  try {
+    isAuthenticating = true
+    const account = DEMO_ACCOUNTS.find(acc => acc.email === email)
+    
+    console.log(`[v0] [DEMO_LOGIN] Iniciando demo login`, { 
+      email, 
+      role: account?.role 
+    })
+    
+    await login(email, password)
+    
+    console.log(`[v0] [DEMO_LOGIN] Demo login completado exitosamente`, { 
+      email, 
+      role: account?.role 
+    })
+  } finally {
+    // Always reset the flag, even if there's an error
+    isAuthenticating = false
+  }
+}
+
+/**
+ * Get demo account by email
+ */
+export function getDemoAccountByEmail(email: string) {
+  return DEMO_ACCOUNTS.find(acc => acc.email === email)
+}
+
+/**
+ * Get demo account by role
+ */
+export function getDemoAccountByRole(role: string) {
+  return DEMO_ACCOUNTS.find(acc => acc.role === role)
+}

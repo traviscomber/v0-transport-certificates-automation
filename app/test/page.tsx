@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Truck, Users, Shield, ChevronDown, LogIn } from 'lucide-react'
+import { performDemoLogin, DEMO_ACCOUNTS } from '@/lib/demo-login'
 
 export default function TestPage() {
   const [activeTab, setActiveTab] = useState('roles')
@@ -72,9 +73,9 @@ export default function TestPage() {
     console.log(`[v0] [QUICK_LOGIN] Iniciando login para ${profile.title}`)
     
     try {
-      console.log(`[v0] [QUICK_LOGIN] Llamando función login`)
+      console.log(`[v0] [QUICK_LOGIN] Llamando performDemoLogin`)
       setLoginStep('Autenticando...')
-      await login(profile.email, profile.password)
+      await performDemoLogin(profile.email, profile.password, login)
       
       console.log(`[v0] [QUICK_LOGIN] Autenticación exitosa, preparando redirección`)
       setLoginStep('Redirigiendo al dashboard...')
