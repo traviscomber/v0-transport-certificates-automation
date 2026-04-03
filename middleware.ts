@@ -1,7 +1,6 @@
 import { updateSession } from "@/lib/supabase/middleware"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { createClient } from "@/lib/supabase/server"
 
 // Rutas públicas que no requieren autenticación
 const PUBLIC_ROUTES = [
@@ -14,15 +13,6 @@ const PUBLIC_ROUTES = [
   '/api/health',
   '/api/docs',
 ]
-
-// Rutas por rol - qué roles pueden acceder dónde
-const ROLE_ROUTES: Record<string, string[]> = {
-  admin: ['/admin', '/dashboard', '/organizations', '/reports', '/compliance', '/certificates', '/alerts', '/drivers-management', '/vehicles-management', '/upload', '/profile'],
-  dispatcher: ['/dispatcher', '/dashboard', '/alerts', '/drivers-management', '/vehicles-management', '/reports', '/upload', '/profile'],
-  transportista: ['/transportista', '/dashboard', '/vehicles-management', '/drivers-management', '/documents', '/reports', '/upload', '/profile'],
-  driver: ['/driver', '/dashboard', '/documents', '/profile'],
-  mandante: ['/mandante', '/dashboard', '/reports', '/compliance', '/certificates', '/alerts', '/profile'],
-}
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
@@ -37,61 +27,9 @@ export async function middleware(request: NextRequest) {
     return await updateSession(request)
   }
 
-  // Para rutas protegidas, mantener la sesión actualizada
-  const requestResponse = await updateSession(request)
-  
-  // Verificar autenticación y permisos
-  try {
-    const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-
-    if (!session) {
-      // No autenticado - redirigir a login
-      return NextResponse.redirect(new URL('/auth/login', request.url))
-    }
-
-    // Obtener rol del usuario desde profile o desde email
-    let userRole = 'driver' // rol por defecto
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', session.user.id)
-      .single()
-
-    if (profile && profile.role) {
-      userRole = profile.role as string
-    } else {
-      // Si no hay profile, extraer rol del email (para demo accounts)
-      const email = session.user.email || ''
-      const emailPrefix = email.split('@')[0].toLowerCase()
-      if (emailPrefix === 'admin') userRole = 'admin'
-      else if (emailPrefix === 'despachador') userRole = 'dispatcher'
-      else if (emailPrefix === 'transportista') userRole = 'transportista'
-      else if (emailPrefix === 'mandante') userRole = 'mandante'
-      else userRole = 'driver'
-      
-      console.log('[v0] No profile found, using role from email:', { email, userRole })
-    }
-
-    // Verificar si el usuario tiene permiso para esta ruta
-    const allowedRoutes = ROLE_ROUTES[userRole] || []
-    const hasPermission = allowedRoutes.some(route => {
-      if (route === path) return true
-      if (path.startsWith(route + '/')) return true
-      return false
-    })
-
-    if (!hasPermission) {
-      // No tiene permiso - retornar 403
-      console.warn(`[v0] User ${session.user.id} with role ${userRole} attempted unauthorized access to ${path}`)
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
-
-    return requestResponse
-  } catch (error) {
-    console.error('[v0] Middleware RBAC error:', error)
-    return requestResponse
-  }
+  // For protected routes, just update the session and let the client handle auth
+  // The AuthProvider (client-side) will redirect to /auth/login if not authenticated
+  return await updateSession(request)
 }
 
 export const config = {
