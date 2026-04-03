@@ -19,7 +19,7 @@ export default function SetupDemoPage() {
     setMessage("")
 
     try {
-      const response = await fetch("/api/setup-demo", {
+      const response = await fetch("/api/create-demo-accounts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       })
@@ -29,9 +29,11 @@ export default function SetupDemoPage() {
         setStatus("success")
         setMessage("Cuentas demo creadas exitosamente.")
         setResults(result.results || [])
+        localStorage.setItem('demo_accounts_setup_completed', 'true')
       } else {
         setStatus("error")
         setMessage(result.error || "Error al crear las cuentas demo.")
+        setResults(result.results || [])
       }
     } catch (error: any) {
       setStatus("error")
