@@ -112,6 +112,10 @@ export default function TestPage() {
     }
   }
 
+  const toggleFaq = (id: string): void => {
+    setExpandedFaq(prev => prev === id ? null : id)
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
