@@ -1,6 +1,20 @@
 "use server"
 
-import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@supabase/supabase-js"
+
+// Explicitly read env vars inside the function to avoid Server Action bundling issues
+function createAdminClient() {
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!url || !key) {
+    throw new Error(`Missing Supabase env vars. URL: ${!!url}, KEY: ${!!key}`)
+  }
+
+  return createClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+}
 
 const DEMO_USER_IDS = {
   "conductor@demo.cl": "11111111-1111-1111-1111-111111111111",

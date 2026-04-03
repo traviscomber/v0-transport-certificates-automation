@@ -10,7 +10,7 @@ import { Truck, Users, Shield, ChevronDown, LogIn, Settings, ArrowRight } from '
 import { performDemoLogin, DEMO_ACCOUNTS } from '@/lib/demo-login'
 
 export default function TestPage() {
-  const [activeTab, setActiveTab] = useState('roles')
+  const [activeTab, setActiveTab] = useState<'roles' | 'features' | 'learning'>('roles')
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null)
   const [loadingRole, setLoadingRole] = useState<string | null>(null)
   const [loginStep, setLoginStep] = useState<string | null>(null)
@@ -18,8 +18,8 @@ export default function TestPage() {
   const { addToast } = useToast()
   const router = useRouter()
 
-  const toggleFaq = (id: string) => {
-    setExpandedFaq(expandedFaq === id ? null : id)
+  const toggleFaq = (id: string): void => {
+    setExpandedFaq(prev => prev === id ? null : id)
   }
 
   const demoProfiles = [
