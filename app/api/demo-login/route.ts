@@ -43,15 +43,78 @@ export async function POST(request: Request) {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
-    // Get the user profile to verify they exist in the database
-    const { data: profile, error: profileError } = await supabase
+    // Get or create the user profile
+    let profile = null
+    
+    // First try to get existing profile
+    const { data: existingProfile, error: profileError } = await supabase
       .from('profiles')
       .select('id, email, full_name, role')
       .eq('email', email)
       .single()
 
-    if (profileError || !profile) {
-      console.error('[v0] Demo account profile not found:', email)
+    if (existingProfile) {
+      profile = existingProfile
+    } else if (profileError?.code === 'PGRST116') {
+      // No rows found - create the profile
+      console.log(`[v0] Creating missing profile for ${email}`)
+      
+      // Map email to role and name
+      const roleMap: Record<string, { role: string; name: string }> = {
+        'conductor@demo.cl': { role: 'driver', name: 'Conductor Demo' },
+        'despachador@demo.cl': { role: 'dispatcher', name: 'Despachador Demo' },
+        'admin@demo.cl': { role: 'admin', name: 'Admin Demo' },
+      }
+      
+      const accountInfo = roleMap[email] || { role: 'user', name: 'Demo User' }
+      
+      // Get the auth user ID from auth.users table
+      const { data: authUsers, error: authError } = await supabase
+        .from('auth.users')
+        .select('id')
+        .eq('email', email)
+        .single()
+
+      if (authError || !authUsers) {
+        console.error(`[v0] Could not find auth user for ${email}`)
+        return NextResponse.json(
+          { error: 'User not found in auth system' },
+          { status: 404 }
+        )
+      }
+
+      // Create the profile
+      const { data: newProfile, error: createError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authUsers.id,
+          email,
+          full_name: accountInfo.name,
+          role: accountInfo.role,
+          company_name: 'Demo Company',
+        })
+        .select('id, email, full_name, role')
+        .single()
+
+      if (createError || !newProfile) {
+        console.error(`[v0] Failed to create profile for ${email}:`, createError)
+        return NextResponse.json(
+          { error: 'Could not create profile' },
+          { status: 500 }
+        )
+      }
+      
+      profile = newProfile
+    } else {
+      console.error('[v0] Error fetching profile:', profileError)
+      return NextResponse.json(
+        { error: 'Profile access error' },
+        { status: 500 }
+      )
+    }
+
+    if (!profile) {
+      console.error('[v0] Demo account profile still not found:', email)
       return NextResponse.json(
         { error: 'Profile not found' },
         { status: 404 }
