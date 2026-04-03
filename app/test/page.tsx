@@ -65,14 +65,12 @@ export default function TestPage() {
 
   const handleQuickLogin = async (profile: typeof demoProfiles[0]) => {
     setLoadingRole(profile.role)
-    console.log('[v0] Attempting login with:', profile.email)
     try {
       await login(profile.email, profile.password)
-      console.log('[v0] Login successful, redirecting to dashboard')
-      // Add small delay to ensure auth state is fully updated
-      await new Promise(resolve => setTimeout(resolve, 300))
-      console.log('[v0] Redirecting to /dashboard')
-      router.push('/dashboard')
+      // Wait for auth state to update then redirect
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 200)
     } catch (error) {
       console.error('[v0] Login error:', error)
       setLoadingRole(null)

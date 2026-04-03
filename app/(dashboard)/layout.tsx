@@ -1,11 +1,21 @@
 export const dynamic = 'force-dynamic'
 
-import DashboardLayoutClient from './layout-client'
+import { DashboardSidebar } from '@/components/layout/dashboard-sidebar'
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return <DashboardLayoutClient>{children}</DashboardLayoutClient>
+  return (
+    <div className="min-h-screen bg-gradient-dark">
+      <DashboardSidebar userRole="driver" userName="Usuario" />
+      <main className="md:ml-64 min-h-screen">
+        <div className="p-4 sm:p-6 lg:p-8">
+          {children}
+        </div>
+      </main>
+    </div>
+  )
 }
+

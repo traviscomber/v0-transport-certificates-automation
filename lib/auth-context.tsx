@@ -28,8 +28,6 @@ export interface RegisterData {
   email: string
   password: string
   full_name: string
-  role: UserRole
-  company_name?: string
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -40,191 +38,79 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
   const supabase = createClient()
 
-  // Verificar usuario al montar componente
+  // Función para extraer rol del email
+  const getRoleFromEmail = (email: string): UserRole => {
+    const emailPrefix = email.split('@')[0].toLowerCase()
+    if (emailPrefix === 'admin') return 'admin'
+    if (emailPrefix === 'despachador') return 'dispatcher'
+    if (emailPrefix === 'transportista') return 'transportista'
+    if (emailPrefix === 'mandante') return 'mandante'
+    return 'driver'
+  }
+
+  // Verificar sesión al montar el componente
   useEffect(() => {
-    const checkUser = async () => {
+    const checkSession = async () => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        const { data: { session } } = await supabase.auth.getSession()
         
-        if (sessionError || !session) {
-          setUser(null)
-          setLoading(false)
-          return
+        if (session?.user) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            role: getRoleFromEmail(session.user.email || ''),
+            full_name: session.user.email?.split('@')[0] || '',
+          })
         }
-
-        // Obtener perfil del usuario - intenta con todas las columnas primero
-        let profile = null
-        let profileError = null
-        
-        // Intentar obtener todas las columnas
-        const { data: fullProfile, error: fullError } = await supabase
-          .from('profiles')
-          .select('id, email, role, full_name, company_name, avatar_url')
-          .eq('id', session.user.id)
-          .single()
-
-        if (fullError) {
-          // Si falla, intentar solo con columnas esenciales
-          const { data: basicProfile, error: basicError } = await supabase
-            .from('profiles')
-            .select('id, email, role, full_name')
-            .eq('id', session.user.id)
-            .single()
-          
-          profile = basicProfile
-          profileError = basicError
-        } else {
-          profile = fullProfile
-          profileError = fullError
-        }
-
-        if (profileError || !profile) {
-          console.error('Error fetching profile:', profileError)
-          setUser(null)
-          setLoading(false)
-          return
-        }
-
-        setUser({
-          id: profile.id,
-          email: profile.email || session.user.email || '',
-          role: profile.role as UserRole,
-          full_name: profile.full_name,
-          company_name: profile.company_name || undefined,
-          avatar_url: profile.avatar_url || undefined,
-        })
       } catch (error) {
-        console.error('Error checking user:', error)
-        setUser(null)
+        console.error('[v0] Error checking session:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    checkUser()
+    checkSession()
 
     // Escuchar cambios de autenticación
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT' || !session) {
         setUser(null)
-      } else if (session) {
-        // Try to fetch profile, but don't fail if it doesn't exist
-        try {
-          const { data: fullProfile, error: fullError } = await supabase
-            .from('profiles')
-            .select('id, email, role, full_name, company_name, avatar_url')
-            .eq('id', session.user.id)
-            .single()
-
-          if (fullProfile) {
-            setUser({
-              id: fullProfile.id,
-              email: fullProfile.email || session.user.email || '',
-              role: fullProfile.role as UserRole,
-              full_name: fullProfile.full_name,
-              company_name: fullProfile.company_name || undefined,
-              avatar_url: fullProfile.avatar_url || undefined,
-            })
-          } else if (fullError && fullError.code === '42703') {
-            // Try with basic columns if avatar_url doesn't exist
-            const { data: basicProfile } = await supabase
-              .from('profiles')
-              .select('id, email, role, full_name')
-              .eq('id', session.user.id)
-              .single()
-            
-            if (basicProfile) {
-              setUser({
-                id: basicProfile.id,
-                email: basicProfile.email || session.user.email || '',
-                role: basicProfile.role as UserRole,
-                full_name: basicProfile.full_name,
-                company_name: undefined,
-                avatar_url: undefined,
-              })
-            }
-          } else if (fullError?.code === 'PGRST116') {
-            // Profile not found - use auth data only
-            const emailPrefix = session.user.email?.split('@')[0] || ''
-            let role: UserRole = 'driver'
-            if (emailPrefix === 'despachador') role = 'dispatcher'
-            if (emailPrefix === 'admin') role = 'admin'
-            
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              role: role,
-              full_name: emailPrefix,
-              company_name: undefined,
-              avatar_url: undefined,
-            })
-          }
-        } catch (err) {
-          console.error('[v0] Error in auth listener:', err)
-          // Fallback: set user from session if profile fetch fails
-          const emailPrefix = session.user.email?.split('@')[0] || ''
-          let role: UserRole = 'driver'
-          if (emailPrefix === 'despachador') role = 'dispatcher'
-          if (emailPrefix === 'admin') role = 'admin'
-          
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            role: role,
-            full_name: emailPrefix,
-            company_name: undefined,
-            avatar_url: undefined,
-          })
-        }
+      } else if (session?.user && event === 'SIGNED_IN') {
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+          role: getRoleFromEmail(session.user.email || ''),
+          full_name: session.user.email?.split('@')[0] || '',
+        })
       }
     })
 
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [supabase])
+    return () => subscription?.unsubscribe()
+  }, [])
 
   const login = async (email: string, password: string) => {
     try {
       setLoading(true)
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-      
-      if (error) {
-        console.error('[v0] Auth error:', error)
-        throw error
-      }
-
-      if (!data.session) {
-        throw new Error('No session returned from login')
-      }
-
-      console.log('[v0] Session created, setting user from auth data')
-      
-      // Set user from auth session immediately to prevent hanging
-      // Extract role from email or use default
-      const emailPrefix = email.split('@')[0]
-      let role: UserRole = 'driver'
-      if (emailPrefix === 'despachador') role = 'dispatcher'
-      if (emailPrefix === 'admin') role = 'admin'
-      
-      setUser({
-        id: data.session.user.id,
-        email: data.session.user.email || email,
-        role: role,
-        full_name: email.split('@')[0],
-        company_name: undefined,
-        avatar_url: undefined
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       })
 
-      console.log('[v0] Login completed successfully')
-      
-      // Give auth state a moment to update
-      await new Promise(resolve => setTimeout(resolve, 100))
-      setLoading(false)
+      if (error) throw error
+
+      if (data.session?.user) {
+        setUser({
+          id: data.session.user.id,
+          email: data.session.user.email || '',
+          role: getRoleFromEmail(data.session.user.email || ''),
+          full_name: data.session.user.email?.split('@')[0] || '',
+        })
+      }
     } catch (error) {
       console.error('[v0] Login error:', error)
-      setLoading(false)
       throw error
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -235,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null)
       router.push('/auth/login')
     } catch (error) {
-      console.error('Logout error:', error)
+      console.error('[v0] Logout error:', error)
       throw error
     } finally {
       setLoading(false)
@@ -245,30 +131,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (data: RegisterData) => {
     try {
       setLoading(true)
-      
-      // Crear usuario en Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
       })
 
-      if (authError || !authData.user) throw authError
-
-      // Crear perfil con solo los campos que existen en la tabla
-      const { error: profileError } = await supabase.from('profiles').insert({
-        id: authData.user.id,
-        email: data.email,
-        full_name: data.full_name,
-        role: data.role,
-        company_name: data.company_name || null,
-      })
-
-      if (profileError) throw profileError
-
-      // Auto-login después de registro
-      await login(data.email, data.password)
+      if (error) throw error
     } catch (error) {
-      console.error('Register error:', error)
+      console.error('[v0] Register error:', error)
       throw error
     } finally {
       setLoading(false)
@@ -293,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider')
   }
   return context
