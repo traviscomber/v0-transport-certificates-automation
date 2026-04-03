@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Truck, Users, Shield, ChevronDown, LogIn, Settings, ArrowRight } from 'lucide-react'
-import { performDemoLogin } from '@/lib/demo-login'
 
 export default function TestPage() {
   const [activeTab, setActiveTab] = useState<'roles' | 'features' | 'learning'>('roles')
