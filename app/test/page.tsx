@@ -67,7 +67,35 @@ export default function TestPage() {
     }
   ]
 
-  const handleQuickLogin = async (profile: typeof demoProfiles[0]) => {
+  const handleFeatureClick = (feature: string) => {
+    console.log(`[v0] Feature clicked: ${feature}`)
+    switch (feature) {
+      case 'dashboard':
+        addToast('Accediendo al Dashboard de Compliance...', 'info', 2000)
+        setTimeout(() => router.push('/dashboard'), 800)
+        break
+      case 'reports':
+        addToast('Generando reportes avanzados...', 'info', 2000)
+        setTimeout(() => {
+          alert('Reportes: Esta sección mostará análisis detallado y opciones de exportación en CSV, PDF y Excel.')
+        }, 800)
+        break
+      case 'analytics':
+        addToast('Cargando Analytics...', 'info', 2000)
+        setTimeout(() => {
+          alert('Analytics: Dashboard de KPIs, tendencias, y visualización de métricas en tiempo real.')
+        }, 800)
+        break
+      case 'ocr':
+        addToast('Abriendo cargador de documentos...', 'info', 2000)
+        setTimeout(() => {
+          alert('OCR: Carga un documento para que la IA extraiga automáticamente datos de certificados, licencias, permisos, etc.')
+        }, 800)
+        break
+      default:
+        addToast('Función disponible en breve', 'warning', 2000)
+    }
+  }
     setLoadingRole(profile.role)
     setLoginStep('Verificando credenciales...')
     console.log(`[v0] [QUICK_LOGIN] Iniciando login para ${profile.title}`)
@@ -202,20 +230,30 @@ export default function TestPage() {
                 <p className="text-slate-300">
                   Visualiza el estado de compliance de todos los documentos en tiempo real.
                 </p>
-                <Button className="btn-orange">Ver Dashboard</Button>
+                <Button 
+                  className="btn-orange"
+                  onClick={() => handleFeatureClick('dashboard')}
+                >
+                  Ver Dashboard
+                </Button>
               </CardContent>
             </Card>
 
             <Card className="border-slate-700 bg-slate-800/50 hover:bg-slate-800/80 transition-all">
               <CardHeader>
                 <CardTitle className="text-orange-500 text-lg">Reportes Avanzados</CardTitle>
-                <CardDescription>An����lisis detallado y exportación</CardDescription>
+                <CardDescription>Análisis detallado y exportación</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-slate-300">
                   Genera reportes personalizados y gráficos analíticos.
                 </p>
-                <Button className="btn-orange">Ver Reportes</Button>
+                <Button 
+                  className="btn-orange"
+                  onClick={() => handleFeatureClick('reports')}
+                >
+                  Ver Reportes
+                </Button>
               </CardContent>
             </Card>
 
@@ -228,7 +266,12 @@ export default function TestPage() {
                 <p className="text-slate-300">
                   Análisis de tendencias y comportamiento de usuarios.
                 </p>
-                <Button className="btn-orange">Ver Analytics</Button>
+                <Button 
+                  className="btn-orange"
+                  onClick={() => handleFeatureClick('analytics')}
+                >
+                  Ver Analytics
+                </Button>
               </CardContent>
             </Card>
 
@@ -241,7 +284,12 @@ export default function TestPage() {
                 <p className="text-slate-300">
                   La IA extrae automáticamente datos de documentos.
                 </p>
-                <Button className="btn-orange">Subir Documento</Button>
+                <Button 
+                  className="btn-orange"
+                  onClick={() => handleFeatureClick('ocr')}
+                >
+                  Subir Documento
+                </Button>
               </CardContent>
             </Card>
           </div>
