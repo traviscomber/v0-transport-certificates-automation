@@ -71,44 +71,24 @@ export default function ComplianceDashboardPage() {
     try {
       setLoading(true)
       setError('')
-      console.log("[v0] Starting fetchData...")
-      
-      // Fetch document types
-      const typesResponse = await supabase
+
+      const { data: types, error: typesError } = await supabase
         .from('document_types')
         .select('*')
         .eq('is_active', true)
         .order('category')
-      
-      console.log("[v0] document_types response:", typesResponse)
-      
-      if (typesResponse.error) {
-        console.error("[v0] document_types error:", typesResponse.error)
-        throw new Error(`Document types error: ${typesResponse.error.message}`)
-      }
-      
-      const types = typesResponse.data || []
-      console.log("[v0] Loaded", types.length, "document types")
-      setDocumentTypes(types)
 
-      // Fetch uploaded documents
-      const docsResponse = await supabase
+      if (typesError) throw new Error(typesError.message)
+      setDocumentTypes(types || [])
+
+      const { data: docs, error: docsError } = await supabase
         .from('uploaded_documents')
         .select('*')
         .order('created_at', { ascending: false })
-      
-      console.log("[v0] uploaded_documents response:", docsResponse)
-      
-      if (docsResponse.error) {
-        console.error("[v0] uploaded_documents error:", docsResponse.error)
-        throw new Error(`Uploaded documents error: ${docsResponse.error.message}`)
-      }
-      
-      const docs = docsResponse.data || []
-      console.log("[v0] Loaded", docs.length, "uploaded documents")
-      setUploadedDocs(docs)
+
+      if (docsError) throw new Error(docsError.message)
+      setUploadedDocs(docs || [])
     } catch (err) {
-      console.error("[v0] Error in fetchData:", err)
       setError(err instanceof Error ? err.message : 'Error cargando datos')
     } finally {
       setLoading(false)
@@ -118,7 +98,7 @@ export default function ComplianceDashboardPage() {
   const getDocStatus = (docTypeId: string) => {
     const uploaded = uploadedDocs.find(ud => ud.document_type_id === docTypeId)
     if (!uploaded) return 'missing'
-    if (uploaded.expiration_date && new Date(uploaded.expiration_date) < new Date()) return 'expired'
+    if (uploaded.expiry_date && new Date(uploaded.expiry_date) < new Date()) return 'expired'
     return uploaded.validation_status
   }
 

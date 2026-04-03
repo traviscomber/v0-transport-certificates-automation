@@ -50,6 +50,7 @@ export default function LandingPage() {
   const transportistasCounter = useCountUp(120, 1500)
   const vehiculosCounter = useCountUp(450, 1500)
   const conductoresCounter = useCountUp(890, 1500)
+  const totalDocs = 35
 
   useEffect(() => {
     docsCounter.start()
@@ -455,7 +456,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center mb-16">
             <h2 className="text-4xl sm:text-5xl font-black text-balance mb-6">
-              35 tipos de documentos
+              {totalDocs} tipos de documentos
             </h2>
             <p className="text-lg text-muted-foreground">
               Soportamos todos los documentos y normativas que exigen tus clientes en compliance logístico, 
