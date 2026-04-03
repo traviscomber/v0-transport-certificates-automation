@@ -455,7 +455,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center mb-16">
             <h2 className="text-4xl sm:text-5xl font-black text-balance mb-6">
-              {stats.documentTypes || 35} tipos de documentos
+              35 tipos de documentos
             </h2>
             <p className="text-lg text-muted-foreground">
               Soportamos todos los documentos y normativas que exigen tus clientes en compliance logístico, 
