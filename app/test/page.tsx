@@ -69,6 +69,8 @@ export default function TestPage() {
     try {
       await login(profile.email, profile.password)
       console.log('[v0] Login successful, redirecting to dashboard')
+      // Add small delay to ensure auth state is fully updated
+      await new Promise(resolve => setTimeout(resolve, 300))
       router.push('/dashboard')
     } catch (error) {
       console.error('[v0] Login error:', error)

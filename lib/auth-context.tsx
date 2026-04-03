@@ -121,8 +121,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (error) throw error
       
-      // Redirect será manejado por middleware
-      router.push('/dashboard')
+      // Give auth state a moment to update before redirect
+      // The onAuthStateChange listener will update the user state
+      // but we need a small delay for the redirect to work properly
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Don't redirect here - let caller handle it
     } catch (error) {
       console.error('Login error:', error)
       throw error
