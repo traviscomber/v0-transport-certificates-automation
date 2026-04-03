@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
@@ -10,20 +10,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Truck } from 'lucide-react'
 
+type Role = 'driver' | 'dispatcher' | 'admin'
+
+interface FormData {
+  fullName: string
+  email: string
+  role: Role
+  companyName: string
+  password: string
+  confirmPassword: string
+}
+
 export default function RegisterPage() {
   const { register } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     fullName: '',
     email: '',
-    role: 'driver' as 'driver' | 'dispatcher' | 'admin',
+    role: 'driver',
     companyName: '',
     password: '',
     confirmPassword: '',
   })
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
