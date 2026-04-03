@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { useToast } from '@/lib/toast-context'
 import { useRouter } from 'next/navigation'
@@ -16,12 +16,50 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [emailError, setEmailError] = useState('')
+  const [passwordError, setPasswordError] = useState('')
   const { login } = useAuth()
   const { addToast } = useToast()
   const router = useRouter()
+  const formRef = useRef<HTMLFormElement>(null)
+
+  // Validación de email en tiempo real
+  const validateEmail = (value: string) => {
+    if (!value) {
+      setEmailError('El correo es requerido')
+      return false
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(value)) {
+      setEmailError('Correo inválido')
+      return false
+    }
+    setEmailError('')
+    return true
+  }
+
+  // Validación de contraseña en tiempo real
+  const validatePassword = (value: string) => {
+    if (!value) {
+      setPasswordError('La contraseña es requerida')
+      return false
+    }
+    if (value.length < 6) {
+      setPasswordError('Mínimo 6 caracteres')
+      return false
+    }
+    setPasswordError('')
+    return true
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    const emailValid = validateEmail(email)
+    const passwordValid = validatePassword(password)
+    
+    if (!emailValid || !passwordValid) return
+
     setIsLoading(true)
     setError(null)
 
@@ -38,71 +76,128 @@ export default function LoginPage() {
   }
 
   const handleDemoLogin = (account: typeof DEMO_ACCOUNTS[0]) => {
-    // Just fill in the fields
+    // Fill fields and submit immediately
     setEmail(account.email)
     setPassword(account.password)
     setError(null)
+    setEmailError('')
+    setPasswordError('')
+    
+    // Submit form after state update
+    setTimeout(() => {
+      formRef.current?.dispatchEvent(
+        new Event('submit', { cancelable: true, bubbles: true })
+      )
+    }, 0)
   }
 
+  const isFormValid = email && password && !emailError && !passwordError
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-dark flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Iniciar Sesión</h1>
-          <p className="text-slate-400">Ingresa tu correo y contraseña para acceder a tu cuenta</p>
+          <h1 className="text-4xl font-bold text-foreground mb-2">Iniciar Sesión</h1>
+          <p className="text-muted-foreground">Ingresa tu correo y contraseña para acceder</p>
         </div>
 
-        <Card className="border-slate-700 bg-slate-900/50">
+        {/* Main Card */}
+        <Card className="border-border bg-card/50 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle>Login</CardTitle>
+            <CardTitle className="text-foreground">Acceso a la Plataforma</CardTitle>
             <CardDescription>Ingresa tus credenciales</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5">
+            {/* Error Alert */}
             {error && (
-              <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm">
+              <div className="p-3 bg-destructive/10 border border-destructive/50 rounded-lg text-destructive text-sm font-medium">
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
-              <div>
-                <Label htmlFor="email">Correo Electrónico</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="usuario@ejemplo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+            {/* Login Form */}
+            <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+              {/* Email Field */}
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-foreground">
+                  Correo Electrónico
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="usuario@ejemplo.com"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value)
+                      validateEmail(e.target.value)
+                    }}
+                    onBlur={() => validateEmail(email)}
+                    className={`bg-input border-border text-foreground placeholder:text-muted-foreground ${
+                      emailError ? 'border-destructive' : ''
+                    }`}
+                  />
+                  {emailError && (
+                    <p className="mt-1 text-xs text-destructive font-medium">{emailError}</p>
+                  )}
+                </div>
               </div>
 
-              <div>
-                <Label htmlFor="password">Contraseña</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Tu contraseña"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+              {/* Password Field */}
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-foreground">
+                  Contraseña
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Tu contraseña"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      validatePassword(e.target.value)
+                    }}
+                    onBlur={() => validatePassword(password)}
+                    className={`bg-input border-border text-foreground placeholder:text-muted-foreground ${
+                      passwordError ? 'border-destructive' : ''
+                    }`}
+                  />
+                  {passwordError && (
+                    <p className="mt-1 text-xs text-destructive font-medium">{passwordError}</p>
+                  )}
+                </div>
               </div>
 
-              <Button type="submit" disabled={isLoading} className="w-full btn-orange">
-                {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                disabled={isLoading || !isFormValid}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-10 mt-6"
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    Iniciando sesión...
+                  </span>
+                ) : (
+                  'Iniciar Sesión'
+                )}
               </Button>
             </form>
 
-            <div className="relative">
+            {/* Divider */}
+            <div className="relative py-2">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-700"></div>
+                <div className="w-full border-t border-border"></div>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-slate-900 text-slate-400">O prueba con una cuenta demo</span>
+              <div className="relative flex justify-center text-xs">
+                <span className="px-2 bg-card text-muted-foreground">O prueba con una cuenta demo</span>
               </div>
             </div>
 
+            {/* Demo Buttons */}
             <div className="space-y-2">
               {DEMO_ACCOUNTS.map((account) => (
                 <Button
@@ -110,17 +205,22 @@ export default function LoginPage() {
                   onClick={() => handleDemoLogin(account)}
                   disabled={isLoading}
                   variant="outline"
-                  className="w-full"
+                  className="w-full border-border hover:bg-primary/10 text-foreground font-medium"
                 >
+                  <span className="text-primary mr-2">●</span>
                   {`Demo: ${account.name}`}
                 </Button>
               ))}
             </div>
 
-            <div className="text-center text-sm">
-              <p className="text-slate-400">
+            {/* Footer Link */}
+            <div className="text-center text-sm pt-2">
+              <p className="text-muted-foreground">
                 ¿No tienes cuenta?{' '}
-                <Link href="/auth/register" className="text-orange-500 hover:text-orange-400 font-semibold">
+                <Link
+                  href="/auth/register"
+                  className="text-primary hover:text-primary/80 font-semibold transition-colors"
+                >
                   Regístrate aquí
                 </Link>
               </p>
