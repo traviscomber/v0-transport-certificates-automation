@@ -117,21 +117,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       setLoading(true)
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       
-      if (error) throw error
+      if (error) {
+        console.error('[v0] Auth error:', error)
+        throw error
+      }
+
+      if (!data.session) {
+        throw new Error('No session returned from login')
+      }
+
+      console.log('[v0] Session created, setting user from auth data')
       
-      // Give auth state a moment to update before redirect
-      // The onAuthStateChange listener will update the user state
-      // but we need a small delay for the redirect to work properly
-      await new Promise(resolve => setTimeout(resolve, 500))
+      // Set user from auth session immediately to prevent hanging
+      // Extract role from email or use default
+      const emailPrefix = email.split('@')[0]
+      let role: UserRole = 'driver'
+      if (emailPrefix === 'despachador') role = 'dispatcher'
+      if (emailPrefix === 'admin') role = 'admin'
       
-      // Don't redirect here - let caller handle it
-    } catch (error) {
-      console.error('Login error:', error)
-      throw error
-    } finally {
+      setUser({
+        id: data.session.user.id,
+        email: data.session.user.email || email,
+        role: role,
+        full_name: email.split('@')[0],
+        company_name: undefined,
+        avatar_url: undefined
+      })
+
+      console.log('[v0] Login completed successfully')
+      
+      // Give auth state a moment to update
+      await new Promise(resolve => setTimeout(resolve, 100))
       setLoading(false)
+    } catch (error) {
+      console.error('[v0] Login error:', error)
+      setLoading(false)
+      throw error
     }
   }
 
