@@ -28,6 +28,8 @@ export interface RegisterData {
   email: string
   password: string
   full_name: string
+  role?: string
+  company_name?: string
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
