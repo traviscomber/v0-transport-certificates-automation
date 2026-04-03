@@ -6,7 +6,7 @@ import { useToast } from '@/lib/toast-context'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Truck, Users, Shield, ChevronDown, LogIn } from 'lucide-react'
+import { Truck, Users, Shield, ChevronDown, LogIn, Settings, ArrowRight } from 'lucide-react'
 import { performDemoLogin, DEMO_ACCOUNTS } from '@/lib/demo-login'
 
 export default function TestPage() {
@@ -69,23 +69,19 @@ export default function TestPage() {
 
   const handleQuickLogin = async (profile: typeof demoProfiles[0]) => {
     setLoadingRole(profile.role)
-    setLoginStep('Verificando credenciales...')
-    
+    setLoginStep('Autenticando...')
+
     try {
-      setLoginStep('Autenticando...')
       await performDemoLogin(profile.email, profile.password, login)
-      
-      setLoginStep('Redirigiendo al dashboard...')
+      setLoginStep('Redirigiendo...')
       addToast(`Bienvenido, ${profile.title}!`, 'success', 2000)
-      
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 500)
+      setTimeout(() => router.push('/dashboard'), 500)
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
       setLoadingRole(null)
       setLoginStep(null)
-      addToast(`Error: No se pudo iniciar sesión como ${profile.title}. Verifica las credenciales.`, 'error', 5000)
+      // Accounts don't exist yet — send to setup page
+      addToast('Cuentas demo no encontradas. Configurando...', 'warning', 3000)
+      setTimeout(() => router.push('/setup-demo'), 1200)
     }
   }
 
@@ -151,6 +147,31 @@ export default function TestPage() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Los 3 Roles Tab */}
         {activeTab === 'roles' && (
+          <div className="space-y-6">
+          {/* Setup notice */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl border border-orange-500/30 bg-orange-500/10">
+            <div className="flex items-start gap-3">
+              <Settings className="w-5 h-5 text-orange-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-foreground">Primera vez aqui?</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Los botones de acceso rapido requieren cuentas demo. Si no estan configuradas, te redirigiremos automaticamente.
+                  Tambien puedes crear tu propia cuenta gratis.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <Button size="sm" variant="outline" className="text-xs" onClick={() => router.push('/setup-demo')}>
+                <Settings className="w-3 h-3 mr-1" />
+                Configurar demos
+              </Button>
+              <Button size="sm" className="btn-orange text-xs" onClick={() => router.push('/auth/register')}>
+                Crear cuenta
+                <ArrowRight className="w-3 h-3 ml-1" />
+              </Button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {demoProfiles.map((profile) => (
               <Card
@@ -201,6 +222,7 @@ export default function TestPage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
           </div>
         )}
 

@@ -1,12 +1,17 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { ArrowLeft, CheckCircle, XCircle, Loader2, Users } from "lucide-react"
+import Link from "next/link"
 
 export default function SetupDemoPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [message, setMessage] = useState("")
   const [results, setResults] = useState<any[]>([])
+  const router = useRouter()
 
   const handleSetupDemo = async () => {
     setIsLoading(true)
@@ -16,284 +21,134 @@ export default function SetupDemoPage() {
     try {
       const response = await fetch("/api/setup-demo", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       })
-
       const result = await response.json()
 
       if (result.success) {
         setStatus("success")
-        setMessage("¡Cuentas demo creadas exitosamente! Ahora puedes usar los botones de demo en la página de login.")
-        setResults(result.results)
+        setMessage("Cuentas demo creadas exitosamente.")
+        setResults(result.results || [])
       } else {
         setStatus("error")
         setMessage(result.error || "Error al crear las cuentas demo.")
       }
     } catch (error: any) {
-      console.error("Error setting up demo accounts:", error)
       setStatus("error")
-      setMessage(error.message || "Error al crear las cuentas demo. Verifica la configuración de la base de datos.")
+      setMessage(error.message || "Error de conexion. Verifica la configuracion.")
     } finally {
       setIsLoading(false)
     }
   }
 
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "1rem",
-        background: "linear-gradient(to bottom right, #f8fafc, #e2e8f0)",
-      }}
-    >
-      <div style={{ width: "100%", maxWidth: "32rem" }}>
-        <div style={{ marginBottom: "2rem" }}>
-          <a
-            href="/auth/login"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              fontSize: "0.875rem",
-              color: "#64748b",
-              textDecoration: "none",
-            }}
-          >
-            ← Volver al Login
-          </a>
-        </div>
+  const accounts = [
+    { label: "Conductor Demo", email: "conductor@demo.cl", color: "text-cyan-400", bg: "bg-cyan-400/10 border-cyan-400/30" },
+    { label: "Despachador Demo", email: "despachador@demo.cl", color: "text-orange-400", bg: "bg-orange-400/10 border-orange-400/30" },
+    { label: "Admin Demo", email: "admin@demo.cl", color: "text-green-400", bg: "bg-green-400/10 border-green-400/30" },
+  ]
 
-        <div
-          style={{
-            backgroundColor: "white",
-            borderRadius: "0.5rem",
-            boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1)",
-            padding: "1.5rem",
-          }}
-        >
-          <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
-            <h1 style={{ fontSize: "1.875rem", fontWeight: "bold", marginBottom: "0.5rem" }}>
-              ▶️ Configurar Cuentas Demo
-            </h1>
-            <p style={{ color: "#64748b" }}>Configura las cuentas de demostración para probar el sistema</p>
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <Link href="/test" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors">
+          <ArrowLeft className="w-4 h-4" />
+          Volver a la Prueba Interactiva
+        </Link>
+
+        <div className="glass-dark rounded-2xl border border-border p-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
+              <Users className="w-5 h-5 text-orange-400" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">Configurar Cuentas Demo</h1>
+              <p className="text-xs text-muted-foreground">Acceso rapido a los 3 roles del sistema</p>
+            </div>
+          </div>
+
+          <div className="my-6 space-y-2">
+            {accounts.map((acc) => (
+              <div key={acc.email} className={`flex items-center justify-between p-3 rounded-lg border ${acc.bg}`}>
+                <div>
+                  <p className={`text-sm font-semibold ${acc.color}`}>{acc.label}</p>
+                  <p className="text-xs text-muted-foreground">{acc.email}</p>
+                </div>
+                <span className="text-xs font-mono text-muted-foreground bg-secondary px-2 py-1 rounded">demo123</span>
+              </div>
+            ))}
           </div>
 
           {status === "idle" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div style={{ textAlign: "center" }}>
-                <p style={{ color: "#64748b", marginBottom: "1rem" }}>
-                  Este proceso creará tres cuentas de demostración con datos de ejemplo:
-                </p>
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.75rem",
-                    padding: "0.75rem",
-                    backgroundColor: "#dbeafe",
-                    borderRadius: "0.5rem",
-                  }}
-                >
-                  <div
-                    style={{ width: "0.5rem", height: "0.5rem", backgroundColor: "#3b82f6", borderRadius: "50%" }}
-                  ></div>
-                  <div>
-                    <div style={{ fontWeight: "500" }}>Conductor Demo</div>
-                    <div style={{ fontSize: "0.875rem", color: "#64748b" }}>conductor@demo.cl / demo123</div>
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.75rem",
-                    padding: "0.75rem",
-                    backgroundColor: "#dcfce7",
-                    borderRadius: "0.5rem",
-                  }}
-                >
-                  <div
-                    style={{ width: "0.5rem", height: "0.5rem", backgroundColor: "#22c55e", borderRadius: "50%" }}
-                  ></div>
-                  <div>
-                    <div style={{ fontWeight: "500" }}>Despachador Demo</div>
-                    <div style={{ fontSize: "0.875rem", color: "#64748b" }}>despachador@demo.cl / demo123</div>
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.75rem",
-                    padding: "0.75rem",
-                    backgroundColor: "#f3e8ff",
-                    borderRadius: "0.5rem",
-                  }}
-                >
-                  <div
-                    style={{ width: "0.5rem", height: "0.5rem", backgroundColor: "#a855f7", borderRadius: "50%" }}
-                  ></div>
-                  <div>
-                    <div style={{ fontWeight: "500" }}>Administrador Demo</div>
-                    <div style={{ fontSize: "0.875rem", color: "#64748b" }}>admin@demo.cl / demo123</div>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  padding: "1rem",
-                  backgroundColor: "#fef3c7",
-                  borderRadius: "0.5rem",
-                  border: "1px solid #f59e0b",
-                }}
-              >
-                <p style={{ fontSize: "0.875rem", color: "#92400e" }}>
-                  ⚠️ Las cuentas demo incluyen certificados de ejemplo, notificaciones y datos de auditoría para una
-                  experiencia completa.
-                </p>
-              </div>
-
-              <button
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Este proceso creara tres cuentas con datos de ejemplo para explorar el sistema sin registro.
+              </p>
+              <Button
                 onClick={handleSetupDemo}
                 disabled={isLoading}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem 1.5rem",
-                  backgroundColor: isLoading ? "#9ca3af" : "#3b82f6",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "0.5rem",
-                  fontSize: "1rem",
-                  fontWeight: "500",
-                  cursor: isLoading ? "not-allowed" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "0.5rem",
-                }}
+                className="w-full btn-orange"
               >
                 {isLoading ? (
                   <>
-                    <div
-                      style={{
-                        width: "1rem",
-                        height: "1rem",
-                        border: "2px solid white",
-                        borderTop: "2px solid transparent",
-                        borderRadius: "50%",
-                        animation: "spin 1s linear infinite",
-                      }}
-                    ></div>
-                    Creando cuentas demo...
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creando cuentas...
                   </>
                 ) : (
-                  <>▶️ Crear Cuentas Demo</>
+                  "Crear Cuentas Demo"
                 )}
-              </button>
+              </Button>
             </div>
           )}
 
           {status === "success" && (
-            <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div style={{ fontSize: "4rem" }}>✅</div>
-              <div>
-                <h3 style={{ fontSize: "1.25rem", fontWeight: "600", color: "#16a34a", marginBottom: "0.5rem" }}>
-                  ¡Configuración Exitosa!
-                </h3>
-                <p style={{ color: "#64748b", marginBottom: "1rem" }}>{message}</p>
-
-                {results.length > 0 && (
-                  <div
-                    style={{
-                      textAlign: "left",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "0.5rem",
-                      marginBottom: "1rem",
-                    }}
-                  >
-                    {results.map((result, index) => (
-                      <div
-                        key={index}
-                        style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem" }}
-                      >
-                        <span>{result.success ? "✅" : "❌"}</span>
-                        <span>
-                          {result.email}: {result.success ? "Creado exitosamente" : result.error}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+                <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-green-400">Configuracion exitosa</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{message}</p>
+                </div>
               </div>
-              <a
-                href="/auth/login"
-                style={{
-                  display: "inline-block",
-                  padding: "0.75rem 1.5rem",
-                  backgroundColor: "#3b82f6",
-                  color: "white",
-                  textDecoration: "none",
-                  borderRadius: "0.5rem",
-                  fontSize: "1rem",
-                  fontWeight: "500",
-                }}
-              >
-                Ir al Login
-              </a>
+              {results.length > 0 && (
+                <ul className="space-y-1">
+                  {results.map((r: any, i: number) => (
+                    <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                      {r.success
+                        ? <CheckCircle className="w-3 h-3 text-green-400 flex-shrink-0" />
+                        : <XCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
+                      }
+                      {r.email}: {r.success ? "listo" : r.error}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <Button className="w-full btn-orange" onClick={() => router.push('/test')}>
+                Ir a la Prueba Interactiva
+              </Button>
             </div>
           )}
 
           {status === "error" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div
-                style={{
-                  padding: "1rem",
-                  backgroundColor: "#fef2f2",
-                  borderRadius: "0.5rem",
-                  border: "1px solid #ef4444",
-                }}
-              >
-                <p style={{ fontSize: "0.875rem", color: "#dc2626" }}>❌ {message}</p>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-red-500/10 border border-red-500/30">
+                <XCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-red-400">Error en configuracion</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{message}</p>
+                </div>
               </div>
-              <button
-                onClick={handleSetupDemo}
-                disabled={isLoading}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem 1.5rem",
-                  backgroundColor: "transparent",
-                  color: "#374151",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "0.5rem",
-                  fontSize: "1rem",
-                  cursor: "pointer",
-                }}
-              >
-                Intentar Nuevamente
-              </button>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={handleSetupDemo}>
+                  Reintentar
+                </Button>
+                <Button className="flex-1 btn-orange" onClick={() => router.push('/auth/register')}>
+                  Crear cuenta
+                </Button>
+              </div>
             </div>
           )}
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   )
 }
