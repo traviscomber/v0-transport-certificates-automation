@@ -93,7 +93,6 @@ export default function TestPage() {
     switch (feature) {
       case 'dashboard':
         addToast('Accediendo al Compliance Dashboard...', 'info', 1500)
-        // Try direct path first, fallback to dashboard group
         setTimeout(() => router.push('/compliance'), 800)
         break
       case 'reports':
@@ -150,13 +149,14 @@ export default function TestPage() {
 
       {/* Content */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Los 3 Roles Tab - Clickable Profiles */}
+        {/* Los 3 Roles Tab */}
         {activeTab === 'roles' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {demoProfiles.map((profile) => (
               <Card
                 key={profile.role}
                 className="border-slate-700 bg-slate-800/50 hover:bg-slate-800/80 transition-all cursor-pointer group"
+                onClick={() => handleQuickLogin(profile)}
               >
                 <CardHeader>
                   <div className="flex items-center gap-3 mb-4">
@@ -185,7 +185,10 @@ export default function TestPage() {
                   </div>
 
                   <Button
-                    onClick={() => handleQuickLogin(profile)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleQuickLogin(profile)
+                    }}
                     disabled={loadingRole === profile.role}
                     className="w-full btn-orange mt-4"
                   >
@@ -281,7 +284,6 @@ export default function TestPage() {
         {/* Centro de Aprendizaje Tab */}
         {activeTab === 'learning' && (
           <div className="space-y-6">
-            {/* Comenzar */}
             <Card className="border-slate-700 bg-slate-800/50">
               <CardHeader>
                 <CardTitle className="text-orange-500">Comenzar</CardTitle>
@@ -294,7 +296,6 @@ export default function TestPage() {
               </CardContent>
             </Card>
 
-            {/* Gestión de Documentos */}
             <Card className="border-slate-700 bg-slate-800/50">
               <CardHeader>
                 <CardTitle className="text-orange-500">Gestión de Documentos</CardTitle>
@@ -307,7 +308,6 @@ export default function TestPage() {
               </CardContent>
             </Card>
 
-            {/* Cumplimiento y Auditoría */}
             <Card className="border-slate-700 bg-slate-800/50">
               <CardHeader>
                 <CardTitle className="text-orange-500">Cumplimiento y Auditoría</CardTitle>
@@ -320,7 +320,6 @@ export default function TestPage() {
               </CardContent>
             </Card>
 
-            {/* Preguntas Frecuentes */}
             <Card className="border-slate-700 bg-slate-800/50">
               <CardHeader>
                 <CardTitle className="text-orange-500">Preguntas Frecuentes</CardTitle>
@@ -370,5 +369,6 @@ export default function TestPage() {
           .
         </div>
       </div>
-    )
-  }
+    </div>
+  )
+}
