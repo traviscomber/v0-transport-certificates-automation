@@ -126,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logStep('INFO: Usuario cerró sesión')
         setUser(null)
         setError(null)
+        setLoading(false)
       } else if (session?.user) {
         const userData: User = {
           id: session.user.id,
@@ -136,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logStep('INFO: Estado de auth cambió - usuario establecido', { email: userData.email, role: userData.role })
         setUser(userData)
         setError(null)
+        setLoading(false)
       }
     })
 
