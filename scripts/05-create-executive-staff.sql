@@ -37,12 +37,7 @@ CREATE POLICY "Allow company admins to manage executive staff"
   ON public.executive_staff
   FOR ALL
   TO authenticated
-  USING (
-    transportista_id IN (
-      SELECT id FROM public.transportistas 
-      WHERE id = transportista_id
-    )
-  );
+  USING (true);
 
 -- Grant permissions
 GRANT SELECT ON public.executive_staff TO authenticated;
