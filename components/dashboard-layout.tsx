@@ -36,9 +36,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const navItems: NavItem[] = [
     {
       label: "Dashboard",
-      href: role === "administrador" ? "/admin" : role === "mandante" ? "/mandante" : role === "transportista" ? "/transportista" : "/conductor",
+      href: role === "admin" ? "/admin" : role === "mandante" ? "/mandante" : role === "transportista" ? "/transportista" : "/conductor",
       icon: <Home className="w-5 h-5" />,
-      roles: ["administrador", "mandante", "transportista", "conductor"]
+      roles: ["admin", "mandante", "transportista", "conductor"]
     },
     // Admin navigation
     {

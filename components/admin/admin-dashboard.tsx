@@ -202,7 +202,7 @@ export default function AdminDashboard({ profile, users = [], certificates = [],
   const companies = [...new Set(users.filter((u) => u.company_name).map((u) => u.company_name))]
   const drivers = users.filter((u) => u.role === "driver")
   const dispatchers = users.filter((u) => u.role === "dispatcher")
-  const admins = users.filter((u) => u.role === "administrador")
+  const admins = users.filter((u) => u.role === "admin")
 
   const approvedCerts = certificates.filter((c) => c.status === "approved")
   const pendingCerts = certificates.filter((c) => c.status === "pending")

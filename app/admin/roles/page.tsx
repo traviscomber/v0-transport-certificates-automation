@@ -69,7 +69,7 @@ export default function RolesPage() {
       </div>
 
       {/* Matriz de roles y permisos */}
-      <RoleManagement currentUserRole="administrador" />
+      <RoleManagement currentUserRole="admin" />
 
       {/* Asignación de roles a usuarios */}
       <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900">
