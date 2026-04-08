@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { v4 as uuidv4 } from 'uuid'
 
-// Route segment config for Next.js 14
-export const config = {
-  maxDuration: 60,
-}
+// Set max duration for the route (30 seconds - Vercel free plan limit)
+export const maxDuration = 30
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
