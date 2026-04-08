@@ -202,7 +202,7 @@ export default function ProfilePage() {
               <div>
                 <Label className='text-muted-foreground text-xs uppercase'>Rol</Label>
                 <div className='mt-2 inline-block px-3 py-1 rounded-full bg-orange-500/10 text-orange-400 text-sm font-semibold border border-orange-500/20'>
-                  {formData.role === 'admin' && 'Administrador'}
+                  {formData.role === 'administrador' && 'Administrador'}
                   {formData.role === 'dispatcher' && 'Despachador'}
                   {formData.role === 'driver' && 'Conductor'}
                   {formData.role === 'mandante' && 'Mandante'}

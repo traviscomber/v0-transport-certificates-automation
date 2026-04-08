@@ -130,13 +130,13 @@ export default function DashboardPage() {
                   <Button variant="outline" size="sm">Ver Reportes</Button>
                 </>
               )}
-              {user.role === 'admin' && (
+              {user.role === 'administrador' && (
                 <>
                   <Button variant="outline" size="sm">Panel Admin</Button>
                   <Button variant="outline" size="sm">Gestionar Organizaciones</Button>
                 </>
               )}
-              {!['driver', 'dispatcher', 'admin'].includes(user.role) && (
+              {!['driver', 'dispatcher', 'administrador'].includes(user.role) && (
                 <Button variant="outline" size="sm">Explorar Dashboard</Button>
               )}
             </div>
