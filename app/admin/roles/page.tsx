@@ -156,20 +156,19 @@ export default function RolesPage() {
                       <Edit2 className="w-4 h-4" />
                     </Button>
                     <AlertDialog>
-                      <AlertDialog content>
-                        <AlertDialogContent className="bg-slate-900 border-slate-700/50">
-                          <AlertDialogHeader>
-                            <AlertDialogTitle className="text-foreground">Eliminar rol</AlertDialogTitle>
-                            <AlertDialogDescription className="text-muted-foreground">
-                              ¿Está seguro que desea eliminar el rol {user.role} de {user.email}?
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <div className="flex justify-end gap-2">
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction>Eliminar</AlertDialogAction>
-                          </div>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      <AlertDialogContent className="bg-slate-900 border-slate-700/50">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-foreground">Eliminar rol</AlertDialogTitle>
+                          <AlertDialogDescription className="text-muted-foreground">
+                            ¿Está seguro que desea eliminar el rol {user.role} de {user.email}?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="flex justify-end gap-2">
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction>Eliminar</AlertDialogAction>
+                        </div>
+                      </AlertDialogContent>
+                    </AlertDialog>
                       <Button 
                         variant="outline" 
                         size="sm"
