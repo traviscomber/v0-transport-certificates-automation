@@ -77,7 +77,9 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
+  const [userProfile, setUserProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [isMounted, setIsMounted] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     "Panel Principal": true,
     "Funciones IA": true,
@@ -87,28 +89,92 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     Administración: false,
   })
 
+  // Mark component as mounted to prevent hydration mismatch
   useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!isMounted) return
+
     const supabase = createClient()
 
     const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      setUser(user)
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser()
+        
+        if (process.env.NODE_ENV === "development") {
+          console.log("[v0] Dashboard-Layout - Auth user:", user?.email, "Error:", error)
+        }
+
+        setUser(user)
+
+        // Fetch user profile from profiles table
+        if (user?.id) {
+          try {
+            const { data: profile, error: profileError } = await supabase
+              .from("profiles")
+              .select("full_name, email, role")
+              .eq("id", user.id)
+              .maybeSingle()
+
+            if (process.env.NODE_ENV === "development") {
+              console.log("[v0] Dashboard-Layout - Profile fetched:", profile)
+              if (profileError) console.log("[v0] Profile fetch error:", profileError)
+            }
+
+            setUserProfile(profile || {})
+          } catch (err) {
+            if (process.env.NODE_ENV === "development") {
+              console.log("[v0] Profile fetch exception:", err)
+            }
+            setUserProfile({})
+          }
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV === "development") {
+          console.log("[v0] Auth user fetch error:", err)
+        }
+      }
+
       setLoading(false)
     }
 
     getUser()
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const user = session?.user ?? null
+      setUser(user)
+
+      if (process.env.NODE_ENV === "development") {
+        console.log("[v0] Dashboard-Layout - Auth state changed:", user?.email, "Event:", event)
+      }
+
+      // Fetch profile when auth state changes
+      if (user?.id) {
+        try {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name, email, role")
+            .eq("id", user.id)
+            .maybeSingle()
+
+          setUserProfile(profile || {})
+        } catch (err) {
+          if (process.env.NODE_ENV === "development") {
+            console.log("[v0] Profile fetch on auth change failed:", err)
+          }
+          setUserProfile({})
+        }
+      } else {
+        setUserProfile(null)
+      }
+
       setLoading(false)
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [isMounted])
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -117,14 +183,30 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   const getUserDisplayName = () => {
-    if (!user) return "Usuario"
+    // Only after component is mounted to avoid hydration mismatch
+    if (!isMounted) return "Usuario"
 
-    if (user.user_metadata?.name) {
+    // Check if it's a demo account
+    const demoEmails = ["conductor@demo.cl", "despachador@demo.cl", "admin@demo.cl"]
+    if (user?.email && demoEmails.includes(user.email)) {
+      return "Demo"
+    }
+
+    // First, try to use the full_name from profiles table
+    if (userProfile?.full_name && userProfile.full_name.trim()) {
+      return userProfile.full_name
+    }
+
+    // Then try metadata name from auth
+    if (user?.user_metadata?.name) {
       return user.user_metadata.name
     }
 
-    if (user.email) {
-      return user.email.split("@")[0]
+    // Finally, use the part before @ from email (most reliable)
+    if (user?.email) {
+      const namePart = user.email.split("@")[0]
+      const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1)
+      return displayName
     }
 
     return "Usuario"
@@ -199,9 +281,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
               <div className="flex flex-1"></div>
               <div className="flex items-center gap-x-4 lg:gap-x-6">
-                <span className="text-sm text-muted-foreground">
-                  {loading ? "Cargando..." : `Bienvenido, ${getUserDisplayName()}`}
-                </span>
+                {/* Only show user info when mounted to avoid hydration mismatch */}
+                {isMounted ? (
+                  <div className="flex flex-col items-end text-sm">
+                    <span className="font-medium text-foreground">
+                      Bienvenido, {loading ? "Cargando..." : getUserDisplayName()}
+                    </span>
+                    {userProfile?.email && (
+                      <span className="text-xs text-muted-foreground">{userProfile.email}</span>
+                    )}
+                    {userProfile?.role && (
+                      <span className="text-xs text-muted-foreground capitalize">{userProfile.role}</span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-sm font-medium text-foreground">Bienvenido</span>
+                )}
               </div>
             </div>
           </div>

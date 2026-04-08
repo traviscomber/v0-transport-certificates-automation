@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Inter, JetBrains_Mono } from "next/font/google"
 import { Suspense } from "react"
 import "./globals.css"
+import { RoleProvider } from "./providers"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -15,10 +16,10 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "TransporteCL - Automatización de Certificados F-30",
+  title: "DocuFleet - Compliance Documental con IA para Transporte",
   description:
-    "Plataforma integral para la gestión automatizada de certificados F-30 y documentos de transporte en Chile",
-  generator: "TransporteCL",
+    "Automatiza la gestion de 35+ documentos de transporte con IA. Validacion instantanea, 99% accuracy, cero multas. Usado por Walmart Chile y +500 transportistas.",
+  generator: "DocuFleet",
 }
 
 export default function RootLayout({
@@ -29,7 +30,9 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark">
       <body className={`font-sans ${inter.variable} ${jetbrainsMono.variable} antialiased`}>
-        <Suspense fallback={null}>{children}</Suspense>
+        <RoleProvider>
+          <Suspense fallback={null}>{children}</Suspense>
+        </RoleProvider>
       </body>
     </html>
   )

@@ -60,6 +60,27 @@ export function DriverDashboard({ profile, certificates, notifications }: Driver
   const router = useRouter()
   const supabase = createClient()
 
+  const getDisplayName = () => {
+    // Check if it's a demo account
+    const demoEmails = ["conductor@demo.cl", "despachador@demo.cl", "admin@demo.cl"]
+    if (profile?.email && demoEmails.includes(profile.email)) {
+      return "Demo"
+    }
+
+    // First try full_name from profile
+    if (profile?.full_name && profile.full_name.trim()) {
+      return profile.full_name
+    }
+    
+    // Then try extracting from email and capitalize
+    if (profile?.email) {
+      const namePart = profile.email.split("@")[0]
+      return namePart.charAt(0).toUpperCase() + namePart.slice(1)
+    }
+    
+    return "Usuario"
+  }
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push("/auth/login")
@@ -119,7 +140,15 @@ export function DriverDashboard({ profile, certificates, notifications }: Driver
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold">Panel del Conductor</h1>
-              <p className="text-muted-foreground">Bienvenido, {profile.full_name}</p>
+              <div className="flex flex-col gap-1">
+                <p className="text-muted-foreground">Bienvenido, {getDisplayName()}</p>
+                {profile?.email && (
+                  <p className="text-xs text-muted-foreground">{profile.email}</p>
+                )}
+                {profile?.company_name && (
+                  <p className="text-xs text-muted-foreground">{profile.company_name}</p>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-4">
               {notifications.length > 0 && (

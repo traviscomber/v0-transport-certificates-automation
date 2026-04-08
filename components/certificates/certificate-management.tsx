@@ -52,10 +52,10 @@ interface UploadedDocument {
   fileSize: string
   uploadDate: string
   documentType: string
-  ocrData: any
+  ocrData: Record<string, unknown>
   confidence: "high" | "medium" | "low"
   status: "pending" | "approved" | "rejected"
-  formData?: any
+  formData?: Record<string, unknown>
 }
 
 interface CertificateManagementProps {

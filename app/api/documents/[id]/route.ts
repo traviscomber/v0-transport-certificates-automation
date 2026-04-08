@@ -7,7 +7,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const { id } = params
     const body = await request.json()
 
-    console.log("[v0] Updating document:", id, body)
+    if (process.env.NODE_ENV === 'development') console.log("[v0] Updating document:", id, body)
 
     const { data, error } = await supabase
       .from("transporters")
@@ -24,7 +24,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ success: false, error: error.message }, { status: 500 })
     }
 
-    console.log("[v0] Document updated successfully:", data)
+    if (process.env.NODE_ENV === 'development') console.log("[v0] Document updated successfully:", data)
     return NextResponse.json({ success: true, data })
   } catch (error) {
     console.error("[v0] Update document error:", error)
@@ -37,7 +37,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     const supabase = createServerClient()
     const { id } = params
 
-    console.log("[v0] Deleting document:", id)
+    if (process.env.NODE_ENV === 'development') console.log("[v0] Deleting document:", id)
 
     const { error } = await supabase.from("transporters").delete().eq("id", id)
 
@@ -46,7 +46,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ success: false, error: error.message }, { status: 500 })
     }
 
-    console.log("[v0] Document deleted successfully")
+    if (process.env.NODE_ENV === 'development') console.log("[v0] Document deleted successfully")
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("[v0] Delete document error:", error)

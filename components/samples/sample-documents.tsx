@@ -14,139 +14,94 @@ interface SampleDocument {
   type: string
   description: string
   icon: React.ComponentType<any>
-  imageUrl: string
-  mockData: {
-    documentType: string
-    transporterName: string
-    transporterRut: string
-    vehiclePlate?: string
-    expiryDate: string
-    extractedData: Record<string, any>
-  }
 }
 
 const sampleDocuments: SampleDocument[] = [
   {
-    id: "f30-sample",
+    id: "f30",
     name: "Certificado F-30",
     type: "f30",
     description: "Certificado de inscripción en el registro de transportistas",
     icon: FileText,
-    imageUrl: "/placeholder.svg?height=400&width=600",
-    mockData: {
-      documentType: "f30",
-      transporterName: "Transportes González Ltda.",
-      transporterRut: "76.543.210-9",
-      vehiclePlate: "HJKL-34",
-      expiryDate: "2024-12-15",
-      extractedData: {
-        numeroF30: "F30-2024-001234",
-        rutTransportista: "76.543.210-9",
-        nombreTransportista: "Transportes González Ltda.",
-        fechaEmision: "2024-01-15",
-        fechaVencimiento: "2024-12-15",
-        patenteVehiculo: "HJKL-34",
-        tipoVehiculo: "Camión",
-        estado: "Vigente",
-        observaciones: "Sin restricciones",
-      },
-    },
   },
   {
-    id: "f30-1-sample",
+    id: "f30-1",
     name: "Certificado F-30-1",
     type: "f30-1",
     description: "Certificado complementario para transporte de carga",
     icon: Shield,
-    imageUrl: "/placeholder.svg?height=400&width=600",
-    mockData: {
-      documentType: "f30-1",
-      transporterName: "Logística del Sur S.A.",
-      transporterRut: "96.789.123-4",
-      vehiclePlate: "MNOP-56",
-      expiryDate: "2024-11-30",
-      extractedData: {
-        numeroF30_1: "F30-1-2024-005678",
-        rutTransportista: "96.789.123-4",
-        nombreTransportista: "Logística del Sur S.A.",
-        fechaEmision: "2024-02-01",
-        fechaVencimiento: "2024-11-30",
-        patenteVehiculo: "MNOP-56",
-        capacidadCarga: "15 toneladas",
-        estado: "Vigente",
-        observaciones: "Autorizado para carga general",
-      },
-    },
   },
   {
-    id: "permiso-sample",
+    id: "cedula-identidad",
+    name: "Cédula de Identidad",
+    type: "cedula-identidad",
+    description: "Cédula de identidad chilena",
+    icon: CreditCard,
+  },
+  {
+    id: "permiso-circulacion",
     name: "Permiso de Circulación",
     type: "permiso-circulacion",
     description: "Permiso municipal de circulación vehicular",
     icon: Truck,
-    imageUrl: "/placeholder.svg?height=400&width=600",
-    mockData: {
-      documentType: "permiso-circulacion",
-      transporterName: "Juan Carlos Pérez",
-      transporterRut: "12.345.678-9",
-      vehiclePlate: "QRST-78",
-      expiryDate: "2024-12-31",
-      extractedData: {
-        patente: "QRST-78",
-        rutPropietario: "12.345.678-9",
-        nombrePropietario: "Juan Carlos Pérez",
-        marcaModelo: "Mercedes-Benz Actros",
-        ano: "2020",
-        fechaVencimiento: "2024-12-31",
-        comuna: "Las Condes",
-      },
-    },
   },
   {
-    id: "licencia-sample",
+    id: "licencia-conducir",
     name: "Licencia de Conducir",
     type: "licencia-conducir",
-    description: "Licencia de conducir profesional clase A4",
+    description: "Licencia de conducir profesional",
     icon: CreditCard,
-    imageUrl: "/placeholder.svg?height=250&width=400",
-    mockData: {
-      documentType: "licencia-conducir",
-      transporterName: "María Elena Rodríguez",
-      transporterRut: "15.987.654-3",
-      expiryDate: "2025-06-20",
-      extractedData: {
-        rutConductor: "15.987.654-3",
-        nombreConductor: "María Elena Rodríguez",
-        numeroLicencia: "A4-123456789",
-        claseLicencia: "A4 - Profesional",
-        fechaEmision: "2023-06-20",
-        fechaVencimiento: "2025-06-20",
-        restricciones: "Debe usar lentes correctores",
-      },
-    },
   },
 ]
 
 export function SampleDocuments() {
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null)
+  const fileInputRef = { current: null } as React.MutableRefObject<HTMLInputElement | null>
 
-  const simulateUpload = async (doc: SampleDocument) => {
-    setUploadingDoc(doc.id)
+  const handleDocumentSelect = (doc: SampleDocument) => {
+    // Create a hidden file input for each document type
+    const input = document.createElement("input")
+    input.type = "file"
+    input.accept = "image/*"
+    input.onchange = async (e: any) => {
+      const file = e.target.files?.[0]
+      if (!file) return
 
-    // Simulate upload delay
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+      setUploadingDoc(doc.id)
 
-    // Redirect to upload page with pre-filled data
-    const params = new URLSearchParams({
-      documentType: doc.mockData.documentType,
-      transporterName: doc.mockData.transporterName,
-      transporterRut: doc.mockData.transporterRut,
-      vehiclePlate: doc.mockData.vehiclePlate || "",
-      expiryDate: doc.mockData.expiryDate,
-      sampleData: JSON.stringify(doc.mockData.extractedData),
-    })
+      try {
+        // Send file to the analyze-document API
+        const formData = new FormData()
+        formData.append("file", file)
+        formData.append("documentType", doc.type)
 
-    window.location.href = `/dashboard/upload?${params.toString()}`
+        const response = await fetch("/api/analyze-document", {
+          method: "POST",
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error("Error al procesar documento")
+        }
+
+        const result = await response.json()
+        console.log("[v0] Document analysis result:", result)
+
+        // Redirect to upload page with actual extracted data
+        const params = new URLSearchParams({
+          documentType: doc.type,
+          extractedData: JSON.stringify(result.extractedData),
+          confidence: result.extractedData.confidence || "medium",
+        })
+
+        window.location.href = `/dashboard/upload?${params.toString()}`
+      } catch (error) {
+        console.error("[v0] Error processing document:", error)
+        alert("Error al procesar el documento. Intenta de nuevo.")
+        setUploadingDoc(null)
+      }
+    }
+    input.click()
   }
 
   return (
@@ -170,12 +125,7 @@ export function SampleDocuments() {
           const isUploading = uploadingDoc === doc.id
 
           return (
-            <Card key={doc.id} className="overflow-hidden">
-              <div className="aspect-video bg-muted relative">
-                <img src={doc.imageUrl || "/placeholder.svg"} alt={doc.name} className="w-full h-full object-cover" />
-                <Badge className="absolute top-2 right-2 bg-primary">Muestra</Badge>
-              </div>
-
+            <Card key={doc.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <IconComponent className="h-5 w-5 text-primary" />
@@ -185,52 +135,28 @@ export function SampleDocuments() {
               </CardHeader>
 
               <CardContent className="space-y-4">
-                <div className="text-sm space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Transportista:</span>
-                    <span className="font-medium">{doc.mockData.transporterName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">RUT:</span>
-                    <span className="font-medium">{doc.mockData.transporterRut}</span>
-                  </div>
-                  {doc.mockData.vehiclePlate && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Patente:</span>
-                      <span className="font-medium">{doc.mockData.vehiclePlate}</span>
-                    </div>
+                <p className="text-sm text-muted-foreground">
+                  Sube una foto de {doc.name.toLowerCase()} para que nuestro sistema extraiga automáticamente los datos usando IA.
+                </p>
+
+                <Button
+                  size="lg"
+                  className="w-full"
+                  onClick={() => handleDocumentSelect(doc)}
+                  disabled={isUploading}
+                >
+                  {isUploading ? (
+                    <>
+                      <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Procesando...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Subir {doc.name}
+                    </>
                   )}
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Vencimiento:</span>
-                    <span className="font-medium">{doc.mockData.expiryDate}</span>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 bg-transparent"
-                    onClick={() => window.open(doc.imageUrl, "_blank")}
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Ver Documento
-                  </Button>
-
-                  <Button size="sm" className="flex-1" onClick={() => simulateUpload(doc)} disabled={isUploading}>
-                    {isUploading ? (
-                      <>
-                        <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                        Procesando...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-4 h-4 mr-2" />
-                        Probar OCR
-                      </>
-                    )}
-                  </Button>
-                </div>
+                </Button>
               </CardContent>
             </Card>
           )

@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { generateText } from "ai"
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,40 +68,69 @@ export async function POST(request: NextRequest) {
 
 async function processCertificate(certificate: any) {
   try {
-    // Simulate AI-powered certificate validation
-    const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
-      prompt: `
-        Analyze this Chilean transport certificate for validation:
-        
-        Certificate Type: ${certificate.certificate_type}
-        Certificate Number: ${certificate.certificate_number || "Not provided"}
-        Issue Date: ${certificate.issue_date || "Not provided"}
-        Expiry Date: ${certificate.expiry_date || "Not provided"}
-        Issuing Authority: ${certificate.issuing_authority || "Not provided"}
-        
-        Please validate this certificate based on Chilean transport regulations and provide:
-        1. Is this certificate valid? (true/false)
-        2. Compliance score (0-100)
-        3. Any validation notes or issues found
-        4. Risk level (low/medium/high)
-        
-        Respond in JSON format with: { "isValid": boolean, "complianceScore": number, "notes": string, "riskLevel": string }
-      `,
+    if (!process.env.OPENAI_API_KEY) {
+      console.error("[v0] OPENAI_API_KEY not configured")
+      return performBasicValidation(certificate)
+    }
+
+    // Use OpenAI Vision API directly with gpt-4o for certificate validation
+    const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `Analyze this Chilean transport certificate for validation:
+
+Certificate Type: ${certificate.certificate_type}
+Certificate Number: ${certificate.certificate_number || "Not provided"}
+Issue Date: ${certificate.issue_date || "Not provided"}
+Expiry Date: ${certificate.expiry_date || "Not provided"}
+Issuing Authority: ${certificate.issuing_authority || "Not provided"}
+
+Please validate this certificate based on Chilean transport regulations and provide:
+1. Is this certificate valid? (true/false)
+2. Compliance score (0-100)
+3. Any validation notes or issues found
+4. Risk level (low/medium/high)
+
+Respond ONLY in JSON format: { "isValid": boolean, "complianceScore": number, "notes": string, "riskLevel": string }`
+              }
+            ]
+          }
+        ],
+        max_tokens: 512
+      })
     })
+
+    if (!openaiResponse.ok) {
+      console.error("[v0] OpenAI API error, falling back to basic validation")
+      return performBasicValidation(certificate)
+    }
+
+    const responseData = await openaiResponse.json()
+    const text = responseData.choices[0]?.message?.content || ""
 
     // Parse AI response
     let result
     try {
       result = JSON.parse(text)
     } catch {
-      // Fallback validation logic
+      console.error("[v0] Failed to parse OpenAI response, using basic validation")
       result = performBasicValidation(certificate)
     }
 
     return result
   } catch (error) {
-    console.error("AI processing error:", error)
+    console.error("[v0] Certificate processing error:", error)
     // Fallback to basic validation
     return performBasicValidation(certificate)
   }

@@ -63,58 +63,91 @@ export async function setupDemoAccounts() {
     const results = []
 
     for (const account of demoAccounts) {
-      const { data: existingUsers } = await adminClient.auth.admin.listUsers()
-      const existingUser = existingUsers.users?.find((user) => user.email === account.email)
+      try {
+        let userId = account.userId
+        let userExists = false
 
-      let userId: string = account.userId
-
-      if (existingUser) {
-        console.log(`User ${account.email} already exists, using existing user`)
-        userId = existingUser.id
-      } else {
+        // Try to create the user - if it already exists, that's OK
         const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
           email: account.email,
           password: account.password,
-          email_confirm: true, // Skip email confirmation for demo accounts
-          user_id: account.userId, // Use deterministic UUID
+          email_confirm: true,
+          user_id: account.userId,
         })
 
         if (authError) {
-          console.error(`Error creating auth user for ${account.email}:`, authError)
-          results.push({ email: account.email, success: false, error: authError.message })
-          continue
+          // If email already exists, that's OK - user was already created
+          if (authError.code === "email_exists") {
+            console.log(`User ${account.email} already exists - skipping auth creation`)
+            userExists = true
+            // Try to find the existing user's ID - but we'll use the predefined ID
+            // since we created them with deterministic IDs
+          } else {
+            // Different error - report it
+            console.error(`Auth error for ${account.email}:`, authError.message)
+            results.push({ email: account.email, success: false, error: authError.message })
+            continue
+          }
+        } else if (authData?.user?.id) {
+          userId = authData.user.id
         }
 
-        if (!authData.user) {
-          results.push({ email: account.email, success: false, error: "No user data returned" })
-          continue
+        // Update or insert the profile - use a direct UPDATE query to avoid unique constraint issues
+        if (userExists) {
+          // If user exists, just do an update (not upsert which causes constraint issues)
+          const { error: updateError } = await adminClient
+            .from("profiles")
+            .update({
+              email: account.email,
+              ...account.profile,
+              is_active: true,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", userId)
+
+          if (updateError) {
+            console.error(`Error updating profile for ${account.email}:`, updateError)
+            // If update fails, try insert as fallback
+            const { error: insertError } = await adminClient.from("profiles").insert({
+              id: userId,
+              email: account.email,
+              ...account.profile,
+              is_active: true,
+              updated_at: new Date().toISOString(),
+            })
+
+            if (insertError && !insertError.message.includes("duplicate")) {
+              results.push({ email: account.email, success: false, error: insertError.message })
+              continue
+            }
+          }
+        } else {
+          // New user - use upsert
+          const { error: profileError } = await adminClient.from("profiles").upsert(
+            {
+              id: userId,
+              email: account.email,
+              ...account.profile,
+              is_active: true,
+              updated_at: new Date().toISOString(),
+            },
+            {
+              onConflict: "id",
+            },
+          )
+
+          if (profileError) {
+            console.error(`Error creating profile for ${account.email}:`, profileError)
+            results.push({ email: account.email, success: false, error: profileError.message })
+            continue
+          }
         }
 
-        userId = authData.user.id
+        results.push({ email: account.email, success: true, userId, existed: userExists })
+      } catch (error: any) {
+        console.error(`Unexpected error for ${account.email}:`, error)
+        results.push({ email: account.email, success: false, error: error.message })
       }
-
-      const { error: profileError } = await adminClient.from("profiles").upsert(
-        {
-          id: userId,
-          email: account.email,
-          ...account.profile,
-          is_active: true,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "id",
-        },
-      )
-
-      if (profileError) {
-        console.error(`Error upserting profile for ${account.email}:`, profileError)
-        results.push({ email: account.email, success: false, error: profileError.message })
-        continue
-      }
-
-      // The SQL script already created comprehensive sample data
-
-      results.push({ email: account.email, success: true, userId, existed: !!existingUser })
     }
 
     return { success: true, results }

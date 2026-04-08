@@ -47,9 +47,10 @@ export function LoginForm() {
         description: "Sesión iniciada correctamente",
       })
 
-      router.push("/dashboard")
+      // Don't redirect here - let the router handle it or use the session cookie
+      // The middleware and app will handle the redirection based on user role
     } catch (error: any) {
-      console.error("Login error:", error)
+      if (process.env.NODE_ENV === 'development') console.error("[v0] Login error:", error)
       setError(error.message || "Error al iniciar sesión")
     } finally {
       setIsLoading(false)
@@ -89,8 +90,9 @@ export function LoginForm() {
         title: "Registro exitoso",
         description: "Revisa tu email para confirmar tu cuenta",
       })
+      // After registration, stay on the page or let user login manually
     } catch (error: any) {
-      console.error("Registration error:", error)
+      if (process.env.NODE_ENV === 'development') console.error("[v0] Registration error:", error)
       setError(error.message || "Error al registrarse")
     } finally {
       setIsLoading(false)
