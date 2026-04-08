@@ -83,9 +83,14 @@ export default function LandingPage() {
             </nav>
 
             <div className="flex items-center gap-2">
+              <Link href="/auth/login-company">
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                  Portal Empresas
+                </Button>
+              </Link>
               <Link href="/auth/login">
                 <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                  Iniciar Sesion
+                  Admin
                 </Button>
               </Link>
               {/* Botón Contactar deshabilitado - usar chat flotante en su lugar */}
@@ -124,10 +129,16 @@ export default function LandingPage() {
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex items-center justify-center">
-              <Link href="/auth/login">
+            <div className="flex items-center justify-center gap-4">
+              <Link href="/auth/login-company">
                 <Button size="lg" className="btn-orange text-base px-8 h-14 font-semibold">
-                  Iniciar Sesion
+                  Portal de Empresas
+                  <ChevronRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
+              <Link href="/auth/login">
+                <Button size="lg" variant="outline" className="text-base px-8 h-14 font-semibold border-cyan-500/30 hover:bg-cyan-500/10">
+                  Admin / Desarrollador
                   <ChevronRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
