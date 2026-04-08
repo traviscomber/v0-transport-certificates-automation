@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Shield, Plus, Trash2, Edit2, Users, Building2, Truck, User } from 'lucide-react'
 import { RoleManagement } from "@/components/admin/role-management"
 
@@ -156,6 +156,15 @@ export default function RolesPage() {
                       <Edit2 className="w-4 h-4" />
                     </Button>
                     <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="border-red-500/30 text-red-400 hover:bg-red-500/20"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
                       <AlertDialogContent className="bg-slate-900 border-slate-700/50">
                         <AlertDialogHeader>
                           <AlertDialogTitle className="text-foreground">Eliminar rol</AlertDialogTitle>
@@ -168,14 +177,6 @@ export default function RolesPage() {
                           <AlertDialogAction>Eliminar</AlertDialogAction>
                         </div>
                       </AlertDialogContent>
-                    </AlertDialog>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="border-red-500/30 text-red-400 hover:bg-red-500/20"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
                     </AlertDialog>
                   </TableCell>
                 </TableRow>
