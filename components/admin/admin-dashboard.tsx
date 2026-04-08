@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -102,15 +102,15 @@ interface SystemStats {
 }
 
 interface AdminDashboardProps {
-  profile: Profile
-  users: Profile[]
-  certificates: Certificate[]
-  auditLog: AuditLogEntry[]
-  notifications: Notification[]
-  stats: SystemStats
+  profile?: Profile
+  users?: Profile[]
+  certificates?: Certificate[]
+  auditLog?: AuditLogEntry[]
+  notifications?: Notification[]
+  stats?: SystemStats
 }
 
-export default function AdminDashboard({ profile, users, certificates, auditLog, notifications, stats }: AdminDashboardProps) {
+export default function AdminDashboard({ profile, users = [], certificates = [], auditLog = [], notifications = [], stats }: AdminDashboardProps = {}) {
   const [searchTerm, setSearchTerm] = useState("")
   const [roleFilter, setRoleFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -118,6 +118,30 @@ export default function AdminDashboard({ profile, users, certificates, auditLog,
   const [showCreateUser, setShowCreateUser] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  // Set default profile if not provided
+  const defaultProfile: Profile = profile || {
+    id: "admin-1",
+    email: "admin@transporteslabbe.cl",
+    full_name: "Administrador",
+    role: "admin",
+    company_name: "Transportes Labbe",
+    rut: "76.123.456-7",
+    phone: "+56 2 1234 5678",
+    address: "Avenida Principal 123",
+    city: "Santiago",
+    region: "Región Metropolitana",
+    is_active: true,
+    created_at: new Date().toISOString(),
+  }
+
+  // Set default stats if not provided
+  const defaultStats: SystemStats = stats || {
+    totalUsers: users.length,
+    totalCertificates: certificates.length,
+    pendingCertificates: certificates.filter(c => c.status === "pending").length,
+    expiredCertificates: certificates.filter(c => c.status === "expired").length,
+  }
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -218,19 +242,19 @@ export default function AdminDashboard({ profile, users, certificates, auditLog,
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <SystemStatsCard
             title="Total Usuarios"
-            value={stats.totalUsers}
+            value={defaultStats.totalUsers}
             icon={<Users className="h-4 w-4" />}
             description={`${drivers.length} conductores, ${dispatchers.length} despachadores`}
           />
           <SystemStatsCard
             title="Certificados"
-            value={stats.totalCertificates}
+            value={defaultStats.totalCertificates}
             icon={<FileText className="h-4 w-4" />}
             description={`${approvedCerts.length} aprobados`}
           />
           <SystemStatsCard
             title="Pendientes"
-            value={stats.pendingCertificates}
+            value={defaultStats.pendingCertificates}
             icon={<Clock className="h-4 w-4 text-yellow-500" />}
             description="Requieren validación"
             variant="warning"

@@ -50,31 +50,47 @@ interface Notification {
 }
 
 interface DriverDashboardProps {
-  profile: Profile
-  certificates: Certificate[]
-  notifications: Notification[]
+  profile?: Profile
+  certificates?: Certificate[]
+  notifications?: Notification[]
 }
 
-export default function DriverDashboard({ profile, certificates, notifications }: DriverDashboardProps) {
+export default function DriverDashboard({ profile, certificates = [], notifications = [] }: DriverDashboardProps = {}) {
   const [showUpload, setShowUpload] = useState(false)
   const router = useRouter()
+  const supabase = createClient()
+
+  // Default profile if not provided
+  const defaultProfile: Profile = profile || {
+    id: "driver-1",
+    email: "conductor@transporteslabbe.cl",
+    full_name: "Conductor",
+    role: "driver",
+    company_name: "Transportes Labbe",
+    rut: "12.345.678-9",
+    phone: "+56 9 1234 5678",
+    address: "Calle Principal 123",
+    city: "Santiago",
+    region: "Región Metropolitana",
+    is_active: true,
+  }
   const supabase = createClient()
 
   const getDisplayName = () => {
     // Check if it's a demo account
     const demoEmails = ["conductor@demo.cl", "despachador@demo.cl", "admin@demo.cl"]
-    if (profile?.email && demoEmails.includes(profile.email)) {
+    if (defaultProfile?.email && demoEmails.includes(defaultProfile.email)) {
       return "Demo"
     }
 
     // First try full_name from profile
-    if (profile?.full_name && profile.full_name.trim()) {
-      return profile.full_name
+    if (defaultProfile?.full_name && defaultProfile.full_name.trim()) {
+      return defaultProfile.full_name
     }
     
     // Then try extracting from email and capitalize
-    if (profile?.email) {
-      const namePart = profile.email.split("@")[0]
+    if (defaultProfile?.email) {
+      const namePart = defaultProfile.email.split("@")[0]
       return namePart.charAt(0).toUpperCase() + namePart.slice(1)
     }
     
@@ -142,11 +158,11 @@ export default function DriverDashboard({ profile, certificates, notifications }
               <h1 className="text-2xl font-bold">Panel del Conductor</h1>
               <div className="flex flex-col gap-1">
                 <p className="text-muted-foreground">Bienvenido, {getDisplayName()}</p>
-                {profile?.email && (
-                  <p className="text-xs text-muted-foreground">{profile.email}</p>
+                {defaultProfile?.email && (
+                  <p className="text-xs text-muted-foreground">{defaultProfile.email}</p>
                 )}
-                {profile?.company_name && (
-                  <p className="text-xs text-muted-foreground">{profile.company_name}</p>
+                {defaultProfile?.company_name && (
+                  <p className="text-xs text-muted-foreground">{defaultProfile.company_name}</p>
                 )}
               </div>
             </div>
@@ -290,27 +306,27 @@ export default function DriverDashboard({ profile, certificates, notifications }
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Nombre Completo</label>
-                    <p className="text-sm">{profile.full_name}</p>
+                    <p className="text-sm">{defaultProfile.full_name}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Correo Electrónico</label>
-                    <p className="text-sm">{profile.email}</p>
+                    <p className="text-sm">{defaultProfile.email}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">RUT</label>
-                    <p className="text-sm">{profile.rut || "No especificado"}</p>
+                    <p className="text-sm">{defaultProfile.rut || "No especificado"}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Teléfono</label>
-                    <p className="text-sm">{profile.phone || "No especificado"}</p>
+                    <p className="text-sm">{defaultProfile.phone || "No especificado"}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Empresa</label>
-                    <p className="text-sm">{profile.company_name}</p>
+                    <p className="text-sm">{defaultProfile.company_name}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Rol</label>
-                    <Badge variant="secondary">{profile.role}</Badge>
+                    <Badge variant="secondary">{defaultProfile.role}</Badge>
                   </div>
                 </div>
               </CardContent>
