@@ -9,6 +9,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  devIndicators: {
+    buildActivity: true,
+    buildActivityPosition: 'bottom-right',
+  },
   onDemandEntries: {
     maxInactiveAge: 60 * 1000,
     pagesBufferLength: 5,
@@ -17,6 +21,9 @@ const nextConfig = {
     // Disable webpack cache entirely to prevent serialization warnings
     config.cache = false
     return config
+  },
+  experimental: {
+    // Keep minimal experimental config for stability
   },
 };
 
