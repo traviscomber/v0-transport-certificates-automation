@@ -1,12 +1,12 @@
 import { createClient } from "@/lib/supabase/server"
-import { NextResponse } from "next/server"
-import { validateRUT, validateLicenseClass, validateEmail, validatePhone } from "@/lib/validations"
+import { NextResponse, NextRequest } from "next/server"
+import { validateRUT, validateLicenseClass, validateChileanDate } from "@/lib/chilean-validators"
 import { verifyAuth, checkOrganizationAccess, logAudit } from "@/lib/auth-middleware"
 
 export const dynamic = 'force-dynamic'
 
 // GET all drivers
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const { user, error: authError } = await verifyAuth(request)
     if (authError || !user) {
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
 }
 
 // POST create new driver with validation
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const { user, error: authError } = await verifyAuth(request)
     if (authError || !user) {
@@ -79,18 +79,6 @@ export async function POST(request: Request) {
     // Validate RUT
     const rutValidation = validateRUT(body.rut)
     if (!rutValidation.valid) return NextResponse.json({ error: rutValidation.error, success: false }, { status: 400 })
-    
-    // Validate email if provided
-    if (body.email) {
-      const emailValidation = validateEmail(body.email)
-      if (!emailValidation.valid) return NextResponse.json({ error: emailValidation.error, success: false }, { status: 400 })
-    }
-    
-    // Validate phone if provided
-    if (body.phone) {
-      const phoneValidation = validatePhone(body.phone)
-      if (!phoneValidation.valid) return NextResponse.json({ error: phoneValidation.error, success: false }, { status: 400 })
-    }
     
     // Validate license class if provided
     if (body.license_type) {
