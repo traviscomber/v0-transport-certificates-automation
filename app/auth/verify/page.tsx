@@ -71,7 +71,7 @@ export default function VerifyPage() {
         return
       }
 
-      const { error } = await supabase.auth.resendPasswordEmail(session.user.email)
+      const { error } = await supabase.auth.resetPasswordForEmail(session.user.email)
       if (error) throw error
 
       setStatus('success')
