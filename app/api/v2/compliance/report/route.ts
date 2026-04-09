@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
             (documents || [])
               .reduce((sum, d) => sum + d.confidence_score, 0) / totalDocs
           ).toFixed(2)
-        : 0;
+        : "0";
 
     return NextResponse.json({
       success: true,
