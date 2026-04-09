@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-export type UserRole = 'admin' | 'dispatcher' | 'driver' | 'mandante' | 'transportista'
+export type UserRole = 'admin' | 'dispatcher' | 'driver' | 'mandante' | 'transportista' | 'executive'
 
 export interface User {
   id: string
