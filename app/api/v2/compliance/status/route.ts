@@ -61,7 +61,10 @@ export async function GET(request: NextRequest) {
         (dt) => dt.category === category
       );
       const uploadedInCategory = uploadedDocs?.filter(
-        (ud) => ud.document_types?.category === category
+        (ud) => {
+          const docType = Array.isArray(ud.document_types) ? ud.document_types[0] : ud.document_types;
+          return docType?.category === category;
+        }
       ) || [];
 
       const validatedInCategory = uploadedInCategory.filter(
