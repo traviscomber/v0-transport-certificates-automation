@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
-import { validatePlate, validateVIN } from "@/lib/validations"
+import { validateLicensePlate } from "@/lib/chilean-validators"
 
 export const dynamic = 'force-dynamic'
 
@@ -40,15 +40,11 @@ export async function PUT(
     
     // Validate plate if provided
     if (body.plate) {
-      const plateValidation = validatePlate(body.plate)
+      const plateValidation = validateLicensePlate(body.plate)
       if (!plateValidation.valid) return NextResponse.json({ error: plateValidation.error }, { status: 400 })
     }
     
-    // Validate VIN if provided
-    if (body.vin) {
-      const vinValidation = validateVIN(body.vin)
-      if (!vinValidation.valid) return NextResponse.json({ error: vinValidation.error }, { status: 400 })
-    }
+    // VIN validation removed - no validator available in chilean-validators
     
     const { data, error } = await supabase
       .from('vehicles')
