@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
-import { validateRUT, validateLicenseClass, validateDateFormat, validateEmail, validatePhone } from "@/lib/validations"
+import { validateRUT, validateLicensePlate, validateChileanDate, validateEmail, validatePhone } from "@/lib/chilean-validators"
 
 export const dynamic = 'force-dynamic'
 
@@ -68,7 +68,7 @@ export async function PUT(
     
     // Validate license expiry date if provided
     if (body.license_expiry) {
-      const dateValidation = validateDateFormat(body.license_expiry)
+      const dateValidation = validateChileanDate(body.license_expiry)
       if (!dateValidation.valid) return NextResponse.json({ error: 'Formato de fecha de vencimiento inválido' }, { status: 400 })
     }
     
