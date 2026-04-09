@@ -3,7 +3,7 @@ import { createServerClient } from "@/lib/supabase/server"
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { id } = params
     const body = await request.json()
 
@@ -34,7 +34,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { id } = params
 
     if (process.env.NODE_ENV === 'development') console.log("[v0] Deleting document:", id)
