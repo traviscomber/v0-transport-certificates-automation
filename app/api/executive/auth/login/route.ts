@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // Query executive_staff table for matching executive
     const { data: executive, error: queryError } = await supabase
