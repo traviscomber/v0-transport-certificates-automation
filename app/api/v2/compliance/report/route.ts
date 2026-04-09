@@ -47,20 +47,21 @@ export async function GET(request: NextRequest) {
     // Group by category
     const reportData = {};
     documents?.forEach((doc) => {
-      const category = doc.document_types?.category;
+      const category = Array.isArray(doc.document_types) ? doc.document_types[0]?.category : doc.document_types?.category;
       if (!reportData[category]) {
         reportData[category] = [];
       }
+      const docType = Array.isArray(doc.document_types) ? doc.document_types[0] : doc.document_types;
       reportData[category].push({
-        code: doc.document_types?.code,
-        name: doc.document_types?.name,
+        code: docType?.code,
+        name: docType?.name,
         status: doc.validation_status,
         confidence: doc.confidence_score,
         expiration_date: doc.expiration_date,
         uploaded_date: doc.created_at,
         validated_date: doc.validated_at,
         fields_extracted: Object.keys(doc.extracted_data || {}),
-        required_fields: doc.document_types?.required_fields,
+        required_fields: docType?.required_fields,
       });
     });
 
@@ -73,7 +74,8 @@ export async function GET(request: NextRequest) {
       csv += "CATEGORÍA,DOCUMENTO,ESTADO,CONFIANZA,VENCIMIENTO,FECHA CARGA,VALIDADO\n";
 
       documents?.forEach((doc) => {
-        csv += `${doc.document_types?.category},${doc.document_types?.code},${doc.validation_status},${doc.confidence_score.toFixed(2)},${
+        const docType = Array.isArray(doc.document_types) ? doc.document_types[0] : doc.document_types;
+        csv += `${docType?.category},${docType?.code},${doc.validation_status},${doc.confidence_score.toFixed(2)},${
           doc.expiration_date || "N/A"
         },${new Date(doc.created_at).toLocaleDateString("es-CL")},${
           doc.validated_at
