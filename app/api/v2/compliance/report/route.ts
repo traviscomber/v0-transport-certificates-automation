@@ -12,6 +12,25 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+interface DocumentType {
+  code: string;
+  name: string;
+  category: string;
+  required_fields: string[];
+}
+
+interface UploadedDocument {
+  id: string;
+  document_type_id: string;
+  validation_status: string;
+  confidence_score: number;
+  expiration_date: string | null;
+  created_at: string;
+  validated_at: string | null;
+  extracted_data: Record<string, any>;
+  document_types: DocumentType | null;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -42,26 +61,26 @@ export async function GET(request: NextRequest) {
       `
       )
       .eq("transporter_id", transporterId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }) as { data: UploadedDocument[] | null };
 
     // Group by category
-    const reportData = {};
+    const reportData: Record<string, any[]> = {};
     documents?.forEach((doc) => {
-      const category = Array.isArray(doc.document_types) ? doc.document_types[0]?.category : doc.document_types?.category;
+      if (!doc.document_types) return;
+      const category = doc.document_types.category;
       if (!reportData[category]) {
         reportData[category] = [];
       }
-      const docType = Array.isArray(doc.document_types) ? doc.document_types[0] : doc.document_types;
       reportData[category].push({
-        code: docType?.code,
-        name: docType?.name,
+        code: doc.document_types.code,
+        name: doc.document_types.name,
         status: doc.validation_status,
         confidence: doc.confidence_score,
         expiration_date: doc.expiration_date,
         uploaded_date: doc.created_at,
         validated_date: doc.validated_at,
         fields_extracted: Object.keys(doc.extracted_data || {}),
-        required_fields: docType?.required_fields,
+        required_fields: doc.document_types.required_fields,
       });
     });
 
@@ -74,8 +93,8 @@ export async function GET(request: NextRequest) {
       csv += "CATEGORÍA,DOCUMENTO,ESTADO,CONFIANZA,VENCIMIENTO,FECHA CARGA,VALIDADO\n";
 
       documents?.forEach((doc) => {
-        const docType = Array.isArray(doc.document_types) ? doc.document_types[0] : doc.document_types;
-        csv += `${docType?.category},${docType?.code},${doc.validation_status},${doc.confidence_score.toFixed(2)},${
+        if (!doc.document_types) return;
+        csv += `${doc.document_types.category},${doc.document_types.code},${doc.validation_status},${doc.confidence_score.toFixed(2)},${
           doc.expiration_date || "N/A"
         },${new Date(doc.created_at).toLocaleDateString("es-CL")},${
           doc.validated_at
