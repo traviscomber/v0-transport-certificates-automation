@@ -381,7 +381,7 @@ Responde ÚNICAMENTE en formato JSON válido con las claves más apropiadas para
     if (process.env.NODE_ENV === 'development') console.log("[v0] OpenAI response received:", text.substring(0, 200) + "...")
 
     // Parse the JSON response with robust error handling
-    let extractedData
+    let extractedData: Record<string, any>
     try {
       // Clean up the response text - sometimes OpenAI returns escaped JSON or extra formatting
       let cleanedText = text.trim()
