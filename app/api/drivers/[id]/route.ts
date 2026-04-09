@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
-import { validateRUT, validateLicensePlate, validateChileanDate, validateEmail, validatePhone } from "@/lib/chilean-validators"
+import { validateRUT, validateLicenseClass, validateChileanDate } from "@/lib/chilean-validators"
 
 export const dynamic = 'force-dynamic'
 
