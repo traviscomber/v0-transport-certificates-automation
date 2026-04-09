@@ -123,8 +123,8 @@ export async function GET(request: NextRequest) {
     const avgConfidence =
       totalDocs > 0
         ? (
-            documents
-              ?.reduce((sum, d) => sum + d.confidence_score, 0) / totalDocs
+            (documents || [])
+              .reduce((sum, d) => sum + d.confidence_score, 0) / totalDocs
           ).toFixed(2)
         : 0;
 
