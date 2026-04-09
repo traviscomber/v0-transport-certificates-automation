@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
-import { validatePlate, validateVIN } from "@/lib/validations"
+import { validateLicensePlate } from "@/lib/chilean-validators"
 
 export const dynamic = 'force-dynamic'
 
@@ -45,14 +45,8 @@ export async function POST(request: Request) {
     if (!body.plate) return NextResponse.json({ error: 'plate es requerido' }, { status: 400 })
     
     // Validate plate format
-    const plateValidation = validatePlate(body.plate)
+    const plateValidation = validateLicensePlate(body.plate)
     if (!plateValidation.valid) return NextResponse.json({ error: plateValidation.error }, { status: 400 })
-    
-    // Validate VIN if provided
-    if (body.vin) {
-      const vinValidation = validateVIN(body.vin)
-      if (!vinValidation.valid) return NextResponse.json({ error: vinValidation.error }, { status: 400 })
-    }
     
     const supabase = await createClient()
     const { data, error } = await supabase
