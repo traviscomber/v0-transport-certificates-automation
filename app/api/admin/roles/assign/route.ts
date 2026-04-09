@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user is admin
     const userRoles = await getUserRoles(user.id)
-    const isAdmin = userRoles.some(r => r.role === 'admin')
+    const isAdmin = userRoles.some(r => r.role === 'administrador')
     
     if (!isAdmin) {
       return NextResponse.json(
