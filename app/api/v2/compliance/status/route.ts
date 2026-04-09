@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     ];
 
     for (const category of allCategories) {
-      const docsInCategory = allDocumentTypes.filter(
+      const docsInCategory = (allDocumentTypes || []).filter(
         (dt) => dt.category === category
       );
       const uploadedInCategory = uploadedDocs?.filter(
