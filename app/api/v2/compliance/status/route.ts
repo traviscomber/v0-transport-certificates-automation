@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       .eq("transporter_id", transporterId);
 
     // Calculate compliance by category
-    const categoryStatus = {};
+    const categoryStatus: Record<string, any> = {};
     const allCategories = [
       "empresa",
       "conductor",
