@@ -151,7 +151,7 @@ export default function MandantPortal() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-white">{mandantData.certifiedDrivers}/{mandantData.totalTransportist}</p>
+                  <p className="text-2xl font-bold text-white">{mandantData.certifiedDrivers}/{mandantData.totalTransportists}</p>
                   <p className="text-xs text-slate-400">Conductores Conformes</p>
                 </div>
                 <div className="text-center">
