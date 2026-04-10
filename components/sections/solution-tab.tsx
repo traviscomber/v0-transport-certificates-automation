@@ -1,95 +1,18 @@
 import { Card, CardContent } from "@/components/ui/card"
-
-const FileCheckIcon = () => (
-  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
-    <path d="M14 2v4a2 2 0 0 0 2 2h4" />
-    <path d="m9 15 2 2 4-4" />
-  </svg>
-)
-
-const ShieldIcon = () => (
-  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
-  </svg>
-)
-
-const ZapIcon = () => (
-  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
-  </svg>
-)
-
-const SmartphoneIcon = () => (
-  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
-    <path d="M12 18h.01" />
-  </svg>
-)
-
-const BarChart3Icon = () => (
-  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M3 3v16a2 2 0 0 0 2 2h16" />
-    <path d="M7 16V9" />
-    <path d="M12 16V5" />
-    <path d="M17 16v-2" />
-  </svg>
-)
-
-const UsersIcon = () => (
-  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-    <circle cx="9" cy="7" r="4" />
-    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-  </svg>
-)
-
-const ClockIcon = () => (
-  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10" />
-    <polyline points="12,6 12,12 16,14" />
-  </svg>
-)
-
-const CheckCircleIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-    <path d="m9 11 3 3L22 4" />
-  </svg>
-)
-
-const ArrowRightIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M5 12h14" />
-    <path d="m12 5 7 7-7 7" />
-  </svg>
-)
-
-const TruckIcon = () => (
-  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M14 18V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" />
-    <path d="M15 18H9" />
-    <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14" />
-    <circle cx="17" cy="18" r="2" />
-    <circle cx="7" cy="18" r="2" />
-  </svg>
-)
-
-const DatabaseIcon = () => (
-  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <ellipse cx="12" cy="5" rx="9" ry="3" />
-    <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5" />
-    <path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3" />
-  </svg>
-)
-
-const BellIcon = () => (
-  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-  </svg>
-)
+import {
+  FileCheck,
+  Shield,
+  Zap,
+  Smartphone,
+  BarChart3,
+  Users,
+  Clock,
+  CheckCircle,
+  ArrowRight,
+  Truck,
+  Database,
+  Bell,
+} from "lucide-react"
 
 export function SolutionTab() {
   return (
@@ -105,15 +28,15 @@ export function SolutionTab() {
         </p>
         <div className="flex items-center justify-center gap-4 text-lg font-medium">
           <span className="flex items-center gap-2 text-primary">
-            <CheckCircleIcon />
+            <CheckCircle className="w-5 h-5" />
             F-30 Automático
           </span>
           <span className="flex items-center gap-2 text-primary">
-            <CheckCircleIcon />
+            <CheckCircle className="w-5 h-5" />
             Cumplimiento 100%
           </span>
           <span className="flex items-center gap-2 text-primary">
-            <CheckCircleIcon />
+            <CheckCircle className="w-5 h-5" />
             Implementación 30 días
           </span>
         </div>
@@ -125,7 +48,7 @@ export function SolutionTab() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="text-center">
             <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <DatabaseIcon />
+              <Database className="w-8 h-8" />
             </div>
             <h4 className="text-xl font-bold mb-4">1. Integración Automática</h4>
             <p className="text-muted-foreground">
@@ -135,7 +58,7 @@ export function SolutionTab() {
           </div>
           <div className="text-center">
             <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <ZapIcon />
+              <Zap className="w-8 h-8" />
             </div>
             <h4 className="text-xl font-bold mb-4">2. Procesamiento Inteligente</h4>
             <p className="text-muted-foreground">
@@ -145,7 +68,7 @@ export function SolutionTab() {
           </div>
           <div className="text-center">
             <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <BellIcon />
+              <Bell className="w-8 h-8" />
             </div>
             <h4 className="text-xl font-bold mb-4">3. Monitoreo Continuo</h4>
             <p className="text-muted-foreground">
@@ -162,7 +85,7 @@ export function SolutionTab() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <Card className="bg-primary/5 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:scale-105">
             <CardContent className="p-8">
-              <FileCheckIcon />
+              <FileCheck className="w-12 h-12 mb-4" />
               <h4 className="text-xl font-bold mb-4">Certificados F-30 Automáticos</h4>
               <p className="text-muted-foreground mb-4">
                 Generación, renovación y gestión automática de certificados F-30. Integración directa con el Ministerio
@@ -170,15 +93,15 @@ export function SolutionTab() {
               </p>
               <ul className="text-sm text-muted-foreground space-y-2">
                 <li className="flex items-center gap-2">
-                  <ArrowRightIcon />
+                  <ArrowRight className="w-4 h-4" />
                   Renovación automática 30 días antes del vencimiento
                 </li>
                 <li className="flex items-center gap-2">
-                  <ArrowRightIcon />
+                  <ArrowRight className="w-4 h-4" />
                   Validación en tiempo real con bases oficiales
                 </li>
                 <li className="flex items-center gap-2">
-                  <ArrowRightIcon />
+                  <ArrowRight className="w-4 h-4" />
                   Historial completo y trazabilidad
                 </li>
               </ul>
@@ -187,7 +110,7 @@ export function SolutionTab() {
 
           <Card className="bg-primary/5 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:scale-105">
             <CardContent className="p-8">
-              <ShieldIcon />
+              <Shield className="w-12 h-12 mb-4" />
               <h4 className="text-xl font-bold mb-4">Cumplimiento Normativo Total</h4>
               <p className="text-muted-foreground mb-4">
                 Monitoreo continuo de todas las regulaciones chilenas. Actualizaciones automáticas cuando cambian las
@@ -195,15 +118,15 @@ export function SolutionTab() {
               </p>
               <ul className="text-sm text-muted-foreground space-y-2">
                 <li className="flex items-center gap-2">
-                  <ArrowRightIcon />
+                  <ArrowRight className="w-4 h-4" />
                   Seguimiento de DS N°158, DS N°75 y más
                 </li>
                 <li className="flex items-center gap-2">
-                  <ArrowRightIcon />
+                  <ArrowRight className="w-4 h-4" />
                   Alertas de cambios normativos
                 </li>
                 <li className="flex items-center gap-2">
-                  <ArrowRightIcon />
+                  <ArrowRight className="w-4 h-4" />
                   Reportes de cumplimiento automáticos
                 </li>
               </ul>
@@ -212,22 +135,22 @@ export function SolutionTab() {
 
           <Card className="bg-primary/5 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:scale-105">
             <CardContent className="p-8">
-              <TruckIcon />
+              <Truck className="w-12 h-12 mb-4" />
               <h4 className="text-xl font-bold mb-4">Gestión de Flota Inteligente</h4>
               <p className="text-muted-foreground mb-4">
                 Control total de vehículos, conductores y rutas. Optimización automática y mantenimiento predictivo.
               </p>
               <ul className="text-sm text-muted-foreground space-y-2">
                 <li className="flex items-center gap-2">
-                  <ArrowRightIcon />
+                  <ArrowRight className="w-4 h-4" />
                   Tracking GPS en tiempo real
                 </li>
                 <li className="flex items-center gap-2">
-                  <ArrowRightIcon />
+                  <ArrowRight className="w-4 h-4" />
                   Mantenimiento predictivo con IA
                 </li>
                 <li className="flex items-center gap-2">
-                  <ArrowRightIcon />
+                  <ArrowRight className="w-4 h-4" />
                   Optimización de rutas y combustible
                 </li>
               </ul>
@@ -236,22 +159,22 @@ export function SolutionTab() {
 
           <Card className="bg-card border-border hover:border-primary/50 transition-all duration-300 hover:scale-105">
             <CardContent className="p-8">
-              <SmartphoneIcon />
+              <Smartphone className="w-12 h-12 mb-4" />
               <h4 className="text-xl font-bold mb-4">Aplicación Móvil Completa</h4>
               <p className="text-muted-foreground mb-4">
                 Conductores y administradores acceden desde cualquier lugar. Funcionalidad completa offline.
               </p>
               <ul className="text-sm text-muted-foreground space-y-2">
                 <li className="flex items-center gap-2">
-                  <ArrowRightIcon />
+                  <ArrowRight className="w-4 h-4" />
                   iOS y Android nativo
                 </li>
                 <li className="flex items-center gap-2">
-                  <ArrowRightIcon />
+                  <ArrowRight className="w-4 h-4" />
                   Modo offline para zonas sin señal
                 </li>
                 <li className="flex items-center gap-2">
-                  <ArrowRightIcon />
+                  <ArrowRight className="w-4 h-4" />
                   Notificaciones push inteligentes
                 </li>
               </ul>
@@ -260,22 +183,22 @@ export function SolutionTab() {
 
           <Card className="bg-card border-border hover:border-primary/50 transition-all duration-300 hover:scale-105">
             <CardContent className="p-8">
-              <BarChart3Icon />
+              <BarChart3 className="w-12 h-12 mb-4" />
               <h4 className="text-xl font-bold mb-4">Analytics y Reportería</h4>
               <p className="text-muted-foreground mb-4">
                 Dashboards en tiempo real, KPIs automáticos y reportes personalizables para toma de decisiones.
               </p>
               <ul className="text-sm text-muted-foreground space-y-2">
                 <li className="flex items-center gap-2">
-                  <ArrowRightIcon />
+                  <ArrowRight className="w-4 h-4" />
                   Dashboards ejecutivos personalizables
                 </li>
                 <li className="flex items-center gap-2">
-                  <ArrowRightIcon />
+                  <ArrowRight className="w-4 h-4" />
                   Reportes automáticos programables
                 </li>
                 <li className="flex items-center gap-2">
-                  <ArrowRightIcon />
+                  <ArrowRight className="w-4 h-4" />
                   Predicciones con machine learning
                 </li>
               </ul>
@@ -284,22 +207,22 @@ export function SolutionTab() {
 
           <Card className="bg-card border-border hover:border-primary/50 transition-all duration-300 hover:scale-105">
             <CardContent className="p-8">
-              <UsersIcon />
+              <Users className="w-12 h-12 mb-4" />
               <h4 className="text-xl font-bold mb-4">Soporte Especializado</h4>
               <p className="text-muted-foreground mb-4">
                 Equipo experto en transporte chileno. Implementación rápida y soporte continuo 24/7.
               </p>
               <ul className="text-sm text-muted-foreground space-y-2">
                 <li className="flex items-center gap-2">
-                  <ArrowRightIcon />
+                  <ArrowRight className="w-4 h-4" />
                   Implementación en 30 días garantizada
                 </li>
                 <li className="flex items-center gap-2">
-                  <ArrowRightIcon />
+                  <ArrowRight className="w-4 h-4" />
                   Soporte 24/7 en español
                 </li>
                 <li className="flex items-center gap-2">
-                  <ArrowRightIcon />
+                  <ArrowRight className="w-4 h-4" />
                   Capacitación completa del equipo
                 </li>
               </ul>
@@ -337,17 +260,17 @@ export function SolutionTab() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-background/50 rounded-xl p-6 text-center">
-            <ClockIcon />
+            <Clock className="w-8 h-8 mx-auto mb-4" />
             <h4 className="font-bold mb-2">Ahorro de Tiempo</h4>
             <p className="text-sm text-muted-foreground">40+ horas semanales liberadas para actividades estratégicas</p>
           </div>
           <div className="bg-background/50 rounded-xl p-6 text-center">
-            <ShieldIcon />
+            <Shield className="w-8 h-8 mx-auto mb-4" />
             <h4 className="font-bold mb-2">Cero Riesgo</h4>
             <p className="text-sm text-muted-foreground">Eliminación total de multas por incumplimiento documental</p>
           </div>
           <div className="bg-background/50 rounded-xl p-6 text-center">
-            <BarChart3Icon />
+            <BarChart3 className="w-8 h-8 mx-auto mb-4" />
             <h4 className="font-bold mb-2">ROI Inmediato</h4>
             <p className="text-sm text-muted-foreground">Retorno de inversión en menos de 6 meses</p>
           </div>
