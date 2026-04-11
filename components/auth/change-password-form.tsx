@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Eye, EyeOff, Lock } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/lib/toast-context"
 
 export function ChangePasswordForm() {
   const [currentPassword, setCurrentPassword] = useState("")
