@@ -179,11 +179,6 @@ export default function CompanyDashboard() {
     </div>
   )
 }
-            className="gap-2 text-slate-300 hover:text-white"
-          >
-            <LogOut className="w-4 h-4" />
-            Cerrar Sesión
-          </Button>
         </div>
       </header>
 
