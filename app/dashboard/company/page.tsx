@@ -62,7 +62,6 @@ interface DashboardData {
 
 export default function CompanyDashboard() {
   const router = useRouter()
-  const [company, setCompany] = useState<CompanyData | null>(null)
   const [data, setData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
