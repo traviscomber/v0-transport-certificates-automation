@@ -5,7 +5,6 @@ import { Suspense } from "react"
 import dynamic from "next/dynamic"
 import "./globals.css"
 import { RoleProvider } from "./providers"
-import { AuthProvider } from "@/lib/auth-context"
 import { ToastProvider } from "@/lib/toast-context"
 import { ToastContainer } from "@/components/toast-container"
 
@@ -39,15 +38,13 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark">
       <body className={`font-sans ${inter.variable} ${jetbrainsMono.variable} antialiased`}>
-        <AuthProvider>
+        <RoleProvider>
           <ToastProvider>
-            <RoleProvider>
-              <Suspense fallback={null}>{children}</Suspense>
-              <ToastContainer />
-              <FloatingChatWidget />
-            </RoleProvider>
+            <Suspense fallback={null}>{children}</Suspense>
+            <ToastContainer />
+            <FloatingChatWidget />
           </ToastProvider>
-        </AuthProvider>
+        </RoleProvider>
       </body>
     </html>
   )
