@@ -179,7 +179,7 @@ export function DocumentScanner() {
                       ? extractedData.confidence === "high"
                         ? "default"
                         : "secondary"
-                      : extractedData.confidence > 0.9
+                      : (extractedData.confidence ?? 0) > 0.9
                         ? "default"
                         : "secondary"
                   }
@@ -188,14 +188,14 @@ export function DocumentScanner() {
                       ? extractedData.confidence === "high"
                         ? "bg-green-100 text-green-800"
                         : "bg-yellow-100 text-yellow-800"
-                      : extractedData.confidence > 0.9
+                      : (extractedData.confidence ?? 0) > 0.9
                         ? "bg-green-100 text-green-800"
                         : "bg-yellow-100 text-yellow-800",
                   )}
                 >
                   {typeof extractedData.confidence === "string"
                     ? extractedData.confidence.charAt(0).toUpperCase() + extractedData.confidence.slice(1)
-                    : `${Math.round(extractedData.confidence * 100)}%`}{" "}
+                    : `${Math.round((extractedData.confidence ?? 0) * 100)}%`}{" "}
                   confianza
                 </Badge>
               </div>
