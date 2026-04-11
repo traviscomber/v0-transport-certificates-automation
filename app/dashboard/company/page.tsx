@@ -44,6 +44,20 @@ interface DashboardData {
     year: number
     type: string
   }>
+  subcontractors: Array<{
+    rut: string
+    nombre: string
+    representante: string
+    ejecutiva: string
+    direccion: string
+    comuna: string
+    telefono: string
+    email: string
+    ariztia: boolean
+    lts: boolean
+    rendic: boolean
+    interpolar: boolean
+  }>
 }
 
 export default function CompanyDashboard() {
@@ -299,6 +313,53 @@ export default function CompanyDashboard() {
               </div>
             ) : (
               <p className="text-slate-400">No hay vehículos registrados</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Subcontractors */}
+        <Card className="bg-slate-800/50 border-slate-700 mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-orange-500" />
+              Subcontratos ({data?.subcontractors?.length || 0})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {data?.subcontractors && data.subcontractors.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-700">
+                      <th className="text-left py-2 px-2 text-slate-300">RUT</th>
+                      <th className="text-left py-2 px-2 text-slate-300">Nombre</th>
+                      <th className="text-left py-2 px-2 text-slate-300">Representante</th>
+                      <th className="text-left py-2 px-2 text-slate-300">Ejecutiva</th>
+                      <th className="text-left py-2 px-2 text-slate-300">Comuna</th>
+                      <th className="text-left py-2 px-2 text-slate-300">Teléfono</th>
+                      <th className="text-left py-2 px-2 text-slate-300">Email</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.subcontractors.slice(0, 20).map((sub, idx) => (
+                      <tr key={idx} className="border-b border-slate-700/50 hover:bg-slate-700/30">
+                        <td className="py-2 px-2 text-slate-300">{sub.rut}</td>
+                        <td className="py-2 px-2 text-white font-medium">{sub.nombre}</td>
+                        <td className="py-2 px-2 text-slate-300">{sub.representante}</td>
+                        <td className="py-2 px-2 text-slate-400">{sub.ejecutiva}</td>
+                        <td className="py-2 px-2 text-slate-400">{sub.comuna}</td>
+                        <td className="py-2 px-2 text-slate-400">{sub.telefono}</td>
+                        <td className="py-2 px-2 text-slate-400 truncate">{sub.email}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {data.subcontractors.length > 20 && (
+                  <p className="mt-4 text-slate-400 text-sm">Mostrando 20 de {data.subcontractors.length} subcontratos</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-slate-400">No hay subcontratos registrados</p>
             )}
           </CardContent>
         </Card>
