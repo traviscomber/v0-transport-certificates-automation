@@ -98,7 +98,7 @@ export default function ComplianceDashboardPage() {
   const getDocStatus = (docTypeId: string) => {
     const uploaded = uploadedDocs.find(ud => ud.document_type_id === docTypeId)
     if (!uploaded) return 'missing'
-    if (uploaded.expiry_date && new Date(uploaded.expiry_date) < new Date()) return 'expired'
+    if (uploaded.expiration_date && new Date(uploaded.expiration_date) < new Date()) return 'expired'
     return uploaded.validation_status
   }
 
