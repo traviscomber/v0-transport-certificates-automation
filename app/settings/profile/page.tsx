@@ -43,7 +43,6 @@ export default function ProfilePage() {
         fullName: user.full_name || '',
         email: user.email,
         role: user.role,
-        organizationId: user.organization_id,
       })
     }
   }, [user])
