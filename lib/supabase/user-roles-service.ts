@@ -69,7 +69,7 @@ export async function getUserPrimaryRole(userId: string): Promise<UserRole | nul
   
   if (roles.length === 0) return null
   
-  return roles.reduce<UserRole>((primary, current) => {
+  return roles.reduce<UserRole>((primary: UserRole, current: UserRoleRecord) => {
     return rolePriority[current.role as UserRole] < rolePriority[primary]
       ? current.role as UserRole
       : primary
