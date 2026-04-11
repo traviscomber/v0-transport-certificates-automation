@@ -107,11 +107,11 @@ export function validateCertificateLogic(certificate: BackgroundCertificate): {
   valid: boolean
   warnings: string[]
   requiresReview: boolean
-  status: 'clean' | 'has_records' | 'expired' | 'suspicious'
+  status: 'clean' | 'has_records' | 'expired' | 'requires_review'
 } {
   const warnings: string[] = []
   let requiresReview = false
-  let status: 'clean' | 'has_records' | 'expired' | 'suspicious' = 'clean'
+  let status: 'clean' | 'has_records' | 'expired' | 'requires_review' = 'clean'
 
   // Verificar si está expirado
   if (isDateExpired(certificate.fechaVencimiento)) {
@@ -137,7 +137,7 @@ export function validateCertificateLogic(certificate: BackgroundCertificate): {
   if (daysDiff < 150 || daysDiff > 430) {
     warnings.push(`⚠️ Vigencia inusual (${daysDiff} días)`)
     requiresReview = true
-    status = 'suspicious'
+    status = 'requires_review'
   }
 
   // Si tiene antecedentes
@@ -202,8 +202,8 @@ export function validateBackgroundCertificate(certificate: Partial<BackgroundCer
   } else if (status === 'expired') {
     confidence = 90 // Expirado - claro pero necesita renovación
     requiresHumanReview = true
-  } else if (status === 'suspicious') {
-    confidence = 70 // Sospechoso - requiere revisión
+  } else if (status === 'requires_review' || status === 'invalid') {
+    confidence = 70 // Requiere revisión o inválido
     requiresHumanReview = true
   }
 
