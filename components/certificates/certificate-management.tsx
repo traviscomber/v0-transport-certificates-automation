@@ -211,20 +211,20 @@ export function CertificateManagement({ title, description, certificateType }: C
       const ocrData = doc.ocrData || {}
 
       // Map transporter/owner/driver names with priority order
-      let transporterName = "Información no disponible"
-      if (ocrData.nombreConductor) transporterName = ocrData.nombreConductor
-      else if (ocrData.nombreTransportista) transporterName = ocrData.nombreTransportista
-      else if (ocrData.nombrePropietario) transporterName = ocrData.nombrePropietario
-      else if (ocrData.nombreContratante) transporterName = ocrData.nombreContratante
-      else if (doc.formData?.transporterName) transporterName = doc.formData.transporterName
+      let transporterName: string = "Información no disponible"
+      if (ocrData.nombreConductor && typeof ocrData.nombreConductor === 'string') transporterName = ocrData.nombreConductor
+      else if (ocrData.nombreTransportista && typeof ocrData.nombreTransportista === 'string') transporterName = ocrData.nombreTransportista
+      else if (ocrData.nombrePropietario && typeof ocrData.nombrePropietario === 'string') transporterName = ocrData.nombrePropietario
+      else if (ocrData.nombreContratante && typeof ocrData.nombreContratante === 'string') transporterName = ocrData.nombreContratante
+      else if (doc.formData?.transporterName && typeof doc.formData.transporterName === 'string') transporterName = doc.formData.transporterName
 
       // Map RUTs with priority order
-      let transporterRut = "No disponible"
-      if (ocrData.rutConductor) transporterRut = ocrData.rutConductor
-      else if (ocrData.rutTransportista) transporterRut = ocrData.rutTransportista
-      else if (ocrData.rutPropietario) transporterRut = ocrData.rutPropietario
-      else if (ocrData.rutContratante) transporterRut = ocrData.rutContratante
-      else if (doc.formData?.transporterRut) transporterRut = doc.formData.transporterRut
+      let transporterRut: string = "No disponible"
+      if (ocrData.rutConductor && typeof ocrData.rutConductor === 'string') transporterRut = ocrData.rutConductor
+      else if (ocrData.rutTransportista && typeof ocrData.rutTransportista === 'string') transporterRut = ocrData.rutTransportista
+      else if (ocrData.rutPropietario && typeof ocrData.rutPropietario === 'string') transporterRut = ocrData.rutPropietario
+      else if (ocrData.rutContratante && typeof ocrData.rutContratante === 'string') transporterRut = ocrData.rutContratante
+      else if (doc.formData?.transporterRut && typeof doc.formData.transporterRut === 'string') transporterRut = doc.formData.transporterRut
 
       // Map vehicle plates
       let vehiclePlate: string | undefined = undefined
@@ -233,13 +233,16 @@ export function CertificateManagement({ title, description, certificateType }: C
       else if (doc.formData?.vehiclePlate && typeof doc.formData.vehiclePlate === 'string') vehiclePlate = doc.formData.vehiclePlate
 
       // Map expiry dates
-      let expiryDate = "No disponible"
-      if (ocrData.fechaVencimiento) expiryDate = ocrData.fechaVencimiento
-      else if (ocrData.fechaExpiracion) expiryDate = ocrData.fechaExpiracion
-      else if (doc.formData?.expiryDate) expiryDate = doc.formData.expiryDate
+      let expiryDate: string = "No disponible"
+      if (ocrData.fechaVencimiento && typeof ocrData.fechaVencimiento === 'string') expiryDate = ocrData.fechaVencimiento
+      else if (ocrData.fechaExpiracion && typeof ocrData.fechaExpiracion === 'string') expiryDate = ocrData.fechaExpiracion
+      else if (doc.formData?.expiryDate && typeof doc.formData.expiryDate === 'string') expiryDate = doc.formData.expiryDate
 
       // Generate notes based on confidence and warnings
-      let notes = doc.formData?.notes || ""
+      let notes: string | undefined = undefined
+      if (doc.formData?.notes && typeof doc.formData.notes === 'string') {
+        notes = doc.formData.notes
+      }
       if (doc.confidence === "low") {
         notes = "Documento procesado con baja confianza - revisar manualmente"
       }
@@ -255,7 +258,7 @@ export function CertificateManagement({ title, description, certificateType }: C
         status: doc.status,
         fileName: doc.fileName,
         fileSize: doc.fileSize,
-        notes: notes || undefined,
+        notes,
       }
     })
   }
