@@ -2,16 +2,10 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter, JetBrains_Mono } from "next/font/google"
 import { Suspense } from "react"
-import dynamic from "next/dynamic"
 import "./globals.css"
 import { RoleProvider } from "./providers"
 import { ToastProvider } from "@/lib/toast-context"
 import { ToastContainer } from "@/components/toast-container"
-
-// Cache buster: Clean webpack cache from old demo-login API - 2026-04-03T22:24
-const FloatingChatWidget = dynamic(() => import('@/components/floating-chat-widget').then(mod => ({ default: mod.FloatingChatWidget })), {
-  ssr: false,
-})
 
 const inter = Inter({
   subsets: ["latin"],
@@ -42,7 +36,6 @@ export default function RootLayout({
           <ToastProvider>
             <Suspense fallback={null}>{children}</Suspense>
             <ToastContainer />
-            <FloatingChatWidget />
           </ToastProvider>
         </RoleProvider>
       </body>
