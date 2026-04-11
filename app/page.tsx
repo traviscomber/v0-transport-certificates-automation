@@ -5,6 +5,7 @@ import { HeroSection } from "@/components/sections/hero-section"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { AccessSection } from "@/components/sections/access-section"
+import { DocumentsSection } from "@/components/sections/documents-section"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { ProblemTab } from "@/components/sections/problem-tab"
 import { SolutionTab } from "@/components/sections/solution-tab"
@@ -55,6 +56,8 @@ export default function HomePage() {
         <HeroSection />
 
         <AccessSection />
+
+        <DocumentsSection />
 
         <section id="tabs-section" className="py-24 bg-background">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
