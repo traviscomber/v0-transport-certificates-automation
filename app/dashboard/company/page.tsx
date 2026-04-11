@@ -1,26 +1,87 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Building2, LogOut, FileCheck, TrendingUp } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
+interface CompanyData {
+  id: string
+  rut: string
+  razon_social: string
+  email: string
+  telefono: string
+  direccion: string
+  region: string
+  ciudad: string
+}
+
 export default function CompanyDashboard() {
   const router = useRouter()
+  const [company, setCompany] = useState<CompanyData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const company = {
-    id: 'labbe-12345',
-    rut: '78.376.780-5',
-    razon_social: 'Transportes Labbe Hermanos Limitada',
-    email: 'admin@transporteslabbe.cl',
-    telefono: '+56 2 2978 5200',
-    direccion: 'Av. Américo Vespucio 1234, Santiago',
-    region: 'Metropolitana',
-    ciudad: 'Santiago'
-  }
+  useEffect(() => {
+    const fetchCompanyData = async () => {
+      try {
+        console.log('[v0] Fetching company data from API')
+        const response = await fetch('/api/company/data')
+        
+        if (!response.ok) {
+          throw new Error('No se pudo obtener los datos de la empresa')
+        }
+
+        const data = await response.json()
+        console.log('[v0] Company data loaded:', data.razon_social)
+        setCompany(data)
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+        console.error('[v0] Error fetching company:', errorMessage)
+        setError(errorMessage)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchCompanyData()
+  }, [])
 
   const handleLogout = () => {
     router.push('/auth/login-company')
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="inline-block w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4" />
+          <p>Cargando datos de la empresa...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !company) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+        <Card className="bg-red-950/20 border-red-500/50 max-w-md w-full">
+          <CardHeader>
+            <CardTitle className="text-red-400">Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-slate-300 mb-4">{error || 'No se encontraron datos de la empresa'}</p>
+            <Button
+              onClick={() => router.push('/auth/login-company')}
+              className="w-full bg-orange-500 hover:bg-orange-600"
+            >
+              Volver a iniciar sesión
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
