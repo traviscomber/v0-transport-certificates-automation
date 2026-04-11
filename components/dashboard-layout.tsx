@@ -28,7 +28,8 @@ interface NavItem {
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { role } = useRole()
+  const { user } = useRole()
+  const role = user?.role
   const pathname = usePathname()
   const router = useRouter()
 
