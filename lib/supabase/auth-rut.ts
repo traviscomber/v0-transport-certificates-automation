@@ -29,41 +29,54 @@ export async function loginByRUT(
   const supabase = createClient()
   const normalizedRUT = normalizeRUT(rut)
 
-  console.log('[v0] Attempting login with RUT:', normalizedRUT)
+  console.log('[v0] loginByRUT called with RUT:', normalizedRUT)
+  console.log('[v0] Supabase client created')
 
-  // Buscar la empresa por RUT en la tabla transportistas
-  const { data: company, error } = await supabase
-    .from('transportistas')
-    .select('id, rut, razon_social, email, is_active')
-    .eq('rut', normalizedRUT)
-    .single()
+  try {
+    // Buscar la empresa por RUT en la tabla transportistas
+    console.log('[v0] Querying transportistas table for RUT:', normalizedRUT)
+    const { data: company, error } = await supabase
+      .from('transportistas')
+      .select('id, rut, razon_social, email, is_active')
+      .eq('rut', normalizedRUT)
+      .single()
 
-  if (error) {
-    console.error('[v0] Database error for RUT:', normalizedRUT, error)
-    throw new Error('Error al buscar la empresa')
-  }
+    console.log('[v0] Query completed. Error:', error, 'Company:', company?.rut)
 
-  if (!company) {
-    console.error('[v0] Company not found for RUT:', normalizedRUT)
-    throw new Error('RUT o contraseña incorrectos')
-  }
+    if (error) {
+      console.error('[v0] Database error for RUT:', normalizedRUT, 'Error code:', error.code, 'Message:', error.message)
+      throw new Error(`Database error: ${error.message}`)
+    }
 
-  if (!company.is_active) {
-    throw new Error('La empresa está inactiva')
-  }
+    if (!company) {
+      console.error('[v0] Company not found for RUT:', normalizedRUT)
+      throw new Error('RUT o contraseña incorrectos')
+    }
 
-  // Por ahora, aceptar cualquier contraseña para demo
-  // TODO: Implementar verificación de contraseña cuando se agregue password_hash a transportistas
-  if (!password) {
-    throw new Error('La contraseña es requerida')
-  }
+    console.log('[v0] Company found:', company.razon_social)
 
-  return {
-    id: company.id,
-    rut: company.rut,
-    name: company.razon_social,
-    email: company.email || '',
-    is_labbe_admin: false,
+    if (!company.is_active) {
+      console.warn('[v0] Company is inactive:', company.rut)
+      throw new Error('La empresa está inactiva')
+    }
+
+    // Por ahora, aceptar cualquier contraseña para demo
+    if (!password) {
+      throw new Error('La contraseña es requerida')
+    }
+
+    console.log('[v0] Login successful for RUT:', company.rut)
+
+    return {
+      id: company.id,
+      rut: company.rut,
+      name: company.razon_social,
+      email: company.email || '',
+      is_labbe_admin: false,
+    }
+  } catch (err) {
+    console.error('[v0] loginByRUT error:', err)
+    throw err
   }
 }
 
