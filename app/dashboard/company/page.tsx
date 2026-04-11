@@ -341,7 +341,7 @@ export default function CompanyDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.subcontractors.slice(0, 20).map((sub, idx) => (
+                    {data.subcontractors.map((sub, idx) => (
                       <tr key={idx} className="border-b border-slate-700/50 hover:bg-slate-700/30">
                         <td className="py-2 px-2 text-slate-300">{sub.rut}</td>
                         <td className="py-2 px-2 text-white font-medium">{sub.nombre}</td>
@@ -354,9 +354,7 @@ export default function CompanyDashboard() {
                     ))}
                   </tbody>
                 </table>
-                {data.subcontractors.length > 20 && (
-                  <p className="mt-4 text-slate-400 text-sm">Mostrando 20 de {data.subcontractors.length} subcontratos</p>
-                )}
+                <p className="mt-4 text-slate-400 text-sm">Mostrando {data.subcontractors.length} subcontratos en total</p>
               </div>
             ) : (
               <p className="text-slate-400">No hay subcontratos registrados</p>
