@@ -179,7 +179,6 @@ export default function CompanyDashboard() {
     </div>
   )
 }
-            <Building2 className="w-8 h-8 text-orange-500" />
             <div>
               <h1 className="text-xl font-bold text-white">{company?.razon_social}</h1>
               <p className="text-sm text-slate-400">RUT: {company?.rut}</p>
