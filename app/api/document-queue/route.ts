@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/client"
 import { NextResponse } from "next/server"
 import { headers } from "next/headers"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
   try {
     const headersList = await headers()
