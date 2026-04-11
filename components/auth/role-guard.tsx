@@ -11,7 +11,8 @@ interface RoleGuardProps {
 }
 
 export function RoleGuard({ requiredRole, children, fallback }: RoleGuardProps) {
-  const { role, loading } = useRole()
+  const { user, loading } = useRole()
+  const role = user?.role
 
   if (loading) {
     return <div className="p-4 text-center text-muted-foreground">Cargando...</div>
