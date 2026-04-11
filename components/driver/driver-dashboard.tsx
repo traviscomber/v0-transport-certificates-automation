@@ -74,7 +74,6 @@ export default function DriverDashboard({ profile, certificates = [], notificati
     region: "Región Metropolitana",
     is_active: true,
   }
-  const supabase = createClient()
 
   const getDisplayName = () => {
     // Check if it's a demo account
