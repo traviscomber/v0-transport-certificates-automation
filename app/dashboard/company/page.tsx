@@ -721,8 +721,9 @@ export default function CompanyDashboard() {
                       <table className="w-full text-sm">
                         <thead className="bg-slate-700/50">
                           <tr className="border-b border-slate-700">
-                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">RUT</th>
+                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">RUT Conductor</th>
                             <th className="text-left py-3 px-3 text-slate-300 font-semibold">Nombre</th>
+                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">RUT Proveedor</th>
                             <th className="text-left py-3 px-3 text-slate-300 font-semibold">Proveedor</th>
                             <th className="text-left py-3 px-3 text-slate-300 font-semibold">Patente Tracto</th>
                           </tr>
@@ -736,6 +737,7 @@ export default function CompanyDashboard() {
                             >
                               <td className="py-3 px-3 text-slate-300 font-mono text-xs">{driver.rut}</td>
                               <td className="py-3 px-3 text-white font-medium">{driver.nombre}</td>
+                              <td className="py-3 px-3 text-slate-400 font-mono text-xs">{driver.rut_proveedor}</td>
                               <td className="py-3 px-3 text-slate-400 text-sm truncate">{driver.proveedor}</td>
                               <td className="py-3 px-3 text-orange-400 font-mono text-sm">{driver.patente_tracto}</td>
                             </tr>
