@@ -28,13 +28,12 @@ interface DashboardData {
     cargo: string
   }>
   drivers: Array<{
-    id: string
-    full_name: string
+    id?: string
     rut: string
-    email: string
-    phone: string
-    license_number: string
-    license_type: string
+    nombre: string
+    rut_proveedor: string
+    proveedor: string
+    patente_tracto: string
   }>
   vehicles: Array<{
     id: string
@@ -74,6 +73,15 @@ export default function CompanyDashboard() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [formData, setFormData] = useState<any>(null)
+  const [activeTab, setActiveTab] = useState<'subcontractors' | 'drivers'>('subcontractors')
+  const [selectedDriver, setSelectedDriver] = useState<any>(null)
+  const [isEditingDriver, setIsEditingDriver] = useState(false)
+  const [showAddDriverModal, setShowAddDriverModal] = useState(false)
+  const [isDeletingDriver, setIsDeletingDriver] = useState(false)
+  const [driverFormData, setDriverFormData] = useState<any>(null)
+  const [driverSearchTerm, setDriverSearchTerm] = useState('')
+  const [driverFilterProvider, setDriverFilterProvider] = useState('')
+  const [driverSortBy, setDriverSortBy] = useState<'nombre' | 'rut' | 'proveedor'>('nombre')
 
   useEffect(() => {
     const fetchData = async () => {
@@ -180,6 +188,8 @@ export default function CompanyDashboard() {
 
   const filteredSubcontractors = getFilteredSubcontractors()
 
+  // Driver filter, search and sort logic
+
   // CRUD Functions
   const handleEditStart = () => {
     setFormData({ ...selectedSubcontractor })
@@ -274,6 +284,40 @@ export default function CompanyDashboard() {
       alert('Error al crear el subcontrato')
     }
   }
+
+  // Filter and search logic for drivers
+  const getFilteredDrivers = () => {
+    if (!data?.drivers) return []
+    
+    let filtered = data.drivers.filter(driver => {
+      const matchesSearch = 
+        driver.nombre.toLowerCase().includes(driverSearchTerm.toLowerCase()) ||
+        driver.rut.toLowerCase().includes(driverSearchTerm.toLowerCase()) ||
+        driver.proveedor.toLowerCase().includes(driverSearchTerm.toLowerCase())
+      
+      const matchesProvider = !driverFilterProvider || driver.proveedor === driverFilterProvider
+      
+      return matchesSearch && matchesProvider
+    })
+
+    // Sort
+    filtered.sort((a, b) => {
+      if (driverSortBy === 'nombre') return a.nombre.localeCompare(b.nombre)
+      if (driverSortBy === 'rut') return a.rut.localeCompare(b.rut)
+      if (driverSortBy === 'proveedor') return a.proveedor.localeCompare(b.proveedor)
+      return 0
+    })
+
+    return filtered
+  }
+
+  // Get unique providers for driver filters
+  const getUniqueProviders = () => {
+    if (!data?.drivers) return []
+    return [...new Set(data.drivers.map(d => d.proveedor))].sort()
+  }
+
+  const filteredDrivers = getFilteredDrivers()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -417,17 +461,23 @@ export default function CompanyDashboard() {
           <CardContent>
             {drivers.length > 0 ? (
               <div className="space-y-4">
-                {drivers.map((driver) => (
-                  <div key={driver.id} className="pb-4 border-b border-slate-700 last:border-0">
-                    <p className="font-semibold text-white">{driver.full_name}</p>
+                {drivers.slice(0, 5).map((driver, idx) => (
+                  <div key={idx} className="pb-4 border-b border-slate-700 last:border-0">
+                    <p className="font-semibold text-white">{driver.nombre}</p>
                     <div className="grid md:grid-cols-2 gap-2 text-sm text-slate-400 mt-2">
                       <div>RUT: {driver.rut}</div>
-                      <div>Licencia: {driver.license_number}</div>
-                      <div>Email: {driver.email}</div>
-                      <div>Teléfono: {driver.phone}</div>
+                      <div>Patente: {driver.patente_tracto}</div>
+                      <div>Proveedor: {driver.proveedor}</div>
+                      <div>RUT Proveedor: {driver.rut_proveedor}</div>
                     </div>
                   </div>
                 ))}
+                {drivers.length > 5 && (
+                  <div className="text-center pt-4">
+                    <p className="text-slate-400 text-sm">+ {drivers.length - 5} conductores más</p>
+                    <p className="text-slate-500 text-xs">Usa la sección de "Conductores" abajo para ver la lista completa con búsqueda y filtros</p>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-slate-400">No hay conductores registrados</p>
@@ -615,7 +665,369 @@ export default function CompanyDashboard() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Drivers Section */}
+        <Card className="bg-slate-800/50 border-slate-700 mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-orange-500" />
+              Conductores ({filteredDrivers.length} de {data?.drivers?.length || 0})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Add New Button */}
+              <div className="flex justify-end">
+                <Button
+                  onClick={() => {
+                    setDriverFormData({
+                      rut: '',
+                      nombre: '',
+                      rut_proveedor: '',
+                      proveedor: '',
+                      patente_tracto: '',
+                    })
+                    setShowAddDriverModal(true)
+                  }}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  + Agregar Conductor
+                </Button>
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre, RUT o proveedor..."
+                  value={driverSearchTerm}
+                  onChange={(e) => setDriverSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+                {driverSearchTerm && (
+                  <button
+                    onClick={() => setDriverSearchTerm('')}
+                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-300"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Filters */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-slate-300 block mb-2">Proveedor</label>
+                  <select
+                    value={driverFilterProvider}
+                    onChange={(e) => setDriverFilterProvider(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  >
+                    <option value="">Todos los proveedores</option>
+                    {getUniqueProviders().slice(0, 50).map((provider) => (
+                      <option key={provider} value={provider}>{provider}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm text-slate-300 block mb-2">Ordenar por</label>
+                  <select
+                    value={driverSortBy}
+                    onChange={(e) => setDriverSortBy(e.target.value as any)}
+                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  >
+                    <option value="nombre">Nombre A-Z</option>
+                    <option value="rut">RUT</option>
+                    <option value="proveedor">Proveedor</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Clear Filters */}
+              {(driverSearchTerm || driverFilterProvider) && (
+                <button
+                  onClick={() => {
+                    setDriverSearchTerm('')
+                    setDriverFilterProvider('')
+                  }}
+                  className="text-sm text-orange-400 hover:text-orange-300 flex items-center gap-1"
+                >
+                  <X className="w-4 h-4" />
+                  Limpiar filtros
+                </button>
+              )}
+
+              {/* Table */}
+              {filteredDrivers.length > 0 ? (
+                <div className="overflow-x-auto border border-slate-700 rounded-lg">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-700/50">
+                      <tr className="border-b border-slate-700">
+                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">RUT</th>
+                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">Nombre</th>
+                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">Proveedor</th>
+                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">Patente Tracto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredDrivers.map((driver, idx) => (
+                        <tr 
+                          key={idx} 
+                          className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors cursor-pointer"
+                          onClick={() => setSelectedDriver(driver)}
+                        >
+                          <td className="py-3 px-3 text-slate-300 font-mono text-xs">{driver.rut}</td>
+                          <td className="py-3 px-3 text-white font-medium">{driver.nombre}</td>
+                          <td className="py-3 px-3 text-slate-400 text-sm truncate">{driver.proveedor}</td>
+                          <td className="py-3 px-3 text-orange-400 font-mono text-sm">{driver.patente_tracto}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-slate-400">No se encontraron conductores que coincidan con tus criterios</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </main>
+
+      {/* Driver Detail Modal */}
+      {selectedDriver && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="bg-slate-800 border-slate-700 max-w-lg w-full max-h-96 overflow-y-auto">
+            <CardHeader className="flex items-center justify-between flex-row pb-3 border-b border-slate-700">
+              <CardTitle className="text-white">{selectedDriver.nombre}</CardTitle>
+              <button
+                onClick={() => setSelectedDriver(null)}
+                className="text-slate-400 hover:text-slate-300"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-slate-400 uppercase">RUT Conductor</p>
+                  {!isEditingDriver ? (
+                    <p className="text-white font-mono">{selectedDriver.rut}</p>
+                  ) : (
+                    <input
+                      type="text"
+                      value={driverFormData?.rut || ''}
+                      onChange={(e) => setDriverFormData({ ...driverFormData, rut: e.target.value })}
+                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                    />
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 uppercase">Patente Tracto</p>
+                  {!isEditingDriver ? (
+                    <p className="text-orange-400">{selectedDriver.patente_tracto}</p>
+                  ) : (
+                    <input
+                      type="text"
+                      value={driverFormData?.patente_tracto || ''}
+                      onChange={(e) => setDriverFormData({ ...driverFormData, patente_tracto: e.target.value })}
+                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                    />
+                  )}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 uppercase">Nombre</p>
+                {!isEditingDriver ? (
+                  <p className="text-white text-sm">{selectedDriver.nombre}</p>
+                ) : (
+                  <input
+                    type="text"
+                    value={driverFormData?.nombre || ''}
+                    onChange={(e) => setDriverFormData({ ...driverFormData, nombre: e.target.value })}
+                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                  />
+                )}
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 uppercase">RUT Proveedor</p>
+                {!isEditingDriver ? (
+                  <p className="text-white text-sm">{selectedDriver.rut_proveedor}</p>
+                ) : (
+                  <input
+                    type="text"
+                    value={driverFormData?.rut_proveedor || ''}
+                    onChange={(e) => setDriverFormData({ ...driverFormData, rut_proveedor: e.target.value })}
+                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                  />
+                )}
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 uppercase">Proveedor</p>
+                {!isEditingDriver ? (
+                  <p className="text-blue-400 text-sm">{selectedDriver.proveedor}</p>
+                ) : (
+                  <input
+                    type="text"
+                    value={driverFormData?.proveedor || ''}
+                    onChange={(e) => setDriverFormData({ ...driverFormData, proveedor: e.target.value })}
+                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                  />
+                )}
+              </div>
+              <div className="flex gap-2 pt-4 border-t border-slate-700">
+                {!isEditingDriver ? (
+                  <>
+                    <Button
+                      onClick={() => {
+                        setDriverFormData({ ...selectedDriver })
+                        setIsEditingDriver(true)
+                      }}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    >
+                      ✎ Editar
+                    </Button>
+                    <Button
+                      onClick={() => setSelectedDriver(null)}
+                      className="flex-1 bg-slate-600 hover:bg-slate-700"
+                    >
+                      Cerrar
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      onClick={() => {
+                        setSelectedDriver(driverFormData)
+                        setIsEditingDriver(false)
+                        setDriverFormData(null)
+                      }}
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                    >
+                      ✓ Guardar
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setIsEditingDriver(false)
+                        setDriverFormData(null)
+                      }}
+                      className="flex-1 bg-slate-600 hover:bg-slate-700"
+                    >
+                      Cancelar
+                    </Button>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Add Driver Modal */}
+      {showAddDriverModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="bg-slate-800 border-slate-700 max-w-lg w-full max-h-96 overflow-y-auto">
+            <CardHeader className="flex items-center justify-between flex-row pb-3 border-b border-slate-700">
+              <CardTitle className="text-white">Nuevo Conductor</CardTitle>
+              <button
+                onClick={() => {
+                  setShowAddDriverModal(false)
+                  setDriverFormData(null)
+                }}
+                className="text-slate-400 hover:text-slate-300"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-slate-400 uppercase">RUT Conductor *</label>
+                  <input
+                    type="text"
+                    placeholder="12.345.678-9"
+                    value={driverFormData?.rut || ''}
+                    onChange={(e) => setDriverFormData({ ...driverFormData, rut: e.target.value })}
+                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 uppercase">Patente *</label>
+                  <input
+                    type="text"
+                    placeholder="XW7026"
+                    value={driverFormData?.patente_tracto || ''}
+                    onChange={(e) => setDriverFormData({ ...driverFormData, patente_tracto: e.target.value })}
+                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 uppercase">Nombre *</label>
+                <input
+                  type="text"
+                  placeholder="Nombre del conductor"
+                  value={driverFormData?.nombre || ''}
+                  onChange={(e) => setDriverFormData({ ...driverFormData, nombre: e.target.value })}
+                  className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 uppercase">RUT Proveedor *</label>
+                <input
+                  type="text"
+                  placeholder="77653071-9"
+                  value={driverFormData?.rut_proveedor || ''}
+                  onChange={(e) => setDriverFormData({ ...driverFormData, rut_proveedor: e.target.value })}
+                  className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 uppercase">Proveedor *</label>
+                <input
+                  type="text"
+                  placeholder="Nombre del proveedor"
+                  value={driverFormData?.proveedor || ''}
+                  onChange={(e) => setDriverFormData({ ...driverFormData, proveedor: e.target.value })}
+                  className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                />
+              </div>
+              <div className="flex gap-2 pt-4 border-t border-slate-700">
+                <Button
+                  onClick={() => {
+                    if (!driverFormData?.rut || !driverFormData?.nombre || !driverFormData?.proveedor) {
+                      alert('Por favor completa los campos requeridos')
+                      return
+                    }
+                    console.log('[v0] Driver created:', driverFormData)
+                    if (data) {
+                      setData({ ...data, drivers: [...data.drivers, driverFormData] })
+                    }
+                    setShowAddDriverModal(false)
+                    setDriverFormData(null)
+                    alert('Conductor agregado exitosamente')
+                  }}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  ✓ Agregar
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowAddDriverModal(false)
+                    setDriverFormData(null)
+                  }}
+                  className="flex-1 bg-slate-600 hover:bg-slate-700"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Subcontractor Detail Modal */}
       {selectedSubcontractor && (
