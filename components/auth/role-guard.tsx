@@ -1,7 +1,7 @@
 'use client'
 
 import { useRole } from '@/app/providers'
-import { UserRole } from '@/lib/rbac-access-control'
+import { UserRole } from '@/lib/auth-context'
 import { ReactNode } from 'react'
 
 interface RoleGuardProps {
