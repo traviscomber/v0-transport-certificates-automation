@@ -179,10 +179,6 @@ export default function CompanyDashboard() {
     </div>
   )
 }
-            </div>
-          </div>
-          <Button
-            onClick={handleLogout}
             variant="ghost"
             className="gap-2 text-slate-300 hover:text-white"
           >
