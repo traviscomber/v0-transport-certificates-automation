@@ -36,7 +36,7 @@ export function ComplianceDashboard({
   documents = [],
   loading = false,
 }: ComplianceDashboardProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<keyof typeof DOCUMENT_CATEGORIES | null>(null)
 
   // Calculate compliance metrics
   const metrics = useMemo(() => {
@@ -246,7 +246,7 @@ export function ComplianceDashboard({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Documentos {selectedCategory && `- ${DOCUMENT_CATEGORIES[selectedCategory as any]?.name}`}
+            Documentos {selectedCategory && `- ${DOCUMENT_CATEGORIES[selectedCategory]?.name}`}
           </CardTitle>
           <CardDescription>
             {filteredDocs.length} documento{filteredDocs.length !== 1 ? 's' : ''} mostrado{filteredDocs.length !== 1 ? 's' : ''}
