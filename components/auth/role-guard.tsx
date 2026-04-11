@@ -12,14 +12,14 @@ interface RoleGuardProps {
 
 export function RoleGuard({ requiredRole, children, fallback }: RoleGuardProps) {
   const { user, loading } = useRole()
-  const role = user?.role
+  const role = user?.role as UserRole | undefined
 
   if (loading) {
     return <div className="p-4 text-center text-muted-foreground">Cargando...</div>
   }
 
   const requiredRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole]
-  const hasAccess = role && requiredRoles.includes(role)
+  const hasAccess = role && requiredRoles.includes(role as UserRole)
 
   if (!hasAccess) {
     return (
