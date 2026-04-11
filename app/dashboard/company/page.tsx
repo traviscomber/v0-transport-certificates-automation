@@ -179,7 +179,6 @@ export default function CompanyDashboard() {
     </div>
   )
 }
-              <p className="text-sm text-slate-400">RUT: {company?.rut}</p>
             </div>
           </div>
           <Button
