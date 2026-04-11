@@ -40,6 +40,7 @@ interface DashboardData {
     nombre: string
     representante: string
     ejecutiva: string
+    region: string
     direccion: string
     comuna: string
     telefono: string

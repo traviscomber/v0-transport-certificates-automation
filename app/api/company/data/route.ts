@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { LABBE_SUBCONTRACTORS } from '../subcontractors-data'
 
 export async function GET(request: Request) {
   try {
@@ -179,55 +180,23 @@ function getFallbackData() {
 }
 
 function getLabbeSubcontractors() {
-  // Returns all 232 Labbe subcontractors with service flags
-  return [
-    { rut: '77653071-9', nombre: '4Vial SPA', representante: 'Ruben Marchant Needhan', ejecutiva: 'Carolina', direccion: 'Ahumada 312 of 715', comuna: 'Santiago', telefono: '9 7255 5016', email: 'g4vial@gmail.com', ariztia: false, lts: true, rendic: false, interpolar: false},
-    { rut: '76461213-2', nombre: 'Adolfo Del Carmen Gonzalez Meza Transporte De Carga E.i.r.l.', representante: 'Adolfo Gonzalez Meza', ejecutiva: 'Carolina', direccion: 'Esmeralda 1561 Lote 2', comuna: 'Colina', telefono: '9 9291 0830', email: 'adolfo.gonzalez.meza@hotmail.com', ariztia: true, lts: true, rendic: false, interpolar: false},
-    { rut: '76956797-6', nombre: 'AEROCAV SPA', representante: 'JOSE MIGUEL ROJAS URBINA', ejecutiva: 'Carolina', direccion: 'Argomedo 321', comuna: 'Santiago', telefono: '9 5533 9046', email: 'JROJAS.SL@GMAIL.COM', ariztia: false, lts: true, rendic: false, interpolar: false},
-    { rut: '16181677-9', nombre: 'Aldo Antonio Bustamante Ortega', representante: 'Aldo Antonio Bustamante Ortega', ejecutiva: 'Carolina', direccion: 'Gacitua 564', comuna: 'Isla de Maipo', telefono: '9 6431 9423', email: 'z71aldo@hotmail.com', ariztia: false, lts: true, rendic: true, interpolar: false},
-    { rut: '76463195-1', nombre: 'Ambrosio Julian Casanova Navarrete Transporte De Carga E.i.r.l.', representante: 'Ambrosio Casanova Naavarrete', ejecutiva: 'Carolina', direccion: 'Pje los Pinos 1498', comuna: 'Rengo', telefono: '9 7147 6688', email: 'juliancasanova1973@gmail.com', ariztia: false, lts: true, rendic: false, interpolar: false},
-    { rut: '77243323-9', nombre: 'Comercio, Servicios Y Transportes Mozó Spa', representante: 'Falcon Nicolas Mozo Farfan', ejecutiva: 'Carolina', direccion: 'Morande 835 of 518', comuna: 'Santiago', telefono: '9 5630 6291', email: 'contacto@cerpaconsultores.cl', ariztia: false, lts: true, rendic: false, interpolar: false},
-    { rut: '77490988-5', nombre: 'Transportes Doña Luciana SPA', representante: 'ROBERTO REBOLLEDO LABRAÑA', ejecutiva: 'Carolina', direccion: 'ALCIDES ROLDAN 1418', comuna: 'San Fernando', telefono: '9 6125 4302', email: 'roberto2730@hotmail.com'},
-    { rut: '78190172-5', nombre: 'Mr Transportes Chile Spa', representante: 'MARIA DE LOS ANGELES SOLAR VARGAS', ejecutiva: 'Carolina', direccion: 'MIGUEL CLARO 119 DP 3 NULL', comuna: 'Providencia', telefono: '932492564', email: 'mr.transportes.chile@gmail.com'},
-    { rut: '78040304-7', nombre: 'R PeÑa Spa', representante: 'Rodrigo Elias Peña Castillo', ejecutiva: 'Carolina', direccion: 'Concejala Berta Carvajal 8089', comuna: 'Cerrillos', telefono: '9 3873 7365', email: 'rpena3646@gmail.com'},
-    { rut: '77390218-6', nombre: 'Sociedad de Transportes Jole SPA', representante: 'Juan Octavio Lillo Espinoza', ejecutiva: 'Carolina', direccion: 'Carlos Palacios 228', comuna: 'Bulnes', telefono: '9 4049 2462', email: 'flillo@lfconsulting.cl'},
-    { rut: '76447559-3', nombre: 'Tello Y Tello Transportes Spa', representante: 'Mauricio Esteban Tello Reyes', ejecutiva: 'Carolina', direccion: 'Avda. Calera de Tango 0', comuna: 'Calera de Tango', telefono: '228172612', email: 'tello.mauricio@gmail.com'},
-    { rut: '77416162-7', nombre: 'Tranportes  Por Carretara  JL SPA', representante: 'Juan Lopez Reyes', ejecutiva: 'Carolina', direccion: 'Julio Valenzuela 836', comuna: 'Buin', telefono: '9 6631 4314', email: 'ignacio_mania2@live.ccl'},
-    { rut: '76848886-K', nombre: 'Transporte Brenet SPA', representante: 'Luz Betsabet Alfaro Brenet', ejecutiva: 'Carolina', direccion: 'Francisco Hidalgo 224', comuna: 'Peñaflor', telefono: '9 6829 4217', email: 'transportes.brenet@gmail.com'},
-    { rut: '77772051-1', nombre: 'Transportes H & B Spa', representante: 'Daniel Esteban Orellana Muñoz', ejecutiva: 'Carolina', direccion: '24 ABRIL ST 72 LTB', comuna: 'Paine', telefono: '9 6407 7995', email: 'transporteshborellana@gmail.com'},
-    { rut: '77441798-2', nombre: 'TRANSPORTE CARGA POR CARRETERA DG SPA', representante: 'DANILO ENRIQUE GAETE FUENZALIDA', ejecutiva: 'Carolina', direccion: 'FERNANDO TORTEROLO 1771 SENDERO 12 FASE 1', comuna: 'QUILLOTA', telefono: '963725085', email: 'gaetedanilo1967@gmail.com'},
-    { rut: '78150214-6', nombre: 'Transportes Jsp Spa', representante: 'Juan Felix Saez Paredes', ejecutiva: 'Carolina', direccion: 'CALLE 3 DE ABRIL 461', comuna: 'Renaico', telefono: '9 4189 8175', email: 'juanfelix.sp@gmail.com'},
-    { rut: '78165845-6', nombre: 'Transportes Matus Salen Spa', representante: 'Fabian Corona Figueroa', ejecutiva: 'Carolina', direccion: 'ALTOS DE MACHICURA PARCEL 50', comuna: 'Parral', telefono: '930966845', email: 'transportesmatussalen@gmail.com'},
-    { rut: '77827992-4', nombre: 'Transporte Y  Comercializadora G Y R Spa', representante: 'Yosselin Elizabeth Reyes Garrido', ejecutiva: 'Carolina', direccion: 'Eulogio Robles 781', comuna: 'Linares', telefono: '9 6519 0198', email: 'jgonzalemartinez86@gmail.com'},
-    { rut: '78156059-6', nombre: 'Transporte Yanina Ysabel Garcia Mora De Nakasone E.i.r.l.', representante: 'Yanina Ysabel Garcia de Nakasone', ejecutiva: 'Carolina', direccion: 'ABRANQUIL 1168 NULL QUINTA NORMAL', comuna: 'QUINTA NORMAL', telefono: '987887693', email: 'yaninatransportes@gmail.com'},
-    { rut: '78087308-6', nombre: 'Transportes Roberto Estrada E.i.r.l', representante: 'Roberto Andrés Estrada Riquelme', ejecutiva: 'Carolina', direccion: 'LOS LIBERTADORES PP STA ANA PC 53 SN NULL', comuna: 'Til Til', telefono: '949194583', email: 'restrada.prevencion@gmail.com'},
-    { rut: '77624057-5', nombre: 'Transportes Angelo Nicolas Carrasco Sanhueza EIRL', representante: 'Angelo Carrasco Sanhueza', ejecutiva: 'Carolina', direccion: 'Lautaro 740', comuna: 'Concepcion', telefono: '9 7907 0145', email: 'angelo.nicolas93@hotmail.com'},
-    { rut: '77420673-6', nombre: 'Transportes Baeza SPA', representante: 'Carlos Alberto Baeza Infante', ejecutiva: 'Carolina', direccion: 'San Luis 841 Pueblo Antiguo', comuna: 'Pudahuel', telefono: '9 6668 5424', email: 'transportescarlosbaezai@gmail.com'},
-    { rut: '78151772-0', nombre: 'Transportes Belen Spa', representante: 'HUGO DEMECIO TILLERIA HUECHE', ejecutiva: 'Carolina', direccion: 'AV LAS TORRES 250 CASA 97 NULL', comuna: 'Quilicura', telefono: '944786241', email: 'tilleria2121@gmail.com'},
-    { rut: '78032375-2', nombre: 'Transportes Bosmann Spa', representante: 'Antonio Bosmann Soto', ejecutiva: 'Carolina', direccion: 'Malaquias concha 309', comuna: 'Paillaco', telefono: '9 3870 1739', email: 'trbosmann@gmail.com'},
-    { rut: '77732652-K', nombre: 'Transportes Bricebor SPA', representante: 'Patricia Briceño Paez', ejecutiva: 'Carolina', direccion: 'Colombia 985', comuna: 'Vallenar', telefono: '9 8548 7796', email: 'paty_briceno@hotmail.com'},
-    { rut: '77647991-8', nombre: 'Transportes Bryan Dinamarca Castillo E.i.r.l.', representante: 'Bryan Willian Dinamarca Castillo', ejecutiva: 'Carolina', direccion: 'Parcela n 30 Lote A Gabriela Mistral', comuna: 'La Serena', telefono: '9 4499 3574', email: 'transportebryandinamarca@gmail.com'},
-    { rut: '77625968-3', nombre: 'Transportes Cale SPA', representante: 'Hugo Nuñez Toro', ejecutiva: 'Carolina', direccion: 'Villa los Castaños sitio 12', comuna: 'Curico', telefono: '9 3769 6652', email: 'transportescale.22@gmail.com'},
-    { rut: '77664223-1', nombre: 'Transportes Cardenas  Limitada', representante: 'Oscar Alberto Cardenas Rojas', ejecutiva: 'Carolina', direccion: 'M Larrain 1154 BL 7 A DP Rolando Alarcon 0', comuna: 'Talagante', telefono: '965132690', email: 'transcar2025ltda@gmail.com'},
-    { rut: '76494991-9', nombre: 'Transportes Carlos Marcelo Rebolledo Rojas Eirl', representante: 'Carlos Marcelo Rebolledo Rojas', ejecutiva: 'Carolina', direccion: 'Olegario Lazo 371', comuna: 'San Fernando', telefono: '9 7498 0078', email: 'p_pereirah@hotmail.com'},
-    { rut: '77536347-9', nombre: 'Transportes Chocobar Spa', representante: 'WILSON HERNAN CHOCOBAR VASQUEZ', ejecutiva: 'Carolina', direccion: 'OSORNO 850 MZ 101 LT 19 TIERRAS BLANCAS', comuna: 'Coquimbo', telefono: '966644778', email: 'yakko.j7@gmail.com'},
-    { rut: '76518447-9', nombre: 'Transportes De Carga Jocelyn Carolina Silva Rojas Eirl', representante: 'Jocelyn Carolina Silva Rojas', ejecutiva: 'Carolina', direccion: 'Barrales 234', comuna: 'Melipilla', telefono: '9 3243 4254', email: 'transportesacr@yahoo.com'},
-    { rut: '78029819-7', nombre: 'Transportes Doble Jj Spa', representante: 'Israel Ariel Pradenas PiÑeiro', ejecutiva: 'Carolina', direccion: 'Jose Leyan 1228', comuna: 'Talagante', telefono: '933638547', email: 'transportesdoblejj@gmail.com'},
-    { rut: '77401369-5', nombre: 'Transportes Domingo Alberto Cerda Lagos E.i.r.l.', representante: 'Domingo Cerda Lagos', ejecutiva: 'Carolina', direccion: 'Dr. Adan Henriquez S 03991', comuna: 'San Fernando', telefono: '9 6607 6722', email: 'msoledadpavezf@gmail.com'},
-    { rut: '77822803-3', nombre: 'TRANSPORTES FELIPE ANDRÉS SARRIA JIMÉNEZ E.I.R.L.', representante: 'FELIPE ANDRES SARRIA JIMENEZ', ejecutiva: 'Carolina', direccion: 'AV. SAN LUIS 15 -- 76 CS 76 BARRIO EL ALBA 4', comuna: 'Lampa', telefono: '930679958', email: 'felipe2925@gmail.com'},
-    { rut: '76994334-K', nombre: 'Transportes Fernando Patricio Valdes Silva Eirl', representante: 'Fernando Patricio Valdes Silva', ejecutiva: 'Carolina', direccion: 'Las Azucenas 1994', comuna: 'Santiago', telefono: '9 4401 9637', email: 'transportesfernandovaldeseirl@gmail.com'},
-    { rut: '77624569-0', nombre: 'TRANSPORTES IVAN ALFONSO DIAZ RIVAS EIRL', representante: 'Ivan Diaz Rivas', ejecutiva: 'Carolina', direccion: 'Avda Costanera 1174', comuna: 'San Pedro de la Paz', telefono: '9 5188 8374', email: 'idiaz9252@gmail.com'},
-    { rut: '77941312-8', nombre: 'TRANSPORTES J&F SPA', representante: 'Daniel Esteban Orellana Muñoz', ejecutiva: 'Carolina', direccion: '24 de Abril St 72 lt b', comuna: 'Paine', telefono: '9 6407 7995', email: 'transporteshborellana@gmail.com'},
-    { rut: '78244173-6', nombre: 'Transportes Jme Spa', representante: 'John Francisco Jofre Gomez', ejecutiva: 'Carolina', direccion: 'LOS FLAMENCOS 965 MEDIA HACIENDA NULL', comuna: 'Ovalle', telefono: '975522197', email: 'johnfranci0511@gmail.com'},
-    { rut: '78165268-7', nombre: 'Transportes Jq Spa', representante: 'Jhon Sebastian Quiroga Esparza', ejecutiva: 'Carolina', direccion: 'PJE VALLE DEL SOL PNTE 2122 PQUE EL SOL NULL PADRE HURTADO', comuna: 'PADRE HURTADO', telefono: '986292130', email: 'sebas.sparza@gmail.com'},
-    { rut: '77503624-9', nombre: 'Transportes Jrm E Hijos Limitada', representante: 'Jimena Andrea Herminia Molinet Lillo', ejecutiva: 'Carolina', direccion: 'Pje santa cruz 721, villa larqui', comuna: 'Bulnes', telefono: '9 4068 4436', email: 'ximenamolinet.35@gmail.com'},
-    { rut: '78351383-8', nombre: 'Transportes L.y. R Spa', representante: 'JUAN CARLOS LOPEZ DIAZ', ejecutiva: 'Carolina', direccion: 'HERMANO DOMINGO 01485 HNOS DE LA SALLE NULL 01485', comuna: 'Puente alto', telefono: '992788524', email: 'ignacio_mania2@live.cl'},
-    { rut: '77889348-7', nombre: 'Transportes Mad Spa', representante: 'Hector Rene Ortiz Gonzalez', ejecutiva: 'Carolina', direccion: 'PSJ LOS MANIOS 2022', comuna: 'TALCA', telefono: '9 4967 1430', email: 'michel_jm@hotmail.cl'},
-    { rut: '78113086-9', nombre: 'Transportes Maxsu Limitada', representante: 'ROBERTO EUGENIO SUAREZ LOPEZ', ejecutiva: 'Carolina', direccion: 'LA ATAJADA 645 EL RODEO', comuna: 'HUECHURABA', telefono: '941798421', email: 'Transportesmaxsu@gmail.com'},
-    { rut: '77531127-4', nombre: 'TRANSPORTES MICHELL ALEXANDER BRAVO ARAYA E.I.R.L', representante: 'Michell Alexander Bravo Araya', ejecutiva: 'Carolina', direccion: 'Casma 634', comuna: 'San Miguel', telefono: '963739068', email: 'transportes.michell.bravo@gmail.com'},
-    { rut: '77896328-0', nombre: 'Transportes Ms Spa', representante: 'Felipe Francisco Miranda Amaya', ejecutiva: 'Carolina', direccion: 'VOLCAN EL MIRADOR 189 SAN ENRIQUE', comuna: 'Quilicura', telefono: '987301778', email: 'transportesms.1928@gmail.com'},
-    { rut: '76891488-5', nombre: 'Transportes Myz Spa', representante: 'Oscar Martinez Arriagada', ejecutiva: 'Carolina', direccion: 'San Antonio 385', comuna: 'Santiago', telefono: '9 3122 9434', email: 'oscarmartinez.a@gmail.com'},
-    { rut: '78310280-3', nombre: 'Transportes Olmo Vega Spa', representante: 'HUGO CAMILO OLMOS VEGA', ejecutiva: 'Carolina', direccion: 'RIO COPIAPÓ 9558', comuna: 'Pudahuel', telefono: '932248782', email: 'camiloolmos946@gmail.com'},
+  // Returns all subcontractors from imported data with region and service flags
+  return LABBE_SUBCONTRACTORS.map(sub => ({
+    rut: sub.rut,
+    nombre: sub.nombre,
+    representante: sub.representante,
+    ejecutiva: sub.ejecutiva,
+    region: sub.region || 'Cecilia',
+    direccion: sub.direccion,
+    comuna: sub.comuna,
+    telefono: sub.telefono,
+    email: sub.email,
+    ariztia: sub.ariztia,
+    lts: sub.lts,
+    rendic: sub.rendic,
+    interpolar: sub.interpolar,
+  }))
+}
     { rut: '78232853-0', nombre: 'Transportes Punolaf Lopez Spa', representante: 'Segundo German Punolaf Queupumil', ejecutiva: 'Carolina', direccion: 'AGUSTINAS 1442 DP 402 NULL', comuna: 'Santiago', telefono: '947542370', email: 'Punolafgerman55@gmail.com'},
     { rut: '77287076-0', nombre: 'Transportes Rene Ernesto Quiroz Rosales E.i.r.l.', representante: 'Rene Ernesto Quiroz Rosales', ejecutiva: 'Carolina', direccion: 'Lucero del Alba St48 V', comuna: 'Calera de Tango', telefono: '9 4221 3307', email: 'renequirozcamionero@gmail.com'},
     { rut: '77016329-3', nombre: 'Transportes Ruben Hernan Silva Vasquez E.i.r.l', representante: 'Ruben Hernan Silva Vasquez', ejecutiva: 'Carolina', direccion: 'Monjitas 550', comuna: 'Santiago', telefono: '936170659', email: 'silvarubem600@gmail.com'},
