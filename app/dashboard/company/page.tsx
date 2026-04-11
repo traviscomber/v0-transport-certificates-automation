@@ -451,39 +451,7 @@ export default function CompanyDashboard() {
         </Card>
 
         {/* Drivers */}
-        <Card className="bg-slate-800/50 border-slate-700 mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-orange-500" />
-              Conductores ({drivers.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {drivers.length > 0 ? (
-              <div className="space-y-4">
-                {drivers.slice(0, 5).map((driver, idx) => (
-                  <div key={idx} className="pb-4 border-b border-slate-700 last:border-0">
-                    <p className="font-semibold text-white">{driver.nombre}</p>
-                    <div className="grid md:grid-cols-2 gap-2 text-sm text-slate-400 mt-2">
-                      <div>RUT: {driver.rut}</div>
-                      <div>Patente: {driver.patente_tracto}</div>
-                      <div>Proveedor: {driver.proveedor}</div>
-                      <div>RUT Proveedor: {driver.rut_proveedor}</div>
-                    </div>
-                  </div>
-                ))}
-                {drivers.length > 5 && (
-                  <div className="text-center pt-4">
-                    <p className="text-slate-400 text-sm">+ {drivers.length - 5} conductores más</p>
-                    <p className="text-slate-500 text-xs">Usa la sección de "Conductores" abajo para ver la lista completa con búsqueda y filtros</p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p className="text-slate-400">No hay conductores registrados</p>
-            )}
-          </CardContent>
-        </Card>
+        {/* Moved to tab section */}
 
         {/* Vehicles */}
         <Card className="bg-slate-800/50 border-slate-700 mb-8">
@@ -512,289 +480,324 @@ export default function CompanyDashboard() {
           </CardContent>
         </Card>
 
-        {/* Subcontractors Section */}
-        <Card className="bg-slate-800/50 border-slate-700 mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-orange-500" />
-              Subcontratos ({filteredSubcontractors.length} de {data?.subcontractors?.length || 0})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Add New Button */}
-              <div className="flex justify-end">
-                <Button
-                  onClick={() => {
-                    setFormData({
-                      rut: '',
-                      nombre: '',
-                      representante: '',
-                      ejecutiva: '',
-                      direccion: '',
-                      comuna: '',
-                      telefono: '',
-                      email: '',
-                    })
-                    setShowAddModal(true)
-                  }}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  + Agregar Subcontrato
-                </Button>
-              </div>
+        {/* Navigation Tabs */}
+        <div className="flex gap-4 mb-8 border-b border-slate-700 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('subcontractors')}
+            className={`pb-3 px-1 font-semibold transition-colors whitespace-nowrap ${
+              activeTab === 'subcontractors'
+                ? 'text-orange-500 border-b-2 border-orange-500'
+                : 'text-slate-400 hover:text-slate-300'
+            }`}
+          >
+            <Building2 className="inline w-5 h-5 mr-2" />
+            Clientes/Subcontratos ({data.subcontractors.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('drivers')}
+            className={`pb-3 px-1 font-semibold transition-colors whitespace-nowrap ${
+              activeTab === 'drivers'
+                ? 'text-orange-500 border-b-2 border-orange-500'
+                : 'text-slate-400 hover:text-slate-300'
+            }`}
+          >
+            <Users className="inline w-5 h-5 mr-2" />
+            Conductores ({data.drivers.length})
+          </button>
+        </div>
 
-              {/* Search Bar */}
-              <div className="relative">
-                <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar por nombre, RUT, representante o email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-300"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
+        {/* Subcontractors Tab Content */}
+        {activeTab === 'subcontractors' && (
+          <div>
+            <Card className="bg-slate-800/50 border-slate-700 mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-orange-500" />
+                  Clientes/Subcontratos ({filteredSubcontractors.length} de {data?.subcontractors?.length || 0})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Add New Button */}
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={() => {
+                        setFormData({
+                          rut: '',
+                          nombre: '',
+                          representante: '',
+                          ejecutiva: '',
+                          direccion: '',
+                          comuna: '',
+                          telefono: '',
+                          email: '',
+                        })
+                        setShowAddModal(true)
+                      }}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      + Agregar Cliente
+                    </Button>
+                  </div>
 
-              {/* Filters */}
-              <div className="grid md:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-sm text-slate-300 block mb-2">Ejecutiva</label>
-                  <select
-                    value={filterExecutiva}
-                    onChange={(e) => setFilterExecutiva(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  >
-                    <option value="">Todas las ejecutivas</option>
-                    {getUniqueExecutivas().map((exec) => (
-                      <option key={exec} value={exec}>{exec}</option>
-                    ))}
-                  </select>
+                  {/* Search Bar */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Buscar por nombre, RUT, representante o email..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className="absolute right-3 top-3 text-slate-400 hover:text-slate-300"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Filters */}
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-sm text-slate-300 block mb-2">Ejecutiva</label>
+                      <select
+                        value={filterExecutiva}
+                        onChange={(e) => setFilterExecutiva(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      >
+                        <option value="">Todas las ejecutivas</option>
+                        {getUniqueExecutivas().map((exec) => (
+                          <option key={exec} value={exec}>{exec}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm text-slate-300 block mb-2">Comuna</label>
+                      <select
+                        value={filterComuna}
+                        onChange={(e) => setFilterComuna(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      >
+                        <option value="">Todas las comunas</option>
+                        {getUniqueComunas().slice(0, 50).map((comuna) => (
+                          <option key={comuna} value={comuna}>{comuna}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm text-slate-300 block mb-2">Ordenar por</label>
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value as any)}
+                        className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      >
+                        <option value="nombre">Nombre A-Z</option>
+                        <option value="rut">RUT</option>
+                        <option value="ejecutiva">Ejecutiva</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Clear Filters */}
+                  {(searchTerm || filterExecutiva || filterComuna) && (
+                    <button
+                      onClick={() => {
+                        setSearchTerm('')
+                        setFilterExecutiva('')
+                        setFilterComuna('')
+                      }}
+                      className="text-sm text-orange-400 hover:text-orange-300 flex items-center gap-1"
+                    >
+                      <X className="w-4 h-4" />
+                      Limpiar filtros
+                    </button>
+                  )}
+
+                  {/* Table */}
+                  {filteredSubcontractors.length > 0 ? (
+                    <div className="overflow-x-auto border border-slate-700 rounded-lg">
+                      <table className="w-full text-sm">
+                        <thead className="bg-slate-700/50">
+                          <tr className="border-b border-slate-700">
+                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">RUT</th>
+                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">Nombre</th>
+                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">Representante</th>
+                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">Ejecutiva</th>
+                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">Comuna</th>
+                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">Email</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredSubcontractors.map((sub, idx) => (
+                            <tr 
+                              key={idx} 
+                              className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors cursor-pointer"
+                              onClick={() => setSelectedSubcontractor(sub)}
+                            >
+                              <td className="py-3 px-3 text-slate-300 font-mono text-xs">{sub.rut}</td>
+                              <td className="py-3 px-3 text-white font-medium">{sub.nombre}</td>
+                              <td className="py-3 px-3 text-slate-300 text-sm">{sub.representante}</td>
+                              <td className="py-3 px-3 text-slate-400 text-sm">
+                                <span className="bg-slate-700/50 px-2 py-1 rounded text-xs">{sub.ejecutiva}</span>
+                              </td>
+                              <td className="py-3 px-3 text-slate-400 text-sm">{sub.comuna}</td>
+                              <td className="py-3 px-3 text-slate-400 text-sm truncate">{sub.email || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-slate-400">No se encontraron clientes que coincidan con tus criterios</p>
+                    </div>
+                  )}
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-                <div>
-                  <label className="text-sm text-slate-300 block mb-2">Comuna</label>
-                  <select
-                    value={filterComuna}
-                    onChange={(e) => setFilterComuna(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  >
-                    <option value="">Todas las comunas</option>
-                    {getUniqueComunas().slice(0, 50).map((comuna) => (
-                      <option key={comuna} value={comuna}>{comuna}</option>
-                    ))}
-                  </select>
+        {/* Drivers Tab Content */}
+        {activeTab === 'drivers' && (
+          <div>
+            <Card className="bg-slate-800/50 border-slate-700 mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-orange-500" />
+                  Conductores ({filteredDrivers.length} de {data?.drivers?.length || 0})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Add New Button */}
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={() => {
+                        setDriverFormData({
+                          rut: '',
+                          nombre: '',
+                          rut_proveedor: '',
+                          proveedor: '',
+                          patente_tracto: '',
+                        })
+                        setShowAddDriverModal(true)
+                      }}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      + Agregar Conductor
+                    </Button>
+                  </div>
+
+                  {/* Search Bar */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Buscar por nombre, RUT o proveedor..."
+                      value={driverSearchTerm}
+                      onChange={(e) => setDriverSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                    {driverSearchTerm && (
+                      <button
+                        onClick={() => setDriverSearchTerm('')}
+                        className="absolute right-3 top-3 text-slate-400 hover:text-slate-300"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Filters */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm text-slate-300 block mb-2">Proveedor</label>
+                      <select
+                        value={driverFilterProvider}
+                        onChange={(e) => setDriverFilterProvider(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      >
+                        <option value="">Todos los proveedores</option>
+                        {getUniqueProviders().slice(0, 50).map((provider) => (
+                          <option key={provider} value={provider}>{provider}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm text-slate-300 block mb-2">Ordenar por</label>
+                      <select
+                        value={driverSortBy}
+                        onChange={(e) => setDriverSortBy(e.target.value as any)}
+                        className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      >
+                        <option value="nombre">Nombre A-Z</option>
+                        <option value="rut">RUT</option>
+                        <option value="proveedor">Proveedor</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Clear Filters */}
+                  {(driverSearchTerm || driverFilterProvider) && (
+                    <button
+                      onClick={() => {
+                        setDriverSearchTerm('')
+                        setDriverFilterProvider('')
+                      }}
+                      className="text-sm text-orange-400 hover:text-orange-300 flex items-center gap-1"
+                    >
+                      <X className="w-4 h-4" />
+                      Limpiar filtros
+                    </button>
+                  )}
+
+                  {/* Table */}
+                  {filteredDrivers.length > 0 ? (
+                    <div className="overflow-x-auto border border-slate-700 rounded-lg">
+                      <table className="w-full text-sm">
+                        <thead className="bg-slate-700/50">
+                          <tr className="border-b border-slate-700">
+                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">RUT</th>
+                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">Nombre</th>
+                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">Proveedor</th>
+                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">Patente Tracto</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredDrivers.map((driver, idx) => (
+                            <tr 
+                              key={idx} 
+                              className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors cursor-pointer"
+                              onClick={() => setSelectedDriver(driver)}
+                            >
+                              <td className="py-3 px-3 text-slate-300 font-mono text-xs">{driver.rut}</td>
+                              <td className="py-3 px-3 text-white font-medium">{driver.nombre}</td>
+                              <td className="py-3 px-3 text-slate-400 text-sm truncate">{driver.proveedor}</td>
+                              <td className="py-3 px-3 text-orange-400 font-mono text-sm">{driver.patente_tracto}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-slate-400">No se encontraron conductores que coincidan con tus criterios</p>
+                    </div>
+                  )}
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-                <div>
-                  <label className="text-sm text-slate-300 block mb-2">Ordenar por</label>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  >
-                    <option value="nombre">Nombre A-Z</option>
-                    <option value="rut">RUT</option>
-                    <option value="ejecutiva">Ejecutiva</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Clear Filters */}
-              {(searchTerm || filterExecutiva || filterComuna) && (
-                <button
-                  onClick={() => {
-                    setSearchTerm('')
-                    setFilterExecutiva('')
-                    setFilterComuna('')
-                  }}
-                  className="text-sm text-orange-400 hover:text-orange-300 flex items-center gap-1"
-                >
-                  <X className="w-4 h-4" />
-                  Limpiar filtros
-                </button>
-              )}
-
-              {/* Table */}
-              {filteredSubcontractors.length > 0 ? (
-                <div className="overflow-x-auto border border-slate-700 rounded-lg">
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-700/50">
-                      <tr className="border-b border-slate-700">
-                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">RUT</th>
-                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">Nombre</th>
-                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">Representante</th>
-                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">Ejecutiva</th>
-                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">Comuna</th>
-                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">Email</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredSubcontractors.map((sub, idx) => (
-                        <tr 
-                          key={idx} 
-                          className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors cursor-pointer"
-                          onClick={() => setSelectedSubcontractor(sub)}
-                        >
-                          <td className="py-3 px-3 text-slate-300 font-mono text-xs">{sub.rut}</td>
-                          <td className="py-3 px-3 text-white font-medium">{sub.nombre}</td>
-                          <td className="py-3 px-3 text-slate-300 text-sm">{sub.representante}</td>
-                          <td className="py-3 px-3 text-slate-400 text-sm">
-                            <span className="bg-slate-700/50 px-2 py-1 rounded text-xs">{sub.ejecutiva}</span>
-                          </td>
-                          <td className="py-3 px-3 text-slate-400 text-sm">{sub.comuna}</td>
-                          <td className="py-3 px-3 text-slate-400 text-sm truncate">{sub.email || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-slate-400">No se encontraron subcontratos que coincidan con tus criterios</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Drivers Section */}
-        <Card className="bg-slate-800/50 border-slate-700 mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-orange-500" />
-              Conductores ({filteredDrivers.length} de {data?.drivers?.length || 0})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Add New Button */}
-              <div className="flex justify-end">
-                <Button
-                  onClick={() => {
-                    setDriverFormData({
-                      rut: '',
-                      nombre: '',
-                      rut_proveedor: '',
-                      proveedor: '',
-                      patente_tracto: '',
-                    })
-                    setShowAddDriverModal(true)
-                  }}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  + Agregar Conductor
-                </Button>
-              </div>
-
-              {/* Search Bar */}
-              <div className="relative">
-                <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar por nombre, RUT o proveedor..."
-                  value={driverSearchTerm}
-                  onChange={(e) => setDriverSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
-                {driverSearchTerm && (
-                  <button
-                    onClick={() => setDriverSearchTerm('')}
-                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-300"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-
-              {/* Filters */}
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm text-slate-300 block mb-2">Proveedor</label>
-                  <select
-                    value={driverFilterProvider}
-                    onChange={(e) => setDriverFilterProvider(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  >
-                    <option value="">Todos los proveedores</option>
-                    {getUniqueProviders().slice(0, 50).map((provider) => (
-                      <option key={provider} value={provider}>{provider}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-sm text-slate-300 block mb-2">Ordenar por</label>
-                  <select
-                    value={driverSortBy}
-                    onChange={(e) => setDriverSortBy(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  >
-                    <option value="nombre">Nombre A-Z</option>
-                    <option value="rut">RUT</option>
-                    <option value="proveedor">Proveedor</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Clear Filters */}
-              {(driverSearchTerm || driverFilterProvider) && (
-                <button
-                  onClick={() => {
-                    setDriverSearchTerm('')
-                    setDriverFilterProvider('')
-                  }}
-                  className="text-sm text-orange-400 hover:text-orange-300 flex items-center gap-1"
-                >
-                  <X className="w-4 h-4" />
-                  Limpiar filtros
-                </button>
-              )}
-
-              {/* Table */}
-              {filteredDrivers.length > 0 ? (
-                <div className="overflow-x-auto border border-slate-700 rounded-lg">
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-700/50">
-                      <tr className="border-b border-slate-700">
-                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">RUT</th>
-                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">Nombre</th>
-                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">Proveedor</th>
-                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">Patente Tracto</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredDrivers.map((driver, idx) => (
-                        <tr 
-                          key={idx} 
-                          className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors cursor-pointer"
-                          onClick={() => setSelectedDriver(driver)}
-                        >
-                          <td className="py-3 px-3 text-slate-300 font-mono text-xs">{driver.rut}</td>
-                          <td className="py-3 px-3 text-white font-medium">{driver.nombre}</td>
-                          <td className="py-3 px-3 text-slate-400 text-sm truncate">{driver.proveedor}</td>
-                          <td className="py-3 px-3 text-orange-400 font-mono text-sm">{driver.patente_tracto}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-slate-400">No se encontraron conductores que coincidan con tus criterios</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
       </main>
 
       {/* Driver Detail Modal */}
