@@ -216,7 +216,7 @@ export default function CompanyDashboard() {
   }
 
   const handleDelete = async () => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este subcontrato?')) return
+    if (!confirm('¿Est��s seguro de que quieres eliminar este subcontrato?')) return
     
     try {
       setIsDeleting(true)
@@ -725,6 +725,7 @@ export default function CompanyDashboard() {
                             <th className="text-left py-3 px-3 text-slate-300 font-semibold">Nombre</th>
                             <th className="text-left py-3 px-3 text-slate-300 font-semibold">RUT Proveedor</th>
                             <th className="text-left py-3 px-3 text-slate-300 font-semibold">Proveedor</th>
+                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">Patente Tracto</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -738,6 +739,7 @@ export default function CompanyDashboard() {
                               <td className="py-3 px-3 text-white font-medium">{driver.nombre}</td>
                               <td className="py-3 px-3 text-slate-400 font-mono text-xs">{driver.rut_proveedor}</td>
                               <td className="py-3 px-3 text-slate-400 text-sm truncate">{driver.proveedor}</td>
+                              <td className="py-3 px-3 text-orange-400 font-mono text-sm">{driver.patente_tracto}</td>
                             </tr>
                           ))}
                         </tbody>
