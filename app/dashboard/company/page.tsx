@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Building2, LogOut, Users, Truck, User } from 'lucide-react'
+import { Building2, LogOut, Users, Truck, User, Search, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface DashboardData {
@@ -62,9 +62,15 @@ interface DashboardData {
 
 export default function CompanyDashboard() {
   const router = useRouter()
+  const [company, setCompany] = useState<CompanyData | null>(null)
   const [data, setData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterExecutiva, setFilterExecutiva] = useState('')
+  const [filterComuna, setFilterComuna] = useState('')
+  const [sortBy, setSortBy] = useState<'nombre' | 'rut' | 'ejecutiva'>('nombre')
+  const [selectedSubcontractor, setSelectedSubcontractor] = useState<any>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -129,6 +135,47 @@ export default function CompanyDashboard() {
   }
 
   const { company, executives, drivers, vehicles } = data
+
+  // Filter and search logic for subcontractors
+  const getFilteredSubcontractors = () => {
+    if (!data?.subcontractors) return []
+    
+    let filtered = data.subcontractors.filter(sub => {
+      const matchesSearch = 
+        sub.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sub.rut.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sub.representante.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sub.email.toLowerCase().includes(searchTerm.toLowerCase())
+      
+      const matchesExecutiva = !filterExecutiva || sub.ejecutiva === filterExecutiva
+      const matchesComuna = !filterComuna || sub.comuna === filterComuna
+      
+      return matchesSearch && matchesExecutiva && matchesComuna
+    })
+
+    // Sort
+    filtered.sort((a, b) => {
+      if (sortBy === 'nombre') return a.nombre.localeCompare(b.nombre)
+      if (sortBy === 'rut') return a.rut.localeCompare(b.rut)
+      if (sortBy === 'ejecutiva') return a.ejecutiva.localeCompare(b.ejecutiva)
+      return 0
+    })
+
+    return filtered
+  }
+
+  // Get unique values for filters
+  const getUniqueExecutivas = () => {
+    if (!data?.subcontractors) return []
+    return [...new Set(data.subcontractors.map(s => s.ejecutiva))].sort()
+  }
+
+  const getUniqueComunas = () => {
+    if (!data?.subcontractors) return []
+    return [...new Set(data.subcontractors.map(s => s.comuna))].sort()
+  }
+
+  const filteredSubcontractors = getFilteredSubcontractors()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -317,51 +364,195 @@ export default function CompanyDashboard() {
           </CardContent>
         </Card>
 
-        {/* Subcontractors */}
+        {/* Subcontractors Section */}
         <Card className="bg-slate-800/50 border-slate-700 mb-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="w-5 h-5 text-orange-500" />
-              Subcontratos ({data?.subcontractors?.length || 0})
+              Subcontratos ({filteredSubcontractors.length} de {data?.subcontractors?.length || 0})
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {data?.subcontractors && data.subcontractors.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-700">
-                      <th className="text-left py-2 px-2 text-slate-300">RUT</th>
-                      <th className="text-left py-2 px-2 text-slate-300">Nombre</th>
-                      <th className="text-left py-2 px-2 text-slate-300">Representante</th>
-                      <th className="text-left py-2 px-2 text-slate-300">Ejecutiva</th>
-                      <th className="text-left py-2 px-2 text-slate-300">Comuna</th>
-                      <th className="text-left py-2 px-2 text-slate-300">Teléfono</th>
-                      <th className="text-left py-2 px-2 text-slate-300">Email</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.subcontractors.map((sub, idx) => (
-                      <tr key={idx} className="border-b border-slate-700/50 hover:bg-slate-700/30">
-                        <td className="py-2 px-2 text-slate-300">{sub.rut}</td>
-                        <td className="py-2 px-2 text-white font-medium">{sub.nombre}</td>
-                        <td className="py-2 px-2 text-slate-300">{sub.representante}</td>
-                        <td className="py-2 px-2 text-slate-400">{sub.ejecutiva}</td>
-                        <td className="py-2 px-2 text-slate-400">{sub.comuna}</td>
-                        <td className="py-2 px-2 text-slate-400">{sub.telefono}</td>
-                        <td className="py-2 px-2 text-slate-400 truncate">{sub.email}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <p className="mt-4 text-slate-400 text-sm">Mostrando {data.subcontractors.length} subcontratos en total</p>
+            <div className="space-y-4">
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre, RUT, representante o email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-300"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
-            ) : (
-              <p className="text-slate-400">No hay subcontratos registrados</p>
-            )}
+
+              {/* Filters */}
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm text-slate-300 block mb-2">Ejecutiva</label>
+                  <select
+                    value={filterExecutiva}
+                    onChange={(e) => setFilterExecutiva(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  >
+                    <option value="">Todas las ejecutivas</option>
+                    {getUniqueExecutivas().map((exec) => (
+                      <option key={exec} value={exec}>{exec}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm text-slate-300 block mb-2">Comuna</label>
+                  <select
+                    value={filterComuna}
+                    onChange={(e) => setFilterComuna(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  >
+                    <option value="">Todas las comunas</option>
+                    {getUniqueComunas().slice(0, 50).map((comuna) => (
+                      <option key={comuna} value={comuna}>{comuna}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm text-slate-300 block mb-2">Ordenar por</label>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  >
+                    <option value="nombre">Nombre A-Z</option>
+                    <option value="rut">RUT</option>
+                    <option value="ejecutiva">Ejecutiva</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Clear Filters */}
+              {(searchTerm || filterExecutiva || filterComuna) && (
+                <button
+                  onClick={() => {
+                    setSearchTerm('')
+                    setFilterExecutiva('')
+                    setFilterComuna('')
+                  }}
+                  className="text-sm text-orange-400 hover:text-orange-300 flex items-center gap-1"
+                >
+                  <X className="w-4 h-4" />
+                  Limpiar filtros
+                </button>
+              )}
+
+              {/* Table */}
+              {filteredSubcontractors.length > 0 ? (
+                <div className="overflow-x-auto border border-slate-700 rounded-lg">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-700/50">
+                      <tr className="border-b border-slate-700">
+                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">RUT</th>
+                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">Nombre</th>
+                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">Representante</th>
+                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">Ejecutiva</th>
+                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">Comuna</th>
+                        <th className="text-left py-3 px-3 text-slate-300 font-semibold">Email</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredSubcontractors.map((sub, idx) => (
+                        <tr 
+                          key={idx} 
+                          className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors cursor-pointer"
+                          onClick={() => setSelectedSubcontractor(sub)}
+                        >
+                          <td className="py-3 px-3 text-slate-300 font-mono text-xs">{sub.rut}</td>
+                          <td className="py-3 px-3 text-white font-medium">{sub.nombre}</td>
+                          <td className="py-3 px-3 text-slate-300 text-sm">{sub.representante}</td>
+                          <td className="py-3 px-3 text-slate-400 text-sm">
+                            <span className="bg-slate-700/50 px-2 py-1 rounded text-xs">{sub.ejecutiva}</span>
+                          </td>
+                          <td className="py-3 px-3 text-slate-400 text-sm">{sub.comuna}</td>
+                          <td className="py-3 px-3 text-slate-400 text-sm truncate">{sub.email || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-slate-400">No se encontraron subcontratos que coincidan con tus criterios</p>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </main>
+
+      {/* Subcontractor Detail Modal */}
+      {selectedSubcontractor && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="bg-slate-800 border-slate-700 max-w-lg w-full max-h-96 overflow-y-auto">
+            <CardHeader className="flex items-center justify-between flex-row pb-3 border-b border-slate-700">
+              <CardTitle className="text-white">{selectedSubcontractor.nombre}</CardTitle>
+              <button
+                onClick={() => setSelectedSubcontractor(null)}
+                className="text-slate-400 hover:text-slate-300"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-slate-400 uppercase">RUT</p>
+                  <p className="text-white font-mono">{selectedSubcontractor.rut}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 uppercase">Ejecutiva</p>
+                  <p className="text-orange-400">{selectedSubcontractor.ejecutiva}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 uppercase">Representante</p>
+                  <p className="text-white">{selectedSubcontractor.representante}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 uppercase">Comuna</p>
+                  <p className="text-white">{selectedSubcontractor.comuna}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 uppercase">Dirección</p>
+                <p className="text-white text-sm">{selectedSubcontractor.direccion}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 uppercase">Email</p>
+                <p className="text-blue-400 text-sm">{selectedSubcontractor.email || '-'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 uppercase">Teléfono</p>
+                <p className="text-white text-sm">{selectedSubcontractor.telefono || '-'}</p>
+              </div>
+              <div className="flex gap-2 pt-4 border-t border-slate-700">
+                <Button
+                  onClick={() => setSelectedSubcontractor(null)}
+                  className="flex-1 bg-orange-500 hover:bg-orange-600"
+                >
+                  Cerrar
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
