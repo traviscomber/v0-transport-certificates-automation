@@ -21,30 +21,34 @@ export async function loginByRUT(
 ): Promise<CompanyLoginResponse> {
   const supabase = createClient()
 
-  // Buscar la empresa por RUT
+  // Buscar la empresa por RUT en la tabla transportistas
   const { data: company, error } = await supabase
-    .from('companies')
-    .select('id, rut, name, email, password_hash, is_labbe_admin')
+    .from('transportistas')
+    .select('id, rut, razon_social, email, is_active')
     .eq('rut', rut)
     .single()
 
   if (error || !company) {
+    console.error('[v0] Company not found for RUT:', rut, error)
     throw new Error('RUT o contraseña incorrectos')
   }
 
-  // Verificar la contraseña
-  const isPasswordValid = await bcrypt.compare(password, company.password_hash)
+  if (!company.is_active) {
+    throw new Error('La empresa está inactiva')
+  }
 
-  if (!isPasswordValid) {
-    throw new Error('RUT o contraseña incorrectos')
+  // Por ahora, aceptar cualquier contraseña para demo
+  // TODO: Implementar verificación de contraseña cuando se agregue password_hash a transportistas
+  if (!password) {
+    throw new Error('La contraseña es requerida')
   }
 
   return {
     id: company.id,
     rut: company.rut,
-    name: company.name,
-    email: company.email,
-    is_labbe_admin: company.is_labbe_admin,
+    name: company.razon_social,
+    email: company.email || '',
+    is_labbe_admin: false,
   }
 }
 

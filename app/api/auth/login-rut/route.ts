@@ -1,12 +1,16 @@
+export const dynamic = 'force-dynamic'
+
 import { loginByRUT } from '@/lib/supabase/auth-rut'
 import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
-    const { rut, password } = await request.json()
+    const body = await request.json()
+    const { rut, password } = body
 
     if (!rut || !password) {
-      return Response.json(
+      return NextResponse.json(
         { error: 'RUT y contraseña son requeridos' },
         { status: 400 }
       )
@@ -33,16 +37,9 @@ export async function POST(request: Request) {
       path: '/',
     })
 
-    cookieStore.set('is_labbe_admin', String(company.is_labbe_admin), {
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/',
-    })
-
     console.log(`[v0] Login successful for company: ${company.rut}`)
 
-    return Response.json({
+    return NextResponse.json({
       success: true,
       company: {
         id: company.id,
@@ -56,7 +53,7 @@ export async function POST(request: Request) {
     console.error('[v0] Login error:', err)
     const errorMessage = err instanceof Error ? err.message : 'Error al iniciar sesión'
 
-    return Response.json(
+    return NextResponse.json(
       { error: errorMessage },
       { status: 401 }
     )
