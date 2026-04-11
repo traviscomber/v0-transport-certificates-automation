@@ -15,10 +15,11 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "TransporteCL - Automatización de Certificados F-30",
+  title: "Transportes Labbe - Portal Empresarial de Automatización",
   description:
-    "Plataforma integral para la gestión automatizada de certificados F-30 y documentos de transporte en Chile",
-  generator: "TransporteCL",
+    "Portal integral de Transportes Labbe para gestión automatizada de certificados F-30, cumplimiento normativo y documentación de transporte. Automatización 100%, cumplimiento total.",
+  generator: "Transportes Labbe",
+  keywords: "Transportes Labbe, F-30, automatización, cumplimiento normativo, gestión documental",
 }
 
 export default function RootLayout({
