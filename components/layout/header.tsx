@@ -2,31 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-
-const MenuIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="4" x2="20" y1="6" y2="6" />
-    <line x1="4" x2="20" y1="12" y2="12" />
-    <line x1="4" x2="20" y1="18" y2="18" />
-  </svg>
-)
-
-const XIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M18 6 6 18" />
-    <path d="M6 6l12 12" />
-  </svg>
-)
-
-const TruckIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M14 18V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" />
-    <path d="M15 18H9" />
-    <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14" />
-    <circle cx="17" cy="18" r="2" />
-    <circle cx="7" cy="18" r="2" />
-  </svg>
-)
+import { Menu, X, Truck } from "lucide-react"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -37,9 +13,9 @@ export function Header() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-2">
             <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg">
-              <TruckIcon />
+              <Truck className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-foreground">TransporteCL</span>
+            <span className="text-xl font-bold text-foreground">Transportes Labbe</span>
           </div>
 
           <nav className="hidden md:flex items-center space-x-8">
@@ -62,12 +38,12 @@ export function Header() {
               <a href="/dashboard">Iniciar Sesión</a>
             </Button>
             <Button size="sm" className="bg-primary hover:bg-primary/90" asChild>
-              <a href="#demo">Comenzar Ahora</a>
+              <a href="/dashboard/executive">Portal de Ejecutivas</a>
             </Button>
           </div>
 
           <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            {isMenuOpen ? <XIcon /> : <MenuIcon />}
+            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
 
