@@ -73,16 +73,23 @@ export default function CompanyLoginPage() {
         body: JSON.stringify({ rut, password }),
       })
 
-      const data = await response.json()
+      let data
+      try {
+        data = await response.json()
+      } catch (parseErr) {
+        console.error('[v0] Failed to parse response:', parseErr)
+        throw new Error('Respuesta inválida del servidor')
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error al iniciar sesión')
+        throw new Error(data?.error || `Error: ${response.status}`)
       }
 
       // Redirigir al dashboard
       router.push('/dashboard/company')
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al iniciar sesión'
+      console.error('[v0] Login error:', errorMessage)
       setError(errorMessage)
       setIsLoading(false)
     }

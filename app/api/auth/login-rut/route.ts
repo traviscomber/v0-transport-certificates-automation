@@ -9,9 +9,19 @@ export async function POST(request: Request) {
     console.log('[v0] ============ LOGIN-RUT ENDPOINT START ============')
     console.log('[v0] Login-RUT endpoint called')
     
-    const body = await request.json()
-    console.log('[v0] Request body received:', { rut: body.rut, hasPassword: !!body.password })
-    const { rut, password } = body
+    let body
+    try {
+      body = await request.json()
+    } catch (parseErr) {
+      console.error('[v0] Failed to parse request body:', parseErr)
+      return NextResponse.json(
+        { error: 'Solicitud inválida' },
+        { status: 400 }
+      )
+    }
+
+    console.log('[v0] Request body received:', { rut: body?.rut, hasPassword: !!body?.password })
+    const { rut, password } = body || {}
 
     if (!rut || !password) {
       console.log('[v0] Missing RUT or password')
@@ -23,8 +33,18 @@ export async function POST(request: Request) {
 
     // Autenticar por RUT
     console.log('[v0] Calling loginByRUT with RUT:', rut)
-    const company = await loginByRUT(rut, password)
-    console.log('[v0] LoginByRUT successful, company:', company.name)
+    let company
+    try {
+      company = await loginByRUT(rut, password)
+    } catch (authErr) {
+      console.error('[v0] Authentication failed:', authErr)
+      return NextResponse.json(
+        { error: authErr instanceof Error ? authErr.message : 'Autenticación fallida' },
+        { status: 401 }
+      )
+    }
+
+    console.log('[v0] LoginByRUT successful, company:', company?.name)
 
     // Guardar sesión en cookies (HTTP-only)
     const cookieStore = await cookies()
@@ -47,7 +67,7 @@ export async function POST(request: Request) {
     console.log(`[v0] Login successful for company: ${company.rut}`)
     console.log('[v0] ============ LOGIN-RUT ENDPOINT SUCCESS ============')
 
-    return NextResponse.json({
+    const responseData = {
       success: true,
       company: {
         id: company.id,
@@ -56,17 +76,18 @@ export async function POST(request: Request) {
         email: company.email,
         is_labbe_admin: company.is_labbe_admin,
       },
-    })
+    }
+
+    return NextResponse.json(responseData)
   } catch (err) {
     console.error('[v0] ============ LOGIN-RUT ENDPOINT ERROR ============')
     console.error('[v0] Login error:', err)
     const errorMessage = err instanceof Error ? err.message : 'Error al iniciar sesión'
     console.error('[v0] Error details:', errorMessage)
-    console.error('[v0] Full error:', JSON.stringify(err, null, 2))
 
     return NextResponse.json(
       { error: errorMessage },
-      { status: 401 }
+      { status: 500 }
     )
   }
 }
