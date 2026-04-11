@@ -3,44 +3,55 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('[v0] Missing Supabase credentials')
+}
 
 const executives = [
   {
     email: 'olga@transporteslabbe.cl',
     full_name: 'Olga Lydia Carrasco Olivares',
-    password: 'labbe2024'
+    password: 'labbe2024',
   },
   {
     email: 'carolina@transporteslabbe.cl',
     full_name: 'Carolina Sepulveda',
-    password: 'labbe2024'
+    password: 'labbe2024',
   },
   {
     email: 'daniela@transporteslabbe.cl',
     full_name: 'Daniela Silva',
-    password: 'labbe2024'
+    password: 'labbe2024',
   },
   {
     email: 'cecilia@transporteslabbe.cl',
     full_name: 'Cecilia Farias',
-    password: 'labbe2024'
+    password: 'labbe2024',
   },
   {
     email: 'diego@transporteslabbe.cl',
     full_name: 'Diego Gonzalez',
-    password: 'labbe2024'
+    password: 'labbe2024',
   },
   {
     email: 'katherinne@transporteslabbe.cl',
     full_name: 'Katherinne Canales',
-    password: 'labbe2024'
-  }
+    password: 'labbe2024',
+  },
 ]
 
 export async function GET() {
   try {
+    console.log('[v0] ========== SEED LABBE USERS START ==========')
+    console.log('[v0] Supabase URL:', supabaseUrl?.substring(0, 20) + '...')
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing Supabase credentials: NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY')
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
@@ -54,15 +65,32 @@ export async function GET() {
       try {
         console.log(`[v0] Creating user: ${exec.email}`)
 
+        // Check if user already exists
+        const { data: existingUser } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', exec.email)
+          .single()
+
+        if (existingUser) {
+          console.log(`[v0] User already exists: ${exec.email}`)
+          results.push({
+            email: exec.email,
+            name: exec.full_name,
+            status: 'already_exists',
+          })
+          continue
+        }
+
         // Create auth user
-        const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
           email: exec.email,
           password: exec.password,
           email_confirm: true,
         })
 
         if (authError) {
-          console.error(`[v0] Auth error for ${exec.email}:`, authError)
+          console.error(`[v0] Auth error for ${exec.email}:`, authError.message)
           results.push({
             email: exec.email,
             status: 'error',
@@ -71,26 +99,25 @@ export async function GET() {
           continue
         }
 
-        console.log(`[v0] Auth user created: ${authUser.user.id}`)
+        const userId = authData.user.id
+        console.log(`[v0] Auth user created: ${userId}`)
 
         // Create profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authUser.user.id,
-            email: exec.email,
-            full_name: exec.full_name,
-            role: 'executive',
-            company_name: 'Transportes Labbe',
-            is_active: true,
-          })
+        const { error: profileError } = await supabase.from('profiles').insert({
+          id: userId,
+          email: exec.email,
+          full_name: exec.full_name,
+          role: 'executive',
+          company_name: 'Transportes Labbe',
+          is_active: true,
+        })
 
         if (profileError) {
-          console.error(`[v0] Profile error for ${exec.email}:`, profileError)
+          console.error(`[v0] Profile error for ${exec.email}:`, profileError.message)
           results.push({
             email: exec.email,
             status: 'error',
-            message: profileError.message,
+            message: `Profile error: ${profileError.message}`,
           })
           continue
         }
@@ -111,17 +138,25 @@ export async function GET() {
       }
     }
 
+    const successCount = results.filter((r) => r.status === 'success').length
+    const alreadyExistCount = results.filter((r) => r.status === 'already_exists').length
+
+    console.log(`[v0] ========== SEED LABBE USERS COMPLETE ==========`)
+    console.log(`[v0] Success: ${successCount}, Already exist: ${alreadyExistCount}`)
+
     return NextResponse.json({
       success: true,
-      message: `Created ${results.filter((r) => r.status === 'success').length} executives`,
+      message: `Created ${successCount} executives (${alreadyExistCount} already existed)`,
       results,
     })
   } catch (error) {
+    console.error('[v0] ========== SEED ERROR ==========')
     console.error('[v0] Seed error:', error)
+    const message = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: message,
       },
       { status: 500 }
     )
