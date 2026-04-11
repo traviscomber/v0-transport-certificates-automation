@@ -10,6 +10,13 @@ export interface CompanyLoginResponse {
 }
 
 /**
+ * Normaliza un RUT (elimina puntos y espacios, mantiene el guión)
+ */
+function normalizeRUT(rut: string): string {
+  return rut.replace(/\./g, '').trim()
+}
+
+/**
  * Autentica una empresa usando RUT y contraseña
  * @param rut - RUT de la empresa
  * @param password - Contraseña
@@ -20,16 +27,24 @@ export async function loginByRUT(
   password: string
 ): Promise<CompanyLoginResponse> {
   const supabase = createClient()
+  const normalizedRUT = normalizeRUT(rut)
+
+  console.log('[v0] Attempting login with RUT:', normalizedRUT)
 
   // Buscar la empresa por RUT en la tabla transportistas
   const { data: company, error } = await supabase
     .from('transportistas')
     .select('id, rut, razon_social, email, is_active')
-    .eq('rut', rut)
+    .eq('rut', normalizedRUT)
     .single()
 
-  if (error || !company) {
-    console.error('[v0] Company not found for RUT:', rut, error)
+  if (error) {
+    console.error('[v0] Database error for RUT:', normalizedRUT, error)
+    throw new Error('Error al buscar la empresa')
+  }
+
+  if (!company) {
+    console.error('[v0] Company not found for RUT:', normalizedRUT)
     throw new Error('RUT o contraseña incorrectos')
   }
 

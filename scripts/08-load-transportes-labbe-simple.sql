@@ -1,8 +1,8 @@
 -- Transportes Labbe Executive Staff Data Load
 -- Insert the main transportista (company)
-INSERT INTO transportistas (rut_empresa, nombre_empresa, representante, contacto_email, contacto_telefono, estado, created_at, updated_at)
-VALUES ('76.123.456-7', 'Transportes Labbe', 'Olga Lydia Carrasco Olivares', 'info@transporteslabbe.cl', '+56977764753', true, NOW(), NOW())
-ON CONFLICT (rut_empresa) DO NOTHING;
+INSERT INTO transportistas (rut, razon_social, nombre_fantasia, representante_legal, email, telefono, region, comuna, is_active, created_at, updated_at)
+VALUES ('78.376.780-5', 'Transportes Labbe Hermanos Limitada', 'Transportes Labbe', 'Olga Lydia Carrasco Olivares', 'info@transporteslabbe.cl', '+56977764753', 'XIII Región Metropolitana', 'Paine', true, NOW(), NOW())
+ON CONFLICT (rut) DO NOTHING;
 
 -- Ejecutiva 1: Olga Lydia Carrasco - Password: Olga2024#Labbe
 INSERT INTO executive_staff (
@@ -30,7 +30,7 @@ SELECT
   true,
   NOW(),
   NOW()
-FROM transportistas t WHERE t.rut_empresa = '76.123.456-7'
+FROM transportistas t WHERE t.rut = '78.376.780-5'
 ON CONFLICT (rut) DO NOTHING;
 
 -- Ejecutiva 2: Carolina Pilar Sepulveda - Password: Carolina2024#Exec
@@ -59,7 +59,7 @@ SELECT
   true,
   NOW(),
   NOW()
-FROM transportistas t WHERE t.rut_empresa = '76.123.456-7'
+FROM transportistas t WHERE t.rut = '78.376.780-5'
 ON CONFLICT (rut) DO NOTHING;
 
 -- Ejecutiva 3: Daniela Constanza Silva - Password: Daniela2024#Silva
@@ -88,7 +88,7 @@ SELECT
   true,
   NOW(),
   NOW()
-FROM transportistas t WHERE t.rut_empresa = '76.123.456-7'
+FROM transportistas t WHERE t.rut = '78.376.780-5'
 ON CONFLICT (rut) DO NOTHING;
 
 -- Ejecutiva 4: Cecilia Del Carmen Farias - Password: Cecilia2024#Farias
@@ -117,7 +117,7 @@ SELECT
   true,
   NOW(),
   NOW()
-FROM transportistas t WHERE t.rut_empresa = '76.123.456-7'
+FROM transportistas t WHERE t.rut = '78.376.780-5'
 ON CONFLICT (rut) DO NOTHING;
 
 -- Jefe RRHH: Diego Andres Gonzalez - Password: Diego2024#JefeRRHH
@@ -146,7 +146,7 @@ SELECT
   true,
   NOW(),
   NOW()
-FROM transportistas t WHERE t.rut_empresa = '76.123.456-7'
+FROM transportistas t WHERE t.rut = '78.376.780-5'
 ON CONFLICT (rut) DO NOTHING;
 
 -- Asistente RRHH: Katherinne Johanna Canales - Password: Katherinne2024#RRHH
@@ -175,5 +175,5 @@ SELECT
   true,
   NOW(),
   NOW()
-FROM transportistas t WHERE t.rut_empresa = '76.123.456-7'
+FROM transportistas t WHERE t.rut = '78.376.780-5'
 ON CONFLICT (rut) DO NOTHING;
