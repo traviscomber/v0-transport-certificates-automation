@@ -13,7 +13,10 @@ export interface CompanyLoginResponse {
  * Normaliza un RUT (elimina puntos y espacios, mantiene el guión)
  */
 function normalizeRUT(rut: string): string {
-  return rut.replace(/\./g, '').trim()
+  // Elimina puntos y espacios
+  const normalized = rut.replace(/\./g, '').replace(/\s/g, '').trim()
+  console.log('[v0] Normalized RUT:', rut, '->', normalized)
+  return normalized
 }
 
 /**
