@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   try {
     console.log('[v0] Fetching complete Labbe data from Supabase')
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // Query the transportistas table
     const { data: company, error: companyError } = await supabase
