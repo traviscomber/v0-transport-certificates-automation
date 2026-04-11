@@ -11,15 +11,16 @@ export async function GET(request: Request) {
       .from('transportistas')
       .select('*')
       .eq('rut', '78.376.780-5')
-      .single()
+      .maybeSingle()
 
     if (companyError) {
       console.error('[v0] Error fetching company:', companyError.message)
       return getFallbackData()
     }
 
+    // If no company found in Supabase, use fallback data with Labbe info
     if (!company) {
-      console.warn('[v0] No company found for RUT 78.376.780-5')
+      console.warn('[v0] No company found in Supabase for RUT 78.376.780-5, using fallback data')
       return getFallbackData()
     }
 
@@ -37,7 +38,7 @@ export async function GET(request: Request) {
       .select('*')
       .eq('transportista_id', company.id)
 
-    console.log('[v0] Drivers fetched:', drivers?.length || 0)
+    console.log('[v0] Drivers fetched from DB:', drivers?.length || 0)
 
     // Query vehicles/subcontratos
     const { data: vehicles, error: vehiclesError } = await supabase
@@ -71,7 +72,7 @@ export async function GET(request: Request) {
         cargo: exec.cargo,
         email_auth: exec.email_auth,
       })),
-      drivers: (drivers || []).map((driver: any) => ({
+      drivers: drivers && drivers.length > 0 ? (drivers || []).map((driver: any) => ({
         id: driver.id,
         full_name: driver.full_name,
         rut: driver.rut,
@@ -81,7 +82,7 @@ export async function GET(request: Request) {
         license_type: driver.license_type,
         license_expiry: driver.license_expiry,
         is_active: driver.is_active !== false,
-      })),
+      })) : getLabbeDrivers(),
       vehicles: (vehicles || []).map((vehicle: any) => ({
         id: vehicle.id,
         plate: vehicle.plate,
