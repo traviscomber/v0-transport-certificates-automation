@@ -253,7 +253,6 @@ export function DocumentScanner() {
                     restricciones: "Restricciones",
                     municipalidad: "Municipalidad",
                     donante: "Donante de Órganos",
-                    numeroF30_1: "Número F-30-1",
                     companiaSeguro: "Compañía de Seguros",
                     numeroPoliza: "Número de Póliza",
                     rutContratante: "RUT Contratante",
