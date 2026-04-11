@@ -179,7 +179,6 @@ export default function CompanyDashboard() {
     </div>
   )
 }
-          <div className="flex items-center gap-3">
             <Building2 className="w-8 h-8 text-orange-500" />
             <div>
               <h1 className="text-xl font-bold text-white">{company?.razon_social}</h1>
