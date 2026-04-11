@@ -19,7 +19,7 @@ export function ChangePasswordForm() {
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
+  const { addToast } = useToast()
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,22 +27,14 @@ export function ChangePasswordForm() {
 
     // Validate passwords match
     if (newPassword !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Las nuevas contraseñas no coinciden",
-        variant: "destructive",
-      })
+      addToast("Las nuevas contraseñas no coinciden", "error")
       setIsLoading(false)
       return
     }
 
     // Validate password strength
     if (newPassword.length < 6) {
-      toast({
-        title: "Error",
-        description: "La nueva contraseña debe tener al menos 6 caracteres",
-        variant: "destructive",
-      })
+      addToast("La nueva contraseña debe tener al menos 6 caracteres", "error")
       setIsLoading(false)
       return
     }
@@ -63,11 +55,7 @@ export function ChangePasswordForm() {
       })
 
       if (signInError) {
-        toast({
-          title: "Error",
-          description: "La contraseña actual es incorrecta",
-          variant: "destructive",
-        })
+        addToast("La contraseña actual es incorrecta", "error")
         setIsLoading(false)
         return
       }
@@ -81,10 +69,7 @@ export function ChangePasswordForm() {
         throw updateError
       }
 
-      toast({
-        title: "Éxito",
-        description: "Contraseña actualizada correctamente",
-      })
+      addToast("Contraseña actualizada correctamente", "success")
 
       // Clear form
       setCurrentPassword("")
@@ -92,11 +77,10 @@ export function ChangePasswordForm() {
       setConfirmPassword("")
     } catch (error) {
       console.error("Error changing password:", error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Error al cambiar la contraseña",
-        variant: "destructive",
-      })
+      addToast(
+        error instanceof Error ? error.message : "Error al cambiar la contraseña",
+        "error"
+      )
     } finally {
       setIsLoading(false)
     }
