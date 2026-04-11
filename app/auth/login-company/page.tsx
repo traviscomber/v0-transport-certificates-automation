@@ -9,8 +9,8 @@ import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 
 export default function CompanyLoginPage() {
-  const [rut, setRut] = useState('')
-  const [password, setPassword] = useState('')
+  const [rut, setRut] = useState('78.376.780-5')
+  const [password, setPassword] = useState('labbe2024')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [rutError, setRutError] = useState('')
