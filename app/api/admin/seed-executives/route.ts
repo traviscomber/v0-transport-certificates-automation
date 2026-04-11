@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     const { data: labbe, error: labbeError } = await supabase
       .from('transportistas')
       .select('id')
-      .eq('rut_empresa', '76.123.456-7')
+      .eq('rut', '76.123.456-7')
       .single()
 
     let labbe_id: string
@@ -78,12 +78,13 @@ export async function POST(request: NextRequest) {
       const { data: newLabbe, error: createError } = await supabase
         .from('transportistas')
         .insert({
-          rut_empresa: '76.123.456-7',
-          nombre_empresa: 'Transportes Labbe',
-          representante: 'Olga Lydia Carrasco Olivares',
-          contacto_email: 'info@transporteslabbe.cl',
-          contacto_telefono: '+56977764753',
-          estado: true
+          rut: '76.123.456-7',
+          razon_social: 'Transportes Labbe',
+          nombre_fantasia: 'Transportes Labbe',
+          representante_legal: 'Olga Lydia Carrasco Olivares',
+          email: 'info@transporteslabbe.cl',
+          telefono: '+56977764753',
+          is_active: true
         })
         .select('id')
         .single()
