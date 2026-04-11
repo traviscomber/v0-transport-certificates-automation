@@ -16,12 +16,20 @@ import {
 } from 'lucide-react'
 import { ClientsXlsImporter } from './clients-xls-importer'
 
+interface Client {
+  razonSocial?: string
+  rut?: string
+  estado?: string
+  totalVehiculos?: number
+  totalConductores?: number
+}
+
 export function ClientsManagementPanel() {
   const [activeTab, setActiveTab] = useState('list')
   const [searchTerm, setSearchTerm] = useState('')
   
   // Placeholder for real data fetching from Supabase
-  const MOCK_CLIENTS = []
+  const MOCK_CLIENTS: Client[] = []
 
   const filteredClients = MOCK_CLIENTS.filter(client =>
     client.razonSocial?.toLowerCase().includes(searchTerm.toLowerCase()) ||
