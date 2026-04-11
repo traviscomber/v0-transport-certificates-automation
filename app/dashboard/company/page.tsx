@@ -179,7 +179,6 @@ export default function CompanyDashboard() {
     </div>
   )
 }
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Building2 className="w-8 h-8 text-orange-500" />
             <div>
