@@ -224,12 +224,13 @@ export function ComplianceDashboard({
               Todos ({metrics.total})
             </Button>
             {Object.entries(DOCUMENT_CATEGORIES).map(([key, cat]) => {
-              const count = documentsByCategory[key]?.length || 0
+              const categoryKey = key as keyof typeof DOCUMENT_CATEGORIES
+              const count = documentsByCategory[categoryKey]?.length || 0
               return (
                 <Button
                   key={key}
-                  variant={selectedCategory === key ? 'default' : 'outline'}
-                  onClick={() => setSelectedCategory(key)}
+                  variant={selectedCategory === categoryKey ? 'default' : 'outline'}
+                  onClick={() => setSelectedCategory(categoryKey)}
                   size="sm"
                   className="w-full"
                 >
