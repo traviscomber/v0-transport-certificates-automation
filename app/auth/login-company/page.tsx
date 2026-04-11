@@ -79,12 +79,8 @@ export default function CompanyLoginPage() {
         throw new Error(data.error || 'Error al iniciar sesión')
       }
 
-      // Redirigir según tipo de usuario
-      if (data.data.is_labbe_admin) {
-        router.push('/dashboard/admin')
-      } else {
-        router.push('/dashboard/company')
-      }
+      // Redirigir al dashboard
+      router.push('/dashboard/company')
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al iniciar sesión'
       setError(errorMessage)
@@ -105,7 +101,7 @@ export default function CompanyLoginPage() {
         <Card className="border-border bg-card/50 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-foreground">Inicia Sesión</CardTitle>
-            <CardDescription>Usa tu RUT de empresa para acceder</CardDescription>
+            <CardDescription>Usa tu RUT de ejecutivo para acceder</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             {/* Error Alert */}
@@ -120,7 +116,7 @@ export default function CompanyLoginPage() {
               {/* RUT Field */}
               <div className="space-y-2">
                 <Label htmlFor="rut" className="text-foreground">
-                  RUT de la Empresa
+                  RUT de Ejecutivo
                 </Label>
                 <Input
                   id="rut"

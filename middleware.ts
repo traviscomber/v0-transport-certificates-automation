@@ -6,6 +6,7 @@ import type { NextRequest } from "next/server"
 const PUBLIC_ROUTES = [
   '/',
   '/auth/login',
+  '/auth/login-company',
   '/auth/register',
   '/auth/forgot-password',
   '/test',
@@ -13,13 +14,26 @@ const PUBLIC_ROUTES = [
   '/contact',
   '/api/health',
   '/api/docs',
+  '/api/auth/login-rut',
 ]
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
   // Skip API routes and static files
-  if (path.startsWith('/api') || path.startsWith('/_next') || path.includes('.')) {
+  if (path.startsWith('/_next') || path.includes('.')) {
+    return await updateSession(request)
+  }
+
+  // Proteger rutas del dashboard
+  if (path.startsWith('/dashboard')) {
+    const companyId = request.cookies.get('company_id')?.value
+
+    if (!companyId) {
+      // Redirigir a login si no está autenticado
+      return NextResponse.redirect(new URL('/auth/login-company', request.url))
+    }
+
     return await updateSession(request)
   }
 
@@ -34,8 +48,23 @@ export async function middleware(request: NextRequest) {
     return await updateSession(request)
   }
 
-  // For protected routes, just update the session and let the client handle auth
-  // The AuthProvider (client-side) will redirect to /auth/login if not authenticated
+  // Para rutas protegidas de API, validar que tenga sesión
+  if (path.startsWith('/api')) {
+    const companyId = request.cookies.get('company_id')?.value
+
+    // Permitir endpoints públicos de API
+    const publicApiEndpoints = ['/api/auth', '/api/health', '/api/docs']
+    const isPublicApi = publicApiEndpoints.some(endpoint => path.startsWith(endpoint))
+
+    if (!isPublicApi && !companyId) {
+      return NextResponse.json(
+        { error: 'No autenticado' },
+        { status: 401 }
+      )
+    }
+  }
+
+  // For other routes, just update the session
   return await updateSession(request)
 }
 
