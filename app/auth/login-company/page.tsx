@@ -80,7 +80,7 @@ export default function CompanyLoginPage() {
       }
 
       // Redirigir según tipo de usuario
-      if (data.company.is_labbe_admin) {
+      if (data.data.is_labbe_admin) {
         router.push('/dashboard/admin')
       } else {
         router.push('/dashboard/company')
