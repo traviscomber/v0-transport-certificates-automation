@@ -578,22 +578,20 @@ export default function CompanyDashboard() {
 
                   {/* Table */}
                   {filteredSubcontractors.length > 0 ? (
-                    <div className="overflow-x-auto border border-slate-700 rounded-lg -mx-4 px-4">
-                      <table className="w-full text-sm" style={{ minWidth: '1400px' }}>
-                        <thead className="bg-slate-700/50">
+                    <div className="overflow-x-auto border border-slate-700 rounded-lg">
+                      <table className="w-full text-sm">
+                        <thead className="bg-slate-700/50 sticky top-0">
                           <tr className="border-b border-slate-700">
-                            <th className="text-left py-3 px-3 text-slate-300 font-semibold whitespace-nowrap">RUT</th>
-                            <th className="text-left py-3 px-3 text-slate-300 font-semibold whitespace-nowrap">Nombre</th>
-                            <th className="text-left py-3 px-3 text-slate-300 font-semibold whitespace-nowrap">Representante</th>
-                            <th className="text-left py-3 px-3 text-slate-300 font-semibold whitespace-nowrap">Ejecutiva</th>
-                            <th className="text-left py-3 px-3 text-slate-300 font-semibold whitespace-nowrap">Dirección</th>
-                            <th className="text-left py-3 px-3 text-slate-300 font-semibold whitespace-nowrap">Comuna</th>
-                            <th className="text-left py-3 px-3 text-slate-300 font-semibold whitespace-nowrap">Teléfono</th>
-                            <th className="text-left py-3 px-3 text-slate-300 font-semibold whitespace-nowrap">Email</th>
-                            <th className="text-center py-3 px-3 text-slate-300 font-semibold whitespace-nowrap">Ariztia</th>
-                            <th className="text-center py-3 px-3 text-slate-300 font-semibold whitespace-nowrap">LTS</th>
-                            <th className="text-center py-3 px-3 text-slate-300 font-semibold whitespace-nowrap">Rendic</th>
-                            <th className="text-center py-3 px-3 text-slate-300 font-semibold whitespace-nowrap">Interpolar</th>
+                            <th className="text-left py-3 px-2 text-slate-300 font-semibold whitespace-nowrap text-xs">RUT</th>
+                            <th className="text-left py-3 px-2 text-slate-300 font-semibold whitespace-nowrap">Nombre</th>
+                            <th className="text-left py-3 px-2 text-slate-300 font-semibold whitespace-nowrap text-xs">Ejecutiva</th>
+                            <th className="text-left py-3 px-2 text-slate-300 font-semibold whitespace-nowrap text-xs">Comuna</th>
+                            <th className="text-center py-3 px-2 text-blue-400 font-semibold whitespace-nowrap text-xs">Ariztia</th>
+                            <th className="text-center py-3 px-2 text-green-400 font-semibold whitespace-nowrap text-xs">LTS</th>
+                            <th className="text-center py-3 px-2 text-amber-400 font-semibold whitespace-nowrap text-xs">Rendic</th>
+                            <th className="text-center py-3 px-2 text-purple-400 font-semibold whitespace-nowrap text-xs">Interpolar</th>
+                            <th className="text-left py-3 px-2 text-slate-300 font-semibold text-xs">Teléfono</th>
+                            <th className="text-left py-3 px-2 text-slate-300 font-semibold text-xs">Email</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -603,28 +601,26 @@ export default function CompanyDashboard() {
                               className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors cursor-pointer"
                               onClick={() => setSelectedSubcontractor(sub)}
                             >
-                              <td className="py-3 px-3 text-slate-300 font-mono text-xs whitespace-nowrap">{sub.rut}</td>
-                              <td className="py-3 px-3 text-white font-medium whitespace-nowrap">{sub.nombre}</td>
-                              <td className="py-3 px-3 text-slate-300 text-sm whitespace-nowrap">{sub.representante}</td>
-                              <td className="py-3 px-3 text-slate-400 text-sm whitespace-nowrap">
-                                <span className="bg-slate-700/50 px-2 py-1 rounded text-xs">{sub.ejecutiva}</span>
+                              <td className="py-2 px-2 text-slate-400 font-mono text-xs whitespace-nowrap">{sub.rut}</td>
+                              <td className="py-2 px-2 text-white font-medium truncate">{sub.nombre}</td>
+                              <td className="py-2 px-2 text-slate-400 text-xs whitespace-nowrap">
+                                <span className="bg-slate-700/50 px-1.5 py-0.5 rounded text-xs">{sub.ejecutiva}</span>
                               </td>
-                              <td className="py-3 px-3 text-slate-400 text-sm">{sub.direccion || '-'}</td>
-                              <td className="py-3 px-3 text-slate-400 text-sm whitespace-nowrap">{sub.comuna}</td>
-                              <td className="py-3 px-3 text-slate-400 text-sm whitespace-nowrap">{sub.telefono || '-'}</td>
-                              <td className="py-3 px-3 text-slate-400 text-sm">{sub.email || '-'}</td>
-                              <td className="py-3 px-3 text-center">
-                                {sub.ariztia ? <span className="inline-block w-4 h-4 bg-blue-500 rounded"></span> : <span className="inline-block w-4 h-4 bg-slate-600 rounded"></span>}
+                              <td className="py-2 px-2 text-slate-400 text-xs whitespace-nowrap">{sub.comuna}</td>
+                              <td className="py-2 px-2 text-center">
+                                {sub.ariztia ? <span className="inline-block w-3 h-3 bg-blue-500 rounded-full"></span> : <span className="inline-block w-3 h-3 bg-slate-700 rounded-full"></span>}
                               </td>
-                              <td className="py-3 px-3 text-center">
-                                {sub.lts ? <span className="inline-block w-4 h-4 bg-green-500 rounded"></span> : <span className="inline-block w-4 h-4 bg-slate-600 rounded"></span>}
+                              <td className="py-2 px-2 text-center">
+                                {sub.lts ? <span className="inline-block w-3 h-3 bg-green-500 rounded-full"></span> : <span className="inline-block w-3 h-3 bg-slate-700 rounded-full"></span>}
                               </td>
-                              <td className="py-3 px-3 text-center">
-                                {sub.rendic ? <span className="inline-block w-4 h-4 bg-amber-500 rounded"></span> : <span className="inline-block w-4 h-4 bg-slate-600 rounded"></span>}
+                              <td className="py-2 px-2 text-center">
+                                {sub.rendic ? <span className="inline-block w-3 h-3 bg-amber-500 rounded-full"></span> : <span className="inline-block w-3 h-3 bg-slate-700 rounded-full"></span>}
                               </td>
-                              <td className="py-3 px-3 text-center">
-                                {sub.interpolar ? <span className="inline-block w-4 h-4 bg-purple-500 rounded"></span> : <span className="inline-block w-4 h-4 bg-slate-600 rounded"></span>}
+                              <td className="py-2 px-2 text-center">
+                                {sub.interpolar ? <span className="inline-block w-3 h-3 bg-purple-500 rounded-full"></span> : <span className="inline-block w-3 h-3 bg-slate-700 rounded-full"></span>}
                               </td>
+                              <td className="py-2 px-2 text-slate-400 text-xs whitespace-nowrap">{sub.telefono || '-'}</td>
+                              <td className="py-2 px-2 text-slate-400 text-xs truncate">{sub.email || '-'}</td>
                             </tr>
                           ))}
                         </tbody>
