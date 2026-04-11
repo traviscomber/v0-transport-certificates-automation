@@ -210,16 +210,8 @@ export default function ProfilePage() {
 
               <Separator className='bg-slate-700/50' />
 
-              <div>
-                <Label className='text-muted-foreground text-xs uppercase flex items-center gap-2'>
-                  <Building2 className='h-4 w-4' />
-                  Organización
-                </Label>
-                <p className='mt-2 text-sm text-foreground'>{formData.organizationId || 'Sin asignar'}</p>
-              </div>
-
               <p className='text-xs text-muted-foreground'>
-                Contacta con tu administrador para cambiar tu rol u organización.
+                Contacta con tu administrador para cambiar tu rol.
               </p>
             </CardContent>
           </Card>
