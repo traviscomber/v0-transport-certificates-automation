@@ -17,10 +17,10 @@ function normalizeRUT(rut: string): string {
 }
 
 /**
- * Autentica una empresa usando RUT y contraseña
- * @param rut - RUT de la empresa
+ * Autentica un ejecutivo usando RUT y contraseña
+ * @param rut - RUT del ejecutivo
  * @param password - Contraseña
- * @returns Datos de la empresa si es válido
+ * @returns Datos del ejecutivo si es válido
  */
 export async function loginByRUT(
   rut: string,
@@ -30,48 +30,51 @@ export async function loginByRUT(
   const normalizedRUT = normalizeRUT(rut)
 
   console.log('[v0] loginByRUT called with RUT:', normalizedRUT)
-  console.log('[v0] Supabase client created')
 
   try {
-    // Buscar la empresa por RUT en la tabla transportistas
-    console.log('[v0] Querying transportistas table for RUT:', normalizedRUT)
-    const { data: company, error } = await supabase
-      .from('transportistas')
-      .select('id, rut, razon_social, email, is_active')
+    // Buscar el ejecutivo por RUT en la tabla executive_staff
+    console.log('[v0] Querying executive_staff table for RUT:', normalizedRUT)
+    const { data: executive, error } = await supabase
+      .from('executive_staff')
+      .select('id, rut, full_name, email, password_hash, is_active, transportista_id')
       .eq('rut', normalizedRUT)
       .single()
 
-    console.log('[v0] Query completed. Error:', error, 'Company:', company?.rut)
-
-    if (error) {
-      console.error('[v0] Database error for RUT:', normalizedRUT, 'Error code:', error.code, 'Message:', error.message)
-      throw new Error(`Database error: ${error.message}`)
-    }
-
-    if (!company) {
-      console.error('[v0] Company not found for RUT:', normalizedRUT)
+    if (error || !executive) {
+      console.error('[v0] Executive not found for RUT:', normalizedRUT, error?.message)
       throw new Error('RUT o contraseña incorrectos')
     }
 
-    console.log('[v0] Company found:', company.razon_social)
-
-    if (!company.is_active) {
-      console.warn('[v0] Company is inactive:', company.rut)
-      throw new Error('La empresa está inactiva')
+    if (!executive.is_active) {
+      console.warn('[v0] Executive is inactive:', executive.rut)
+      throw new Error('El usuario está inactivo')
     }
 
-    // Por ahora, aceptar cualquier contraseña para demo
+    // Validar contraseña
     if (!password) {
       throw new Error('La contraseña es requerida')
     }
 
-    console.log('[v0] Login successful for RUT:', company.rut)
+    const passwordValid = await bcrypt.compare(password, executive.password_hash)
+    if (!passwordValid) {
+      console.error('[v0] Invalid password for RUT:', normalizedRUT)
+      throw new Error('RUT o contraseña incorrectos')
+    }
+
+    console.log('[v0] Login successful for executive:', executive.full_name)
+
+    // Obtener la información de la empresa
+    const { data: company } = await supabase
+      .from('transportistas')
+      .select('razon_social, email')
+      .eq('id', executive.transportista_id)
+      .single()
 
     return {
-      id: company.id,
-      rut: company.rut,
-      name: company.razon_social,
-      email: company.email || '',
+      id: executive.id,
+      rut: executive.rut,
+      name: executive.full_name,
+      email: executive.email || company?.email || '',
       is_labbe_admin: false,
     }
   } catch (err) {
