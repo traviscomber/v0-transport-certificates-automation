@@ -585,8 +585,14 @@ export default function CompanyDashboard() {
                             <th className="text-left py-3 px-3 text-slate-300 font-semibold">Nombre</th>
                             <th className="text-left py-3 px-3 text-slate-300 font-semibold">Representante</th>
                             <th className="text-left py-3 px-3 text-slate-300 font-semibold">Ejecutiva</th>
+                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">Dirección</th>
                             <th className="text-left py-3 px-3 text-slate-300 font-semibold">Comuna</th>
+                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">Teléfono</th>
                             <th className="text-left py-3 px-3 text-slate-300 font-semibold">Email</th>
+                            <th className="text-center py-3 px-3 text-slate-300 font-semibold">Ariztia</th>
+                            <th className="text-center py-3 px-3 text-slate-300 font-semibold">LTS</th>
+                            <th className="text-center py-3 px-3 text-slate-300 font-semibold">Rendic</th>
+                            <th className="text-center py-3 px-3 text-slate-300 font-semibold">Interpolar</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -602,8 +608,22 @@ export default function CompanyDashboard() {
                               <td className="py-3 px-3 text-slate-400 text-sm">
                                 <span className="bg-slate-700/50 px-2 py-1 rounded text-xs">{sub.ejecutiva}</span>
                               </td>
+                              <td className="py-3 px-3 text-slate-400 text-sm truncate">{sub.direccion || '-'}</td>
                               <td className="py-3 px-3 text-slate-400 text-sm">{sub.comuna}</td>
+                              <td className="py-3 px-3 text-slate-400 text-sm">{sub.telefono || '-'}</td>
                               <td className="py-3 px-3 text-slate-400 text-sm truncate">{sub.email || '-'}</td>
+                              <td className="py-3 px-3 text-center">
+                                {sub.ariztia ? <span className="inline-block w-4 h-4 bg-green-600 rounded"></span> : <span className="inline-block w-4 h-4 bg-slate-600 rounded"></span>}
+                              </td>
+                              <td className="py-3 px-3 text-center">
+                                {sub.lts ? <span className="inline-block w-4 h-4 bg-green-600 rounded"></span> : <span className="inline-block w-4 h-4 bg-slate-600 rounded"></span>}
+                              </td>
+                              <td className="py-3 px-3 text-center">
+                                {sub.rendic ? <span className="inline-block w-4 h-4 bg-green-600 rounded"></span> : <span className="inline-block w-4 h-4 bg-slate-600 rounded"></span>}
+                              </td>
+                              <td className="py-3 px-3 text-center">
+                                {sub.interpolar ? <span className="inline-block w-4 h-4 bg-green-600 rounded"></span> : <span className="inline-block w-4 h-4 bg-slate-600 rounded"></span>}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
