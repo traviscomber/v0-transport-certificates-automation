@@ -1,4 +1,3 @@
-import { changeCompanyPassword } from '@/lib/supabase/auth-rut'
 import { cookies } from 'next/headers'
 
 export async function POST(request: Request) {
@@ -36,15 +35,11 @@ export async function POST(request: Request) {
       )
     }
 
-    // Cambiar contraseña
-    await changeCompanyPassword(companyId, oldPassword, newPassword)
-
-    console.log(`[v0] Password changed for company: ${companyId}`)
-
-    return Response.json({
-      success: true,
-      message: 'Contraseña actualizada correctamente',
-    })
+    // TODO: Implement password change with bcryptjs
+    return Response.json(
+      { error: 'Cambio de contraseña no disponible en este momento' },
+      { status: 503 }
+    )
   } catch (err) {
     console.error('[v0] Change password error:', err)
     const errorMessage = err instanceof Error ? err.message : 'Error al cambiar contraseña'
