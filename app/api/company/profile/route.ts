@@ -1,4 +1,4 @@
-'use server'
+export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/client'
 import { cookies } from 'next/headers'
