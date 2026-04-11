@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 
 export interface CompanyLoginResponse {
   id: string
