@@ -58,7 +58,14 @@ export async function loginByRUT(
       throw new Error('La contraseña es requerida')
     }
 
+    console.log('[v0] Password hash from DB:', executive.password_hash?.substring(0, 20) + '...')
+    console.log('[v0] Password provided:', password)
+    console.log('[v0] Comparing passwords...')
+    
     const passwordValid = await bcrypt.compare(password, executive.password_hash)
+    
+    console.log('[v0] Password comparison result:', passwordValid)
+    
     if (!passwordValid) {
       console.error('[v0] Invalid password for RUT:', normalizedRUT)
       throw new Error('RUT o contraseña incorrectos')
