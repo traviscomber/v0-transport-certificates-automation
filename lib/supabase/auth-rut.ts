@@ -41,26 +41,34 @@ export async function loginByRUT(
   const normalizedInput = normalizeRUT(rut)
   const formattedRUT = formatRUT(normalizedInput)
 
-  console.log('[v0] loginByRUT called with RUT:', rut)
+  console.log('[v0] ========== LOGIN BY RUT START ==========')
+  console.log('[v0] Input RUT:', rut)
+  console.log('[v0] Input Password:', password)
   console.log('[v0] Normalized RUT:', normalizedInput)
   console.log('[v0] Formatted RUT for query:', formattedRUT)
 
   try {
     // Buscar la empresa por RUT en la tabla transportistas
-    // La BD almacena RUT con puntos (ej: 78.376.780-5)
-    console.log('[v0] Querying transportistas table for RUT:', formattedRUT)
+    console.log('[v0] QUERY: SELECT FROM transportistas WHERE rut =', formattedRUT)
     const { data: company, error } = await supabase
       .from('transportistas')
       .select('id, rut, razon_social, email, is_active, password_hash')
       .eq('rut', formattedRUT)
       .single()
 
+    console.log('[v0] Query returned error:', error?.message)
+    console.log('[v0] Query returned data:', company ? `Found company: ${company.razon_social}` : 'No company found')
+
     if (error || !company) {
-      console.error('[v0] Company not found for RUT:', formattedRUT, error?.message)
+      console.error('[v0] FAILURE: Company not found for RUT:', formattedRUT)
+      console.error('[v0] Error details:', error)
       throw new Error('RUT o contraseña incorrectos')
     }
 
-    console.log('[v0] Company found:', company.razon_social)
+    console.log('[v0] Company found:', company)
+    console.log('[v0] Database RUT:', company.rut)
+    console.log('[v0] Database password_hash:', company.password_hash)
+    console.log('[v0] Is active:', company.is_active)
 
     if (!company.is_active) {
       console.warn('[v0] Company is inactive:', company.rut)
@@ -68,13 +76,17 @@ export async function loginByRUT(
     }
 
     // Validar contraseña
-    console.log('[v0] Validating password for RUT:', formattedRUT)
+    console.log('[v0] Comparing passwords:')
+    console.log('[v0]   Input password:', password)
+    console.log('[v0]   DB password_hash:', company.password_hash)
+    console.log('[v0]   Match:', password === company.password_hash)
+
     if (password !== company.password_hash) {
-      console.error('[v0] Invalid password for RUT:', formattedRUT)
+      console.error('[v0] FAILURE: Invalid password for RUT:', formattedRUT)
       throw new Error('RUT o contraseña incorrectos')
     }
 
-    console.log('[v0] Login successful for company:', company.razon_social)
+    console.log('[v0] ========== LOGIN SUCCESS ==========')
 
     return {
       id: company.id,
@@ -84,7 +96,8 @@ export async function loginByRUT(
       is_labbe_admin: false,
     }
   } catch (err) {
-    console.error('[v0] loginByRUT error:', err)
+    console.error('[v0] ========== LOGIN ERROR ==========')
+    console.error('[v0] Error:', err)
     throw err
   }
 }
