@@ -10,14 +10,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Eye, EyeOff, Mail, Lock, User, Building } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/lib/toast-context"
 
 export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
-  const { toast } = useToast()
+  const { addToast } = useToast()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,10 +42,7 @@ export function LoginForm() {
         throw error
       }
 
-      toast({
-        title: "Éxito",
-        description: "Sesión iniciada correctamente",
-      })
+      addToast("Sesión iniciada correctamente", "success")
 
       // Don't redirect here - let the router handle it or use the session cookie
       // The middleware and app will handle the redirection based on user role
@@ -86,10 +83,7 @@ export function LoginForm() {
         throw error
       }
 
-      toast({
-        title: "Registro exitoso",
-        description: "Revisa tu email para confirmar tu cuenta",
-      })
+      addToast("Registro exitoso. Revisa tu email para confirmar tu cuenta", "success")
       // After registration, stay on the page or let user login manually
     } catch (error: any) {
       if (process.env.NODE_ENV === 'development') console.error("[v0] Registration error:", error)
