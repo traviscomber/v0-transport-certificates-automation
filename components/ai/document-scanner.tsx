@@ -24,12 +24,14 @@ export function DocumentScanner() {
     setIsScanning(true)
     setScanProgress(0)
 
+    let progressInterval: NodeJS.Timeout | null = null
+
     try {
       // Simulate progress while file is being processed
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         setScanProgress((prev) => {
           if (prev >= 90) {
-            clearInterval(progressInterval)
+            if (progressInterval) clearInterval(progressInterval)
             return 90
           }
           return prev + 10
@@ -47,7 +49,7 @@ export function DocumentScanner() {
         body: formData,
       })
 
-      clearInterval(progressInterval)
+      if (progressInterval) clearInterval(progressInterval)
       setScanProgress(100)
 
       if (!response.ok) {
@@ -67,7 +69,7 @@ export function DocumentScanner() {
       setExtractedData(extracted)
       setIsScanning(false)
     } catch (error) {
-      clearInterval(progressInterval)
+      if (progressInterval) clearInterval(progressInterval)
       setIsScanning(false)
       setScanProgress(0)
       console.error("[v0] Error analyzing document:", error)
