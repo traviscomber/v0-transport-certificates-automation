@@ -98,7 +98,7 @@ export default function TestPage() {
     setLoginStep('Autenticando...')
 
     try {
-      await performDemoLogin(profile.email, profile.password, login)
+      await login(profile.email, profile.password)
       setLoginStep('Redirigiendo...')
       addToast(`Bienvenido, ${profile.title}!`, 'success', 2000)
       setTimeout(() => router.push('/dashboard'), 500)
