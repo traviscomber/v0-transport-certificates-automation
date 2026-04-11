@@ -29,16 +29,16 @@ export function Header() {
               Ver Demo
             </a>
             <a href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
-              Dashboard
+              Acceso
             </a>
           </nav>
 
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-2">
             <Button variant="ghost" size="sm" asChild>
-              <a href="/dashboard">Iniciar Sesión</a>
+              <a href="/auth/login">Iniciar Sesión</a>
             </Button>
             <Button size="sm" className="bg-primary hover:bg-primary/90" asChild>
-              <a href="/dashboard/executive">Portal de Ejecutivas</a>
+              <a href="/dashboard/executive">Ejecutivas</a>
             </Button>
           </div>
 
