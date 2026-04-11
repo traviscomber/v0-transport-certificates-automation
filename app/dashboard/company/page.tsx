@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Building2, LogOut, Users, Truck, User, Search, X } from 'lucide-react'
+import { Building2, LogOut, Users, User, Search, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface DashboardData {
@@ -34,14 +34,6 @@ interface DashboardData {
     rut_proveedor: string
     proveedor: string
     patente_tracto: string
-  }>
-  vehicles: Array<{
-    id: string
-    plate: string
-    brand: string
-    model: string
-    year: number
-    type: string
   }>
   subcontractors: Array<{
     rut: string
@@ -98,7 +90,6 @@ export default function CompanyDashboard() {
           company: result.company?.razon_social,
           executives: result.executives?.length || 0,
           drivers: result.drivers?.length || 0,
-          vehicles: result.vehicles?.length || 0,
         })
         setData(result)
       } catch (err) {
@@ -145,7 +136,7 @@ export default function CompanyDashboard() {
     )
   }
 
-  const { company, executives, drivers, vehicles } = data
+  const { company, executives, drivers } = data
 
   // Filter and search logic for subcontractors
   const getFilteredSubcontractors = () => {
@@ -373,14 +364,6 @@ export default function CompanyDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-300">Vehículos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xl font-bold text-purple-500">{vehicles.length}</p>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Company Info */}
@@ -452,33 +435,6 @@ export default function CompanyDashboard() {
 
         {/* Drivers */}
         {/* Moved to tab section */}
-
-        {/* Vehicles */}
-        <Card className="bg-slate-800/50 border-slate-700 mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Truck className="w-5 h-5 text-orange-500" />
-              Vehículos ({vehicles.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {vehicles.length > 0 ? (
-              <div className="space-y-4">
-                {vehicles.map((vehicle) => (
-                  <div key={vehicle.id} className="pb-4 border-b border-slate-700 last:border-0">
-                    <p className="font-semibold text-white">{vehicle.brand} {vehicle.model} ({vehicle.year})</p>
-                    <div className="grid md:grid-cols-2 gap-2 text-sm text-slate-400 mt-2">
-                      <div>Patente: {vehicle.plate}</div>
-                      <div>Tipo: {vehicle.type}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-slate-400">No hay vehículos registrados</p>
-            )}
-          </CardContent>
-        </Card>
 
         {/* Navigation Tabs */}
         <div className="flex gap-4 mb-8 border-b border-slate-700 overflow-x-auto">
