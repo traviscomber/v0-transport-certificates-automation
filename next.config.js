@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+// Cache invalidation: 2026-04-11T17:45:00Z - Force rebuild to clear old config
 const nextConfig = {
   reactStrictMode: true,
   onDemandEntries: {
