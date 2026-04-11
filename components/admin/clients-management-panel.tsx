@@ -14,23 +14,25 @@ import {
   MoreVertical,
   FileSpreadsheet,
 } from 'lucide-react'
-import { MOCK_CLIENTS } from '@/lib/constants/mock-data'
 import { ClientsXlsImporter } from './clients-xls-importer'
 
 export function ClientsManagementPanel() {
   const [activeTab, setActiveTab] = useState('list')
   const [searchTerm, setSearchTerm] = useState('')
+  
+  // Placeholder for real data fetching from Supabase
+  const MOCK_CLIENTS = []
 
   const filteredClients = MOCK_CLIENTS.filter(client =>
-    client.razonSocial.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.rut.includes(searchTerm)
+    client.razonSocial?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.rut?.includes(searchTerm)
   )
 
   const stats = {
     totalClientes: MOCK_CLIENTS.length,
     activos: MOCK_CLIENTS.filter(c => c.estado === 'activo').length,
-    totalVehiculos: MOCK_CLIENTS.reduce((sum, c) => sum + c.totalVehiculos, 0),
-    totalConductores: MOCK_CLIENTS.reduce((sum, c) => sum + c.totalConductores, 0),
+    totalVehiculos: MOCK_CLIENTS.reduce((sum, c) => sum + (c.totalVehiculos || 0), 0),
+    totalConductores: MOCK_CLIENTS.reduce((sum, c) => sum + (c.totalConductores || 0), 0),
   }
 
   return (
