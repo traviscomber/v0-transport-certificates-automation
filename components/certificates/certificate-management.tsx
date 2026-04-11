@@ -227,10 +227,10 @@ export function CertificateManagement({ title, description, certificateType }: C
       else if (doc.formData?.transporterRut) transporterRut = doc.formData.transporterRut
 
       // Map vehicle plates
-      let vehiclePlate = undefined
-      if (ocrData.patenteVehiculo) vehiclePlate = ocrData.patenteVehiculo
-      else if (ocrData.patente) vehiclePlate = ocrData.patente
-      else if (doc.formData?.vehiclePlate) vehiclePlate = doc.formData.vehiclePlate
+      let vehiclePlate: string | undefined = undefined
+      if (ocrData.patenteVehiculo && typeof ocrData.patenteVehiculo === 'string') vehiclePlate = ocrData.patenteVehiculo
+      else if (ocrData.patente && typeof ocrData.patente === 'string') vehiclePlate = ocrData.patente
+      else if (doc.formData?.vehiclePlate && typeof doc.formData.vehiclePlate === 'string') vehiclePlate = doc.formData.vehiclePlate
 
       // Map expiry dates
       let expiryDate = "No disponible"
