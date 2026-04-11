@@ -20,7 +20,6 @@ export default function ProfilePage() {
     fullName: '',
     email: '',
     role: '',
-    organizationId: '',
   })
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
