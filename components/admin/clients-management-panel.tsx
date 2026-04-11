@@ -17,11 +17,14 @@ import {
 import { ClientsXlsImporter } from './clients-xls-importer'
 
 interface Client {
+  id?: string
   razonSocial?: string
   rut?: string
+  email?: string
   estado?: string
   totalVehiculos?: number
   totalConductores?: number
+  complianceScore?: number
 }
 
 export function ClientsManagementPanel() {
