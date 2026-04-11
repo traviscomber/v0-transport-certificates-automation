@@ -58,38 +58,62 @@ export default function CompanyLoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    console.log('[v0] ========== FORM SUBMISSION START ==========')
+    console.log('[v0] RUT value:', rut)
+    console.log('[v0] Password length:', password.length)
+
     const rutValid = validateRUT(rut)
     const passwordValid = validatePassword(password)
 
-    if (!rutValid || !passwordValid) return
+    console.log('[v0] RUT validation:', rutValid)
+    console.log('[v0] Password validation:', passwordValid)
+
+    if (!rutValid || !passwordValid) {
+      console.log('[v0] Validation failed - aborting submission')
+      return
+    }
 
     setIsLoading(true)
     setError(null)
 
     try {
+      console.log('[v0] Sending login request to /api/auth/login-simple')
       const response = await fetch('/api/auth/login-simple', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rut, password }),
       })
 
+      console.log('[v0] Response status:', response.status)
+      console.log('[v0] Response ok:', response.ok)
+
       let data
       try {
         data = await response.json()
+        console.log('[v0] Response parsed successfully:', data?.success ? 'SUCCESS' : 'FAILURE')
       } catch (parseErr) {
-        console.error('[v0] Failed to parse response:', parseErr)
-        throw new Error('Respuesta inválida del servidor')
+        console.error('[v0] Failed to parse response JSON:', parseErr)
+        throw new Error('Respuesta inválida del servidor - no es JSON válido')
       }
+
+      console.log('[v0] Response data:', data)
 
       if (!response.ok) {
-        throw new Error(data?.error || `Error: ${response.status}`)
+        const errorMsg = data?.error || `Error HTTP ${response.status}`
+        console.error('[v0] Login failed:', errorMsg)
+        throw new Error(errorMsg)
       }
 
+      console.log('[v0] Login successful - company:', data.company?.name)
+      console.log('[v0] Redirecting to dashboard...')
+      
       // Redirigir al dashboard
       router.push('/dashboard/company')
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error al iniciar sesión'
-      console.error('[v0] Login error:', errorMessage)
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido al iniciar sesión'
+      console.error('[v0] ========== LOGIN ERROR ==========')
+      console.error('[v0] Error:', errorMessage)
+      console.error('[v0] Error type:', err instanceof Error ? 'Error instance' : typeof err)
       setError(errorMessage)
       setIsLoading(false)
     }
