@@ -50,11 +50,6 @@ export async function POST() {
           rut: driver.rut,
           email: `${driver.rut.replace(/\./g, '')}@transportes-labbe.cl`,
           phone: driver.telefono || '',
-          license_number: driver.numero_licencia || `LIC-${driver.rut}`,
-          license_type: 'Clase C',
-          license_expiry: driver.vencimiento_licencia 
-            ? new Date(driver.vencimiento_licencia).toISOString().split('T')[0]
-            : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
           organization_id: orgId
         }
       })
