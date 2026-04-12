@@ -3,16 +3,16 @@
 import { useState, useMemo } from 'react'
 import { Search, Phone, Mail } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { teamMembers } from '@/lib/data/team-members'
+import { allTeamMembers } from '@/lib/data/team-members'
 
 export function TeamSearch() {
   const [searchQuery, setSearchQuery] = useState('')
 
   const filteredTeam = useMemo(() => {
-    if (!searchQuery) return teamMembers
+    if (!searchQuery) return allTeamMembers
 
     const query = searchQuery.toLowerCase()
-    return teamMembers.filter(
+    return allTeamMembers.filter(
       (member) =>
         member.nombre_completo.toLowerCase().includes(query) ||
         member.rut.toLowerCase().includes(query) ||
