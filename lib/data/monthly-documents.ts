@@ -1,94 +1,83 @@
 export interface MonthlyDocument {
   id: string
   nombre: string
-  descripcion: string
-  docExtraClienteRequerido: boolean
+  descripcion?: string
+  docExtraClienteRequerido?: boolean
   certificacionesRelacionadas: string[]
 }
 
 export const allMonthlyDocuments: MonthlyDocument[] = [
   {
-    id: 'doc-001',
+    id: 'doc-1',
     nombre: 'Planillas de imposiciones (AFP, Salud, Mutual, Seguro Social)',
-    descripcion: 'Documentos mensuales de imposiciones de seguridad social',
+    descripcion: 'Documentos de imposiciones obligatorias',
     docExtraClienteRequerido: true,
     certificacionesRelacionadas: []
   },
   {
-    id: 'doc-002',
+    id: 'doc-2',
     nombre: 'IVA',
-    descripcion: 'Declaración mensual de IVA',
-    docExtraClienteRequerido: true,
+    descripcion: 'Impuesto al Valor Agregado',
     certificacionesRelacionadas: []
   },
   {
-    id: 'doc-003',
+    id: 'doc-3',
     nombre: 'F30',
-    descripcion: 'Formulario F30 de Hacienda',
-    docExtraClienteRequerido: true,
+    descripcion: 'Formulario F30',
     certificacionesRelacionadas: []
   },
   {
-    id: 'doc-004',
+    id: 'doc-4',
     nombre: 'F30-1',
-    descripcion: 'Formulario F30-1 de Hacienda',
-    docExtraClienteRequerido: true,
+    descripcion: 'Formulario F30-1',
     certificacionesRelacionadas: []
   },
   {
-    id: 'doc-005',
+    id: 'doc-5',
     nombre: 'Liq Sueldo',
-    descripcion: 'Liquidación de sueldos mensuales',
-    docExtraClienteRequerido: true,
+    descripcion: 'Liquidación de sueldo',
     certificacionesRelacionadas: []
   },
   {
-    id: 'doc-006',
+    id: 'doc-6',
     nombre: 'Cert. Afil Mutual',
-    descripcion: 'Certificado de afiliación a mutual',
-    docExtraClienteRequerido: true,
+    descripcion: 'Certificado de Afiliación Mutual',
     certificacionesRelacionadas: []
   },
   {
-    id: 'doc-007',
+    id: 'doc-7',
     nombre: 'Cert. Tasas Mutual',
-    descripcion: 'Certificado de tasas de mutual',
-    docExtraClienteRequerido: true,
+    descripcion: 'Certificado de Tasas Mutual',
     certificacionesRelacionadas: []
   },
   {
-    id: 'doc-008',
+    id: 'doc-8',
     nombre: 'Hoja de vida',
-    descripcion: 'Hoja de vida de empleados',
-    docExtraClienteRequerido: true,
+    descripcion: 'Documento de hoja de vida',
     certificacionesRelacionadas: []
   },
   {
-    id: 'doc-009',
+    id: 'doc-9',
     nombre: 'Cert. Antecedentes',
-    descripcion: 'Certificado de antecedentes',
-    docExtraClienteRequerido: true,
+    descripcion: 'Certificado de Antecedentes',
     certificacionesRelacionadas: []
   },
   {
-    id: 'doc-010',
+    id: 'doc-10',
     nombre: 'Certificado de cotizaciones',
-    descripcion: 'Certificado de cotizaciones mensuales',
-    docExtraClienteRequerido: true,
+    descripcion: 'Certificado de cotizaciones realizadas',
     certificacionesRelacionadas: ['Ariztia']
   },
   {
-    id: 'doc-011',
+    id: 'doc-11',
     nombre: 'F30-1 Lts',
-    descripcion: 'Formulario F30-1 para LTS',
-    docExtraClienteRequerido: true,
+    descripcion: 'Formulario F30-1 LTS',
     certificacionesRelacionadas: ['LTS']
   },
   {
-    id: 'doc-012',
+    id: 'doc-12',
     nombre: 'Comprobantes de pago sueldo',
-    descripcion: 'Comprobantes de pago de sueldos',
-    docExtraClienteRequerido: true,
+    descripcion: 'Comprobantes de pago de sueldo',
     certificacionesRelacionadas: ['Rendic', 'Interpolar']
   }
 ]

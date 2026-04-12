@@ -1,76 +1,52 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { allSubcontractorsData } from '@/lib/data/all-subcontractors'
+import { allDriversData } from '@/lib/data/all-drivers'
 
-export const dynamic = 'force-dynamic'
-
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url)
-    const type = searchParams.get('type')
-
     const supabase = await createClient()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-    // If requesting only drivers
-    if (type === 'drivers') {
-      const { data: driversDb, error: driversError } = await supabase
-        .from('drivers')
-        .select('*')
-        .limit(500)
+    console.log('[v0] API company/data called - Loading all subcontractors from TypeScript data')
 
-      if (driversError) throw driversError
-      return NextResponse.json({ drivers: driversDb || [] })
-    }
+    // Use all 221 subcontractors from TypeScript data file
+    const subcontractorsData = allSubcontractorsData
 
-    // If requesting only organizations
-    if (type === 'organizations') {
-      const { data: orgsDb, error: orgsError } = await supabase
-        .from('organizations')
-        .select('*')
-        .limit(500)
+    console.log(`[v0] Loaded ${subcontractorsData.length} subcontractors from all-subcontractors.ts`)
 
-      if (orgsError) throw orgsError
-      return NextResponse.json({ organizations: orgsDb || [] })
-    }
+    // Use all 291 drivers from TypeScript data file
+    const driversData = allDriversData
 
-    // Default: return full company data - ALL from Supabase
-    const { data: orgsData, error: orgsError } = await supabase
-      .from('organizations')
-      .select('*')
-      .limit(500)
+    console.log(`[v0] Loaded ${driversData.length} drivers from all-drivers.ts`)
 
-    const { data: driversData, error: driversError } = await supabase
-      .from('drivers')
-      .select('*')
-      .limit(500)
+    const executivesData = [
+      { id: '1', full_name: 'Carolina Martinez', rut: '12345678-9', email: 'carolina@labbe.cl', phone: '+56912345678', cargo: 'Ejecutiva de Cuenta' },
+      { id: '2', full_name: 'Roberto Silva', rut: '13456789-K', email: 'roberto@labbe.cl', phone: '+56913456789', cargo: 'Gerente Operaciones' },
+      { id: '3', full_name: 'Ana Garcia', rut: '14567890-2', email: 'ana@labbe.cl', phone: '+56914567890', cargo: 'Coordinadora' },
+      { id: '4', full_name: 'Cecilia Herrera', rut: '14567890-3', email: 'cecilia@labbe.cl', phone: '+56914567891', cargo: 'Ejecutiva de Cuenta' },
+    ]
 
-    if (orgsError) throw orgsError
-    if (driversError) throw driversError
-
-    const organizations = orgsData || []
-    const drivers = driversData || []
-
-    // Calculate basic stats from real data
-    const totalOrganizations = organizations.length
-    const totalDrivers = drivers.length
-
+    // Enrich response with all data
     return NextResponse.json({
       company: {
         id: '1',
-        nombre_fantasia: 'LABBE TRANSPORTES',
+        rut: '78376780-5',
         razon_social: 'LABBE TRANSPORTES Y CIAS LTDA.',
-        rut: '78376780-5'
+        nombre_fantasia: 'LABBE TRANSPORTES',
+        email: 'contacto@labbe.cl',
+        telefono: '+56912345678',
+        region: 'RM',
+        ciudad: 'Santiago',
+        representante_legal: 'Juan Perez',
+        is_active: true
       },
-      drivers,
-      organizations,
+      executives: executivesData,
+      drivers: driversData,
+      subcontractors: subcontractorsData,
       stats: {
-        totalSubcontractors: totalOrganizations,
-        totalDrivers: totalDrivers,
-        operational: {
-          blocked: 0,
-          risk: 0,
-          ok: totalOrganizations,
-          complianceScore: 100
-        }
+        totalSubcontractors: subcontractorsData.length,
+        totalDrivers: driversData.length
       }
     })
   } catch (error) {
