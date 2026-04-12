@@ -239,13 +239,25 @@ export default function CompanyDashboard() {
         <div className="mt-8 p-6 bg-slate-800/30 rounded-lg border border-slate-700">
           <p className="text-sm text-slate-400 mb-4">Próximos pasos</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+            <Button 
+              variant="outline" 
+              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              onClick={() => router.push('/dashboard/company/drivers')}
+            >
               Ver Conductores
             </Button>
-            <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+            <Button 
+              variant="outline" 
+              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              onClick={() => router.push('/dashboard/company/documents')}
+            >
               Ver Documentos
             </Button>
-            <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+            <Button 
+              variant="outline" 
+              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              onClick={() => router.push('/dashboard/company/alerts')}
+            >
               Ver Alertas
             </Button>
           </div>
