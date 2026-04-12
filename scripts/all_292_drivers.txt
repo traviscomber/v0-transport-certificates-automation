@@ -282,6 +282,86 @@ Rut_Conductor	Conductor	Rut_Proveedor	Proveedor	Patente Tracto
 8461526-9	Malco Agabo Cespedes Manquez	78115034-7	Transportes Y Servicios Jenavama Spa	GTGJ65
 12880784-5	Luis Eduardo Perez Vargas	77110277-8	Transportes Santa Rafaela Spa	XB6062
 12756249-0	Genaro Francisco Zurita Hernandez	78293071-0	Transportes Zura Spa	FVYX86
+13773888-0	Rodrigo Andres Sarralde Diaz	78207782-1	Transportes   M&f Spa	GZKY51
+20077993-2	Francisco  Patricio Valenzuela Barros	77369887-2	TRANSSAMY SPA	JPWR75
+17217685-2	Raul  Miguel Panes  Lopez	77369887-2	TRANSSAMY SPA	CWVP90
+16809991-6	Claudio Ivan Eduardo Ortega Escobar	76937652-6	Trasportes Claudio Ortega Spa	JCHR77
+27132464-2	Angel Estiben Zamora Gallego	78019868-0	Ubilla Transportes Spa	UU9853
+9609199-0	Luis Alberto Silva Atenas	10534518-6	Veronica Yolanda Silva Atenas	YV6119
+12044190-6	Victor Marcel Jimenez Reyes	12044190-6	Victor Marcel Jimenez Reyes	DCHW24
+16275792-K	Eduardo Andres Zuñiga Luengo	77806154-6	ZF TRANSPORTES SPA	CVPS70
+10842565-2	Ignacio Santiago Burgos Alamos	77547318-5	Transportes Ignacio Burgos E.i.r.l.	LZ6072
+27446096-2	Miguel Jesus Uribe Coca	77998655-1	TRANSPORTES MIGUEL JESUS URIBE COCA E.I.R.L	BWPL16
+15107209-7	Mauricio Antonio Arroyo Esfronceda	78069053-4	Transportes Mauricio Arroyo E.i.r.l.	HXJD90
+10286272-4	Luis Fernando Bravo Saldias	78125401-0	Transportes Miranda Y Bravo Limitada	JLHZ73
+16146554-2	Richard  Andres Contreras Forton	78242685-0	Transportes Rc Spa	ZL7937
+15493907-5	Juan Pablo Morales Toloza	78003531-5	Transportes Morales Castillo Spa	BVWZ52
+17338237-5	Felipe Francisco Miranda Amaya	77896328-0	Transportes Ms Spa	HZHG88
+17166009-2	Moises Antonio Muñoz Cerda	77480102-2	Transportes Myt Spa	DPDT12
+16117345-2	Leonardo Andres Sanhueza Valdes	76891488-5	Transportes Myz Spa	FXVF38
+9807595-K	Oscar Martinez Arriagada	76891488-5	Transportes Myz Spa	BKVH88
+25598621-K	Wilder Alexander Naranjo Zapata	77417801-5	Transportes Naranjo´s Spa	FJGJ81
+14046644-1	Pedro Enrique Navarro Delgado	78157982-3	Transportes Navarro Spa	CHTV41
+9407328-6	Nibaldo Patricio Araya Astorga	77392988-2	Transportes Nibaldo Araya Eirl	GLCD16
+9659299-K	Pedro Benjasmin Soto Jara	77377291-6	Transportes Nicolas Spa	CKXS66
+27364850-K	Nino Alvaro Pinzas Julca	78295014-2	Transportes Nino Spa	DDRV97
+18592248-0	Hugo Camilo Olmos Vega	78310280-3	Transportes Olmo Vega Spa	DHZR15
+16296370-8	Álvaro EfraÍn Madrid Reyes	77986483-9	TRANSPORTES OPTIMUM SPA	BWPY29
+10891710-5	Orlando Del Carmen Mendez Gutierrez	77387969-9	Transportes Orlando Del Carmen Mendez Gutierrez Eirl	CJKC59
+12869737-3	Pablo Cesar Soto Cruz	76843705-K	Transportes Pablo Cesar Soto Cruz E.i.r.l.	CFPD66
+14467460-K	PABLO ANDRES PEREZ URRUTIA	78000781-8	TRANSPORTES PABLO PEREZ SPA	JCHR79
+16379465-9	ALVARO LORENZO PAILLAN PALMA	77993482-9	TRANSPORTES PAISOL SPA	HYWX12
+10813156-K	Daniel Hernan Pacheco  Villacura	77805935-5	Transportes Paola Garcia  Fredes E.i.r.l	WA1701
+9646548-3	Patricio Enrique Romo Moreno	77425212-6	Transportes Patricio Romo Moreno E.i.r.l.	HYDC95
+10990624-7	Pedro Enrique Cortes Rojas	77703639-4	Transportes Pecort Spa	BGYT95
+18670406-1	Pedro Sebastian Villagran Saldias	77852474-0	TRANSPORTES PEDRO VILLAGRAN E.I.R.L.	FTYT32
+11114172-K	Segundo German Punolaf Queupumil	78232853-0	Transportes Punolaf Lopez Spa	DDKT83
+22504079-6	Joaquin Marcos Quispe Maguina	78365485-7	Transportes Ql Spa	JKHC71
+15392455-4	Raul Marcelo Soto Bobadilla	77394975-1	Transportes Raul Marcelo Soto Bobadilla E.i.r.l.	HKDV93
+15213567-K	Hector Mario Ceballos Gallegos	77848888-4	Celin Spa	JCHR81
+13401728-7	Cuevas Gatica Ariel Alejandro	77287076-0	Transportes Rene Ernesto Quiroz Rosales E.i.r.l.	CHRY90
+16682420-6	Luis Quiroz Salazar	77287076-0	Transportes Rene Ernesto Quiroz Rosales E.i.r.l.	CSPY48
+13839705-K	Alexis Bladimir Calfin Araya	77692211-0	Transportes Renee Bastias P E Hijos Spa	FFVW31
+17429147-0	Alvaro Sebastian Reyes Alfaro	77509381-1	Transportes Reyes Quintero SPA	CFYS95
+12924248-5	Richard Antonio Aguilera Contreras	77843013-4	TRANSPORTES RICHARD AGUILERA CONTRERAS E.R.I.L	FTDW49
+27113827-K	Angel  Elias Oberto  Serrano	77117558-9	Transportes Ro Spa	HSTG66
+17102045-K	Roberto Andres Estrada Riquelme	78087308-6	Transportes Roberto Estrada E.i.r.l	WG7070
+8026404-6	Juan Carlos Casanova Sanchez	77413603-7	Transportes Rodmac Spa	GHDJ52
+15957473-3	Rodrigo Esteban Rojas Araya	77119982-8	Transportes Rodrigo Esteban Rojas Araya EIRL	BGRX95
+12509107-5	Alejandro Daniel Iquilio Abarzua	77016329-3	Transportes Ruben Hernan Silva Vasquez E.i.r.l	FYZB83
+22329060-4	Cesar Augusto Paz  Reyes	77016329-3	Transportes Ruben Hernan Silva Vasquez E.i.r.l	HKFS81
+13715309-2	Erik Hernan Zuñiga Perez	77016329-3	Transportes Ruben Hernan Silva Vasquez E.i.r.l	FYZB83
+26390420-6	Jesus Efren Angulo Calle	77016329-3	Transportes Ruben Hernan Silva Vasquez E.i.r.l	FTKY81
+8865083-2	Jorge Antonio Boada Sepulveda	77016329-3	Transportes Ruben Hernan Silva Vasquez E.i.r.l	CHRX54
+22027038-6	Ruben Hernan Silva Vasquez	77016329-3	Transportes Ruben Hernan Silva Vasquez E.i.r.l	FTKY81
+18512352-9	Esteban Ignacio Villegas Letelier	78302429-2	Transportes San Lorenzo Spa	FYLC99
+8189883-9	Juan Eduardo Chandia Parra	78302429-2	Transportes San Lorenzo Spa	GBVW26
+17932540-3	Lorenzo Eduardo Chandia Salazar	78302429-2	Transportes San Lorenzo Spa	GBVW26
+17900921-8	David Salomon Sanchez Otarola	77888835-1	TRANSPORTES SANCHEZ SPA	GWZK89
+19026744-K	Camilo Alejandro Espinosa Navarro	76285729-4	Sociedad De Transportes Quintanilla Ltda.	GFRH71
+8942372-4	Samuel Marcelino Vera Palma	77110277-8	Transportes Santa Rafaela Spa	BSBL17
+10623289-K	Marcelo Antonio Barriga Contreras	77357401-4	Transportes Sebastian Exequiel Garcia Martini Empresa Individual De Re	ZH8800
+15931067-1	Sebastian Exequiel Garcia Martini	77357401-4	Transportes Sebastian Exequiel Garcia Martini Empresa Individual De Re	WU5504
+7077324-4	Sergio  Manuel Simoncelii Rey	77893331-4	TRANSPORTES SERGIO SIMONCELLI E.I.R.L	WG8423
+21836416-0	Antony Jesus Cosme  Ircanaupa	77640206-0	Transportes Sin Fronteras SPA	WD6582
+18866252-8	Felipe Antonio Castro MuÑoz	77325414-1	Transportes Suyai Spa	MZ7707
+18633398-5	Jonathan Alfredo Vergara Osorio	77273263-5	Transportes Taurus Spa	ZK1658
+16201301-7	Alejandro Andres Calderon Figueroa	77698453-1	Transportes Trans Adroc Spa	BTJH92
+9982464-6	Marcelo Eduardo Leon Salvatierra	76970026-9	TRANSPORTES TRANS-LYON SPA	DGKC53
+24425491-8	Dario Hernan Calderon Rodriguez	78296208-6	Transportes Venaur  Spa	CZXS46
+15954550-4	Manuel Humberto Poza Torres	78259175-4	Transportes Verpo Spa	DHZR54
+17468168-6	Francisco Adolfo Chamorro Sobarzo	77713918-5	Transportes Victoria Spa	UL5773
+20731894-9	Benjamin Eduardo Cid Harcha	77982752-6	Transportes Villegas Y Villegas Spa	ZN5201
+20251681-5	Robinson Nicolas Villegas Hernandez	77982752-6	Transportes Villegas Y Villegas Spa	ZN5201
+11142090-4	Dorian Gilberto Jamett Maturana	78303894-3	Transportes Chachy Spa	DLYX41
+16935590-8	Rene Ignacio Henriquez  Rivas	77926368-1	TRANSPORTES WEREK SPA	HYHL52
+22607329-9	Omar Christian Perez Encinas	77892137-5	TRANSPORTES WHITE EXPRESS SPA	JYPW76
+15943194-0	Wilson Antonio Cabello Reyes	77383694-9	Transportes Wilson Antonio Cabello Reyes Eirl	SL3034
+19034826-1	Pablo Ignacio Escobedo Quintanilla	77436503-6	Transportes Mj E Hijos Spa	BDCF89
+14564017-2	Giovanne Isaac Martinez Mella	77931594-0	Transportes Y Servicios Fs Spa	FFZS31
+8461526-9	Malco Agabo Cespedes Manquez	78115034-7	Transportes Y Servicios Jenavama Spa	GTGJ65
+12880784-5	Luis Eduardo Perez Vargas	77110277-8	Transportes Santa Rafaela Spa	XB6062
+12756249-0	Genaro Francisco Zurita Hernandez	78293071-0	Transportes Zura Spa	FVYX86
 13773888-0	Rodrigo Andres Sarralde Diaz	78207782-1	Transportes   M&f Spa	GZKY51
 20077993-2	Francisco  Patricio Valenzuela Barros	77369887-2	TRANSSAMY SPA	JPWR75
 17217685-2	Raul  Miguel Panes  Lopez	77369887-2	TRANSSAMY SPA	CWVP90
