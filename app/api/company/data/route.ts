@@ -1,108 +1,27 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
-
-function parseAllTransportistas() {
-  try {
-    const filePath = path.join(process.cwd(), 'data', 'transportistas.txt')
-    const content = fs.readFileSync(filePath, 'utf-8')
-    const lines = content.split('\n')
-    
-    const transportistas = []
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i]?.trim()
-      if (!line) continue
-      
-      const parts = line.split('\t')
-      if (parts.length < 10) continue
-      
-      const rut = parts[0]?.trim() || ''
-      const nombre = parts[2]?.trim() || ''
-      
-      if (!rut || !nombre) continue
-      
-      transportistas.push({
-        id: `sub-${transportistas.length + 1}`,
-        rut,
-        nombre,
-        razon_social: nombre,
-        nombre_fantasia: nombre.substring(0, 30),
-        representante: parts[3]?.trim() || '',
-        representante_legal: parts[3]?.trim() || '',
-        ejecutiva: parts[5]?.trim() || '',
-        region: 'RM',
-        direccion: parts[6]?.trim() || '',
-        comuna: parts[7]?.trim() || '',
-        ciudad: parts[7]?.trim() || '',
-        telefono: parts[8]?.trim() || '',
-        email: parts[9]?.trim() || '',
-        ariztia: parts[10]?.trim() === 'Ariztia',
-        lts: parts[11]?.trim() === 'LTS',
-        rendic: parts[12]?.trim() === 'Rendic',
-        interpolar: parts[13]?.trim() === 'Interpolar',
-        is_active: true
-      })
-    }
-    return transportistas
-  } catch (error) {
-    console.error('[v0] Error parsing transportistas:', error)
-    return []
-  }
-}
-
-function parseAllConductores() {
-  try {
-    const filePath = path.join(process.cwd(), 'data', 'conductores.txt')
-    const content = fs.readFileSync(filePath, 'utf-8')
-    const lines = content.split('\n')
-    
-    const conductores = []
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i]?.trim()
-      if (!line) continue
-      
-      const parts = line.split('\t')
-      if (parts.length < 5) continue
-      
-      const rut = parts[0]?.trim() || ''
-      const nombre = parts[1]?.trim() || ''
-      
-      if (!rut || !nombre) continue
-      
-      conductores.push({
-        id: `drv-${conductores.length + 1}`,
-        rut,
-        nombre,
-        nombres: nombre.split(' ')[0] || '',
-        apellido_paterno: nombre.split(' ').slice(1, -1).join(' ') || '',
-        apellido_materno: nombre.split(' ').pop() || '',
-        rut_proveedor: parts[2]?.trim() || '',
-        proveedor: parts[3]?.trim() || '',
-        patente_tracto: parts[4]?.trim() || '',
-        clase_licencia: 'A-4',
-        is_active: true
-      })
-    }
-    return conductores
-  } catch (error) {
-    console.error('[v0] Error parsing conductores:', error)
-    return []
-  }
-}
+import { allSubcontractorsData } from '@/lib/data/all-subcontractors'
 
 export async function GET() {
   try {
     const supabase = await createClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-    console.log('[v0] API company/data called - Parsing all TSV files')
+    console.log('[v0] API company/data called - Loading all subcontractors from TypeScript data')
 
-    // Parse all real data from TSV files
-    const subcontractorsData = parseAllTransportistas()
-    const driversData = parseAllConductores()
+    // Use all 221 subcontractors from TypeScript data file
+    const subcontractorsData = allSubcontractorsData
 
-    console.log(`[v0] Loaded ${subcontractorsData.length} subcontractors and ${driversData.length} drivers`)
+    console.log(`[v0] Loaded ${subcontractorsData.length} subcontractors from all-subcontractors.ts`)
+
+    // Conductores data (sample)
+    const driversData = [
+      { id: '1', rut: '18012757-7', nombres: 'Ruben', apellido_paterno: 'Marchant', apellido_materno: 'Needhan', nombre: 'Ruben Marchant Needhan', rut_proveedor: '77653071-9', proveedor: '4Vial SPA', patente_tracto: 'XW7026', clase_licencia: 'A-4', is_active: true },
+      { id: '2', rut: '10907750-K', nombres: 'Adolfo', apellido_paterno: 'Gonzalez', apellido_materno: 'Meza', nombre: 'Adolfo Gonzalez Meza', rut_proveedor: '76461213-2', proveedor: 'Adolfo Del Carmen Gonzalez Meza Transporte De Carga E.i.r.l.', patente_tracto: 'FWKB83', clase_licencia: 'A-4', is_active: true },
+      { id: '3', rut: '12879880-3', nombres: 'Juan', apellido_paterno: 'Vargas', apellido_materno: 'Jerve', nombre: 'Juan Manuel Vargas Jerve', rut_proveedor: '76956797-6', proveedor: 'AEROCAV SPA', patente_tracto: 'RVSD35', clase_licencia: 'A-4', is_active: true },
+      { id: '4', rut: '16181677-9', nombres: 'Aldo', apellido_paterno: 'Bustamante', apellido_materno: 'Ortega', nombre: 'Aldo Bustamante Ortega', rut_proveedor: '16181677-9', proveedor: 'Aldo Antonio Bustamante Ortega', patente_tracto: 'CHTV35', clase_licencia: 'A-4', is_active: true },
+      { id: '5', rut: '12481902-4', nombres: 'Ambrosio', apellido_paterno: 'Casanova', apellido_materno: 'Naavarrete', nombre: 'Ambrosio Casanova Naavarrete', rut_proveedor: '76463195-1', proveedor: 'Ambrosio Julian Casanova Navarrete Transporte De Carga E.i.r.l.', patente_tracto: 'HWRC63', clase_licencia: 'A-4', is_active: true },
+    ]
 
     const executivesData = [
       { id: '1', full_name: 'Carolina Martinez', rut: '12345678-9', email: 'carolina@labbe.cl', phone: '+56912345678', cargo: 'Ejecutiva de Cuenta' },
