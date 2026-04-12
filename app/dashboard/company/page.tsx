@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Building2, LogOut, Users, User, Search, X, FileText, BarChart3, Bell, AlertTriangle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { ControlTower } from '@/components/control-tower'
+import { TorreControl } from '@/components/torre-control'
 import { SubcontractorsList } from '@/components/subcontractors-list'
 import { DriversList } from '@/components/drivers-list'
 import { TeamSearch } from '@/components/team-search'
@@ -73,7 +73,7 @@ export default function CompanyDashboard() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [formData, setFormData] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState<'control-tower' | 'subcontractors' | 'drivers' | 'documents' | 'team' | 'alertas'>('control-tower')
+  const [activeTab, setActiveTab] = useState<'torre-control' | 'subcontractors' | 'drivers' | 'documents' | 'team' | 'alertas'>('torre-control')
   const [selectedDriver, setSelectedDriver] = useState<any>(null)
   const [isEditingDriver, setIsEditingDriver] = useState(false)
   const [showAddDriverModal, setShowAddDriverModal] = useState(false)
@@ -425,15 +425,15 @@ export default function CompanyDashboard() {
 
         <div className="flex gap-2 mb-8 border-b border-slate-700 overflow-x-auto pb-0 -mb-px">
           <button
-            onClick={() => setActiveTab('control-tower')}
+            onClick={() => setActiveTab('torre-control')}
             className={`pb-3 px-2 font-semibold transition-colors whitespace-nowrap flex items-center gap-2 text-sm ${
-              activeTab === 'control-tower'
+              activeTab === 'torre-control'
                 ? 'text-orange-500 border-b-2 border-orange-500'
                 : 'text-slate-400 hover:text-slate-300'
             }`}
           >
             <BarChart3 className="w-4 h-4" />
-            Control Tower
+            Torre de Control
           </button>
           <button
             onClick={() => setActiveTab('subcontractors')}
@@ -495,9 +495,9 @@ export default function CompanyDashboard() {
           </button>
         </div>
 
-        {activeTab === 'control-tower' && (
+        {activeTab === 'torre-control' && (
           <div>
-            <ControlTower 
+            <TorreControl 
               drivers={drivers}
               subcontractors={subcontractors}
               vehicles={[]}

@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { AlertCircle, Clock, CheckCircle2, TrendingUp } from 'lucide-react'
+import { AlertCircle, Clock, CheckCircle2, TrendingUp, Info } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { EducationalTooltip } from './educational-tooltip'
 import {
   calculateStatusBatch,
   summarizeStatus,
@@ -23,7 +24,7 @@ interface ControlTowerProps {
   vehicles?: any[]
 }
 
-export function ControlTower({ drivers, subcontractors, vehicles = [] }: ControlTowerProps) {
+export function TorreControl({ drivers, subcontractors, vehicles = [] }: ControlTowerProps) {
   const [blockedList, setBlockedList] = useState<Array<[string, StatusResult, OperableEntity]>>([])
   const [riskList, setRiskList] = useState<Array<[string, StatusResult, OperableEntity]>>([])
   const [summary, setSummary] = useState<StatusSummary | null>(null)
@@ -91,59 +92,104 @@ export function ControlTower({ drivers, subcontractors, vehicles = [] }: Control
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Control Tower</h1>
-          <p className="text-sm text-muted-foreground mt-1">Panel de control operacional</p>
+      {/* Header con explicación */}
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+            Torre de Control
+            <EducationalTooltip 
+              title="¿Qué es la Torre de Control?"
+              content="Centro de monitoreo operacional. Aquí ves el estado de salud de toda tu flota: conductores, subcontratistas y vehículos. Te permite identificar inmediatamente qué recursos están bloqueados, en riesgo o completamente operacionales."
+            />
+          </h1>
+          <p className="text-sm text-muted-foreground mt-2 max-w-2xl leading-relaxed">
+            Panel de inteligencia operacional en tiempo real. Monitorea el cumplimiento normativo, identifica cuellos de botella y toma decisiones informadas sobre tu flota.
+          </p>
         </div>
       </div>
 
-      {/* Summary Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Total Entities */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total de Entidades</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summary.total}</div>
-            <p className="text-xs text-muted-foreground mt-1">Conductores, subcontratistas y vehículos</p>
-          </CardContent>
-        </Card>
+      {/* Summary Metrics con explicaciones */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-foreground">Estado de tu Flota</h2>
+          <EducationalTooltip 
+            title="¿Cómo se calcula el estado?"
+            content="Cada recurso (conductor, subcontratista, vehículo) se evalúa automáticamente basándose en documentos vencidos, licencias vigentes y cumplimiento normativo. El color indica el riesgo actual."
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Total Entities */}
+          <Card className="hover:border-slate-500 transition-colors">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium">Recursos Totales</CardTitle>
+                <EducationalTooltip 
+                  title="Recursos Totales"
+                  content="Suma de todos los conductores, subcontratistas y vehículos en tu sistema."
+                  size="sm"
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{summary.total}</div>
+              <p className="text-xs text-muted-foreground mt-1">Conductores + Subcontratistas + Vehículos</p>
+            </CardContent>
+          </Card>
 
-        {/* OK Status */}
-        <Card className="border-green-200 bg-green-50/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-green-900">Operacionales</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-700">{summary.ok}</div>
-            <p className="text-xs text-green-600 mt-1">{summary.compliancePercentage}% cumplimiento</p>
-          </CardContent>
-        </Card>
+          {/* OK Status */}
+          <Card className="border-green-200 bg-green-50/50 hover:border-green-300 transition-colors">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-green-900">Operacionales</CardTitle>
+                <EducationalTooltip 
+                  title="Operacionales"
+                  content="Recursos completamente listos para operar. Todos los documentos vigentes, cumplimiento normativo al día."
+                  size="sm"
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-700">{summary.ok}</div>
+              <p className="text-xs text-green-600 mt-1">{summary.compliancePercentage}% cumplimiento</p>
+            </CardContent>
+          </Card>
 
-        {/* Risk Status */}
-        <Card className="border-yellow-200 bg-yellow-50/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-yellow-900">En Riesgo</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-700">{summary.risk}</div>
-            <p className="text-xs text-yellow-600 mt-1">Vencimientos próximos</p>
-          </CardContent>
-        </Card>
+          {/* Risk Status */}
+          <Card className="border-yellow-200 bg-yellow-50/50 hover:border-yellow-300 transition-colors">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-yellow-900">En Riesgo</CardTitle>
+                <EducationalTooltip 
+                  title="En Riesgo"
+                  content="Documentos próximos a vencer (menos de 30 días). Requieren atención pronto para evitar bloqueos."
+                  size="sm"
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-700">{summary.risk}</div>
+              <p className="text-xs text-yellow-600 mt-1">Vencimientos próximos</p>
+            </CardContent>
+          </Card>
 
-        {/* Blocked Status */}
-        <Card className="border-red-200 bg-red-50/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-red-900">Bloqueados</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-700">{summary.blocked}</div>
-            <p className="text-xs text-red-600 mt-1">NO pueden operar</p>
-          </CardContent>
-        </Card>
+          {/* Blocked Status */}
+          <Card className="border-red-200 bg-red-50/50 hover:border-red-300 transition-colors">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-red-900">Bloqueados</CardTitle>
+                <EducationalTooltip 
+                  title="Bloqueados"
+                  content="Documentos vencidos o incumplimiento normativo. ESTOS RECURSOS NO PUEDEN OPERAR hasta resolver."
+                  size="sm"
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-700">{summary.blocked}</div>
+              <p className="text-xs text-red-600 mt-1">NO pueden operar</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Compliance Score */}
