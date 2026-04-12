@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { allSubcontractorsData } from '@/lib/data/all-subcontractors'
 import { allDriversData } from '@/lib/data/all-drivers'
+import { generateAlerts } from '@/lib/operations/alert-engine'
+import { calculateComplianceScore } from '@/lib/operations/expiration-engine'
 
 export async function GET() {
   try {
@@ -19,6 +21,26 @@ export async function GET() {
     const driversData = allDriversData
 
     console.log(`[v0] Loaded ${driversData.length} drivers from all-drivers.ts`)
+
+    // Calculate operational stats
+    const blockedCount = 24  // Placeholder - en Fase 6 vendría de DB
+    const riskCount = 12
+    const okCount = subcontractorsData.length - blockedCount - riskCount
+    const complianceScore = calculateComplianceScore(
+      subcontractorsData.length,
+      okCount,
+      riskCount,
+      blockedCount
+    )
+
+    // Generate alerts based on current state
+    const alerts = generateAlerts({
+      blockedCount,
+      riskCount,
+      complianceScore,
+      expiringToday: 2,
+      expiringThisWeek: 12
+    })
 
     const executivesData = [
       { id: '1', full_name: 'Carolina Martinez', rut: '12345678-9', email: 'carolina@labbe.cl', phone: '+56912345678', cargo: 'Ejecutiva de Cuenta' },
@@ -46,8 +68,22 @@ export async function GET() {
       subcontractors: subcontractorsData,
       stats: {
         totalSubcontractors: subcontractorsData.length,
-        totalDrivers: driversData.length
-      }
+        totalDrivers: driversData.length,
+        operational: {
+          ok: okCount,
+          risk: riskCount,
+          blocked: blockedCount,
+          complianceScore,
+          compliancePercentage: Math.round((okCount / subcontractorsData.length) * 100)
+        },
+        alerts: {
+          total: alerts.length,
+          critical: alerts.filter(a => a.severity === 'critical').length,
+          warning: alerts.filter(a => a.severity === 'warning').length,
+          info: alerts.filter(a => a.severity === 'info').length,
+        }
+      },
+      alerts
     })
   } catch (error) {
     console.error('[v0] Error in company data endpoint:', error)
