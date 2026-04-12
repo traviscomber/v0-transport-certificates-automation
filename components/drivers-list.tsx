@@ -1,0 +1,229 @@
+'use client'
+
+import { useState, useMemo } from 'react'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Mail, Phone, MapPin, Search, X } from 'lucide-react'
+
+interface Driver {
+  id: string
+  rut: string
+  nombre: string
+  nombres?: string
+  apellido_paterno?: string
+  apellido_materno?: string
+  rut_proveedor?: string
+  proveedor?: string
+  patente_tracto?: string
+  clase_licencia?: string
+  is_active: boolean
+}
+
+interface DriversListProps {
+  drivers: Driver[]
+}
+
+export function DriversList({ drivers }: DriversListProps) {
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null)
+
+  const filteredDrivers = useMemo(() => {
+    return drivers.filter(driver => {
+      const searchLower = searchTerm.toLowerCase()
+      return (
+        driver.rut?.toLowerCase().includes(searchLower) ||
+        driver.nombre?.toLowerCase().includes(searchLower) ||
+        driver.proveedor?.toLowerCase().includes(searchLower) ||
+        driver.patente_tracto?.toLowerCase().includes(searchLower)
+      )
+    })
+  }, [drivers, searchTerm])
+
+  return (
+    <div className="w-full space-y-4">
+      {/* Header with search */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-white">Conductores</h2>
+          <p className="text-sm text-slate-400">
+            Total: <span className="font-semibold text-amber-400">{drivers.length}</span> • 
+            Mostrando: <span className="font-semibold text-emerald-400">{filteredDrivers.length}</span>
+          </p>
+        </div>
+        <div className="relative flex-1 md:max-w-xs">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <Input
+            placeholder="Buscar por RUT, nombre, proveedor o patente..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-400"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Drivers Grid */}
+      {filteredDrivers.length > 0 ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredDrivers.map((driver) => (
+            <div
+              key={driver.id}
+              className="group cursor-pointer rounded-lg border border-slate-700 bg-gradient-to-br from-slate-900 to-slate-950 p-4 transition-all hover:border-amber-500/50 hover:shadow-lg hover:shadow-amber-500/10"
+              onClick={() => setSelectedDriver(driver)}
+            >
+              {/* Header with RUT and status */}
+              <div className="mb-3 flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase text-slate-400">RUT</p>
+                  <p className="font-mono text-lg font-bold text-amber-400">{driver.rut}</p>
+                </div>
+                {driver.is_active && (
+                  <Badge className="bg-emerald-500/20 text-emerald-300">Activo</Badge>
+                )}
+              </div>
+
+              {/* Driver Name */}
+              <div className="mb-4 border-t border-slate-700 pt-3">
+                <p className="text-sm font-semibold text-white line-clamp-2">
+                  {driver.nombre}
+                </p>
+              </div>
+
+              {/* Proveedor */}
+              {driver.proveedor && (
+                <div className="mb-3">
+                  <p className="text-xs font-semibold uppercase text-slate-400">Proveedor</p>
+                  <p className="text-sm text-slate-300 line-clamp-1">{driver.proveedor}</p>
+                </div>
+              )}
+
+              {/* Patente */}
+              {driver.patente_tracto && (
+                <div className="mb-3">
+                  <p className="text-xs font-semibold uppercase text-slate-400">Patente Tracto</p>
+                  <p className="font-mono text-lg font-bold text-blue-400">
+                    {driver.patente_tracto}
+                  </p>
+                </div>
+              )}
+
+              {/* Clase Licencia */}
+              {driver.clase_licencia && (
+                <div className="mb-3">
+                  <p className="text-xs font-semibold uppercase text-slate-400">Licencia</p>
+                  <Badge variant="outline" className="font-mono">
+                    {driver.clase_licencia}
+                  </Badge>
+                </div>
+              )}
+
+              {/* RUT Proveedor */}
+              {driver.rut_proveedor && (
+                <div className="border-t border-slate-700 pt-3">
+                  <p className="text-xs font-semibold uppercase text-slate-400">RUT Proveedor</p>
+                  <p className="font-mono text-sm text-slate-400">{driver.rut_proveedor}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center rounded-lg border border-slate-700 bg-slate-900/50 py-12 text-center">
+          <Search className="mb-3 h-12 w-12 text-slate-600" />
+          <p className="text-lg font-semibold text-slate-300">No se encontraron conductores</p>
+          <p className="text-sm text-slate-500">Intenta ajustar tu búsqueda</p>
+        </div>
+      )}
+
+      {/* Driver Detail Modal */}
+      {selectedDriver && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+            <button
+              onClick={() => setSelectedDriver(null)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-white"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-2xl font-bold text-white">{selectedDriver.nombre}</h3>
+                <p className="font-mono text-sm text-amber-400">{selectedDriver.rut}</p>
+              </div>
+
+              <div className="space-y-3 border-t border-slate-700 pt-4">
+                {selectedDriver.nombres && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-slate-400">Nombres</p>
+                    <p className="text-white">{selectedDriver.nombres}</p>
+                  </div>
+                )}
+
+                {selectedDriver.apellido_paterno && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-slate-400">Apellido Paterno</p>
+                    <p className="text-white">{selectedDriver.apellido_paterno}</p>
+                  </div>
+                )}
+
+                {selectedDriver.apellido_materno && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-slate-400">Apellido Materno</p>
+                    <p className="text-white">{selectedDriver.apellido_materno}</p>
+                  </div>
+                )}
+
+                {selectedDriver.proveedor && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-slate-400">Proveedor</p>
+                    <p className="text-white">{selectedDriver.proveedor}</p>
+                  </div>
+                )}
+
+                {selectedDriver.rut_proveedor && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-slate-400">RUT Proveedor</p>
+                    <p className="font-mono text-slate-300">{selectedDriver.rut_proveedor}</p>
+                  </div>
+                )}
+
+                {selectedDriver.patente_tracto && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-slate-400">Patente Tracto</p>
+                    <p className="font-mono text-lg font-bold text-blue-400">
+                      {selectedDriver.patente_tracto}
+                    </p>
+                  </div>
+                )}
+
+                {selectedDriver.clase_licencia && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-slate-400">Clase Licencia</p>
+                    <p className="text-white">{selectedDriver.clase_licencia}</p>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 border-t border-slate-700 pt-4">
+                  {selectedDriver.is_active ? (
+                    <Badge className="bg-emerald-500/20 text-emerald-300">Activo</Badge>
+                  ) : (
+                    <Badge className="bg-red-500/20 text-red-300">Inactivo</Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

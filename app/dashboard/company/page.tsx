@@ -7,6 +7,7 @@ import { Building2, LogOut, Users, User, Search, X, FileText, BarChart3 } from '
 import { useRouter } from 'next/navigation'
 import { ControlTower } from '@/components/control-tower'
 import { SubcontractorsList } from '@/components/subcontractors-list'
+import { DriversList } from '@/components/drivers-list'
 import { type OperableEntity } from '@/lib/operations/status-engine'
 
 interface DashboardData {
@@ -454,7 +455,7 @@ export default function CompanyDashboard() {
 
         {activeTab === 'drivers' && (
           <div>
-            <p className="text-slate-300">Drivers tab content coming soon</p>
+            <DriversList drivers={drivers} />
           </div>
         )}
 
