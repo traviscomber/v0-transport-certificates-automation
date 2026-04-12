@@ -9,6 +9,7 @@ import { ControlTower } from '@/components/control-tower'
 import { SubcontractorsList } from '@/components/subcontractors-list'
 import { DriversList } from '@/components/drivers-list'
 import { TeamSearch } from '@/components/team-search'
+import { MonthlyDocumentsList } from '@/components/monthly-documents-list'
 import { type OperableEntity } from '@/lib/operations/status-engine'
 
 interface DashboardData {
@@ -473,7 +474,7 @@ export default function CompanyDashboard() {
 
         {activeTab === 'documents' && (
           <div>
-            <p className="text-slate-300">Documentos Mensuales - En desarrollo</p>
+            <MonthlyDocumentsList />
           </div>
         )}
 
