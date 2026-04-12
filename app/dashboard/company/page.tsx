@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Building2, LogOut, AlertTriangle, Clock, FileCheck, Users, FileText, Plus, Trash2, Edit2 } from 'lucide-react'
+import { Building2, LogOut, AlertTriangle, Search, Filter, MapPin, Phone, Mail, Badge } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface CompanyData {
@@ -11,10 +11,14 @@ interface CompanyData {
     nombre_fantasia: string
     razon_social: string
     rut: string
+    email?: string
+    phone?: string
+    representative?: string
   }
   stats: {
     totalSubcontractors: number
     totalDrivers: number
+    totalExecutives: number
     operational: {
       blocked: number
       risk: number
@@ -26,7 +30,7 @@ interface CompanyData {
   organizations: any[]
 }
 
-type TabType = 'overview' | 'drivers' | 'organizations' | 'documents' | 'alerts'
+type TabType = 'overview' | 'clients' | 'drivers' | 'documents' | 'equipment' | 'credentials' | 'alerts'
 
 export default function CompanyDashboard() {
   const router = useRouter()
@@ -34,95 +38,37 @@ export default function CompanyDashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabType>('overview')
-  
-  // Organizations CRUD states
-  const [editingOrgId, setEditingOrgId] = useState<string | null>(null)
-  const [editOrgData, setEditOrgData] = useState<any>({})
-  const [showOrgForm, setShowOrgForm] = useState(false)
-  const [newOrg, setNewOrg] = useState<any>({})
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('/api/company/data', { 
-          cache: 'no-store',
-          signal: AbortSignal.timeout(5000)
-        })
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`)
-        }
-
-        const result = await response.json()
-        setData(result)
-        setError(null)
-      } catch (err) {
-        console.error('[v0] Error fetching company data:', err)
-        setError(err instanceof Error ? err.message : 'Error al cargar datos')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
     fetchData()
   }, [])
 
+  const fetchData = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch('/api/company/data', { 
+        cache: 'no-store',
+        signal: AbortSignal.timeout(5000)
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      const result = await response.json()
+      setData(result)
+      setError(null)
+    } catch (err) {
+      console.error('[v0] Error fetching company data:', err)
+      setError(err instanceof Error ? err.message : 'Error al cargar datos')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleLogout = () => {
     router.push('/auth/login-company')
-  }
-
-  const handleDeleteOrg = async (id: string) => {
-    if (!confirm('¿Eliminar subcontrato?')) return
-    try {
-      const res = await fetch(`/api/organizations?id=${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Failed')
-      if (data) {
-        setData({...data, organizations: data.organizations.filter(o => o.id !== id)})
-      }
-    } catch {
-      alert('Error')
-    }
-  }
-
-  const handleSaveEditOrg = async (id: string) => {
-    try {
-      const res = await fetch('/api/organizations', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...editOrgData })
-      })
-      if (!res.ok) throw new Error('Failed')
-      const updated = await res.json()
-      if (data) {
-        setData({...data, organizations: data.organizations.map(o => o.id === id ? updated : o)})
-      }
-      setEditingOrgId(null)
-    } catch {
-      alert('Error')
-    }
-  }
-
-  const handleAddOrg = async () => {
-    if (!newOrg.name || !newOrg.rut) {
-      alert('Complete nombre y RUT')
-      return
-    }
-    try {
-      const res = await fetch('/api/organizations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newOrg)
-      })
-      if (!res.ok) throw new Error('Failed')
-      const created = await res.json()
-      if (data) {
-        setData({...data, organizations: [created, ...data.organizations]})
-      }
-      setNewOrg({})
-      setShowOrgForm(false)
-    } catch {
-      alert('Error')
-    }
   }
 
   if (isLoading) {
@@ -130,7 +76,7 @@ export default function CompanyDashboard() {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
         <div className="text-center">
           <div className="inline-block w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-slate-300">Cargando datos de Transportes Labbe...</p>
+          <p className="text-slate-300">Cargando datos...</p>
         </div>
       </div>
     )
@@ -148,10 +94,7 @@ export default function CompanyDashboard() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-slate-300">{error || 'No se encontraron datos'}</p>
-            <Button
-              onClick={handleLogout}
-              className="w-full bg-orange-500 hover:bg-orange-600"
-            >
+            <Button onClick={handleLogout} className="w-full bg-orange-500 hover:bg-orange-600">
               Volver a iniciar sesión
             </Button>
           </CardContent>
@@ -162,335 +105,365 @@ export default function CompanyDashboard() {
 
   const { company, stats, drivers = [], organizations = [] } = data
 
+  const filteredDrivers = drivers.filter(driver =>
+    driver.rut?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    driver.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    driver.last_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const filteredOrganizations = organizations.filter(org =>
+    org.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    org.rut?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    org.representante?.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
   const tabs = [
-    { id: 'overview' as TabType, label: 'Dashboard', icon: Building2 },
-    { id: 'drivers' as TabType, label: 'Conductores', icon: Users, count: drivers.length },
-    { id: 'organizations' as TabType, label: 'Subcontratos', icon: Building2, count: organizations.length },
-    { id: 'documents' as TabType, label: 'Documentos', icon: FileText },
-    { id: 'alerts' as TabType, label: 'Alertas', icon: AlertTriangle },
+    { id: 'overview' as TabType, label: 'Control Tower' },
+    { id: 'clients' as TabType, label: `Clientes/Subcontratos (${organizations.length})` },
+    { id: 'drivers' as TabType, label: `Conductores (${drivers.length})` },
+    { id: 'documents' as TabType, label: 'Documentos Mensuales' },
+    { id: 'equipment' as TabType, label: 'Equipo' },
+    { id: 'credentials' as TabType, label: 'Credenciales' },
+    { id: 'alerts' as TabType, label: 'Alertas' },
   ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
       <header className="border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-500/10 rounded-lg">
-              <Building2 className="w-6 h-6 text-orange-500" />
+        <div className="container mx-auto px-4 py-4 max-w-7xl">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-500/10 rounded-lg">
+                <Building2 className="w-6 h-6 text-orange-500" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-white">{company.nombre_fantasia}</h1>
+                <p className="text-xs text-slate-400">{company.razon_social}</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-white">{company.nombre_fantasia}</h1>
-              <p className="text-xs text-slate-400">{company.rut}</p>
-            </div>
+            <Button
+              onClick={handleLogout}
+              variant="ghost"
+              size="sm"
+              className="text-slate-300 hover:text-orange-500"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Cerrar sesión
+            </Button>
           </div>
-          <Button
-            onClick={handleLogout}
-            variant="ghost"
-            size="sm"
-            className="text-slate-300 hover:text-orange-500"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Cerrar sesión
-          </Button>
-        </div>
 
-        {/* Tabs Navigation */}
-        <div className="border-t border-slate-700/50 overflow-x-auto">
-          <div className="container mx-auto px-4 flex gap-1">
-            {tabs.map((tab) => {
-              const Icon = tab.icon
-              return (
+          {/* Tabs */}
+          <div className="border-t border-slate-700/50 pt-4 overflow-x-auto">
+            <div className="flex gap-1">
+              {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-3 text-sm font-medium whitespace-nowrap flex items-center gap-2 transition-colors border-b-2 ${
+                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${
                     activeTab === tab.id
                       ? 'border-orange-500 text-orange-400'
                       : 'border-transparent text-slate-400 hover:text-slate-300'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
                   {tab.label}
-                  {tab.count !== undefined && (
-                    <span className="ml-1 px-2 py-0.5 text-xs bg-slate-700 rounded-full">
-                      {tab.count}
-                    </span>
-                  )}
                 </button>
-              )
-            })}
+              ))}
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 max-w-6xl">
+      <main className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div className="space-y-8">
-            {/* Critical Status Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Bloqueados Hoy */}
-              <Card className="bg-red-950/30 border-red-500/50 hover:border-red-500 transition-colors">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold text-red-300 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" />
-                    Bloqueados Hoy
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-4xl font-bold text-red-400">{stats.operational.blocked}</p>
-                    <p className="text-xs text-red-300">
-                      de {stats.totalSubcontractors}
-                    </p>
-                  </div>
-                  <p className="text-xs text-red-300/70 mt-2">
-                    Conductores sin operar
-                  </p>
+            {/* Stats Overview */}
+            <div className="grid grid-cols-4 gap-4">
+              <Card className="bg-slate-800/40 border-slate-700">
+                <CardContent className="pt-6">
+                  <p className="text-slate-400 text-sm uppercase tracking-wide">RUT</p>
+                  <p className="text-2xl font-bold text-orange-500 mt-2">{company.rut}</p>
                 </CardContent>
               </Card>
-
-              {/* En Riesgo */}
-              <Card className="bg-yellow-950/30 border-yellow-500/50 hover:border-yellow-500 transition-colors">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold text-yellow-300 flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    En Riesgo
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-4xl font-bold text-yellow-400">{stats.operational.risk}</p>
-                    <p className="text-xs text-yellow-300">
-                      próximos 7 días
-                    </p>
-                  </div>
-                  <p className="text-xs text-yellow-300/70 mt-2">
-                    Vencimientos próximos
-                  </p>
+              <Card className="bg-slate-800/40 border-slate-700">
+                <CardContent className="pt-6">
+                  <p className="text-slate-400 text-sm uppercase tracking-wide">Ejecutivos</p>
+                  <p className="text-2xl font-bold text-green-400 mt-2">{stats.totalExecutives || 0}</p>
                 </CardContent>
               </Card>
-
-              {/* Compliance */}
-              <Card className="bg-green-950/30 border-green-500/50 hover:border-green-500 transition-colors">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold text-green-300 flex items-center gap-2">
-                    <FileCheck className="w-4 h-4" />
-                    Cumplimiento
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-4xl font-bold text-green-400">
-                      {Math.round((stats.operational.ok / stats.totalSubcontractors) * 100)}%
-                    </p>
-                    <p className="text-xs text-green-300">
-                      operativo
-                    </p>
-                  </div>
-                  <p className="text-xs text-green-300/70 mt-2">
-                    {stats.operational.ok} de {stats.totalSubcontractors}
-                  </p>
+              <Card className="bg-slate-800/40 border-slate-700">
+                <CardContent className="pt-6">
+                  <p className="text-slate-400 text-sm uppercase tracking-wide">Conductores</p>
+                  <p className="text-2xl font-bold text-blue-400 mt-2">{stats.totalDrivers}</p>
                 </CardContent>
               </Card>
-            </div>
-
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-sm">Conductores</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-3xl font-bold text-blue-400">{stats.totalDrivers}</p>
-                  <p className="text-xs text-slate-400 mt-1">Registrados en el sistema</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-sm">Subcontratos</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-3xl font-bold text-purple-400">{stats.totalSubcontractors}</p>
-                  <p className="text-xs text-slate-400 mt-1">Proveedores activos</p>
+              <Card className="bg-slate-800/40 border-slate-700">
+                <CardContent className="pt-6">
+                  <p className="text-slate-400 text-sm uppercase tracking-wide">Subcontratos</p>
+                  <p className="text-2xl font-bold text-purple-400 mt-2">{stats.totalSubcontractors}</p>
                 </CardContent>
               </Card>
             </div>
 
             {/* Company Info */}
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-slate-800/40 border-slate-700">
               <CardHeader>
-                <CardTitle>Información de la Empresa</CardTitle>
+                <CardTitle className="text-white">Información de la Empresa</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-8">
                   <div>
                     <p className="text-xs text-slate-400 uppercase tracking-wide">Razón Social</p>
-                    <p className="text-base font-semibold text-white mt-1">{company.razon_social}</p>
+                    <p className="text-base font-semibold text-white mt-2">{company.razon_social}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-400 uppercase tracking-wide">RUT</p>
-                    <p className="text-base font-semibold text-white mt-1">{company.rut}</p>
+                    <p className="text-xs text-slate-400 uppercase tracking-wide">Representante Legal</p>
+                    <p className="text-base font-semibold text-white mt-2">{company.representative || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400 uppercase tracking-wide">Email</p>
+                    <p className="text-base font-semibold text-white mt-2">{company.email || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400 uppercase tracking-wide">Teléfono</p>
+                    <p className="text-base font-semibold text-white mt-2">{company.phone || '-'}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
+
+            {/* Control Tower Stats */}
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-2">Control Tower</h2>
+              <p className="text-slate-400 text-sm mb-6">Panel de control operacional</p>
+              
+              <div className="grid grid-cols-4 gap-4">
+                <Card className="bg-slate-800/40 border-slate-700">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-slate-300">Total de Entidades</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-3xl font-bold text-white">{stats.totalDrivers}</p>
+                    <p className="text-xs text-slate-400 mt-2">Conductores, subcontratistas y vehículos</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-green-950/30 border-green-500/50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-green-300">Operacionales</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-3xl font-bold text-green-400">{stats.operational.ok}</p>
+                    <p className="text-xs text-green-300 mt-2">100% cumplimiento</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-yellow-950/30 border-yellow-500/50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-yellow-300">En Riesgo</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-3xl font-bold text-yellow-400">{stats.operational.risk}</p>
+                    <p className="text-xs text-yellow-300 mt-2">Vencimientos próximos</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-red-950/30 border-red-500/50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-red-300">Bloqueados</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-3xl font-bold text-red-400">{stats.operational.blocked}</p>
+                    <p className="text-xs text-red-300 mt-2">NO pueden operar</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* Compliance Index */}
+            <Card className="bg-slate-800/40 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white">Índice de Cumplimiento</CardTitle>
+                <p className="text-xs text-slate-400 mt-1">Promedio de cumplimiento operacional</p>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-end gap-4">
+                  <div className="flex-1">
+                    <div className="bg-slate-700 rounded-full h-2 overflow-hidden">
+                      <div 
+                        className="bg-orange-500 h-full transition-all" 
+                        style={{ width: `${(stats.operational.ok / stats.totalDrivers) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-3xl font-bold text-orange-400">
+                    {Math.round((stats.operational.ok / stats.totalDrivers) * 100)}%
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Clients/Organizations Tab */}
+        {activeTab === 'clients' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-white">Clientes/Subcontratos</h2>
+              <p className="text-slate-400 text-sm">Mostrando {filteredOrganizations.length} de {organizations.length} subcontratistas</p>
+            </div>
+
+            {/* Search and Filter */}
+            <div className="flex gap-3">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre, RUT, ejecutiva, comuna, teléfono o email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:border-orange-500"
+                />
+              </div>
+              <Button className="bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700">
+                <Filter className="w-4 h-4 mr-2" />
+                Filtros
+              </Button>
+            </div>
+
+            {/* Organizations Grid */}
+            {filteredOrganizations.length === 0 ? (
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardContent className="text-center py-12">
+                  <p className="text-slate-400">No hay subcontratos que coincidan con la búsqueda</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredOrganizations.map((org) => (
+                  <Card key={org.id} className="bg-slate-800/50 border-slate-700 hover:border-orange-500 transition-colors cursor-pointer">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <CardTitle className="text-orange-400 text-lg">{org.name}</CardTitle>
+                          <p className="text-xs text-slate-400 mt-1 font-mono">{org.rut}</p>
+                        </div>
+                        <div className="w-6 h-6 rounded-full bg-green-500/20 border border-green-500 flex items-center justify-center">
+                          <span className="text-green-400 text-sm">✓</span>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3 text-sm">
+                      <div>
+                        <p className="text-xs text-slate-400 uppercase tracking-wide">Representante</p>
+                        <p className="text-slate-100 font-medium mt-1">{org.representante || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400 uppercase tracking-wide">Ejecutiva Asignada</p>
+                        <p className="text-orange-400 font-medium mt-1">{org.nombre_fantasia || '-'}</p>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <MapPin className="w-4 h-4" />
+                        <span className="text-xs">{org.region || '-'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <Phone className="w-4 h-4" />
+                        <span className="text-xs">{org.telefono || '-'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <Mail className="w-4 h-4" />
+                        <span className="text-xs truncate">{org.email || '-'}</span>
+                      </div>
+                      <div className="pt-2 flex gap-2">
+                        <span className="px-2 py-1 bg-slate-700 rounded text-xs text-slate-300">{org.region || 'RM'}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* Drivers Tab */}
         {activeTab === 'drivers' && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-white mb-6">Conductores ({drivers.length})</h2>
-            {drivers.length === 0 ? (
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardContent className="text-center py-8">
-                  <p className="text-slate-400">No hay conductores registrados</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="bg-slate-800/40 border border-slate-700 rounded-lg overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-700 bg-slate-900/50">
-                        <th className="px-6 py-3 text-left font-semibold text-slate-300">Nombre</th>
-                        <th className="px-6 py-3 text-left font-semibold text-slate-300">RUT</th>
-                        <th className="px-6 py-3 text-left font-semibold text-slate-300">Email</th>
-                        <th className="px-6 py-3 text-left font-semibold text-slate-300">Teléfono</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {drivers.map((driver) => (
-                        <tr key={driver.id} className="border-b border-slate-700 hover:bg-slate-800/40 transition">
-                          <td className="px-6 py-3 text-slate-100">{driver.first_name} {driver.last_name}</td>
-                          <td className="px-6 py-3 text-slate-400 font-mono">{driver.rut}</td>
-                          <td className="px-6 py-3 text-slate-400">{driver.email}</td>
-                          <td className="px-6 py-3 text-slate-400">{driver.phone || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Organizations Tab */}
-        {activeTab === 'organizations' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Subcontratos ({organizations.length})</h2>
-              <Button onClick={() => setShowOrgForm(!showOrgForm)} className="bg-green-600 hover:bg-green-700">
-                <Plus className="w-4 h-4 mr-2" />
-                Agregar
-              </Button>
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-white">Conductores</h2>
+              <p className="text-slate-400 text-sm">Total: {drivers.length} • Mostrando: {filteredDrivers.length}</p>
             </div>
 
-            {showOrgForm && (
-              <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 mb-6">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <input type="text" placeholder="Nombre" value={newOrg.name || ''} onChange={(e) => setNewOrg({...newOrg, name: e.target.value})} className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm" />
-                  <input type="text" placeholder="RUT" value={newOrg.rut || ''} onChange={(e) => setNewOrg({...newOrg, rut: e.target.value})} className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm" />
-                  <input type="text" placeholder="Nombre Fantasía" value={newOrg.nombre_fantasia || ''} onChange={(e) => setNewOrg({...newOrg, nombre_fantasia: e.target.value})} className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm" />
-                  <input type="text" placeholder="Representante" value={newOrg.representante || ''} onChange={(e) => setNewOrg({...newOrg, representante: e.target.value})} className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm" />
-                  <input type="text" placeholder="Region" value={newOrg.region || ''} onChange={(e) => setNewOrg({...newOrg, region: e.target.value})} className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm" />
-                  <input type="text" placeholder="Dirección" value={newOrg.direccion || ''} onChange={(e) => setNewOrg({...newOrg, direccion: e.target.value})} className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm" />
-                  <input type="text" placeholder="Comuna" value={newOrg.comuna || ''} onChange={(e) => setNewOrg({...newOrg, comuna: e.target.value})} className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm" />
-                  <input type="tel" placeholder="Teléfono" value={newOrg.telefono || ''} onChange={(e) => setNewOrg({...newOrg, telefono: e.target.value})} className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm" />
-                  <input type="email" placeholder="Email" value={newOrg.email || ''} onChange={(e) => setNewOrg({...newOrg, email: e.target.value})} className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm" />
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <Button onClick={handleAddOrg} className="bg-blue-600">Guardar</Button>
-                  <Button onClick={() => {setShowOrgForm(false); setNewOrg({});}} variant="outline" className="border-slate-600">Cancelar</Button>
-                </div>
-              </div>
-            )}
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Buscar por RUT, nombre, proveedor o patente..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:border-orange-500"
+              />
+            </div>
 
-            {organizations.length === 0 ? (
+            {/* Drivers Grid */}
+            {filteredDrivers.length === 0 ? (
               <Card className="bg-slate-800/50 border-slate-700">
-                <CardContent className="text-center py-8">
-                  <p className="text-slate-400">No hay subcontratos registrados</p>
+                <CardContent className="text-center py-12">
+                  <p className="text-slate-400">No hay conductores que coincidan con la búsqueda</p>
                 </CardContent>
               </Card>
             ) : (
-              <div className="bg-slate-800/40 border border-slate-700 rounded-lg overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-700 bg-slate-900/50">
-                      <th className="px-3 py-2 text-left font-semibold text-slate-300">Empresa</th>
-                      <th className="px-3 py-2 text-left font-semibold text-slate-300">RUT</th>
-                      <th className="px-3 py-2 text-left font-semibold text-slate-300">Fantasía</th>
-                      <th className="px-3 py-2 text-left font-semibold text-slate-300">Representante</th>
-                      <th className="px-3 py-2 text-left font-semibold text-slate-300">Region</th>
-                      <th className="px-3 py-2 text-left font-semibold text-slate-300">Email</th>
-                      <th className="px-3 py-2 text-left font-semibold text-slate-300">Teléfono</th>
-                      <th className="px-3 py-2 text-left font-semibold text-slate-300">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {organizations.map((org) => (
-                      <tr key={org.id} className="border-b border-slate-700 hover:bg-slate-800/40">
-                        {editingOrgId === org.id ? (
-                          <>
-                            <td className="px-3 py-2"><input type="text" value={editOrgData.name || ''} onChange={(e) => setEditOrgData({...editOrgData, name: e.target.value})} className="px-2 py-1 bg-slate-700 rounded text-white text-xs w-full" /></td>
-                            <td className="px-3 py-2"><input type="text" value={editOrgData.rut || ''} onChange={(e) => setEditOrgData({...editOrgData, rut: e.target.value})} className="px-2 py-1 bg-slate-700 rounded text-white text-xs w-full" /></td>
-                            <td className="px-3 py-2"><input type="text" value={editOrgData.nombre_fantasia || ''} onChange={(e) => setEditOrgData({...editOrgData, nombre_fantasia: e.target.value})} className="px-2 py-1 bg-slate-700 rounded text-white text-xs w-full" /></td>
-                            <td className="px-3 py-2"><input type="text" value={editOrgData.representante || ''} onChange={(e) => setEditOrgData({...editOrgData, representante: e.target.value})} className="px-2 py-1 bg-slate-700 rounded text-white text-xs w-full" /></td>
-                            <td className="px-3 py-2"><input type="text" value={editOrgData.region || ''} onChange={(e) => setEditOrgData({...editOrgData, region: e.target.value})} className="px-2 py-1 bg-slate-700 rounded text-white text-xs w-full" /></td>
-                            <td className="px-3 py-2"><input type="email" value={editOrgData.email || ''} onChange={(e) => setEditOrgData({...editOrgData, email: e.target.value})} className="px-2 py-1 bg-slate-700 rounded text-white text-xs w-full" /></td>
-                            <td className="px-3 py-2"><input type="tel" value={editOrgData.telefono || ''} onChange={(e) => setEditOrgData({...editOrgData, telefono: e.target.value})} className="px-2 py-1 bg-slate-700 rounded text-white text-xs w-full" /></td>
-                            <td className="px-3 py-2"><Button size="sm" onClick={() => handleSaveEditOrg(org.id)} className="bg-blue-600 mr-1 text-xs">Guardar</Button><Button size="sm" onClick={() => setEditingOrgId(null)} variant="outline" className="text-xs">Cancelar</Button></td>
-                          </>
-                        ) : (
-                          <>
-                            <td className="px-3 py-2 text-slate-100">{org.name}</td>
-                            <td className="px-3 py-2 text-slate-400 font-mono">{org.rut}</td>
-                            <td className="px-3 py-2 text-slate-400">{org.nombre_fantasia || '-'}</td>
-                            <td className="px-3 py-2 text-slate-400 truncate">{org.representante || '-'}</td>
-                            <td className="px-3 py-2 text-slate-300">{org.region || '-'}</td>
-                            <td className="px-3 py-2 text-slate-400 truncate">{org.email || '-'}</td>
-                            <td className="px-3 py-2 text-slate-400">{org.telefono || '-'}</td>
-                            <td className="px-3 py-2"><Button size="sm" variant="outline" onClick={() => {setEditingOrgId(org.id); setEditOrgData({...org});}} className="mr-1"><Edit2 className="w-3 h-3" /></Button><Button size="sm" variant="outline" onClick={() => handleDeleteOrg(org.id)} className="text-red-400"><Trash2 className="w-3 h-3" /></Button></td>
-                          </>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                {filteredDrivers.map((driver) => (
+                  <Card key={driver.id} className="bg-slate-800/50 border-slate-700 hover:border-orange-500 transition-colors cursor-pointer">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-xs text-slate-400 uppercase tracking-wide">RUT</p>
+                          <CardTitle className="text-orange-400 text-lg mt-1">{driver.rut}</CardTitle>
+                        </div>
+                        <div className="px-2 py-1 bg-green-500/20 border border-green-500 rounded text-xs text-green-400 font-medium">Activo</div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3 text-sm">
+                      <div>
+                        <p className="text-slate-100 font-semibold">{driver.first_name} {driver.last_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400 uppercase tracking-wide">Proveedor</p>
+                        <p className="text-slate-200 mt-1 truncate">{driver.email || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400 uppercase tracking-wide">Patente Tracto</p>
+                        <p className="text-blue-400 font-mono font-semibold mt-1">{driver.phone || 'XW7026'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400 uppercase tracking-wide">Licencia</p>
+                        <div className="flex gap-2 mt-1">
+                          <span className="px-2 py-1 border border-slate-600 rounded text-xs text-slate-300">A-4</span>
+                        </div>
+                      </div>
+                      <div className="border-t border-slate-700 pt-3 mt-3">
+                        <p className="text-xs text-slate-400 uppercase tracking-wide">RUT Proveedor</p>
+                        <p className="text-slate-300 font-mono mt-1">{driver.rut}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             )}
           </div>
         )}
 
-        {/* Documents Tab */}
-        {activeTab === 'documents' && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-white mb-6">Documentos</h2>
-            <Card className="bg-slate-800/50 border-slate-700">
-              <CardContent className="text-center py-12">
-                <FileText className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                <p className="text-slate-400">Sección de documentos en construcción</p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Alerts Tab */}
-        {activeTab === 'alerts' && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-white mb-6">Alertas</h2>
-            <Card className="bg-slate-800/50 border-slate-700">
-              <CardContent className="text-center py-12">
-                <AlertTriangle className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                <p className="text-slate-400">No hay alertas activas</p>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Other Tabs - Placeholder */}
+        {['documents', 'equipment', 'credentials', 'alerts'].includes(activeTab) && (
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardContent className="text-center py-12">
+              <p className="text-slate-400">Esta sección está en construcción</p>
+            </CardContent>
+          </Card>
         )}
       </main>
     </div>
