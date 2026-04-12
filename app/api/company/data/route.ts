@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { calculateStatusBatch, summarizeStatus, type OperableEntity } from '@/lib/operations/status-engine'
 
 export async function GET() {
   try {
@@ -44,41 +43,7 @@ export async function GET() {
       { id: '3', full_name: 'Ana Garcia', rut: '14567890-2', email: 'ana@labbe.cl', phone: '+56914567890', cargo: 'Coordinadora' },
     ]
 
-    // Convert to OperableEntity format for status calculation
-    const driverEntities: OperableEntity[] = driversData.map(d => ({
-      id: d.id,
-      rut: d.rut,
-      nombre: d.nombre,
-      type: 'driver' as const,
-      is_active: d.is_active,
-      expiryDates: d.expiryDates
-    }))
-
-    const subcontractorEntities: OperableEntity[] = subcontractorsData.map(s => ({
-      id: s.id,
-      rut: s.rut,
-      nombre: s.nombre,
-      type: 'subcontractor' as const,
-      is_active: s.is_active,
-      expiryDates: {}
-    }))
-
-    // Calculate operational status
-    const allEntities = [...driverEntities, ...subcontractorEntities]
-    const statusResults = calculateStatusBatch(allEntities)
-    const statusSummary = summarizeStatus(statusResults)
-
-    // Enrich response with status data
-    const driversWithStatus = driversData.map(d => ({
-      ...d,
-      operationalStatus: statusResults.get(d.id)
-    }))
-
-    const subcontractorsWithStatus = subcontractorsData.map(s => ({
-      ...s,
-      operationalStatus: statusResults.get(s.id)
-    }))
-
+    // Enrich response with basic data (status calculations will be done client-side)
     return NextResponse.json({
       company: {
         id: '1',
@@ -93,9 +58,8 @@ export async function GET() {
         is_active: true
       },
       executives: executivesData,
-      drivers: driversWithStatus,
-      subcontractors: subcontractorsWithStatus,
-      operationalSummary: statusSummary
+      drivers: driversData,
+      subcontractors: subcontractorsData
     })
   } catch (error) {
     console.error('[v0] Error in company data endpoint:', error)
