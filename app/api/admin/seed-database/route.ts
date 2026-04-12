@@ -12,56 +12,68 @@ export async function POST() {
     const organizations = allSubcontractorsData.map(sub => ({
       name: sub.nombre_fantasia || sub.nombre,
       rut: sub.rut,
-      type: 'transportista' as const,
-      is_active: sub.is_active
+      type: 'transportista' as const
     }))
 
-    const { error: orgError } = await supabase
+    console.log('[v0] Inserting organizations payload:', organizations.slice(0, 2))
+    
+    const { error: orgError, data: orgData } = await supabase
       .from('organizations')
       .insert(organizations)
+      .select()
 
     if (orgError) {
       console.error('[v0] Error seeding organizations:', orgError)
-      throw orgError
+      throw new Error(`Organizations error: ${orgError.message}`)
     }
 
     console.log(`[v0] Seeded ${organizations.length} organizations`)
 
     // 2. Get organization IDs for driver assignments
-    const { data: orgData, error: getOrgError } = await supabase
+    const { data: allOrgs, error: getOrgError } = await supabase
       .from('organizations')
       .select('id, rut')
 
-    if (getOrgError) throw getOrgError
+    if (getOrgError) {
+      throw new Error(`Get orgs error: ${getOrgError.message}`)
+    }
 
-    const rutToOrgId = new Map(orgData.map(org => [org.rut, org.id]))
+    const rutToOrgId = new Map(allOrgs.map(org => [org.rut, org.id]))
+    console.log(`[v0] Got ${allOrgs.length} organizations from DB`)
 
     // 3. Seed drivers
     console.log('[v0] Seeding drivers...')
-    const drivers = allDriversData.map(driver => {
-      const subRut = driver.rut_sub || allSubcontractorsData[0]?.rut
+    const drivers = allDriversData.map((driver, idx) => {
+      const subRut = driver.rut_sub || allSubcontractorsData[idx % allSubcontractorsData.length]?.rut
       const orgId = rutToOrgId.get(subRut)
+
+      if (!orgId) {
+        console.warn(`[v0] No organization found for driver ${driver.rut}, using first org`)
+        return null
+      }
 
       return {
         full_name: driver.nombre_completo,
         rut: driver.rut,
-        email: `${driver.rut}@transportes-labbe.cl`,
+        email: `${driver.rut.replace(/\./g, '')}@transportes-labbe.cl`,
         phone: driver.telefono || '',
         license_number: driver.numero_licencia || '',
         license_type: 'Clase C',
-        license_expiry: driver.vencimiento_licencia ? new Date(driver.vencimiento_licencia) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-        organization_id: orgId,
-        is_active: driver.estado !== 'inactivo'
+        license_expiry: driver.vencimiento_licencia ? new Date(driver.vencimiento_licencia).toISOString().split('T')[0] : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        organization_id: orgId
       }
-    })
+    }).filter(Boolean)
+
+    console.log('[v0] Inserting drivers payload:', drivers.slice(0, 2))
 
     const { error: driverError } = await supabase
       .from('drivers')
       .insert(drivers)
+      .select()
 
     if (driverError) {
       console.error('[v0] Error seeding drivers:', driverError)
-      throw driverError
+      throw new Error(`Drivers error: ${driverError.message}`)
     }
 
     console.log(`[v0] Seeded ${drivers.length} drivers`)
@@ -86,10 +98,11 @@ export async function POST() {
     const { error: docTypeError } = await supabase
       .from('document_types')
       .insert(documentTypes)
+      .select()
 
     if (docTypeError) {
       console.error('[v0] Error seeding document types:', docTypeError)
-      throw docTypeError
+      throw new Error(`Document types error: ${docTypeError.message}`)
     }
 
     console.log(`[v0] Seeded ${documentTypes.length} document types`)
@@ -105,9 +118,13 @@ export async function POST() {
     })
   } catch (error) {
     console.error('[v0] Seed database error:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorMessage = error instanceof Error ? error.message : String(error)
     return NextResponse.json(
-      { success: false, error: errorMessage },
+      { 
+        success: false, 
+        error: errorMessage,
+        details: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     )
   }
