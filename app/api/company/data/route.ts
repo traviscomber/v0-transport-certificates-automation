@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { allSubcontractorsData } from '@/lib/data/all-subcontractors'
+import { allDriversData } from '@/lib/data/all-drivers'
 
 export async function GET() {
   try {
@@ -14,14 +15,10 @@ export async function GET() {
 
     console.log(`[v0] Loaded ${subcontractorsData.length} subcontractors from all-subcontractors.ts`)
 
-    // Conductores data (sample)
-    const driversData = [
-      { id: '1', rut: '18012757-7', nombres: 'Ruben', apellido_paterno: 'Marchant', apellido_materno: 'Needhan', nombre: 'Ruben Marchant Needhan', rut_proveedor: '77653071-9', proveedor: '4Vial SPA', patente_tracto: 'XW7026', clase_licencia: 'A-4', is_active: true },
-      { id: '2', rut: '10907750-K', nombres: 'Adolfo', apellido_paterno: 'Gonzalez', apellido_materno: 'Meza', nombre: 'Adolfo Gonzalez Meza', rut_proveedor: '76461213-2', proveedor: 'Adolfo Del Carmen Gonzalez Meza Transporte De Carga E.i.r.l.', patente_tracto: 'FWKB83', clase_licencia: 'A-4', is_active: true },
-      { id: '3', rut: '12879880-3', nombres: 'Juan', apellido_paterno: 'Vargas', apellido_materno: 'Jerve', nombre: 'Juan Manuel Vargas Jerve', rut_proveedor: '76956797-6', proveedor: 'AEROCAV SPA', patente_tracto: 'RVSD35', clase_licencia: 'A-4', is_active: true },
-      { id: '4', rut: '16181677-9', nombres: 'Aldo', apellido_paterno: 'Bustamante', apellido_materno: 'Ortega', nombre: 'Aldo Bustamante Ortega', rut_proveedor: '16181677-9', proveedor: 'Aldo Antonio Bustamante Ortega', patente_tracto: 'CHTV35', clase_licencia: 'A-4', is_active: true },
-      { id: '5', rut: '12481902-4', nombres: 'Ambrosio', apellido_paterno: 'Casanova', apellido_materno: 'Naavarrete', nombre: 'Ambrosio Casanova Naavarrete', rut_proveedor: '76463195-1', proveedor: 'Ambrosio Julian Casanova Navarrete Transporte De Carga E.i.r.l.', patente_tracto: 'HWRC63', clase_licencia: 'A-4', is_active: true },
-    ]
+    // Use all 291 drivers from TypeScript data file
+    const driversData = allDriversData
+
+    console.log(`[v0] Loaded ${driversData.length} drivers from all-drivers.ts`)
 
     const executivesData = [
       { id: '1', full_name: 'Carolina Martinez', rut: '12345678-9', email: 'carolina@labbe.cl', phone: '+56912345678', cargo: 'Ejecutiva de Cuenta' },
