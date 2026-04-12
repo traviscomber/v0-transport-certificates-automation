@@ -61,20 +61,64 @@ export default function SeedDatabasePage() {
               </ul>
             </div>
 
-            <Button
-              onClick={handleSeed}
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white py-6 text-lg font-semibold"
-            >
-              {loading ? (
-                <>
-                  <Loader className="w-5 h-5 mr-2 animate-spin" />
-                  Cargando datos...
-                </>
-              ) : (
-                'Ejecutar Seed Database'
-              )}
-            </Button>
+            <div className="space-y-3">
+              <Button
+                onClick={handleSeed}
+                disabled={loading}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white py-6 text-lg font-semibold"
+              >
+                {loading ? (
+                  <>
+                    <Loader className="w-5 h-5 mr-2 animate-spin" />
+                    Cargando datos...
+                  </>
+                ) : (
+                  'Ejecutar Seed Database'
+                )}
+              </Button>
+
+              <Button
+                onClick={async () => {
+                  setLoading(true)
+                  setStatus('loading')
+                  setMessage('Cargando datos REALES en Supabase...')
+
+                  try {
+                    const response = await fetch('/api/admin/seed-real-data', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                    })
+
+                    const result = await response.json()
+
+                    if (!response.ok) {
+                      setStatus('error')
+                      setMessage(result.error || 'Error al cargar datos reales')
+                    } else {
+                      setStatus('success')
+                      setMessage('✓ Datos REALES cargados exitosamente')
+                      setData(result)
+                    }
+                  } catch (error) {
+                    setStatus('error')
+                    setMessage(error instanceof Error ? error.message : 'Error desconocido')
+                  } finally {
+                    setLoading(false)
+                  }
+                }}
+                disabled={loading}
+                className="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-600 text-white py-6 text-lg font-semibold"
+              >
+                {loading ? (
+                  <>
+                    <Loader className="w-5 h-5 mr-2 animate-spin" />
+                    Cargando datos reales...
+                  </>
+                ) : (
+                  'Cargar Datos REALES (291 conductores reales)'
+                )}
+              </Button>
+            </div>
 
             {status !== 'idle' && (
               <div className={`p-4 rounded-lg border-2 flex gap-3 ${
