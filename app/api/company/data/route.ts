@@ -135,8 +135,9 @@ export async function GET() {
     })
   } catch (error) {
     console.error('[v0] Error in company data endpoint:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: 'Failed to fetch company data', details: error.message },
+      { error: 'Failed to fetch company data', details: errorMessage },
       { status: 500 }
     )
   }
