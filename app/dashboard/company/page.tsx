@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Building2, LogOut, Users, User, Search, X, FileText, BarChart3 } from 'lucide-react'
+import { Building2, LogOut, Users, User, Search, X, FileText, BarChart3, Key } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { ControlTower } from '@/components/control-tower'
 import { SubcontractorsList } from '@/components/subcontractors-list'
 import { DriversList } from '@/components/drivers-list'
 import { TeamSearch } from '@/components/team-search'
 import { MonthlyDocumentsList } from '@/components/monthly-documents-list'
+import { SystemCredentialsList } from '@/components/system-credentials-list'
 import { type OperableEntity } from '@/lib/operations/status-engine'
 
 interface DashboardData {
@@ -72,7 +73,7 @@ export default function CompanyDashboard() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [formData, setFormData] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState<'control-tower' | 'subcontractors' | 'drivers' | 'documents' | 'team'>('control-tower')
+  const [activeTab, setActiveTab] = useState<'control-tower' | 'subcontractors' | 'drivers' | 'documents' | 'team' | 'credentials'>('control-tower')
   const [selectedDriver, setSelectedDriver] = useState<any>(null)
   const [isEditingDriver, setIsEditingDriver] = useState(false)
   const [showAddDriverModal, setShowAddDriverModal] = useState(false)
@@ -448,6 +449,17 @@ export default function CompanyDashboard() {
             <Users className="w-4 h-4" />
             Equipo
           </button>
+          <button
+            onClick={() => setActiveTab('credentials')}
+            className={`pb-3 px-2 font-semibold transition-colors whitespace-nowrap flex items-center gap-2 text-sm ${
+              activeTab === 'credentials'
+                ? 'text-orange-500 border-b-2 border-orange-500'
+                : 'text-slate-400 hover:text-slate-300'
+            }`}
+          >
+            <Key className="w-4 h-4" />
+            Credenciales
+          </button>
         </div>
 
         {activeTab === 'control-tower' && (
@@ -481,6 +493,12 @@ export default function CompanyDashboard() {
         {activeTab === 'team' && (
           <div>
             <TeamSearch />
+          </div>
+        )}
+
+        {activeTab === 'credentials' && (
+          <div>
+            <SystemCredentialsList />
           </div>
         )}
       </main>
