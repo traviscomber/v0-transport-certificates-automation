@@ -393,10 +393,10 @@ export default function CompanyDashboard() {
           </CardContent>
         </Card>
 
-        <div className="flex gap-4 mb-8 border-b border-slate-700 overflow-x-auto">
+        <div className="flex gap-2 mb-8 border-b border-slate-700 overflow-x-auto pb-0 -mb-px">
           <button
             onClick={() => setActiveTab('control-tower')}
-            className={`pb-3 px-1 font-semibold transition-colors whitespace-nowrap flex items-center gap-2 ${
+            className={`pb-3 px-2 font-semibold transition-colors whitespace-nowrap flex items-center gap-2 text-sm ${
               activeTab === 'control-tower'
                 ? 'text-orange-500 border-b-2 border-orange-500'
                 : 'text-slate-400 hover:text-slate-300'
@@ -407,7 +407,7 @@ export default function CompanyDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('subcontractors')}
-            className={`pb-3 px-1 font-semibold transition-colors whitespace-nowrap ${
+            className={`pb-3 px-2 font-semibold transition-colors whitespace-nowrap text-sm ${
               activeTab === 'subcontractors'
                 ? 'text-orange-500 border-b-2 border-orange-500'
                 : 'text-slate-400 hover:text-slate-300'
@@ -417,7 +417,7 @@ export default function CompanyDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('drivers')}
-            className={`pb-3 px-1 font-semibold transition-colors whitespace-nowrap ${
+            className={`pb-3 px-2 font-semibold transition-colors whitespace-nowrap text-sm ${
               activeTab === 'drivers'
                 ? 'text-orange-500 border-b-2 border-orange-500'
                 : 'text-slate-400 hover:text-slate-300'
@@ -427,18 +427,18 @@ export default function CompanyDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('documents')}
-            className={`pb-3 px-1 font-semibold transition-colors whitespace-nowrap ${
+            className={`pb-3 px-2 font-semibold transition-colors whitespace-nowrap text-sm flex items-center gap-2 ${
               activeTab === 'documents'
                 ? 'text-orange-500 border-b-2 border-orange-500'
                 : 'text-slate-400 hover:text-slate-300'
             }`}
           >
-            <FileText className="inline w-4 h-4 mr-2" />
+            <FileText className="w-4 h-4" />
             Documentos Mensuales
           </button>
           <button
             onClick={() => setActiveTab('team')}
-            className={`pb-3 px-1 font-semibold transition-colors whitespace-nowrap flex items-center gap-2 ${
+            className={`pb-3 px-2 font-semibold transition-colors whitespace-nowrap flex items-center gap-2 text-sm ${
               activeTab === 'team'
                 ? 'text-orange-500 border-b-2 border-orange-500'
                 : 'text-slate-400 hover:text-slate-300'
