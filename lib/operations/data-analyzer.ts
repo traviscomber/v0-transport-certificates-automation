@@ -241,7 +241,9 @@ export function generateDetailedAlerts() {
 
   // Ordenar por severidad
   return alerts.sort((a, b) => {
-    const severityOrder = { critical: 0, warning: 1, info: 2 }
-    return severityOrder[a.severity] - severityOrder[b.severity]
+    const severityOrder: Record<string, number> = { critical: 0, warning: 1, info: 2 }
+    const aSeverity = (a.severity as string) in severityOrder ? severityOrder[a.severity as string] : 2
+    const bSeverity = (b.severity as string) in severityOrder ? severityOrder[b.severity as string] : 2
+    return aSeverity - bSeverity
   })
 }
