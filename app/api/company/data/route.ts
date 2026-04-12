@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     const { data: company, error: companyError } = await supabase
       .from('transportistas')
       .select('*')
-      .eq('rut', '78.376.780-5')
+      .eq('rut', '78376780-5')
       .maybeSingle()
 
     if (companyError) {
@@ -33,13 +33,17 @@ export async function GET(request: Request) {
 
     console.log('[v0] Executives fetched:', executives?.length || 0)
 
-    // Query drivers
-    const { data: drivers, error: driversError } = await supabase
-      .from('drivers')
+    // Query drivers from conductores table
+    const { data: driversData, error: driversError } = await supabase
+      .from('conductores')
       .select('*')
-      .eq('transportista_id', company.id)
+      .eq('empresa_id', company.id)
 
-    console.log('[v0] Drivers fetched from DB:', drivers?.length || 0)
+    if (driversError) {
+      console.error('[v0] Error fetching drivers:', driversError.message)
+    } else {
+      console.log('[v0] Drivers fetched from DB:', driversData?.length || 0)
+    }
 
     console.log('[v0] Complete Labbe data retrieved from Supabase')
 
@@ -65,16 +69,12 @@ export async function GET(request: Request) {
         cargo: exec.cargo,
         email_auth: exec.email_auth,
       })),
-      drivers: drivers && drivers.length > 0 ? (drivers || []).map((driver: any) => ({
-        id: driver.id,
-        full_name: driver.full_name,
+      drivers: driversData && driversData.length > 0 ? (driversData || []).map((driver: any) => ({
         rut: driver.rut,
-        email: driver.email,
-        phone: driver.phone,
-        license_number: driver.license_number,
-        license_type: driver.license_type,
-        license_expiry: driver.license_expiry,
-        is_active: driver.is_active !== false,
+        nombre: driver.nombre,
+        rut_proveedor: driver.rut_proveedor,
+        proveedor: driver.proveedor,
+        patente_tracto: driver.patente_tracto,
       })) : getLabbeDrivers(),
       subcontractors: getLabbeSubcontractors(),
     })
