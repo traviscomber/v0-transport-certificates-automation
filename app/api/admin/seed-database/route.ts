@@ -8,24 +8,43 @@ export async function POST() {
   
   try {
     supabase = await createClient()
-    console.log('[v0] Supabase client created successfully')
   } catch (err) {
-    console.error('[v0] Failed to create Supabase client:', err)
     return NextResponse.json(
-      { success: false, error: 'Failed to initialize Supabase client' },
+      { success: false, error: 'Failed to initialize Supabase' },
       { status: 500 }
     )
   }
 
   try {
-    // 1. Seed organizations
-    console.log('[v0] Starting to seed organizations...')
+    // 1. Clear existing data (delete drivers first due to FK constraint)
+    console.log('[v0] Clearing existing data...')
+    
+    const { error: deleteDriversError } = await supabase
+      .from('drivers')
+      .delete()
+      .neq('id', '')
+    
+    if (deleteDriversError) {
+      console.error('[v0] Error clearing drivers:', deleteDriversError)
+    }
+
+    const { error: deleteOrgsError } = await supabase
+      .from('organizations')
+      .delete()
+      .neq('id', '')
+    
+    if (deleteOrgsError) {
+      console.error('[v0] Error clearing organizations:', deleteOrgsError)
+    }
+
+    console.log('[v0] Cleared existing data')
+
+    // 2. Seed fresh organizations
+    console.log('[v0] Inserting 221 organizations...')
     const organizations = allSubcontractorsData.map(sub => ({
       name: sub.nombre_fantasia || sub.nombre,
       rut: sub.rut
     }))
-
-    console.log(`[v0] Prepared ${organizations.length} organizations`)
 
     const { error: orgError, data: orgData } = await supabase
       .from('organizations')
@@ -40,14 +59,13 @@ export async function POST() {
       )
     }
 
-    console.log(`[v0] Successfully inserted ${organizations.length} organizations`)
+    console.log(`[v0] ✓ Inserted ${organizations.length} organizations`)
 
     // Create RUT to ID mapping
     const rutToOrgId = new Map((orgData || []).map(org => [org.rut, org.id]))
-    console.log(`[v0] Created mapping for ${rutToOrgId.size} organizations`)
 
-    // 2. Seed drivers
-    console.log('[v0] Starting to seed drivers...')
+    // 3. Seed fresh drivers
+    console.log('[v0] Preparing 291 drivers...')
     const drivers: any[] = []
 
     for (let i = 0; i < allDriversData.length; i++) {
@@ -57,18 +75,16 @@ export async function POST() {
       const orgId = rutToOrgId.get(subRut)
 
       if (!orgId) {
-        console.warn(`[v0] Skipping driver ${driver.rut} - no organization found`)
         continue
       }
 
-      // Extract first and last name from full name
       const nameParts = (driver.nombre || '').trim().split(/\s+/)
-      const firstName = nameParts[0] || ''
-      const lastName = nameParts.slice(1).join(' ') || ''
+      const firstName = nameParts[0] || 'Unknown'
+      const lastName = nameParts.slice(1).join(' ') || 'User'
 
       drivers.push({
         rut: driver.rut,
-        email: `${driver.rut.replace(/\./g, '').replace(/-/g, '')}@transportes-labbe.cl`,
+        email: `driver${i + 1}@transportes-labbe.cl`,
         phone: '',
         first_name: firstName,
         last_name: lastName,
@@ -76,61 +92,46 @@ export async function POST() {
       })
     }
 
-    console.log(`[v0] Prepared ${drivers.length} drivers for insertion`)
+    console.log(`[v0] Inserting ${drivers.length} drivers in batches...`)
 
-    if (drivers.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'No drivers to seed' },
-        { status: 400 }
-      )
-    }
-
-    // Insert drivers in batches to avoid timeout
-    const batchSize = 100
+    // Insert drivers in batches
+    const batchSize = 50
     let insertedDrivers = 0
 
     for (let i = 0; i < drivers.length; i += batchSize) {
       const batch = drivers.slice(i, i + batchSize)
-      console.log(`[v0] Inserting driver batch ${Math.floor(i / batchSize) + 1}...`)
-
+      
       const { error: driverError, data: driverData } = await supabase
         .from('drivers')
         .insert(batch)
         .select('id')
 
       if (driverError) {
-        console.error('[v0] Driver batch insert error:', driverError)
+        console.error(`[v0] Batch ${i / batchSize + 1} error:`, driverError)
         return NextResponse.json(
-          { success: false, error: `Failed to insert drivers batch: ${driverError.message}` },
+          { success: false, error: `Failed at batch: ${driverError.message}` },
           { status: 500 }
         )
       }
 
       insertedDrivers += (driverData || []).length
-      console.log(`[v0] Inserted ${insertedDrivers}/${drivers.length} drivers`)
+      console.log(`[v0] Progress: ${insertedDrivers}/${drivers.length} drivers inserted`)
     }
 
-    console.log(`[v0] Successfully inserted all ${insertedDrivers} drivers`)
+    console.log(`[v0] ✓ Inserted ${insertedDrivers} drivers`)
 
     return NextResponse.json({
       success: true,
-      message: 'Database seeded successfully',
+      message: 'Database seeded successfully!',
       stats: {
-        organizations_created: organizations.length,
-        drivers_created: insertedDrivers,
-        total_records: organizations.length + insertedDrivers
+        organizations: organizations.length,
+        drivers: insertedDrivers,
+        total: organizations.length + insertedDrivers
       }
     })
   } catch (error) {
-    console.error('[v0] Unexpected error in seed:', error)
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: errorMessage,
-        details: error instanceof Error ? error.stack : undefined
-      },
-      { status: 500 }
-    )
+    console.error('[v0] Unexpected error:', error)
+    const msg = error instanceof Error ? error.message : String(error)
+    return NextResponse.json({ success: false, error: msg }, { status: 500 })
   }
 }
