@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Building2, LogOut, AlertTriangle, Clock, FileCheck, Users, FileText } from 'lucide-react'
+import { Building2, LogOut, AlertTriangle, Clock, FileCheck, Users, FileText, Plus, Trash2, Edit2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface CompanyData {
@@ -34,6 +34,12 @@ export default function CompanyDashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabType>('overview')
+  
+  // Organizations CRUD states
+  const [editingOrgId, setEditingOrgId] = useState<string | null>(null)
+  const [editOrgData, setEditOrgData] = useState<any>({})
+  const [showOrgForm, setShowOrgForm] = useState(false)
+  const [newOrg, setNewOrg] = useState<any>({})
 
   useEffect(() => {
     const fetchData = async () => {
@@ -63,6 +69,60 @@ export default function CompanyDashboard() {
 
   const handleLogout = () => {
     router.push('/auth/login-company')
+  }
+
+  const handleDeleteOrg = async (id: string) => {
+    if (!confirm('¿Eliminar subcontrato?')) return
+    try {
+      const res = await fetch(`/api/organizations?id=${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed')
+      if (data) {
+        setData({...data, organizations: data.organizations.filter(o => o.id !== id)})
+      }
+    } catch {
+      alert('Error')
+    }
+  }
+
+  const handleSaveEditOrg = async (id: string) => {
+    try {
+      const res = await fetch('/api/organizations', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...editOrgData })
+      })
+      if (!res.ok) throw new Error('Failed')
+      const updated = await res.json()
+      if (data) {
+        setData({...data, organizations: data.organizations.map(o => o.id === id ? updated : o)})
+      }
+      setEditingOrgId(null)
+    } catch {
+      alert('Error')
+    }
+  }
+
+  const handleAddOrg = async () => {
+    if (!newOrg.name || !newOrg.rut) {
+      alert('Complete nombre y RUT')
+      return
+    }
+    try {
+      const res = await fetch('/api/organizations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newOrg)
+      })
+      if (!res.ok) throw new Error('Failed')
+      const created = await res.json()
+      if (data) {
+        setData({...data, organizations: [created, ...data.organizations]})
+      }
+      setNewOrg({})
+      setShowOrgForm(false)
+    } catch {
+      alert('Error')
+    }
   }
 
   if (isLoading) {
@@ -323,7 +383,34 @@ export default function CompanyDashboard() {
         {/* Organizations Tab */}
         {activeTab === 'organizations' && (
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-white mb-6">Subcontratos ({organizations.length})</h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Subcontratos ({organizations.length})</h2>
+              <Button onClick={() => setShowOrgForm(!showOrgForm)} className="bg-green-600 hover:bg-green-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar
+              </Button>
+            </div>
+
+            {showOrgForm && (
+              <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 mb-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <input type="text" placeholder="Nombre" value={newOrg.name || ''} onChange={(e) => setNewOrg({...newOrg, name: e.target.value})} className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm" />
+                  <input type="text" placeholder="RUT" value={newOrg.rut || ''} onChange={(e) => setNewOrg({...newOrg, rut: e.target.value})} className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm" />
+                  <input type="text" placeholder="Nombre Fantasía" value={newOrg.nombre_fantasia || ''} onChange={(e) => setNewOrg({...newOrg, nombre_fantasia: e.target.value})} className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm" />
+                  <input type="text" placeholder="Representante" value={newOrg.representante || ''} onChange={(e) => setNewOrg({...newOrg, representante: e.target.value})} className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm" />
+                  <input type="text" placeholder="Region" value={newOrg.region || ''} onChange={(e) => setNewOrg({...newOrg, region: e.target.value})} className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm" />
+                  <input type="text" placeholder="Dirección" value={newOrg.direccion || ''} onChange={(e) => setNewOrg({...newOrg, direccion: e.target.value})} className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm" />
+                  <input type="text" placeholder="Comuna" value={newOrg.comuna || ''} onChange={(e) => setNewOrg({...newOrg, comuna: e.target.value})} className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm" />
+                  <input type="tel" placeholder="Teléfono" value={newOrg.telefono || ''} onChange={(e) => setNewOrg({...newOrg, telefono: e.target.value})} className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm" />
+                  <input type="email" placeholder="Email" value={newOrg.email || ''} onChange={(e) => setNewOrg({...newOrg, email: e.target.value})} className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm" />
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Button onClick={handleAddOrg} className="bg-blue-600">Guardar</Button>
+                  <Button onClick={() => {setShowOrgForm(false); setNewOrg({});}} variant="outline" className="border-slate-600">Cancelar</Button>
+                </div>
+              </div>
+            )}
+
             {organizations.length === 0 ? (
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardContent className="text-center py-8">
@@ -331,25 +418,50 @@ export default function CompanyDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="bg-slate-800/40 border border-slate-700 rounded-lg overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-700 bg-slate-900/50">
-                        <th className="px-6 py-3 text-left font-semibold text-slate-300">Empresa</th>
-                        <th className="px-6 py-3 text-left font-semibold text-slate-300">RUT</th>
+              <div className="bg-slate-800/40 border border-slate-700 rounded-lg overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-700 bg-slate-900/50">
+                      <th className="px-3 py-2 text-left font-semibold text-slate-300">Empresa</th>
+                      <th className="px-3 py-2 text-left font-semibold text-slate-300">RUT</th>
+                      <th className="px-3 py-2 text-left font-semibold text-slate-300">Fantasía</th>
+                      <th className="px-3 py-2 text-left font-semibold text-slate-300">Representante</th>
+                      <th className="px-3 py-2 text-left font-semibold text-slate-300">Region</th>
+                      <th className="px-3 py-2 text-left font-semibold text-slate-300">Email</th>
+                      <th className="px-3 py-2 text-left font-semibold text-slate-300">Teléfono</th>
+                      <th className="px-3 py-2 text-left font-semibold text-slate-300">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {organizations.map((org) => (
+                      <tr key={org.id} className="border-b border-slate-700 hover:bg-slate-800/40">
+                        {editingOrgId === org.id ? (
+                          <>
+                            <td className="px-3 py-2"><input type="text" value={editOrgData.name || ''} onChange={(e) => setEditOrgData({...editOrgData, name: e.target.value})} className="px-2 py-1 bg-slate-700 rounded text-white text-xs w-full" /></td>
+                            <td className="px-3 py-2"><input type="text" value={editOrgData.rut || ''} onChange={(e) => setEditOrgData({...editOrgData, rut: e.target.value})} className="px-2 py-1 bg-slate-700 rounded text-white text-xs w-full" /></td>
+                            <td className="px-3 py-2"><input type="text" value={editOrgData.nombre_fantasia || ''} onChange={(e) => setEditOrgData({...editOrgData, nombre_fantasia: e.target.value})} className="px-2 py-1 bg-slate-700 rounded text-white text-xs w-full" /></td>
+                            <td className="px-3 py-2"><input type="text" value={editOrgData.representante || ''} onChange={(e) => setEditOrgData({...editOrgData, representante: e.target.value})} className="px-2 py-1 bg-slate-700 rounded text-white text-xs w-full" /></td>
+                            <td className="px-3 py-2"><input type="text" value={editOrgData.region || ''} onChange={(e) => setEditOrgData({...editOrgData, region: e.target.value})} className="px-2 py-1 bg-slate-700 rounded text-white text-xs w-full" /></td>
+                            <td className="px-3 py-2"><input type="email" value={editOrgData.email || ''} onChange={(e) => setEditOrgData({...editOrgData, email: e.target.value})} className="px-2 py-1 bg-slate-700 rounded text-white text-xs w-full" /></td>
+                            <td className="px-3 py-2"><input type="tel" value={editOrgData.telefono || ''} onChange={(e) => setEditOrgData({...editOrgData, telefono: e.target.value})} className="px-2 py-1 bg-slate-700 rounded text-white text-xs w-full" /></td>
+                            <td className="px-3 py-2"><Button size="sm" onClick={() => handleSaveEditOrg(org.id)} className="bg-blue-600 mr-1 text-xs">Guardar</Button><Button size="sm" onClick={() => setEditingOrgId(null)} variant="outline" className="text-xs">Cancelar</Button></td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="px-3 py-2 text-slate-100">{org.name}</td>
+                            <td className="px-3 py-2 text-slate-400 font-mono">{org.rut}</td>
+                            <td className="px-3 py-2 text-slate-400">{org.nombre_fantasia || '-'}</td>
+                            <td className="px-3 py-2 text-slate-400 truncate">{org.representante || '-'}</td>
+                            <td className="px-3 py-2 text-slate-300">{org.region || '-'}</td>
+                            <td className="px-3 py-2 text-slate-400 truncate">{org.email || '-'}</td>
+                            <td className="px-3 py-2 text-slate-400">{org.telefono || '-'}</td>
+                            <td className="px-3 py-2"><Button size="sm" variant="outline" onClick={() => {setEditingOrgId(org.id); setEditOrgData({...org});}} className="mr-1"><Edit2 className="w-3 h-3" /></Button><Button size="sm" variant="outline" onClick={() => handleDeleteOrg(org.id)} className="text-red-400"><Trash2 className="w-3 h-3" /></Button></td>
+                          </>
+                        )}
                       </tr>
-                    </thead>
-                    <tbody>
-                      {organizations.map((org) => (
-                        <tr key={org.id} className="border-b border-slate-700 hover:bg-slate-800/40 transition">
-                          <td className="px-6 py-3 text-slate-100">{org.name}</td>
-                          <td className="px-6 py-3 text-slate-400 font-mono">{org.rut}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
