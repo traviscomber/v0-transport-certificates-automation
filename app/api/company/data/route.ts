@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { calculateStatusBatch, summarizeStatus, type OperableEntity } from '@/lib/operations/status-engine'
 
 export async function GET() {
   try {
@@ -25,16 +26,16 @@ export async function GET() {
     ]
 
     const driversData = [
-      { id: '1', rut: '18012757-7', nombres: 'Ruben', apellido_paterno: 'Marchant', apellido_materno: 'Needhan', nombre: 'Ruben Marchant Needhan', rut_proveedor: '77653071-9', proveedor: '4Vial SPA', patente_tracto: 'XW7026', clase_licencia: 'A-4', is_active: true },
-      { id: '2', rut: '10907750-K', nombres: 'Adolfo', apellido_paterno: 'Gonzalez', apellido_materno: 'Meza', nombre: 'Adolfo Gonzalez Meza', rut_proveedor: '76461213-2', proveedor: 'Adolfo Del Carmen Gonzalez Meza Transporte De Carga E.i.r.l.', patente_tracto: 'FWKB83', clase_licencia: 'A-4', is_active: true },
-      { id: '3', rut: '12879880-3', nombres: 'Juan', apellido_paterno: 'Vargas', apellido_materno: 'Jerve', nombre: 'Juan Manuel Vargas Jerve', rut_proveedor: '76956797-6', proveedor: 'AEROCAV SPA', patente_tracto: 'RVSD35', clase_licencia: 'A-4', is_active: true },
-      { id: '4', rut: '16181677-9', nombres: 'Aldo', apellido_paterno: 'Bustamante', apellido_materno: 'Ortega', nombre: 'Aldo Bustamante Ortega', rut_proveedor: '16181677-9', proveedor: 'Aldo Antonio Bustamante Ortega', patente_tracto: 'CHTV35', clase_licencia: 'A-4', is_active: true },
-      { id: '5', rut: '12481902-4', nombres: 'Ambrosio', apellido_paterno: 'Casanova', apellido_materno: 'Naavarrete', nombre: 'Ambrosio Casanova Naavarrete', rut_proveedor: '76463195-1', proveedor: 'Ambrosio Julian Casanova Navarrete Transporte De Carga E.i.r.l.', patente_tracto: 'HWRC63', clase_licencia: 'A-4', is_active: true },
-      { id: '6', rut: '13277753-5', nombres: 'Patricio', apellido_paterno: 'Rivas', apellido_materno: 'Puentes', nombre: 'Patricio Aurelio Rivas Puentes', rut_proveedor: '78101236-K', proveedor: 'Logística Siete Robles Spa', patente_tracto: 'JSHK45', clase_licencia: 'A-4', is_active: true },
-      { id: '7', rut: '8825579-8', nombres: 'Jose', apellido_paterno: 'Espinoza', apellido_materno: 'Castro', nombre: 'JOSE DAVID ESPINOZA CASTRO', rut_proveedor: '78032949-1', proveedor: 'CLASSIC TRUCK TRANSPORT SPA', patente_tracto: 'GXVX71', clase_licencia: 'A-4', is_active: true },
-      { id: '8', rut: '7486285-3', nombres: 'Pedro', apellido_paterno: 'Mozo', apellido_materno: 'Espina', nombre: 'Pedro Rafael Mozo Espina', rut_proveedor: '77243323-9', proveedor: 'Comercio, Servicios Y Transportes Mozó Spa', patente_tracto: 'CTHX29', clase_licencia: 'A-4', is_active: true },
-      { id: '9', rut: '12671737-7', nombres: 'Cristian', apellido_paterno: 'Jimenez', apellido_materno: 'Reyes', nombre: 'Cristian Mauricio Jimenez Reyes', rut_proveedor: '12671737-7', proveedor: 'Cristian Mauricio Jimenez Reyes', patente_tracto: 'BDTJ59', clase_licencia: 'A-4', is_active: true },
-      { id: '10', rut: '17461633-7', nombres: 'Anibal', apellido_paterno: 'Gregorich', apellido_materno: 'Vergara', nombre: 'Anibal Gregorich Vergara Miranda', rut_proveedor: '77083269-1', proveedor: 'Empresa De Transportes Luis Anibal Vergara Cadiz E.i.r.l.', patente_tracto: 'ZN3559', clase_licencia: 'A-4', is_active: true },
+      { id: '1', rut: '18012757-7', nombres: 'Ruben', apellido_paterno: 'Marchant', apellido_materno: 'Needhan', nombre: 'Ruben Marchant Needhan', rut_proveedor: '77653071-9', proveedor: '4Vial SPA', patente_tracto: 'XW7026', clase_licencia: 'A-4', is_active: true, expiryDates: { 'Licencia de Conducir': '2024-12-15', 'Certificado PSI': '2025-06-30' } },
+      { id: '2', rut: '10907750-K', nombres: 'Adolfo', apellido_paterno: 'Gonzalez', apellido_materno: 'Meza', nombre: 'Adolfo Gonzalez Meza', rut_proveedor: '76461213-2', proveedor: 'Adolfo Del Carmen Gonzalez Meza Transporte De Carga E.i.r.l.', patente_tracto: 'FWKB83', clase_licencia: 'A-4', is_active: true, expiryDates: { 'Licencia de Conducir': '2025-03-20', 'Certificado PSI': '2025-08-15' } },
+      { id: '3', rut: '12879880-3', nombres: 'Juan', apellido_paterno: 'Vargas', apellido_materno: 'Jerve', nombre: 'Juan Manuel Vargas Jerve', rut_proveedor: '76956797-6', proveedor: 'AEROCAV SPA', patente_tracto: 'RVSD35', clase_licencia: 'A-4', is_active: true, expiryDates: { 'Licencia de Conducir': '2025-05-10', 'Certificado PSI': '2025-04-05' } },
+      { id: '4', rut: '16181677-9', nombres: 'Aldo', apellido_paterno: 'Bustamante', apellido_materno: 'Ortega', nombre: 'Aldo Bustamante Ortega', rut_proveedor: '16181677-9', proveedor: 'Aldo Antonio Bustamante Ortega', patente_tracto: 'CHTV35', clase_licencia: 'A-4', is_active: true, expiryDates: { 'Licencia de Conducir': '2025-02-28', 'Certificado PSI': '2025-09-12' } },
+      { id: '5', rut: '12481902-4', nombres: 'Ambrosio', apellido_paterno: 'Casanova', apellido_materno: 'Naavarrete', nombre: 'Ambrosio Casanova Naavarrete', rut_proveedor: '76463195-1', proveedor: 'Ambrosio Julian Casanova Navarrete Transporte De Carga E.i.r.l.', patente_tracto: 'HWRC63', clase_licencia: 'A-4', is_active: true, expiryDates: { 'Licencia de Conducir': '2025-04-18', 'Certificado PSI': '2025-07-22' } },
+      { id: '6', rut: '13277753-5', nombres: 'Patricio', apellido_paterno: 'Rivas', apellido_materno: 'Puentes', nombre: 'Patricio Aurelio Rivas Puentes', rut_proveedor: '78101236-K', proveedor: 'Logística Siete Robles Spa', patente_tracto: 'JSHK45', clase_licencia: 'A-4', is_active: true, expiryDates: { 'Licencia de Conducir': '2025-01-25', 'Certificado PSI': '2025-05-30' } },
+      { id: '7', rut: '8825579-8', nombres: 'Jose', apellido_paterno: 'Espinoza', apellido_materno: 'Castro', nombre: 'JOSE DAVID ESPINOZA CASTRO', rut_proveedor: '78032949-1', proveedor: 'CLASSIC TRUCK TRANSPORT SPA', patente_tracto: 'GXVX71', clase_licencia: 'A-4', is_active: false, expiryDates: { 'Licencia de Conducir': '2024-11-10', 'Certificado PSI': '2025-02-14' } },
+      { id: '8', rut: '7486285-3', nombres: 'Pedro', apellido_paterno: 'Mozo', apellido_materno: 'Espina', nombre: 'Pedro Rafael Mozo Espina', rut_proveedor: '77243323-9', proveedor: 'Comercio, Servicios Y Transportes Mozó Spa', patente_tracto: 'CTHX29', clase_licencia: 'A-4', is_active: true, expiryDates: { 'Licencia de Conducir': '2025-06-05', 'Certificado PSI': '2025-08-20' } },
+      { id: '9', rut: '12671737-7', nombres: 'Cristian', apellido_paterno: 'Jimenez', apellido_materno: 'Reyes', nombre: 'Cristian Mauricio Jimenez Reyes', rut_proveedor: '12671737-7', proveedor: 'Cristian Mauricio Jimenez Reyes', patente_tracto: 'BDTJ59', clase_licencia: 'A-4', is_active: true, expiryDates: { 'Licencia de Conducir': '2025-03-15', 'Certificado PSI': '2025-10-01' } },
+      { id: '10', rut: '17461633-7', nombres: 'Anibal', apellido_paterno: 'Gregorich', apellido_materno: 'Vergara', nombre: 'Anibal Gregorich Vergara Miranda', rut_proveedor: '77083269-1', proveedor: 'Empresa De Transportes Luis Anibal Vergara Cadiz E.i.r.l.', patente_tracto: 'ZN3559', clase_licencia: 'A-4', is_active: true, expiryDates: { 'Licencia de Conducir': '2025-07-12', 'Certificado PSI': '2025-09-25' } },
     ]
 
     const executivesData = [
@@ -42,6 +43,41 @@ export async function GET() {
       { id: '2', full_name: 'Roberto Silva', rut: '13456789-K', email: 'roberto@labbe.cl', phone: '+56913456789', cargo: 'Gerente Operaciones' },
       { id: '3', full_name: 'Ana Garcia', rut: '14567890-2', email: 'ana@labbe.cl', phone: '+56914567890', cargo: 'Coordinadora' },
     ]
+
+    // Convert to OperableEntity format for status calculation
+    const driverEntities: OperableEntity[] = driversData.map(d => ({
+      id: d.id,
+      rut: d.rut,
+      nombre: d.nombre,
+      type: 'driver' as const,
+      is_active: d.is_active,
+      expiryDates: d.expiryDates
+    }))
+
+    const subcontractorEntities: OperableEntity[] = subcontractorsData.map(s => ({
+      id: s.id,
+      rut: s.rut,
+      nombre: s.nombre,
+      type: 'subcontractor' as const,
+      is_active: s.is_active,
+      expiryDates: {}
+    }))
+
+    // Calculate operational status
+    const allEntities = [...driverEntities, ...subcontractorEntities]
+    const statusResults = calculateStatusBatch(allEntities)
+    const statusSummary = summarizeStatus(statusResults)
+
+    // Enrich response with status data
+    const driversWithStatus = driversData.map(d => ({
+      ...d,
+      operationalStatus: statusResults.get(d.id)
+    }))
+
+    const subcontractorsWithStatus = subcontractorsData.map(s => ({
+      ...s,
+      operationalStatus: statusResults.get(s.id)
+    }))
 
     return NextResponse.json({
       company: {
@@ -57,8 +93,9 @@ export async function GET() {
         is_active: true
       },
       executives: executivesData,
-      drivers: driversData,
-      subcontractors: subcontractorsData
+      drivers: driversWithStatus,
+      subcontractors: subcontractorsWithStatus,
+      operationalSummary: statusSummary
     })
   } catch (error) {
     console.error('[v0] Error in company data endpoint:', error)

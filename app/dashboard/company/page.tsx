@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Building2, LogOut, Users, User, Search, X, FileText } from 'lucide-react'
+import { Building2, LogOut, Users, User, Search, X, FileText, BarChart3 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { ControlTower } from '@/components/control-tower'
+import { type OperableEntity } from '@/lib/operations/status-engine'
 
 interface DashboardData {
   company: {
@@ -66,7 +68,7 @@ export default function CompanyDashboard() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [formData, setFormData] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState<'subcontractors' | 'drivers' | 'documents'>('subcontractors')
+  const [activeTab, setActiveTab] = useState<'control-tower' | 'subcontractors' | 'drivers' | 'documents'>('control-tower')
   const [selectedDriver, setSelectedDriver] = useState<any>(null)
   const [isEditingDriver, setIsEditingDriver] = useState(false)
   const [showAddDriverModal, setShowAddDriverModal] = useState(false)
@@ -390,6 +392,17 @@ export default function CompanyDashboard() {
 
         <div className="flex gap-4 mb-8 border-b border-slate-700 overflow-x-auto">
           <button
+            onClick={() => setActiveTab('control-tower')}
+            className={`pb-3 px-1 font-semibold transition-colors whitespace-nowrap flex items-center gap-2 ${
+              activeTab === 'control-tower'
+                ? 'text-orange-500 border-b-2 border-orange-500'
+                : 'text-slate-400 hover:text-slate-300'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            Control Tower
+          </button>
+          <button
             onClick={() => setActiveTab('subcontractors')}
             className={`pb-3 px-1 font-semibold transition-colors whitespace-nowrap ${
               activeTab === 'subcontractors'
@@ -421,6 +434,16 @@ export default function CompanyDashboard() {
             Documentos Mensuales
           </button>
         </div>
+
+        {activeTab === 'control-tower' && (
+          <div>
+            <ControlTower 
+              drivers={drivers}
+              subcontractors={subcontractors}
+              vehicles={[]}
+            />
+          </div>
+        )}
 
         {activeTab === 'subcontractors' && (
           <div>
