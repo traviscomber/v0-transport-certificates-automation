@@ -22,8 +22,8 @@ export async function POST() {
     console.log('[v0] Inserting organizations...')
     const organizations = allSubcontractorsData.map(org => ({
       name: org.nombre || org.nombre_fantasia || org.razon_social,
-      rut: org.rut,
-      type: 'transportista' as const
+      rut: org.rut
+      // Note: type field omitted to avoid schema cache issues - will use DEFAULT 'transportista'
     }))
 
     const { data: orgData, error: orgError } = await supabase
