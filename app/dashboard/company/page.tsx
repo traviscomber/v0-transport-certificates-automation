@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Building2, LogOut, Users, User, Search, X, FileText, BarChart3 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { ControlTower } from '@/components/control-tower'
+import { SubcontractorsList } from '@/components/subcontractors-list'
 import { type OperableEntity } from '@/lib/operations/status-engine'
 
 interface DashboardData {
@@ -447,7 +448,7 @@ export default function CompanyDashboard() {
 
         {activeTab === 'subcontractors' && (
           <div>
-            <p className="text-slate-300">Subcontractors tab content coming soon</p>
+            <SubcontractorsList subcontractors={subcontractors} />
           </div>
         )}
 
