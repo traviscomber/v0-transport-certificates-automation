@@ -61,10 +61,17 @@ export async function POST() {
         continue
       }
 
+      // Extract first and last name from full name
+      const nameParts = (driver.nombre || '').trim().split(/\s+/)
+      const firstName = nameParts[0] || ''
+      const lastName = nameParts.slice(1).join(' ') || ''
+
       drivers.push({
         rut: driver.rut,
         email: `${driver.rut.replace(/\./g, '').replace(/-/g, '')}@transportes-labbe.cl`,
         phone: '',
+        first_name: firstName,
+        last_name: lastName,
         organization_id: orgId
       })
     }
