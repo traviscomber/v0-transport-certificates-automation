@@ -91,7 +91,7 @@ export function AlertsDisplay({ alerts: initialAlerts, onDismiss }: AlertsDispla
 }
 
 interface AlertCardProps {
-  alert: AlertType
+  alert: Alert
   onDismiss: (alertId: string) => void
 }
 
