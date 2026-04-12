@@ -310,6 +310,7 @@ export default function CompanyDashboard() {
     return [...new Set(data.drivers.map(d => d.proveedor))].sort()
   }
 
+  const filteredSubcontractors = getFilteredSubcontractors()
   const filteredDrivers = getFilteredDrivers()
 
   return (
