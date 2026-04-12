@@ -310,9 +310,6 @@ export default function CompanyDashboard() {
     return [...new Set(data.drivers.map(d => d.proveedor))].sort()
   }
 
-  const filteredSubcontractors = getFilteredSubcontractors()
-  const filteredDrivers = getFilteredDrivers()
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
