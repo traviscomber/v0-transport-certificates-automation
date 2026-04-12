@@ -4,17 +4,28 @@ import { allSubcontractorsData } from '@/lib/data/all-subcontractors'
 import { allDriversData } from '@/lib/data/all-drivers'
 
 export async function POST() {
+  let supabase
+  
   try {
-    const supabase = await createClient()
+    supabase = await createClient()
+    console.log('[v0] Supabase client created successfully')
+  } catch (err) {
+    console.error('[v0] Failed to create Supabase client:', err)
+    return NextResponse.json(
+      { success: false, error: 'Failed to initialize Supabase client' },
+      { status: 500 }
+    )
+  }
 
-    console.log('[v0] Starting database seed...')
-
-    // 1. Seed organizations (subcontratistas/transportistas)
-    console.log('[v0] Seeding 221 organizations...')
+  try {
+    // 1. Seed organizations
+    console.log('[v0] Starting to seed organizations...')
     const organizations = allSubcontractorsData.map(sub => ({
       name: sub.nombre_fantasia || sub.nombre,
       rut: sub.rut
     }))
+
+    console.log(`[v0] Prepared ${organizations.length} organizations`)
 
     const { error: orgError, data: orgData } = await supabase
       .from('organizations')
@@ -22,73 +33,95 @@ export async function POST() {
       .select('id, rut')
 
     if (orgError) {
-      console.error('[v0] Error seeding organizations:', orgError)
-      throw new Error(`Organizations error: ${orgError.message}`)
+      console.error('[v0] Organization insert error:', orgError)
+      return NextResponse.json(
+        { success: false, error: `Failed to insert organizations: ${orgError.message}` },
+        { status: 500 }
+      )
     }
 
-    console.log(`[v0] ✓ Successfully seeded ${organizations.length} organizations`)
+    console.log(`[v0] Successfully inserted ${organizations.length} organizations`)
 
     // Create RUT to ID mapping
     const rutToOrgId = new Map((orgData || []).map(org => [org.rut, org.id]))
-    console.log(`[v0] Created RUT mapping with ${rutToOrgId.size} organizations`)
+    console.log(`[v0] Created mapping for ${rutToOrgId.size} organizations`)
 
     // 2. Seed drivers
-    console.log('[v0] Seeding 291 drivers...')
-    const drivers = allDriversData
-      .map((driver, idx) => {
-        // Assign driver to a subcontractor based on index
-        const subIdx = idx % allSubcontractorsData.length
-        const subRut = allSubcontractorsData[subIdx].rut
-        const orgId = rutToOrgId.get(subRut)
+    console.log('[v0] Starting to seed drivers...')
+    const drivers: any[] = []
 
-        if (!orgId) {
-          console.warn(`[v0] No organization found for driver ${driver.rut}, skipping`)
-          return null
-        }
+    for (let i = 0; i < allDriversData.length; i++) {
+      const driver = allDriversData[i]
+      const subIdx = i % allSubcontractorsData.length
+      const subRut = allSubcontractorsData[subIdx].rut
+      const orgId = rutToOrgId.get(subRut)
 
-        return {
-          rut: driver.rut,
-          email: `${driver.rut.replace(/\./g, '')}@transportes-labbe.cl`,
-          phone: '',
-          organization_id: orgId
-        }
+      if (!orgId) {
+        console.warn(`[v0] Skipping driver ${driver.rut} - no organization found`)
+        continue
+      }
+
+      drivers.push({
+        rut: driver.rut,
+        email: `${driver.rut.replace(/\./g, '').replace(/-/g, '')}@transportes-labbe.cl`,
+        phone: '',
+        organization_id: orgId
       })
-      .filter(Boolean)
-
-    if (drivers.length === 0) {
-      throw new Error('No valid drivers to seed')
     }
 
     console.log(`[v0] Prepared ${drivers.length} drivers for insertion`)
 
-    const { error: driverError, data: driverData } = await supabase
-      .from('drivers')
-      .insert(drivers)
-      .select('id')
-
-    if (driverError) {
-      console.error('[v0] Error seeding drivers:', driverError)
-      throw new Error(`Drivers error: ${driverError.message}`)
+    if (drivers.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'No drivers to seed' },
+        { status: 400 }
+      )
     }
 
-    console.log(`[v0] ✓ Successfully seeded ${drivers.length} drivers`)
+    // Insert drivers in batches to avoid timeout
+    const batchSize = 100
+    let insertedDrivers = 0
+
+    for (let i = 0; i < drivers.length; i += batchSize) {
+      const batch = drivers.slice(i, i + batchSize)
+      console.log(`[v0] Inserting driver batch ${Math.floor(i / batchSize) + 1}...`)
+
+      const { error: driverError, data: driverData } = await supabase
+        .from('drivers')
+        .insert(batch)
+        .select('id')
+
+      if (driverError) {
+        console.error('[v0] Driver batch insert error:', driverError)
+        return NextResponse.json(
+          { success: false, error: `Failed to insert drivers batch: ${driverError.message}` },
+          { status: 500 }
+        )
+      }
+
+      insertedDrivers += (driverData || []).length
+      console.log(`[v0] Inserted ${insertedDrivers}/${drivers.length} drivers`)
+    }
+
+    console.log(`[v0] Successfully inserted all ${insertedDrivers} drivers`)
 
     return NextResponse.json({
       success: true,
       message: 'Database seeded successfully',
       stats: {
         organizations_created: organizations.length,
-        drivers_created: drivers.length,
-        total_records: organizations.length + drivers.length
+        drivers_created: insertedDrivers,
+        total_records: organizations.length + insertedDrivers
       }
     })
   } catch (error) {
-    console.error('[v0] Seed error:', error)
+    console.error('[v0] Unexpected error in seed:', error)
     const errorMessage = error instanceof Error ? error.message : String(error)
     return NextResponse.json(
       { 
         success: false, 
-        error: errorMessage
+        error: errorMessage,
+        details: error instanceof Error ? error.stack : undefined
       },
       { status: 500 }
     )
