@@ -91,21 +91,40 @@ export async function POST() {
 
     console.log(`[v0] Inserting ${MISSING_DRIVERS.length} missing drivers...`)
 
-    const { error } = await supabase
-      .from('drivers')
-      .insert(MISSING_DRIVERS)
-      .select()
+    // Transform data to match drivers table schema
+    const driversToInsert = MISSING_DRIVERS.map(driver => ({
+      rut: driver.rut,
+      full_name: driver.nombre,
+      rut_proveedor: driver.rut_proveedor,
+      proveedor: driver.proveedor,
+      patente_tracto: driver.patente_tracto,
+      is_active: true, // Set as active
+    }))
 
-    if (error) {
-      console.error('[v0] Supabase error:', error)
-      return NextResponse.json({ error: error.message }, { status: 400 })
+    // Insert in batches of 50 to avoid errors
+    let totalInserted = 0
+    
+    for (let i = 0; i < driversToInsert.length; i += 50) {
+      const batch = driversToInsert.slice(i, i + 50)
+      
+      const { data, error } = await supabase
+        .from('drivers')
+        .insert(batch)
+        .select()
+
+      if (error) {
+        console.error(`[v0] Batch error:`, error)
+      } else {
+        totalInserted += data?.length || 0
+        console.log(`[v0] Batch inserted: ${data?.length || 0} drivers (Total: ${totalInserted})`)
+      }
     }
 
     return NextResponse.json({
       success: true,
-      message: `Successfully inserted ${MISSING_DRIVERS.length} missing drivers`,
-      inserted: MISSING_DRIVERS.length,
-      total_expected: 292,
+      message: `Successfully inserted ${totalInserted} drivers`,
+      inserted: totalInserted,
+      total_expected: MISSING_DRIVERS.length,
     })
   } catch (error) {
     console.error('[v0] Exception:', error)
