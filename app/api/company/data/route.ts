@@ -458,14 +458,11 @@ function getLabbeDrivers() {
   
   return driversData.map(driver => ({
     id: driver.rut,
-    full_name: driver.nombre,
     rut: driver.rut,
-    phone: '',
-    email: '',
-    license_number: '',
-    license_type: '',
-    license_expiry: '',
-    is_active: true,
+    nombre: driver.nombre,
+    rut_proveedor: driver.rut_proveedor,
+    proveedor: driver.proveedor,
+    patente_tracto: driver.patente_tracto,
   }))
 }
 
