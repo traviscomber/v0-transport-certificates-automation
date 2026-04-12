@@ -18,7 +18,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Read drivers data from file
-const dataFile = path.join(__dirname, 'conductores-data.txt');
+const dataFile = '/vercel/share/v0-project/scripts/conductores-data.txt';
 const fileContent = fs.readFileSync(dataFile, 'utf-8');
 const lines = fileContent.split('\n').filter(l => l.trim());
 
