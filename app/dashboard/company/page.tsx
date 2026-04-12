@@ -218,7 +218,7 @@ export default function CompanyDashboard() {
   }
 
   const handleDelete = async () => {
-    if (!confirm('¿Est��s seguro de que quieres eliminar este subcontrato?')) return
+    if (!confirm('Confirma que deseas eliminar este subcontrato')) return
     
     try {
       setIsDeleting(true)
@@ -235,6 +235,16 @@ export default function CompanyDashboard() {
         const newSubs = data.subcontractors.filter(s => s.rut !== selectedSubcontractor.rut)
         setData({ ...data, subcontractors: newSubs })
       }
+      
+      setSelectedSubcontractor(null)
+      setIsEditMode(false)
+    } catch (error) {
+      console.error('[v0] Error deleting:', error)
+      alert('Error al eliminar el subcontrato')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
       
       setSelectedSubcontractor(null)
       setIsEditMode(false)
