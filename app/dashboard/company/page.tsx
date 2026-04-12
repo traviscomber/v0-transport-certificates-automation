@@ -956,44 +956,209 @@ export default function CompanyDashboard() {
             <MonthlyDocumentsTab />
           </div>
         )}
-      </main>
-    </div>
-  )
-}
 
-      {/* Subcontractor Detail Modal */}
-      {selectedSubcontractor && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="bg-slate-800 border-slate-700 max-w-lg w-full max-h-96 overflow-y-auto">
-            <CardHeader className="flex items-center justify-between flex-row pb-3 border-b border-slate-700">
-              <CardTitle className="text-white">{selectedSubcontractor.nombre}</CardTitle>
-              <button
-                onClick={() => setSelectedSubcontractor(null)}
-                className="text-slate-400 hover:text-slate-300"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-3">
-              <div className="grid grid-cols-2 gap-4">
+        {/* Subcontractor Detail Modal */}
+        {selectedSubcontractor && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <Card className="bg-slate-800 border-slate-700 max-w-lg w-full max-h-96 overflow-y-auto">
+              <CardHeader className="flex items-center justify-between flex-row pb-3 border-b border-slate-700">
+                <CardTitle className="text-white">{selectedSubcontractor.nombre}</CardTitle>
+                <button
+                  onClick={() => setSelectedSubcontractor(null)}
+                  className="text-slate-400 hover:text-slate-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-slate-400 uppercase">RUT</p>
+                    {!isEditMode ? (
+                      <p className="text-white font-mono">{selectedSubcontractor.rut}</p>
+                    ) : (
+                      <input
+                        type="text"
+                        value={formData?.rut || ''}
+                        onChange={(e) => setFormData({ ...formData, rut: e.target.value })}
+                        className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400 uppercase">Ejecutiva</p>
+                    {!isEditMode ? (
+                      <p className="text-orange-400">{selectedSubcontractor.ejecutiva}</p>
+                    ) : (
+                      <select
+                        value={formData?.ejecutiva || ''}
+                        onChange={(e) => setFormData({ ...formData, ejecutiva: e.target.value })}
+                        className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                      >
+                        <option value="">Selecciona ejecutiva</option>
+                        {getUniqueExecutivas().map((exec) => (
+                          <option key={exec} value={exec}>{exec}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400 uppercase">Representante</p>
+                    {!isEditMode ? (
+                      <p className="text-white">{selectedSubcontractor.representante}</p>
+                    ) : (
+                      <input
+                        type="text"
+                        value={formData?.representante || ''}
+                        onChange={(e) => setFormData({ ...formData, representante: e.target.value })}
+                        className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400 uppercase">Comuna</p>
+                    {!isEditMode ? (
+                      <p className="text-white">{selectedSubcontractor.comuna}</p>
+                    ) : (
+                      <input
+                        type="text"
+                        value={formData?.comuna || ''}
+                        onChange={(e) => setFormData({ ...formData, comuna: e.target.value })}
+                        className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                      />
+                    )}
+                  </div>
+                </div>
                 <div>
-                  <p className="text-xs text-slate-400 uppercase">RUT</p>
+                  <p className="text-xs text-slate-400 uppercase">Nombre</p>
                   {!isEditMode ? (
-                    <p className="text-white font-mono">{selectedSubcontractor.rut}</p>
+                    <p className="text-white text-sm">{selectedSubcontractor.nombre}</p>
                   ) : (
                     <input
                       type="text"
-                      value={formData?.rut || ''}
-                      onChange={(e) => setFormData({ ...formData, rut: e.target.value })}
+                      value={formData?.nombre || ''}
+                      onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                       className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
                     />
                   )}
                 </div>
                 <div>
-                  <p className="text-xs text-slate-400 uppercase">Ejecutiva</p>
+                  <p className="text-xs text-slate-400 uppercase">Dirección</p>
                   {!isEditMode ? (
-                    <p className="text-orange-400">{selectedSubcontractor.ejecutiva}</p>
+                    <p className="text-white text-sm">{selectedSubcontractor.direccion}</p>
                   ) : (
+                    <input
+                      type="text"
+                      value={formData?.direccion || ''}
+                      onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
+                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                    />
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 uppercase">Email</p>
+                  {!isEditMode ? (
+                    <p className="text-blue-400 text-sm">{selectedSubcontractor.email || '-'}</p>
+                  ) : (
+                    <input
+                      type="email"
+                      value={formData?.email || ''}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                    />
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 uppercase">Teléfono</p>
+                  {!isEditMode ? (
+                    <p className="text-white text-sm">{selectedSubcontractor.telefono || '-'}</p>
+                  ) : (
+                    <input
+                      type="text"
+                      value={formData?.telefono || ''}
+                      onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                    />
+                  )}
+                </div>
+                <div className="flex gap-2 pt-4 border-t border-slate-700">
+                  {!isEditMode ? (
+                    <>
+                      <Button
+                        onClick={() => handleEditStart()}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700"
+                      >
+                        ✎ Editar
+                      </Button>
+                      <Button
+                        onClick={() => handleDelete()}
+                        disabled={isDeleting}
+                        className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {isDeleting ? 'Eliminando...' : '🗑 Eliminar'}
+                      </Button>
+                      <Button
+                        onClick={() => setSelectedSubcontractor(null)}
+                        className="flex-1 bg-slate-600 hover:bg-slate-700"
+                      >
+                        Cerrar
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        onClick={() => handleSave()}
+                        className="flex-1 bg-green-600 hover:bg-green-700"
+                      >
+                        ✓ Guardar
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setIsEditMode(false)
+                          setFormData(null)
+                        }}
+                        className="flex-1 bg-slate-600 hover:bg-slate-700"
+                      >
+                        Cancelar
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Add New Subcontractor Modal */}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <Card className="bg-slate-800 border-slate-700 max-w-lg w-full max-h-96 overflow-y-auto">
+              <CardHeader className="flex items-center justify-between flex-row pb-3 border-b border-slate-700">
+                <CardTitle className="text-white">Nuevo Subcontrato</CardTitle>
+                <button
+                  onClick={() => {
+                    setShowAddModal(false)
+                    setFormData(null)
+                  }}
+                  className="text-slate-400 hover:text-slate-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-slate-400 uppercase">RUT *</label>
+                    <input
+                      type="text"
+                      placeholder="12.345.678-9"
+                      value={formData?.rut || ''}
+                      onChange={(e) => setFormData({ ...formData, rut: e.target.value })}
+                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 uppercase">Ejecutiva *</label>
                     <select
                       value={formData?.ejecutiva || ''}
                       onChange={(e) => setFormData({ ...formData, ejecutiva: e.target.value })}
@@ -1004,258 +1169,90 @@ export default function CompanyDashboard() {
                         <option key={exec} value={exec}>{exec}</option>
                       ))}
                     </select>
-                  )}
+                  </div>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-400 uppercase">Representante</p>
-                  {!isEditMode ? (
-                    <p className="text-white">{selectedSubcontractor.representante}</p>
-                  ) : (
-                    <input
-                      type="text"
-                      value={formData?.representante || ''}
-                      onChange={(e) => setFormData({ ...formData, representante: e.target.value })}
-                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                    />
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 uppercase">Comuna</p>
-                  {!isEditMode ? (
-                    <p className="text-white">{selectedSubcontractor.comuna}</p>
-                  ) : (
-                    <input
-                      type="text"
-                      value={formData?.comuna || ''}
-                      onChange={(e) => setFormData({ ...formData, comuna: e.target.value })}
-                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                    />
-                  )}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 uppercase">Nombre</p>
-                {!isEditMode ? (
-                  <p className="text-white text-sm">{selectedSubcontractor.nombre}</p>
-                ) : (
+                  <label className="text-xs text-slate-400 uppercase">Nombre *</label>
                   <input
                     type="text"
+                    placeholder="Nombre de la empresa"
                     value={formData?.nombre || ''}
                     onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                     className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
                   />
-                )}
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 uppercase">Dirección</p>
-                {!isEditMode ? (
-                  <p className="text-white text-sm">{selectedSubcontractor.direccion}</p>
-                ) : (
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 uppercase">Representante</label>
                   <input
                     type="text"
+                    placeholder="Nombre del representante"
+                    value={formData?.representante || ''}
+                    onChange={(e) => setFormData({ ...formData, representante: e.target.value })}
+                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 uppercase">Dirección</label>
+                  <input
+                    type="text"
+                    placeholder="Dirección"
                     value={formData?.direccion || ''}
                     onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
                     className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
                   />
-                )}
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 uppercase">Email</p>
-                {!isEditMode ? (
-                  <p className="text-blue-400 text-sm">{selectedSubcontractor.email || '-'}</p>
-                ) : (
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 uppercase">Comuna</label>
+                  <input
+                    type="text"
+                    placeholder="Comuna"
+                    value={formData?.comuna || ''}
+                    onChange={(e) => setFormData({ ...formData, comuna: e.target.value })}
+                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 uppercase">Email</label>
                   <input
                     type="email"
+                    placeholder="correo@ejemplo.com"
                     value={formData?.email || ''}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
                   />
-                )}
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 uppercase">Teléfono</p>
-                {!isEditMode ? (
-                  <p className="text-white text-sm">{selectedSubcontractor.telefono || '-'}</p>
-                ) : (
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 uppercase">Teléfono</label>
                   <input
                     type="text"
+                    placeholder="+56 9 XXXX XXXX"
                     value={formData?.telefono || ''}
                     onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
                     className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
                   />
-                )}
-              </div>
-              <div className="flex gap-2 pt-4 border-t border-slate-700">
-                {!isEditMode ? (
-                  <>
-                    <Button
-                      onClick={() => handleEditStart()}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700"
-                    >
-                      ✎ Editar
-                    </Button>
-                    <Button
-                      onClick={() => handleDelete()}
-                      disabled={isDeleting}
-                      className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50"
-                    >
-                      {isDeleting ? 'Eliminando...' : '🗑 Eliminar'}
-                    </Button>
-                    <Button
-                      onClick={() => setSelectedSubcontractor(null)}
-                      className="flex-1 bg-slate-600 hover:bg-slate-700"
-                    >
-                      Cerrar
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      onClick={() => handleSave()}
-                      className="flex-1 bg-green-600 hover:bg-green-700"
-                    >
-                      ✓ Guardar
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setIsEditMode(false)
-                        setFormData(null)
-                      }}
-                      className="flex-1 bg-slate-600 hover:bg-slate-700"
-                    >
-                      Cancelar
-                    </Button>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Add New Subcontractor Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="bg-slate-800 border-slate-700 max-w-lg w-full max-h-96 overflow-y-auto">
-            <CardHeader className="flex items-center justify-between flex-row pb-3 border-b border-slate-700">
-              <CardTitle className="text-white">Nuevo Subcontrato</CardTitle>
-              <button
-                onClick={() => {
-                  setShowAddModal(false)
-                  setFormData(null)
-                }}
-                className="text-slate-400 hover:text-slate-300"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-3">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-slate-400 uppercase">RUT *</label>
-                  <input
-                    type="text"
-                    placeholder="12.345.678-9"
-                    value={formData?.rut || ''}
-                    onChange={(e) => setFormData({ ...formData, rut: e.target.value })}
-                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                  />
                 </div>
-                <div>
-                  <label className="text-xs text-slate-400 uppercase">Ejecutiva *</label>
-                  <select
-                    value={formData?.ejecutiva || ''}
-                    onChange={(e) => setFormData({ ...formData, ejecutiva: e.target.value })}
-                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                <div className="flex gap-2 pt-4 border-t border-slate-700">
+                  <Button
+                    onClick={() => handleCreateNew()}
+                    className="flex-1 bg-green-600 hover:bg-green-700"
                   >
-                    <option value="">Selecciona ejecutiva</option>
-                    {getUniqueExecutivas().map((exec) => (
-                      <option key={exec} value={exec}>{exec}</option>
-                    ))}
-                  </select>
+                    ✓ Crear
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowAddModal(false)
+                      setFormData(null)
+                    }}
+                    className="flex-1 bg-slate-600 hover:bg-slate-700"
+                  >
+                    Cancelar
+                  </Button>
                 </div>
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 uppercase">Nombre *</label>
-                <input
-                  type="text"
-                  placeholder="Nombre de la empresa"
-                  value={formData?.nombre || ''}
-                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 uppercase">Representante</label>
-                <input
-                  type="text"
-                  placeholder="Nombre del representante"
-                  value={formData?.representante || ''}
-                  onChange={(e) => setFormData({ ...formData, representante: e.target.value })}
-                  className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 uppercase">Dirección</label>
-                <input
-                  type="text"
-                  placeholder="Dirección"
-                  value={formData?.direccion || ''}
-                  onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                  className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 uppercase">Comuna</label>
-                <input
-                  type="text"
-                  placeholder="Comuna"
-                  value={formData?.comuna || ''}
-                  onChange={(e) => setFormData({ ...formData, comuna: e.target.value })}
-                  className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 uppercase">Email</label>
-                <input
-                  type="email"
-                  placeholder="correo@ejemplo.com"
-                  value={formData?.email || ''}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 uppercase">Teléfono</label>
-                <input
-                  type="text"
-                  placeholder="+56 9 XXXX XXXX"
-                  value={formData?.telefono || ''}
-                  onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                  className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                />
-              </div>
-              <div className="flex gap-2 pt-4 border-t border-slate-700">
-                <Button
-                  onClick={() => handleCreateNew()}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                >
-                  ✓ Crear
-                </Button>
-                <Button
-                  onClick={() => {
-                    setShowAddModal(false)
-                    setFormData(null)
-                  }}
-                  className="flex-1 bg-slate-600 hover:bg-slate-700"
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </main>
     </div>
   )
 }
