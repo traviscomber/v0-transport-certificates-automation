@@ -30,10 +30,10 @@
     },
     {
       "id": 5,
-      "title": "Documentos",
-      "description": "Repositorio centralizado de documentación",
+      "title": "Gestión de Documentos",
+      "description": "Panel para visualizar documentos requeridos mensualmente",
       "icon": "FileText",
-      "content": "Almacena, organiza y valida documentos. Sistema automático de alertas para vencimientos."
+      "content": "Visualiza todos los documentos que requiere tu operación. Filtra por certificación (Ariztia, LTS, Rendic, Interpolar), identifica documentos extra que piden tus clientes."
     },
     {
       "id": 6,
@@ -126,24 +126,32 @@
       ]
     },
     "documentos": {
-      "title": "Documentos - Archivo Central",
-      "description": "Repositorio organizado de toda la documentación",
+      "title": "Gestión de Documentos - Administra tu Documentación",
+      "description": "Panel para visualizar y gestionar todos los documentos requeridos",
       "items": [
         {
-          "label": "Subir Documento",
-          "explanation": "Carga PDFs, imágenes de licencias, certificados, etc."
+          "label": "¿Qué es un Documento?",
+          "explanation": "Certificado, registro, autorización o comprobante que debe estar vigente para que tu operación sea legal y cumplida. Cada documento tiene periodicidad (mensual, anual, etc)."
         },
         {
-          "label": "Validación Automática",
-          "explanation": "OCR extrae datos automáticamente (RUT, fechas, clase, etc.)"
+          "label": "Búsqueda Inteligente",
+          "explanation": "Busca por nombre del documento (ej: Licencia) o descripción. La búsqueda es instantánea y case-insensible."
         },
         {
-          "label": "Estado de Vencimiento",
-          "explanation": "Sistema automático marca cuándo vence cada documento"
+          "label": "Filtro por Certificaciones",
+          "explanation": "Ariztia: Asociación de Transporte. LTS: Licencia Técnica. Rendic: Declaración de Rentas. Interpolar: Verificación Internacional. Filtra documentos relacionados."
         },
         {
-          "label": "Búsqueda Avanzada",
-          "explanation": "Encuentra documentos por conductor, tipo, fecha, estado"
+          "label": "Documentos Extra",
+          "explanation": "Documentos adicionales que solicitan algunos clientes específicos. Más allá de los requerimientos legales estándar."
+        },
+        {
+          "label": "Periodicidad",
+          "explanation": "Con qué frecuencia debe renovarse o verificarse el documento. Mensual = cada mes. Anual = cada año. Vigencia = mientras sea válido."
+        },
+        {
+          "label": "Estadísticas Rápidas",
+          "explanation": "Total de documentos, certificaciones disponibles, documentos extra, resultados de búsqueda en tiempo real."
         }
       ]
     },

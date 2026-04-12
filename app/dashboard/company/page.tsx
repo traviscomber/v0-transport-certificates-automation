@@ -464,7 +464,7 @@ export default function CompanyDashboard() {
             }`}
           >
             <FileText className="w-4 h-4" />
-            Documentos Mensuales
+            Gestión de Documentos
           </button>
           <button
             onClick={() => setActiveTab('team')}
