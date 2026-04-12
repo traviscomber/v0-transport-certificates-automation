@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Search, Phone, Mail } from 'lucide-react'
+import { Search, Phone } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { allTeamMembers } from '@/lib/data/team-members'
 
@@ -84,19 +84,10 @@ export function TeamSearch() {
                       </a>
                     </div>
 
-                    {/* Email */}
-                    {member.email && (
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
-                        <a
-                          href={`mailto:${member.email}`}
-                          className="text-slate-300 hover:text-orange-500 transition-colors text-xs truncate"
-                          title={member.email}
-                        >
-                          {member.email}
-                        </a>
-                      </div>
-                    )}
+                    {/* Cargo Badge */}
+                    <div className="inline-flex px-2 py-1 bg-slate-800 rounded text-xs text-orange-400">
+                      {member.cargo}
+                    </div>
                   </div>
                 </div>
               ))
