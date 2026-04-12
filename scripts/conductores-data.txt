@@ -82,7 +82,7 @@ Rut_Conductor	Conductor	Rut_Proveedor	Proveedor	Patente Tracto
 22518660-K	Jose David Nakasone Deza	78156059-6	Transporte Yanina Ysabel Garcia Mora De Nakasone E.i.r.l.	ZS7636
 7445306-6	Daniel  Alejandro Sepulveda  Pastene	77863057-5	TRANSPORTES   DANIEL ALEJANDRO SEPULVEDA NEGRON E.I.R.L	BHHV10
 27704167-7	Anderson Alberto Aguas Acosta	77844986-2	TRANSPORTES  HAKUNA MATATA  SPA	DKRK21
-10511943-7	Jose  Mariano Benitez Vega	77742801-2	transportes  y logistica  jose mariano  benitez  vega spa	RR1154
+10511943-7	Jose  Mariano Benitiz Vega	77742801-2	transportes  y logistica  jose mariano  benitez  vega spa	RR1154
 18348389-7	Eric Ivan Mendoza Cid	77941272-5	TRANSPORTES ALFER SPA	HYHL53
 8769209-4	Hugolino Oscar D'apremont Fuentes	78365117-3	Transportes Almendra Y Roco Spa	JJHV94
 23642784-6	Ariel Martin Ameijeira	77204205-1	Transportes Amal Spa	GXDZ83
@@ -282,7 +282,7 @@ Rut_Conductor	Conductor	Rut_Proveedor	Proveedor	Patente Tracto
 8461526-9	Malco Agabo Cespedes Manquez	78115034-7	Transportes Y Servicios Jenavama Spa	GTGJ65
 12880784-5	Luis Eduardo Perez Vargas	77110277-8	Transportes Santa Rafaela Spa	XB6062
 12756249-0	Genaro Francisco Zurita Hernandez	78293071-0	Transportes Zura Spa	FVYX86
-13773888-0	Rodrigo Andres Sarralde Diaz	78207782-1	Transportes   M&f Spa	GZKY51
+13773888-0	Rodrigo Andres Sarralde Diaz	78207782-1	Transportes   M&f Spa	GZKY51
 20077993-2	Francisco  Patricio Valenzuela Barros	77369887-2	TRANSSAMY SPA	JPWR75
 17217685-2	Raul  Miguel Panes  Lopez	77369887-2	TRANSSAMY SPA	CWVP90
 16809991-6	Claudio Ivan Eduardo Ortega Escobar,	76937652-6	Trasportes Claudio Ortega Spa	JCHR77
