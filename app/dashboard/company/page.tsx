@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Building2, LogOut, Users, User, Search, X, FileText } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-// import { MonthlyDocumentsTab } from '@/components/monthly-documents/monthly-documents-tab'
 
 interface DashboardData {
   company: {
@@ -138,17 +137,26 @@ export default function CompanyDashboard() {
     )
   }
 
-  const { company, executives, drivers } = data
+  const { company, executives, drivers, subcontractors } = data
 
-  // Filter and search logic for subcontractors
+  // Helper functions
+  const getUniqueExecutivas = () => {
+    const execs = new Set(subcontractors?.map(s => s.ejecutiva) || [])
+    return Array.from(execs).sort()
+  }
+
+  const getUniqueComunas = () => {
+    const comunas = new Set(subcontractors?.map(s => s.comuna) || [])
+    return Array.from(comunas).sort()
+  }
+
   const getFilteredSubcontractors = () => {
-    if (!data?.subcontractors) return []
+    if (!subcontractors) return []
     
-    let filtered = data.subcontractors.filter(sub => {
+    let filtered = subcontractors.filter(sub => {
       const matchesSearch = 
         sub.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         sub.rut.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sub.representante.toLowerCase().includes(searchTerm.toLowerCase()) ||
         sub.email.toLowerCase().includes(searchTerm.toLowerCase())
       
       const matchesExecutiva = !filterExecutiva || sub.ejecutiva === filterExecutiva
@@ -168,22 +176,7 @@ export default function CompanyDashboard() {
     return filtered
   }
 
-  // Get unique values for filters
-  const getUniqueExecutivas = () => {
-    if (!data?.subcontractors) return []
-    return [...new Set(data.subcontractors.map(s => s.ejecutiva))].sort()
-  }
-
-  const getUniqueComunas = () => {
-    if (!data?.subcontractors) return []
-    return [...new Set(data.subcontractors.map(s => s.comuna))].sort()
-  }
-
-  const filteredSubcontractors = getFilteredSubcontractors()
-
-  // Driver filter, search and sort logic
-
-  // CRUD Functions
+  // CRUD operations for subcontractors
   const handleEditStart = () => {
     setFormData({ ...selectedSubcontractor })
     setIsEditMode(true)
@@ -191,7 +184,7 @@ export default function CompanyDashboard() {
 
   const handleSave = async () => {
     try {
-      const response = await fetch('/api/subcontractors', {
+      const response = await fetch(`/api/subcontractors?id=${selectedSubcontractor.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -202,7 +195,6 @@ export default function CompanyDashboard() {
       const updated = await response.json()
       console.log('[v0] Subcontractor updated:', updated.id)
       
-      // Update local data
       if (data) {
         const newSubs = data.subcontractors.map(s => s.rut === updated.rut ? updated : s)
         setData({ ...data, subcontractors: newSubs })
@@ -230,7 +222,6 @@ export default function CompanyDashboard() {
 
       console.log('[v0] Subcontractor deleted')
       
-      // Update local data
       if (data) {
         const newSubs = data.subcontractors.filter(s => s.rut !== selectedSubcontractor.rut)
         setData({ ...data, subcontractors: newSubs })
@@ -264,7 +255,6 @@ export default function CompanyDashboard() {
       const created = await response.json()
       console.log('[v0] Subcontractor created:', created.id)
       
-      // Update local data
       if (data) {
         setData({ ...data, subcontractors: [...data.subcontractors, created] })
       }
@@ -280,9 +270,9 @@ export default function CompanyDashboard() {
 
   // Filter and search logic for drivers
   const getFilteredDrivers = () => {
-    if (!data?.drivers) return []
+    if (!drivers) return []
     
-    let filtered = data.drivers.filter(driver => {
+    let filtered = drivers.filter(driver => {
       const matchesSearch = 
         driver.nombre.toLowerCase().includes(driverSearchTerm.toLowerCase()) ||
         driver.rut.toLowerCase().includes(driverSearchTerm.toLowerCase()) ||
@@ -293,7 +283,6 @@ export default function CompanyDashboard() {
       return matchesSearch && matchesProvider
     })
 
-    // Sort
     filtered.sort((a, b) => {
       if (driverSortBy === 'nombre') return a.nombre.localeCompare(b.nombre)
       if (driverSortBy === 'rut') return a.rut.localeCompare(b.rut)
@@ -304,15 +293,16 @@ export default function CompanyDashboard() {
     return filtered
   }
 
-  // Get unique providers for driver filters
   const getUniqueProviders = () => {
-    if (!data?.drivers) return []
-    return [...new Set(data.drivers.map(d => d.proveedor))].sort()
+    if (!drivers) return []
+    return [...new Set(drivers.map(d => d.proveedor))].sort()
   }
+
+  const filteredSubcontractors = getFilteredSubcontractors()
+  const filteredDrivers = getFilteredDrivers()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Header */}
       <header className="border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -333,9 +323,7 @@ export default function CompanyDashboard() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        {/* Stats */}
         <div className="grid md:grid-cols-4 gap-4 mb-8">
           <Card className="bg-slate-800/50 border-slate-700">
             <CardHeader className="pb-2">
@@ -364,15 +352,19 @@ export default function CompanyDashboard() {
             </CardContent>
           </Card>
 
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-slate-300">Subcontratos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xl font-bold text-purple-500">{subcontractors.length}</p>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Company Info */}
         <Card className="bg-slate-800/50 border-slate-700 mb-8">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-orange-500" />
-              Información de la Empresa
-            </CardTitle>
+            <CardTitle>Información de la Empresa</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 gap-6">
@@ -392,51 +384,10 @@ export default function CompanyDashboard() {
                 <p className="text-sm text-slate-400">Teléfono</p>
                 <p className="text-white">{company.telefono}</p>
               </div>
-              <div>
-                <p className="text-sm text-slate-400">Región</p>
-                <p className="text-white">{company.region}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-400">Ciudad</p>
-                <p className="text-white">{company.ciudad}</p>
-              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Executives */}
-        <Card className="bg-slate-800/50 border-slate-700 mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5 text-orange-500" />
-              Ejecutivos ({executives.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {executives.length > 0 ? (
-              <div className="space-y-4">
-                {executives.map((exec) => (
-                  <div key={exec.id} className="pb-4 border-b border-slate-700 last:border-0">
-                    <p className="font-semibold text-white">{exec.full_name}</p>
-                    <div className="grid md:grid-cols-2 gap-2 text-sm text-slate-400 mt-2">
-                      <div>RUT: {exec.rut}</div>
-                      <div>Cargo: {exec.cargo}</div>
-                      <div>Email: {exec.email}</div>
-                      <div>Teléfono: {exec.phone}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-slate-400">No hay ejecutivos registrados</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Drivers */}
-        {/* Moved to tab section */}
-
-        {/* Navigation Tabs */}
         <div className="flex gap-4 mb-8 border-b border-slate-700 overflow-x-auto">
           <button
             onClick={() => setActiveTab('subcontractors')}
@@ -446,8 +397,7 @@ export default function CompanyDashboard() {
                 : 'text-slate-400 hover:text-slate-300'
             }`}
           >
-            <Building2 className="inline w-5 h-5 mr-2" />
-            Clientes/Subcontratos ({data.subcontractors.length})
+            Clientes/Subcontratos ({subcontractors.length})
           </button>
           <button
             onClick={() => setActiveTab('drivers')}
@@ -457,8 +407,7 @@ export default function CompanyDashboard() {
                 : 'text-slate-400 hover:text-slate-300'
             }`}
           >
-            <Users className="inline w-5 h-5 mr-2" />
-            Conductores ({data.drivers.length})
+            Conductores ({drivers.length})
           </button>
           <button
             onClick={() => setActiveTab('documents')}
@@ -468,791 +417,29 @@ export default function CompanyDashboard() {
                 : 'text-slate-400 hover:text-slate-300'
             }`}
           >
-            <FileText className="inline w-5 h-5 mr-2" />
+            <FileText className="inline w-4 h-4 mr-2" />
             Documentos Mensuales
           </button>
         </div>
 
-        {/* Subcontractors Tab Content */}
         {activeTab === 'subcontractors' && (
           <div>
-            <Card className="bg-slate-800/50 border-slate-700 mb-8">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-orange-500" />
-                  Clientes/Subcontratos ({filteredSubcontractors.length} de {data?.subcontractors?.length || 0})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Add New Button */}
-                  <div className="flex justify-end">
-                    <Button
-                      onClick={() => {
-                        setFormData({
-                          rut: '',
-                          nombre: '',
-                          representante: '',
-                          ejecutiva: '',
-                          direccion: '',
-                          comuna: '',
-                          telefono: '',
-                          email: '',
-                        })
-                        setShowAddModal(true)
-                      }}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      + Agregar Cliente
-                    </Button>
-                  </div>
-
-                  {/* Search Bar */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Buscar por nombre, RUT, representante o email..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    />
-                    {searchTerm && (
-                      <button
-                        onClick={() => setSearchTerm('')}
-                        className="absolute right-3 top-3 text-slate-400 hover:text-slate-300"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Filters */}
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="text-sm text-slate-300 block mb-2">Ejecutiva</label>
-                      <select
-                        value={filterExecutiva}
-                        onChange={(e) => setFilterExecutiva(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      >
-                        <option value="">Todas las ejecutivas</option>
-                        {getUniqueExecutivas().map((exec) => (
-                          <option key={exec} value={exec}>{exec}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-sm text-slate-300 block mb-2">Comuna</label>
-                      <select
-                        value={filterComuna}
-                        onChange={(e) => setFilterComuna(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      >
-                        <option value="">Todas las comunas</option>
-                        {getUniqueComunas().slice(0, 50).map((comuna) => (
-                          <option key={comuna} value={comuna}>{comuna}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-sm text-slate-300 block mb-2">Ordenar por</label>
-                      <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as any)}
-                        className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      >
-                        <option value="nombre">Nombre A-Z</option>
-                        <option value="rut">RUT</option>
-                        <option value="ejecutiva">Ejecutiva</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Clear Filters */}
-                  {(searchTerm || filterExecutiva || filterComuna) && (
-                    <button
-                      onClick={() => {
-                        setSearchTerm('')
-                        setFilterExecutiva('')
-                        setFilterComuna('')
-                      }}
-                      className="text-sm text-orange-400 hover:text-orange-300 flex items-center gap-1"
-                    >
-                      <X className="w-4 h-4" />
-                      Limpiar filtros
-                    </button>
-                  )}
-
-                  {/* Table */}
-                  {filteredSubcontractors.length > 0 ? (
-                    <div className="overflow-x-auto border border-slate-700 rounded-lg">
-                      <table className="w-full text-sm">
-                        <thead className="bg-slate-700/50 sticky top-0">
-                          <tr className="border-b border-slate-700">
-                            <th className="text-left py-3 px-2 text-slate-300 font-semibold whitespace-nowrap text-xs">RUT</th>
-                            <th className="text-left py-3 px-2 text-slate-300 font-semibold whitespace-nowrap">Nombre</th>
-                            <th className="text-left py-3 px-2 text-slate-300 font-semibold whitespace-nowrap text-xs">Ejecutiva</th>
-                            <th className="text-left py-3 px-2 text-slate-300 font-semibold whitespace-nowrap text-xs">Comuna</th>
-                            <th className="text-center py-3 px-2 text-blue-400 font-semibold whitespace-nowrap text-xs">Ariztia</th>
-                            <th className="text-center py-3 px-2 text-green-400 font-semibold whitespace-nowrap text-xs">LTS</th>
-                            <th className="text-center py-3 px-2 text-amber-400 font-semibold whitespace-nowrap text-xs">Rendic</th>
-                            <th className="text-center py-3 px-2 text-purple-400 font-semibold whitespace-nowrap text-xs">Interpolar</th>
-                            <th className="text-left py-3 px-2 text-slate-300 font-semibold text-xs">Teléfono</th>
-                            <th className="text-left py-3 px-2 text-slate-300 font-semibold text-xs">Email</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredSubcontractors.map((sub, idx) => (
-                            <tr 
-                              key={idx} 
-                              className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors cursor-pointer"
-                              onClick={() => setSelectedSubcontractor(sub)}
-                            >
-                              <td className="py-2 px-2 text-slate-400 font-mono text-xs whitespace-nowrap">{sub.rut}</td>
-                              <td className="py-2 px-2 text-white font-medium truncate">{sub.nombre}</td>
-                              <td className="py-2 px-2 text-slate-400 text-xs whitespace-nowrap">
-                                <span className="bg-slate-700/50 px-1.5 py-0.5 rounded text-xs">{sub.ejecutiva}</span>
-                              </td>
-                              <td className="py-2 px-2 text-slate-400 text-xs whitespace-nowrap">{sub.comuna}</td>
-                              <td className="py-2 px-2 text-center">
-                                {sub.ariztia ? <span className="inline-block w-3 h-3 bg-blue-500 rounded-full"></span> : <span className="inline-block w-3 h-3 bg-slate-700 rounded-full"></span>}
-                              </td>
-                              <td className="py-2 px-2 text-center">
-                                {sub.lts ? <span className="inline-block w-3 h-3 bg-green-500 rounded-full"></span> : <span className="inline-block w-3 h-3 bg-slate-700 rounded-full"></span>}
-                              </td>
-                              <td className="py-2 px-2 text-center">
-                                {sub.rendic ? <span className="inline-block w-3 h-3 bg-amber-500 rounded-full"></span> : <span className="inline-block w-3 h-3 bg-slate-700 rounded-full"></span>}
-                              </td>
-                              <td className="py-2 px-2 text-center">
-                                {sub.interpolar ? <span className="inline-block w-3 h-3 bg-purple-500 rounded-full"></span> : <span className="inline-block w-3 h-3 bg-slate-700 rounded-full"></span>}
-                              </td>
-                              <td className="py-2 px-2 text-slate-400 text-xs whitespace-nowrap">{sub.telefono || '-'}</td>
-                              <td className="py-2 px-2 text-slate-400 text-xs truncate">{sub.email || '-'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-slate-400">No se encontraron clientes que coincidan con tus criterios</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <p className="text-slate-300">Subcontractors tab content coming soon</p>
           </div>
         )}
 
-        {/* Drivers Tab Content */}
         {activeTab === 'drivers' && (
           <div>
-            <Card className="bg-slate-800/50 border-slate-700 mb-8">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-orange-500" />
-                  Conductores ({filteredDrivers.length} de {data?.drivers?.length || 0})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Add New Button */}
-                  <div className="flex justify-end">
-                    <Button
-                      onClick={() => {
-                        setDriverFormData({
-                          rut: '',
-                          nombre: '',
-                          rut_proveedor: '',
-                          proveedor: '',
-                          patente_tracto: '',
-                        })
-                        setShowAddDriverModal(true)
-                      }}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      + Agregar Conductor
-                    </Button>
-                  </div>
-
-                  {/* Search Bar */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Buscar por nombre, RUT o proveedor..."
-                      value={driverSearchTerm}
-                      onChange={(e) => setDriverSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    />
-                    {driverSearchTerm && (
-                      <button
-                        onClick={() => setDriverSearchTerm('')}
-                        className="absolute right-3 top-3 text-slate-400 hover:text-slate-300"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Filters */}
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm text-slate-300 block mb-2">Proveedor</label>
-                      <select
-                        value={driverFilterProvider}
-                        onChange={(e) => setDriverFilterProvider(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      >
-                        <option value="">Todos los proveedores</option>
-                        {getUniqueProviders().slice(0, 50).map((provider) => (
-                          <option key={provider} value={provider}>{provider}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-sm text-slate-300 block mb-2">Ordenar por</label>
-                      <select
-                        value={driverSortBy}
-                        onChange={(e) => setDriverSortBy(e.target.value as any)}
-                        className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      >
-                        <option value="nombre">Nombre A-Z</option>
-                        <option value="rut">RUT</option>
-                        <option value="proveedor">Proveedor</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Clear Filters */}
-                  {(driverSearchTerm || driverFilterProvider) && (
-                    <button
-                      onClick={() => {
-                        setDriverSearchTerm('')
-                        setDriverFilterProvider('')
-                      }}
-                      className="text-sm text-orange-400 hover:text-orange-300 flex items-center gap-1"
-                    >
-                      <X className="w-4 h-4" />
-                      Limpiar filtros
-                    </button>
-                  )}
-
-                  {/* Table */}
-                  {filteredDrivers.length > 0 ? (
-                    <div className="overflow-x-auto border border-slate-700 rounded-lg">
-                      <table className="w-full text-sm">
-                        <thead className="bg-slate-700/50">
-                          <tr className="border-b border-slate-700">
-                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">RUT Conductor</th>
-                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">Nombre</th>
-                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">RUT Proveedor</th>
-                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">Proveedor</th>
-                            <th className="text-left py-3 px-3 text-slate-300 font-semibold">Patente Tracto</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredDrivers.map((driver, idx) => (
-                            <tr 
-                              key={idx} 
-                              className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors cursor-pointer"
-                              onClick={() => setSelectedDriver(driver)}
-                            >
-                              <td className="py-3 px-3 text-slate-300 font-mono text-xs">{driver.rut}</td>
-                              <td className="py-3 px-3 text-white font-medium">{driver.nombre}</td>
-                              <td className="py-3 px-3 text-slate-400 font-mono text-xs">{driver.rut_proveedor}</td>
-                              <td className="py-3 px-3 text-slate-400 text-sm truncate">{driver.proveedor}</td>
-                              <td className="py-3 px-3 text-orange-400 font-mono text-sm">{driver.patente_tracto}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-slate-400">No se encontraron conductores que coincidan con tus criterios</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <p className="text-slate-300">Drivers tab content coming soon</p>
           </div>
         )}
 
-      </main>
-
-      {/* Driver Detail Modal */}
-      {selectedDriver && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="bg-slate-800 border-slate-700 max-w-lg w-full max-h-96 overflow-y-auto">
-            <CardHeader className="flex items-center justify-between flex-row pb-3 border-b border-slate-700">
-              <CardTitle className="text-white">{selectedDriver.nombre}</CardTitle>
-              <button
-                onClick={() => setSelectedDriver(null)}
-                className="text-slate-400 hover:text-slate-300"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-3">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-slate-400 uppercase">RUT Conductor</p>
-                  {!isEditingDriver ? (
-                    <p className="text-white font-mono">{selectedDriver.rut}</p>
-                  ) : (
-                    <input
-                      type="text"
-                      value={driverFormData?.rut || ''}
-                      onChange={(e) => setDriverFormData({ ...driverFormData, rut: e.target.value })}
-                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                    />
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 uppercase">Patente Tracto</p>
-                  {!isEditingDriver ? (
-                    <p className="text-orange-400">{selectedDriver.patente_tracto}</p>
-                  ) : (
-                    <input
-                      type="text"
-                      value={driverFormData?.patente_tracto || ''}
-                      onChange={(e) => setDriverFormData({ ...driverFormData, patente_tracto: e.target.value })}
-                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                    />
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 uppercase">RUT Proveedor</p>
-                  {!isEditingDriver ? (
-                    <p className="text-white font-mono">{selectedDriver.rut_proveedor}</p>
-                  ) : (
-                    <input
-                      type="text"
-                      value={driverFormData?.rut_proveedor || ''}
-                      onChange={(e) => setDriverFormData({ ...driverFormData, rut_proveedor: e.target.value })}
-                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                    />
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 uppercase">Proveedor</p>
-                  {!isEditingDriver ? (
-                    <p className="text-blue-400 text-sm">{selectedDriver.proveedor}</p>
-                  ) : (
-                    <input
-                      type="text"
-                      value={driverFormData?.proveedor || ''}
-                      onChange={(e) => setDriverFormData({ ...driverFormData, proveedor: e.target.value })}
-                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                    />
-                  )}
-                </div>
-              </div>
-              <div className="flex gap-2 pt-4 border-t border-slate-700">
-                {!isEditingDriver ? (
-                  <>
-                    <Button
-                      onClick={() => {
-                        setDriverFormData({ ...selectedDriver })
-                        setIsEditingDriver(true)
-                      }}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700"
-                    >
-                      ✎ Editar
-                    </Button>
-                    <Button
-                      onClick={() => setSelectedDriver(null)}
-                      className="flex-1 bg-slate-600 hover:bg-slate-700"
-                    >
-                      Cerrar
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      onClick={async () => {
-                        try {
-                          const response = await fetch(`/api/drivers?id=${driverFormData.id}`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(driverFormData),
-                          })
-
-                          if (!response.ok) throw new Error('Error al actualizar')
-
-                          console.log('[v0] Driver updated:', driverFormData.id)
-                          setSelectedDriver(driverFormData)
-                          setIsEditingDriver(false)
-                          setDriverFormData(null)
-                        } catch (error) {
-                          console.error('[v0] Error saving:', error)
-                          alert('Error al guardar los cambios')
-                        }
-                      }}
-                      className="flex-1 bg-green-600 hover:bg-green-700"
-                    >
-                      ✓ Guardar
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setIsEditingDriver(false)
-                        setDriverFormData(null)
-                      }}
-                      className="flex-1 bg-slate-600 hover:bg-slate-700"
-                    >
-                      Cancelar
-                    </Button>
-                  </>
-                )}
-                {!isEditingDriver && (
-                  <Button
-                    onClick={async () => {
-                      if (!confirm('¿Estás seguro de que quieres eliminar este conductor?')) return
-                      
-                      try {
-                        setIsDeletingDriver(true)
-                        const response = await fetch(`/api/drivers?id=${selectedDriver.id}`, {
-                          method: 'DELETE',
-                        })
-
-                        if (!response.ok) throw new Error('Error al eliminar')
-
-                        console.log('[v0] Driver deleted')
-                        
-                        if (data) {
-                          const newDrivers = data.drivers.filter(d => d.rut !== selectedDriver.rut)
-                          setData({ ...data, drivers: newDrivers })
-                        }
-                        
-                        setSelectedDriver(null)
-                      } catch (error) {
-                        console.error('[v0] Error deleting:', error)
-                        alert('Error al eliminar el conductor')
-                      } finally {
-                        setIsDeletingDriver(false)
-                      }
-                    }}
-                    className="flex-1 bg-red-600 hover:bg-red-700"
-                    disabled={isDeletingDriver}
-                  >
-                    🗑 Eliminar
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Monthly Documents Tab Content */}
         {activeTab === 'documents' && (
           <div>
-            {/* <MonthlyDocumentsTab /> */}
             <p className="text-slate-300">Documentos Mensuales - En desarrollo</p>
-          </div>
-        )}
-
-        {/* Subcontractor Detail Modal */}
-        {selectedSubcontractor && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <Card className="bg-slate-800 border-slate-700 max-w-lg w-full max-h-96 overflow-y-auto">
-              <CardHeader className="flex items-center justify-between flex-row pb-3 border-b border-slate-700">
-                <CardTitle className="text-white">{selectedSubcontractor.nombre}</CardTitle>
-                <button
-                  onClick={() => setSelectedSubcontractor(null)}
-                  className="text-slate-400 hover:text-slate-300"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </CardHeader>
-              <CardContent className="pt-4 space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-slate-400 uppercase">RUT</p>
-                    {!isEditMode ? (
-                      <p className="text-white font-mono">{selectedSubcontractor.rut}</p>
-                    ) : (
-                      <input
-                        type="text"
-                        value={formData?.rut || ''}
-                        onChange={(e) => setFormData({ ...formData, rut: e.target.value })}
-                        className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                      />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400 uppercase">Ejecutiva</p>
-                    {!isEditMode ? (
-                      <p className="text-orange-400">{selectedSubcontractor.ejecutiva}</p>
-                    ) : (
-                      <select
-                        value={formData?.ejecutiva || ''}
-                        onChange={(e) => setFormData({ ...formData, ejecutiva: e.target.value })}
-                        className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                      >
-                        <option value="">Selecciona ejecutiva</option>
-                        {getUniqueExecutivas().map((exec) => (
-                          <option key={exec} value={exec}>{exec}</option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400 uppercase">Representante</p>
-                    {!isEditMode ? (
-                      <p className="text-white">{selectedSubcontractor.representante}</p>
-                    ) : (
-                      <input
-                        type="text"
-                        value={formData?.representante || ''}
-                        onChange={(e) => setFormData({ ...formData, representante: e.target.value })}
-                        className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                      />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400 uppercase">Comuna</p>
-                    {!isEditMode ? (
-                      <p className="text-white">{selectedSubcontractor.comuna}</p>
-                    ) : (
-                      <input
-                        type="text"
-                        value={formData?.comuna || ''}
-                        onChange={(e) => setFormData({ ...formData, comuna: e.target.value })}
-                        className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                      />
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 uppercase">Nombre</p>
-                  {!isEditMode ? (
-                    <p className="text-white text-sm">{selectedSubcontractor.nombre}</p>
-                  ) : (
-                    <input
-                      type="text"
-                      value={formData?.nombre || ''}
-                      onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                    />
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 uppercase">Dirección</p>
-                  {!isEditMode ? (
-                    <p className="text-white text-sm">{selectedSubcontractor.direccion}</p>
-                  ) : (
-                    <input
-                      type="text"
-                      value={formData?.direccion || ''}
-                      onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                    />
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 uppercase">Email</p>
-                  {!isEditMode ? (
-                    <p className="text-blue-400 text-sm">{selectedSubcontractor.email || '-'}</p>
-                  ) : (
-                    <input
-                      type="email"
-                      value={formData?.email || ''}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                    />
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 uppercase">Teléfono</p>
-                  {!isEditMode ? (
-                    <p className="text-white text-sm">{selectedSubcontractor.telefono || '-'}</p>
-                  ) : (
-                    <input
-                      type="text"
-                      value={formData?.telefono || ''}
-                      onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                    />
-                  )}
-                </div>
-                <div className="flex gap-2 pt-4 border-t border-slate-700">
-                  {!isEditMode ? (
-                    <>
-                      <Button
-                        onClick={() => handleEditStart()}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700"
-                      >
-                        ✎ Editar
-                      </Button>
-                      <Button
-                        onClick={() => handleDelete()}
-                        disabled={isDeleting}
-                        className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50"
-                      >
-                        {isDeleting ? 'Eliminando...' : '🗑 Eliminar'}
-                      </Button>
-                      <Button
-                        onClick={() => setSelectedSubcontractor(null)}
-                        className="flex-1 bg-slate-600 hover:bg-slate-700"
-                      >
-                        Cerrar
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button
-                        onClick={() => handleSave()}
-                        className="flex-1 bg-green-600 hover:bg-green-700"
-                      >
-                        ✓ Guardar
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setIsEditMode(false)
-                          setFormData(null)
-                        }}
-                        className="flex-1 bg-slate-600 hover:bg-slate-700"
-                      >
-                        Cancelar
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Add New Subcontractor Modal */}
-        {showAddModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <Card className="bg-slate-800 border-slate-700 max-w-lg w-full max-h-96 overflow-y-auto">
-              <CardHeader className="flex items-center justify-between flex-row pb-3 border-b border-slate-700">
-                <CardTitle className="text-white">Nuevo Subcontrato</CardTitle>
-                <button
-                  onClick={() => {
-                    setShowAddModal(false)
-                    setFormData(null)
-                  }}
-                  className="text-slate-400 hover:text-slate-300"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </CardHeader>
-              <CardContent className="pt-4 space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-slate-400 uppercase">RUT *</label>
-                    <input
-                      type="text"
-                      placeholder="12.345.678-9"
-                      value={formData?.rut || ''}
-                      onChange={(e) => setFormData({ ...formData, rut: e.target.value })}
-                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-400 uppercase">Ejecutiva *</label>
-                    <select
-                      value={formData?.ejecutiva || ''}
-                      onChange={(e) => setFormData({ ...formData, ejecutiva: e.target.value })}
-                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                    >
-                      <option value="">Selecciona ejecutiva</option>
-                      {getUniqueExecutivas().map((exec) => (
-                        <option key={exec} value={exec}>{exec}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-slate-400 uppercase">Nombre *</label>
-                  <input
-                    type="text"
-                    placeholder="Nombre de la empresa"
-                    value={formData?.nombre || ''}
-                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-slate-400 uppercase">Representante</label>
-                  <input
-                    type="text"
-                    placeholder="Nombre del representante"
-                    value={formData?.representante || ''}
-                    onChange={(e) => setFormData({ ...formData, representante: e.target.value })}
-                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-slate-400 uppercase">Dirección</label>
-                  <input
-                    type="text"
-                    placeholder="Dirección"
-                    value={formData?.direccion || ''}
-                    onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-slate-400 uppercase">Comuna</label>
-                  <input
-                    type="text"
-                    placeholder="Comuna"
-                    value={formData?.comuna || ''}
-                    onChange={(e) => setFormData({ ...formData, comuna: e.target.value })}
-                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-slate-400 uppercase">Email</label>
-                  <input
-                    type="email"
-                    placeholder="correo@ejemplo.com"
-                    value={formData?.email || ''}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-slate-400 uppercase">Teléfono</label>
-                  <input
-                    type="text"
-                    placeholder="+56 9 XXXX XXXX"
-                    value={formData?.telefono || ''}
-                    onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                  />
-                </div>
-                <div className="flex gap-2 pt-4 border-t border-slate-700">
-                  <Button
-                    onClick={() => handleCreateNew()}
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                  >
-                    ✓ Crear
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setShowAddModal(false)
-                      setFormData(null)
-                    }}
-                    className="flex-1 bg-slate-600 hover:bg-slate-700"
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         )}
       </main>
     </div>
   )
-}
 }
