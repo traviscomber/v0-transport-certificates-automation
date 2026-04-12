@@ -15,33 +15,62 @@ interface Driver {
   organization_id: string
 }
 
+interface DriverWithOrg extends Driver {
+  organization_name?: string
+}
+
 export default function DriversPage() {
   const router = useRouter()
-  const [drivers, setDrivers] = useState<Driver[]>([])
+  const [drivers, setDrivers] = useState<DriverWithOrg[]>([])
+  const [organizations, setOrganizations] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchDrivers = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('/api/company/data?type=drivers', {
+        // Fetch drivers
+        const driversResponse = await fetch('/api/company/data?type=drivers', {
           signal: AbortSignal.timeout(5000)
         })
-        if (!response.ok) throw new Error('Failed to fetch drivers')
-        const data = await response.json()
-        setDrivers(data.drivers || [])
+        if (!driversResponse.ok) throw new Error('Failed to fetch drivers')
+        const driversData = await driversResponse.json()
+        
+        // Fetch organizations
+        const orgsResponse = await fetch('/api/company/data?type=organizations', {
+          signal: AbortSignal.timeout(5000)
+        })
+        if (!orgsResponse.ok) throw new Error('Failed to fetch organizations')
+        const orgsData = await orgsResponse.json()
+        
+        // Create organization map
+        const orgMap: Record<string, string> = {}
+        if (orgsData.organizations) {
+          orgsData.organizations.forEach((org: any) => {
+            orgMap[org.id] = org.name
+          })
+        }
+        
+        // Enrich drivers with organization names
+        const enrichedDrivers = (driversData.drivers || []).map((driver: Driver) => ({
+          ...driver,
+          organization_name: orgMap[driver.organization_id] || 'Sin asignar'
+        }))
+        
+        setOrganizations(orgMap)
+        setDrivers(enrichedDrivers)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error loading drivers')
+        setError(err instanceof Error ? err.message : 'Error loading data')
       } finally {
         setLoading(false)
       }
     }
-    fetchDrivers()
+    fetchData()
   }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Button
@@ -77,22 +106,44 @@ export default function DriversPage() {
             <p className="text-slate-400">No hay conductores registrados</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {drivers.map(driver => (
-              <div
-                key={driver.id}
-                className="bg-slate-800/40 border border-slate-700 rounded-lg p-4 hover:bg-slate-800/60 transition"
-              >
-                <p className="font-semibold text-slate-100">
-                  {driver.first_name} {driver.last_name}
-                </p>
-                <p className="text-slate-400 text-sm">RUT: {driver.rut}</p>
-                <p className="text-slate-400 text-sm truncate">{driver.email}</p>
-                {driver.phone && (
-                  <p className="text-slate-400 text-sm">{driver.phone}</p>
-                )}
-              </div>
-            ))}
+          <div className="bg-slate-800/40 border border-slate-700 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-700 bg-slate-900/50">
+                    <th className="px-6 py-3 text-left font-semibold text-slate-300">Nombre Completo</th>
+                    <th className="px-6 py-3 text-left font-semibold text-slate-300">RUT</th>
+                    <th className="px-6 py-3 text-left font-semibold text-slate-300">Email</th>
+                    <th className="px-6 py-3 text-left font-semibold text-slate-300">Teléfono</th>
+                    <th className="px-6 py-3 text-left font-semibold text-slate-300">Empresa / Subcontratista</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {drivers.map((driver, idx) => (
+                    <tr
+                      key={driver.id}
+                      className="border-b border-slate-700 hover:bg-slate-800/40 transition"
+                    >
+                      <td className="px-6 py-3 text-slate-100">
+                        {driver.first_name} {driver.last_name}
+                      </td>
+                      <td className="px-6 py-3 text-slate-400 font-mono">
+                        {driver.rut}
+                      </td>
+                      <td className="px-6 py-3 text-slate-400 truncate">
+                        {driver.email}
+                      </td>
+                      <td className="px-6 py-3 text-slate-400">
+                        {driver.phone || '-'}
+                      </td>
+                      <td className="px-6 py-3 text-slate-300 font-medium">
+                        {driver.organization_name}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
