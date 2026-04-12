@@ -13,8 +13,7 @@ export async function POST() {
     console.log('[v0] Seeding 221 organizations...')
     const organizations = allSubcontractorsData.map(sub => ({
       name: sub.nombre_fantasia || sub.nombre,
-      rut: sub.rut,
-      type: 'transportista'
+      rut: sub.rut
     }))
 
     const { error: orgError, data: orgData } = await supabase
