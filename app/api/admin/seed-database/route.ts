@@ -5,7 +5,7 @@ import { allDriversData } from '@/lib/data/all-drivers'
 
 export async function POST() {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // 1. Seed organizations (subcontratistas/transportistas)
     console.log('[v0] Seeding organizations...')
