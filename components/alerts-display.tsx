@@ -4,11 +4,11 @@ import { AlertCircle, Clock, Info, X } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Alert as AlertType, sortAlertsByUrgency } from '@/lib/operations/alert-system'
+import { Alert, sortAlertsByUrgency } from '@/lib/operations/alert-system'
 import { useState } from 'react'
 
 interface AlertsDisplayProps {
-  alerts: AlertType[]
+  alerts: Alert[]
   onDismiss?: (alertId: string) => void
 }
 
