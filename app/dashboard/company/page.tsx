@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { ControlTower } from '@/components/control-tower'
 import { SubcontractorsList } from '@/components/subcontractors-list'
 import { DriversList } from '@/components/drivers-list'
+import { TeamSearch } from '@/components/team-search'
 import { type OperableEntity } from '@/lib/operations/status-engine'
 
 interface DashboardData {
@@ -391,6 +392,8 @@ export default function CompanyDashboard() {
             </div>
           </CardContent>
         </Card>
+
+        <TeamSearch />
 
         <div className="flex gap-4 mb-8 border-b border-slate-700 overflow-x-auto">
           <button
