@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { LABBE_SUBCONTRACTORS } from '../subcontractors-data'
+import fs from 'fs'
+import path from 'path'
 
 export async function GET(request: Request) {
   try {
@@ -161,11 +162,31 @@ function getFallbackData() {
 }
 
 function getLabbeDrivers() {
-  // All 292 drivers data
-  const driversData = [
-    { rut: '18012757-7', nombre: 'Ruben Marchant Needhan', rut_proveedor: '77653071-9', proveedor: '4Vial SPA', patente_tracto: 'XW7026' },
-    { rut: '10907750-K', nombre: 'Adolfo Gonzalez Meza', rut_proveedor: '76461213-2', proveedor: 'Adolfo Del Carmen Gonzalez Meza Transporte De Carga E.i.r.l.', patente_tracto: 'FWKB83' },
-    { rut: '12879880-3', nombre: 'Juan Manuel Vargas Jerve', rut_proveedor: '76956797-6', proveedor: 'AEROCAV SPA', patente_tracto: 'RVSD35' },
+  try {
+    // Load real data from TSV file
+    const filePath = path.join(process.cwd(), 'data', 'conductores.txt')
+    const fileContent = fs.readFileSync(filePath, 'utf-8')
+    const lines = fileContent.split('\n').slice(1) // Skip header
+    
+    return lines
+      .filter(line => line.trim())
+      .map(line => {
+        const parts = line.split('\t')
+        return {
+          rut: parts[0],
+          nombre: parts[1],
+          rut_proveedor: parts[2],
+          proveedor: parts[3],
+          patente_tracto: parts[4]
+        }
+      })
+  } catch (error) {
+    console.log('[v0] Error loading real drivers data, using fallback')
+    return []
+  }
+}
+
+function getFallbackData() {
     { rut: '16181677-9', nombre: 'Aldo Bustamante Ortega', rut_proveedor: '16181677-9', proveedor: 'Aldo Antonio Bustamante Ortega', patente_tracto: 'CHTV35' },
     { rut: '12481902-4', nombre: 'Ambrosio Casanova Naavarrete', rut_proveedor: '76463195-1', proveedor: 'Ambrosio Julian Casanova Navarrete Transporte De Carga E.i.r.l.', patente_tracto: 'HWRC63' },
     { rut: '13277753-5', nombre: 'Patricio Aurelio Rivas Puentes', rut_proveedor: '78101236-K', proveedor: 'LogÍstica Siete Robles Spa', patente_tracto: 'JSHK45' },
@@ -467,20 +488,30 @@ function getLabbeDrivers() {
 }
 
 function getLabbeSubcontractors() {
-  // Returns all subcontractors from imported data with region and service flags
-  return LABBE_SUBCONTRACTORS.map(sub => ({
-    rut: sub.rut,
-    nombre: sub.nombre,
-    representante: sub.representante,
-    ejecutiva: sub.ejecutiva,
-    region: sub.region || 'Cecilia',
-    direccion: sub.direccion,
-    comuna: sub.comuna,
-    telefono: sub.telefono,
-    email: sub.email,
-    ariztia: sub.ariztia,
-    lts: sub.lts,
-    rendic: sub.rendic,
-    interpolar: sub.interpolar,
-  }))
+  try {
+    // Load real data from TSV file
+    const filePath = path.join(process.cwd(), 'data', 'transportistas.txt')
+    const fileContent = fs.readFileSync(filePath, 'utf-8')
+    const lines = fileContent.split('\n').slice(1) // Skip header
+    
+    return lines
+      .filter(line => line.trim())
+      .map(line => {
+        const parts = line.split('\t')
+        return {
+          rut: parts[0],
+          nombre: parts[1],
+          representante: parts[3],
+          ejecutiva: parts[5],
+          direccion: parts[6],
+          comuna: parts[7],
+          telefono: parts[8],
+          email: parts[9],
+          proveedor: parts[10] || parts[11] || parts[12] || parts[13] || ''
+        }
+      })
+  } catch (error) {
+    console.log('[v0] Error loading real subcontractors data, using fallback')
+    return []
+  }
 }
