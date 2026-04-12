@@ -33,13 +33,21 @@ export async function GET(request: Request) {
     }
 
     // Default: return full company data - ALL from Supabase
-    const [orgsResult, driversResult] = await Promise.all([
-      supabase.from('organizations').select('*').limit(500),
-      supabase.from('drivers').select('*').limit(500)
-    ])
+    const { data: orgsData, error: orgsError } = await supabase
+      .from('organizations')
+      .select('*')
+      .limit(500)
 
-    const organizations = orgsResult.data || []
-    const drivers = driversResult.data || []
+    const { data: driversData, error: driversError } = await supabase
+      .from('drivers')
+      .select('*')
+      .limit(500)
+
+    if (orgsError) throw orgsError
+    if (driversError) throw driversError
+
+    const organizations = orgsData || []
+    const drivers = driversData || []
 
     // Calculate basic stats from real data
     const totalOrganizations = organizations.length
