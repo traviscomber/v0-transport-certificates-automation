@@ -13,8 +13,7 @@ export async function POST() {
       name: sub.nombre_fantasia || sub.nombre,
       rut: sub.rut,
       type: 'transportista' as const,
-      is_active: sub.is_active,
-      compliance_score: sub.is_active ? 85 : 0
+      is_active: sub.is_active
     }))
 
     const { error: orgError } = await supabase
@@ -52,8 +51,7 @@ export async function POST() {
         license_type: 'Clase C',
         license_expiry: driver.vencimiento_licencia ? new Date(driver.vencimiento_licencia) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
         organization_id: orgId,
-        is_active: driver.estado !== 'inactivo',
-        compliance_score: driver.estado !== 'inactivo' ? 80 : 0
+        is_active: driver.estado !== 'inactivo'
       }
     })
 
