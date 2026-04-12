@@ -42,7 +42,7 @@ export function TeamSearch() {
 
           {/* Results Count */}
           <div className="text-sm text-slate-400">
-            {filteredTeam.length} de {teamMembers.length} miembros
+            {filteredTeam.length} de {allTeamMembers.length} miembros
           </div>
 
           {/* Team Grid */}
