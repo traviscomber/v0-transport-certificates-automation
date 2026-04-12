@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { Mail, Phone, MapPin, Search, X, AlertCircle, CheckCircle2, Info } from 'lucide-react'
+import { Mail, Phone, MapPin, Search, X, AlertCircle, CheckCircle2, Info, Filter } from 'lucide-react'
 import { EducationalTooltip } from './educational-tooltip'
 
 interface Driver {
@@ -44,18 +44,57 @@ interface DriversListProps {
 export function DriversList({ drivers }: DriversListProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null)
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  const [selectedProviders, setSelectedProviders] = useState<string[]>([])
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'inactive'>('all')
 
   const filteredDrivers = useMemo(() => {
     return drivers.filter(driver => {
       const searchLower = searchTerm.toLowerCase()
-      return (
+      
+      // Filtro de búsqueda
+      const matchesSearch = 
         driver.rut?.toLowerCase().includes(searchLower) ||
         driver.nombre?.toLowerCase().includes(searchLower) ||
         driver.proveedor?.toLowerCase().includes(searchLower) ||
         driver.patente_tracto?.toLowerCase().includes(searchLower)
-      )
+      
+      // Filtro por proveedor/subcontratista
+      const matchesProvider = 
+        selectedProviders.length === 0 || 
+        (driver.proveedor && selectedProviders.includes(driver.proveedor))
+      
+      // Filtro por estado
+      const matchesStatus = 
+        selectedStatus === 'all' ||
+        (selectedStatus === 'active' && driver.is_active) ||
+        (selectedStatus === 'inactive' && !driver.is_active)
+      
+      return matchesSearch && matchesProvider && matchesStatus
     })
-  }, [drivers, searchTerm])
+  }, [drivers, searchTerm, selectedProviders, selectedStatus])
+
+  // Obtener lista única de proveedores
+  const providers = useMemo(() => {
+    const uniqueProviders = new Set(drivers.map(d => d.proveedor).filter(Boolean))
+    return Array.from(uniqueProviders).sort()
+  }, [drivers])
+
+  // Funciones para manejar filtros
+  const toggleProvider = (provider: string) => {
+    setSelectedProviders(prev =>
+      prev.includes(provider)
+        ? prev.filter(p => p !== provider)
+        : [...prev, provider]
+    )
+  }
+
+  const resetFilters = () => {
+    setSearchTerm('')
+    setSelectedProviders([])
+    setSelectedStatus('all')
+    setShowAdvancedFilters(false)
+  }
 
   return (
     <div className="w-full space-y-4">
@@ -101,35 +140,127 @@ export function DriversList({ drivers }: DriversListProps) {
         </Card>
       </div>
 
-      {/* Header with search */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-lg font-semibold text-white">Buscar Conductores</h3>
-            <EducationalTooltip 
-              title="¿Cómo buscar?"
-              content="Busca por RUT (ej: 18.012.757-7), nombre completo, proveedor (subcontratista) o patente del vehículo (ej: XW7026). La búsqueda es instantánea."
-              size="sm"
-            />
+      {/* Header with search and filters button */}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-white">Buscar Conductores</h3>
+              <EducationalTooltip 
+                title="¿Cómo buscar?"
+                content="Busca por RUT (ej: 18.012.757-7), nombre completo, proveedor (subcontratista) o patente del vehículo (ej: XW7026). La búsqueda es instantánea."
+                size="sm"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <div className="relative flex-1 md:max-w-xs">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <Input
+                placeholder="Buscar por RUT, nombre, proveedor o patente..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-400"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <Button
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              variant={showAdvancedFilters ? 'default' : 'outline'}
+              className="gap-2"
+            >
+              <Filter className="h-4 w-4" />
+              Filtros
+              {(selectedProviders.length > 0 || selectedStatus !== 'all') && (
+                <Badge className="ml-1 bg-orange-500 text-white">{selectedProviders.length + (selectedStatus !== 'all' ? 1 : 0)}</Badge>
+              )}
+            </Button>
           </div>
         </div>
-        <div className="relative flex-1 md:max-w-xs">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-          <Input
-            placeholder="Buscar por RUT, nombre, proveedor o patente..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-400"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
+
+        {/* Advanced Filters con Tooltips */}
+        {showAdvancedFilters && (
+          <div className="space-y-3 p-4 bg-slate-900 rounded-lg border border-slate-800">
+            {/* Status Filter */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <label className="text-sm font-semibold text-slate-300">Estado</label>
+                <EducationalTooltip 
+                  title="¿Qué significa cada estado?"
+                  content="Activo: Conductor listo para operar, todos los documentos vigentes. Inactivo: Documentos vencidos o incumplimiento que impide operar."
+                  size="sm"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: 'all', label: 'Todos' },
+                  { value: 'active', label: 'Activos' },
+                  { value: 'inactive', label: 'Inactivos' }
+                ].map(status => (
+                  <button
+                    key={status.value}
+                    onClick={() => setSelectedStatus(status.value as 'all' | 'active' | 'inactive')}
+                    className={`px-3 py-1 rounded text-sm transition-colors ${
+                      selectedStatus === status.value
+                        ? 'bg-orange-500 text-white'
+                        : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {status.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Providers Filter */}
+            {providers.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <label className="text-sm font-semibold text-slate-300">Proveedor/Subcontratista ({selectedProviders.length})</label>
+                  <EducationalTooltip 
+                    title="¿Qué es el Proveedor?"
+                    content="Empresa o persona (subcontratista) que proporciona el conductor. Filtra por proveedor para ver solo conductores de una empresa específica."
+                    size="sm"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {providers.map(provider => (
+                    <button
+                      key={provider}
+                      onClick={() => toggleProvider(provider)}
+                      className={`px-3 py-1 rounded text-sm transition-colors ${
+                        selectedProviders.includes(provider)
+                          ? 'bg-orange-500 text-white'
+                          : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {provider}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Reset Filters Button */}
+            {(selectedProviders.length > 0 || selectedStatus !== 'all' || searchTerm) && (
+              <Button
+                onClick={resetFilters}
+                variant="outline"
+                size="sm"
+                className="w-full"
+              >
+                Limpiar Filtros
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Drivers Grid */}

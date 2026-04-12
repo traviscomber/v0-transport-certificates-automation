@@ -86,20 +86,20 @@
           "explanation": "Busca por RUT (ej: 18.012.757-7), nombre completo, proveedor (subcontratista) o patente del vehículo (ej: XW7026). Búsqueda instantánea."
         },
         {
+          "label": "Filtro por Estado",
+          "explanation": "Todos: Ver toda tu flota. Activos: Solo conductores listos para operar. Inactivos: Conductores con problemas que deben resolverse."
+        },
+        {
+          "label": "Filtro por Proveedor",
+          "explanation": "Filtra conductores por empresa o subcontratista. Útil para análisis por proveedor y verificar cumplimiento de cada uno."
+        },
+        {
           "label": "Estado - Activo",
           "explanation": "Conductor listo para operar. Todos sus documentos están vigentes y cumple con la normativa regulatoria."
         },
         {
           "label": "Estado - Inactivo",
           "explanation": "Conductor no puede operar. Tiene documentos vencidos, antecedentes o incumplimiento normativo que debe resolverse."
-        },
-        {
-          "label": "Documentación Requerida",
-          "explanation": "Licencia de Conducir, RUTA (Registración Única de Transportista), Certificados de Capacitación, Antecedentes Penales, Seguros."
-        },
-        {
-          "label": "Clase de Licencia",
-          "explanation": "A1-A3: Motocicletas. B: Vehículos hasta 3.5 toneladas. C-C2: Camiones. E: Vehículos con remolques. Mayor clase = mayor responsabilidad."
         }
       ]
     },
