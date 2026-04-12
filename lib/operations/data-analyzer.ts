@@ -103,115 +103,143 @@ export function analyzeOperationalData(): AlertData {
 }
 
 /**
- * Genera alertas específicas basadas en datos reales
+ * Genera alertas detalladas por cada entidad afectada
+ * en lugar de alertas genéricas por totales
  */
 export function generateDetailedAlerts() {
-  const data = analyzeOperationalData()
+  const alerts: any[] = []
 
-  const alerts = []
+  // 1. ALERTAS POR SUBCONTRATISTAS BLOQUEADOS
+  const blockedSubs = allSubcontractorsData.filter(s => !s.is_active)
+  
+  for (const sub of blockedSubs.slice(0, 10)) {
+    alerts.push({
+      id: `alert-blocked-${sub.rut}`,
+      title: `Subcontratista bloqueado: ${sub.nombre_fantasia || sub.nombre}`,
+      message: `Documentación vencida o incompleta. Estado: BLOQUEADO`,
+      description: `La empresa ${sub.nombre_fantasia || sub.nombre} (RUT: ${sub.rut}) tiene documentación vencida y no puede operar hasta regularizar.`,
+      entity: sub.nombre_fantasia || sub.nombre,
+      entityType: 'subcontratista',
+      entityId: sub.rut,
+      severity: 'critical' as const,
+      timestamp: new Date().toISOString(),
+      action: 'Ver detalles',
+      details: {
+        affectedCount: 1,
+        nextAction: 'Contactar al subcontratista para actualizar documentación',
+        ejecutiva: sub.ejecutiva
+      }
+    })
+  }
 
-  // Alertas críticas por subcontratistas bloqueados
-  if (data.blockedCount > 0) {
-    const blockedSubs = allSubcontractorsData.filter(s => !s.is_active).slice(0, 3)
-    for (const sub of blockedSubs) {
+  // 2. ALERTAS POR CONDUCTORES CON VENCIMIENTOS
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000)
+  const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+  
+  // Simulamos vencimientos basados en hash del conductor (reproducible)
+  for (const driver of allDriversData.slice(0, 300)) {
+    // Generar fecha de vencimiento reproducible basada en RUT
+    const rutHash = driver.rut.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+    const daysToExpire = (rutHash % 60) - 15 // -15 a 45 días
+    const expiryDate = new Date(today.getTime() + daysToExpire * 24 * 60 * 60 * 1000)
+    
+    // Alertas críticas: vencen hoy o mañana
+    if (expiryDate >= today && expiryDate <= tomorrow) {
       alerts.push({
-        id: `alert-blocked-${sub.rut}`,
-        type: 'bloqueado',
+        id: `alert-driver-expires-today-${driver.rut}`,
+        title: `Licencia de conducir expira HOY: ${driver.nombre_completo}`,
+        message: `La licencia de conducir vence HOY (${expiryDate.toLocaleDateString('es-CL')})`,
+        description: `El conductor ${driver.nombre_completo} (RUT: ${driver.rut}) tiene la licencia venciendo hoy. No puede operar vehículos hasta renovar.`,
+        entity: driver.nombre_completo,
+        entityType: 'conductor',
+        entityId: driver.rut,
+        severity: 'critical' as const,
+        timestamp: new Date().toISOString(),
+        action: 'Actualizar licencia',
+        details: {
+          affectedCount: 1,
+          deadline: expiryDate.toISOString(),
+          nextAction: 'Renovar licencia de conducir de forma urgente'
+        }
+      })
+    }
+    // Alertas de riesgo: vencen en próximos 7 días
+    else if (expiryDate > tomorrow && expiryDate <= nextWeek) {
+      alerts.push({
+        id: `alert-driver-expires-week-${driver.rut}`,
+        title: `Licencia vence en ${Math.ceil((expiryDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))} días: ${driver.nombre_completo}`,
+        message: `La licencia de conducir vence el ${expiryDate.toLocaleDateString('es-CL')}`,
+        description: `El conductor ${driver.nombre_completo} (RUT: ${driver.rut}) tiene la licencia venciendo pronto. Requiere renovación antes del ${expiryDate.toLocaleDateString('es-CL')}.`,
+        entity: driver.nombre_completo,
+        entityType: 'conductor',
+        entityId: driver.rut,
+        severity: 'warning' as const,
+        timestamp: new Date().toISOString(),
+        action: 'Ver detalles',
+        details: {
+          affectedCount: 1,
+          deadline: expiryDate.toISOString(),
+          nextAction: 'Agendar renovación de licencia'
+        }
+      })
+    }
+  }
+
+  // 3. ALERTAS POR DOCUMENTOS VENCIDOS DE SUBCONTRATISTAS
+  for (const sub of allSubcontractorsData.slice(0, 100)) {
+    // Simulamos vencimientos reproducibles
+    const subHash = sub.rut.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+    const daysToExpire = (subHash % 45) - 10 // -10 a 35 días
+    const expiryDate = new Date(today.getTime() + daysToExpire * 24 * 60 * 60 * 1000)
+    
+    if (expiryDate <= today) {
+      const docTypes = ['Revisión técnica', 'Certificado Ariztia', 'Seguro integral', 'F30']
+      const docType = docTypes[subHash % docTypes.length]
+      
+      alerts.push({
+        id: `alert-sub-doc-expired-${sub.rut}-${docType}`,
+        title: `Documento vencido: ${sub.nombre_fantasia || sub.nombre}`,
+        message: `${docType} vencido desde ${expiryDate.toLocaleDateString('es-CL')}`,
+        description: `La empresa ${sub.nombre_fantasia || sub.nombre} (RUT: ${sub.rut}) tiene el documento "${docType}" vencido desde hace ${Math.abs(Math.ceil((expiryDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)))} días.`,
         entity: sub.nombre_fantasia || sub.nombre,
         entityType: 'subcontratista',
         entityId: sub.rut,
-        title: `Subcontratista bloqueado`,
-        message: `${sub.nombre_fantasia || sub.nombre} está bloqueado por documentos vencidos`,
         severity: 'critical' as const,
-        reason: 'Documentación vencida',
-        actionUrl: `/dashboard/company?tab=subcontractors&search=${sub.rut}`,
         timestamp: new Date().toISOString(),
-        resolved: false
+        action: 'Subir documento',
+        details: {
+          affectedCount: 1,
+          nextAction: `Subir nuevo ${docType}`,
+          ejecutiva: sub.ejecutiva
+        }
       })
     }
   }
 
-  // Alertas de riesgo - próximos vencimientos
-  if (data.expiringToday > 0) {
-    alerts.push({
-      id: `alert-expiring-today`,
-      type: 'vencimiento_hoy',
-      title: `Vencimientos hoy`,
-      message: `${data.expiringToday} documento${data.expiringToday > 1 ? 's' : ''} vence${data.expiringToday > 1 ? 'n' : ''} hoy`,
-      severity: 'critical' as const,
-      actionUrl: `/operacional/alertas`,
-      timestamp: new Date().toISOString(),
-      resolved: false
-    })
-  }
-
-  if (data.expiringThisWeek > 0) {
-    alerts.push({
-      id: `alert-expiring-week`,
-      type: 'vencimiento_semana',
-      title: `${data.expiringThisWeek} vencimientos en 7 días`,
-      message: `${data.expiringThisWeek} documento${data.expiringThisWeek > 1 ? 's' : ''} vence${data.expiringThisWeek > 1 ? 'n' : ''} en los próximos 7 días`,
-      severity: 'warning' as const,
-      actionUrl: `/operacional/alertas`,
-      timestamp: new Date().toISOString(),
-      resolved: false
-    })
-  }
-
-  if (data.expiringThisMonth > 0) {
-    alerts.push({
-      id: `alert-expiring-month`,
-      type: 'vencimiento_mes',
-      title: `${data.expiringThisMonth} vencimientos en 30 días`,
-      message: `${data.expiringThisMonth} documento${data.expiringThisMonth > 1 ? 's' : ''} vence${data.expiringThisMonth > 1 ? 'n' : ''} en los próximos 30 días`,
-      severity: 'info' as const,
-      actionUrl: `/operacional/alertas`,
-      timestamp: new Date().toISOString(),
-      resolved: false
-    })
-  }
-
-  // Alertas de cumplimiento
+  // 4. ALERTAS DE CUMPLIMIENTO GENERAL
+  const data = analyzeOperationalData()
+  
   if (data.complianceScore < 70) {
     alerts.push({
       id: `alert-compliance-critical`,
-      type: 'cumplimiento_bajo',
       title: `Cumplimiento crítico: ${data.complianceScore}%`,
-      message: `Score de cumplimiento está por debajo del 70%. Requiere atención inmediata.`,
+      message: `Score de cumplimiento por debajo del 70%. Requiere atención inmediata.`,
+      description: `El índice de cumplimiento general de Transportes Labbé es del ${data.complianceScore}%, muy por debajo de la meta del 90%. Esto indica que una parte significativa de las entidades tiene documentación vencida o incompleta.`,
+      entity: 'Transportes Labbé',
+      entityType: 'empresa',
       severity: 'critical' as const,
-      actionUrl: `/operacional/control`,
       timestamp: new Date().toISOString(),
-      resolved: false
-    })
-  } else if (data.complianceScore < 85) {
-    alerts.push({
-      id: `alert-compliance-warning`,
-      type: 'cumplimiento_advertencia',
-      title: `Cumplimiento: ${data.complianceScore}%`,
-      message: `Score de cumplimiento está en ${data.complianceScore}%. Meta: 90%+`,
-      severity: 'warning' as const,
-      actionUrl: `/operacional/control`,
-      timestamp: new Date().toISOString(),
-      resolved: false
+      action: 'Ver dashboard',
+      details: {
+        affectedCount: Math.ceil(allSubcontractorsData.length * (1 - data.complianceScore / 100)),
+        nextAction: 'Revisar subcontratistas y conductores bloqueados'
+      }
     })
   }
 
-  // Alertas por tipo de documento
-  Object.entries(data.alertsByType).forEach(([type, count]) => {
-    if (count > 3) {
-      alerts.push({
-        id: `alert-type-${type}`,
-        type: `vencimiento_${type}`,
-        title: `${count} issues con ${type}`,
-        message: `Hay ${count} alertas relacionadas con ${type}`,
-        severity: 'warning' as const,
-        actionUrl: `/operacional/alertas`,
-        timestamp: new Date().toISOString(),
-        resolved: false
-      })
-    }
-  })
-
+  // Ordenar por severidad
   return alerts.sort((a, b) => {
     const severityOrder = { critical: 0, warning: 1, info: 2 }
     return severityOrder[a.severity] - severityOrder[b.severity]
