@@ -1,25 +1,18 @@
 import { NextResponse } from 'next/server'
-import { generateDetailedAlerts, analyzeOperationalData } from '@/lib/operations/data-analyzer'
+import { createClient } from '@/lib/supabase/server'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    // Analizar datos reales de conductores y subcontratistas
-    const operationalData = analyzeOperationalData()
-    
-    // Generar alertas basadas en datos reales
-    const alerts = generateDetailedAlerts()
+    const supabase = await createClient()
 
-    // Ordenar por severidad: critical, warning, info
-    const severityOrder: Record<string, number> = { critical: 0, warning: 1, info: 2 }
-    const sorted = alerts.sort((a, b) => {
-      const aSeverity = (a.severity as string) in severityOrder ? severityOrder[a.severity] : 2
-      const bSeverity = (b.severity as string) in severityOrder ? severityOrder[b.severity] : 2
-      return aSeverity - bSeverity
-    })
+    // Fetch all alerts from Supabase when that table exists
+    // For now, return empty array - alerts will be generated from real data when needed
+    const alerts: any[] = []
 
     return NextResponse.json({
-      alerts: sorted,
-      operationalData,
+      alerts,
       stats: {
         total: alerts.length,
         critical: alerts.filter(a => a.severity === 'critical').length,
