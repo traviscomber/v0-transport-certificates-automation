@@ -1,10 +1,27 @@
+/**
+ * GESTIÓN DE CONDUCTORES
+ * 
+ * Panel para visualizar y gestionar todos los conductores de tu flota.
+ * Aquí puedes:
+ * - Buscar conductores por RUT, nombre, proveedor o patente
+ * - Ver estado de cumplimiento (activo/inactivo)
+ * - Monitorear clase de licencia vigente
+ * - Acceder a información de contacto
+ * - Identificar conductores en riesgo o bloqueados
+ * 
+ * ¿Qué es un Conductor? Es la persona responsable de operar vehículos.
+ * Cada conductor tiene documentos (licencia, antecedentes) que monitorear.
+ */
+
 'use client'
 
 import { useState, useMemo } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Mail, Phone, MapPin, Search, X } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Mail, Phone, MapPin, Search, X, AlertCircle, CheckCircle2, Info } from 'lucide-react'
+import { EducationalTooltip } from './educational-tooltip'
 
 interface Driver {
   id: string
@@ -42,14 +59,59 @@ export function DriversList({ drivers }: DriversListProps) {
 
   return (
     <div className="w-full space-y-4">
+      {/* Header Educativo */}
+      <div className="space-y-3 mb-6">
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-white">Gestión de Conductores</h2>
+          <EducationalTooltip 
+            title="¿Qué es un Conductor?"
+            content="Persona responsable de operar vehículos en tu flota. Cada conductor tiene licencia de conducir, antecedentes penales y documentos que deben estar vigentes para que pueda trabajar."
+          />
+        </div>
+        <p className="text-sm text-slate-400 max-w-2xl leading-relaxed">
+          Monitorea licencias vigentes, estado de cumplimiento y actualización de documentos. Identifica conductores listos para operar o que necesitan atención inmediata.
+        </p>
+      </div>
+
+      {/* Estadísticas Rápidas */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="bg-slate-900/50 border-slate-800">
+          <CardContent className="p-3">
+            <div className="text-2xl font-bold text-white">{drivers.length}</div>
+            <p className="text-xs text-slate-400">Total de Conductores</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-green-900/20 border-green-800">
+          <CardContent className="p-3">
+            <div className="text-2xl font-bold text-green-400">{drivers.filter(d => d.is_active).length}</div>
+            <p className="text-xs text-green-300">Activos</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-red-900/20 border-red-800">
+          <CardContent className="p-3">
+            <div className="text-2xl font-bold text-red-400">{drivers.filter(d => !d.is_active).length}</div>
+            <p className="text-xs text-red-300">Inactivos</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-slate-900/50 border-slate-800">
+          <CardContent className="p-3">
+            <div className="text-2xl font-bold text-white">{filteredDrivers.length}</div>
+            <p className="text-xs text-slate-400">Resultados de búsqueda</p>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Header with search */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Conductores</h2>
-          <p className="text-sm text-slate-400">
-            Total: <span className="font-semibold text-amber-400">{drivers.length}</span> • 
-            Mostrando: <span className="font-semibold text-emerald-400">{filteredDrivers.length}</span>
-          </p>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-white">Buscar Conductores</h3>
+            <EducationalTooltip 
+              title="¿Cómo buscar?"
+              content="Busca por RUT (ej: 18.012.757-7), nombre completo, proveedor (subcontratista) o patente del vehículo (ej: XW7026). La búsqueda es instantánea."
+              size="sm"
+            />
+          </div>
         </div>
         <div className="relative flex-1 md:max-w-xs">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
@@ -82,11 +144,26 @@ export function DriversList({ drivers }: DriversListProps) {
               {/* Header with RUT and status */}
               <div className="mb-3 flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase text-slate-400">RUT</p>
+                  <div className="flex items-center gap-1">
+                    <p className="text-xs font-semibold uppercase text-slate-400">RUT</p>
+                    <EducationalTooltip 
+                      title="¿Qué es el RUT?"
+                      content="Número de identificación único en Chile. Todos los conductores deben tener un RUT válido para operar."
+                      size="xs"
+                    />
+                  </div>
                   <p className="font-mono text-lg font-bold text-amber-400">{driver.rut}</p>
                 </div>
-                {driver.is_active && (
-                  <Badge className="bg-emerald-500/20 text-emerald-300">Activo</Badge>
+                {driver.is_active ? (
+                  <Badge className="bg-green-500/20 text-green-300 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Activo
+                  </Badge>
+                ) : (
+                  <Badge className="bg-red-500/20 text-red-300 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Inactivo
+                  </Badge>
                 )}
               </div>
 

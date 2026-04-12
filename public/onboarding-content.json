@@ -16,10 +16,10 @@
     },
     {
       "id": 3,
-      "title": "Conductores",
-      "description": "Gestión centralizada de conductores y su documentación",
+      "title": "Gestión de Conductores",
+      "description": "Panel para administrar conductores y monitorear licencias",
       "icon": "Users",
-      "content": "Registra, edita y monitorea conductores. Verifica licencias, seguros y certificados en tiempo real."
+      "content": "Gestiona todos tus conductores. Visualiza RUT, estado de cumplimiento, clase de licencia, antecedentes y proveedor. Identifica conductores listos para operar o en riesgo."
     },
     {
       "id": 4,
@@ -74,24 +74,32 @@
       ]
     },
     "conductores": {
-      "title": "Conductores - Gestión Integral",
-      "description": "Panel completo para administrar tu fuerza de trabajo",
+      "title": "Gestión de Conductores - Administra tu Fuerza de Trabajo",
+      "description": "Panel para visualizar y gestionar todos los conductores de tu flota",
       "items": [
         {
-          "label": "Registro",
-          "explanation": "Crea nuevos conductores con RUT, datos personales y documentación inicial"
+          "label": "¿Qué es un Conductor?",
+          "explanation": "Persona responsable de operar vehículos en tu flota. Tiene licencia de conducir, antecedentes penales y documentos que deben estar vigentes para trabajar."
         },
         {
-          "label": "Documentación",
-          "explanation": "Licencia, RUTA, Certificados de capacitación, Seguros"
+          "label": "Búsqueda Inteligente",
+          "explanation": "Busca por RUT (ej: 18.012.757-7), nombre completo, proveedor (subcontratista) o patente del vehículo (ej: XW7026). Búsqueda instantánea."
         },
         {
-          "label": "Estado",
-          "explanation": "Verde = Todo al día | Amarillo = Por vencer | Rojo = Vencido"
+          "label": "Estado - Activo",
+          "explanation": "Conductor listo para operar. Todos sus documentos están vigentes y cumple con la normativa regulatoria."
         },
         {
-          "label": "Historial",
-          "explanation": "Registro completo de cambios y actualizaciones del conductor"
+          "label": "Estado - Inactivo",
+          "explanation": "Conductor no puede operar. Tiene documentos vencidos, antecedentes o incumplimiento normativo que debe resolverse."
+        },
+        {
+          "label": "Documentación Requerida",
+          "explanation": "Licencia de Conducir, RUTA (Registración Única de Transportista), Certificados de Capacitación, Antecedentes Penales, Seguros."
+        },
+        {
+          "label": "Clase de Licencia",
+          "explanation": "A1-A3: Motocicletas. B: Vehículos hasta 3.5 toneladas. C-C2: Camiones. E: Vehículos con remolques. Mayor clase = mayor responsabilidad."
         }
       ]
     },

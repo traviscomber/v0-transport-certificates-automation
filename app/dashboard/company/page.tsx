@@ -453,7 +453,7 @@ export default function CompanyDashboard() {
                 : 'text-slate-400 hover:text-slate-300'
             }`}
           >
-            Conductores ({drivers.length})
+            Gestión de Conductores ({drivers.length})
           </button>
           <button
             onClick={() => setActiveTab('documents')}
