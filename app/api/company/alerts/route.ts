@@ -10,9 +10,11 @@ export async function GET() {
     const alerts = generateDetailedAlerts()
 
     // Ordenar por severidad: critical, warning, info
+    const severityOrder: Record<string, number> = { critical: 0, warning: 1, info: 2 }
     const sorted = alerts.sort((a, b) => {
-      const severityOrder = { critical: 0, warning: 1, info: 2 }
-      return severityOrder[a.severity] - severityOrder[b.severity]
+      const aSeverity = (a.severity as string) in severityOrder ? severityOrder[a.severity] : 2
+      const bSeverity = (b.severity as string) in severityOrder ? severityOrder[b.severity] : 2
+      return aSeverity - bSeverity
     })
 
     return NextResponse.json({
