@@ -84,9 +84,6 @@ export function ControlTower({ drivers, subcontractors, vehicles = [] }: Control
 
     const sortedAlerts = sortAlertsByUrgency(generatedAlerts)
     setAlerts(sortedAlerts)
-  }, [drivers, subcontractors, vehicles, blockedList, riskList])
-
-  const statusResults = calculateStatusBatch([...drivers, ...subcontractors, ...vehicles])
   }, [drivers, subcontractors, vehicles])
 
   if (!summary) return null
