@@ -443,7 +443,7 @@ export default function CompanyDashboard() {
                 : 'text-slate-400 hover:text-slate-300'
             }`}
           >
-            Clientes/Subcontratos ({subcontractors.length})
+            Gestión de Subcontratistas ({subcontractors.length})
           </button>
           <button
             onClick={() => setActiveTab('drivers')}

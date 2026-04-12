@@ -1,10 +1,27 @@
+/**
+ * GESTIÓN DE SUBCONTRATISTAS
+ * 
+ * Panel para visualizar y gestionar todos los subcontratistas/proveedores de transporte.
+ * Aquí puedes:
+ * - Buscar subcontratistas por nombre, RUT, región o contacto
+ * - Filtrar por regiones geográficas
+ * - Ver certificaciones y cumplimiento
+ * - Identificar subcontratistas activos/inactivos
+ * - Acceder a información de contacto
+ * 
+ * ¿Qué es un Subcontratista? Es una empresa o persona que proporciona servicios
+ * de transporte para tu operación. Cada uno tiene documentos, certificaciones y
+ * estado de cumplimiento que monitorear.
+ */
+
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Search, MapPin, Phone, Mail, CheckCircle, AlertCircle, X, Filter } from 'lucide-react'
+import { Search, MapPin, Phone, Mail, CheckCircle, AlertCircle, X, Filter, Info } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { EducationalTooltip } from './educational-tooltip'
 
 interface Subcontractor {
   id?: string
@@ -123,6 +140,50 @@ export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) 
   const hasActiveFilters = searchTerm || selectedRegions.length > 0 || selectedEjecutivas.length > 0 || selectedCertifications.length > 0 || showActiveOnly
 
   return (
+    <div className="space-y-4">
+      {/* Header Educativo */}
+      <div className="space-y-2 mb-6">
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-foreground">Gestión de Subcontratistas</h2>
+          <EducationalTooltip 
+            title="¿Qué es un Subcontratista?"
+            content="Empresa o persona que proporciona servicios de transporte para tu operación. Cada subcontratista tiene documentos, certificaciones (Ariztia, LTS, Rendic, Interpolar) y estado de cumplimiento que monitorear constantemente."
+          />
+        </div>
+        <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
+          Visualiza, busca y filtra todos tus proveedores de transporte. Monitorea su cumplimiento normativo y certificaciones. Mantén contacto directo con representantes y ejecutivas.
+        </p>
+      </div>
+
+      {/* Información Rápida */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <Card className="bg-slate-900/50 border-slate-800">
+          <CardContent className="p-3">
+            <div className="text-2xl font-bold text-foreground">{subcontractors.length}</div>
+            <p className="text-xs text-muted-foreground">Total de Subcontratistas</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-green-900/20 border-green-800">
+          <CardContent className="p-3">
+            <div className="text-2xl font-bold text-green-400">{subcontractors.filter(s => s.is_active).length}</div>
+            <p className="text-xs text-green-300">Activos</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-slate-900/50 border-slate-800">
+          <CardContent className="p-3">
+            <div className="text-2xl font-bold text-foreground">{Array.from(new Set(subcontractors.map(s => s.region))).length}</div>
+            <p className="text-xs text-muted-foreground">Regiones</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-slate-900/50 border-slate-800">
+          <CardContent className="p-3">
+            <div className="text-2xl font-bold text-foreground">{filtered.length}</div>
+            <p className="text-xs text-muted-foreground">Resultados</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and Filters */}
     <div className="space-y-6">
       {/* Search Bar */}
       <div className="flex gap-2">
@@ -157,12 +218,19 @@ export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) 
         )}
       </div>
 
-      {/* Advanced Filters */}
+      {/* Advanced Filters con Tooltips */}
       {showAdvancedFilters && (
         <div className="space-y-4 p-4 bg-slate-900 rounded-lg border border-slate-800">
           {/* Ejecutivas Filter */}
           <div>
-            <label className="text-sm font-semibold text-slate-300 block mb-2">Ejecutivas ({selectedEjecutivas.length})</label>
+            <div className="flex items-center gap-2 mb-2">
+              <label className="text-sm font-semibold text-slate-300">Ejecutivas ({selectedEjecutivas.length})</label>
+              <EducationalTooltip 
+                title="¿Qué es una Ejecutiva?"
+                content="Persona responsable de gestionar la relación con el subcontratista. Es tu contacto directo para resolver problemas, negociar términos y coordinar operaciones."
+                size="sm"
+              />
+            </div>
             <div className="flex flex-wrap gap-2">
               {ejecutivas.map(ejecutiva => (
                 <button
@@ -179,6 +247,77 @@ export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) 
               ))}
             </div>
           </div>
+
+          {/* Regions Filter */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <label className="text-sm font-semibold text-slate-300">Regiones ({selectedRegions.length})</label>
+              <EducationalTooltip 
+                title="Filtrar por Región"
+                content="Visualiza subcontratistas en regiones específicas. Útil para análisis geográfico y coordinación operativa por zona."
+                size="sm"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {regions.map(region => (
+                <button
+                  key={region}
+                  onClick={() => toggleRegion(region)}
+                  className={`px-3 py-1 rounded text-sm transition-colors ${
+                    selectedRegions.includes(region)
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {region}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Certifications Filter */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <label className="text-sm font-semibold text-slate-300">Certificaciones ({selectedCertifications.length})</label>
+              <EducationalTooltip 
+                title="¿Qué son las Certificaciones?"
+                content="Acreditaciones de cumplimiento normativo: Ariztia (asociación de transporte), LTS (licencia técnica), Rendic (declaración de rentas), Interpolar (verificación internacional)."
+                size="sm"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(certifications).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => toggleCertification(key)}
+                  className={`px-3 py-1 rounded text-sm transition-colors ${
+                    selectedCertifications.includes(key)
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Active Status Filter */}
+          <div>
+            <button
+              onClick={() => setShowActiveOnly(!showActiveOnly)}
+              className={`w-full px-4 py-2 rounded transition-colors flex items-center justify-center gap-2 ${
+                showActiveOnly
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <CheckCircle className="w-4 h-4" />
+              {showActiveOnly ? 'Solo Activos' : 'Mostrar Todos'}
+            </button>
+          </div>
+        </div>
+      )}
 
           {/* Regions Filter */}
           <div>

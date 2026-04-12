@@ -9,10 +9,10 @@
     },
     {
       "id": 2,
-      "title": "Control Tower",
-      "description": "Dashboard ejecutivo con KPIs y métricas en tiempo real",
+      "title": "Torre de Control",
+      "description": "Panel ejecutivo con KPIs operacionales en tiempo real",
       "icon": "BarChart3",
-      "content": "Visualiza estado general, documentos vencidos, alertas críticas y tendencias de cumplimiento."
+      "content": "Centro de monitoreo inteligente. Visualiza estado de toda tu flota: conductores operacionales, en riesgo o bloqueados. Alertas críticas y score de cumplimiento normativo."
     },
     {
       "id": 3,
@@ -23,10 +23,10 @@
     },
     {
       "id": 4,
-      "title": "Subcontratistas",
-      "description": "Administra proveedores y transportistas asociados",
+      "title": "Gestión de Subcontratistas",
+      "description": "Panel para administrar proveedores de transporte",
       "icon": "Building2",
-      "content": "Gestiona relaciones con subcontratistas, verifica documentación y monitorea cumplimiento."
+      "content": "Gestiona todos tus subcontratistas y proveedores. Visualiza ejecutivas, regiones, certificaciones (Ariztia, LTS, Rendic, Interpolar) y estado de cumplimiento normativo."
     },
     {
       "id": 5,
@@ -52,8 +52,8 @@
   ],
   "section_explanations": {
     "control-tower": {
-      "title": "Control Tower - Tu Centro de Control",
-      "description": "Panel de control ejecutivo con todas las métricas que necesitas",
+      "title": "Torre de Control - Tu Centro de Monitoreo",
+      "description": "Panel ejecutivo con todas las métricas que necesitas",
       "items": [
         {
           "label": "Estado General",
@@ -136,6 +136,36 @@
         {
           "label": "Búsqueda Avanzada",
           "explanation": "Encuentra documentos por conductor, tipo, fecha, estado"
+        }
+      ]
+    },
+    "gestion-subcontratistas": {
+      "title": "Gestión de Subcontratistas - Administra Proveedores",
+      "description": "Panel para visualizar y gestionar todos tus proveedores de transporte",
+      "items": [
+        {
+          "label": "¿Qué es un Subcontratista?",
+          "explanation": "Empresa o persona que proporciona servicios de transporte para tu operación. Tiene documentos, certificaciones y estado de cumplimiento regulatorio."
+        },
+        {
+          "label": "Búsqueda Inteligente",
+          "explanation": "Busca por nombre, RUT, región, ejecutiva, teléfono o email. Sistema rápido y flexible."
+        },
+        {
+          "label": "Filtros Avanzados",
+          "explanation": "Filtra por: Ejecutivas (responsables del contacto), Regiones (geografía), Certificaciones (Ariztia, LTS, Rendic, Interpolar), Estado (activo/inactivo)"
+        },
+        {
+          "label": "Certificaciones",
+          "explanation": "Ariztia: Asociación de Transporte. LTS: Licencia Técnica. Rendic: Declaración de Rentas. Interpolar: Verificación Internacional."
+        },
+        {
+          "label": "Estadísticas Rápidas",
+          "explanation": "Total de subcontratistas, activos, regiones cubiertas, resultados de búsqueda en tiempo real."
+        },
+        {
+          "label": "Información de Contacto",
+          "explanation": "Accede a ejecutivas, representantes, teléfonos y emails de cada subcontratista directamente."
         }
       ]
     },
