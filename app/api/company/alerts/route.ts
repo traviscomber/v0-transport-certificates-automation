@@ -1,17 +1,13 @@
 import { NextResponse } from 'next/server'
-import { generateAlerts } from '@/lib/operations/alert-engine'
+import { generateDetailedAlerts, analyzeOperationalData } from '@/lib/operations/data-analyzer'
 
 export async function GET() {
   try {
-    // Simulamos alertas generadas en tiempo real
-    // En Fase 6 verdadera, estos valores vendrían de la base de datos
-    const alerts = generateAlerts({
-      blockedCount: 24,
-      riskCount: 12,
-      complianceScore: 92,
-      expiringToday: 2,
-      expiringThisWeek: 12
-    })
+    // Analizar datos reales de conductores y subcontratistas
+    const operationalData = analyzeOperationalData()
+    
+    // Generar alertas basadas en datos reales
+    const alerts = generateDetailedAlerts()
 
     // Ordenar por severidad: critical, warning, info
     const sorted = alerts.sort((a, b) => {
@@ -21,6 +17,7 @@ export async function GET() {
 
     return NextResponse.json({
       alerts: sorted,
+      operationalData,
       stats: {
         total: alerts.length,
         critical: alerts.filter(a => a.severity === 'critical').length,
