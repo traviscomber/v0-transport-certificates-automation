@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Building2, LogOut, Users, User, Search, X, FileText } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { MonthlyDocumentsTab } from '@/components/monthly-documents/monthly-documents-tab'
+// import { MonthlyDocumentsTab } from '@/components/monthly-documents/monthly-documents-tab'
 
 interface DashboardData {
   company: {
@@ -953,7 +953,8 @@ export default function CompanyDashboard() {
         {/* Monthly Documents Tab Content */}
         {activeTab === 'documents' && (
           <div>
-            <MonthlyDocumentsTab />
+            {/* <MonthlyDocumentsTab /> */}
+            <p className="text-slate-300">Documentos Mensuales - En desarrollo</p>
           </div>
         )}
 
