@@ -3,17 +3,23 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { AlertCircle, AlertTriangle, Info, CheckCircle, Clock, X } from 'lucide-react'
+import { AlertCircle, AlertTriangle, Info, CheckCircle, Clock, X, ChevronRight } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 
 interface Alert {
   id: string
   title: string
   message: string
+  description?: string
   entity: string
   severity: 'critical' | 'warning' | 'info'
   timestamp: string
   action?: string
+  details?: {
+    affectedCount?: number
+    nextAction?: string
+    deadline?: string
+  }
 }
 
 interface AlertsListProps {
@@ -26,6 +32,7 @@ export function AlertsList({ alerts: initialAlerts }: AlertsListProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterSeverity, setFilterSeverity] = useState<'all' | 'critical' | 'warning' | 'info'>('all')
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
+  const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!initialAlerts) {
@@ -59,6 +66,8 @@ export function AlertsList({ alerts: initialAlerts }: AlertsListProps) {
   const dismissAlert = (id: string) => {
     setDismissedIds(prev => new Set([...prev, id]))
   }
+
+  const selectedAlert = alerts.find(a => a.id === selectedAlertId)
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
@@ -225,7 +234,8 @@ export function AlertsList({ alerts: initialAlerts }: AlertsListProps) {
           {filtered.map((alert) => (
             <div
               key={alert.id}
-              className={`p-4 rounded-lg border-2 transition-all ${getSeverityColor(alert.severity)}`}
+              className={`p-4 rounded-lg border-2 transition-all cursor-pointer hover:shadow-md ${getSeverityColor(alert.severity)}`}
+              onClick={() => setSelectedAlertId(alert.id)}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -253,16 +263,119 @@ export function AlertsList({ alerts: initialAlerts }: AlertsListProps) {
                     </button>
                   )}
                   <button
-                    onClick={() => dismissAlert(alert.id)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      dismissAlert(alert.id)
+                    }}
                     className="p-1.5 hover:bg-slate-200 rounded transition-colors text-slate-600 hover:text-slate-900"
                     title="Descartar alerta"
                   >
                     <X className="w-4 h-4" />
                   </button>
+                  <ChevronRight className="w-4 h-4 text-slate-600" />
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {selectedAlert && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-slate-200 p-6 flex items-start justify-between">
+              <div className="flex items-start gap-3 flex-1">
+                <div className="flex-shrink-0">
+                  {getSeverityIcon(selectedAlert.severity)}
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">{selectedAlert.title}</h2>
+                  <p className="text-sm text-slate-600 mt-1">{selectedAlert.entity}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedAlertId(null)}
+                className="p-1.5 hover:bg-slate-100 rounded transition-colors text-slate-600 hover:text-slate-900 flex-shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Badges */}
+              <div className="flex gap-2">
+                <Badge className={`text-sm ${getBadgeColor(selectedAlert.severity)}`}>
+                  {selectedAlert.severity === 'critical' ? 'Crítica' : selectedAlert.severity === 'warning' ? 'Advertencia' : 'Información'}
+                </Badge>
+                <Badge className="bg-slate-100 text-slate-800">
+                  {new Date(selectedAlert.timestamp).toLocaleString('es-CL')}
+                </Badge>
+              </div>
+
+              {/* Mensaje principal */}
+              <div>
+                <h3 className="text-sm font-semibold text-slate-600 uppercase mb-2">Descripción</h3>
+                <p className="text-slate-900 leading-relaxed">{selectedAlert.message}</p>
+              </div>
+
+              {/* Descripción adicional si existe */}
+              {selectedAlert.description && (
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-600 uppercase mb-2">Detalles</h3>
+                  <p className="text-slate-700 leading-relaxed">{selectedAlert.description}</p>
+                </div>
+              )}
+
+              {/* Información adicional */}
+              {selectedAlert.details && (
+                <div className="space-y-3">
+                  {selectedAlert.details.affectedCount && (
+                    <div className="p-3 bg-slate-50 rounded border border-slate-200">
+                      <p className="text-sm text-slate-600">Registros afectados</p>
+                      <p className="text-lg font-bold text-slate-900">{selectedAlert.details.affectedCount}</p>
+                    </div>
+                  )}
+                  {selectedAlert.details.deadline && (
+                    <div className="p-3 bg-slate-50 rounded border border-slate-200">
+                      <p className="text-sm text-slate-600">Fecha límite</p>
+                      <p className="text-lg font-bold text-slate-900">{new Date(selectedAlert.details.deadline).toLocaleDateString('es-CL')}</p>
+                    </div>
+                  )}
+                  {selectedAlert.details.nextAction && (
+                    <div className="p-3 bg-blue-50 rounded border border-blue-200">
+                      <p className="text-sm text-blue-600">Próxima acción recomendada</p>
+                      <p className="text-slate-900 font-medium mt-1">{selectedAlert.details.nextAction}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Acciones */}
+              <div className="flex gap-3 pt-4">
+                {selectedAlert.action && (
+                  <button className="flex-1 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-medium">
+                    {selectedAlert.action}
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    dismissAlert(selectedAlert.id)
+                    setSelectedAlertId(null)
+                  }}
+                  className="flex-1 px-4 py-2 bg-slate-100 text-slate-900 rounded-lg hover:bg-slate-200 transition-colors font-medium"
+                >
+                  Descartar
+                </button>
+                <button
+                  onClick={() => setSelectedAlertId(null)}
+                  className="flex-1 px-4 py-2 bg-slate-200 text-slate-900 rounded-lg hover:bg-slate-300 transition-colors font-medium"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
