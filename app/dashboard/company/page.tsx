@@ -245,16 +245,6 @@ export default function CompanyDashboard() {
       setIsDeleting(false)
     }
   }
-      
-      setSelectedSubcontractor(null)
-      setIsEditMode(false)
-    } catch (error) {
-      console.error('[v0] Error deleting:', error)
-      alert('Error al eliminar el subcontrato')
-    } finally {
-      setIsDeleting(false)
-    }
-  }
 
   const handleCreateNew = async () => {
     try {
