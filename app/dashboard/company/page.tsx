@@ -71,7 +71,7 @@ export default function CompanyDashboard() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [formData, setFormData] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState<'control-tower' | 'subcontractors' | 'drivers' | 'documents'>('control-tower')
+  const [activeTab, setActiveTab] = useState<'control-tower' | 'subcontractors' | 'drivers' | 'documents' | 'team'>('control-tower')
   const [selectedDriver, setSelectedDriver] = useState<any>(null)
   const [isEditingDriver, setIsEditingDriver] = useState(false)
   const [showAddDriverModal, setShowAddDriverModal] = useState(false)
