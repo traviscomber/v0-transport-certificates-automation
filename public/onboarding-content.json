@@ -37,17 +37,17 @@
     },
     {
       "id": 6,
-      "title": "Alertas",
-      "description": "Sistema inteligente de notificaciones",
+      "title": "Centro de Alertas",
+      "description": "Sistema inteligente de notificaciones en tiempo real",
       "icon": "Bell",
-      "content": "Recibe alertas automáticas sobre documentos vencidos, cambios normativos y riesgos de cumplimiento."
+      "content": "Recibe alertas automáticas sobre documentos vencidos, conductores bloqueados, subcontratistas en riesgo y cambios normativos. Filtra por prioridad, tipo y estado."
     },
     {
       "id": 7,
-      "title": "Equipo",
-      "description": "Gestión de permisos y acceso de usuarios",
+      "title": "Gestión de Equipo",
+      "description": "Panel para contactar al equipo LABBE Transportes",
       "icon": "Users",
-      "content": "Administra quién tiene acceso a qué. Roles: Admin, Supervisor, Operador."
+      "content": "Visualiza y contacta a ejecutivas, gerentes y coordinadores del equipo LABBE. Búsqueda por nombre, RUT, cargo o teléfono. Contacto directo para resolver operaciones."
     }
   ],
   "section_explanations": {
@@ -186,46 +186,62 @@
       ]
     },
     "alertas": {
-      "title": "Alertas - Tu Sistema de Warnings",
-      "description": "Notificaciones inteligentes en tiempo real",
+      "title": "Centro de Alertas - Tu Sistema de Warnings",
+      "description": "Notificaciones inteligentes en tiempo real sobre eventos críticos",
       "items": [
         {
-          "label": "Alertas Críticas",
-          "explanation": "Documentos vencidos, conductores bloqueados, cambios normativos"
+          "label": "¿Qué es una Alerta?",
+          "explanation": "Notificación automática sobre eventos importantes: documentos vencidos, conductores bloqueados, subcontratistas en riesgo, cambios normativos."
         },
         {
-          "label": "Alertas Normales",
-          "explanation": "Avisos generales, documentos por vencer en 30 días"
+          "label": "Prioridad Crítica",
+          "explanation": "Documentos ya vencidos, conductores bloqueados, incumplimiento normativo. Requieren acción inmediata."
         },
         {
-          "label": "Filtros",
-          "explanation": "Filtra por tipo, prioridad, fecha, estado de lectura"
+          "label": "Prioridad Alta",
+          "explanation": "Documentos por vencer en menos de 15 días, cambios normativos próximos."
         },
         {
-          "label": "Acciones",
-          "explanation": "Marca como leída, accede directamente al documento"
+          "label": "Prioridad Normal",
+          "explanation": "Eventos informativos, documentos por vencer en 30 días, cambios administrativos."
+        },
+        {
+          "label": "Filtros de Alertas",
+          "explanation": "Filtra por tipo (documento, conductor, subcontratista), prioridad (crítica, alta, normal), solo no leídas, por fecha."
+        },
+        {
+          "label": "Marcar como Leída",
+          "explanation": "Marca alertas como leídas para mantener control de qué ya revisaste y qué aún necesita atención."
         }
       ]
     },
     "equipo": {
-      "title": "Equipo - Control de Acceso",
-      "description": "Administra permisos y usuarios del sistema",
+      "title": "Gestión de Equipo - Contacta tu Equipo LABBE",
+      "description": "Panel para visualizar y contactar miembros del equipo",
       "items": [
         {
-          "label": "Roles",
-          "explanation": "Admin (todo), Supervisor (lectura/reporte), Operador (datos operacionales)"
+          "label": "¿Quién es el Equipo?",
+          "explanation": "Profesionales de LABBE Transportes que gestionan tu operación: Ejecutivas (contacto principal), Gerentes (supervisión), Coordinadores (gestión operativa)."
         },
         {
-          "label": "Agregar Usuario",
-          "explanation": "Invita a colaboradores por email con rol específico"
+          "label": "Búsqueda Inteligente",
+          "explanation": "Busca por nombre completo, RUT, cargo (Ejecutiva, Gerente, Coordinador) o teléfono. Búsqueda instantánea."
         },
         {
-          "label": "Auditoría",
-          "explanation": "Registro de quién hizo qué y cuándo en el sistema"
+          "label": "Ejecutivas",
+          "explanation": "Tu contacto principal en LABBE. Responsables de tu cuenta, negociación y resolución de problemas estratégicos."
         },
         {
-          "label": "Seguridad",
-          "explanation": "Cambio de contraseña, autenticación de dos factores"
+          "label": "Gerentes",
+          "explanation": "Supervisan operaciones, garantizan cumplimiento normativo, coordinan con conductores y subcontratistas."
+        },
+        {
+          "label": "Coordinadores",
+          "explanation": "Gestión diaria, resolución de problemas operativos, seguimiento de documentos y alertas."
+        },
+        {
+          "label": "Contacto Directo",
+          "explanation": "Llama, envía email o contacta directamente a cualquier miembro del equipo desde esta sección."
         }
       ]
     }

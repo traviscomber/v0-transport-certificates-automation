@@ -475,7 +475,7 @@ export default function CompanyDashboard() {
             }`}
           >
             <Users className="w-4 h-4" />
-            Equipo
+            Gestión de Equipo
           </button>
           <button
             onClick={() => setActiveTab('alertas')}
@@ -486,7 +486,7 @@ export default function CompanyDashboard() {
             }`}
           >
             <Bell className="w-4 h-4" />
-            Alertas
+            Centro de Alertas
             {alerts.length > 0 && (
               <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">
                 {alerts.length}
@@ -530,29 +530,44 @@ export default function CompanyDashboard() {
         )}
 
         {activeTab === 'alertas' && (
-          <div className="space-y-4">
-            {alertsLoading ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <div className="text-slate-400">Cargando alertas...</div>
+          <div className="space-y-6">
+            {/* Header Educativo */}
+            <div className="space-y-3">
+              <h2 className="text-2xl font-bold text-white">Centro de Alertas</h2>
+              <p className="text-sm text-slate-400 max-w-2xl leading-relaxed">
+                Centro de notificaciones del sistema. Aquí recibes alertas sobre documentos vencidos, conductores bloqueados, subcontratistas en riesgo y eventos críticos de tu operación.
+              </p>
+            </div>
+
+            {/* Estadísticas de Alertas */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card className="bg-slate-900/50 border-slate-800">
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold text-blue-400">{alerts.length}</div>
+                  <p className="text-xs text-slate-400 mt-1">Total de Alertas</p>
                 </CardContent>
               </Card>
-            ) : alerts.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <Bell className="h-12 w-12 text-slate-500 mx-auto mb-4" />
-                  <div className="text-foreground font-semibold">Sin alertas</div>
-                  <div className="text-slate-400">¡Todo está en orden!</div>
+              <Card className="bg-red-900/20 border-red-800">
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold text-red-400">{alerts.filter(a => a.priority === 'critical').length}</div>
+                  <p className="text-xs text-red-300 mt-1">Críticas</p>
                 </CardContent>
               </Card>
-            ) : (
-              alerts.map((alert) => (
-                <Card key={alert.id} className="border-slate-700 hover:border-slate-600 transition-all">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <div className="mt-1">
-                        {alert.type === 'error' && <AlertTriangle className="h-5 w-5 text-red-500" />}
-                        {alert.type === 'warning' && <AlertTriangle className="h-5 w-5 text-yellow-500" />}
+              <Card className="bg-orange-900/20 border-orange-800">
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold text-orange-400">{alerts.filter(a => a.priority === 'high').length}</div>
+                  <p className="text-xs text-orange-300 mt-1">Altas</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-slate-900/50 border-slate-800">
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold text-white">{alerts.filter(a => !a.read).length}</div>
+                  <p className="text-xs text-slate-400 mt-1">No Leídas</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Alertas List */}e className="h-5 w-5 text-yellow-500" />}
                         {alert.type === 'info' && <Bell className="h-5 w-5 text-blue-500" />}
                         {alert.type === 'success' && <Bell className="h-5 w-5 text-green-500" />}
                       </div>
