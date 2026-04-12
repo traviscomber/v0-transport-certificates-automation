@@ -18,9 +18,9 @@ import { generateAlertsBatch, sortAlertsByUrgency } from '@/lib/operations/alert
 import { AlertsDisplay } from './alerts-display'
 
 interface ControlTowerProps {
-  drivers: OperableEntity[]
-  subcontractors: OperableEntity[]
-  vehicles?: OperableEntity[]
+  drivers: any[]
+  subcontractors: any[]
+  vehicles?: any[]
 }
 
 export function ControlTower({ drivers, subcontractors, vehicles = [] }: ControlTowerProps) {
