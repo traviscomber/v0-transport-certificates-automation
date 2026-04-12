@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Building2, LogOut, Users, User, Search, X, FileText, BarChart3 } from 'lucide-react'
+import { Building2, LogOut, Users, User, Search, X, FileText, BarChart3, Bell, AlertTriangle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { ControlTower } from '@/components/control-tower'
 import { SubcontractorsList } from '@/components/subcontractors-list'
@@ -72,12 +72,14 @@ export default function CompanyDashboard() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [formData, setFormData] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState<'control-tower' | 'subcontractors' | 'drivers' | 'documents' | 'team'>('control-tower')
+  const [activeTab, setActiveTab] = useState<'control-tower' | 'subcontractors' | 'drivers' | 'documents' | 'team' | 'alertas'>('control-tower')
   const [selectedDriver, setSelectedDriver] = useState<any>(null)
   const [isEditingDriver, setIsEditingDriver] = useState(false)
   const [showAddDriverModal, setShowAddDriverModal] = useState(false)
   const [isDeletingDriver, setIsDeletingDriver] = useState(false)
   const [driverFormData, setDriverFormData] = useState<any>(null)
+  const [alerts, setAlerts] = useState<any[]>([])
+  const [alertsLoading, setAlertsLoading] = useState(false)
   const [driverSearchTerm, setDriverSearchTerm] = useState('')
   const [driverFilterProvider, setDriverFilterProvider] = useState('')
   const [driverSortBy, setDriverSortBy] = useState<'nombre' | 'rut' | 'proveedor'>('nombre')
@@ -109,6 +111,29 @@ export default function CompanyDashboard() {
     }
 
     fetchData()
+  }, [])
+
+  // Fetch alerts
+  useEffect(() => {
+    const fetchAlerts = async () => {
+      try {
+        setAlertsLoading(true)
+        const response = await fetch('/api/alerts')
+        if (response.ok) {
+          const { data } = await response.json()
+          setAlerts(data || [])
+        }
+      } catch (error) {
+        console.error('Error fetching alerts:', error)
+      } finally {
+        setAlertsLoading(false)
+      }
+    }
+
+    fetchAlerts()
+    // Refresh alerts every 30 seconds
+    const interval = setInterval(fetchAlerts, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   if (isLoading) {
@@ -448,6 +473,22 @@ export default function CompanyDashboard() {
             <Users className="w-4 h-4" />
             Equipo
           </button>
+          <button
+            onClick={() => setActiveTab('alertas')}
+            className={`pb-3 px-2 font-semibold transition-colors whitespace-nowrap flex items-center gap-2 text-sm relative ${
+              activeTab === 'alertas'
+                ? 'text-orange-500 border-b-2 border-orange-500'
+                : 'text-slate-400 hover:text-slate-300'
+            }`}
+          >
+            <Bell className="w-4 h-4" />
+            Alertas
+            {alerts.length > 0 && (
+              <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">
+                {alerts.length}
+              </span>
+            )}
+          </button>
         </div>
 
         {activeTab === 'control-tower' && (
@@ -481,6 +522,59 @@ export default function CompanyDashboard() {
         {activeTab === 'team' && (
           <div>
             <TeamSearch />
+          </div>
+        )}
+
+        {activeTab === 'alertas' && (
+          <div className="space-y-4">
+            {alertsLoading ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <div className="text-slate-400">Cargando alertas...</div>
+                </CardContent>
+              </Card>
+            ) : alerts.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Bell className="h-12 w-12 text-slate-500 mx-auto mb-4" />
+                  <div className="text-foreground font-semibold">Sin alertas</div>
+                  <div className="text-slate-400">¡Todo está en orden!</div>
+                </CardContent>
+              </Card>
+            ) : (
+              alerts.map((alert) => (
+                <Card key={alert.id} className="border-slate-700 hover:border-slate-600 transition-all">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="mt-1">
+                        {alert.type === 'error' && <AlertTriangle className="h-5 w-5 text-red-500" />}
+                        {alert.type === 'warning' && <AlertTriangle className="h-5 w-5 text-yellow-500" />}
+                        {alert.type === 'info' && <Bell className="h-5 w-5 text-blue-500" />}
+                        {alert.type === 'success' && <Bell className="h-5 w-5 text-green-500" />}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold text-foreground">{alert.title}</h3>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            alert.priority === 'critical' ? 'bg-red-500/30 text-red-200' :
+                            alert.priority === 'high' ? 'bg-orange-500/30 text-orange-200' :
+                            alert.priority === 'normal' ? 'bg-blue-500/30 text-blue-200' :
+                            'bg-slate-500/30 text-slate-200'
+                          }`}>
+                            {alert.priority?.toUpperCase()}
+                          </span>
+                        </div>
+                        <p className="text-slate-400 text-sm mb-3">{alert.message}</p>
+                        <div className="flex items-center justify-between text-xs text-slate-500">
+                          <span>{new Date(alert.created_at).toLocaleDateString('es-ES')}</span>
+                          <span className="capitalize">{alert.category}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         )}
       </main>
