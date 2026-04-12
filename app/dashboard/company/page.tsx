@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Building2, LogOut, Users, User, Search, X } from 'lucide-react'
+import { Building2, LogOut, Users, User, Search, X, FileText } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { MonthlyDocumentsTab } from '@/components/monthly-documents/monthly-documents-tab'
 
 interface DashboardData {
   company: {
@@ -66,7 +67,7 @@ export default function CompanyDashboard() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [formData, setFormData] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState<'subcontractors' | 'drivers'>('subcontractors')
+  const [activeTab, setActiveTab] = useState<'subcontractors' | 'drivers' | 'documents'>('subcontractors')
   const [selectedDriver, setSelectedDriver] = useState<any>(null)
   const [isEditingDriver, setIsEditingDriver] = useState(false)
   const [showAddDriverModal, setShowAddDriverModal] = useState(false)
@@ -461,6 +462,17 @@ export default function CompanyDashboard() {
             <Users className="inline w-5 h-5 mr-2" />
             Conductores ({data.drivers.length})
           </button>
+          <button
+            onClick={() => setActiveTab('documents')}
+            className={`pb-3 px-1 font-semibold transition-colors whitespace-nowrap ${
+              activeTab === 'documents'
+                ? 'text-orange-500 border-b-2 border-orange-500'
+                : 'text-slate-400 hover:text-slate-300'
+            }`}
+          >
+            <FileText className="inline w-5 h-5 mr-2" />
+            Documentos Mensuales
+          </button>
         </div>
 
         {/* Subcontractors Tab Content */}
@@ -816,45 +828,32 @@ export default function CompanyDashboard() {
                     />
                   )}
                 </div>
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 uppercase">Nombre</p>
-                {!isEditingDriver ? (
-                  <p className="text-white text-sm">{selectedDriver.nombre}</p>
-                ) : (
-                  <input
-                    type="text"
-                    value={driverFormData?.nombre || ''}
-                    onChange={(e) => setDriverFormData({ ...driverFormData, nombre: e.target.value })}
-                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                  />
-                )}
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 uppercase">RUT Proveedor</p>
-                {!isEditingDriver ? (
-                  <p className="text-white text-sm">{selectedDriver.rut_proveedor}</p>
-                ) : (
-                  <input
-                    type="text"
-                    value={driverFormData?.rut_proveedor || ''}
-                    onChange={(e) => setDriverFormData({ ...driverFormData, rut_proveedor: e.target.value })}
-                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                  />
-                )}
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 uppercase">Proveedor</p>
-                {!isEditingDriver ? (
-                  <p className="text-blue-400 text-sm">{selectedDriver.proveedor}</p>
-                ) : (
-                  <input
-                    type="text"
-                    value={driverFormData?.proveedor || ''}
-                    onChange={(e) => setDriverFormData({ ...driverFormData, proveedor: e.target.value })}
-                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                  />
-                )}
+                <div>
+                  <p className="text-xs text-slate-400 uppercase">RUT Proveedor</p>
+                  {!isEditingDriver ? (
+                    <p className="text-white font-mono">{selectedDriver.rut_proveedor}</p>
+                  ) : (
+                    <input
+                      type="text"
+                      value={driverFormData?.rut_proveedor || ''}
+                      onChange={(e) => setDriverFormData({ ...driverFormData, rut_proveedor: e.target.value })}
+                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                    />
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 uppercase">Proveedor</p>
+                  {!isEditingDriver ? (
+                    <p className="text-blue-400 text-sm">{selectedDriver.proveedor}</p>
+                  ) : (
+                    <input
+                      type="text"
+                      value={driverFormData?.proveedor || ''}
+                      onChange={(e) => setDriverFormData({ ...driverFormData, proveedor: e.target.value })}
+                      className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                    />
+                  )}
+                </div>
               </div>
               <div className="flex gap-2 pt-4 border-t border-slate-700">
                 {!isEditingDriver ? (
@@ -878,10 +877,24 @@ export default function CompanyDashboard() {
                 ) : (
                   <>
                     <Button
-                      onClick={() => {
-                        setSelectedDriver(driverFormData)
-                        setIsEditingDriver(false)
-                        setDriverFormData(null)
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(`/api/drivers?id=${driverFormData.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(driverFormData),
+                          })
+
+                          if (!response.ok) throw new Error('Error al actualizar')
+
+                          console.log('[v0] Driver updated:', driverFormData.id)
+                          setSelectedDriver(driverFormData)
+                          setIsEditingDriver(false)
+                          setDriverFormData(null)
+                        } catch (error) {
+                          console.error('[v0] Error saving:', error)
+                          alert('Error al guardar los cambios')
+                        }
                       }}
                       className="flex-1 bg-green-600 hover:bg-green-700"
                     >
@@ -898,114 +911,55 @@ export default function CompanyDashboard() {
                     </Button>
                   </>
                 )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+                {!isEditingDriver && (
+                  <Button
+                    onClick={async () => {
+                      if (!confirm('¿Estás seguro de que quieres eliminar este conductor?')) return
+                      
+                      try {
+                        setIsDeletingDriver(true)
+                        const response = await fetch(`/api/drivers?id=${selectedDriver.id}`, {
+                          method: 'DELETE',
+                        })
 
-      {/* Add Driver Modal */}
-      {showAddDriverModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="bg-slate-800 border-slate-700 max-w-lg w-full max-h-96 overflow-y-auto">
-            <CardHeader className="flex items-center justify-between flex-row pb-3 border-b border-slate-700">
-              <CardTitle className="text-white">Nuevo Conductor</CardTitle>
-              <button
-                onClick={() => {
-                  setShowAddDriverModal(false)
-                  setDriverFormData(null)
-                }}
-                className="text-slate-400 hover:text-slate-300"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-3">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-slate-400 uppercase">RUT Conductor *</label>
-                  <input
-                    type="text"
-                    placeholder="12.345.678-9"
-                    value={driverFormData?.rut || ''}
-                    onChange={(e) => setDriverFormData({ ...driverFormData, rut: e.target.value })}
-                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-slate-400 uppercase">Patente *</label>
-                  <input
-                    type="text"
-                    placeholder="XW7026"
-                    value={driverFormData?.patente_tracto || ''}
-                    onChange={(e) => setDriverFormData({ ...driverFormData, patente_tracto: e.target.value })}
-                    className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 uppercase">Nombre *</label>
-                <input
-                  type="text"
-                  placeholder="Nombre del conductor"
-                  value={driverFormData?.nombre || ''}
-                  onChange={(e) => setDriverFormData({ ...driverFormData, nombre: e.target.value })}
-                  className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 uppercase">RUT Proveedor *</label>
-                <input
-                  type="text"
-                  placeholder="77653071-9"
-                  value={driverFormData?.rut_proveedor || ''}
-                  onChange={(e) => setDriverFormData({ ...driverFormData, rut_proveedor: e.target.value })}
-                  className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 uppercase">Proveedor *</label>
-                <input
-                  type="text"
-                  placeholder="Nombre del proveedor"
-                  value={driverFormData?.proveedor || ''}
-                  onChange={(e) => setDriverFormData({ ...driverFormData, proveedor: e.target.value })}
-                  className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
-                />
-              </div>
-              <div className="flex gap-2 pt-4 border-t border-slate-700">
-                <Button
-                  onClick={() => {
-                    if (!driverFormData?.rut || !driverFormData?.nombre || !driverFormData?.proveedor) {
-                      alert('Por favor completa los campos requeridos')
-                      return
-                    }
-                    console.log('[v0] Driver created:', driverFormData)
-                    if (data) {
-                      setData({ ...data, drivers: [...data.drivers, driverFormData] })
-                    }
-                    setShowAddDriverModal(false)
-                    setDriverFormData(null)
-                    alert('Conductor agregado exitosamente')
-                  }}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                >
-                  ✓ Agregar
-                </Button>
-                <Button
-                  onClick={() => {
-                    setShowAddDriverModal(false)
-                    setDriverFormData(null)
-                  }}
-                  className="flex-1 bg-slate-600 hover:bg-slate-700"
-                >
-                  Cancelar
-                </Button>
+                        if (!response.ok) throw new Error('Error al eliminar')
+
+                        console.log('[v0] Driver deleted')
+                        
+                        if (data) {
+                          const newDrivers = data.drivers.filter(d => d.rut !== selectedDriver.rut)
+                          setData({ ...data, drivers: newDrivers })
+                        }
+                        
+                        setSelectedDriver(null)
+                      } catch (error) {
+                        console.error('[v0] Error deleting:', error)
+                        alert('Error al eliminar el conductor')
+                      } finally {
+                        setIsDeletingDriver(false)
+                      }
+                    }}
+                    className="flex-1 bg-red-600 hover:bg-red-700"
+                    disabled={isDeletingDriver}
+                  >
+                    🗑 Eliminar
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
-        </div>
-      )}
+        )}
+
+        {/* Monthly Documents Tab Content */}
+        {activeTab === 'documents' && (
+          <div>
+            <MonthlyDocumentsTab />
+          </div>
+        )}
+      </main>
+    </div>
+  )
+}
 
       {/* Subcontractor Detail Modal */}
       {selectedSubcontractor && (
