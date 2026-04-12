@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Search, MapPin, Phone, Mail, CheckCircle, AlertCircle } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Search, MapPin, Phone, Mail, CheckCircle, AlertCircle, X, Filter } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -32,56 +32,215 @@ interface SubcontractorsListProps {
 
 export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) {
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedRegion, setSelectedRegion] = useState('all')
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([])
+  const [selectedEjecutivas, setSelectedEjecutivas] = useState<string[]>([])
+  const [selectedCertifications, setSelectedCertifications] = useState<string[]>([])
+  const [showActiveOnly, setShowActiveOnly] = useState(false)
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
 
-  const filtered = subcontractors.filter(sub => {
-    const matchesSearch =
-      sub.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sub.rut.includes(searchTerm) ||
-      sub.ejecutiva.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesRegion = selectedRegion === 'all' || sub.region === selectedRegion
-    
-    return matchesSearch && matchesRegion
-  })
-
-  const regions = Array.from(new Set(subcontractors.map(s => s.region))).sort()
+  // Get unique values for filters
+  const regions = useMemo(() => Array.from(new Set(subcontractors.map(s => s.region))).sort(), [subcontractors])
+  const ejecutivas = useMemo(() => Array.from(new Set(subcontractors.map(s => s.ejecutiva))).sort(), [subcontractors])
   const certifications = { ariztia: 'Ariztia', lts: 'LTS', rendic: 'Rendic', interpolar: 'Interpolar' }
+
+  // Smart search and filtering
+  const filtered = useMemo(() => {
+    return subcontractors.filter(sub => {
+      // Search term filter
+      if (searchTerm) {
+        const query = searchTerm.toLowerCase()
+        const matchesSearch =
+          sub.nombre.toLowerCase().includes(query) ||
+          sub.nombre_fantasia?.toLowerCase().includes(query) ||
+          sub.rut.includes(query) ||
+          sub.representante.toLowerCase().includes(query) ||
+          sub.ejecutiva.toLowerCase().includes(query) ||
+          sub.comuna.toLowerCase().includes(query) ||
+          sub.telefono.includes(query) ||
+          sub.email.toLowerCase().includes(query)
+        
+        if (!matchesSearch) return false
+      }
+
+      // Region filter
+      if (selectedRegions.length > 0 && !selectedRegions.includes(sub.region)) {
+        return false
+      }
+
+      // Ejecutiva filter
+      if (selectedEjecutivas.length > 0 && !selectedEjecutivas.includes(sub.ejecutiva)) {
+        return false
+      }
+
+      // Certifications filter
+      if (selectedCertifications.length > 0) {
+        const hasCertification = selectedCertifications.some(cert => {
+          if (cert === 'ariztia') return sub.ariztia
+          if (cert === 'lts') return sub.lts
+          if (cert === 'rendic') return sub.rendic
+          if (cert === 'interpolar') return sub.interpolar
+          return false
+        })
+        if (!hasCertification) return false
+      }
+
+      // Active status filter
+      if (showActiveOnly && !sub.is_active) {
+        return false
+      }
+
+      return true
+    })
+  }, [searchTerm, selectedRegions, selectedEjecutivas, selectedCertifications, showActiveOnly, subcontractors])
+
+  // Toggle filter functions
+  const toggleRegion = (region: string) => {
+    setSelectedRegions(prev => 
+      prev.includes(region) ? prev.filter(r => r !== region) : [...prev, region]
+    )
+  }
+
+  const toggleEjecutiva = (ejecutiva: string) => {
+    setSelectedEjecutivas(prev =>
+      prev.includes(ejecutiva) ? prev.filter(e => e !== ejecutiva) : [...prev, ejecutiva]
+    )
+  }
+
+  const toggleCertification = (cert: string) => {
+    setSelectedCertifications(prev =>
+      prev.includes(cert) ? prev.filter(c => c !== cert) : [...prev, cert]
+    )
+  }
+
+  const clearAllFilters = () => {
+    setSearchTerm('')
+    setSelectedRegions([])
+    setSelectedEjecutivas([])
+    setSelectedCertifications([])
+    setShowActiveOnly(false)
+  }
+
+  const hasActiveFilters = searchTerm || selectedRegions.length > 0 || selectedEjecutivas.length > 0 || selectedCertifications.length > 0 || showActiveOnly
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-end">
-        <div className="flex-1">
-          <label className="text-sm font-semibold text-slate-300 block mb-2">Buscar</label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
-            <Input
-              placeholder="Buscar por nombre, RUT o ejecutiva..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-slate-900 border-slate-700 text-white placeholder-slate-500"
-            />
-          </div>
+      {/* Search Bar */}
+      <div className="flex gap-2">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <Input
+            placeholder="Buscar por nombre, RUT, ejecutiva, comuna, teléfono o email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 bg-slate-900 border-slate-700 text-white placeholder-slate-500"
+          />
         </div>
-        <div>
-          <label className="text-sm font-semibold text-slate-300 block mb-2">Región</label>
-          <select
-            value={selectedRegion}
-            onChange={(e) => setSelectedRegion(e.target.value)}
-            className="px-4 py-2 bg-slate-900 border border-slate-700 rounded text-white text-sm"
+        <button
+          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+          className={`px-4 py-2 rounded border transition-colors flex items-center gap-2 ${
+            showAdvancedFilters
+              ? 'bg-orange-500 border-orange-500 text-white'
+              : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Filter className="w-4 h-4" />
+          Filtros
+        </button>
+        {hasActiveFilters && (
+          <button
+            onClick={clearAllFilters}
+            className="px-3 py-2 rounded bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-200 transition-colors"
+            title="Limpiar todos los filtros"
           >
-            <option value="all">Todas las regiones</option>
-            {regions.map(region => (
-              <option key={region} value={region}>{region}</option>
-            ))}
-          </select>
-        </div>
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
+      {/* Advanced Filters */}
+      {showAdvancedFilters && (
+        <div className="space-y-4 p-4 bg-slate-900 rounded-lg border border-slate-800">
+          {/* Ejecutivas Filter */}
+          <div>
+            <label className="text-sm font-semibold text-slate-300 block mb-2">Ejecutivas ({selectedEjecutivas.length})</label>
+            <div className="flex flex-wrap gap-2">
+              {ejecutivas.map(ejecutiva => (
+                <button
+                  key={ejecutiva}
+                  onClick={() => toggleEjecutiva(ejecutiva)}
+                  className={`px-3 py-1 rounded text-sm transition-colors ${
+                    selectedEjecutivas.includes(ejecutiva)
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {ejecutiva}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Regions Filter */}
+          <div>
+            <label className="text-sm font-semibold text-slate-300 block mb-2">Regiones ({selectedRegions.length})</label>
+            <div className="flex flex-wrap gap-2">
+              {regions.map(region => (
+                <button
+                  key={region}
+                  onClick={() => toggleRegion(region)}
+                  className={`px-3 py-1 rounded text-sm transition-colors ${
+                    selectedRegions.includes(region)
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {region}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Certifications Filter */}
+          <div>
+            <label className="text-sm font-semibold text-slate-300 block mb-2">Certificaciones ({selectedCertifications.length})</label>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(certifications).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => toggleCertification(key)}
+                  className={`px-3 py-1 rounded text-sm transition-colors ${
+                    selectedCertifications.includes(key)
+                      ? 'bg-green-600 text-white'
+                      : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Status Filter */}
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showActiveOnly}
+                onChange={(e) => setShowActiveOnly(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-700 bg-slate-800"
+              />
+              <span className="text-sm text-slate-300">Solo activos</span>
+            </label>
+          </div>
+        </div>
+      )}
+
       {/* Results count */}
-      <div className="text-sm text-slate-400">
-        Mostrando {filtered.length} de {subcontractors.length} subcontratistas
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-slate-400">
+          Mostrando <span className="font-semibold text-orange-400">{filtered.length}</span> de <span className="font-semibold">{subcontractors.length}</span> subcontratistas
+          {hasActiveFilters && <span className="ml-2 text-slate-500">(filtrado)</span>}
+        </div>
       </div>
 
       {/* Subcontractors Grid */}
@@ -110,7 +269,7 @@ export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) 
 
               {/* Ejecutiva */}
               <div>
-                <p className="text-xs text-slate-500 uppercase font-semibold mb-1">Ejecutiva</p>
+                <p className="text-xs text-slate-500 uppercase font-semibold mb-1">Ejecutiva Asignada</p>
                 <p className="text-sm text-orange-400 font-medium">{sub.ejecutiva}</p>
               </div>
 
@@ -160,6 +319,14 @@ export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) 
       {filtered.length === 0 && (
         <div className="text-center py-12">
           <p className="text-slate-400">No se encontraron subcontratistas que coincidan con tu búsqueda</p>
+          {hasActiveFilters && (
+            <button
+              onClick={clearAllFilters}
+              className="mt-4 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors text-sm"
+            >
+              Limpiar filtros
+            </button>
+          )}
         </div>
       )}
     </div>
