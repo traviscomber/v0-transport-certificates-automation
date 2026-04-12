@@ -393,8 +393,6 @@ export default function CompanyDashboard() {
           </CardContent>
         </Card>
 
-        <TeamSearch />
-
         <div className="flex gap-4 mb-8 border-b border-slate-700 overflow-x-auto">
           <button
             onClick={() => setActiveTab('control-tower')}
@@ -438,6 +436,17 @@ export default function CompanyDashboard() {
             <FileText className="inline w-4 h-4 mr-2" />
             Documentos Mensuales
           </button>
+          <button
+            onClick={() => setActiveTab('team')}
+            className={`pb-3 px-1 font-semibold transition-colors whitespace-nowrap flex items-center gap-2 ${
+              activeTab === 'team'
+                ? 'text-orange-500 border-b-2 border-orange-500'
+                : 'text-slate-400 hover:text-slate-300'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Equipo
+          </button>
         </div>
 
         {activeTab === 'control-tower' && (
@@ -465,6 +474,12 @@ export default function CompanyDashboard() {
         {activeTab === 'documents' && (
           <div>
             <p className="text-slate-300">Documentos Mensuales - En desarrollo</p>
+          </div>
+        )}
+
+        {activeTab === 'team' && (
+          <div>
+            <TeamSearch />
           </div>
         )}
       </main>
