@@ -1,0 +1,187 @@
+{
+  "onboarding_steps": [
+    {
+      "id": 1,
+      "title": "Bienvenido a DocuFleet",
+      "description": "Sistema de gestión de transporte y cumplimiento normativo para ejecutivos LABBE",
+      "icon": "Briefcase",
+      "content": "DocuFleet es tu plataforma centralizada para gestionar conductores, subcontratistas, documentos y cumplimiento regulatorio en tiempo real."
+    },
+    {
+      "id": 2,
+      "title": "Control Tower",
+      "description": "Dashboard ejecutivo con KPIs y métricas en tiempo real",
+      "icon": "BarChart3",
+      "content": "Visualiza estado general, documentos vencidos, alertas críticas y tendencias de cumplimiento."
+    },
+    {
+      "id": 3,
+      "title": "Conductores",
+      "description": "Gestión centralizada de conductores y su documentación",
+      "icon": "Users",
+      "content": "Registra, edita y monitorea conductores. Verifica licencias, seguros y certificados en tiempo real."
+    },
+    {
+      "id": 4,
+      "title": "Subcontratistas",
+      "description": "Administra proveedores y transportistas asociados",
+      "icon": "Building2",
+      "content": "Gestiona relaciones con subcontratistas, verifica documentación y monitorea cumplimiento."
+    },
+    {
+      "id": 5,
+      "title": "Documentos",
+      "description": "Repositorio centralizado de documentación",
+      "icon": "FileText",
+      "content": "Almacena, organiza y valida documentos. Sistema automático de alertas para vencimientos."
+    },
+    {
+      "id": 6,
+      "title": "Alertas",
+      "description": "Sistema inteligente de notificaciones",
+      "icon": "Bell",
+      "content": "Recibe alertas automáticas sobre documentos vencidos, cambios normativos y riesgos de cumplimiento."
+    },
+    {
+      "id": 7,
+      "title": "Equipo",
+      "description": "Gestión de permisos y acceso de usuarios",
+      "icon": "Users",
+      "content": "Administra quién tiene acceso a qué. Roles: Admin, Supervisor, Operador."
+    }
+  ],
+  "section_explanations": {
+    "control-tower": {
+      "title": "Control Tower - Tu Centro de Control",
+      "description": "Panel de control ejecutivo con todas las métricas que necesitas",
+      "items": [
+        {
+          "label": "Estado General",
+          "explanation": "Número total de conductores activos, documentos vigentes y alertas pendientes"
+        },
+        {
+          "label": "Documentos por Vencer",
+          "explanation": "Listado de documentos que vencerán en los próximos 30 días"
+        },
+        {
+          "label": "Alertas Críticas",
+          "explanation": "Eventos urgentes que requieren atención inmediata"
+        },
+        {
+          "label": "Score de Cumplimiento",
+          "explanation": "Porcentaje de regularización normativa de tu operación"
+        }
+      ]
+    },
+    "conductores": {
+      "title": "Conductores - Gestión Integral",
+      "description": "Panel completo para administrar tu fuerza de trabajo",
+      "items": [
+        {
+          "label": "Registro",
+          "explanation": "Crea nuevos conductores con RUT, datos personales y documentación inicial"
+        },
+        {
+          "label": "Documentación",
+          "explanation": "Licencia, RUTA, Certificados de capacitación, Seguros"
+        },
+        {
+          "label": "Estado",
+          "explanation": "Verde = Todo al día | Amarillo = Por vencer | Rojo = Vencido"
+        },
+        {
+          "label": "Historial",
+          "explanation": "Registro completo de cambios y actualizaciones del conductor"
+        }
+      ]
+    },
+    "subcontratistas": {
+      "title": "Subcontratistas - Proveedores Confiables",
+      "description": "Administra tu red de transportistas y proveedores",
+      "items": [
+        {
+          "label": "Empresa",
+          "explanation": "Datos de la empresa, RUT, contacto principal"
+        },
+        {
+          "label": "Documentación",
+          "explanation": "Licencia de operación, Seguro, Certificaciones"
+        },
+        {
+          "label": "Conductores Asociados",
+          "explanation": "Conductores que trabajan para este subcontratista"
+        },
+        {
+          "label": "Evaluación",
+          "explanation": "Calificación de cumplimiento y confiabilidad"
+        }
+      ]
+    },
+    "documentos": {
+      "title": "Documentos - Archivo Central",
+      "description": "Repositorio organizado de toda la documentación",
+      "items": [
+        {
+          "label": "Subir Documento",
+          "explanation": "Carga PDFs, imágenes de licencias, certificados, etc."
+        },
+        {
+          "label": "Validación Automática",
+          "explanation": "OCR extrae datos automáticamente (RUT, fechas, clase, etc.)"
+        },
+        {
+          "label": "Estado de Vencimiento",
+          "explanation": "Sistema automático marca cuándo vence cada documento"
+        },
+        {
+          "label": "Búsqueda Avanzada",
+          "explanation": "Encuentra documentos por conductor, tipo, fecha, estado"
+        }
+      ]
+    },
+    "alertas": {
+      "title": "Alertas - Tu Sistema de Warnings",
+      "description": "Notificaciones inteligentes en tiempo real",
+      "items": [
+        {
+          "label": "Alertas Críticas",
+          "explanation": "Documentos vencidos, conductores bloqueados, cambios normativos"
+        },
+        {
+          "label": "Alertas Normales",
+          "explanation": "Avisos generales, documentos por vencer en 30 días"
+        },
+        {
+          "label": "Filtros",
+          "explanation": "Filtra por tipo, prioridad, fecha, estado de lectura"
+        },
+        {
+          "label": "Acciones",
+          "explanation": "Marca como leída, accede directamente al documento"
+        }
+      ]
+    },
+    "equipo": {
+      "title": "Equipo - Control de Acceso",
+      "description": "Administra permisos y usuarios del sistema",
+      "items": [
+        {
+          "label": "Roles",
+          "explanation": "Admin (todo), Supervisor (lectura/reporte), Operador (datos operacionales)"
+        },
+        {
+          "label": "Agregar Usuario",
+          "explanation": "Invita a colaboradores por email con rol específico"
+        },
+        {
+          "label": "Auditoría",
+          "explanation": "Registro de quién hizo qué y cuándo en el sistema"
+        },
+        {
+          "label": "Seguridad",
+          "explanation": "Cambio de contraseña, autenticación de dos factores"
+        }
+      ]
+    }
+  }
+}
