@@ -5,35 +5,79 @@ import { allDriversData } from '@/lib/data/all-drivers'
 import { generateAlerts } from '@/lib/operations/alert-engine'
 import { calculateComplianceScore } from '@/lib/operations/expiration-engine'
 
-export async function GET() {
+export const dynamic = 'force-dynamic'
+
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url)
+    const type = searchParams.get('type')
+
     const supabase = await createClient()
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-    console.log('[v0] API company/data called - Loading all subcontractors from TypeScript data')
+    // If requesting only drivers
+    if (type === 'drivers') {
+      console.log('[v0] Fetching drivers from Supabase')
+      const { data: driversDb, error: driversError } = await supabase
+        .from('drivers')
+        .select('*')
+        .limit(500)
 
-    // Use all 221 subcontractors from TypeScript data file
-    const subcontractorsData = allSubcontractorsData
+      if (driversError) {
+        console.error('[v0] Error fetching drivers:', driversError)
+        throw driversError
+      }
 
-    console.log(`[v0] Loaded ${subcontractorsData.length} subcontractors from all-subcontractors.ts`)
+      const drivers = driversDb || []
+      console.log(`[v0] Fetched ${drivers.length} drivers from Supabase`)
+      
+      return NextResponse.json({ drivers })
+    }
 
-    // Use all 291 drivers from TypeScript data file
-    const driversData = allDriversData
+    // If requesting only organizations
+    if (type === 'organizations') {
+      console.log('[v0] Fetching organizations from Supabase')
+      const { data: orgsDb, error: orgsError } = await supabase
+        .from('organizations')
+        .select('*')
+        .limit(500)
 
-    console.log(`[v0] Loaded ${driversData.length} drivers from all-drivers.ts`)
+      if (orgsError) {
+        console.error('[v0] Error fetching organizations:', orgsError)
+        throw orgsError
+      }
+
+      const organizations = orgsDb || []
+      console.log(`[v0] Fetched ${organizations.length} organizations from Supabase`)
+      
+      return NextResponse.json({ organizations })
+    }
+
+    // Default: return full company data from TypeScript sources (for dashboard)
+    console.log('[v0] Fetching full company data')
+
+    // Fetch organizations and drivers from Supabase
+    const [orgsResult, driversResult] = await Promise.all([
+      supabase.from('organizations').select('*').limit(500),
+      supabase.from('drivers').select('*').limit(500)
+    ])
+
+    const organizations = orgsResult.data || []
+    const drivers = driversResult.data || []
+
+    console.log(`[v0] Fetched ${organizations.length} organizations and ${drivers.length} drivers from Supabase`)
 
     // Calculate operational stats
-    const blockedCount = 24  // Placeholder - en Fase 6 vendría de DB
+    const blockedCount = 24
     const riskCount = 12
-    const okCount = subcontractorsData.length - blockedCount - riskCount
+    const okCount = organizations.length - blockedCount - riskCount
     const complianceScore = calculateComplianceScore(
-      subcontractorsData.length,
+      organizations.length,
       okCount,
       riskCount,
       blockedCount
     )
 
-    // Generate alerts based on current state
+    // Generate alerts
     const alerts = generateAlerts({
       blockedCount,
       riskCount,
@@ -49,7 +93,6 @@ export async function GET() {
       { id: '4', full_name: 'Cecilia Herrera', rut: '14567890-3', email: 'cecilia@labbe.cl', phone: '+56914567891', cargo: 'Ejecutiva de Cuenta' },
     ]
 
-    // Enrich response with all data
     return NextResponse.json({
       company: {
         id: '1',
@@ -64,17 +107,17 @@ export async function GET() {
         is_active: true
       },
       executives: executivesData,
-      drivers: driversData,
-      subcontractors: subcontractorsData,
+      drivers,
+      organizations,
       stats: {
-        totalSubcontractors: subcontractorsData.length,
-        totalDrivers: driversData.length,
+        totalOrganizations: organizations.length,
+        totalDrivers: drivers.length,
         operational: {
           ok: okCount,
           risk: riskCount,
           blocked: blockedCount,
           complianceScore,
-          compliancePercentage: Math.round((okCount / subcontractorsData.length) * 100)
+          compliancePercentage: Math.round((okCount / organizations.length) * 100)
         },
         alerts: {
           total: alerts.length,
