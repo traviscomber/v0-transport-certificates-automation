@@ -47,7 +47,6 @@ export async function POST() {
         }
 
         return {
-          full_name: driver.nombre_completo,
           rut: driver.rut,
           email: `${driver.rut.replace(/\./g, '')}@transportes-labbe.cl`,
           phone: driver.telefono || '',
