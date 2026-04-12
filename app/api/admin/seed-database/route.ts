@@ -49,7 +49,7 @@ export async function POST() {
         return {
           rut: driver.rut,
           email: `${driver.rut.replace(/\./g, '')}@transportes-labbe.cl`,
-          phone: driver.telefono || '',
+          phone: '',
           organization_id: orgId
         }
       })
