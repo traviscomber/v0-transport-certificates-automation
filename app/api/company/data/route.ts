@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 
     // If no company found in Supabase, use fallback data with Labbe info
     if (!company) {
-      console.warn('[v0] No company found in Supabase for RUT 78.376.780-5, using fallback data')
+      console.log('[v0] Using fallback data for company RUT 78.376.780-5')
       return getFallbackData()
     }
 
