@@ -149,10 +149,10 @@ export function generateDetailedAlerts() {
     if (expiryDate >= today && expiryDate <= tomorrow) {
       alerts.push({
         id: `alert-driver-expires-today-${driver.rut}`,
-        title: `Licencia de conducir expira HOY: ${driver.nombre_completo}`,
+        title: `Licencia de conducir expira HOY: ${driver.nombre}`,
         message: `La licencia de conducir vence HOY (${expiryDate.toLocaleDateString('es-CL')})`,
-        description: `El conductor ${driver.nombre_completo} (RUT: ${driver.rut}) tiene la licencia venciendo hoy. No puede operar vehículos hasta renovar.`,
-        entity: driver.nombre_completo,
+        description: `El conductor ${driver.nombre} (RUT: ${driver.rut}) tiene la licencia venciendo hoy. No puede operar vehículos hasta renovar.`,
+        entity: driver.nombre,
         entityType: 'conductor',
         entityId: driver.rut,
         severity: 'critical' as const,
@@ -169,10 +169,10 @@ export function generateDetailedAlerts() {
     else if (expiryDate > tomorrow && expiryDate <= nextWeek) {
       alerts.push({
         id: `alert-driver-expires-week-${driver.rut}`,
-        title: `Licencia vence en ${Math.ceil((expiryDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))} días: ${driver.nombre_completo}`,
+        title: `Licencia vence en ${Math.ceil((expiryDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))} días: ${driver.nombre}`,
         message: `La licencia de conducir vence el ${expiryDate.toLocaleDateString('es-CL')}`,
-        description: `El conductor ${driver.nombre_completo} (RUT: ${driver.rut}) tiene la licencia venciendo pronto. Requiere renovación antes del ${expiryDate.toLocaleDateString('es-CL')}.`,
-        entity: driver.nombre_completo,
+        description: `El conductor ${driver.nombre} (RUT: ${driver.rut}) tiene la licencia venciendo pronto. Requiere renovación antes del ${expiryDate.toLocaleDateString('es-CL')}.`,
+        entity: driver.nombre,
         entityType: 'conductor',
         entityId: driver.rut,
         severity: 'warning' as const,
