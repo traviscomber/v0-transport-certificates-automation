@@ -449,13 +449,13 @@ export default function CompanyDashboard() {
 
         {activeTab === 'subcontractors' && (
           <div>
-            <SubcontractorsList subcontractors={subcontractors} />
+            <SubcontractorsList subcontractors={subcontractors as any} />
           </div>
         )}
 
         {activeTab === 'drivers' && (
           <div>
-            <DriversList drivers={drivers} />
+            <DriversList drivers={drivers as any} />
           </div>
         )}
 
