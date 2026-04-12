@@ -11,6 +11,10 @@ export type AlertType =
   | 'ENTITY_BLOCKED'
   | 'ENTITY_AT_RISK'
   | 'COMPLIANCE_SCORE_LOW'
+  | 'DOCUMENT_UPLOADED'
+  | 'DOCUMENT_VALIDATION_PENDING'
+  | 'DOCUMENT_VALIDATED'
+  | 'DOCUMENT_REJECTED'
 
 export interface Alert {
   id: string

@@ -3,7 +3,6 @@ import { createClient } from '@supabase/supabase-js'
 import { v4 as uuidv4 } from 'uuid'
 import { generateDocumentUploadAlerts } from '@/lib/document-alerts-generator'
 
-// Set max duration for the route (30 seconds - Vercel free plan limit)
 export const maxDuration = 30
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -12,7 +11,6 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 
 export async function POST(request: NextRequest) {
   try {
-    // Get the current user
     const authHeader = request.headers.get('authorization')
     if (!authHeader) {
       return NextResponse.json(
@@ -23,7 +21,6 @@ export async function POST(request: NextRequest) {
 
     const token = authHeader.replace('Bearer ', '')
     
-    // Verify token and get user
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     if (authError || !user) {
       return NextResponse.json(
@@ -32,10 +29,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Parse multipart form data
     const formData = await request.formData()
     const file = formData.get('file') as File
     const documentType = formData.get('documentType') as string
+    const clientId = formData.get('clientId') as string
 
     if (!file || !documentType) {
       return NextResponse.json(
@@ -44,7 +41,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate file size
     if (file.size > 10 * 1024 * 1024) {
       return NextResponse.json(
         { message: 'File too large' },
@@ -52,7 +48,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate file type
     const validTypes = ['application/pdf', 'image/jpeg', 'image/png']
     if (!validTypes.includes(file.type)) {
       return NextResponse.json(
@@ -61,21 +56,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get conductor info from user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get client info
+    const { data: clientProfile, error: clientError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', user.id)
+      .eq('id', clientId || user.id)
       .single()
 
-    if (profileError || !profile) {
+    if (clientError || !clientProfile) {
       return NextResponse.json(
-        { message: 'User profile not found' },
+        { message: 'Client profile not found' },
         { status: 404 }
       )
     }
 
-    // Get document type info
     const { data: docType, error: docTypeError } = await supabase
       .from('document_types')
       .select('*')
@@ -89,12 +83,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate file path
     const fileExtension = file.name.split('.').pop()
     const fileName = `${uuidv4()}.${fileExtension}`
-    const filePath = `conductor-documents/${user.id}/${fileName}`
+    const filePath = `client-documents/${clientId || user.id}/${fileName}`
 
-    // Upload file to storage
     const fileBuffer = await file.arrayBuffer()
     const { error: uploadError } = await supabase.storage
       .from('documents')
@@ -111,17 +103,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('documents')
       .getPublicUrl(filePath)
 
-    // Create uploaded_documents record
     const { data: uploadedDoc, error: dbError } = await supabase
       .from('uploaded_documents')
       .insert({
         document_type_id: docType.id,
-        conductor_id: profile.id,
+        client_id: clientId || user.id,
         uploaded_by: user.id,
         original_filename: file.name,
         file_url: publicUrl,
@@ -136,7 +126,6 @@ export async function POST(request: NextRequest) {
 
     if (dbError) {
       console.error('Database error:', dbError)
-      // Try to clean up storage
       await supabase.storage.from('documents').remove([filePath])
       return NextResponse.json(
         { message: 'Failed to save document record' },
@@ -144,13 +133,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create notification for conductor
+    // Notification for uploader
     await supabase
       .from('notifications')
       .insert({
         user_id: user.id,
         title: 'Documento Subido',
-        message: `Tu ${docType.name} ha sido recibido y se procesará en breve.`,
+        message: `Tu ${docType.name} ha sido recibido y se validará en breve.`,
         type: 'info',
         metadata: {
           document_id: uploadedDoc.id,
@@ -158,17 +147,14 @@ export async function POST(request: NextRequest) {
         },
       })
 
-    // Generate alerts for admins about the new document
+    // Generate alerts for admins about the new client document
     await generateDocumentUploadAlerts(
       uploadedDoc.id,
       docType.name,
-      profile.first_name || 'Conductor',
-      'conductor',
-      user.id
+      clientProfile.company_name || clientProfile.first_name || 'Cliente',
+      'client',
+      clientId || user.id
     )
-
-    // Optionally trigger OCR processing (would be handled by a background job)
-    // You could emit an event or call another service here
 
     return NextResponse.json(
       {
