@@ -24,27 +24,19 @@ export async function GET(request: NextRequest) {
     
     let query = supabase
       .from('drivers')
-      .select(`
-        *,
-        organization:organizations(id, name),
-        assignments:driver_assignments(
-          vehicle:vehicles(id, plate, brand, model)
-        )
-      `)
-      .eq('is_active', true)
+      .select(`*`)
       .order('full_name')
+      .limit(500)
     
     if (organizationId) {
       query = query.eq('organization_id', organizationId)
-    } else if (user.organization_id) {
-      query = query.eq('organization_id', user.organization_id)
     }
     
     const { data, error } = await query
     
     if (error) throw error
     
-    return NextResponse.json({ data, success: true })
+    return NextResponse.json({ drivers: data, success: true })
   } catch (error) {
     console.error('Error fetching drivers:', error)
     return NextResponse.json({ error: 'Failed to fetch drivers', success: false }, { status: 500 })
