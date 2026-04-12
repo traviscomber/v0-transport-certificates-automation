@@ -28,6 +28,7 @@ export function ControlTower({ drivers, subcontractors, vehicles = [] }: Control
   const [riskList, setRiskList] = useState<Array<[string, StatusResult, OperableEntity]>>([])
   const [summary, setSummary] = useState<StatusSummary | null>(null)
   const [alerts, setAlerts] = useState<any[]>([])
+  const [statusResults, setStatusResults] = useState<Map<string, StatusResult>>(new Map())
 
   useEffect(() => {
     // Combine all entities
@@ -39,6 +40,7 @@ export function ControlTower({ drivers, subcontractors, vehicles = [] }: Control
 
     // Calculate status for all entities
     const results = calculateStatusBatch(allEntities)
+    setStatusResults(results)
     
     // Get summary
     const summaryData = summarizeStatus(results)
@@ -61,24 +63,16 @@ export function ControlTower({ drivers, subcontractors, vehicles = [] }: Control
 
     setBlockedList(blocked)
     setRiskList(risk)
-  }, [drivers, subcontractors, vehicles])
 
-  useEffect(() => {
     // Generate alerts from status results
-    const allEntities = [
-      ...drivers.map(d => ({ ...d, type: 'driver' as const })),
-      ...subcontractors.map(s => ({ ...s, type: 'subcontractor' as const })),
-      ...vehicles.map(v => ({ ...v, type: 'vehicle' as const }))
-    ]
-
     const generatedAlerts = generateAlertsBatch(
       allEntities.map(e => ({
         id: e.id,
         nombre: e.nombre,
         type: e.type,
-        blockedReasons: (statusResults?.get(e.id)?.blockedReasons || []),
-        riskReasons: (statusResults?.get(e.id)?.riskReasons || []),
-        score: statusResults?.get(e.id)?.score || 0
+        blockedReasons: (results.get(e.id)?.blockedReasons || []),
+        riskReasons: (results.get(e.id)?.riskReasons || []),
+        score: results.get(e.id)?.score || 0
       }))
     )
 
