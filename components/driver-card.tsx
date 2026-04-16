@@ -34,17 +34,18 @@ export function DriverCard({
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [uploadDocType, setUploadDocType] = useState('Licencia de Conducir')
   const [uploadFileName, setUploadFileName] = useState('')
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
-  const fileInputRef = useState<HTMLInputElement | null>(null)[1]
 
   const handleUpload = async () => {
-    if (!uploadFileName.trim()) return
+    if (!uploadFileName.trim() || !uploadFile) return
 
     setUploading(true)
     try {
-      await uploadDocument(uploadDocType, uploadFileName)
+      await uploadDocument(uploadDocType, uploadFileName, uploadFile)
       setShowUploadModal(false)
       setUploadFileName('')
+      setUploadFile(null)
       setUploadDocType('Licencia de Conducir')
     } catch (error) {
       console.error('[v0] Upload error:', error)
@@ -250,7 +251,9 @@ export function DriverCard({
                   e.preventDefault()
                   e.currentTarget.classList.remove('border-blue-500', 'bg-blue-500/10')
                   if (e.dataTransfer.files?.[0]) {
-                    setUploadFileName(e.dataTransfer.files[0].name)
+                    const file = e.dataTransfer.files[0]
+                    setUploadFileName(file.name)
+                    setUploadFile(file)
                   }
                 }}
                 onClick={() => {
@@ -266,7 +269,9 @@ export function DriverCard({
                   className="hidden"
                   onChange={(e) => {
                     if (e.target.files?.[0]) {
-                      setUploadFileName(e.target.files[0].name)
+                      const file = e.target.files[0]
+                      setUploadFileName(file.name)
+                      setUploadFile(file)
                     }
                   }}
                 />

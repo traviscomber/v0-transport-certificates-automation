@@ -36,17 +36,17 @@ export function useDriverDocuments(driverId: string) {
   }
 
   // Subir documento
-  const uploadDocument = async (tipo: string, nombre: string) => {
+  const uploadDocument = async (tipo: string, nombre: string, file: File) => {
     try {
+      const formData = new FormData()
+      formData.append('driverId', driverId)
+      formData.append('tipo', tipo)
+      formData.append('nombre', nombre)
+      formData.append('file', file)
+
       const response = await fetch('/api/documents/upload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          driverId,
-          tipo,
-          nombre,
-          estado: 'pendiente',
-        }),
+        body: formData,
       })
 
       const result = await response.json()
