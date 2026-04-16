@@ -38,17 +38,17 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Guardar registro en tabla uploaded_documents (que ya existe)
-    console.log('[v0] Saving document record to uploaded_documents:', { driverId, tipo, nombre })
+    // Guardar registro en tabla documents (estructura real de la BD)
+    console.log('[v0] Saving document record to documents:', { tipo, nombre })
     const { data: dbData, error: dbError } = await supabase
-      .from('uploaded_documents')
+      .from('documents')
       .insert([
         {
-          driver_id: driverId,
-          doc_type: tipo,
           file_name: nombre,
-          status: 'pending',
-          created_at: new Date().toISOString(),
+          file_size: file.size.toString(),
+          file_type: file.type || 'application/octet-stream',
+          document_type: tipo,
+          upload_date: new Date().toISOString().split('T')[0],
         },
       ])
       .select()
