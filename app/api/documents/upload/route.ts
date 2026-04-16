@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Guardar en tabla certificates (tabla que ya existe)
+    // Guardar en tabla certificates solo con los campos necesarios que no son referencias
     console.log('[v0] Saving certificate record:', { driverId, tipo, nombre })
     
     const timestamp = Date.now()
@@ -49,11 +49,13 @@ export async function POST(request: NextRequest) {
       .insert([
         {
           driver_id: driverId,
-          certificate_type: tipo,
           file_name: nombre,
           file_url: fileName,
           file_size: file.size,
+          mime_type: file.type || 'application/octet-stream',
           status: 'pending',
+          document_number: tipo,
+          notes: `Uploaded certificate: ${tipo}`,
         },
       ])
       .select()
