@@ -28,19 +28,19 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       },
     })
 
-    // Obtener documentos del conductor desde tabla monthly_documents
+    // Obtener certificados del conductor desde tabla certificates
     const { data, error } = await supabase
-      .from('monthly_documents')
-      .select('id, file_name as nombre, document_type as tipo, status as estado, uploaded_at as fecha_subida, month_year')
+      .from('certificates')
+      .select('id, file_name as nombre, certificate_type as tipo, status as estado, uploaded_date as fecha_subida')
       .eq('driver_id', driverId)
-      .order('uploaded_at', { ascending: false })
+      .order('uploaded_date', { ascending: false })
 
     if (error) {
-      console.error('[v0] Error fetching documents:', error)
+      console.error('[v0] Error fetching certificates:', error)
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    console.log('[v0] Documents fetched for driver', driverId, ':', data?.length || 0)
+    console.log('[v0] Certificates fetched for driver', driverId, ':', data?.length || 0)
     return NextResponse.json({ data }, { status: 200 })
   } catch (error) {
     console.error('[v0] Error in fetch handler:', error)

@@ -38,38 +38,35 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Guardar registro en tabla monthly_documents
-    console.log('[v0] Saving document record to monthly_documents:', { driverId, tipo, nombre })
+    // Guardar en tabla certificates (tabla que ya existe)
+    console.log('[v0] Saving certificate record:', { driverId, tipo, nombre })
     
-    // Calcular month_year (primer día del mes actual)
-    const today = new Date()
-    const monthYear = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]
+    const timestamp = Date.now()
+    const fileName = `${driverId}/${tipo}/${timestamp}-${nombre}`
     
     const { data: dbData, error: dbError } = await supabase
-      .from('monthly_documents')
+      .from('certificates')
       .insert([
         {
           driver_id: driverId,
-          document_type: tipo,
-          month_year: monthYear,
-          status: 'uploaded',
-          provider: 'Manual Upload',
+          certificate_type: tipo,
           file_name: nombre,
-          file_url: `/documents/${driverId}/${nombre}`,
-          uploaded_at: new Date().toISOString(),
+          file_url: fileName,
+          status: 'pending',
+          uploaded_date: new Date().toISOString(),
         },
       ])
       .select()
 
     if (dbError) {
-      console.error('[v0] Database error inserting document:', dbError)
+      console.error('[v0] Database error inserting certificate:', dbError)
       return NextResponse.json(
-        { error: `Failed to save document record: ${dbError.message}` },
+        { error: `Failed to save certificate record: ${dbError.message}` },
         { status: 400 }
       )
     }
 
-    console.log('[v0] Document registered successfully:', dbData)
+    console.log('[v0] Certificate registered successfully:', dbData)
     return NextResponse.json({ success: true, data: dbData }, { status: 201 })
   } catch (error) {
     console.error('[v0] Error in upload handler:', error)
