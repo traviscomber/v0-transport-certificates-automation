@@ -567,7 +567,29 @@ export default function CompanyDashboard() {
               </Card>
             </div>
 
-            {/* Alertas List */}e className="h-5 w-5 text-yellow-500" />}
+            {/* Alertas List */}
+            {alertsLoading ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <div className="text-slate-400">Cargando alertas...</div>
+                </CardContent>
+              </Card>
+            ) : alerts.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Bell className="h-12 w-12 text-slate-500 mx-auto mb-4" />
+                  <div className="text-foreground font-semibold">Sin alertas</div>
+                  <div className="text-slate-400">¡Todo está en orden!</div>
+                </CardContent>
+              </Card>
+            ) : (
+              alerts.map((alert) => (
+                <Card key={alert.id} className="border-slate-700 hover:border-slate-600 transition-all">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="mt-1">
+                        {alert.type === 'error' && <AlertTriangle className="h-5 w-5 text-red-500" />}
+                        {alert.type === 'warning' && <AlertTriangle className="h-5 w-5 text-yellow-500" />}
                         {alert.type === 'info' && <Bell className="h-5 w-5 text-blue-500" />}
                         {alert.type === 'success' && <Bell className="h-5 w-5 text-green-500" />}
                       </div>
