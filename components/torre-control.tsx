@@ -100,7 +100,6 @@ export function TorreControl({ drivers, subcontractors, vehicles = [] }: Control
           </p>
         </div>
       </div>
-      </div>
 
       {/* Summary Metrics con explicaciones */}
       <div className="space-y-3">

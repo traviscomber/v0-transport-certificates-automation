@@ -136,7 +136,7 @@ export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) 
     setShowActiveOnly(false)
   }
 
-  const hasActiveFilters = searchTerm || selectedRegions.length > 0 || selectedEjecutivas.length > 0 || selectedCertifications.length > 0 || showActiveOnly
+  const hasActiveFilters = searchTerm.length > 0 || selectedRegions.length > 0 || selectedEjecutivas.length > 0 || selectedCertifications.length > 0 || showActiveOnly
 
   return (
     <div className="space-y-4">
