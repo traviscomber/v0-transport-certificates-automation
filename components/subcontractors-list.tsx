@@ -97,6 +97,7 @@ export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) 
           if (cert === 'interpolar') return sub.interpolar
           return false
         })
+        })
         if (!hasCertification) return false
       }
 
