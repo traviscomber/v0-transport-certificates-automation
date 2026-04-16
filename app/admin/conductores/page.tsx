@@ -1,9 +1,11 @@
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, Search, Users, Building2, AlertTriangle, Calendar, HelpCircle } from "lucide-react"
+import { Plus, Users, Building2, AlertTriangle, Calendar } from "lucide-react"
 import Link from "next/link"
 import { HelpBox, QuickHelp } from "@/components/ui/help-box"
+import { DriverFilters, type DriverFilters as DriverFiltersType } from "@/components/admin/driver-filters"
+import { LicenseAndCertifications } from "@/components/admin/license-certifications"
 
 async function getConductores() {
   const supabase = await createClient()
@@ -18,6 +20,22 @@ async function getConductores() {
 
   if (error) {
     console.error("Error fetching conductores:", error)
+    return []
+  }
+
+  return data || []
+}
+
+async function getCompanies() {
+  const supabase = await createClient()
+  
+  const { data, error } = await supabase
+    .from("transportistas")
+    .select("id, razon_social, rut")
+    .order("razon_social", { ascending: true })
+
+  if (error) {
+    console.error("Error fetching companies:", error)
     return []
   }
 
@@ -39,6 +57,7 @@ function isLicenseExpired(date: string | null): boolean {
 
 export default async function ConductoresPage() {
   const conductores = await getConductores()
+  const companies = await getCompanies()
 
   return (
     <div className="space-y-6">
@@ -46,7 +65,7 @@ export default async function ConductoresPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Conductores</h1>
           <p className="text-muted-foreground">
-            Lista de choferes registrados en el sistema
+            Gestión de conductores, licencias, certificaciones y estado operativo
           </p>
         </div>
         <Link href="/admin/conductores/nuevo" title="Haz clic para registrar un nuevo conductor">
@@ -60,34 +79,21 @@ export default async function ConductoresPage() {
       {/* Ayuda Educativa */}
       <HelpBox
         variant="info"
-        title="Que es un conductor?"
-        description="Un conductor (o chofer) es la persona que maneja los vehiculos de transporte. Aqui puedes ver todos los conductores registrados y sus licencias."
+        title="Gestión Operativa de Conductores"
+        description="Sistema centralizado para gestionar conductores, licencias (A2/A5), certificaciones profesionales, subcontratistas y estado de liquidaciones."
         tips={[
-          "Haz clic en 'Nuevo Conductor' para registrar un nuevo chofer con su licencia.",
-          "Las etiquetas de colores te ayudan a identificar rapidamente el estado de cada conductor.",
-          "ROJO 'Licencia Vencida' significa que el conductor NO puede operar hasta renovar su licencia.",
-          "AMARILLO 'Por Vencer' significa que la licencia vencera pronto (en menos de 30 dias).",
-          "VERDE 'Activo' significa que el conductor esta habilitado para trabajar."
+          "Usa los filtros para encontrar conductores por empresa, RUT proveedor, tipo de vehículo y estado de licencia.",
+          "ROJO 'Licencia Vencida' = conductor NO puede operar hasta renovar licencia.",
+          "AMARILLO 'Por Vencer' = licencia vence en menos de 30 días.",
+          "VERDE 'Activo' = conductor habilitado para trabajar.",
+          "Verifica certificaciones profesionales (ADR, Defensivo, Seguridad)."
         ]}
       />
 
-      {/* Search */}
-      <Card>
-        <CardContent className="pt-6 space-y-3">
-          <QuickHelp text="Escribe el RUT o el nombre del conductor para encontrarlo rapidamente en la lista." />
-          <div className="flex gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Escribe aqui para buscar por RUT o nombre..."
-                className="w-full rounded-md border bg-background pl-10 pr-4 py-2 text-sm"
-              />
-            </div>
-            <Button variant="outline" title="Ver opciones de filtrado">Filtros</Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filtros Avanzados */}
+      <DriverFilters 
+        companies={companies.map(c => ({ id: c.id, razon_social: c.razon_social, rut: c.rut }))} 
+      />
 
       {/* Conductores List */}
       {conductores.length === 0 ? (
@@ -114,7 +120,8 @@ export default async function ConductoresPage() {
             
             return (
               <Card key={c.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
+                <CardContent className="p-6 space-y-4">
+                  {/* Header Row */}
                   <div className="flex items-start justify-between">
                     <div className="flex gap-4">
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100">
@@ -133,7 +140,7 @@ export default async function ConductoresPage() {
                             {c.transportistas?.razon_social || "Sin asignar"}
                           </span>
                           {c.clase_licencia && (
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-sm text-muted-foreground font-semibold">
                               Licencia: {c.clase_licencia}
                             </span>
                           )}
@@ -151,28 +158,57 @@ export default async function ConductoresPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
                       {expired && (
-                        <span className="px-2 py-1 rounded-full text-xs bg-red-100 text-red-700">
+                        <span className="px-2 py-1 rounded-full text-xs bg-red-100 text-red-700 font-semibold">
                           Licencia Vencida
                         </span>
                       )}
                       {expiringSoon && !expired && (
-                        <span className="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-700">
+                        <span className="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-700 font-semibold">
                           Por Vencer
                         </span>
                       )}
-                      <span className={`px-2 py-1 rounded-full text-xs ${
+                      {!expired && !expiringSoon && (
+                        <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700 font-semibold">
+                          Licencia Activa
+                        </span>
+                      )}
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                         c.is_active 
-                          ? "bg-green-100 text-green-700" 
-                          : "bg-red-100 text-red-700"
+                          ? "bg-blue-100 text-blue-700" 
+                          : "bg-gray-100 text-gray-700"
                       }`}>
-                        {c.is_active ? "Activo" : "Inactivo"}
+                        {c.is_active ? "En Servicio" : "Inactivo"}
                       </span>
-                      <Link href={`/admin/conductores/${c.id}`}>
-                        <Button variant="ghost" size="sm">Ver detalles</Button>
-                      </Link>
                     </div>
+                  </div>
+
+                  {/* License and Certifications Info */}
+                  <div className="pt-4 border-t">
+                    <LicenseAndCertifications 
+                      licenses={c.vencimiento_licencia ? [{
+                        id: c.id,
+                        licenseType: c.clase_licencia || 'A2',
+                        expiryDate: c.vencimiento_licencia,
+                        status: expired ? 'expired' : (expiringSoon ? 'pending_renewal' : 'active'),
+                      }] : []}
+                      certifications={[]}
+                    />
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex justify-end gap-2 pt-2">
+                    <Link href={`/admin/conductores/${c.id}`}>
+                      <Button variant="outline" size="sm">
+                        Ver Detalles
+                      </Button>
+                    </Link>
+                    <Link href={`/admin/conductores/${c.id}/editar`}>
+                      <Button variant="outline" size="sm">
+                        Editar
+                      </Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>
