@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { Mail, Phone, MapPin, Search, X, AlertCircle, CheckCircle2, Filter } from 'lucide-react'
+import { Mail, Phone, MapPin, Search, X, AlertCircle, CheckCircle2, Filter, FileText, Download, ChevronDown } from 'lucide-react'
 
 interface Driver {
   id: string
@@ -29,11 +29,18 @@ interface Driver {
   nombres?: string
   apellido_paterno?: string
   apellido_materno?: string
-  rut_proveedor?: string
   proveedor?: string
+  rut_proveedor?: string
   patente_tracto?: string
   clase_licencia?: string
-  is_active: boolean
+  is_active?: boolean
+  documentos?: Array<{
+    id: string
+    tipo: string
+    nombre: string
+    fecha_subida: string
+    estado: 'pendiente' | 'aprobado' | 'rechazado'
+  }>
 }
 
 interface DriversListProps {
@@ -46,6 +53,7 @@ export function DriversList({ drivers }: DriversListProps) {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [selectedProviders, setSelectedProviders] = useState<string[]>([])
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'inactive'>('all')
+  const [expandedDocuments, setExpandedDocuments] = useState<Set<string>>(new Set())
 
   const filteredDrivers = useMemo(() => {
     return drivers.filter(driver => {
@@ -93,6 +101,43 @@ export function DriversList({ drivers }: DriversListProps) {
     setSelectedProviders([])
     setSelectedStatus('all')
     setShowAdvancedFilters(false)
+  }
+
+  // Funciones para manejar documentos expandibles
+  const toggleDocuments = (driverId: string) => {
+    const newExpanded = new Set(expandedDocuments)
+    if (newExpanded.has(driverId)) {
+      newExpanded.delete(driverId)
+    } else {
+      newExpanded.add(driverId)
+    }
+    setExpandedDocuments(newExpanded)
+  }
+
+  const getDocumentStatusColor = (estado: string) => {
+    switch (estado) {
+      case 'aprobado':
+        return 'bg-green-500/30 text-green-200'
+      case 'rechazado':
+        return 'bg-red-500/30 text-red-200'
+      case 'pendiente':
+        return 'bg-yellow-500/30 text-yellow-200'
+      default:
+        return 'bg-slate-500/30 text-slate-200'
+    }
+  }
+
+  const getDocumentStatusLabel = (estado: string) => {
+    switch (estado) {
+      case 'aprobado':
+        return 'Aprobado'
+      case 'rechazado':
+        return 'Rechazado'
+      case 'pendiente':
+        return 'Pendiente'
+      default:
+        return estado
+    }
   }
 
   return (
@@ -301,6 +346,59 @@ export function DriversList({ drivers }: DriversListProps) {
                 <div className="border-t border-slate-700 pt-3">
                   <p className="text-xs font-semibold uppercase text-slate-400">RUT Proveedor</p>
                   <p className="font-mono text-sm text-slate-400">{driver.rut_proveedor}</p>
+                </div>
+              )}
+
+              {/* Documentos Subidos - Sección Expandible */}
+              {driver.documentos && driver.documentos.length > 0 && (
+                <div className="border-t border-slate-700 pt-3 mt-3">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleDocuments(driver.id)
+                    }}
+                    className="flex w-full items-center justify-between hover:opacity-80 transition-opacity"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-blue-400" />
+                      <span className="text-sm font-semibold text-white">
+                        Documentos Subidos ({driver.documentos.length})
+                      </span>
+                    </div>
+                    <ChevronDown 
+                      className={`h-4 w-4 text-slate-400 transition-transform ${
+                        expandedDocuments.has(driver.id) ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+
+                  {/* Documentos expandibles */}
+                  {expandedDocuments.has(driver.id) && (
+                    <div className="mt-3 space-y-2">
+                      {driver.documentos.map((doc) => (
+                        <div
+                          key={doc.id}
+                          className="flex items-center justify-between rounded bg-slate-800/50 p-2 text-xs"
+                        >
+                          <div className="flex flex-1 items-center gap-2 min-w-0">
+                            <FileText className="h-3 w-3 text-slate-400 flex-shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-slate-300 truncate">{doc.tipo}</p>
+                              <p className="text-slate-500 truncate">{doc.nombre}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                            <Badge className={`text-xs ${getDocumentStatusColor(doc.estado)}`}>
+                              {getDocumentStatusLabel(doc.estado)}
+                            </Badge>
+                            <button className="p-1 hover:bg-slate-700 rounded transition-colors">
+                              <Download className="h-3 w-3 text-slate-400" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

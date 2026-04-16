@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
-// Read the file
-const filePath = path.join(__dirname, '../lib/data/all-drivers.ts');
+// Read the file using absolute path
+const filePath = '/vercel/share/v0-project/lib/data/all-drivers.ts';
 let content = fs.readFileSync(filePath, 'utf-8');
 
 // Replace all lines that don't have "documentos:" with version that includes empty documentos array
