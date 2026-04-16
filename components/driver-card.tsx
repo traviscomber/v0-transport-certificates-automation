@@ -53,10 +53,6 @@ export function DriverCard({
       setUploading(false)
     }
   }
-    } finally {
-      setUploading(false)
-    }
-  }
 
   const statusBg = driver.is_active
     ? 'bg-green-500/20'
