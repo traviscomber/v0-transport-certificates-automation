@@ -1,10 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-const supabase = createClient(supabaseUrl, supabaseKey)
+import { createServerClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,6 +9,8 @@ export async function POST(request: NextRequest) {
     const nombre = formData.get('nombre') as string
     const file = formData.get('file') as File
 
+    console.log('[v0] Upload request received:', { driverId, tipo, nombre, fileSize: file?.size })
+
     if (!driverId || !tipo || !nombre || !file) {
       console.error('[v0] Missing fields:', { driverId: !!driverId, tipo: !!tipo, nombre: !!nombre, file: !!file })
       return NextResponse.json(
@@ -22,7 +19,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Guardar registro en base de datos (sin subir archivo a Storage)
+    // Crear cliente de Supabase del servidor
+    const supabase = await createServerClient()
+
+    // Guardar registro en base de datos
     console.log('[v0] Saving document record:', { driverId, tipo, nombre })
     const { data: dbData, error: dbError } = await supabase
       .from('driver_documents')

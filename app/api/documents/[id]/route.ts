@@ -1,9 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabaseAdmin = createClient(supabaseUrl, supabaseKey)
+import { createServerClient } from "@/lib/supabase/server"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -13,8 +9,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Driver ID is required' }, { status: 400 })
     }
 
+    // Crear cliente de Supabase del servidor
+    const supabase = await createServerClient()
+
     // Obtener documentos del conductor
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from('driver_documents')
       .select('id, driver_id, document_type as tipo, file_name as nombre, status as estado, uploaded_at as fecha_subida')
       .eq('driver_id', driverId)
