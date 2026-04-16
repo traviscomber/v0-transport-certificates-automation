@@ -4,15 +4,25 @@ import { cookies } from "next/headers"
 /**
  * Server-side Supabase client for use in Server Components and API routes.
  * Creates a new client on each request to avoid state issues with Fluid compute.
+ * Uses SERVICE_ROLE_KEY for write operations on protected tables.
  */
 export async function createServerClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  if (!url || !key) {
-    throw new Error("Missing Supabase URL or Key. Please check your environment variables.")
+  if (!url) {
+    throw new Error("Missing Supabase URL. Please check your environment variables.")
   }
 
+  // Use service role key for server operations, fallback to anon key
+  const key = serviceKey || anonKey
+  
+  if (!key) {
+    throw new Error("Missing Supabase API key. Please check your environment variables.")
+  }
+
+  console.log('[v0] Creating Supabase client with key type:', serviceKey ? 'SERVICE_ROLE' : 'ANON')
   return createSupabaseClient(url, key)
 }
 
