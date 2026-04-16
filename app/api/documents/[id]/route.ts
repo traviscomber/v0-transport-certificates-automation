@@ -31,9 +31,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     // Obtener certificados del conductor desde tabla certificates
     const { data, error } = await supabase
       .from('certificates')
-      .select('id, file_name as nombre, certificate_type as tipo, status as estado, uploaded_date as fecha_subida')
+      .select('id, file_name as nombre, certificate_type as tipo, status as estado, created_at as fecha_subida')
       .eq('driver_id', driverId)
-      .order('uploaded_date', { ascending: false })
+      .order('created_at', { ascending: false })
 
     if (error) {
       console.error('[v0] Error fetching certificates:', error)

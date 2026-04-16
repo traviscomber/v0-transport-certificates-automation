@@ -52,8 +52,8 @@ export async function POST(request: NextRequest) {
           certificate_type: tipo,
           file_name: nombre,
           file_url: fileName,
+          file_size: file.size,
           status: 'pending',
-          uploaded_date: new Date().toISOString(),
         },
       ])
       .select()
