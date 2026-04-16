@@ -15,12 +15,13 @@
 
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { Mail, Phone, MapPin, Search, X, AlertCircle, CheckCircle2, Filter, FileText, Download, ChevronDown, Upload, Plus } from 'lucide-react'
+import { Search, X, Filter } from 'lucide-react'
+import { DriverCard } from './driver-card'
 
 interface Driver {
   id: string
@@ -54,9 +55,6 @@ export function DriversList({ drivers }: DriversListProps) {
   const [selectedProviders, setSelectedProviders] = useState<string[]>([])
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'inactive'>('all')
   const [expandedDocuments, setExpandedDocuments] = useState<Set<string>>(new Set())
-  const [showUploadModal, setShowUploadModal] = useState<string | null>(null)
-  const [uploadFileName, setUploadFileName] = useState('')
-  const [uploadDocType, setUploadDocType] = useState('Otro')
 
   const filteredDrivers = useMemo(() => {
     return drivers.filter(driver => {
@@ -285,28 +283,23 @@ export function DriversList({ drivers }: DriversListProps) {
       {filteredDrivers.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredDrivers.map((driver) => (
-            <div
+            <DriverCard
               key={driver.id}
-              className="group cursor-pointer rounded-lg border border-slate-700 bg-gradient-to-br from-slate-900 to-slate-950 p-4 transition-all hover:border-amber-500/50 hover:shadow-lg hover:shadow-amber-500/10"
-              onClick={() => setSelectedDriver(driver)}
-            >
-              {/* Header with RUT and status */}
-              <div className="mb-3 flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase text-slate-400">RUT</p>
-                  <p className="font-mono text-lg font-bold text-amber-400">{driver.rut}</p>
-                </div>
-                {driver.is_active ? (
-                  <Badge className="bg-green-500/20 text-green-300 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Activo
-                  </Badge>
-                ) : (
-                  <Badge className="bg-red-500/20 text-red-300 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    Inactivo
-                  </Badge>
-                )}
+              driver={driver}
+              expandedDocuments={expandedDocuments}
+              toggleDocuments={toggleDocuments}
+              getDocumentStatusColor={getDocumentStatusColor}
+              getDocumentStatusLabel={getDocumentStatusLabel}
+            />
+          ))}
+        </div>
+      ) : (
+        <Card className="border-slate-700">
+          <CardContent className="p-8 text-center">
+            <p className="text-slate-400">No se encontraron conductores</p>
+          </CardContent>
+        </Card>
+      )}
               </div>
 
               {/* Driver Name */}
@@ -512,97 +505,6 @@ export function DriversList({ drivers }: DriversListProps) {
                     <Badge className="bg-red-500/20 text-red-300">Inactivo</Badge>
                   )}
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Upload Document Modal */}
-      {showUploadModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="relative w-full max-w-md rounded-lg border border-slate-700 bg-slate-900 p-6 shadow-2xl">
-            <button
-              onClick={() => setShowUploadModal(null)}
-              className="absolute right-4 top-4 text-slate-400 hover:text-white"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <h2 className="mb-4 text-lg font-semibold text-white">Subir Documento</h2>
-
-            {/* Conductor Info */}
-            {drivers.find(d => d.id === showUploadModal) && (
-              <div className="mb-4 rounded bg-slate-800 p-3 text-sm">
-                <p className="text-slate-400">Conductor:</p>
-                <p className="font-semibold text-white">{drivers.find(d => d.id === showUploadModal)?.nombre}</p>
-                <p className="text-xs text-slate-500">{drivers.find(d => d.id === showUploadModal)?.rut}</p>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              {/* Tipo de Documento */}
-              <div>
-                <label className="text-sm font-semibold text-slate-300">Tipo de Documento</label>
-                <select
-                  value={uploadDocType}
-                  onChange={(e) => setUploadDocType(e.target.value)}
-                  className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
-                >
-                  <option>Licencia de Conducir</option>
-                  <option>Antecedentes Penales</option>
-                  <option>Certificado Médico</option>
-                  <option>Comprobante Domicilio</option>
-                  <option>Contrato</option>
-                  <option>Otro</option>
-                </select>
-              </div>
-
-              {/* Nombre del archivo */}
-              <div>
-                <label className="text-sm font-semibold text-slate-300">Nombre del Archivo</label>
-                <input
-                  type="text"
-                  value={uploadFileName}
-                  onChange={(e) => setUploadFileName(e.target.value)}
-                  placeholder="ej: Licencia_2024.pdf"
-                  className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white placeholder-slate-500"
-                />
-              </div>
-
-              {/* File Upload Area */}
-              <div className="rounded border-2 border-dashed border-slate-700 p-4 text-center">
-                <Upload className="mx-auto h-8 w-8 text-slate-400 mb-2" />
-                <p className="text-sm text-slate-400">Arrastra o haz click para seleccionar archivo</p>
-                <input
-                  type="file"
-                  className="hidden"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      setUploadFileName(e.target.files[0].name)
-                    }
-                  }}
-                />
-              </div>
-
-              {/* Botones */}
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={() => setShowUploadModal(null)}
-                  className="flex-1 rounded border border-slate-700 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={() => {
-                    console.log('[v0] Documento subido:', { driverId: showUploadModal, tipo: uploadDocType, nombre: uploadFileName })
-                    setShowUploadModal(null)
-                  }}
-                  disabled={!uploadFileName.trim()}
-                  className="flex-1 rounded bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed"
-                >
-                  Subir Documento
-                </button>
               </div>
             </div>
           </div>

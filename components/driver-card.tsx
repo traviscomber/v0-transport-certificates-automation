@@ -1,0 +1,277 @@
+import { useState } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Mail, Phone, MapPin, FileText, Download, ChevronDown, Plus, X, Upload, AlertCircle, Loader } from 'lucide-react'
+import { useDriverDocuments } from '@/hooks/use-driver-documents'
+
+interface Driver {
+  id: string
+  rut: string
+  nombre: string
+  proveedor?: string
+  patente_tracto?: string
+  clase_licencia?: string
+  is_active?: boolean
+  rut_proveedor?: string
+}
+
+interface DriverCardProps {
+  driver: Driver
+  expandedDocuments: Set<string>
+  toggleDocuments: (id: string) => void
+  getDocumentStatusColor: (estado: string) => string
+  getDocumentStatusLabel: (estado: string) => string
+}
+
+export function DriverCard({
+  driver,
+  expandedDocuments,
+  toggleDocuments,
+  getDocumentStatusColor,
+  getDocumentStatusLabel,
+}: DriverCardProps) {
+  const { documents, loading, uploadDocument } = useDriverDocuments(driver.id)
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [uploadDocType, setUploadDocType] = useState('Licencia de Conducir')
+  const [uploadFileName, setUploadFileName] = useState('')
+  const [uploading, setUploading] = useState(false)
+
+  const handleUpload = async () => {
+    if (!uploadFileName.trim()) return
+
+    setUploading(true)
+    try {
+      await uploadDocument(uploadDocType, uploadFileName)
+      setShowUploadModal(false)
+      setUploadFileName('')
+      setUploadDocType('Licencia de Conducir')
+    } catch (error) {
+      console.error('[v0] Upload error:', error)
+      alert('Error al subir documento')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const statusBg = driver.is_active
+    ? 'bg-green-500/20'
+    : 'bg-red-500/20'
+  const statusText = driver.is_active ? 'text-green-200' : 'text-red-200'
+
+  return (
+    <>
+      <Card className={`border-slate-700 hover:border-slate-600 transition-all ${statusBg}`}>
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            {/* Header with RUT and status */}
+            <div className="mb-3 flex items-start justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase text-slate-400">RUT</p>
+                <p className="font-mono text-lg font-bold text-amber-400">{driver.rut}</p>
+              </div>
+              <Badge className={`${statusText} bg-transparent border border-current`}>
+                {driver.is_active ? 'Activo' : 'Inactivo'}
+              </Badge>
+            </div>
+
+            {/* Nombre */}
+            <div>
+              <p className="font-semibold text-white">{driver.nombre}</p>
+            </div>
+
+            {/* Proveedor */}
+            {driver.proveedor && (
+              <div className="text-sm">
+                <p className="text-xs text-slate-400">PROVEEDOR</p>
+                <p className="text-slate-200">{driver.proveedor}</p>
+              </div>
+            )}
+
+            {/* Patente Tracto */}
+            {driver.patente_tracto && (
+              <div className="text-sm">
+                <p className="text-xs text-slate-400">PATENTE TRACTO</p>
+                <p className="font-mono text-blue-400">{driver.patente_tracto}</p>
+              </div>
+            )}
+
+            {/* Clase de Licencia */}
+            {driver.clase_licencia && (
+              <div className="text-sm">
+                <p className="text-xs text-slate-400">LICENCIA</p>
+                <Badge className="bg-slate-700 text-slate-200">{driver.clase_licencia}</Badge>
+              </div>
+            )}
+
+            {/* RUT Proveedor */}
+            {driver.rut_proveedor && (
+              <div className="border-t border-slate-700 pt-3">
+                <p className="text-xs font-semibold uppercase text-slate-400">RUT Proveedor</p>
+                <p className="font-mono text-sm text-slate-400">{driver.rut_proveedor}</p>
+              </div>
+            )}
+
+            {/* Documentos Subidos - Sección Expandible SIEMPRE VISIBLE */}
+            <div className="border-t border-slate-700 pt-3 mt-3">
+              <div className="flex items-center justify-between mb-3">
+                <button
+                  onClick={() => toggleDocuments(driver.id)}
+                  className="flex flex-1 items-center justify-between hover:opacity-80 transition-opacity"
+                >
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-blue-400" />
+                    <span className="text-sm font-semibold text-white">
+                      Documentos ({documents.length})
+                    </span>
+                  </div>
+                  <ChevronDown 
+                    className={`h-4 w-4 text-slate-400 transition-transform ${
+                      expandedDocuments.has(driver.id) ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+                
+                {/* Botón de upload para LABBE */}
+                <button
+                  onClick={() => setShowUploadModal(true)}
+                  className="ml-2 p-2 rounded bg-blue-600 hover:bg-blue-700 transition-colors flex items-center gap-1 text-xs text-white"
+                  title="Subir documento"
+                >
+                  <Plus className="h-3 w-3" />
+                  <span>Subir</span>
+                </button>
+              </div>
+
+              {/* Documentos expandibles */}
+              {expandedDocuments.has(driver.id) && (
+                <div className="space-y-2">
+                  {loading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader className="h-4 w-4 animate-spin text-slate-400" />
+                    </div>
+                  ) : documents.length > 0 ? (
+                    documents.map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="flex items-center justify-between rounded bg-slate-800/50 p-2 text-xs"
+                      >
+                        <div className="flex flex-1 items-center gap-2 min-w-0">
+                          <FileText className="h-3 w-3 text-slate-400 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-slate-300 truncate">{doc.tipo}</p>
+                            <p className="text-slate-500 truncate text-xs">{doc.nombre}</p>
+                            <p className="text-slate-600 text-xs">{new Date(doc.fecha_subida).toLocaleDateString('es-ES')}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                          <Badge className={`text-xs ${getDocumentStatusColor(doc.estado)}`}>
+                            {getDocumentStatusLabel(doc.estado)}
+                          </Badge>
+                          <button className="p-1 hover:bg-slate-700 rounded transition-colors">
+                            <Download className="h-3 w-3 text-slate-400" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4 text-slate-500">
+                      <p className="text-xs">No hay documentos subidos</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Upload Document Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="relative w-full max-w-md rounded-lg border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+            <button
+              onClick={() => setShowUploadModal(false)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-white"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h2 className="mb-4 text-lg font-semibold text-white">Subir Documento</h2>
+
+            {/* Conductor Info */}
+            <div className="mb-4 rounded bg-slate-800 p-3 text-sm">
+              <p className="text-slate-400">Conductor:</p>
+              <p className="font-semibold text-white">{driver.nombre}</p>
+              <p className="text-xs text-slate-500">{driver.rut}</p>
+            </div>
+
+            <div className="space-y-4">
+              {/* Tipo de Documento */}
+              <div>
+                <label className="text-sm font-semibold text-slate-300">Tipo de Documento</label>
+                <select
+                  value={uploadDocType}
+                  onChange={(e) => setUploadDocType(e.target.value)}
+                  className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                >
+                  <option>Licencia de Conducir</option>
+                  <option>Antecedentes Penales</option>
+                  <option>Certificado Médico</option>
+                  <option>Comprobante Domicilio</option>
+                  <option>Contrato</option>
+                  <option>Otro</option>
+                </select>
+              </div>
+
+              {/* Nombre del archivo */}
+              <div>
+                <label className="text-sm font-semibold text-slate-300">Nombre del Archivo</label>
+                <input
+                  type="text"
+                  value={uploadFileName}
+                  onChange={(e) => setUploadFileName(e.target.value)}
+                  placeholder="ej: Licencia_2024.pdf"
+                  className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white placeholder-slate-500"
+                />
+              </div>
+
+              {/* File Upload Area */}
+              <div className="rounded border-2 border-dashed border-slate-700 p-4 text-center">
+                <Upload className="mx-auto h-8 w-8 text-slate-400 mb-2" />
+                <p className="text-sm text-slate-400">Arrastra o haz click para seleccionar archivo</p>
+                <input
+                  type="file"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      setUploadFileName(e.target.files[0].name)
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Botones */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowUploadModal(false)}
+                  disabled={uploading}
+                  className="flex-1 rounded border border-slate-700 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleUpload}
+                  disabled={!uploadFileName.trim() || uploading}
+                  className="flex-1 rounded bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {uploading && <Loader className="h-4 w-4 animate-spin" />}
+                  {uploading ? 'Subiendo...' : 'Subir Documento'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
