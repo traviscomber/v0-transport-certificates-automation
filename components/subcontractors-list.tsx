@@ -74,7 +74,6 @@ export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) 
           sub.comuna.toLowerCase().includes(query) ||
           sub.telefono.includes(query) ||
           sub.email.toLowerCase().includes(query)
-        )
         if (!matchesSearch) return false
       }
 
