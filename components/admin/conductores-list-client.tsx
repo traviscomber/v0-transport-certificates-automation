@@ -26,6 +26,12 @@ function isLicenseExpired(date: string | null): boolean {
   return new Date(date) < new Date()
 }
 
+// Normalizar RUTs: quita espacios, guiones y convierte a minúsculas
+function normalizeRut(rut: string | null | undefined): string {
+  if (!rut) return ''
+  return rut.toLowerCase().trim().replace(/[\s\-\.]/g, '')
+}
+
 export function ConductoresListClient({
   conductores: initialConductores,
   companies,
@@ -41,53 +47,89 @@ export function ConductoresListClient({
     setFilters(newFilters)
   }
 
+  // Log data estructura when component mounts for debugging
+  useMemo(() => {
+    if (initialConductores.length > 0) {
+      console.log('[v0] Sample conductor data:', {
+        conductor0: initialConductores[0],
+        transportista: initialConductores[0]?.transportistas,
+      })
+    }
+  }, [])
+
   // Memoized filtered list
   const filteredConductores = useMemo(() => {
     const searchQuery = (searchInput || filters.searchQuery).toLowerCase().trim()
+
+    console.log('[v0] Filtering with query:', searchQuery)
 
     if (!searchQuery) {
       return initialConductores
     }
 
-    return initialConductores.filter((conductor) => {
-      const normalizedQuery = searchQuery.replace(/\s+/g, '').replace(/\-/g, '')
+    const normalizedQuery = normalizeRut(searchQuery)
 
-      // Campos buscables con normalizacion
-      const fieldMatch = [
-        // RUT conductor
-        conductor.rut?.toLowerCase().replace(/\s+/g, '').replace(/\-/g, ''),
-        // Nombre completo
-        `${conductor.nombres} ${conductor.apellido_paterno} ${conductor.apellido_materno}`.toLowerCase(),
-        // Nombre proveedor
-        conductor.transportistas?.razon_social?.toLowerCase(),
-        // RUT proveedor - CRITICAL FIELD
-        conductor.transportistas?.rut?.toLowerCase().replace(/\s+/g, '').replace(/\-/g, ''),
-        // Licencia
-        conductor.clase_licencia?.toLowerCase(),
-      ]
+    return initialConductores.filter((conductor, index) => {
+      // Build search fields array
+      const searchFields: string[] = []
 
-      // Agregar patentes de tractos
-      if (conductor.subcontractor_drivers?.length > 0) {
+      // 1. RUT del conductor
+      if (conductor.rut) {
+        searchFields.push(normalizeRut(conductor.rut))
+        searchFields.push(conductor.rut.toLowerCase())
+      }
+
+      // 2. Nombre completo
+      const fullName = `${conductor.nombres || ''} ${conductor.apellido_paterno || ''} ${conductor.apellido_materno || ''}`.toLowerCase()
+      if (fullName.trim()) {
+        searchFields.push(fullName)
+      }
+
+      // 3. Nombre de la empresa/proveedor
+      if (conductor.transportistas?.razon_social) {
+        searchFields.push(conductor.transportistas.razon_social.toLowerCase())
+      }
+
+      // 4. RUT del proveedor
+      if (conductor.transportistas?.rut) {
+        searchFields.push(normalizeRut(conductor.transportistas.rut))
+        searchFields.push(conductor.transportistas.rut.toLowerCase())
+      }
+
+      // 5. Licencia
+      if (conductor.clase_licencia) {
+        searchFields.push(conductor.clase_licencia.toLowerCase())
+      }
+
+      // 6. Patentes de tractos
+      if (conductor.subcontractor_drivers && Array.isArray(conductor.subcontractor_drivers)) {
         conductor.subcontractor_drivers.forEach((sd: any) => {
           if (sd.vehicle_plate) {
-            fieldMatch.push(sd.vehicle_plate.toLowerCase().replace(/\s+/g, '').replace(/\-/g, ''))
+            searchFields.push(sd.vehicle_plate.toLowerCase())
+            searchFields.push(normalizeRut(sd.vehicle_plate))
           }
         })
       }
 
-      // Debug logs solo cuando hay búsqueda
-      if (initialConductores.indexOf(conductor) < 3) {
-        console.log('[v0] Conductor search match:', {
-          name: conductor.nombres,
+      // Debug: log first 3 conductors when searching
+      if (index < 3) {
+        console.log(`[v0] Conductor ${index} - ${conductor.nombres}:`, {
+          rut: conductor.rut,
           providerRut: conductor.transportistas?.rut,
-          normalizedProviderRut: conductor.transportistas?.rut?.toLowerCase().replace(/\s+/g, '').replace(/\-/g, ''),
-          query: normalizedQuery,
-          matches: fieldMatch,
+          searchFields,
+          query: searchQuery,
+          normalizedQuery,
+          match: searchFields.some(field => field && field.includes(searchQuery)) ||
+                  searchFields.some(field => field && field.includes(normalizedQuery)),
         })
       }
 
-      // Buscar coincidencia
-      return fieldMatch.some(field => field && field.includes(normalizedQuery))
+      // Check if any field matches
+      const matchesText = searchFields.some(field => 
+        field && (field.includes(searchQuery) || field.includes(normalizedQuery))
+      )
+
+      return matchesText
     })
   }, [searchInput, filters.searchQuery, initialConductores])
 
@@ -119,6 +161,7 @@ export function ConductoresListClient({
 
       <DriverFilters companies={companies} onFiltersChange={handleFiltersChange} />
 
+      {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
@@ -150,6 +193,7 @@ export function ConductoresListClient({
         </Card>
       </div>
 
+      {/* Conductores List */}
       {filteredConductores.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
@@ -169,6 +213,7 @@ export function ConductoresListClient({
             return (
               <Card key={c.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-6 space-y-4">
+                  {/* Header Row */}
                   <div className="flex items-start justify-between">
                     <div className="flex gap-4">
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100">
@@ -178,11 +223,13 @@ export function ConductoresListClient({
                         <h3 className="font-semibold text-lg">
                           {c.nombres} {c.apellido_paterno} {c.apellido_materno}
                         </h3>
-                        <p className="text-sm font-mono text-muted-foreground">RUT: {c.rut}</p>
+                        <p className="text-sm font-mono text-muted-foreground">
+                          RUT: {c.rut}
+                        </p>
                         <div className="flex flex-wrap gap-4 mt-2">
                           <span className="flex items-center gap-1 text-sm text-muted-foreground">
                             <Building2 className="h-4 w-4" />
-                            {c.transportistas?.razon_social || 'Sin asignar'}
+                            {c.transportistas?.razon_social || "Sin asignar"}
                           </span>
                           {c.clase_licencia && (
                             <span className="text-sm text-muted-foreground font-semibold">
@@ -190,17 +237,13 @@ export function ConductoresListClient({
                             </span>
                           )}
                           {c.vencimiento_licencia && (
-                            <span
-                              className={`flex items-center gap-1 text-sm ${
-                                expired
-                                  ? 'text-red-600'
-                                  : expiringSoon
-                                    ? 'text-yellow-600'
-                                    : 'text-muted-foreground'
-                              }`}
-                            >
+                            <span className={`flex items-center gap-1 text-sm ${
+                              expired ? "text-red-600" : 
+                              expiringSoon ? "text-yellow-600" : 
+                              "text-muted-foreground"
+                            }`}>
                               <Calendar className="h-4 w-4" />
-                              Vence: {new Date(c.vencimiento_licencia).toLocaleDateString('es-CL')}
+                              Vence: {new Date(c.vencimiento_licencia).toLocaleDateString("es-CL")}
                               {expired && <AlertTriangle className="h-4 w-4 ml-1" />}
                             </span>
                           )}
@@ -223,40 +266,30 @@ export function ConductoresListClient({
                           Licencia Activa
                         </span>
                       )}
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          c.is_active
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-gray-100 text-gray-700'
-                        }`}
-                      >
-                        {c.is_active ? 'En Servicio' : 'Inactivo'}
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        c.is_active 
+                          ? "bg-blue-100 text-blue-700" 
+                          : "bg-gray-100 text-gray-700"
+                      }`}>
+                        {c.is_active ? "En Servicio" : "Inactivo"}
                       </span>
                     </div>
                   </div>
 
+                  {/* License and Certifications Info */}
                   <div className="pt-4 border-t">
-                    <LicenseAndCertifications
-                      licenses={
-                        c.vencimiento_licencia
-                          ? [
-                              {
-                                id: c.id,
-                                licenseType: c.clase_licencia || 'A2',
-                                expiryDate: c.vencimiento_licencia,
-                                status: expired
-                                  ? 'expired'
-                                  : expiringSoon
-                                    ? 'pending_renewal'
-                                    : 'active',
-                              },
-                            ]
-                          : []
-                      }
+                    <LicenseAndCertifications 
+                      licenses={c.vencimiento_licencia ? [{
+                        id: c.id,
+                        licenseType: c.clase_licencia || 'A2',
+                        expiryDate: c.vencimiento_licencia,
+                        status: expired ? 'expired' : (expiringSoon ? 'pending_renewal' : 'active'),
+                      }] : []}
                       certifications={[]}
                     />
                   </div>
 
+                  {/* Action Buttons */}
                   <div className="flex justify-end gap-2 pt-2">
                     <Link href={`/admin/conductores/${c.id}`}>
                       <Button variant="outline" size="sm">
