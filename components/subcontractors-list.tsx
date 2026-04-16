@@ -5,13 +5,13 @@ import { Search, MapPin, Phone, Mail, CheckCircle, AlertCircle, X, Filter } from
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { allSubcontractors } from '@/lib/data/all-subcontractors'
+import { allSubcontractorsData } from '@/lib/data/all-subcontractors'
 
 interface SubcontractorsListProps {
-  subcontractors?: typeof allSubcontractors
+  subcontractors?: typeof allSubcontractorsData
 }
 
-export function SubcontractorsList({ subcontractors = allSubcontractors }: SubcontractorsListProps) {
+export function SubcontractorsList({ subcontractors = allSubcontractorsData }: SubcontractorsListProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRegions, setSelectedRegions] = useState<string[]>([])
   const [selectedEjecutivas, setSelectedEjecutivas] = useState<string[]>([])
