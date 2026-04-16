@@ -20,8 +20,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { Mail, Phone, MapPin, Search, X, AlertCircle, CheckCircle2, Info, Filter } from 'lucide-react'
-import { EducationalTooltip } from './educational-tooltip'
+import { Mail, Phone, MapPin, Search, X, AlertCircle, CheckCircle2, Filter } from 'lucide-react'
 
 interface Driver {
   id: string
@@ -100,13 +99,7 @@ export function DriversList({ drivers }: DriversListProps) {
     <div className="w-full space-y-4">
       {/* Header Educativo */}
       <div className="space-y-3 mb-6">
-        <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-bold text-white">Gestión de Conductores</h2>
-          <EducationalTooltip 
-            title="¿Qué es un Conductor?"
-            content="Persona responsable de operar vehículos en tu flota. Cada conductor tiene licencia de conducir, antecedentes penales y documentos que deben estar vigentes para que pueda trabajar."
-          />
-        </div>
+        <h2 className="text-2xl font-bold text-white">Gestión de Conductores</h2>
         <p className="text-sm text-slate-400 max-w-2xl leading-relaxed">
           Monitorea licencias vigentes, estado de cumplimiento y actualización de documentos. Identifica conductores listos para operar o que necesitan atención inmediata.
         </p>
@@ -143,16 +136,7 @@ export function DriversList({ drivers }: DriversListProps) {
       {/* Header with search and filters button */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold text-white">Buscar Conductores</h3>
-              <EducationalTooltip 
-                title="¿Cómo buscar?"
-                content="Busca por RUT (ej: 18.012.757-7), nombre completo, proveedor (subcontratista) o patente del vehículo (ej: XW7026). La búsqueda es instantánea."
-                size="sm"
-              />
-            </div>
-          </div>
+          <h3 className="text-lg font-semibold text-white">Buscar Conductores</h3>
           <div className="flex gap-2">
             <div className="relative flex-1 md:max-w-xs">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
@@ -190,15 +174,8 @@ export function DriversList({ drivers }: DriversListProps) {
           <div className="space-y-3 p-4 bg-slate-900 rounded-lg border border-slate-800">
             {/* Status Filter */}
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <label className="text-sm font-semibold text-slate-300">Estado</label>
-                <EducationalTooltip 
-                  title="¿Qué significa cada estado?"
-                  content="Activo: Conductor listo para operar, todos los documentos vigentes. Inactivo: Documentos vencidos o incumplimiento que impide operar."
-                  size="sm"
-                />
-              </div>
-              <div className="flex flex-wrap gap-2">
+              <label className="text-sm font-semibold text-slate-300">Estado</label>
+              <div className="flex flex-wrap gap-2 mt-2">
                 {[
                   { value: 'all', label: 'Todos' },
                   { value: 'active', label: 'Activos' },
@@ -222,15 +199,8 @@ export function DriversList({ drivers }: DriversListProps) {
             {/* Providers Filter */}
             {providers.length > 0 && (
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <label className="text-sm font-semibold text-slate-300">Proveedor/Subcontratista ({selectedProviders.length})</label>
-                  <EducationalTooltip 
-                    title="¿Qué es el Proveedor?"
-                    content="Empresa o persona (subcontratista) que proporciona el conductor. Filtra por proveedor para ver solo conductores de una empresa específica."
-                    size="sm"
-                  />
-                </div>
-                <div className="flex flex-wrap gap-2">
+                <label className="text-sm font-semibold text-slate-300">Proveedor/Subcontratista ({selectedProviders.length})</label>
+                <div className="flex flex-wrap gap-2 mt-2">
                   {providers.map(provider => (
                     <button
                       key={provider}
@@ -275,14 +245,7 @@ export function DriversList({ drivers }: DriversListProps) {
               {/* Header with RUT and status */}
               <div className="mb-3 flex items-start justify-between">
                 <div>
-                  <div className="flex items-center gap-1">
-                    <p className="text-xs font-semibold uppercase text-slate-400">RUT</p>
-                    <EducationalTooltip 
-                      title="¿Qué es el RUT?"
-                      content="Número de identificación único en Chile. Todos los conductores deben tener un RUT válido para operar."
-                      size="xs"
-                    />
-                  </div>
+                  <p className="text-xs font-semibold uppercase text-slate-400">RUT</p>
                   <p className="font-mono text-lg font-bold text-amber-400">{driver.rut}</p>
                 </div>
                 {driver.is_active ? (

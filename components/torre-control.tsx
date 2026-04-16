@@ -1,11 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { AlertCircle, Clock, CheckCircle2, TrendingUp, Info } from 'lucide-react'
+import { AlertCircle, Clock, CheckCircle2, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { EducationalTooltip } from './educational-tooltip'
 import {
   calculateStatusBatch,
   summarizeStatus,
@@ -95,27 +94,18 @@ export function TorreControl({ drivers, subcontractors, vehicles = [] }: Control
       {/* Header con explicación */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-            Torre de Control
-            <EducationalTooltip 
-              title="¿Qué es la Torre de Control?"
-              content="Centro de monitoreo operacional. Aquí ves el estado de salud de toda tu flota: conductores, subcontratistas y vehículos. Te permite identificar inmediatamente qué recursos están bloqueados, en riesgo o completamente operacionales."
-            />
-          </h1>
+          <h1 className="text-3xl font-bold text-foreground">Torre de Control</h1>
           <p className="text-sm text-muted-foreground mt-2 max-w-2xl leading-relaxed">
             Panel de inteligencia operacional en tiempo real. Monitorea el cumplimiento normativo, identifica cuellos de botella y toma decisiones informadas sobre tu flota.
           </p>
         </div>
+      </div>
       </div>
 
       {/* Summary Metrics con explicaciones */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-semibold text-foreground">Estado de tu Flota</h2>
-          <EducationalTooltip 
-            title="¿Cómo se calcula el estado?"
-            content="Cada recurso (conductor, subcontratista, vehículo) se evalúa automáticamente basándose en documentos vencidos, licencias vigentes y cumplimiento normativo. El color indica el riesgo actual."
-          />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Total Entities */}
@@ -123,11 +113,6 @@ export function TorreControl({ drivers, subcontractors, vehicles = [] }: Control
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium">Recursos Totales</CardTitle>
-                <EducationalTooltip 
-                  title="Recursos Totales"
-                  content="Suma de todos los conductores, subcontratistas y vehículos en tu sistema."
-                  size="sm"
-                />
               </div>
             </CardHeader>
             <CardContent>
@@ -141,11 +126,6 @@ export function TorreControl({ drivers, subcontractors, vehicles = [] }: Control
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-green-900">Operacionales</CardTitle>
-                <EducationalTooltip 
-                  title="Operacionales"
-                  content="Recursos completamente listos para operar. Todos los documentos vigentes, cumplimiento normativo al día."
-                  size="sm"
-                />
               </div>
             </CardHeader>
             <CardContent>
@@ -159,11 +139,6 @@ export function TorreControl({ drivers, subcontractors, vehicles = [] }: Control
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-yellow-900">En Riesgo</CardTitle>
-                <EducationalTooltip 
-                  title="En Riesgo"
-                  content="Documentos próximos a vencer (menos de 30 días). Requieren atención pronto para evitar bloqueos."
-                  size="sm"
-                />
               </div>
             </CardHeader>
             <CardContent>
@@ -177,11 +152,6 @@ export function TorreControl({ drivers, subcontractors, vehicles = [] }: Control
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-red-900">Bloqueados</CardTitle>
-                <EducationalTooltip 
-                  title="Bloqueados"
-                  content="Documentos vencidos o incumplimiento normativo. ESTOS RECURSOS NO PUEDEN OPERAR hasta resolver."
-                  size="sm"
-                />
               </div>
             </CardHeader>
             <CardContent>

@@ -17,11 +17,10 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Search, MapPin, Phone, Mail, CheckCircle, AlertCircle, X, Filter, Info } from 'lucide-react'
+import { Search, MapPin, Phone, Mail, CheckCircle, AlertCircle, X, Filter } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { EducationalTooltip } from './educational-tooltip'
 
 interface Subcontractor {
   id?: string
@@ -143,13 +142,7 @@ export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) 
     <div className="space-y-4">
       {/* Header Educativo */}
       <div className="space-y-2 mb-6">
-        <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-bold text-foreground">Gestión de Subcontratistas</h2>
-          <EducationalTooltip 
-            title="¿Qué es un Subcontratista?"
-            content="Empresa o persona que proporciona servicios de transporte para tu operación. Cada subcontratista tiene documentos, certificaciones (Ariztia, LTS, Rendic, Interpolar) y estado de cumplimiento que monitorear constantemente."
-          />
-        </div>
+        <h2 className="text-2xl font-bold text-foreground">Gestión de Subcontratistas</h2>
         <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
           Visualiza, busca y filtra todos tus proveedores de transporte. Monitorea su cumplimiento normativo y certificaciones. Mantén contacto directo con representantes y ejecutivas.
         </p>
@@ -223,15 +216,8 @@ export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) 
         <div className="space-y-4 p-4 bg-slate-900 rounded-lg border border-slate-800">
           {/* Ejecutivas Filter */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <label className="text-sm font-semibold text-slate-300">Ejecutivas ({selectedEjecutivas.length})</label>
-              <EducationalTooltip 
-                title="¿Qué es una Ejecutiva?"
-                content="Persona responsable de gestionar la relación con el subcontratista. Es tu contacto directo para resolver problemas, negociar términos y coordinar operaciones."
-                size="sm"
-              />
-            </div>
-            <div className="flex flex-wrap gap-2">
+            <label className="text-sm font-semibold text-slate-300">Ejecutivas ({selectedEjecutivas.length})</label>
+            <div className="flex flex-wrap gap-2 mt-2">
               {ejecutivas.map(ejecutiva => (
                 <button
                   key={ejecutiva}
@@ -250,15 +236,8 @@ export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) 
 
           {/* Regions Filter */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <label className="text-sm font-semibold text-slate-300">Regiones ({selectedRegions.length})</label>
-              <EducationalTooltip 
-                title="Filtrar por Región"
-                content="Visualiza subcontratistas en regiones específicas. Útil para análisis geográfico y coordinación operativa por zona."
-                size="sm"
-              />
-            </div>
-            <div className="flex flex-wrap gap-2">
+            <label className="text-sm font-semibold text-slate-300">Regiones ({selectedRegions.length})</label>
+            <div className="flex flex-wrap gap-2 mt-2">
               {regions.map(region => (
                 <button
                   key={region}
@@ -277,15 +256,8 @@ export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) 
 
           {/* Certifications Filter */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <label className="text-sm font-semibold text-slate-300">Certificaciones ({selectedCertifications.length})</label>
-              <EducationalTooltip 
-                title="¿Qué son las Certificaciones?"
-                content="Acreditaciones de cumplimiento normativo: Ariztia (asociación de transporte), LTS (licencia técnica), Rendic (declaración de rentas), Interpolar (verificación internacional)."
-                size="sm"
-              />
-            </div>
-            <div className="flex flex-wrap gap-2">
+            <label className="text-sm font-semibold text-slate-300">Certificaciones ({selectedCertifications.length})</label>
+            <div className="flex flex-wrap gap-2 mt-2">
               {Object.entries(certifications).map(([key, label]) => (
                 <button
                   key={key}
@@ -315,61 +287,6 @@ export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) 
               <CheckCircle className="w-4 h-4" />
               {showActiveOnly ? 'Solo Activos' : 'Mostrar Todos'}
             </button>
-          </div>
-        </div>
-      )}
-
-          {/* Regions Filter */}
-          <div>
-            <label className="text-sm font-semibold text-slate-300 block mb-2">Regiones ({selectedRegions.length})</label>
-            <div className="flex flex-wrap gap-2">
-              {regions.map(region => (
-                <button
-                  key={region}
-                  onClick={() => toggleRegion(region)}
-                  className={`px-3 py-1 rounded text-sm transition-colors ${
-                    selectedRegions.includes(region)
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {region}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Certifications Filter */}
-          <div>
-            <label className="text-sm font-semibold text-slate-300 block mb-2">Certificaciones ({selectedCertifications.length})</label>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(certifications).map(([key, label]) => (
-                <button
-                  key={key}
-                  onClick={() => toggleCertification(key)}
-                  className={`px-3 py-1 rounded text-sm transition-colors ${
-                    selectedCertifications.includes(key)
-                      ? 'bg-green-600 text-white'
-                      : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Status Filter */}
-          <div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showActiveOnly}
-                onChange={(e) => setShowActiveOnly(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-700 bg-slate-800"
-              />
-              <span className="text-sm text-slate-300">Solo activos</span>
-            </label>
           </div>
         </div>
       )}

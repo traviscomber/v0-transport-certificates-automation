@@ -16,11 +16,10 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Search, FileText, Filter, X, CheckCircle, Info, AlertCircle } from 'lucide-react'
+import { Search, FileText, Filter, X, CheckCircle, AlertCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { EducationalTooltip } from './educational-tooltip'
 import { allMonthlyDocuments } from '@/lib/data/monthly-documents'
 
 export function MonthlyDocumentsList() {
@@ -86,13 +85,7 @@ export function MonthlyDocumentsList() {
     <div className="space-y-6">
       {/* Header Educativo */}
       <div className="space-y-3 mb-6">
-        <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-bold text-foreground">Gestión de Documentos</h2>
-          <EducationalTooltip 
-            title="¿Qué es un Documento?"
-            content="Certificado, registro, autorización o comprobante que debe estar vigente para que tu operación sea legal y cumplida. Cada documento tiene periodicidad (mensual, anual, etc)."
-          />
-        </div>
+        <h2 className="text-2xl font-bold text-foreground">Gestión de Documentos</h2>
         <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
           Visualiza todos los documentos requeridos en tu operación. Filtra por certificación, busca documentos específicos e identifica qué documentos extra solicitan tus clientes.
         </p>
@@ -128,14 +121,7 @@ export function MonthlyDocumentsList() {
 
       {/* Search Bar con Educación */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold text-white">Buscar Documentos</h3>
-          <EducationalTooltip 
-            title="¿Cómo buscar?"
-            content="Busca por nombre del documento (ej: Licencia) o descripción. La búsqueda es instantánea y caso-insensible."
-            size="sm"
-          />
-        </div>
+        <h3 className="text-lg font-semibold text-white">Buscar Documentos</h3>
         <div className="flex gap-2">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
@@ -177,15 +163,8 @@ export function MonthlyDocumentsList() {
         <div className="space-y-4 p-4 bg-slate-900 rounded-lg border border-slate-800">
           {/* Certifications Filter */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <label className="text-sm font-semibold text-slate-300">Certificaciones ({selectedCertifications.length})</label>
-              <EducationalTooltip 
-                title="¿Qué son las Certificaciones?"
-                content="Acreditaciones de cumplimiento normativo: Ariztia (asociación de transporte), LTS (licencia técnica), Rendic (declaración de rentas), Interpolar (verificación internacional)."
-                size="sm"
-              />
-            </div>
-            <div className="flex flex-wrap gap-2">
+            <label className="text-sm font-semibold text-slate-300">Certificaciones ({selectedCertifications.length})</label>
+            <div className="flex flex-wrap gap-2 mt-2">
               {certifications.map(cert => (
                 <button
                   key={cert}
@@ -206,21 +185,14 @@ export function MonthlyDocumentsList() {
           <div>
             <button
               onClick={() => setShowExtraDocsOnly(!showExtraDocsOnly)}
-              className={`w-full px-4 py-2 rounded transition-colors flex items-center justify-between ${
+              className={`w-full px-4 py-2 rounded transition-colors flex items-center justify-center gap-2 ${
                 showExtraDocsOnly
                   ? 'bg-orange-500 text-white'
                   : 'bg-slate-800 text-slate-400 hover:text-slate-200'
               }`}
             >
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-4 h-4" />
-                <span>Solo Documentos Extra (Clientes)</span>
-              </div>
-              <EducationalTooltip 
-                title="¿Qué son Documentos Extra?"
-                content="Documentos adicionales que solicitan algunos clientes específicos. Más allá de los requerimientos legales estándar."
-                size="sm"
-              />
+              <AlertCircle className="w-4 h-4" />
+              <span>Solo Documentos Extra (Clientes)</span>
             </button>
           </div>
         </div>
@@ -259,14 +231,7 @@ export function MonthlyDocumentsList() {
 
               {/* Periodicidad */}
               <div>
-                <p className="text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1">
-                  Periodicidad
-                  <EducationalTooltip 
-                    title="¿Qué es Periodicidad?"
-                    content="Con qué frecuencia debe renovarse o verificarse el documento. Mensual = cada mes. Anual = cada año. Vigencia = mientras sea válido."
-                    size="xs"
-                  />
-                </p>
+                <p className="text-xs font-semibold text-slate-300 mb-1">Periodicidad</p>
                 <Badge className="bg-blue-500/20 text-blue-300">{doc.periodicidad}</Badge>
               </div>
 

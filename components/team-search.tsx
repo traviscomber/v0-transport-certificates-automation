@@ -12,9 +12,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Search, Phone, Info } from 'lucide-react'
+import { Search, Phone } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { EducationalTooltip } from './educational-tooltip'
 import { allTeamMembers } from '@/lib/data/team-members'
 
 export function TeamSearch() {
@@ -37,13 +36,7 @@ export function TeamSearch() {
     <div className="space-y-6">
       {/* Header Educativo */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-bold text-white">Gestión de Equipo</h2>
-          <EducationalTooltip 
-            title="¿Quién es el Equipo?"
-            content="Profesionales de LABBE Transportes que gestionan tu operación. Ejecutivas, gerentes, coordinadores y especialistas en diferentes áreas."
-          />
-        </div>
+        <h2 className="text-2xl font-bold text-white">Gestión de Equipo</h2>
         <p className="text-sm text-slate-400 max-w-2xl leading-relaxed">
           Visualiza y contacta a los miembros del equipo LABBE. Cada uno tiene un rol específico en tu operación. Busca por nombre, RUT, cargo o teléfono.
         </p>
@@ -80,14 +73,7 @@ export function TeamSearch() {
       {/* Card con búsqueda */}
       <Card className="bg-slate-900 border-slate-700">
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-white">Buscar Miembro del Equipo</CardTitle>
-            <EducationalTooltip 
-              title="¿Cómo buscar?"
-              content="Busca por nombre completo, RUT, cargo (Ejecutiva, Gerente, Coordinador) o teléfono. La búsqueda es instantánea."
-              size="sm"
-            />
-          </div>
+          <CardTitle className="text-white">Buscar Miembro del Equipo</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
