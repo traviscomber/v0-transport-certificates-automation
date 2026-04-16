@@ -30,104 +30,93 @@ export function ConductoresListClient({
   conductores: initialConductores,
   companies,
 }: ConductoresListClientProps) {
+  const [searchInput, setSearchInput] = useState('')
   const [filters, setFilters] = useState<DriverFiltersType>({
     searchQuery: '',
     licenseStatus: 'all',
   })
 
+  // Handle filter changes from DriverFilters component
   const handleFiltersChange = (newFilters: DriverFiltersType) => {
-    console.log('[v0] Filters changed:', newFilters)
     setFilters(newFilters)
   }
 
+  // Memoized filtered list
   const filteredConductores = useMemo(() => {
-    console.log('[v0] Applying filters:', filters)
-    console.log('[v0] Initial conductores count:', initialConductores.length)
+    const searchQuery = (searchInput || filters.searchQuery).toLowerCase().trim()
 
-    const result = initialConductores.filter((conductor, index) => {
-      if (filters.searchQuery) {
-        const query = filters.searchQuery.toLowerCase().trim().replace(/\s+/g, '')
-        
-        // Campos buscables: RUT, Nombre, Proveedor, RUT Proveedor, Licencia, Patente Tracto
-        const searchableFields = [
-          conductor.rut?.toLowerCase().replace(/\s+/g, ''), // RUT conductor (normalizado)
-          `${conductor.nombres} ${conductor.apellido_paterno} ${conductor.apellido_materno}`.toLowerCase(), // Nombre completo
-          conductor.transportistas?.razon_social?.toLowerCase(), // Nombre proveedor
-          conductor.transportistas?.rut?.toLowerCase().replace(/\s+/g, ''), // RUT proveedor (normalizado)
-          conductor.clase_licencia?.toLowerCase(), // Licencia (A2, A4, A5, etc)
-        ]
+    if (!searchQuery) {
+      return initialConductores
+    }
 
-        // Agregar patentes de tractos si existen
-        if (conductor.subcontractor_drivers?.length > 0) {
-          conductor.subcontractor_drivers.forEach((sd: any) => {
-            if (sd.vehicle_plate) {
-              searchableFields.push(sd.vehicle_plate.toLowerCase().replace(/\s+/g, ''))
-            }
-          })
-        }
+    return initialConductores.filter((conductor) => {
+      const normalizedQuery = searchQuery.replace(/\s+/g, '').replace(/\-/g, '')
 
-        // Log para debugging (solo para los primeros 3 conductores)
-        if (index < 3) {
-          console.log(`[v0] Conductor ${index}:`, {
-            nombre: conductor.nombres,
-            rut: conductor.rut,
-            providerRut: conductor.transportistas?.rut,
-            searchableFields,
-            query,
-          })
-        }
+      // Campos buscables con normalizacion
+      const fieldMatch = [
+        // RUT conductor
+        conductor.rut?.toLowerCase().replace(/\s+/g, '').replace(/\-/g, ''),
+        // Nombre completo
+        `${conductor.nombres} ${conductor.apellido_paterno} ${conductor.apellido_materno}`.toLowerCase(),
+        // Nombre proveedor
+        conductor.transportistas?.razon_social?.toLowerCase(),
+        // RUT proveedor - CRITICAL FIELD
+        conductor.transportistas?.rut?.toLowerCase().replace(/\s+/g, '').replace(/\-/g, ''),
+        // Licencia
+        conductor.clase_licencia?.toLowerCase(),
+      ]
 
-        // Buscar si algún campo contiene la query
-        const matchesAnyField = searchableFields.some(field => 
-          field && field.includes(query)
-        )
-
-        if (!matchesAnyField) {
-          return false
-        }
+      // Agregar patentes de tractos
+      if (conductor.subcontractor_drivers?.length > 0) {
+        conductor.subcontractor_drivers.forEach((sd: any) => {
+          if (sd.vehicle_plate) {
+            fieldMatch.push(sd.vehicle_plate.toLowerCase().replace(/\s+/g, '').replace(/\-/g, ''))
+          }
+        })
       }
 
-      if (filters.companyId && conductor.transportista_id !== filters.companyId) {
-        return false
+      // Debug logs solo cuando hay búsqueda
+      if (initialConductores.indexOf(conductor) < 3) {
+        console.log('[v0] Conductor search match:', {
+          name: conductor.nombres,
+          providerRut: conductor.transportistas?.rut,
+          normalizedProviderRut: conductor.transportistas?.rut?.toLowerCase().replace(/\s+/g, '').replace(/\-/g, ''),
+          query: normalizedQuery,
+          matches: fieldMatch,
+        })
       }
 
-      if (filters.providerRut) {
-        const providerRut = filters.providerRut.toLowerCase().trim()
-        const companyRut = conductor.transportistas?.rut?.toLowerCase().trim()
-        if (!companyRut || !companyRut.includes(providerRut)) {
-          return false
-        }
-      }
-
-      if (filters.vehicleType) {
-        const hasVehicleType = conductor.subcontractor_drivers?.some(
-          (sd: any) => sd.vehicle_type === filters.vehicleType
-        )
-        if (!hasVehicleType) {
-          return false
-        }
-      }
-
-      if (filters.licenseStatus !== 'all') {
-        const isExpired = isLicenseExpired(conductor.vencimiento_licencia)
-        const isExpiringSoon = isLicenseExpiringSoon(conductor.vencimiento_licencia)
-
-        if (filters.licenseStatus === 'expired' && !isExpired) return false
-        if (filters.licenseStatus === 'expiring' && (!isExpiringSoon || isExpired))
-          return false
-        if (filters.licenseStatus === 'active' && (isExpired || isExpiringSoon))
-          return false
-      }
-
-      return true
+      // Buscar coincidencia
+      return fieldMatch.some(field => field && field.includes(normalizedQuery))
     })
-
-    console.log('[v0] Filtered results count:', result.length)
-    return result
-  }, [filters, initialConductores])
+  }, [searchInput, filters.searchQuery, initialConductores])
 
   return (
     <div className="space-y-6">
+      {/* Search Input */}
+      <Card>
+        <CardContent className="pt-6">
+          <label className="text-sm font-medium mb-2 block">Buscar Conductores</label>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="RUT, Nombre, Proveedor, RUT Proveedor, Licencia o Patente..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full rounded-md border bg-background px-4 py-2 text-sm placeholder:text-muted-foreground"
+            />
+            {searchInput && (
+              <button
+                onClick={() => setSearchInput('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       <DriverFilters companies={companies} onFiltersChange={handleFiltersChange} />
 
       <div className="grid grid-cols-4 gap-4">
