@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase/server"
+import { createClient } from '@supabase/supabase-js'
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -9,15 +9,31 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Driver ID is required' }, { status: 400 })
     }
 
-    // Crear cliente de Supabase del servidor
-    const supabase = await createServerClient()
+    // Crear cliente de Supabase con ANON_KEY
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    
+    if (!supabaseUrl || !anonKey) {
+      console.error('[v0] Missing Supabase configuration')
+      return NextResponse.json(
+        { error: 'Server not properly configured' },
+        { status: 500 }
+      )
+    }
 
-    // Obtener documentos del conductor
+    const supabase = createClient(supabaseUrl, anonKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    })
+
+    // Obtener documentos del conductor desde tabla uploaded_documents
     const { data, error } = await supabase
-      .from('driver_documents')
-      .select('id, driver_id, document_type as tipo, file_name as nombre, status as estado, uploaded_at as fecha_subida')
+      .from('uploaded_documents')
+      .select('id, driver_id, doc_type as tipo, file_name as nombre, status as estado, created_at as fecha_subida')
       .eq('driver_id', driverId)
-      .order('uploaded_at', { ascending: false })
+      .order('created_at', { ascending: false })
 
     if (error) {
       console.error('[v0] Error fetching documents:', error)

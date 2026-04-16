@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,21 +19,36 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Crear cliente de Supabase del servidor
-    const supabase = await createServerClient()
+    // Crear cliente de Supabase con ANON_KEY (más confiable que SERVICE_ROLE)
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    
+    if (!supabaseUrl || !anonKey) {
+      console.error('[v0] Missing Supabase configuration')
+      return NextResponse.json(
+        { error: 'Server not properly configured' },
+        { status: 500 }
+      )
+    }
 
-    // Guardar registro en base de datos
-    console.log('[v0] Saving document record:', { driverId, tipo, nombre })
+    const supabase = createClient(supabaseUrl, anonKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    })
+
+    // Guardar registro en tabla uploaded_documents (que ya existe)
+    console.log('[v0] Saving document record to uploaded_documents:', { driverId, tipo, nombre })
     const { data: dbData, error: dbError } = await supabase
-      .from('driver_documents')
+      .from('uploaded_documents')
       .insert([
         {
           driver_id: driverId,
-          document_type: tipo,
+          doc_type: tipo,
           file_name: nombre,
-          file_url: `/documents/${driverId}/${nombre}`,
-          status: 'pendiente',
-          uploaded_at: new Date().toISOString(),
+          status: 'pending',
+          created_at: new Date().toISOString(),
         },
       ])
       .select()
