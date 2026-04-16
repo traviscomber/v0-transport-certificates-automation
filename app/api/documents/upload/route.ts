@@ -22,37 +22,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Convertir file a buffer
-    const buffer = await file.arrayBuffer()
-    const fileBuffer = Buffer.from(buffer)
-
-    // Generar nombre único para el archivo
-    const timestamp = Date.now()
-    const uniqueFileName = `${driverId}/${tipo}/${timestamp}-${nombre}`
-
-    // Subir archivo a Supabase Storage
-    console.log('[v0] Uploading file to storage:', uniqueFileName)
-    const { data: storageData, error: storageError } = await supabase.storage
-      .from('driver-documents')
-      .upload(uniqueFileName, fileBuffer, {
-        contentType: file.type,
-        upsert: false,
-      })
-
-    if (storageError) {
-      console.error('[v0] Storage upload error:', storageError)
-      return NextResponse.json(
-        { error: `Failed to upload file: ${storageError.message}` },
-        { status: 400 }
-      )
-    }
-
-    // Obtener URL pública del archivo
-    const { data: publicUrlData } = supabase.storage
-      .from('driver-documents')
-      .getPublicUrl(uniqueFileName)
-
-    // Insertar registro en base de datos
+    // Guardar registro en base de datos (sin subir archivo a Storage)
+    console.log('[v0] Saving document record:', { driverId, tipo, nombre })
     const { data: dbData, error: dbError } = await supabase
       .from('driver_documents')
       .insert([
@@ -60,7 +31,7 @@ export async function POST(request: NextRequest) {
           driver_id: driverId,
           document_type: tipo,
           file_name: nombre,
-          file_url: publicUrlData.publicUrl,
+          file_url: `/documents/${driverId}/${nombre}`,
           status: 'pendiente',
           uploaded_at: new Date().toISOString(),
         },
@@ -75,7 +46,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[v0] Document uploaded successfully:', dbData)
+    console.log('[v0] Document registered successfully:', dbData)
     return NextResponse.json({ success: true, data: dbData }, { status: 201 })
   } catch (error) {
     console.error('[v0] Error in upload handler:', error)
