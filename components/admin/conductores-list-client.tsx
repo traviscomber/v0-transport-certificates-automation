@@ -61,8 +61,6 @@ export function ConductoresListClient({
   const filteredConductores = useMemo(() => {
     const searchQuery = (searchInput || filters.searchQuery).toLowerCase().trim()
 
-    console.log('[v0] Filtering with query:', searchQuery)
-
     if (!searchQuery) {
       return initialConductores
     }
@@ -70,7 +68,7 @@ export function ConductoresListClient({
     const normalizedQuery = normalizeRut(searchQuery)
 
     return initialConductores.filter((conductor, index) => {
-      // Build search fields array
+      // Build search fields array - BOTH normalized and non-normalized
       const searchFields: string[] = []
 
       // 1. RUT del conductor
@@ -90,7 +88,7 @@ export function ConductoresListClient({
         searchFields.push(conductor.transportistas.razon_social.toLowerCase())
       }
 
-      // 4. RUT del proveedor
+      // 4. RUT del proveedor - CRITICAL FIELD
       if (conductor.transportistas?.rut) {
         searchFields.push(normalizeRut(conductor.transportistas.rut))
         searchFields.push(conductor.transportistas.rut.toLowerCase())
@@ -111,25 +109,26 @@ export function ConductoresListClient({
         })
       }
 
-      // Debug: log first 3 conductors when searching
-      if (index < 3) {
+      // Debug: log first 5 conductors when searching
+      if (index < 5) {
+        const matches = searchFields.some(field => 
+          field && (field.includes(searchQuery) || field.includes(normalizedQuery))
+        )
         console.log(`[v0] Conductor ${index} - ${conductor.nombres}:`, {
           rut: conductor.rut,
           providerRut: conductor.transportistas?.rut,
-          searchFields,
-          query: searchQuery,
+          providerRutNormalized: normalizeRut(conductor.transportistas?.rut),
+          searchQuery,
           normalizedQuery,
-          match: searchFields.some(field => field && field.includes(searchQuery)) ||
-                  searchFields.some(field => field && field.includes(normalizedQuery)),
+          searchFields,
+          matches,
         })
       }
 
-      // Check if any field matches
-      const matchesText = searchFields.some(field => 
+      // Check if any field matches - try both original and normalized query
+      return searchFields.some(field => 
         field && (field.includes(searchQuery) || field.includes(normalizedQuery))
       )
-
-      return matchesText
     })
   }, [searchInput, filters.searchQuery, initialConductores])
 
