@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { Mail, Phone, MapPin, Search, X, AlertCircle, CheckCircle2, Filter, FileText, Download, ChevronDown } from 'lucide-react'
+import { Mail, Phone, MapPin, Search, X, AlertCircle, CheckCircle2, Filter, FileText, Download, ChevronDown, Upload, Plus } from 'lucide-react'
 
 interface Driver {
   id: string
@@ -54,6 +54,9 @@ export function DriversList({ drivers }: DriversListProps) {
   const [selectedProviders, setSelectedProviders] = useState<string[]>([])
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'inactive'>('all')
   const [expandedDocuments, setExpandedDocuments] = useState<Set<string>>(new Set())
+  const [showUploadModal, setShowUploadModal] = useState<string | null>(null)
+  const [uploadFileName, setUploadFileName] = useState('')
+  const [uploadDocType, setUploadDocType] = useState('Otro')
 
   const filteredDrivers = useMemo(() => {
     return drivers.filter(driver => {
@@ -349,20 +352,20 @@ export function DriversList({ drivers }: DriversListProps) {
                 </div>
               )}
 
-              {/* Documentos Subidos - Sección Expandible */}
-              {driver.documentos && driver.documentos.length > 0 && (
-                <div className="border-t border-slate-700 pt-3 mt-3">
+              {/* Documentos Subidos - Sección Expandible SIEMPRE VISIBLE */}
+              <div className="border-t border-slate-700 pt-3 mt-3">
+                <div className="flex items-center justify-between mb-3">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
                       toggleDocuments(driver.id)
                     }}
-                    className="flex w-full items-center justify-between hover:opacity-80 transition-opacity"
+                    className="flex flex-1 items-center justify-between hover:opacity-80 transition-opacity"
                   >
                     <div className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-blue-400" />
                       <span className="text-sm font-semibold text-white">
-                        Documentos Subidos ({driver.documentos.length})
+                        Documentos ({driver.documentos?.length || 0})
                       </span>
                     </div>
                     <ChevronDown 
@@ -371,11 +374,27 @@ export function DriversList({ drivers }: DriversListProps) {
                       }`}
                     />
                   </button>
+                  
+                  {/* Botón de upload para LABBE */}
+                  <button
+                    onClick={() => {
+                      setShowUploadModal(driver.id)
+                      setUploadFileName('')
+                      setUploadDocType('Otro')
+                    }}
+                    className="ml-2 p-2 rounded bg-blue-600 hover:bg-blue-700 transition-colors flex items-center gap-1 text-xs text-white"
+                    title="Subir documento"
+                  >
+                    <Plus className="h-3 w-3" />
+                    <span>Subir</span>
+                  </button>
+                </div>
 
-                  {/* Documentos expandibles */}
-                  {expandedDocuments.has(driver.id) && (
-                    <div className="mt-3 space-y-2">
-                      {driver.documentos.map((doc) => (
+                {/* Documentos expandibles */}
+                {expandedDocuments.has(driver.id) && (
+                  <div className="space-y-2">
+                    {driver.documentos && driver.documentos.length > 0 ? (
+                      driver.documentos.map((doc) => (
                         <div
                           key={doc.id}
                           className="flex items-center justify-between rounded bg-slate-800/50 p-2 text-xs"
@@ -384,7 +403,8 @@ export function DriversList({ drivers }: DriversListProps) {
                             <FileText className="h-3 w-3 text-slate-400 flex-shrink-0" />
                             <div className="min-w-0 flex-1">
                               <p className="font-medium text-slate-300 truncate">{doc.tipo}</p>
-                              <p className="text-slate-500 truncate">{doc.nombre}</p>
+                              <p className="text-slate-500 truncate text-xs">{doc.nombre}</p>
+                              <p className="text-slate-600 text-xs">{new Date(doc.fecha_subida).toLocaleDateString('es-ES')}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0 ml-2">
@@ -396,11 +416,15 @@ export function DriversList({ drivers }: DriversListProps) {
                             </button>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+                      ))
+                    ) : (
+                      <div className="text-center py-4 text-slate-500">
+                        <p className="text-xs">No hay documentos subidos</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -488,6 +512,97 @@ export function DriversList({ drivers }: DriversListProps) {
                     <Badge className="bg-red-500/20 text-red-300">Inactivo</Badge>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Document Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="relative w-full max-w-md rounded-lg border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+            <button
+              onClick={() => setShowUploadModal(null)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-white"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h2 className="mb-4 text-lg font-semibold text-white">Subir Documento</h2>
+
+            {/* Conductor Info */}
+            {drivers.find(d => d.id === showUploadModal) && (
+              <div className="mb-4 rounded bg-slate-800 p-3 text-sm">
+                <p className="text-slate-400">Conductor:</p>
+                <p className="font-semibold text-white">{drivers.find(d => d.id === showUploadModal)?.nombre}</p>
+                <p className="text-xs text-slate-500">{drivers.find(d => d.id === showUploadModal)?.rut}</p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {/* Tipo de Documento */}
+              <div>
+                <label className="text-sm font-semibold text-slate-300">Tipo de Documento</label>
+                <select
+                  value={uploadDocType}
+                  onChange={(e) => setUploadDocType(e.target.value)}
+                  className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                >
+                  <option>Licencia de Conducir</option>
+                  <option>Antecedentes Penales</option>
+                  <option>Certificado Médico</option>
+                  <option>Comprobante Domicilio</option>
+                  <option>Contrato</option>
+                  <option>Otro</option>
+                </select>
+              </div>
+
+              {/* Nombre del archivo */}
+              <div>
+                <label className="text-sm font-semibold text-slate-300">Nombre del Archivo</label>
+                <input
+                  type="text"
+                  value={uploadFileName}
+                  onChange={(e) => setUploadFileName(e.target.value)}
+                  placeholder="ej: Licencia_2024.pdf"
+                  className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white placeholder-slate-500"
+                />
+              </div>
+
+              {/* File Upload Area */}
+              <div className="rounded border-2 border-dashed border-slate-700 p-4 text-center">
+                <Upload className="mx-auto h-8 w-8 text-slate-400 mb-2" />
+                <p className="text-sm text-slate-400">Arrastra o haz click para seleccionar archivo</p>
+                <input
+                  type="file"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      setUploadFileName(e.target.files[0].name)
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Botones */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowUploadModal(null)}
+                  className="flex-1 rounded border border-slate-700 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    console.log('[v0] Documento subido:', { driverId: showUploadModal, tipo: uploadDocType, nombre: uploadFileName })
+                    setShowUploadModal(null)
+                  }}
+                  disabled={!uploadFileName.trim()}
+                  className="flex-1 rounded bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed"
+                >
+                  Subir Documento
+                </button>
               </div>
             </div>
           </div>
