@@ -38,16 +38,30 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Guardar en tabla certificates solo con los campos necesarios que no son referencias
+    // Ejecutar insert directo sin schema cache
     console.log('[v0] Saving certificate record:', { driverId, tipo, nombre })
     
     const timestamp = Date.now()
     const fileName = `${driverId}/${tipo}/${timestamp}-${nombre}`
     
+    // Usar rpc o raw SQL para evitar schema cache
     const { data: dbData, error: dbError } = await supabase
-      .from('certificates')
-      .insert([
-        {
+      .rpc('insert_certificate', {
+        p_driver_id: driverId,
+        p_file_name: nombre,
+        p_file_url: fileName,
+        p_file_size: file.size,
+        p_mime_type: file.type || 'application/octet-stream',
+        p_document_number: tipo,
+      })
+
+    if (dbError) {
+      console.error('[v0] RPC error:', dbError)
+      // Intentar con insert directo como fallback
+      console.log('[v0] Intentando insert directo...')
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('certificates')
+        .insert({
           driver_id: driverId,
           file_name: nombre,
           file_url: fileName,
@@ -55,20 +69,23 @@ export async function POST(request: NextRequest) {
           mime_type: file.type || 'application/octet-stream',
           status: 'pending',
           document_number: tipo,
-          notes: `Uploaded certificate: ${tipo}`,
-        },
-      ])
-      .select()
-
-    if (dbError) {
-      console.error('[v0] Database error inserting certificate:', dbError)
-      return NextResponse.json(
-        { error: `Failed to save certificate record: ${dbError.message}` },
-        { status: 400 }
-      )
+          notes: `Uploaded: ${tipo}`,
+        } as any)
+        .select()
+      
+      if (fallbackError) {
+        console.error('[v0] Database error inserting certificate:', fallbackError)
+        return NextResponse.json(
+          { error: `Failed to save certificate record: ${fallbackError.message}` },
+          { status: 400 }
+        )
+      }
+      
+      console.log('[v0] Certificate registered successfully:', fallbackData)
+      return NextResponse.json({ success: true, data: fallbackData }, { status: 201 })
     }
 
-    console.log('[v0] Certificate registered successfully:', dbData)
+    console.log('[v0] Certificate registered successfully via RPC:', dbData)
     return NextResponse.json({ success: true, data: dbData }, { status: 201 })
   } catch (error) {
     console.error('[v0] Error in upload handler:', error)
