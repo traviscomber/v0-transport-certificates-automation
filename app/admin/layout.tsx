@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Building2, Truck, Users, Car, FileText, LayoutDashboard, Settings, LogOut, Shield, BarChart3 } from "lucide-react"
+import { Building2, Truck, Users, Car, FileText, LayoutDashboard, Settings, LogOut, Shield, BarChart3, UserPlus } from "lucide-react"
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -11,6 +11,7 @@ const navItems = [
   { href: "/admin/transportistas", label: "Transportistas", icon: Truck },
   { href: "/admin/vehiculos", label: "Vehiculos", icon: Car },
   { href: "/admin/conductores", label: "Conductores", icon: Users },
+  { href: "/admin/postulantes", label: "Postulantes", icon: UserPlus },
   { href: "/admin/documentos", label: "Documentos", icon: FileText },
   { href: "/admin/roles", label: "Roles y Permisos", icon: Shield },
   { href: "/admin/reportes", label: "Reportes", icon: BarChart3 },
