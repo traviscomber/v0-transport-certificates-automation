@@ -47,14 +47,31 @@ export function ConductoresListClient({
     const result = initialConductores.filter((conductor) => {
       if (filters.searchQuery) {
         const query = filters.searchQuery.toLowerCase().trim()
-        const matchesRut = conductor.rut?.toLowerCase().includes(query)
-        const matchesName =
-          `${conductor.nombres} ${conductor.apellido_paterno} ${conductor.apellido_materno}`
-            .toLowerCase()
-            .includes(query)
-        const matchesProviderRut = conductor.transportistas?.rut?.toLowerCase().includes(query)
+        
+        // Campos buscables: RUT, Nombre, Proveedor, RUT Proveedor, Licencia, Patente Tracto
+        const searchableFields = [
+          conductor.rut?.toLowerCase(), // RUT conductor
+          `${conductor.nombres} ${conductor.apellido_paterno} ${conductor.apellido_materno}`.toLowerCase(), // Nombre completo
+          conductor.transportistas?.razon_social?.toLowerCase(), // Nombre proveedor
+          conductor.transportistas?.rut?.toLowerCase(), // RUT proveedor
+          conductor.clase_licencia?.toLowerCase(), // Licencia (A2, A4, A5, etc)
+        ]
 
-        if (!matchesRut && !matchesName && !matchesProviderRut) {
+        // Agregar patentes de tractos si existen
+        if (conductor.subcontractor_drivers?.length > 0) {
+          conductor.subcontractor_drivers.forEach((sd: any) => {
+            if (sd.vehicle_plate) {
+              searchableFields.push(sd.vehicle_plate.toLowerCase())
+            }
+          })
+        }
+
+        // Buscar si algún campo contiene la query
+        const matchesAnyField = searchableFields.some(field => 
+          field && field.includes(query)
+        )
+
+        if (!matchesAnyField) {
           return false
         }
       }
