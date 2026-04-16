@@ -1,19 +1,3 @@
-/**
- * GESTIÓN DE SUBCONTRATISTAS
- * 
- * Panel para visualizar y gestionar todos los subcontratistas/proveedores de transporte.
- * Aquí puedes:
- * - Buscar subcontratistas por nombre, RUT, región o contacto
- * - Filtrar por regiones geográficas
- * - Ver certificaciones y cumplimiento
- * - Identificar subcontratistas activos/inactivos
- * - Acceder a información de contacto
- * 
- * ¿Qué es un Subcontratista? Es una empresa o persona que proporciona servicios
- * de transporte para tu operación. Cada uno tiene documentos, certificaciones y
- * estado de cumplimiento que monitorear.
- */
-
 'use client'
 
 import { useState, useMemo } from 'react'
@@ -21,32 +5,13 @@ import { Search, MapPin, Phone, Mail, CheckCircle, AlertCircle, X, Filter } from
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-
-interface Subcontractor {
-  id?: string
-  rut: string
-  nombre: string
-  nombre_fantasia?: string
-  representante: string
-  ejecutiva: string
-  region: string
-  direccion: string
-  comuna: string
-  ciudad: string
-  telefono: string
-  email: string
-  ariztia?: boolean
-  lts?: boolean
-  rendic?: boolean
-  interpolar?: boolean
-  is_active: boolean
-}
+import { allSubcontractors } from '@/lib/data/subcontractors'
 
 interface SubcontractorsListProps {
-  subcontractors: Subcontractor[]
+  subcontractors?: typeof allSubcontractors
 }
 
-export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) {
+export function SubcontractorsList({ subcontractors = allSubcontractors }: SubcontractorsListProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRegions, setSelectedRegions] = useState<string[]>([])
   const [selectedEjecutivas, setSelectedEjecutivas] = useState<string[]>([])
@@ -133,9 +98,10 @@ export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) 
     setSelectedEjecutivas([])
     setSelectedCertifications([])
     setShowActiveOnly(false)
+    setShowAdvancedFilters(false)
   }
 
-  const hasActiveFilters = searchTerm.length > 0 || selectedRegions.length > 0 || selectedEjecutivas.length > 0 || selectedCertifications.length > 0 || showActiveOnly;
+  const hasActiveFilters = searchTerm.length > 0 || selectedRegions.length > 0 || selectedEjecutivas.length > 0 || selectedCertifications.length > 0 || showActiveOnly
 
   return (
     <div className="space-y-4">
@@ -147,46 +113,24 @@ export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) 
         </p>
       </div>
 
-      {/* Información Rápida */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        <Card className="bg-slate-900/50 border-slate-800">
-          <CardContent className="p-3">
-            <div className="text-2xl font-bold text-foreground">{subcontractors.length}</div>
-            <p className="text-xs text-muted-foreground">Total de Subcontratistas</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-green-900/20 border-green-800">
-          <CardContent className="p-3">
-            <div className="text-2xl font-bold text-green-400">{subcontractors.filter(s => s.is_active).length}</div>
-            <p className="text-xs text-green-300">Activos</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-slate-900/50 border-slate-800">
-          <CardContent className="p-3">
-            <div className="text-2xl font-bold text-foreground">{Array.from(new Set(subcontractors.map(s => s.region))).length}</div>
-            <p className="text-xs text-muted-foreground">Regiones</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-slate-900/50 border-slate-800">
-          <CardContent className="p-3">
-            <div className="text-2xl font-bold text-foreground">{filtered.length}</div>
-            <p className="text-xs text-muted-foreground">Resultados</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Search and Filters */}
-    <div className="space-y-6">
       {/* Search Bar */}
       <div className="flex gap-2">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
           <Input
-            placeholder="Buscar por nombre, RUT, ejecutiva, comuna, teléfono o email..."
+            placeholder="Buscar por nombre, RUT, región, ejecutiva..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 bg-slate-900 border-slate-700 text-white placeholder-slate-500"
           />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-400"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
         <button
           onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
@@ -198,6 +142,11 @@ export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) 
         >
           <Filter className="w-4 h-4" />
           Filtros
+          {hasActiveFilters && (
+            <Badge className="ml-1 bg-red-500 text-white">
+              {selectedRegions.length + selectedEjecutivas.length + selectedCertifications.length + (showActiveOnly ? 1 : 0)}
+            </Badge>
+          )}
         </button>
         {hasActiveFilters && (
           <button
@@ -210,40 +159,20 @@ export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) 
         )}
       </div>
 
-      {/* Advanced Filters con Tooltips */}
+      {/* Advanced Filters */}
       {showAdvancedFilters && (
         <div className="space-y-4 p-4 bg-slate-900 rounded-lg border border-slate-800">
-          {/* Ejecutivas Filter */}
-          <div>
-            <label className="text-sm font-semibold text-slate-300">Ejecutivas ({selectedEjecutivas.length})</label>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {ejecutivas.map(ejecutiva => (
-                <button
-                  key={ejecutiva}
-                  onClick={() => toggleEjecutiva(ejecutiva)}
-                  className={`px-3 py-1 rounded text-sm transition-colors ${
-                    selectedEjecutivas.includes(ejecutiva)
-                      ? 'bg-orange-500 text-white'
-                      : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {ejecutiva}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Regions Filter */}
           <div>
-            <label className="text-sm font-semibold text-slate-300">Regiones ({selectedRegions.length})</label>
-            <div className="flex flex-wrap gap-2 mt-2">
+            <label className="text-sm font-semibold text-slate-300 block mb-2">Regiones ({selectedRegions.length})</label>
+            <div className="flex flex-wrap gap-2">
               {regions.map(region => (
                 <button
                   key={region}
                   onClick={() => toggleRegion(region)}
                   className={`px-3 py-1 rounded text-sm transition-colors ${
                     selectedRegions.includes(region)
-                      ? 'bg-orange-500 text-white'
+                      ? 'bg-blue-600 text-white'
                       : 'bg-slate-800 text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -253,17 +182,37 @@ export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) 
             </div>
           </div>
 
+          {/* Ejecutivas Filter */}
+          <div>
+            <label className="text-sm font-semibold text-slate-300 block mb-2">Ejecutivas ({selectedEjecutivas.length})</label>
+            <div className="flex flex-wrap gap-2">
+              {ejecutivas.map(ejecutiva => (
+                <button
+                  key={ejecutiva}
+                  onClick={() => toggleEjecutiva(ejecutiva)}
+                  className={`px-3 py-1 rounded text-sm transition-colors ${
+                    selectedEjecutivas.includes(ejecutiva)
+                      ? 'bg-green-600 text-white'
+                      : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {ejecutiva}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Certifications Filter */}
           <div>
-            <label className="text-sm font-semibold text-slate-300">Certificaciones ({selectedCertifications.length})</label>
-            <div className="flex flex-wrap gap-2 mt-2">
+            <label className="text-sm font-semibold text-slate-300 block mb-2">Certificaciones ({selectedCertifications.length})</label>
+            <div className="flex flex-wrap gap-2">
               {Object.entries(certifications).map(([key, label]) => (
                 <button
                   key={key}
                   onClick={() => toggleCertification(key)}
                   className={`px-3 py-1 rounded text-sm transition-colors ${
                     selectedCertifications.includes(key)
-                      ? 'bg-orange-500 text-white'
+                      ? 'bg-purple-600 text-white'
                       : 'bg-slate-800 text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -273,117 +222,109 @@ export function SubcontractorsList({ subcontractors }: SubcontractorsListProps) 
             </div>
           </div>
 
-          {/* Active Status Filter */}
-          <div>
-            <button
-              onClick={() => setShowActiveOnly(!showActiveOnly)}
-              className={`w-full px-4 py-2 rounded transition-colors flex items-center justify-center gap-2 ${
-                showActiveOnly
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <CheckCircle className="w-4 h-4" />
-              {showActiveOnly ? 'Solo Activos' : 'Mostrar Todos'}
-            </button>
-          </div>
+          {/* Status Filter */}
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showActiveOnly}
+              onChange={(e) => setShowActiveOnly(e.target.checked)}
+              className="w-4 h-4 rounded border-slate-700 bg-slate-800"
+            />
+            <span className="text-sm text-slate-300">Solo activos</span>
+          </label>
         </div>
       )}
 
       {/* Results count */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-slate-400">
-          Mostrando <span className="font-semibold text-orange-400">{filtered.length}</span> de <span className="font-semibold">{subcontractors.length}</span> subcontratistas
-          {hasActiveFilters && <span className="ml-2 text-slate-500">(filtrado)</span>}
-        </div>
+      <div className="text-sm text-slate-400">
+        Mostrando {filtered.length} de {subcontractors.length} subcontratistas
       </div>
 
-      {/* Subcontractors Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map((sub) => (
-          <Card key={sub.id || sub.rut} className="bg-slate-900 border-slate-800 hover:border-orange-500 transition-colors">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="text-base text-white truncate">{sub.nombre_fantasia || sub.nombre}</CardTitle>
-                  <p className="text-xs text-slate-400 mt-1">{sub.rut}</p>
-                </div>
-                {sub.is_active ? (
-                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {/* Representante */}
-              <div>
-                <p className="text-xs text-slate-500 uppercase font-semibold mb-1">Representante</p>
-                <p className="text-sm text-slate-200">{sub.representante}</p>
-              </div>
-
-              {/* Ejecutiva */}
-              <div>
-                <p className="text-xs text-slate-500 uppercase font-semibold mb-1">Ejecutiva Asignada</p>
-                <p className="text-sm text-orange-400 font-medium">{sub.ejecutiva}</p>
-              </div>
-
-              {/* Ubicación */}
-              <div className="flex items-start gap-2 text-sm">
-                <MapPin className="w-4 h-4 text-slate-500 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-slate-200">{sub.comuna}</p>
-                  <p className="text-xs text-slate-400">{sub.region}</p>
-                </div>
-              </div>
-
-              {/* Contacto */}
-              <div className="space-y-1.5">
-                {sub.telefono && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Phone className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                    <a href={`tel:${sub.telefono}`} className="text-slate-300 hover:text-orange-400 truncate">
-                      {sub.telefono}
-                    </a>
-                  </div>
-                )}
-                {sub.email && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Mail className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                    <a href={`mailto:${sub.email}`} className="text-slate-300 hover:text-orange-400 truncate">
-                      {sub.email}
-                    </a>
-                  </div>
-                )}
-              </div>
-
-              {/* Certificaciones */}
-              {(sub.ariztia || sub.lts || sub.rendic || sub.interpolar) && (
-                <div className="flex flex-wrap gap-1 pt-2 border-t border-slate-800">
-                  {sub.ariztia && <Badge variant="outline" className="text-xs bg-slate-800 text-slate-200 border-slate-700">{certifications.ariztia}</Badge>}
-                  {sub.lts && <Badge variant="outline" className="text-xs bg-slate-800 text-slate-200 border-slate-700">{certifications.lts}</Badge>}
-                  {sub.rendic && <Badge variant="outline" className="text-xs bg-slate-800 text-slate-200 border-slate-700">{certifications.rendic}</Badge>}
-                  {sub.interpolar && <Badge variant="outline" className="text-xs bg-slate-800 text-slate-200 border-slate-700">{certifications.interpolar}</Badge>}
-                </div>
-              )}
+      {/* Results Grid */}
+      <div className="grid gap-4">
+        {filtered.length === 0 ? (
+          <Card className="col-span-full">
+            <CardContent className="p-8 text-center">
+              <p className="text-slate-400">No hay subcontratistas que coincidan con los filtros.</p>
             </CardContent>
           </Card>
-        ))}
-      </div>
+        ) : (
+          filtered.map(sub => (
+            <Card key={sub.id} className="hover:border-slate-500 transition-colors">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  {/* Header with name and status */}
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-bold text-lg text-white">{sub.nombre}</h3>
+                      {sub.nombre_fantasia && (
+                        <p className="text-sm text-slate-400 italic">{sub.nombre_fantasia}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {sub.is_active ? (
+                        <>
+                          <CheckCircle className="w-5 h-5 text-green-500" />
+                          <Badge className="bg-green-500/20 text-green-300">Activo</Badge>
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle className="w-5 h-5 text-red-500" />
+                          <Badge className="bg-red-500/20 text-red-300">Inactivo</Badge>
+                        </>
+                      )}
+                    </div>
+                  </div>
 
-      {filtered.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-slate-400">No se encontraron subcontratistas que coincidan con tu búsqueda</p>
-          {hasActiveFilters && (
-            <button
-              onClick={clearAllFilters}
-              className="mt-4 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors text-sm"
-            >
-              Limpiar filtros
-            </button>
-          )}
-        </div>
-      )}
+                  {/* Contact Info */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs text-slate-400 font-semibold">RUT</p>
+                      <p className="font-mono text-sm text-amber-400">{sub.rut}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 font-semibold">REGIÓN</p>
+                      <p className="text-sm text-white">{sub.region}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 font-semibold">REPRESENTANTE</p>
+                      <p className="text-sm text-white">{sub.representante}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 font-semibold">EJECUTIVA</p>
+                      <p className="text-sm text-white">{sub.ejecutiva}</p>
+                    </div>
+                  </div>
+
+                  {/* Contact Details */}
+                  <div className="flex flex-wrap gap-2 text-sm">
+                    {sub.telefono && (
+                      <a href={`tel:${sub.telefono}`} className="flex items-center gap-1 text-blue-400 hover:text-blue-300">
+                        <Phone className="w-4 h-4" />
+                        {sub.telefono}
+                      </a>
+                    )}
+                    {sub.email && (
+                      <a href={`mailto:${sub.email}`} className="flex items-center gap-1 text-blue-400 hover:text-blue-300">
+                        <Mail className="w-4 h-4" />
+                        {sub.email}
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Certifications */}
+                  <div className="flex flex-wrap gap-2">
+                    {sub.ariztia && <Badge className="bg-blue-500/20 text-blue-300">Ariztia</Badge>}
+                    {sub.lts && <Badge className="bg-green-500/20 text-green-300">LTS</Badge>}
+                    {sub.rendic && <Badge className="bg-purple-500/20 text-purple-300">Rendic</Badge>}
+                    {sub.interpolar && <Badge className="bg-orange-500/20 text-orange-300">Interpolar</Badge>}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   )
 }
