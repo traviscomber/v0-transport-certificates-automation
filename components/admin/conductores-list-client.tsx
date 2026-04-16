@@ -44,16 +44,16 @@ export function ConductoresListClient({
     console.log('[v0] Applying filters:', filters)
     console.log('[v0] Initial conductores count:', initialConductores.length)
 
-    const result = initialConductores.filter((conductor) => {
+    const result = initialConductores.filter((conductor, index) => {
       if (filters.searchQuery) {
-        const query = filters.searchQuery.toLowerCase().trim()
+        const query = filters.searchQuery.toLowerCase().trim().replace(/\s+/g, '')
         
         // Campos buscables: RUT, Nombre, Proveedor, RUT Proveedor, Licencia, Patente Tracto
         const searchableFields = [
-          conductor.rut?.toLowerCase(), // RUT conductor
+          conductor.rut?.toLowerCase().replace(/\s+/g, ''), // RUT conductor (normalizado)
           `${conductor.nombres} ${conductor.apellido_paterno} ${conductor.apellido_materno}`.toLowerCase(), // Nombre completo
           conductor.transportistas?.razon_social?.toLowerCase(), // Nombre proveedor
-          conductor.transportistas?.rut?.toLowerCase(), // RUT proveedor
+          conductor.transportistas?.rut?.toLowerCase().replace(/\s+/g, ''), // RUT proveedor (normalizado)
           conductor.clase_licencia?.toLowerCase(), // Licencia (A2, A4, A5, etc)
         ]
 
@@ -61,8 +61,19 @@ export function ConductoresListClient({
         if (conductor.subcontractor_drivers?.length > 0) {
           conductor.subcontractor_drivers.forEach((sd: any) => {
             if (sd.vehicle_plate) {
-              searchableFields.push(sd.vehicle_plate.toLowerCase())
+              searchableFields.push(sd.vehicle_plate.toLowerCase().replace(/\s+/g, ''))
             }
+          })
+        }
+
+        // Log para debugging (solo para los primeros 3 conductores)
+        if (index < 3) {
+          console.log(`[v0] Conductor ${index}:`, {
+            nombre: conductor.nombres,
+            rut: conductor.rut,
+            providerRut: conductor.transportistas?.rut,
+            searchableFields,
+            query,
           })
         }
 
