@@ -38,21 +38,26 @@ export function useDriverDocuments(driverId: string) {
   // Subir documento
   const uploadDocument = async (tipo: string, nombre: string, file: File) => {
     try {
+      console.log('[v0] Preparing FormData for upload', { tipo, nombre, fileType: file.type, fileSize: file.size })
       const formData = new FormData()
       formData.append('driverId', driverId)
       formData.append('tipo', tipo)
       formData.append('nombre', nombre)
       formData.append('file', file)
 
+      console.log('[v0] Sending upload request to /api/documents/upload')
       const response = await fetch('/api/documents/upload', {
         method: 'POST',
         body: formData,
       })
 
+      console.log('[v0] Upload response status:', response.status)
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to upload document')
+        const errorMsg = result.error || `Upload failed with status ${response.status}`
+        console.error('[v0] Upload failed:', errorMsg)
+        throw new Error(errorMsg)
       }
 
       console.log('[v0] Document uploaded successfully:', result.data)
@@ -60,7 +65,8 @@ export function useDriverDocuments(driverId: string) {
       await fetchDocuments()
       return result.data
     } catch (err) {
-      console.error('[v0] Error uploading document:', err)
+      const errorMsg = err instanceof Error ? err.message : 'Error desconocido'
+      console.error('[v0] Error uploading document:', errorMsg)
       throw err
     }
   }

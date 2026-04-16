@@ -36,20 +36,27 @@ export function DriverCard({
   const [uploadFileName, setUploadFileName] = useState('')
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string>('')
 
   const handleUpload = async () => {
-    if (!uploadFileName.trim() || !uploadFile) return
+    if (!uploadFileName.trim() || !uploadFile) {
+      setUploadError('Por favor selecciona un archivo')
+      return
+    }
 
     setUploading(true)
+    setUploadError('')
     try {
+      console.log('[v0] Iniciando upload:', { driverId: driver.id, tipo: uploadDocType, nombre: uploadFileName, fileSize: uploadFile.size })
       await uploadDocument(uploadDocType, uploadFileName, uploadFile)
       setShowUploadModal(false)
       setUploadFileName('')
       setUploadFile(null)
       setUploadDocType('Licencia de Conducir')
     } catch (error) {
-      console.error('[v0] Upload error:', error)
-      alert('Error al subir documento')
+      const errorMsg = error instanceof Error ? error.message : 'Error desconocido al subir documento'
+      console.error('[v0] Upload error:', errorMsg, error)
+      setUploadError(errorMsg)
     } finally {
       setUploading(false)
     }
@@ -276,6 +283,14 @@ export function DriverCard({
                   }}
                 />
               </div>
+
+              {/* Error Alert */}
+              {uploadError && (
+                <div className="rounded bg-red-500/20 border border-red-500/50 p-3 text-sm text-red-300">
+                  <p className="font-semibold">Error:</p>
+                  <p>{uploadError}</p>
+                </div>
+              )}
 
               {/* Botones */}
               <div className="flex gap-3 pt-4">
