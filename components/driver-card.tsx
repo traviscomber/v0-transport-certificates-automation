@@ -35,6 +35,7 @@ export function DriverCard({
   const [uploadDocType, setUploadDocType] = useState('Licencia de Conducir')
   const [uploadFileName, setUploadFileName] = useState('')
   const [uploading, setUploading] = useState(false)
+  const fileInputRef = useState<HTMLInputElement | null>(null)[1]
 
   const handleUpload = async () => {
     if (!uploadFileName.trim()) return
@@ -48,6 +49,10 @@ export function DriverCard({
     } catch (error) {
       console.error('[v0] Upload error:', error)
       alert('Error al subir documento')
+    } finally {
+      setUploading(false)
+    }
+  }
     } finally {
       setUploading(false)
     }
@@ -236,10 +241,31 @@ export function DriverCard({
               </div>
 
               {/* File Upload Area */}
-              <div className="rounded border-2 border-dashed border-slate-700 p-4 text-center">
+              <div 
+                className="rounded border-2 border-dashed border-slate-700 p-4 text-center cursor-pointer hover:border-slate-500 hover:bg-slate-800/30 transition-all"
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  e.currentTarget.classList.add('border-blue-500', 'bg-blue-500/10')
+                }}
+                onDragLeave={(e) => {
+                  e.currentTarget.classList.remove('border-blue-500', 'bg-blue-500/10')
+                }}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  e.currentTarget.classList.remove('border-blue-500', 'bg-blue-500/10')
+                  if (e.dataTransfer.files?.[0]) {
+                    setUploadFileName(e.dataTransfer.files[0].name)
+                  }
+                }}
+                onClick={() => {
+                  const input = document.getElementById(`file-input-${driver.id}`) as HTMLInputElement
+                  input?.click()
+                }}
+              >
                 <Upload className="mx-auto h-8 w-8 text-slate-400 mb-2" />
-                <p className="text-sm text-slate-400">Arrastra o haz click para seleccionar archivo</p>
+                <p className="text-sm text-slate-400">Arrastra aquí o haz click para seleccionar archivo</p>
                 <input
+                  id={`file-input-${driver.id}`}
                   type="file"
                   className="hidden"
                   onChange={(e) => {

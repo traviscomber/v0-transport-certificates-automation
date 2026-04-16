@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase/server"
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -9,6 +8,10 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseKey)
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const driverId = params.id
+
+    if (!driverId) {
+      return NextResponse.json({ error: 'Driver ID is required' }, { status: 400 })
+    }
 
     // Obtener documentos del conductor
     const { data, error } = await supabaseAdmin
@@ -22,10 +25,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    if (process.env.NODE_ENV === 'development') console.log('[v0] Documents fetched:', data)
+    console.log('[v0] Documents fetched for driver', driverId, ':', data?.length || 0)
     return NextResponse.json({ data }, { status: 200 })
   } catch (error) {
     console.error('[v0] Error in fetch handler:', error)
-    return NextResponse.json({ error: 'Failed to fetch documents' }, { status: 500 })
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to fetch documents' },
+      { status: 500 }
+    )
   }
 }
