@@ -28,19 +28,19 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       },
     })
 
-    // Obtener documentos desde tabla documents (ya que no hay driver_id en esa tabla)
-    // Por ahora retornamos todos los documentos
+    // Obtener documentos del conductor desde tabla monthly_documents
     const { data, error } = await supabase
-      .from('documents')
-      .select('id, file_name as nombre, document_type as tipo, upload_date, created_at')
-      .order('created_at', { ascending: false })
+      .from('monthly_documents')
+      .select('id, file_name as nombre, document_type as tipo, status as estado, uploaded_at as fecha_subida, month_year')
+      .eq('driver_id', driverId)
+      .order('uploaded_at', { ascending: false })
 
     if (error) {
       console.error('[v0] Error fetching documents:', error)
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    console.log('[v0] Documents fetched:', data?.length || 0)
+    console.log('[v0] Documents fetched for driver', driverId, ':', data?.length || 0)
     return NextResponse.json({ data }, { status: 200 })
   } catch (error) {
     console.error('[v0] Error in fetch handler:', error)

@@ -38,17 +38,25 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Guardar registro en tabla documents (estructura real de la BD)
-    console.log('[v0] Saving document record to documents:', { tipo, nombre })
+    // Guardar registro en tabla monthly_documents
+    console.log('[v0] Saving document record to monthly_documents:', { driverId, tipo, nombre })
+    
+    // Calcular month_year (primer día del mes actual)
+    const today = new Date()
+    const monthYear = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]
+    
     const { data: dbData, error: dbError } = await supabase
-      .from('documents')
+      .from('monthly_documents')
       .insert([
         {
-          file_name: nombre,
-          file_size: file.size.toString(),
-          file_type: file.type || 'application/octet-stream',
+          driver_id: driverId,
           document_type: tipo,
-          upload_date: new Date().toISOString().split('T')[0],
+          month_year: monthYear,
+          status: 'uploaded',
+          provider: 'Manual Upload',
+          file_name: nombre,
+          file_url: `/documents/${driverId}/${nombre}`,
+          uploaded_at: new Date().toISOString(),
         },
       ])
       .select()
