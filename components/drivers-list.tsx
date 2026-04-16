@@ -247,7 +247,7 @@ export function DriversList({ drivers }: DriversListProps) {
               <div>
                 <label className="text-sm font-semibold text-slate-300">Proveedor/Subcontratista ({selectedProviders.length})</label>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {providers.filter(Boolean).map((provider) => (
+                  {providers.filter((p): p is string => Boolean(p)).map((provider) => (
                     <button
                       key={provider}
                       onClick={() => toggleProvider(provider)}
