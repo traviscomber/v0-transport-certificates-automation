@@ -229,12 +229,6 @@ export function MonthlyDocumentsList() {
                 <p className="text-sm text-slate-400 leading-relaxed">{doc.descripcion}</p>
               )}
 
-              {/* Periodicidad */}
-              <div>
-                <p className="text-xs font-semibold text-slate-300 mb-1">Periodicidad</p>
-                <Badge className="bg-blue-500/20 text-blue-300">{doc.periodicidad}</Badge>
-              </div>
-
               {/* Certificaciones */}
               {doc.certificacionesRelacionadas.length > 0 && (
                 <div>
