@@ -198,22 +198,28 @@ export async function POST(request: NextRequest) {
         const email = userData.email.toLowerCase().trim()
         console.log('[v0] Processing user:', email)
 
-        // Use provided ID if available (from pre-created auth users), otherwise use UUID
+        // Use provided ID if available (from pre-created auth users), otherwise generate UUID for matching
         const userId = userData.id || randomUUID()
         console.log('[v0] Using user ID:', userId, '- from auth:', !!userData.id)
 
         // Insert into profiles table with the user ID
         console.log('[v0] Inserting into profiles table for', email)
         
-        // Build insert object
+        // Build insert object - DON'T include 'id' field if it's a generated UUID
+        // The foreign key constraint requires id to exist in auth.users, so only set it if provided
         const insertData: any = {
-          id: userId,
           email: email,
           full_name: userData.full_name,
           role: 'admin',
           phone: userData.phone || '',
           rut: userData.rut || '',
           is_active: userData.is_active !== false,
+        }
+        
+        // Only include the id if it came from auth users
+        if (userData.id) {
+          insertData.id = userId
+          console.log('[v0] Including pre-created auth user ID:', userId)
         }
         
         // Try with organization_id first if companyId exists
