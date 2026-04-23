@@ -26,29 +26,43 @@ export function BulkImportForm() {
     const lines = text.trim().split('\n')
     const parsedUsers: BulkUser[] = []
 
+    console.log('[v0] Parsing CSV with', lines.length, 'lines')
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
-      if (!line) continue
+      if (!line) {
+        console.log('[v0] Line', i, 'is empty, skipping')
+        continue
+      }
 
       // Format: nombre | email | teléfono | rut
-      const [name, email, phone, rut] = line.split('|').map(s => s.trim())
+      const parts = line.split('|').map(s => s.trim())
+      console.log('[v0] Line', i, 'parts:', parts)
 
-      if (name && email && phone && rut) {
-        parsedUsers.push({
-          full_name: name,
-          email: email.toLowerCase(),
-          phone,
-          rut,
-          role: 'admin_company',
-          is_active: true,
-        })
+      const [name, email, phone, rut] = parts
+
+      if (!name || !email || !phone || !rut) {
+        console.warn('[v0] Line', i, 'missing fields. Got:', { name, email, phone, rut })
+        continue
       }
+
+      parsedUsers.push({
+        full_name: name,
+        email: email.toLowerCase(),
+        phone,
+        rut,
+        role: 'admin_company',
+        is_active: true,
+      })
+      console.log('[v0] Added user:', name, email)
     }
 
+    console.log('[v0] Total parsed users:', parsedUsers.length)
     return parsedUsers
   }
 
   const handleParse = () => {
+    console.log('[v0] handleParse called with input length:', csvInput.length)
     setError('')
     if (!csvInput.trim()) {
       setError('Por favor ingresa datos de usuarios')
@@ -56,6 +70,7 @@ export function BulkImportForm() {
     }
 
     const parsed = parseCSV(csvInput)
+    console.log('[v0] Parsed result:', parsed)
     if (parsed.length === 0) {
       setError('No se encontraron usuarios válidos. Formato: nombre | email | teléfono | rut')
       return
@@ -147,10 +162,24 @@ Daniela Constanza Silva Rojas | daniela@ejemplo.com | 569 7854072 | 17782246-2"
         />
 
         <div className="flex gap-2">
-          <Button onClick={handleParse} variant="outline" disabled={!csvInput.trim()}>
+          <Button 
+            onClick={() => {
+              console.log('[v0] Validar Datos button clicked')
+              handleParse()
+            }} 
+            variant="outline" 
+            disabled={!csvInput.trim()}
+          >
             Validar Datos
           </Button>
-          <Button onClick={handleImport} disabled={users.length === 0 || loading} className="bg-orange-600 hover:bg-orange-700">
+          <Button 
+            onClick={() => {
+              console.log('[v0] Importar button clicked, users.length:', users.length)
+              handleImport()
+            }} 
+            disabled={users.length === 0 || loading} 
+            className="bg-orange-600 hover:bg-orange-700"
+          >
             {loading ? 'Importando...' : `Importar ${users.length} Usuarios`}
           </Button>
         </div>
