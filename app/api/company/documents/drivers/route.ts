@@ -17,27 +17,32 @@ export async function GET(request: NextRequest) {
 
     const adminClient = createAdminClient()
 
-    // Get all documents for this driver RUT
-    const { data: documents, error } = await adminClient
-      .from('documents')
-      .select('*')
-      .eq('driver_rut', rut)
-      .order('upload_date', { ascending: false })
+    // Get all documents for this driver RUT via transporters table
+    const { data: transporters, error } = await adminClient
+      .from('transporters')
+      .select('document_id, documents(id, file_name, file_size, file_type, document_type, upload_date, created_at)')
+      .eq('rut', rut)
+      .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('[v0] Error fetching documents:', error)
+      console.error('[v0] Error fetching transporters:', error)
       return NextResponse.json(
         { error: 'Failed to fetch documents' },
         { status: 500 }
       )
     }
 
-    console.log('[v0] Found', documents?.length || 0, 'documents for driver:', rut)
+    // Extract documents from the relationship
+    const documents = transporters
+      ?.map((t: any) => t.documents)
+      .filter(Boolean) || []
+
+    console.log('[v0] Found', documents.length, 'documents for driver:', rut)
 
     return NextResponse.json({
       success: true,
       driver_rut: rut,
-      documents: documents || [],
+      documents: documents,
     })
   } catch (error) {
     console.error('[v0] Error in GET /api/company/documents/drivers:', error)

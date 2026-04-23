@@ -78,44 +78,50 @@ export async function POST(request: NextRequest) {
         .from('documents')
         .getPublicUrl(filePath)
 
-      // Verificar que no exista un documento duplicado (mismo driver + mismo nombre + mismo día)
+      // Verificar que no exista un documento duplicado (mismo nombre + mismo día)
       const today = new Date().toISOString().split('T')[0]
-      const { data: existingDoc } = await adminClient
+      const { data: existingDocs } = await adminClient
         .from('documents')
         .select('id')
-        .eq('driver_rut', driverRut)
         .eq('file_name', file.name)
-        .gte('upload_date', `${today}T00:00:00`)
-        .lte('upload_date', `${today}T23:59:59`)
-        .single()
+        .eq('upload_date', today)
 
-      if (existingDoc) {
-        console.log('[v0] Duplicate document found, deleting old version:', existingDoc.id)
+      if (existingDocs && existingDocs.length > 0) {
+        console.log('[v0] Duplicate document found, deleting old version:', existingDocs[0].id)
         // Eliminar el documento duplicado más antiguo
         await adminClient
           .from('documents')
           .delete()
-          .eq('id', existingDoc.id)
+          .eq('id', existingDocs[0].id)
       }
 
-      // Save metadata to documents table
+      // Save metadata to documents table (only use columns that exist)
       const { data: doc, error: docError } = await adminClient
         .from('documents')
         .insert({
           file_name: file.name,
-          file_size: file.size,
+          file_size: file.size.toString(),
           file_type: file.type,
           document_type: documentType,
-          driver_rut: driverRut,
-          storage_path: filePath,
-          public_url: publicUrl,
-          upload_date: new Date().toISOString(),
-          verification_status: 'pending',
+          upload_date: today, // DATE type (YYYY-MM-DD)
         })
         .select()
         .single()
 
       if (!docError && doc) {
+        // También guardar referencia en transporters table con el RUT del conductor
+        const { error: transporterError } = await adminClient
+          .from('transporters')
+          .insert({
+            document_id: doc.id,
+            rut: driverRut,
+            name: `Documento ${documentType}`,
+          })
+
+        if (transporterError) {
+          console.error('[v0] Error linking transporter:', transporterError)
+        }
+
         uploadedDocs.push(doc)
         console.log('[v0] Document saved:', doc.id)
       } else {
