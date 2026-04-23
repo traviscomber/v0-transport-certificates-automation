@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 
 const navItems = [
   { href: '/dashboard/company', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/company/usuarios', label: 'Usuarios', icon: Users },
   { href: '/dashboard/company/equipo', label: 'Gestión de Equipo', icon: Users2 },
   { href: '/dashboard/company/subcontratistas', label: 'Subcontratistas', icon: Zap },
   { href: '/dashboard/company/conductores', label: 'Conductores', icon: Users },
