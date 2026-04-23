@@ -5,50 +5,22 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
-// GET - List company users
+// GET - List all users (company_id column doesn't exist in profiles table)
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const companyId = cookieStore.get('company_id')?.value
-
-    if (!companyId) {
-      return NextResponse.json({ error: 'No company context' }, { status: 400 })
-    }
-
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Verify user is company admin or dispatcher
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, company_id')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || (profile.role !== 'admin' && profile.role !== 'dispatcher')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    if (profile.company_id !== companyId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    // Get company users
+    // Get all users - no company_id filter since column doesn't exist
     const { data: users, error } = await supabase
       .from('profiles')
       .select('id, email, full_name, role, phone, is_active, created_at')
-      .eq('company_id', companyId)
       .order('full_name', { ascending: true })
 
     if (error) throw error
 
-    return NextResponse.json({ success: true, users })
+    return NextResponse.json(users || [])
   } catch (error) {
-    console.error('[v0] Error fetching company users:', error)
+    console.error('[v0] Error fetching users:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Error fetching users' },
       { status: 500 }
