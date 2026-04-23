@@ -158,9 +158,9 @@ export function ImportExecutivesForm({ forceLabbe = false }: { forceLabbe?: bool
         console.warn('[v0] Sync error (non-fatal):', syncErr)
       }
       
-      // Redirect after success to company users dashboard
+      // Redirect after success to company users dashboard with refresh token
       setTimeout(() => {
-        router.push('/dashboard/company/usuarios')
+        router.push(`/dashboard/company/usuarios?refresh=${Date.now()}`)
       }, 2000)
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Error en la importación'
