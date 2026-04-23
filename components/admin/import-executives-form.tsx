@@ -126,6 +126,24 @@ export function ImportExecutivesForm() {
       setImportResults(data.result)
       setSuccess(data.message)
       
+      // Step 3: Sync profiles to ensure database is up to date
+      console.log('[v0] Step 3: Syncing profiles')
+      try {
+        const syncResponse = await fetch('/api/admin/sync-profiles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        })
+        
+        if (syncResponse.ok) {
+          const syncData = await syncResponse.json()
+          console.log('[v0] Profiles synced:', syncData.count, 'total profiles')
+        } else {
+          console.warn('[v0] Sync warning:', await syncResponse.json())
+        }
+      } catch (syncErr) {
+        console.warn('[v0] Sync error (non-fatal):', syncErr)
+      }
+      
       // Redirect after success
       setTimeout(() => {
         router.push('/admin/usuarios')
