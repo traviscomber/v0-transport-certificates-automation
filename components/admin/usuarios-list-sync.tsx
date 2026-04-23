@@ -29,7 +29,9 @@ export function UsuariosListWithSync({ initialUsers }: { initialUsers: User[] })
       fallbackData: initialUsers,
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
-      dedupingInterval: 5000,
+      revalidateIfStale: true,
+      dedupingInterval: 0, // No deduping to always fetch fresh
+      focusThrottleInterval: 0, // Revalidate immediately on focus
     }
   )
 
@@ -43,9 +45,9 @@ export function UsuariosListWithSync({ initialUsers }: { initialUsers: User[] })
         throw new Error(data.error || 'Failed to delete user')
       }
 
-      console.log('[v0] User deleted, revalidating...')
-      // Revalidate the users list after deletion
-      await mutate()
+      console.log('[v0] User deleted, forcing immediate revalidation')
+      // Force immediate revalidation (don't wait for SWR's schedule)
+      await mutate(undefined, { revalidate: true })
     } catch (err) {
       console.error('[v0] Delete error in sync handler:', err)
       throw err

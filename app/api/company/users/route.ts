@@ -8,17 +8,31 @@ import { cookies } from 'next/headers'
 // GET - List all users (company_id column doesn't exist in profiles table)
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const adminClient = createAdminClient()
 
-    // Get all users - no company_id filter since column doesn't exist
-    const { data: users, error } = await supabase
+    console.log('[v0] Fetching all users from profiles')
+    
+    // Get all users - use admin client to bypass RLS and ensure fresh data
+    const { data: users, error } = await adminClient
       .from('profiles')
       .select('id, email, full_name, role, phone, is_active, created_at')
       .order('full_name', { ascending: true })
 
-    if (error) throw error
+    if (error) {
+      console.error('[v0] Database error:', error)
+      throw error
+    }
 
-    return NextResponse.json(users || [])
+    console.log('[v0] Users fetched:', users?.length || 0)
+
+    // Return with no-cache headers to ensure fresh data
+    return new NextResponse(JSON.stringify(users || []), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+      },
+    })
   } catch (error) {
     console.error('[v0] Error fetching users:', error)
     return NextResponse.json(
