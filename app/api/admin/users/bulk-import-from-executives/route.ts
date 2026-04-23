@@ -204,19 +204,51 @@ export async function POST(request: NextRequest) {
 
         // Insert into profiles table with the user ID
         console.log('[v0] Inserting into profiles table for', email)
-        const { data: newProfile, error: profileError } = await adminClient
+        
+        // Build insert object
+        const insertData: any = {
+          id: userId,
+          email: email,
+          full_name: userData.full_name,
+          role: 'admin',
+          phone: userData.phone || '',
+          rut: userData.rut || '',
+          is_active: userData.is_active !== false,
+        }
+        
+        // Try with organization_id first if companyId exists
+        if (companyId) {
+          insertData.organization_id = companyId
+          console.log('[v0] Including organization_id:', companyId)
+        }
+        
+        let profileError: any = null
+        let newProfile: any = null
+        
+        // Try the insert
+        const insertResult = await adminClient
           .from('profiles')
-          .insert({
-            id: userId,
-            email: email,
-            full_name: userData.full_name,
-            role: 'admin',
-            phone: userData.phone || '',
-            rut: userData.rut || '',
-            is_active: userData.is_active !== false,
-          })
+          .insert(insertData)
           .select()
           .single()
+        
+        profileError = insertResult.error
+        newProfile = insertResult.data
+        
+        // If error is about organization_id column not existing, try without it
+        if (profileError && profileError.message && profileError.message.includes('organization_id')) {
+          console.log('[v0] organization_id column not found, retrying without it')
+          delete insertData.organization_id
+          
+          const retryResult = await adminClient
+            .from('profiles')
+            .insert(insertData)
+            .select()
+            .single()
+          
+          profileError = retryResult.error
+          newProfile = retryResult.data
+        }
 
         if (profileError) {
           console.error('[v0] Profile insert error for', email, ':', {
