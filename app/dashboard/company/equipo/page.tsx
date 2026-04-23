@@ -10,9 +10,6 @@ import { CleanAllUsersButton } from '@/components/admin/clean-all-users-button'
 import { UsuariosListWithSync } from '@/components/admin/usuarios-list-sync'
 import { TeamSearch } from '@/components/team-search'
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
-
 export default function EquipoPage() {
   return (
     <div className="space-y-6">
