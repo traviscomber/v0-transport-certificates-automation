@@ -3,13 +3,17 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Users, UsersIcon, FileText, BarChart3, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, FileText, BarChart3, LogOut, Zap, AlertTriangle, Users2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const navItems = [
   { href: '/dashboard/company', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/company/usuarios', label: 'Usuarios', icon: UsersIcon },
+  { href: '/dashboard/company/usuarios', label: 'Usuarios', icon: Users },
+  { href: '/dashboard/company/equipo', label: 'Gestión de Equipo', icon: Users2 },
+  { href: '/dashboard/company/subcontratistas', label: 'Subcontratistas', icon: Zap },
+  { href: '/dashboard/company/conductores', label: 'Conductores', icon: Users },
   { href: '/dashboard/company/documentos', label: 'Documentos', icon: FileText },
+  { href: '/dashboard/company/alertas', label: 'Alertas', icon: AlertTriangle },
   { href: '/dashboard/company/reportes', label: 'Reportes', icon: BarChart3 },
 ]
 
