@@ -155,12 +155,101 @@ export async function POST(request: NextRequest) {
     console.log('[v0] POST /api/admin/users/bulk-import-from-executives - Starting import')
 
     const body = await request.json()
-    const { users, company_id } = body as { users: BulkUser[], company_id?: string }
+    const { users } = body as { users: BulkUser[] }
 
     if (!Array.isArray(users) || users.length === 0) {
       console.error('[v0] Invalid users array received')
       return NextResponse.json({ error: 'Invalid users array' }, { status: 400 })
     }
+
+    console.log('[v0] Importing', users.length, 'users')
+
+    const adminClient = createAdminClient()
+    const result: ImportResult = { created: 0, errors: [] }
+
+    // Simple insert into profiles table directly
+    for (const userData of users) {
+      try {
+        if (!userData.full_name || !userData.email) {
+          throw new Error('Missing required fields: full_name and email')
+        }
+
+        const email = userData.email.toLowerCase().trim()
+        const userId = randomUUID()
+        
+        console.log('[v0] Creating profile for:', email)
+
+        // Simple insert without any foreign key constraints or complex validation
+        const { data, error } = await adminClient
+          .from('profiles')
+          .insert({
+            id: userId,
+            email: email,
+            full_name: userData.full_name,
+            role: 'dispatcher', // Default to dispatcher for imported users
+            phone: userData.phone || '',
+            rut: userData.rut || '',
+            is_active: true,
+          })
+          .select()
+          .single()
+
+        if (error) {
+          console.error('[v0] Error creating profile for', email, ':', error.message)
+          
+          // If it's a duplicate email, try updating instead
+          if (error.message.includes('duplicate')) {
+            console.log('[v0] Profile exists, attempting update')
+            const { error: updateError } = await adminClient
+              .from('profiles')
+              .update({
+                full_name: userData.full_name,
+                phone: userData.phone || '',
+                rut: userData.rut || '',
+                is_active: true,
+              })
+              .eq('email', email)
+            
+            if (!updateError) {
+              result.created++
+              continue
+            }
+          }
+          
+          result.errors.push({
+            email: email,
+            error: error.message
+          })
+          continue
+        }
+
+        console.log('[v0] Profile created for:', email)
+        result.created++
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'Unknown error'
+        console.error('[v0] Error processing user:', errorMsg)
+        result.errors.push({
+          email: userData.email,
+          error: errorMsg
+        })
+      }
+    }
+
+    console.log('[v0] Import complete:', { created: result.created, errors: result.errors.length })
+
+    return NextResponse.json({
+      success: result.errors.length === 0,
+      result: result,
+      message: `Successfully created ${result.created} users, ${result.errors.length} errors`
+    })
+  } catch (err) {
+    console.error('[v0] POST error:', err)
+    return NextResponse.json(
+      { error: 'Import failed', details: String(err) },
+      { status: 500 }
+    )
+  }
+}
 
     console.log('[v0] Processing', users.length, 'users for bulk import')
     console.log('[v0] Using company_id from request:', company_id)
