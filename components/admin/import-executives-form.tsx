@@ -15,13 +15,32 @@ interface BulkUser {
   is_active: boolean
 }
 
-export function ImportExecutivesForm() {
+export function ImportExecutivesForm({ forceLabbe = false }: { forceLabbe?: boolean }) {
   const router = useRouter()
   const [users, setUsers] = useState<BulkUser[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [importResults, setImportResults] = useState<any>(null)
+  const [labbeCompanyId, setLabbeCompanyId] = useState<string | null>(null)
+
+  // Load Labbe company_id if forceLabbe is true
+  useEffect(() => {
+    if (forceLabbe) {
+      const getLabbeId = async () => {
+        try {
+          console.log('[v0] Fetching Labbe company_id')
+          const response = await fetch('/api/admin/users/get-company-id')
+          const data = await response.json()
+          setLabbeCompanyId(data.company_id)
+          console.log('[v0] Labbe company_id:', data.company_id)
+        } catch (err) {
+          console.warn('[v0] Error getting Labbe company_id:', err)
+        }
+      }
+      getLabbeId()
+    }
+  }, [forceLabbe])
 
   // Load executives on mount
   useEffect(() => {
@@ -67,17 +86,22 @@ export function ImportExecutivesForm() {
     setSuccess('')
 
     try {
-      console.log('[v0] Step 0: Getting current company_id')
+      console.log('[v0] Step 0: Getting company_id')
       
-      // Step 0: Get the current company_id from cookies
-      const companyIdResponse = await fetch('/api/admin/users/get-company-id')
-      const companyIdData = await companyIdResponse.json()
-      const companyId = companyIdData.company_id
+      // Use Labbe company_id if forceLabbe, otherwise get from cookies
+      let companyId = forceLabbe ? labbeCompanyId : null
       
-      console.log('[v0] Using company_id:', companyId)
+      if (!companyId && !forceLabbe) {
+        // Step 0: Get the current company_id from cookies
+        const companyIdResponse = await fetch('/api/admin/users/get-company-id')
+        const companyIdData = await companyIdResponse.json()
+        companyId = companyIdData.company_id
+      }
+      
+      console.log('[v0] Using company_id:', companyId, 'forceLabbe:', forceLabbe)
       
       if (!companyId) {
-        throw new Error('No company_id found - please log in to your company first')
+        throw new Error('No company_id found - please refresh and try again')
       }
 
       console.log('[v0] Step 1: Creating auth users for', users.length, 'executives')

@@ -24,7 +24,7 @@ export default function ImportExecutivesPage() {
       </div>
 
       <div className="grid gap-6 max-w-2xl">
-        <ImportExecutivesForm />
+        <ImportExecutivesForm forceLabbe={true} />
 
         <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg space-y-2">
           <p className="font-medium text-sm text-blue-900 dark:text-blue-200">ℹ️ Información</p>
