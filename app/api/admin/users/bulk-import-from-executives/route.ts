@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
     
     const { data: executives, error } = await adminClient
       .from('executive_staff')
-      .select('id, nombre_completo, rut, email, telefono, cargo, is_active')
-      .order('nombre_completo', { ascending: true })
+      .select('id, full_name, rut, email_auth, phone, cargo, login_enabled')
+      .order('full_name', { ascending: true })
 
     if (error) {
       console.error('[v0] Error fetching executives from executive_staff:', error)
@@ -56,14 +56,14 @@ export async function GET(request: NextRequest) {
 
     // Transform to BulkUser format
     const bulkUsers: BulkUser[] = executives.map(exec => {
-      console.log('[v0] Processing executive:', exec.nombre_completo, 'email:', exec.email)
+      console.log('[v0] Processing executive:', exec.full_name, 'email:', exec.email_auth)
       return {
-        full_name: exec.nombre_completo,
-        email: exec.email,
-        phone: exec.telefono || '',
+        full_name: exec.full_name,
+        email: exec.email_auth,
+        phone: exec.phone || '',
         rut: exec.rut || '',
         role: 'admin_company',
-        is_active: exec.is_active !== false,
+        is_active: exec.login_enabled !== false,
       }
     })
 
