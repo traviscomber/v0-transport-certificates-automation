@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { Button } from '@/components/ui/button'
-import { Plus } from 'lucide-react'
+import { Plus, Download } from 'lucide-react'
 import Link from 'next/link'
 import { HelpBox } from '@/components/ui/help-box'
 import { UserListClient } from '@/components/admin/user-list-client'
@@ -42,12 +42,20 @@ export default async function CompanyUsuariosPage() {
             Gestiona los usuarios que trabajan en tu empresa
           </p>
         </div>
-        <Link href="/dashboard/company/usuarios/invitar">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Invitar Usuario
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/dashboard/company/usuarios/importar-ejecutivos">
+            <Button variant="outline">
+              <Download className="mr-2 h-4 w-4" />
+              Importar Ejecutivos
+            </Button>
+          </Link>
+          <Link href="/dashboard/company/usuarios/invitar">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Invitar Usuario
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Ayuda Educativa */}
