@@ -14,21 +14,21 @@ export async function GET() {
       console.log('[v0] No company_id in cookies, fetching Labbe company_id')
       const adminClient = createAdminClient()
       
-      // Try to find Labbe by name (case insensitive)
+      // Try to find company by name (case insensitive) - search for "company"
       const { data: companies, error } = await adminClient
         .from('organizations')
         .select('id, name')
-        .ilike('name', '%labbe%')
+        .ilike('name', '%company%')
 
-      console.log('[v0] Labbe company search results:', { count: companies?.length, error: error?.message })
+      console.log('[v0] Company search results:', { count: companies?.length, error: error?.message })
 
       if (!error && companies && companies.length > 0) {
         companyId = companies[0].id
-        console.log('[v0] Using Labbe company_id as default:', companyId, 'name:', companies[0].name)
+        console.log('[v0] Using company_id as default:', companyId, 'name:', companies[0].name)
       } else if (error) {
-        console.warn('[v0] Error fetching Labbe company:', error)
+        console.warn('[v0] Error fetching company:', error)
       } else {
-        console.warn('[v0] No Labbe company found in database')
+        console.warn('[v0] No company found in database')
       }
     }
 
