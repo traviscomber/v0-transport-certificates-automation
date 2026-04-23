@@ -22,6 +22,21 @@ export function BulkImportForm() {
   const [success, setSuccess] = useState('')
   const [csvInput, setCsvInput] = useState('')
 
+  const generateEmail = (fullName: string): string => {
+    // Remove extra spaces and split by spaces
+    const nameParts = fullName.trim().toLowerCase().split(/\s+/)
+    if (nameParts.length < 2) {
+      return `${nameParts[0]}@labbe.cl`
+    }
+    
+    // Get first letter of first name and the last name (apellido paterno - usually second to last word)
+    const firstName = nameParts[0][0] // First letter of first name
+    const lastName = nameParts[nameParts.length - 2] // Apellido paterno
+    
+    const email = `${firstName}${lastName}@labbe.cl`
+    return email
+  }
+
   const parseCSV = (text: string) => {
     const lines = text.trim().split('\n')
     const parsedUsers: BulkUser[] = []
@@ -35,20 +50,24 @@ export function BulkImportForm() {
         continue
       }
 
-      // Format: nombre | email | teléfono | rut
+      // Format: nombre | teléfono | rut
       const parts = line.split('|').map(s => s.trim())
       console.log('[v0] Line', i, 'parts:', parts)
 
-      const [name, email, phone, rut] = parts
+      const [name, phone, rut] = parts
 
-      if (!name || !email || !phone || !rut) {
-        console.warn('[v0] Line', i, 'missing fields. Got:', { name, email, phone, rut })
+      if (!name || !phone || !rut) {
+        console.warn('[v0] Line', i, 'missing fields. Got:', { name, phone, rut })
         continue
       }
 
+      // Generate email automatically from name
+      const email = generateEmail(name)
+      console.log('[v0] Generated email:', email, 'from name:', name)
+
       parsedUsers.push({
         full_name: name,
-        email: email.toLowerCase(),
+        email: email,
         phone,
         rut,
         role: 'admin_company',
@@ -72,7 +91,7 @@ export function BulkImportForm() {
     const parsed = parseCSV(csvInput)
     console.log('[v0] Parsed result:', parsed)
     if (parsed.length === 0) {
-      setError('No se encontraron usuarios válidos. Formato: nombre | email | teléfono | rut')
+      setError('No se encontraron usuarios válidos. Formato: nombre | teléfono | rut')
       return
     }
 
@@ -145,19 +164,25 @@ export function BulkImportForm() {
         <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg space-y-2 text-sm">
           <p className="font-medium">Formato esperado (una línea por usuario):</p>
           <p className="font-mono text-xs text-slate-600 dark:text-slate-400 break-words">
-            Nombre Completo | email@ejemplo.com | +569123456789 | 12345678-9
+            Nombre Completo | +569123456789 | 12345678-9
           </p>
           <p className="text-xs text-slate-600 dark:text-slate-400">
             Separar campos con tubería (|) · Sin encabezados
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-500 italic">
+            El email se genera automáticamente: primera letra del nombre + primer apellido @labbe.cl
           </p>
         </div>
 
         <textarea
           value={csvInput}
           onChange={(e) => setCsvInput(e.target.value)}
-          placeholder="Olga Lydia Carrasco Olivares | olga@ejemplo.com | 569 77664753 | 18877641-8
-Carolina Pílar Sepúlveda Contreras | carolina@ejemplo.com | 569 50067666 | 15464894-8
-Daniela Constanza Silva Rojas | daniela@ejemplo.com | 569 7854072 | 17782246-2"
+          placeholder="Olga Lydia Carrasco Olivares | 569 77664753 | 18877641-8
+Carolina Pílar Sepúlveda Contreras | 569 50067666 | 15464894-8
+Daniela Constanza Silva Rojas | 569 7854072 | 17782246-2
+Farías Muñoz Cecilia Del Carmen | 569 7854708 | 18889892-2
+Katherine Johanna Canales Hernandez | 569 5619734 | 18717311-6
+Diego Andres Gonzalez Valenzuela | 569 7845527 | 28114386-8"
           className="w-full h-32 p-3 border rounded-lg font-mono text-sm bg-white dark:bg-slate-950 dark:border-slate-700"
         />
 
