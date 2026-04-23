@@ -155,10 +155,15 @@ export async function POST(request: NextRequest) {
         })
 
         if (createError) {
-          console.error('[v0] Auth creation error for', userData.email, ':', createError)
+          console.error('[v0] Auth creation error for', userData.email, ':', {
+            code: createError.code,
+            message: createError.message,
+            status: (createError as any).status,
+          })
           result.errors.push({
             email: userData.email,
-            error: createError.message || 'Failed to create auth user'
+            error: createError.message || 'Failed to create auth user',
+            code: createError.code
           })
           continue
         }
@@ -185,10 +190,17 @@ export async function POST(request: NextRequest) {
           .single()
 
         if (profileError) {
-          console.error('[v0] Profile creation error for', userData.email, ':', profileError)
+          console.error('[v0] Profile creation error for', userData.email, ':', {
+            code: profileError.code,
+            message: profileError.message,
+            details: (profileError as any).details,
+            hint: (profileError as any).hint,
+          })
           result.errors.push({
             email: userData.email,
-            error: profileError.message || 'Failed to create profile'
+            error: profileError.message || 'Failed to create profile',
+            code: profileError.code,
+            details: (profileError as any).details
           })
           // Clean up auth user if profile creation fails
           await adminClient.auth.admin.deleteUser(authUser.user.id)
@@ -208,6 +220,9 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[v0] Bulk import complete - Created:', result.created, 'Errors:', result.errors.length)
+    if (result.errors.length > 0) {
+      console.error('[v0] Import errors detail:', JSON.stringify(result.errors, null, 2))
+    }
 
     return NextResponse.json({
       success: true,
