@@ -167,6 +167,21 @@ export async function POST(request: NextRequest) {
     const adminClient = createAdminClient()
     const result: ImportResult = { created: 0, errors: [] }
 
+    // Get company_id for Transportes Labbe
+    console.log('[v0] Fetching Transportes Labbe company ID')
+    const { data: companies, error: companyError } = await adminClient
+      .from('organizations')
+      .select('id')
+      .eq('name', 'Transportes Labbe')
+      .single()
+
+    if (companyError || !companies) {
+      console.warn('[v0] Could not find Transportes Labbe company, using null for company_id')
+    }
+
+    const companyId = companies?.id || null
+    console.log('[v0] Using company_id:', companyId)
+
     for (const userData of users) {
       try {
         // Validate required fields
@@ -193,6 +208,7 @@ export async function POST(request: NextRequest) {
             phone: userData.phone || '',
             rut: userData.rut || '',
             is_active: userData.is_active !== false,
+            company_id: companyId,
           })
           .select()
           .single()

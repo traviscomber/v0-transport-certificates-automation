@@ -144,9 +144,9 @@ export function ImportExecutivesForm() {
         console.warn('[v0] Sync error (non-fatal):', syncErr)
       }
       
-      // Redirect after success
+      // Redirect after success to company users dashboard
       setTimeout(() => {
-        router.push('/admin/usuarios')
+        router.push('/dashboard/company/usuarios')
       }, 2000)
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Error en la importación'
