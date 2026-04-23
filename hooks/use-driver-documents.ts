@@ -50,9 +50,10 @@ export function useDriverDocuments(driverId: string) {
   // Subir documento usando la API unificada
   const uploadDocument = async (tipo: string, nombre: string, file: File) => {
     try {
-      console.log('[v0] Preparing FormData for upload', { tipo, nombre, fileType: file.type, fileSize: file.size })
+      console.log('[v0] Preparing FormData for upload', { driverId, tipo, nombre, fileType: file.type, fileSize: file.size })
       const formData = new FormData()
       formData.append('file', file)
+      formData.append('driverId', driverId)
       formData.append('document_type', tipo)
       formData.append('file_name', nombre)
 
