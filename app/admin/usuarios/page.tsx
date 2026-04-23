@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Button } from '@/components/ui/button'
-import { Plus, Users } from 'lucide-react'
+import { Plus, Upload, Users } from 'lucide-react'
 import Link from 'next/link'
 import { HelpBox } from '@/components/ui/help-box'
 import { UserListClient } from '@/components/admin/user-list-client'
@@ -55,12 +55,20 @@ export default async function UsuariosPage() {
             Crea, edita y elimina usuarios del sistema
           </p>
         </div>
-        <Link href="/admin/usuarios/nuevo">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Nuevo Usuario
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/admin/usuarios/importar">
+            <Button variant="outline">
+              <Upload className="mr-2 h-4 w-4" />
+              Importar en Masa
+            </Button>
+          </Link>
+          <Link href="/admin/usuarios/nuevo">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Nuevo Usuario
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Ayuda Educativa */}
