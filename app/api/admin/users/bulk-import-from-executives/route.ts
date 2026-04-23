@@ -10,7 +10,7 @@ interface BulkUser {
   email: string
   phone: string
   rut: string
-  role: 'admin_company' | 'dispatcher' | 'driver'
+  role: 'admin' | 'dispatcher' | 'driver' | 'mandante' | 'transportista'
   is_active?: boolean
 }
 
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
         email: exec.email_auth || exec.email || '',
         phone: exec.phone || exec.telefono || '',
         rut: exec.rut || '',
-        role: 'admin_company',
+        role: 'admin',
         is_active: exec.login_enabled !== false,
       }
     })
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
             id: userId,
             email: email,
             full_name: userData.full_name,
-            role: userData.role || 'admin_company',
+            role: 'admin',
             phone: userData.phone || '',
             rut: userData.rut || '',
             is_active: userData.is_active !== false,
