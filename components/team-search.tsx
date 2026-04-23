@@ -138,7 +138,7 @@ export function TeamSearch() {
                       <div className="flex items-center gap-2">
                         <MessageCircle className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
                         <a
-                          href={`https://wa.me/56${member.telefono.replace(/\s/g, '').replace('+56', '')}?text=Hola%20${member.nombre_completo.replace(/\s/g, '%20')},%20quería%20comunicarme%20contigo.`}
+                          href={`https://web.whatsapp.com/send/?phone=56${member.telefono.replace(/\s/g, '')}&text=Hola+${member.nombre_completo.replace(/\s/g, '+')},+quer%C3%ADa+comunicarme+contigo.&type=phone_number&app_absent=0`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-slate-300 hover:text-green-500 transition-colors text-xs"
