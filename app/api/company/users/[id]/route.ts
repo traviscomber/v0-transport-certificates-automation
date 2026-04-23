@@ -126,23 +126,57 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 // DELETE - Remove user from company
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const supabase = await createClient()
+    console.log('[v0] DELETE request for user:', params.id)
 
-    console.log('[v0] Deleting user:', params.id)
+    // Use admin client to bypass RLS
+    const adminClient = createAdminClient()
 
-    // Delete profile - no company_id filter since column doesn't exist
-    const { error: profileError } = await supabase
+    // Verify user exists
+    const { data: profile, error: fetchError } = await adminClient
+      .from('profiles')
+      .select('id, email, full_name')
+      .eq('id', params.id)
+      .single()
+
+    if (fetchError || !profile) {
+      console.warn('[v0] User not found:', params.id)
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    console.log('[v0] Found user to delete:', profile.email)
+
+    // Delete profile - using admin client to bypass RLS
+    const { error: profileError } = await adminClient
       .from('profiles')
       .delete()
       .eq('id', params.id)
 
     if (profileError) {
       console.error('[v0] Profile delete error:', profileError)
-      throw profileError
+      return NextResponse.json(
+        { error: 'Failed to delete profile: ' + profileError.message },
+        { status: 400 }
+      )
     }
 
     console.log('[v0] User deleted successfully:', params.id)
-    return NextResponse.json({ success: true, message: 'User removed' })
+    
+    // Verify deletion
+    const { data: verifyDelete } = await adminClient
+      .from('profiles')
+      .select('id')
+      .eq('id', params.id)
+
+    if (verifyDelete && verifyDelete.length > 0) {
+      console.error('[v0] WARNING: User still exists after delete attempt')
+      return NextResponse.json(
+        { error: 'User still exists after deletion - possible constraint issue' },
+        { status: 400 }
+      )
+    }
+
+    console.log('[v0] Deletion verified - user no longer exists')
+    return NextResponse.json({ success: true, message: 'User removed successfully' })
   } catch (error) {
     console.error('[v0] Error deleting user:', error)
     return NextResponse.json(
