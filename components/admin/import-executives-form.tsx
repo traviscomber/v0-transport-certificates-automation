@@ -67,24 +67,60 @@ export function ImportExecutivesForm() {
     setSuccess('')
 
     try {
-      const payload = { users }
-      console.log('[v0] Starting bulk import of', users.length, 'executives')
+      console.log('[v0] Step 1: Creating auth users for', users.length, 'executives')
 
-      const response = await fetch('/api/admin/users/bulk-import-from-executives', {
+      // Step 1: Create auth users first
+      const authPayload = { executives: users.map(u => ({ email: u.email, full_name: u.full_name })) }
+      const authResponse = await fetch('/api/admin/create-executives-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(authPayload),
       })
 
-      console.log('[v0] Response status:', response.status)
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error('[v0] Error response:', errorData)
-        throw new Error(errorData.error || `Error ${response.status}`)
+      if (!authResponse.ok) {
+        const authError = await authResponse.json()
+        console.error('[v0] Auth creation failed:', authError)
+        throw new Error(`Auth creation error: ${authError.error}`)
       }
 
-      const data = await response.json()
+      const authData = await authResponse.json()
+      console.log('[v0] Auth users created:', authData.summary)
+
+      // Build mapping of email to user_id for successful creations
+      const userIdMap = new Map()
+      authData.results.forEach((result: any) => {
+        if (result.success && result.user_id) {
+          userIdMap.set(result.email, result.user_id)
+        }
+      })
+
+      console.log('[v0] Step 2: Creating profiles for', userIdMap.size, 'users')
+
+      // Step 2: Create profiles with the user IDs
+      const profilePayload = { 
+        users: users
+          .filter(u => userIdMap.has(u.email))
+          .map(u => ({
+            ...u,
+            id: userIdMap.get(u.email)
+          }))
+      }
+
+      const profileResponse = await fetch('/api/admin/users/bulk-import-from-executives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profilePayload),
+      })
+
+      console.log('[v0] Profile response status:', profileResponse.status)
+
+      if (!profileResponse.ok) {
+        const errorData = await profileResponse.json()
+        console.error('[v0] Profile creation error:', errorData)
+        throw new Error(errorData.error || `Error ${profileResponse.status}`)
+      }
+
+      const data = await profileResponse.json()
       console.log('[v0] Import response:', data)
       
       setImportResults(data.result)

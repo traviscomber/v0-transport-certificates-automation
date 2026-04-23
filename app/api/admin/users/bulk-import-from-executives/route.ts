@@ -12,6 +12,7 @@ interface BulkUser {
   rut: string
   role: 'admin' | 'dispatcher' | 'driver' | 'mandante' | 'transportista'
   is_active?: boolean
+  id?: string  // Optional: user ID from auth.users if pre-created
 }
 
 interface ImportResult {
@@ -176,11 +177,16 @@ export async function POST(request: NextRequest) {
         const email = userData.email.toLowerCase().trim()
         console.log('[v0] Processing user:', email)
 
-        // Insert into profiles table - let the database generate the ID or use email as reference
+        // Use provided ID if available (from pre-created auth users), otherwise use UUID
+        const userId = userData.id || randomUUID()
+        console.log('[v0] Using user ID:', userId, '- from auth:', !!userData.id)
+
+        // Insert into profiles table with the user ID
         console.log('[v0] Inserting into profiles table for', email)
         const { data: newProfile, error: profileError } = await adminClient
           .from('profiles')
           .insert({
+            id: userId,
             email: email,
             full_name: userData.full_name,
             role: 'admin',
