@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { randomUUID } from 'crypto'
 
 interface BulkUser {
   full_name: string
@@ -146,8 +147,8 @@ export async function POST(request: NextRequest) {
         const email = userData.email.toLowerCase().trim()
         console.log('[v0] Processing user:', email)
 
-        // Generate a UUID for the user ID (since we can't create auth users)
-        const userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        // Generate a proper UUID for the user ID
+        const userId = randomUUID()
         console.log('[v0] Generated user ID:', userId)
 
         // Just insert directly into profiles table
