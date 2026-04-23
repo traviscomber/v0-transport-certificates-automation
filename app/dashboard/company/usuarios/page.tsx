@@ -5,6 +5,7 @@ import { Plus, Download } from 'lucide-react'
 import Link from 'next/link'
 import { HelpBox } from '@/components/ui/help-box'
 import { UserListClient } from '@/components/admin/user-list-client'
+import { InsertarUsuariosButton } from '@/components/admin/insertar-usuarios-button'
 
 async function getCompanyUsers() {
   const cookieStore = await cookies()
@@ -54,6 +55,7 @@ export default async function CompanyUsuariosPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <InsertarUsuariosButton />
           <Link href="/dashboard/company/usuarios/importar-ejecutivos">
             <Button variant="outline">
               <Download className="mr-2 h-4 w-4" />
