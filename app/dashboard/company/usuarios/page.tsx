@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { HelpBox } from '@/components/ui/help-box'
 import { InsertarUsuariosButton } from '@/components/admin/insertar-usuarios-button'
 import { CleanupProfilesButton } from '@/components/admin/cleanup-profiles-button'
+import { CleanAllUsersButton } from '@/components/admin/clean-all-users-button'
 import { UsuariosListWithSync } from '@/components/admin/usuarios-list-sync'
 
 async function getCompanyUsers() {
@@ -67,6 +68,8 @@ export default async function CompanyUsuariosPage() {
       />
 
       <CleanupProfilesButton />
+
+      <CleanAllUsersButton />
 
       <UsuariosListWithSync initialUsers={users} />
     </div>
