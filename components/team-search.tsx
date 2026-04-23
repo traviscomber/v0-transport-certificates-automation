@@ -12,7 +12,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Search, Phone } from 'lucide-react'
+import { Search, Phone, Mail } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { allTeamMembers } from '@/lib/data/team-members'
 
@@ -28,7 +28,8 @@ export function TeamSearch() {
         member.nombre_completo.toLowerCase().includes(query) ||
         member.rut.toLowerCase().includes(query) ||
         member.cargo.toLowerCase().includes(query) ||
-        member.telefono.includes(query)
+        member.telefono.includes(query) ||
+        member.email.toLowerCase().includes(query)
     )
   }, [searchQuery])
 
@@ -82,7 +83,7 @@ export function TeamSearch() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
               <input
                 type="text"
-                placeholder="Buscar por nombre, RUT, cargo o teléfono..."
+                placeholder="Buscar por nombre, RUT, email, cargo o teléfono..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
@@ -120,6 +121,17 @@ export function TeamSearch() {
                       <div className="flex items-start gap-2">
                         <span className="text-slate-500 text-xs mt-0.5">RUT:</span>
                         <span className="text-slate-300 font-mono text-xs">{member.rut}</span>
+                      </div>
+
+                      {/* Email */}
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                        <a
+                          href={`mailto:${member.email}`}
+                          className="text-slate-300 hover:text-orange-500 transition-colors text-xs"
+                        >
+                          {member.email}
+                        </a>
                       </div>
 
                       {/* Phone */}
