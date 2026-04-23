@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Plus, Download } from 'lucide-react'
 import Link from 'next/link'
@@ -8,25 +7,16 @@ import { CleanupProfilesButton } from '@/components/admin/cleanup-profiles-butto
 import { CleanAllUsersButton } from '@/components/admin/clean-all-users-button'
 import { UsuariosListWithSync } from '@/components/admin/usuarios-list-sync'
 
-async function getCompanyUsers() {
-  const supabase = await createClient()
-  
-  const { data: users } = await supabase
-    .from('profiles')
-    .select('*')
-    .order('full_name', { ascending: true })
-
-  return users || []
-}
-
 export const metadata = {
   title: 'Gestión de Usuarios - Mi Empresa',
   description: 'Administra los usuarios de tu empresa',
 }
 
-export default async function CompanyUsuariosPage() {
-  const users = await getCompanyUsers()
+// Disable static generation - always fetch fresh
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
+export default function CompanyUsuariosPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -71,7 +61,7 @@ export default async function CompanyUsuariosPage() {
 
       <CleanAllUsersButton />
 
-      <UsuariosListWithSync initialUsers={users} />
+      <UsuariosListWithSync initialUsers={[]} />
     </div>
   )
 }
