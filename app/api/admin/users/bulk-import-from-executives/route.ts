@@ -143,80 +143,45 @@ export async function POST(request: NextRequest) {
           throw new Error('Missing required fields: full_name and email')
         }
 
-        console.log('[v0] Creating user:', userData.email)
+        const email = userData.email.toLowerCase().trim()
+        console.log('[v0] Processing user:', email)
 
-        // Create auth user with temporary password
-        const tempPassword = Math.random().toString(36).slice(-12)
+        // Generate a UUID for the user ID (since we can't create auth users)
+        const userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        console.log('[v0] Generated user ID:', userId)
 
-        console.log('[v0] Calling adminClient.auth.admin.createUser for', userData.email)
-
-        const { data: authUser, error: createError } = await adminClient.auth.admin.createUser({
-          email: userData.email.toLowerCase().trim(),
-          password: tempPassword,
-          email_confirm: true,
-          user_metadata: {
+        // Just insert directly into profiles table
+        console.log('[v0] Inserting into profiles table for', email)
+        const { data: newProfile, error: profileError } = await adminClient
+          .from('profiles')
+          .insert({
+            id: userId,
+            email: email,
             full_name: userData.full_name,
+            role: userData.role || 'admin_company',
             phone: userData.phone || '',
             rut: userData.rut || '',
-            role: userData.role || 'admin_company',
-          }
-        })
+            is_active: userData.is_active !== false,
+          })
+          .select()
+          .single()
 
-        console.log('[v0] adminClient response:', { 
-          user_id: authUser?.user?.id,
-          error: createError ? { code: createError.code, message: createError.message } : null
-        })
-
-        if (createError) {
-          console.error('[v0] Auth creation error for', userData.email, ':', {
-            code: createError.code,
-            message: createError.message,
-            status: (createError as any).status,
+        if (profileError) {
+          console.error('[v0] Profile insert error for', email, ':', {
+            code: profileError.code,
+            message: profileError.message,
+            details: (profileError as any).details,
+            hint: (profileError as any).hint,
           })
           result.errors.push({
-            email: userData.email,
-            error: createError.message || 'Failed to create auth user',
-            code: createError.code
+            email: email,
+            error: `${profileError.code}: ${profileError.message}`
           })
           continue
         }
 
-        if (!authUser.user) {
-          console.error('[v0] No auth user returned for', userData.email)
-          throw new Error('No auth user returned')
-        }
-
-        console.log('[v0] Auth user created successfully:', authUser.user.id, 'for', userData.email)
+        console.log('[v0] Profile created successfully:', userId, 'for', email)
         result.created++
-
-        // Try to create profile, but don't fail if it errors (might be due to RLS)
-        try {
-          console.log('[v0] Attempting to create profile for', authUser.user.id)
-          const { data: newProfile, error: profileError } = await adminClient
-            .from('profiles')
-            .insert({
-              id: authUser.user.id,
-              email: userData.email.toLowerCase().trim(),
-              full_name: userData.full_name,
-              role: userData.role || 'admin_company',
-              phone: userData.phone || '',
-              rut: userData.rut || '',
-              is_active: userData.is_active !== false,
-            })
-            .select()
-            .single()
-
-          if (profileError) {
-            console.warn('[v0] Profile creation warning for', userData.email, '(non-fatal):', {
-              code: profileError.code,
-              message: profileError.message,
-            })
-          } else {
-            console.log('[v0] Profile created successfully:', authUser.user.id)
-          }
-        } catch (profileErr) {
-          console.warn('[v0] Profile creation skipped (non-fatal):', profileErr instanceof Error ? profileErr.message : String(profileErr))
-        }
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Unknown error'
         console.error('[v0] Error processing user', userData.email, ':', errorMsg)
