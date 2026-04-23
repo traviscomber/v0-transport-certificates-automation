@@ -129,8 +129,8 @@ export async function POST(request: NextRequest) {
         const email = userData.email.toLowerCase().trim()
         const rut = userData.rut.trim()
         
-        // Generate password as "labbe+RUT" (e.g., "labbe+78376780-5")
-        const password = `labbe+${rut}`
+        // Password is just the RUT (e.g., "78.376.780-5")
+        const password = rut
         
         console.log('[v0] Processing user:', email, 'with RUT:', rut)
 

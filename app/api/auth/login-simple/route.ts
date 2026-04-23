@@ -9,20 +9,18 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { rut, password } = body
 
-    if (!rut || !password) {
+    if (!rut) {
       return NextResponse.json(
-        { error: 'RUT y contraseña requeridos' },
+        { error: 'RUT requerido' },
         { status: 400 }
       )
     }
 
     console.log('[v0] Login attempt with RUT:', rut)
 
-    // Validate password format: should be "labbe+RUT"
-    const expectedPassword = `labbe+${rut}`
-    
-    if (password !== expectedPassword) {
-      console.log('[v0] Password mismatch - expected labbe+RUT format')
+    // Password should be the RUT itself
+    if (password !== rut) {
+      console.log('[v0] Password mismatch - expected RUT as password')
       return NextResponse.json(
         { error: 'RUT o contraseña incorrectos' },
         { status: 401 }

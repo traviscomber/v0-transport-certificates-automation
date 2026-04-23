@@ -54,14 +54,12 @@ export default function CompanyLoginPage() {
     setError(null)
 
     try {
-      // Use RUT as both username and password (password is "labbe+RUT")
-      const password = `labbe+${rut}`
-      
+      // Use RUT as both username and password
       console.log('[v0] Sending login request with RUT')
       const response = await fetch('/api/auth/login-simple', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rut, password }),
+        body: JSON.stringify({ rut, password: rut }),
       })
 
       let data
