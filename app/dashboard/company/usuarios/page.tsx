@@ -16,10 +16,21 @@ async function getCompanyUsers() {
 
   const supabase = await createClient()
   
+  // Get the organization ID for this company
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('id')
+    .eq('id', companyId)
+    .single()
+
+  if (!org) {
+    return []
+  }
+
   const { data: users } = await supabase
     .from('profiles')
     .select('*')
-    .eq('company_id', companyId)
+    .eq('organization_id', org.id)
     .order('full_name', { ascending: true })
 
   return users || []

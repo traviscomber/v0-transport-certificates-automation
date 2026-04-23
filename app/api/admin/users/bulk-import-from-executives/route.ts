@@ -119,6 +119,21 @@ export async function POST(request: NextRequest) {
     const adminClient = createAdminClient()
     const result: ImportResult = { created: 0, errors: [] }
 
+    // Get Transportes Labbe organization ID
+    console.log('[v0] Fetching Transportes Labbe organization ID')
+    const { data: orgData, error: orgError } = await adminClient
+      .from('organizations')
+      .select('id')
+      .eq('name', 'Transportes Labbe')
+      .single()
+
+    if (orgError || !orgData) {
+      console.warn('[v0] Could not find Transportes Labbe organization')
+    }
+
+    const organizationId = orgData?.id || null
+    console.log('[v0] Using organization_id:', organizationId)
+
     // Create auth users and profiles in the database
     for (const userData of users) {
       try {
@@ -168,7 +183,7 @@ export async function POST(request: NextRequest) {
             phone: userData.phone || '',
             rut: rut,
             is_active: true,
-            company_id: 'labbe', // Assign to Transportes Labbe company
+            organization_id: organizationId, // Assign to Transportes Labbe organization
           })
           .select()
           .single()
@@ -187,7 +202,7 @@ export async function POST(request: NextRequest) {
                 rut: rut,
                 role: 'admin',
                 is_active: true,
-                company_id: 'labbe',
+                organization_id: organizationId,
               })
               .eq('email', email)
             
