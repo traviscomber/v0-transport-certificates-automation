@@ -17,6 +17,25 @@ export async function POST(request: NextRequest) {
     const created = []
     const errors = []
 
+    // Get Transportes Labbe organization ID
+    console.log('[v0] Fetching Transportes Labbe organization')
+    const { data: org, error: orgError } = await adminClient
+      .from('organizations')
+      .select('id')
+      .eq('name', 'Transportes Labbe')
+      .single()
+
+    if (orgError || !org) {
+      console.error('[v0] Could not find Transportes Labbe organization')
+      return NextResponse.json(
+        { error: 'Transportes Labbe organization not found' },
+        { status: 400 }
+      )
+    }
+
+    const organizationId = org.id
+    console.log('[v0] Using organization_id:', organizationId)
+
     // Step 1: Create auth users first, then profiles
     for (const userData of users) {
       try {
@@ -63,6 +82,7 @@ export async function POST(request: NextRequest) {
             rut: rut,
             phone: userData.phone || '',
             is_active: true,
+            organization_id: organizationId,
           })
           .select()
           .single()
