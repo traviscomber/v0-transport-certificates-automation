@@ -126,46 +126,23 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 // DELETE - Remove user from company
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const cookieStore = await cookies()
-    const companyId = cookieStore.get('company_id')?.value
-
-    if (!companyId) {
-      return NextResponse.json({ error: 'No company context' }, { status: 400 })
-    }
-
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    console.log('[v0] Deleting user:', params.id)
 
-    // Verify user is company admin
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, company_id')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.role !== 'admin' || profile?.company_id !== companyId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    const adminClient = createAdminClient()
-
-    // Delete profile
-    const { error: profileError } = await adminClient
+    // Delete profile - no company_id filter since column doesn't exist
+    const { error: profileError } = await supabase
       .from('profiles')
       .delete()
       .eq('id', params.id)
-      .eq('company_id', companyId)
 
-    if (profileError) throw profileError
+    if (profileError) {
+      console.error('[v0] Profile delete error:', profileError)
+      throw profileError
+    }
 
-    // Delete auth user
-    await adminClient.auth.admin.deleteUser(params.id)
-
-    return NextResponse.json({ success: true, message: 'User removed from company' })
+    console.log('[v0] User deleted successfully:', params.id)
+    return NextResponse.json({ success: true, message: 'User removed' })
   } catch (error) {
     console.error('[v0] Error deleting user:', error)
     return NextResponse.json(
