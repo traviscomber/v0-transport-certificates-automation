@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { HelpBox } from '@/components/ui/help-box'
 import { UserListClient } from '@/components/admin/user-list-client'
 import { InsertarUsuariosButton } from '@/components/admin/insertar-usuarios-button'
+import { CleanupProfilesButton } from '@/components/admin/cleanup-profiles-button'
 
 async function getCompanyUsers() {
   const supabase = await createClient()
@@ -66,6 +67,8 @@ export default async function CompanyUsuariosPage() {
           "Los usuarios recibirán un email para confirmar su cuenta"
         ]}
       />
+
+      <CleanupProfilesButton />
 
       <UserListClient users={users} isCompanyContext={true} />
     </div>
