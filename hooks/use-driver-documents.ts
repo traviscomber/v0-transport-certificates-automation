@@ -14,19 +14,31 @@ export function useDriverDocuments(driverId: string) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Cargar documentos
+  // Cargar documentos usando la API unificada
   const fetchDocuments = async () => {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch(`/api/documents/${driverId}`)
+      console.log('[v0] Fetching driver documents from unified API:', driverId)
+      const response = await fetch(`/api/company/documents/drivers/${driverId}`)
       const result = await response.json()
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to fetch documents')
       }
 
-      setDocuments(result.data || [])
+      // Transformar respuesta de la API unificada
+      const transformedDocs = (result.documents || []).map((doc: any) => ({
+        id: doc.id,
+        driver_id: driverId,
+        tipo: doc.document_type || 'Documento',
+        nombre: doc.file_name || '',
+        estado: doc.verification_status || 'pendiente',
+        fecha_subida: doc.upload_date || new Date().toISOString(),
+      }))
+
+      console.log('[v0] Documents loaded:', transformedDocs.length)
+      setDocuments(transformedDocs)
     } catch (err) {
       console.error('[v0] Error fetching documents:', err)
       setError(err instanceof Error ? err.message : 'Unknown error')
@@ -35,18 +47,17 @@ export function useDriverDocuments(driverId: string) {
     }
   }
 
-  // Subir documento
+  // Subir documento usando la API unificada
   const uploadDocument = async (tipo: string, nombre: string, file: File) => {
     try {
       console.log('[v0] Preparing FormData for upload', { tipo, nombre, fileType: file.type, fileSize: file.size })
       const formData = new FormData()
-      formData.append('driverId', driverId)
-      formData.append('tipo', tipo)
-      formData.append('nombre', nombre)
       formData.append('file', file)
+      formData.append('document_type', tipo)
+      formData.append('file_name', nombre)
 
-      console.log('[v0] Sending upload request to /api/documents/upload')
-      const response = await fetch('/api/documents/upload', {
+      console.log('[v0] Sending upload request to /api/company/documents/drivers/upload')
+      const response = await fetch('/api/company/documents/drivers/upload', {
         method: 'POST',
         body: formData,
       })
@@ -60,10 +71,10 @@ export function useDriverDocuments(driverId: string) {
         throw new Error(errorMsg)
       }
 
-      console.log('[v0] Document uploaded successfully:', result.data)
-      // Recargar documentos
+      console.log('[v0] Document uploaded successfully:', result.document?.id)
+      // Recargar documentos desde API (single source of truth)
       await fetchDocuments()
-      return result.data
+      return result.document
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Error desconocido'
       console.error('[v0] Error uploading document:', errorMsg)
