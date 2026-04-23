@@ -225,15 +225,16 @@ export async function POST(request: NextRequest) {
         let profileError: any = null
         let newProfile: any = null
         
-        // Try the insert
-        const insertResult = await adminClient
+        // Try upsert: insert or update if email already exists
+        console.log('[v0] Attempting upsert for email:', email)
+        const upsertResult = await adminClient
           .from('profiles')
-          .insert(insertData)
+          .upsert([insertData], { onConflict: 'email' })
           .select()
           .single()
         
-        profileError = insertResult.error
-        newProfile = insertResult.data
+        profileError = upsertResult.error
+        newProfile = upsertResult.data
         
         // If error is about organization_id column not existing, try without it
         if (profileError && profileError.message && profileError.message.includes('organization_id')) {
@@ -242,7 +243,7 @@ export async function POST(request: NextRequest) {
           
           const retryResult = await adminClient
             .from('profiles')
-            .insert(insertData)
+            .upsert([insertData], { onConflict: 'email' })
             .select()
             .single()
           
@@ -251,7 +252,7 @@ export async function POST(request: NextRequest) {
         }
 
         if (profileError) {
-          console.error('[v0] Profile insert error for', email, ':', {
+          console.error('[v0] Profile upsert error for', email, ':', {
             code: profileError.code,
             message: profileError.message,
             details: (profileError as any).details,
