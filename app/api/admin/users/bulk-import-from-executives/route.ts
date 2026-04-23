@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
           console.warn('[v0] Auth user creation issue:', authError.message)
           // Continue - we'll still create the profile even if auth user creation has issues
         } else if (authData?.user?.id) {
-          authUserId = authData.user.id
+          authUserId = authData.user.id as string
           console.log('[v0] Auth user created with ID:', authUserId)
         }
 
