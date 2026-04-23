@@ -67,6 +67,19 @@ export function ImportExecutivesForm() {
     setSuccess('')
 
     try {
+      console.log('[v0] Step 0: Getting current company_id')
+      
+      // Step 0: Get the current company_id from cookies
+      const companyIdResponse = await fetch('/api/admin/users/get-company-id')
+      const companyIdData = await companyIdResponse.json()
+      const companyId = companyIdData.company_id
+      
+      console.log('[v0] Using company_id:', companyId)
+      
+      if (!companyId) {
+        throw new Error('No company_id found - please log in to your company first')
+      }
+
       console.log('[v0] Step 1: Creating auth users for', users.length, 'executives')
 
       // Step 1: Create auth users first
@@ -96,8 +109,9 @@ export function ImportExecutivesForm() {
 
       console.log('[v0] Step 2: Creating profiles for', userIdMap.size, 'users')
 
-      // Step 2: Create profiles with the user IDs
+      // Step 2: Create profiles with the user IDs and company_id
       const profilePayload = { 
+        company_id: companyId,
         users: users
           .filter(u => userIdMap.has(u.email))
           .map(u => ({

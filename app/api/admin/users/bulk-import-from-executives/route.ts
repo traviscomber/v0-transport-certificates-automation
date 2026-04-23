@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
     console.log('[v0] POST /api/admin/users/bulk-import-from-executives - Starting import')
 
     const body = await request.json()
-    const { users } = body as { users: BulkUser[] }
+    const { users, company_id } = body as { users: BulkUser[], company_id?: string }
 
     if (!Array.isArray(users) || users.length === 0) {
       console.error('[v0] Invalid users array received')
@@ -163,24 +163,30 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[v0] Processing', users.length, 'users for bulk import')
+    console.log('[v0] Using company_id from request:', company_id)
 
     const adminClient = createAdminClient()
     const result: ImportResult = { created: 0, errors: [] }
 
-    // Get company_id for Transportes Labbe
-    console.log('[v0] Fetching Transportes Labbe company ID')
-    const { data: companies, error: companyError } = await adminClient
-      .from('organizations')
-      .select('id')
-      .eq('name', 'Transportes Labbe')
-      .single()
+    // Use company_id from request, or fall back to looking it up
+    let companyId = company_id
+    
+    if (!companyId) {
+      console.log('[v0] No company_id provided, fetching Transportes Labbe company ID')
+      const { data: companies, error: companyError } = await adminClient
+        .from('organizations')
+        .select('id')
+        .eq('name', 'Transportes Labbe')
+        .single()
 
-    if (companyError || !companies) {
-      console.warn('[v0] Could not find Transportes Labbe company, using null for company_id')
+      if (companyError || !companies) {
+        console.warn('[v0] Could not find Transportes Labbe company, using null for company_id')
+      }
+
+      companyId = companies?.id || null
     }
-
-    const companyId = companies?.id || null
-    console.log('[v0] Using company_id:', companyId)
+    
+    console.log('[v0] Final company_id to use:', companyId)
 
     for (const userData of users) {
       try {
