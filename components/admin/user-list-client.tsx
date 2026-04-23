@@ -22,11 +22,13 @@ interface UserListClientProps {
   onDelete?: (userId: string) => Promise<void>
 }
 
-export function UserListClient({ users, isCompanyContext = false, onDelete }: UserListClientProps) {
+export function UserListClient({ users: initialUsers, isCompanyContext = false, onDelete }: UserListClientProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [users, setUsers] = useState<User[]>(initialUsers)
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
@@ -47,6 +49,8 @@ export function UserListClient({ users, isCompanyContext = false, onDelete }: Us
     if (!window.confirm('¿Estás seguro de que quieres eliminar este usuario?')) return
 
     setDeleting(userId)
+    setMessage(null)
+    
     try {
       if (onDelete) {
         await onDelete(userId)
@@ -55,13 +59,23 @@ export function UserListClient({ users, isCompanyContext = false, onDelete }: Us
         const response = await fetch(endpoint, { method: 'DELETE' })
         
         if (!response.ok) {
-          throw new Error('Failed to delete user')
+          const data = await response.json()
+          throw new Error(data.error || 'Failed to delete user')
         }
 
-        window.location.reload()
+        // Remove user from local state immediately
+        setUsers(users.filter(u => u.id !== userId))
+        setMessage({ type: 'success', text: 'Usuario eliminado correctamente' })
+        
+        // Reload page after 1.5 seconds to sync
+        setTimeout(() => {
+          window.location.reload()
+        }, 1500)
       }
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Error al eliminar usuario')
+      const errorMsg = error instanceof Error ? error.message : 'Error al eliminar usuario'
+      setMessage({ type: 'error', text: errorMsg })
+      console.error('[v0] Delete error:', error)
     } finally {
       setDeleting(null)
     }
@@ -71,6 +85,20 @@ export function UserListClient({ users, isCompanyContext = false, onDelete }: Us
 
   return (
     <div className="space-y-6">
+      {/* Message */}
+      {message && (
+        <Card className={message.type === 'success' ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
+          <CardContent className="pt-6">
+            <div className="flex gap-2">
+              <AlertCircle className={`h-5 w-5 flex-shrink-0 ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`} />
+              <p className={message.type === 'success' ? 'text-green-800' : 'text-red-800'}>
+                {message.text}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Filters */}
       <Card>
         <CardContent className="pt-6 space-y-4">
