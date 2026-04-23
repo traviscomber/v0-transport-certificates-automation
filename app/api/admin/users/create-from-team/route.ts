@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
           email_confirm: true,
         })
 
-        let userId = randomUUID()
+        let userId: string = randomUUID()
         if (authUser?.user?.id) {
           userId = authUser.user.id
           console.log('[v0] Auth user created with ID:', userId)
