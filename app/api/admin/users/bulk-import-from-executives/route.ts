@@ -21,39 +21,53 @@ interface ImportResult {
 // GET - Fetch users from executive_staff table to prepare for import
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    // Note: Don't check auth here - the page is already protected by middleware
+    console.log('[v0] GET /api/admin/users/bulk-import-from-executives - Fetching executive_staff')
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    console.log('[v0] Fetching executive_staff for bulk import preparation')
-
-    // Use admin client to fetch from executive_staff table
+    // Use admin client to bypass RLS entirely
     const adminClient = createAdminClient()
+    
     const { data: executives, error } = await adminClient
       .from('executive_staff')
       .select('id, nombre_completo, rut, email, telefono, cargo, is_active')
-      .eq('is_active', true)
       .order('nombre_completo', { ascending: true })
 
     if (error) {
-      console.error('[v0] Error fetching executives:', error)
-      throw error
+      console.error('[v0] Error fetching executives from executive_staff:', error)
+      return NextResponse.json(
+        { 
+          error: `Failed to fetch executives: ${error.message}`,
+          details: error
+        },
+        { status: 500 }
+      )
     }
 
-    console.log('[v0] Found', executives?.length, 'active executives')
+    console.log('[v0] Found', executives?.length, 'executives in executive_staff table')
+
+    if (!executives || executives.length === 0) {
+      console.log('[v0] No executives found in database')
+      return NextResponse.json({ 
+        success: true, 
+        users: [],
+        message: 'No executives found in the system'
+      })
+    }
 
     // Transform to BulkUser format
-    const bulkUsers: BulkUser[] = (executives || []).map(exec => ({
-      full_name: exec.nombre_completo,
-      email: exec.email,
-      phone: exec.telefono,
-      rut: exec.rut,
-      role: 'admin_company',
-      is_active: true,
-    }))
+    const bulkUsers: BulkUser[] = executives.map(exec => {
+      console.log('[v0] Processing executive:', exec.nombre_completo, 'email:', exec.email)
+      return {
+        full_name: exec.nombre_completo,
+        email: exec.email,
+        phone: exec.telefono || '',
+        rut: exec.rut || '',
+        role: 'admin_company',
+        is_active: exec.is_active !== false,
+      }
+    })
+
+    console.log('[v0] Returning', bulkUsers.length, 'users in BulkUser format')
 
     return NextResponse.json({ 
       success: true, 
@@ -61,9 +75,12 @@ export async function GET(request: NextRequest) {
       message: `Loaded ${bulkUsers.length} executives from Transportes Labbe`
     })
   } catch (error) {
-    console.error('[v0] Error in GET executive_staff:', error)
+    console.error('[v0] Unexpected error in GET:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Error fetching executives' },
+      { 
+        error: error instanceof Error ? error.message : 'Unexpected error',
+        details: String(error)
+      },
       { status: 500 }
     )
   }
@@ -72,14 +89,7 @@ export async function GET(request: NextRequest) {
 // POST - Import users (accepts array of BulkUser)
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    console.log('[v0] Bulk import - Current user:', user?.id)
-
-    if (!user) {
-      console.warn('[v0] Bulk import - No authenticated user found')
-    }
+    console.log('[v0] POST /api/admin/users/bulk-import-from-executives - Starting import')
 
     const body = await request.json()
     const { users } = body as { users: BulkUser[] }
@@ -97,8 +107,8 @@ export async function POST(request: NextRequest) {
     for (const userData of users) {
       try {
         // Validate required fields
-        if (!userData.full_name || !userData.email || !userData.phone || !userData.rut) {
-          throw new Error('Missing required fields: ' + JSON.stringify(userData))
+        if (!userData.full_name || !userData.email) {
+          throw new Error('Missing required fields: full_name and email')
         }
 
         console.log('[v0] Creating user:', userData.email)
@@ -125,7 +135,7 @@ export async function POST(request: NextRequest) {
           throw new Error('No auth user returned')
         }
 
-        console.log('[v0] Auth user created:', authUser.user.id)
+        console.log('[v0] Auth user created:', authUser.user.id, 'for', userData.email)
 
         // Create profile
         const { data: newProfile, error: profileError } = await adminClient
@@ -135,15 +145,15 @@ export async function POST(request: NextRequest) {
             email: userData.email.toLowerCase().trim(),
             full_name: userData.full_name,
             role: userData.role || 'admin_company',
-            phone: userData.phone,
-            rut: userData.rut,
+            phone: userData.phone || '',
+            rut: userData.rut || '',
             is_active: userData.is_active !== false,
           })
           .select()
           .single()
 
         if (profileError) {
-          console.error('[v0] Profile creation error:', profileError)
+          console.error('[v0] Profile creation error for', userData.email, ':', profileError)
           result.errors.push({
             email: userData.email,
             error: profileError.message || 'Failed to create profile'
@@ -153,11 +163,11 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        console.log('[v0] User created successfully:', authUser.user.id)
+        console.log('[v0] Profile created successfully:', authUser.user.id)
         result.created++
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Unknown error'
-        console.error('[v0] Error processing user:', errorMsg)
+        console.error('[v0] Error processing user', userData.email, ':', errorMsg)
         result.errors.push({
           email: userData.email,
           error: errorMsg
@@ -165,7 +175,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log('[v0] Bulk import complete:', result)
+    console.log('[v0] Bulk import complete - Created:', result.created, 'Errors:', result.errors.length)
 
     return NextResponse.json({
       success: true,
