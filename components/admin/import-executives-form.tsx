@@ -97,17 +97,27 @@ export function ImportExecutivesForm({ forceLabbe = false }: { forceLabbe?: bool
       }
 
       const authData = await authResponse.json()
-      console.log('[v0] Auth users created:', authData.summary)
+      console.log('[v0] Auth users created:', authData)
+      console.log('[v0] Auth response structure:', { 
+        summary: authData.summary,
+        results: authData.results,
+        resultsType: typeof authData.results,
+        resultsLength: Array.isArray(authData.results) ? authData.results.length : 'not an array'
+      })
 
       // Build mapping of email to user_id for successful creations
       const userIdMap = new Map()
-      authData.results.forEach((result: any) => {
-        if (result.success && result.user_id) {
-          userIdMap.set(result.email, result.user_id)
-        }
-      })
+      if (Array.isArray(authData.results)) {
+        authData.results.forEach((result: any) => {
+          if (result.success && result.user_id) {
+            userIdMap.set(result.email, result.user_id)
+          }
+        })
+      } else {
+        console.warn('[v0] authData.results is not an array:', authData.results)
+      }
 
-      console.log('[v0] Step 2: Creating profiles for', userIdMap.size, 'users')
+      console.log('[v0] Step 2: Creating profiles for', userIdMap.size, 'users from', users.length, 'original users')
 
       // Step 2: Create profiles with the user IDs and company_id
       const profilePayload = { 
@@ -119,6 +129,12 @@ export function ImportExecutivesForm({ forceLabbe = false }: { forceLabbe?: bool
             id: userIdMap.get(u.email)
           }))
       }
+      
+      console.log('[v0] Profile payload:', {
+        company_id: profilePayload.company_id,
+        userCount: profilePayload.users.length,
+        users: profilePayload.users.map(u => ({ email: u.email, id: u.id }))
+      })
 
       const profileResponse = await fetch('/api/admin/users/bulk-import-from-executives', {
         method: 'POST',
