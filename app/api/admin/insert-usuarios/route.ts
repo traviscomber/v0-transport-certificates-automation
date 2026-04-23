@@ -8,20 +8,28 @@ export async function GET() {
 
     const adminClient = createAdminClient()
 
-    // Get Transportes Labbe organization ID
-    const { data: org, error: orgError } = await adminClient
-      .from('organizations')
-      .select('id')
-      .eq('name', 'Transportes Labbe')
-      .single()
+    console.log('[v0] Fetching all organizations to find Labbe')
+    
+    // Get ALL organizations first to debug
+    const { data: allOrgs } = await adminClient.from('organizations').select('id, name')
+    console.log('[v0] All organizations:', allOrgs)
 
-    if (orgError) {
-      console.warn('[v0] Organization not found by name, trying with ID')
-      // Try with a fixed ID or skip organization_id
+    let organizationId: string | null = null
+    
+    // Try different search patterns
+    if (allOrgs && allOrgs.length > 0) {
+      const labbeOrg = allOrgs.find(o => o.name?.toLowerCase().includes('labbe') || o.name?.toLowerCase().includes('transportes'))
+      if (labbeOrg) {
+        organizationId = labbeOrg.id
+        console.log('[v0] Found organization:', labbeOrg.name, 'ID:', organizationId)
+      } else {
+        // Use first organization as fallback
+        organizationId = allOrgs[0].id
+        console.log('[v0] Using first organization:', allOrgs[0].name, 'ID:', organizationId)
+      }
+    } else {
+      console.warn('[v0] No organizations found')
     }
-
-    const organizationId = org?.id || null
-    console.log('[v0] Organization ID:', organizationId)
 
     // 6 usuarios
     const usuarios = [
