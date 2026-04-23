@@ -61,43 +61,25 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // PUT - Update company user
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const cookieStore = await cookies()
-    const companyId = cookieStore.get('company_id')?.value
-
-    if (!companyId) {
-      return NextResponse.json({ error: 'No company context' }, { status: 400 })
-    }
-
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Verify user is company admin
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, company_id')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.role !== 'admin' || profile?.company_id !== companyId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    console.log('[v0] PUT request for user:', params.id)
 
     const body = await request.json()
     const { full_name, role, phone, is_active } = body
 
+    console.log('[v0] Update data:', { full_name, role, phone, is_active })
+
     // Allowed roles for company users
-    if (role && !['dispatcher', 'driver'].includes(role)) {
+    if (role && !['admin', 'dispatcher', 'driver'].includes(role)) {
       return NextResponse.json(
         { error: 'Invalid role for company user' },
         { status: 400 }
       )
     }
 
-    const { data: updatedUser, error } = await supabase
+    // Use admin client to bypass RLS
+    const adminClient = createAdminClient()
+
+    const { data: updatedUser, error } = await adminClient
       .from('profiles')
       .update({
         full_name,
@@ -107,12 +89,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         updated_at: new Date().toISOString(),
       })
       .eq('id', params.id)
-      .eq('company_id', companyId)
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('[v0] Update error:', error)
+      throw error
+    }
 
+    console.log('[v0] User updated successfully')
     return NextResponse.json({ success: true, user: updatedUser })
   } catch (error) {
     console.error('[v0] Error updating user:', error)

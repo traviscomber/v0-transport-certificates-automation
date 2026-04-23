@@ -10,20 +10,13 @@ interface PageParams {
 }
 
 async function getCompanyUser(id: string) {
-  const cookieStore = await cookies()
-  const companyId = cookieStore.get('company_id')?.value
-
-  if (!companyId) {
-    return null
-  }
-
   const supabase = await createClient()
   
+  // Simply fetch the user by ID - no company_id filter since column doesn't exist
   const { data: user, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', id)
-    .eq('company_id', companyId)
     .single()
 
   if (error || !user) {
