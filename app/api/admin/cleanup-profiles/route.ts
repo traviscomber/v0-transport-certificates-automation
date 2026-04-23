@@ -31,16 +31,47 @@ export async function POST(request: Request) {
     const adminClient = createAdminClient()
 
     if (action === 'delete_non_labbe') {
-      // Delete all profiles that are NOT @labbe.cl
-      const { error } = await adminClient
+      console.log('[v0] Deleting non-labbe profiles')
+      
+      // First, get the IDs of profiles to delete
+      const { data: toDelete, error: fetchError } = await adminClient
         .from('profiles')
-        .delete()
+        .select('id')
         .not('email', 'ilike', '%@labbe.cl%')
         .not('email', 'ilike', '%@transporteslabbe.cl%')
 
-      if (error) {
-        console.error('[v0] Delete error:', error)
-        return NextResponse.json({ error: error.message }, { status: 400 })
+      if (fetchError) {
+        console.error('[v0] Error fetching profiles to delete:', fetchError)
+        return NextResponse.json({ error: fetchError.message }, { status: 400 })
+      }
+
+      console.log('[v0] Found', toDelete?.length, 'profiles to delete')
+
+      if (!toDelete || toDelete.length === 0) {
+        return NextResponse.json({
+          success: true,
+          message: 'No non-labbe profiles found',
+          deleted: 0,
+        })
+      }
+
+      // Delete each profile individually to avoid constraint issues
+      let deletedCount = 0
+      for (const profile of toDelete) {
+        try {
+          const { error: deleteError } = await adminClient
+            .from('profiles')
+            .delete()
+            .eq('id', profile.id)
+
+          if (deleteError) {
+            console.warn('[v0] Could not delete profile', profile.id, ':', deleteError.message)
+          } else {
+            deletedCount++
+          }
+        } catch (err) {
+          console.warn('[v0] Exception deleting profile:', err)
+        }
       }
 
       // Get remaining profiles
@@ -49,11 +80,12 @@ export async function POST(request: Request) {
         .select('id, email, full_name')
         .order('full_name')
 
-      console.log('[v0] Deleted non-labbe profiles. Remaining:', remaining?.length)
+      console.log('[v0] Deleted', deletedCount, 'profiles. Remaining:', remaining?.length)
 
       return NextResponse.json({
         success: true,
-        message: 'Non-labbe profiles deleted',
+        message: `Deleted ${deletedCount} non-labbe profiles`,
+        deleted: deletedCount,
         remaining: remaining || [],
       })
     }
@@ -61,6 +93,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   } catch (err) {
     console.error('[v0] Error:', err)
-    return NextResponse.json({ error: 'Error processing request' }, { status: 500 })
+    const msg = err instanceof Error ? err.message : 'Unknown error'
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
