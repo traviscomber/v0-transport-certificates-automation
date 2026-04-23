@@ -214,7 +214,6 @@ export async function POST(request: NextRequest) {
             phone: userData.phone || '',
             rut: userData.rut || '',
             is_active: userData.is_active !== false,
-            organization_id: companyId,
           })
           .select()
           .single()

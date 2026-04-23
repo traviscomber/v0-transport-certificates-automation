@@ -1,9 +1,11 @@
--- Add organization_id column to profiles table if it doesn't exist
-ALTER TABLE profiles 
-ADD COLUMN IF NOT EXISTS organization_id UUID REFERENCES organizations(id) ON DELETE SET NULL;
-
--- Create index for faster queries
-CREATE INDEX IF NOT EXISTS idx_profiles_organization_id ON profiles(organization_id);
-
--- Add comment to document the column
-COMMENT ON COLUMN profiles.organization_id IS 'Reference to the organization/company this profile belongs to';
+-- Check if organization_id column already exists
+-- If not, add it to the profiles table
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name='profiles' AND column_name='organization_id'
+  ) THEN
+    ALTER TABLE public.profiles ADD COLUMN organization_id UUID;
+  END IF;
+END $$;
