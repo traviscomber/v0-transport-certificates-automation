@@ -23,14 +23,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Obtener driverId del contexto autenticado o del formulario
-    const formDriverId = formData.get('driverId') as string
-    let driverId = formDriverId
-    
+    // Obtener driverRut del formulario
+    const driverRut = formData.get('driverRut') as string
     const documentType = formData.get('document_type') as string || 'Documento'
     const fileName = formData.get('file_name') as string
 
-    console.log('[v0] Driver document upload:', { driverId, documentType, fileCount: files.length, fileName })
+    console.log('[v0] Driver document upload:', { driverRut, documentType, fileCount: files.length, fileName })
+
+    if (!driverRut) {
+      return NextResponse.json(
+        { error: 'Driver RUT required in request body' },
+        { status: 400 }
+      )
+    }
 
     if (!files.length) {
       return NextResponse.json(
@@ -41,31 +46,7 @@ export async function POST(request: NextRequest) {
 
     const adminClient = createAdminClient()
 
-    // Si no viene driverId, intentar obtenerlo del usuario autenticado
-    if (!driverId) {
-      const { data: { user } } = await adminClient.auth.admin.listUsers()
-      // This is a fallback - ideally pass driverId in request
-      return NextResponse.json(
-        { error: 'Driver ID required in request body' },
-        { status: 400 }
-      )
-    }
-
-    // Verify driver exists
-    const { data: driver, error: driverError } = await adminClient
-      .from('profiles')
-      .select('id, email, full_name')
-      .eq('id', driverId)
-      .single()
-
-    if (driverError || !driver) {
-      return NextResponse.json(
-        { error: 'Driver not found' },
-        { status: 404 }
-      )
-    }
-
-    console.log('[v0] Found driver:', driver.full_name)
+    console.log('[v0] Uploading documents for driver RUT:', driverRut)
 
     // Upload each file
     const uploadedDocs = []
@@ -73,7 +54,7 @@ export async function POST(request: NextRequest) {
       // Usar timestamp para evitar duplicados
       const timestamp = Date.now()
       const sanitizedFileName = file.name.replace(/[^a-z0-9._-]/gi, '_').toLowerCase()
-      const filePath = `drivers/${driverId}/${timestamp}_${sanitizedFileName}`
+      const filePath = `drivers/${driverRut}/${timestamp}_${sanitizedFileName}`
 
       console.log('[v0] Uploading to path:', filePath)
 
@@ -82,7 +63,7 @@ export async function POST(request: NextRequest) {
         .from('documents')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false, // Prevenir sobrescrituras
+          upsert: false,
         })
 
       if (uploadError) {
@@ -102,7 +83,7 @@ export async function POST(request: NextRequest) {
       const { data: existingDoc } = await adminClient
         .from('documents')
         .select('id')
-        .eq('driver_id', driverId)
+        .eq('driver_rut', driverRut)
         .eq('file_name', file.name)
         .gte('upload_date', `${today}T00:00:00`)
         .lte('upload_date', `${today}T23:59:59`)
@@ -125,7 +106,7 @@ export async function POST(request: NextRequest) {
           file_size: file.size,
           file_type: file.type,
           document_type: documentType,
-          driver_id: driverId,
+          driver_rut: driverRut,
           storage_path: filePath,
           public_url: publicUrl,
           upload_date: new Date().toISOString(),
@@ -154,7 +135,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: `${uploadedDocs.length} document(s) uploaded successfully`,
-      document: uploadedDocs[0], // Return first for single uploads
+      document: uploadedDocs[0],
       documents: uploadedDocs,
     })
   } catch (error) {

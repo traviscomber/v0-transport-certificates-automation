@@ -2,25 +2,27 @@ import { useState, useEffect } from 'react'
 
 export interface DriverDocument {
   id: string
-  driver_id: string
+  driver_rut: string
   tipo: string
   nombre: string
   estado: 'pendiente' | 'aprobado' | 'rechazado'
   fecha_subida: string
 }
 
-export function useDriverDocuments(driverId: string) {
+export function useDriverDocuments(driverRut: string) {
   const [documents, setDocuments] = useState<DriverDocument[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Cargar documentos usando la API unificada
   const fetchDocuments = async () => {
+    if (!driverRut) return
+    
     setLoading(true)
     setError(null)
     try {
-      console.log('[v0] Fetching driver documents from unified API:', driverId)
-      const response = await fetch(`/api/company/documents/drivers/${driverId}`)
+      console.log('[v0] Fetching driver documents from unified API:', driverRut)
+      const response = await fetch(`/api/company/documents/drivers?rut=${encodeURIComponent(driverRut)}`)
       const result = await response.json()
 
       if (!response.ok) {
@@ -30,7 +32,7 @@ export function useDriverDocuments(driverId: string) {
       // Transformar respuesta de la API unificada
       const transformedDocs = (result.documents || []).map((doc: any) => ({
         id: doc.id,
-        driver_id: driverId,
+        driver_rut: driverRut,
         tipo: doc.document_type || 'Documento',
         nombre: doc.file_name || '',
         estado: doc.verification_status || 'pendiente',
@@ -42,6 +44,7 @@ export function useDriverDocuments(driverId: string) {
     } catch (err) {
       console.error('[v0] Error fetching documents:', err)
       setError(err instanceof Error ? err.message : 'Unknown error')
+      setDocuments([])
     } finally {
       setLoading(false)
     }
@@ -50,10 +53,10 @@ export function useDriverDocuments(driverId: string) {
   // Subir documento usando la API unificada
   const uploadDocument = async (tipo: string, nombre: string, file: File) => {
     try {
-      console.log('[v0] Preparing FormData for upload', { driverId, tipo, nombre, fileType: file.type, fileSize: file.size })
+      console.log('[v0] Preparing FormData for upload', { driverRut, tipo, nombre, fileType: file.type, fileSize: file.size })
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('driverId', driverId)
+      formData.append('driverRut', driverRut)
       formData.append('document_type', tipo)
       formData.append('file_name', nombre)
 
@@ -83,12 +86,12 @@ export function useDriverDocuments(driverId: string) {
     }
   }
 
-  // Cargar documentos al montar o cuando cambia driverId
+  // Cargar documentos al montar o cuando cambia driverRut
   useEffect(() => {
-    if (driverId) {
+    if (driverRut) {
       fetchDocuments()
     }
-  }, [driverId])
+  }, [driverRut])
 
   return {
     documents,

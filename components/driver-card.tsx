@@ -30,7 +30,7 @@ export function DriverCard({
   getDocumentStatusColor,
   getDocumentStatusLabel,
 }: DriverCardProps) {
-  const { documents, loading, uploadDocument } = useDriverDocuments(driver.id)
+  const { documents, loading, uploadDocument } = useDriverDocuments(driver.rut)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [uploadDocType, setUploadDocType] = useState('Licencia de Conducir')
   const [uploadFileName, setUploadFileName] = useState('')
@@ -264,14 +264,14 @@ export function DriverCard({
                   }
                 }}
                 onClick={() => {
-                  const input = document.getElementById(`file-input-${driver.id}`) as HTMLInputElement
+                  const input = document.getElementById(`file-input-${driver.rut}`) as HTMLInputElement
                   input?.click()
                 }}
               >
                 <Upload className="mx-auto h-8 w-8 text-slate-400 mb-2" />
                 <p className="text-sm text-slate-400">Arrastra aquí o haz click para seleccionar archivo</p>
                 <input
-                  id={`file-input-${driver.id}`}
+                  id={`file-input-${driver.rut}`}
                   type="file"
                   className="hidden"
                   onChange={(e) => {
