@@ -18,16 +18,21 @@ export function InsertarUsuariosButton() {
       console.log('[v0] Response status:', response.status)
       console.log('[v0] Response data:', data)
       
-      if (response.ok) {
+      if (response.ok && data.created && data.created.length > 0) {
         setSuccess(true)
         console.log('[v0] Success, reloading in 2 seconds')
         // Recargar la página después de 2 segundos
         setTimeout(() => {
           window.location.reload()
         }, 2000)
+      } else if (data.errors && data.errors.length > 0) {
+        // Show first error in detail
+        const firstError = data.errors[0]
+        setError(`${firstError.rut}: ${firstError.error}`)
+        console.error('[v0] Errors:', data.errors)
       } else {
-        setError(data.error || 'Error desconocido')
-        console.error('[v0] Error from API:', data.error)
+        setError(data.message || 'Error desconocido')
+        console.error('[v0] Error from API:', data)
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error desconocido'
