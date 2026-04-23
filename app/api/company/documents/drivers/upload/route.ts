@@ -73,28 +73,6 @@ export async function POST(request: NextRequest) {
 
       console.log('[v0] File uploaded to storage:', filePath)
 
-      // Get signed URL
-      const { data: { publicUrl } } = adminClient.storage
-        .from('documents')
-        .getPublicUrl(filePath)
-
-      // Verificar que no exista un documento duplicado (mismo nombre + mismo día)
-      const today = new Date().toISOString().split('T')[0]
-      const { data: existingDocs } = await adminClient
-        .from('documents')
-        .select('id')
-        .eq('file_name', file.name)
-        .eq('upload_date', today)
-
-      if (existingDocs && existingDocs.length > 0) {
-        console.log('[v0] Duplicate document found, deleting old version:', existingDocs[0].id)
-        // Eliminar el documento duplicado más antiguo
-        await adminClient
-          .from('documents')
-          .delete()
-          .eq('id', existingDocs[0].id)
-      }
-
       // Save metadata to documents table (only use columns that exist)
       const { data: doc, error: docError } = await adminClient
         .from('documents')
@@ -103,30 +81,40 @@ export async function POST(request: NextRequest) {
           file_size: file.size.toString(),
           file_type: file.type,
           document_type: documentType,
-          upload_date: today, // DATE type (YYYY-MM-DD)
+          // upload_date will use DEFAULT CURRENT_DATE from the schema
         })
         .select()
         .single()
 
-      if (!docError && doc) {
-        // También guardar referencia en transporters table con el RUT del conductor
-        const { error: transporterError } = await adminClient
-          .from('transporters')
-          .insert({
-            document_id: doc.id,
-            rut: driverRut,
-            name: `Documento ${documentType}`,
-          })
-
-        if (transporterError) {
-          console.error('[v0] Error linking transporter:', transporterError)
-        }
-
-        uploadedDocs.push(doc)
-        console.log('[v0] Document saved:', doc.id)
-      } else {
+      if (docError) {
         console.error('[v0] Error saving document metadata:', docError)
+        continue
       }
+
+      if (!doc) {
+        console.error('[v0] No document returned after insert')
+        continue
+      }
+
+      console.log('[v0] Document saved with ID:', doc.id)
+
+      // Link document to driver via transporters table
+      const { error: linkError } = await adminClient
+        .from('transporters')
+        .insert({
+          document_id: doc.id,
+          rut: driverRut,
+          name: `Documento ${documentType}`,
+        })
+
+      if (linkError) {
+        console.error('[v0] Error linking to transporter:', linkError)
+        // Continue anyway - document was saved
+      } else {
+        console.log('[v0] Linked document to transporter with RUT:', driverRut)
+      }
+
+      uploadedDocs.push(doc)
     }
 
     if (uploadedDocs.length === 0) {
