@@ -80,60 +80,18 @@ export function ImportExecutivesForm({ forceLabbe = false }: { forceLabbe?: bool
         throw new Error('No company_id found in database - please contact administrator')
       }
 
-      console.log('[v0] Step 1: Creating auth users for', users.length, 'executives')
+      console.log('[v0] Step 1: Creating profiles for', users.length, 'executives')
 
-      // Step 1: Create auth users first
-      const authPayload = { executives: users.map(u => ({ email: u.email, full_name: u.full_name })) }
-      const authResponse = await fetch('/api/admin/create-executives-auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(authPayload),
-      })
-
-      if (!authResponse.ok) {
-        const authError = await authResponse.json()
-        console.error('[v0] Auth creation failed:', authError)
-        throw new Error(`Auth creation error: ${authError.error}`)
-      }
-
-      const authData = await authResponse.json()
-      console.log('[v0] Auth users created:', authData)
-      console.log('[v0] Auth response structure:', { 
-        summary: authData.summary,
-        results: authData.results,
-        resultsType: typeof authData.results,
-        resultsLength: Array.isArray(authData.results) ? authData.results.length : 'not an array'
-      })
-
-      // Build mapping of email to user_id for successful creations
-      const userIdMap = new Map()
-      if (Array.isArray(authData.results)) {
-        authData.results.forEach((result: any) => {
-          if (result.success && result.user_id) {
-            userIdMap.set(result.email, result.user_id)
-          }
-        })
-      } else {
-        console.warn('[v0] authData.results is not an array:', authData.results)
-      }
-
-      console.log('[v0] Step 2: Creating profiles for', userIdMap.size, 'users from', users.length, 'original users')
-
-      // Step 2: Create profiles with the user IDs and company_id
+      // Step 1: Create profiles directly (simplified - no auth users)
       const profilePayload = { 
         company_id: companyId,
         users: users
-          .filter(u => userIdMap.has(u.email))
-          .map(u => ({
-            ...u,
-            id: userIdMap.get(u.email)
-          }))
       }
       
       console.log('[v0] Profile payload:', {
         company_id: profilePayload.company_id,
         userCount: profilePayload.users.length,
-        users: profilePayload.users.map(u => ({ email: u.email, id: u.id }))
+        users: profilePayload.users.map(u => ({ email: u.email, full_name: u.full_name }))
       })
 
       const profileResponse = await fetch('/api/admin/users/bulk-import-from-executives', {
