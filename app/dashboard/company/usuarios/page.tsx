@@ -8,30 +8,12 @@ import { UserListClient } from '@/components/admin/user-list-client'
 import { InsertarUsuariosButton } from '@/components/admin/insertar-usuarios-button'
 
 async function getCompanyUsers() {
-  const cookieStore = await cookies()
-  const companyId = cookieStore.get('company_id')?.value
-
-  if (!companyId) {
-    return []
-  }
-
   const supabase = await createClient()
   
-  // Get the organization ID for this company
-  const { data: org } = await supabase
-    .from('organizations')
-    .select('id')
-    .eq('id', companyId)
-    .single()
-
-  if (!org) {
-    return []
-  }
-
+  // Get all users - without organization_id filter since the column doesn't exist
   const { data: users } = await supabase
     .from('profiles')
     .select('*')
-    .eq('organization_id', org.id)
     .order('full_name', { ascending: true })
 
   return users || []

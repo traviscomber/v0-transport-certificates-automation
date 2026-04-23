@@ -90,7 +90,6 @@ export async function GET() {
             rut: usuario.rut,
             phone: usuario.phone,
             is_active: true,
-            ...(organizationId && { organization_id: organizationId }),
           })
           .select()
           .single()
