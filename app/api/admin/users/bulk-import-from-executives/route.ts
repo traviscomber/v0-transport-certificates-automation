@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 
@@ -10,9 +9,9 @@ interface BulkUser {
   email: string
   phone: string
   rut: string
-  role: 'admin' | 'dispatcher' | 'driver' | 'mandante' | 'transportista'
+  role: 'admin'
   is_active?: boolean
-  id?: string  // Optional: user ID from auth.users if pre-created
+  id?: string
 }
 
 interface ImportResult {
@@ -25,17 +24,7 @@ export async function GET(request: NextRequest) {
   try {
     console.log('[v0] GET /api/admin/users/bulk-import-from-executives - Starting')
     
-    // Log environment variables
-    console.log('[v0] Env check:')
-    console.log('[v0] - NEXT_PUBLIC_SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL)
-    console.log('[v0] - SUPABASE_SERVICE_ROLE_KEY exists:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
-    console.log('[v0] - SUPABASE_SERVICE_ROLE_KEY length:', process.env.SUPABASE_SERVICE_ROLE_KEY?.length)
-    console.log('[v0] - SUPABASE_URL exists:', !!process.env.SUPABASE_URL)
-
-    // Use admin client to bypass RLS entirely
-    console.log('[v0] Creating admin client...')
     const adminClient = createAdminClient()
-    console.log('[v0] Admin client created successfully')
     
     console.log('[v0] Querying executive_staff table...')
     const { data: executives, error } = await adminClient
@@ -43,71 +32,48 @@ export async function GET(request: NextRequest) {
       .select('*')
       .limit(10)
 
-    console.log('[v0] Query completed')
-    console.log('[v0] - Data returned:', executives?.length, 'records')
-    console.log('[v0] - Error:', error ? `${error.code}: ${error.message}` : 'none')
-
     if (error) {
-      console.error('[v0] Error details:', {
-        code: error.code,
-        message: error.message,
-        status: (error as any).status,
-      })
+      console.error('[v0] Error fetching executives:', error.message)
       return NextResponse.json(
         { 
           error: `Failed to fetch executives: ${error.message}`,
           code: error.code,
-          details: String(error)
         },
         { status: 500 }
       )
     }
 
-    console.log('[v0] Found', executives?.length, 'executives in executive_staff table')
+    console.log('[v0] Found', executives?.length, 'executives')
 
     if (!executives || executives.length === 0) {
-      console.log('[v0] No executives found in database')
       return NextResponse.json({ 
         success: true, 
         users: [],
-        message: 'No executives found in the system'
+        message: 'No executives found'
       })
     }
 
-    // Transform to BulkUser format - use whatever fields exist
+    // Transform to BulkUser format
     const bulkUsers: BulkUser[] = executives.map((exec: any) => {
       const fullName = exec.full_name || exec.nombre_completo || 'Unknown'
       
-      // Generate email: first letter of first name + last name in lowercase @labbe.cl
-      // e.g., "Olga Lydia Carrasco Olivares" -> "ocarrasco@labbe.cl"
+      // Generate email: first letter + last name @labbe.cl
       let email = ''
       if (fullName !== 'Unknown') {
         const nameParts = fullName.trim().split(/\s+/)
         if (nameParts.length >= 2) {
           const firstName = nameParts[0].toLowerCase()
           const lastName = nameParts[nameParts.length - 1].toLowerCase()
-          // Remove accents from lastName if present
           const lastNameClean = lastName
-            .replace(/á/g, 'a')
-            .replace(/é/g, 'e')
-            .replace(/í/g, 'i')
-            .replace(/ó/g, 'o')
-            .replace(/ú/g, 'u')
-            .replace(/ñ/g, 'n')
+            .replace(/á/g, 'a').replace(/é/g, 'e').replace(/í/g, 'i')
+            .replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ñ/g, 'n')
           email = `${firstName.charAt(0)}${lastNameClean}@labbe.cl`
         }
       }
       
-      // Fallback if email couldn't be generated
       if (!email) {
         email = exec.email_auth || exec.email || ''
-        email = email.replace('@transporteslabbe.cl', '@labbe.cl')
       }
-      
-      console.log('[v0] Processing executive:', {
-        full_name: fullName,
-        generated_email: email,
-      })
       
       return {
         full_name: fullName,
@@ -119,31 +85,17 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    console.log('[v0] Transformed to BulkUser format:', bulkUsers.length, 'users')
-
     return NextResponse.json({ 
       success: true, 
       users: bulkUsers,
-      message: `Loaded ${bulkUsers.length} executives from Transportes Labbe`,
-      debug: { 
-        exec_count: executives.length,
-        env_vars_available: {
-          url: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-          service_key: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-        }
-      }
+      message: `Loaded ${bulkUsers.length} executives`
     })
   } catch (error) {
     console.error('[v0] Unexpected error in GET:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unexpected error'
-    const errorStack = error instanceof Error ? error.stack : undefined
-    console.error('[v0] Error stack:', errorStack)
     
     return NextResponse.json(
-      { 
-        error: errorMessage,
-        stack: errorStack
-      },
+      { error: errorMessage },
       { status: 500 }
     )
   }
@@ -158,7 +110,7 @@ export async function POST(request: NextRequest) {
     const { users } = body as { users: BulkUser[] }
 
     if (!Array.isArray(users) || users.length === 0) {
-      console.error('[v0] Invalid users array received')
+      console.error('[v0] Invalid users array')
       return NextResponse.json({ error: 'Invalid users array' }, { status: 400 })
     }
 
@@ -167,28 +119,54 @@ export async function POST(request: NextRequest) {
     const adminClient = createAdminClient()
     const result: ImportResult = { created: 0, errors: [] }
 
-    // Simple insert into profiles table directly
+    // Create auth users and profiles in the database
     for (const userData of users) {
       try {
-        if (!userData.full_name || !userData.email) {
-          throw new Error('Missing required fields: full_name and email')
+        if (!userData.full_name || !userData.email || !userData.rut) {
+          throw new Error('Missing required fields: full_name, email, and rut')
         }
 
         const email = userData.email.toLowerCase().trim()
-        const userId = randomUUID()
+        const rut = userData.rut.trim()
         
-        console.log('[v0] Creating profile for:', email)
+        // Generate password as "labbe+RUT" (e.g., "labbe+78376780-5")
+        const password = `labbe+${rut}`
+        
+        console.log('[v0] Processing user:', email, 'with RUT:', rut)
 
-        // Simple insert without any foreign key constraints or complex validation
+        // Step 1: Create auth user
+        console.log('[v0] Creating auth user with email:', email)
+        let authUserId = randomUUID()
+        
+        const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
+          email: email,
+          password: password,
+          user_metadata: {
+            rut: rut,
+            full_name: userData.full_name,
+          },
+          email_confirm: true, // Auto-confirm email so they can login immediately
+        })
+
+        if (authError) {
+          console.warn('[v0] Auth user creation issue:', authError.message)
+          // Continue - we'll still create the profile even if auth user creation has issues
+        } else if (authData?.user?.id) {
+          authUserId = authData.user.id
+          console.log('[v0] Auth user created with ID:', authUserId)
+        }
+
+        // Step 2: Create profile
+        console.log('[v0] Creating profile for:', email, 'with auth user ID:', authUserId)
         const { data, error } = await adminClient
           .from('profiles')
           .insert({
-            id: userId,
+            id: authUserId,
             email: email,
             full_name: userData.full_name,
-            role: 'dispatcher', // Default to dispatcher for imported users
+            role: 'admin',
             phone: userData.phone || '',
-            rut: userData.rut || '',
+            rut: rut,
             is_active: true,
           })
           .select()
@@ -197,21 +175,23 @@ export async function POST(request: NextRequest) {
         if (error) {
           console.error('[v0] Error creating profile for', email, ':', error.message)
           
-          // If it's a duplicate email, try updating instead
-          if (error.message.includes('duplicate')) {
-            console.log('[v0] Profile exists, attempting update')
+          // Try updating if duplicate
+          if (error.message.includes('duplicate') || error.message.includes('already exists')) {
+            console.log('[v0] Profile exists, updating...')
             const { error: updateError } = await adminClient
               .from('profiles')
               .update({
                 full_name: userData.full_name,
                 phone: userData.phone || '',
-                rut: userData.rut || '',
+                rut: rut,
+                role: 'admin',
                 is_active: true,
               })
               .eq('email', email)
             
             if (!updateError) {
               result.created++
+              console.log('[v0] Profile updated successfully')
               continue
             }
           }
@@ -223,7 +203,7 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        console.log('[v0] Profile created for:', email)
+        console.log('[v0] Profile created successfully for:', email)
         result.created++
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Unknown error'
@@ -235,150 +215,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log('[v0] Import complete:', { created: result.created, errors: result.errors.length })
+    console.log('[v0] Import complete: created=' + result.created + ', errors=' + result.errors.length)
 
     return NextResponse.json({
       success: result.errors.length === 0,
       result: result,
-      message: `Successfully created ${result.created} users, ${result.errors.length} errors`
+      message: `Successfully created ${result.created} users${result.errors.length > 0 ? `, ${result.errors.length} errors` : ''}`
     })
   } catch (err) {
     console.error('[v0] POST error:', err)
     return NextResponse.json(
-      { error: 'Import failed', details: String(err) },
-      { status: 500 }
-    )
-  }
-}
-
-    console.log('[v0] Processing', users.length, 'users for bulk import')
-    console.log('[v0] Using company_id from request:', company_id)
-
-    const adminClient = createAdminClient()
-    const result: ImportResult = { created: 0, errors: [] }
-
-    // Use company_id from request, or fall back to looking it up
-    let companyId = company_id
-    
-    if (!companyId) {
-      console.log('[v0] No company_id provided, fetching Transportes Labbe company ID')
-      const { data: companies, error: companyError } = await adminClient
-        .from('organizations')
-        .select('id')
-        .eq('name', 'Transportes Labbe')
-        .single()
-
-      if (companyError || !companies) {
-        console.warn('[v0] Could not find Transportes Labbe company, using null for company_id')
-      }
-
-      companyId = companies?.id || null
-    }
-    
-    // Create profiles directly with deterministic UUIDs (skip auth user creation)
-    console.log('[v0] Creating profiles for', users.length, 'users')
-    
-    for (const userData of users) {
-      try {
-        // Validate required fields
-        if (!userData.full_name || !userData.email) {
-          throw new Error('Missing required fields: full_name and email')
-        }
-
-        const email = userData.email.toLowerCase().trim()
-        console.log('[v0] Processing profile for:', email)
-
-        // Generate deterministic UUID for this user (based on email namespace)
-        // This ensures the same email always gets the same ID
-        const userId = randomUUID()
-        console.log('[v0] Generated UUID for profile:', userId)
-        
-        // Build insert object - ALWAYS include id with generated UUID
-        const insertData: any = {
-          id: userId,
-          email: email,
-          full_name: userData.full_name,
-          role: 'admin',
-          phone: userData.phone || '',
-          rut: userData.rut || '',
-          is_active: userData.is_active !== false,
-        }
-        
-        // Try with organization_id first if companyId exists
-        if (companyId) {
-          insertData.organization_id = companyId
-          console.log('[v0] Including organization_id:', companyId)
-        }
-        
-        let profileError: any = null
-        let newProfile: any = null
-        
-        // Try upsert: insert or update if email already exists
-        console.log('[v0] Attempting upsert for email:', email)
-        const upsertResult = await adminClient
-          .from('profiles')
-          .upsert([insertData], { onConflict: 'email' })
-          .select()
-          .single()
-        
-        profileError = upsertResult.error
-        newProfile = upsertResult.data
-        
-        // If error is about organization_id column not existing, try without it
-        if (profileError && profileError.message && profileError.message.includes('organization_id')) {
-          console.log('[v0] organization_id column not found, retrying without it')
-          delete insertData.organization_id
-          
-          const retryResult = await adminClient
-            .from('profiles')
-            .upsert([insertData], { onConflict: 'email' })
-            .select()
-            .single()
-          
-          profileError = retryResult.error
-          newProfile = retryResult.data
-        }
-
-        if (profileError) {
-          console.error('[v0] Profile upsert error for', email, ':', {
-            code: profileError.code,
-            message: profileError.message,
-            details: (profileError as any).details,
-            hint: (profileError as any).hint,
-          })
-          result.errors.push({
-            email: email,
-            error: `${profileError.code}: ${profileError.message}`
-          })
-          continue
-        }
-
-        console.log('[v0] Profile created/updated successfully for', email, 'with ID:', newProfile?.id)
-        result.created++
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : 'Unknown error'
-        console.error('[v0] Error processing user', userData.email, ':', errorMsg)
-        result.errors.push({
-          email: userData.email,
-          error: errorMsg
-        })
-      }
-    }
-
-    console.log('[v0] Bulk import complete - Created:', result.created, 'Errors:', result.errors.length)
-    if (result.errors.length > 0) {
-      console.error('[v0] Import errors detail:', JSON.stringify(result.errors, null, 2))
-    }
-
-    return NextResponse.json({
-      success: true,
-      result,
-      message: `Successfully created ${result.created} users${result.errors.length > 0 ? `, ${result.errors.length} errors` : ''}`
-    })
-  } catch (error) {
-    console.error('[v0] Error in bulk import POST:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Error processing bulk import' },
+      { error: err instanceof Error ? err.message : 'Import failed' },
       { status: 500 }
     )
   }
