@@ -21,23 +21,41 @@ interface ImportResult {
 // GET - Fetch users from executive_staff table to prepare for import
 export async function GET(request: NextRequest) {
   try {
-    // Note: Don't check auth here - the page is already protected by middleware
-    console.log('[v0] GET /api/admin/users/bulk-import-from-executives - Fetching executive_staff')
+    console.log('[v0] GET /api/admin/users/bulk-import-from-executives - Starting')
+    
+    // Log environment variables
+    console.log('[v0] Env check:')
+    console.log('[v0] - NEXT_PUBLIC_SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL)
+    console.log('[v0] - SUPABASE_SERVICE_ROLE_KEY exists:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
+    console.log('[v0] - SUPABASE_SERVICE_ROLE_KEY length:', process.env.SUPABASE_SERVICE_ROLE_KEY?.length)
+    console.log('[v0] - SUPABASE_URL exists:', !!process.env.SUPABASE_URL)
 
     // Use admin client to bypass RLS entirely
+    console.log('[v0] Creating admin client...')
     const adminClient = createAdminClient()
+    console.log('[v0] Admin client created successfully')
     
+    console.log('[v0] Querying executive_staff table...')
     const { data: executives, error } = await adminClient
       .from('executive_staff')
-      .select('id, full_name, rut, email_auth, phone, cargo, login_enabled')
-      .order('full_name', { ascending: true })
+      .select('*')
+      .limit(10)
+
+    console.log('[v0] Query completed')
+    console.log('[v0] - Data returned:', executives?.length, 'records')
+    console.log('[v0] - Error:', error ? `${error.code}: ${error.message}` : 'none')
 
     if (error) {
-      console.error('[v0] Error fetching executives from executive_staff:', error)
+      console.error('[v0] Error details:', {
+        code: error.code,
+        message: error.message,
+        status: (error as any).status,
+      })
       return NextResponse.json(
         { 
           error: `Failed to fetch executives: ${error.message}`,
-          details: error
+          code: error.code,
+          details: String(error)
         },
         { status: 500 }
       )
@@ -54,32 +72,46 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Transform to BulkUser format
-    const bulkUsers: BulkUser[] = executives.map(exec => {
-      console.log('[v0] Processing executive:', exec.full_name, 'email:', exec.email_auth)
-      return {
+    // Transform to BulkUser format - use whatever fields exist
+    const bulkUsers: BulkUser[] = executives.map((exec: any) => {
+      console.log('[v0] Processing executive:', {
         full_name: exec.full_name,
-        email: exec.email_auth,
-        phone: exec.phone || '',
+        email: exec.email_auth || exec.email,
+      })
+      return {
+        full_name: exec.full_name || exec.nombre_completo || 'Unknown',
+        email: exec.email_auth || exec.email || '',
+        phone: exec.phone || exec.telefono || '',
         rut: exec.rut || '',
         role: 'admin_company',
         is_active: exec.login_enabled !== false,
       }
     })
 
-    console.log('[v0] Returning', bulkUsers.length, 'users in BulkUser format')
+    console.log('[v0] Transformed to BulkUser format:', bulkUsers.length, 'users')
 
     return NextResponse.json({ 
       success: true, 
       users: bulkUsers,
-      message: `Loaded ${bulkUsers.length} executives from Transportes Labbe`
+      message: `Loaded ${bulkUsers.length} executives from Transportes Labbe`,
+      debug: { 
+        exec_count: executives.length,
+        env_vars_available: {
+          url: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+          service_key: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        }
+      }
     })
   } catch (error) {
     console.error('[v0] Unexpected error in GET:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unexpected error'
+    const errorStack = error instanceof Error ? error.stack : undefined
+    console.error('[v0] Error stack:', errorStack)
+    
     return NextResponse.json(
       { 
-        error: error instanceof Error ? error.message : 'Unexpected error',
-        details: String(error)
+        error: errorMessage,
+        stack: errorStack
       },
       { status: 500 }
     )
