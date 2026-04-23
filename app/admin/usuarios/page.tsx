@@ -56,6 +56,12 @@ export default async function UsuariosPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Link href="/admin/usuarios/importar-ejecutivos">
+            <Button variant="outline">
+              <Users className="mr-2 h-4 w-4" />
+              Importar Ejecutivos
+            </Button>
+          </Link>
           <Link href="/admin/usuarios/importar">
             <Button variant="outline">
               <Upload className="mr-2 h-4 w-4" />
