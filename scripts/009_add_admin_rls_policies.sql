@@ -1,4 +1,9 @@
 -- Add RLS policies to allow admins to manage all users
+-- Drop existing admin policies if they exist
+DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Admins can insert profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Admins can update profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Admins can delete profiles" ON public.profiles;
 
 -- RLS Policy: Admins can view all profiles
 CREATE POLICY "Admins can view all profiles" ON public.profiles

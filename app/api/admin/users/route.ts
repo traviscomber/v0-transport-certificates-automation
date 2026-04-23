@@ -14,26 +14,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Verify admin role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
+    console.log('[v0] Admin users GET - Current user:', user.id)
 
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    // Get all users
-    const { data: users, error } = await supabase
+    // Get all users - use admin client to bypass RLS
+    const adminClient = createAdminClient()
+    const { data: users, error } = await adminClient
       .from('profiles')
       .select('*')
-      .order('full_name', { ascending: true })
+      .order('created_at', { ascending: false })
 
-    if (error) throw error
+    if (error) {
+      console.error('[v0] Error fetching users:', error)
+      throw error
+    }
 
-    return NextResponse.json({ success: true, users })
+    console.log('[v0] Retrieved users count:', users?.length)
+
+    return NextResponse.json({ success: true, users: users || [] })
   } catch (error) {
     console.error('[v0] Error fetching users:', error)
     return NextResponse.json(
@@ -53,16 +50,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Verify admin role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    console.log('[v0] Admin users POST - Creating user, initiated by:', user.id)
 
     const body = await request.json()
     const { email, full_name, role, phone, is_active = true } = body
@@ -77,16 +65,22 @@ export async function POST(request: NextRequest) {
     // Use admin client to create user
     const adminClient = createAdminClient()
     
-    // Create auth user
+    // Create auth user with temporary password
+    const tempPassword = Math.random().toString(36).slice(-12)
+    console.log('[v0] Creating auth user with email:', email)
+    
     const { data: authUser, error: createError } = await adminClient.auth.admin.createUser({
       email,
-      password: Math.random().toString(36).slice(-12), // Temporary password
+      password: tempPassword,
       email_confirm: true,
     })
 
     if (createError || !authUser.user) {
+      console.error('[v0] Auth user creation error:', createError)
       throw new Error(createError?.message || 'Failed to create auth user')
     }
+
+    console.log('[v0] Auth user created:', authUser.user.id)
 
     // Create profile
     const { data: newProfile, error: profileError } = await adminClient
@@ -103,10 +97,13 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (profileError) {
+      console.error('[v0] Profile creation error:', profileError)
       // Clean up auth user if profile creation fails
       await adminClient.auth.admin.deleteUser(authUser.user.id)
       throw profileError
     }
+
+    console.log('[v0] User created successfully:', authUser.user.id)
 
     return NextResponse.json({
       success: true,

@@ -53,16 +53,25 @@ export function UserForm({ user, isCompanyContext = false, onSuccess }: UserForm
       const method = user ? 'PUT' : 'POST'
       const url = user ? `${endpoint}/${user.id}` : endpoint
 
+      console.log('[v0] Submitting form:', { endpoint, method, url, formData })
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       })
 
+      console.log('[v0] Response status:', response.status)
+
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to save user')
+        const errorMessage = errorData.error || `Error ${response.status}: ${response.statusText}`
+        console.error('[v0] API error:', errorMessage)
+        throw new Error(errorMessage)
       }
+
+      const responseData = await response.json()
+      console.log('[v0] Success response:', responseData)
 
       if (onSuccess) {
         onSuccess()
@@ -70,7 +79,9 @@ export function UserForm({ user, isCompanyContext = false, onSuccess }: UserForm
         router.back()
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      const errorMsg = err instanceof Error ? err.message : 'An error occurred'
+      console.error('[v0] Form submission error:', errorMsg)
+      setError(errorMsg)
     } finally {
       setLoading(false)
     }

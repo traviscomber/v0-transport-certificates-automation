@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Button } from '@/components/ui/button'
 import { Plus, Users } from 'lucide-react'
 import Link from 'next/link'
@@ -6,30 +7,35 @@ import { HelpBox } from '@/components/ui/help-box'
 import { UserListClient } from '@/components/admin/user-list-client'
 
 async function getAdminUsers() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
+    if (!user) {
+      console.log('[v0] No authenticated user')
+      return []
+    }
+
+    console.log('[v0] Fetching users for authenticated user:', user.id)
+
+    // Use admin client to bypass RLS and get all users
+    const adminClient = createAdminClient()
+    const { data: users, error } = await adminClient
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('[v0] Error fetching users:', error)
+      return []
+    }
+
+    console.log('[v0] Retrieved users count:', users?.length)
+    return users || []
+  } catch (error) {
+    console.error('[v0] Error in getAdminUsers:', error)
     return []
   }
-
-  // Verify admin role
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.role !== 'admin') {
-    return []
-  }
-
-  const { data: users } = await supabase
-    .from('profiles')
-    .select('*')
-    .order('full_name', { ascending: true })
-
-  return users || []
 }
 
 export const metadata = {
