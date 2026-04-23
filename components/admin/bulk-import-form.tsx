@@ -76,17 +76,22 @@ export function BulkImportForm() {
     setSuccess('')
 
     try {
+      const payload = { users }
       console.log('[v0] Starting bulk import of', users.length, 'users')
+      console.log('[v0] Payload:', JSON.stringify(payload))
 
       const response = await fetch('/api/admin/users/bulk-import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ users }),
+        body: JSON.stringify(payload),
       })
+
+      console.log('[v0] Response status:', response.status, response.statusText)
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || `Error ${response.status}`)
+        console.error('[v0] Error response:', errorData)
+        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`)
       }
 
       const data = await response.json()
