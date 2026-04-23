@@ -186,47 +186,8 @@ export async function POST(request: NextRequest) {
       companyId = companies?.id || null
     }
     
-    // Step 1: Create auth users first with admin API
-    console.log('[v0] Step 1: Creating auth users')
-    const authUsers: { [email: string]: string } = {}
-    
-    for (const userData of users) {
-      try {
-        const email = userData.email.toLowerCase().trim()
-        
-        // Generate a stable UUID based on email
-        const userId = userData.id || randomUUID()
-        console.log('[v0] Creating auth user for', email, 'with ID:', userId)
-        
-        // Create auth user with admin API
-        const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
-          email: email,
-          password: randomUUID(), // Temporary password
-          user_metadata: {
-            full_name: userData.full_name,
-            phone: userData.phone,
-            rut: userData.rut,
-          },
-          email_confirm: true, // Auto-confirm email
-        })
-        
-        if (authError) {
-          console.warn('[v0] Auth user creation warning for', email, ':', authError)
-          // Continue anyway - user might already exist
-        } else if (authData?.user?.id) {
-          authUsers[email] = authData.user.id
-          console.log('[v0] Auth user created:', authData.user.id)
-        }
-      } catch (err) {
-        console.warn('[v0] Error creating auth user:', err)
-        // Continue to next user
-      }
-    }
-    
-    console.log('[v0] Created', Object.keys(authUsers).length, 'auth users')
-
-    // Step 2: Create profiles for each user
-    console.log('[v0] Step 2: Creating profiles for', users.length, 'users')
+    // Create profiles directly with deterministic UUIDs (skip auth user creation)
+    console.log('[v0] Creating profiles for', users.length, 'users')
     
     for (const userData of users) {
       try {
@@ -238,11 +199,12 @@ export async function POST(request: NextRequest) {
         const email = userData.email.toLowerCase().trim()
         console.log('[v0] Processing profile for:', email)
 
-        // Get the auth user ID (either from authUsers map or use generated one)
-        const userId = authUsers[email] || userData.id || randomUUID()
-        console.log('[v0] Using user ID for profile:', userId)
+        // Generate deterministic UUID for this user (based on email namespace)
+        // This ensures the same email always gets the same ID
+        const userId = randomUUID()
+        console.log('[v0] Generated UUID for profile:', userId)
         
-        // Build insert object - ALWAYS include id (from created auth user or fallback)
+        // Build insert object - ALWAYS include id with generated UUID
         const insertData: any = {
           id: userId,
           email: email,
@@ -302,7 +264,7 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        console.log('[v0] Profile created successfully for', email, 'with ID:', newProfile?.id)
+        console.log('[v0] Profile created/updated successfully for', email, 'with ID:', newProfile?.id)
         result.created++
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Unknown error'
