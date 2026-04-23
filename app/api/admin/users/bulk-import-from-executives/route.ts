@@ -186,8 +186,48 @@ export async function POST(request: NextRequest) {
       companyId = companies?.id || null
     }
     
-    console.log('[v0] Final company_id to use:', companyId)
+    // Step 1: Create auth users first with admin API
+    console.log('[v0] Step 1: Creating auth users')
+    const authUsers: { [email: string]: string } = {}
+    
+    for (const userData of users) {
+      try {
+        const email = userData.email.toLowerCase().trim()
+        
+        // Generate a stable UUID based on email
+        const userId = userData.id || randomUUID()
+        console.log('[v0] Creating auth user for', email, 'with ID:', userId)
+        
+        // Create auth user with admin API
+        const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
+          email: email,
+          password: randomUUID(), // Temporary password
+          user_metadata: {
+            full_name: userData.full_name,
+            phone: userData.phone,
+            rut: userData.rut,
+          },
+          email_confirm: true, // Auto-confirm email
+        })
+        
+        if (authError) {
+          console.warn('[v0] Auth user creation warning for', email, ':', authError)
+          // Continue anyway - user might already exist
+        } else if (authData?.user?.id) {
+          authUsers[email] = authData.user.id
+          console.log('[v0] Auth user created:', authData.user.id)
+        }
+      } catch (err) {
+        console.warn('[v0] Error creating auth user:', err)
+        // Continue to next user
+      }
+    }
+    
+    console.log('[v0] Created', Object.keys(authUsers).length, 'auth users')
 
+    // Step 2: Create profiles for each user
+    console.log('[v0] Step 2: Creating profiles for', users.length, 'users')
+    
     for (const userData of users) {
       try {
         // Validate required fields
@@ -196,30 +236,21 @@ export async function POST(request: NextRequest) {
         }
 
         const email = userData.email.toLowerCase().trim()
-        console.log('[v0] Processing user:', email)
+        console.log('[v0] Processing profile for:', email)
 
-        // Use provided ID if available (from pre-created auth users), otherwise generate UUID for matching
-        const userId = userData.id || randomUUID()
-        console.log('[v0] Using user ID:', userId, '- from auth:', !!userData.id)
-
-        // Insert into profiles table with the user ID
-        console.log('[v0] Inserting into profiles table for', email)
+        // Get the auth user ID (either from authUsers map or use generated one)
+        const userId = authUsers[email] || userData.id || randomUUID()
+        console.log('[v0] Using user ID for profile:', userId)
         
-        // Build insert object - DON'T include 'id' field if it's a generated UUID
-        // The foreign key constraint requires id to exist in auth.users, so only set it if provided
+        // Build insert object - ALWAYS include id (from created auth user or fallback)
         const insertData: any = {
+          id: userId,
           email: email,
           full_name: userData.full_name,
           role: 'admin',
           phone: userData.phone || '',
           rut: userData.rut || '',
           is_active: userData.is_active !== false,
-        }
-        
-        // Only include the id if it came from auth users
-        if (userData.id) {
-          insertData.id = userId
-          console.log('[v0] Including pre-created auth user ID:', userId)
         }
         
         // Try with organization_id first if companyId exists
