@@ -75,13 +75,17 @@ export async function GET(request: NextRequest) {
 
     // Transform to BulkUser format - use whatever fields exist
     const bulkUsers: BulkUser[] = executives.map((exec: any) => {
+      let email = exec.email_auth || exec.email || ''
+      // Convert @transporteslabbe.cl to @labbe.cl if needed
+      email = email.replace('@transporteslabbe.cl', '@labbe.cl')
+      
       console.log('[v0] Processing executive:', {
         full_name: exec.full_name,
-        email: exec.email_auth || exec.email,
+        email: email,
       })
       return {
         full_name: exec.full_name || exec.nombre_completo || 'Unknown',
-        email: exec.email_auth || exec.email || '',
+        email: email,
         phone: exec.phone || exec.telefono || '',
         rut: exec.rut || '',
         role: 'admin',
