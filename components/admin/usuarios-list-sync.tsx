@@ -33,9 +33,23 @@ export function UsuariosListWithSync({ initialUsers }: { initialUsers: User[] })
     }
   )
 
-  const handleUserDeleted = () => {
-    // Revalidate the users list after deletion
-    mutate()
+  const handleUserDeleted = async (userId: string) => {
+    try {
+      console.log('[v0] Deleting user:', userId)
+      const response = await fetch(`/api/company/users/${userId}`, { method: 'DELETE' })
+      
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to delete user')
+      }
+
+      console.log('[v0] User deleted, revalidating...')
+      // Revalidate the users list after deletion
+      await mutate()
+    } catch (err) {
+      console.error('[v0] Delete error in sync handler:', err)
+      throw err
+    }
   }
 
   if (error) {

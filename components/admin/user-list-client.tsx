@@ -53,9 +53,15 @@ export function UserListClient({ users: initialUsers, isCompanyContext = false, 
     
     try {
       if (onDelete) {
+        // Use the provided onDelete handler (from SWR parent)
+        console.log('[v0] Using provided onDelete handler')
         await onDelete(userId)
+        setUsers(users.filter(u => u.id !== userId))
+        setMessage({ type: 'success', text: 'Usuario eliminado correctamente' })
       } else {
+        // Fallback: delete directly
         const endpoint = isCompanyContext ? `/api/company/users/${userId}` : `/api/admin/users/${userId}`
+        console.log('[v0] Deleting with endpoint:', endpoint)
         const response = await fetch(endpoint, { method: 'DELETE' })
         
         if (!response.ok) {
@@ -66,12 +72,12 @@ export function UserListClient({ users: initialUsers, isCompanyContext = false, 
         // Remove user from local state immediately
         setUsers(users.filter(u => u.id !== userId))
         setMessage({ type: 'success', text: 'Usuario eliminado correctamente' })
-        
-        // Reload page after 1.5 seconds to sync
-        setTimeout(() => {
-          window.location.reload()
-        }, 1500)
       }
+      
+      // Reload page after 1.5 seconds to ensure sync
+      setTimeout(() => {
+        window.location.reload()
+      }, 1500)
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Error al eliminar usuario'
       setMessage({ type: 'error', text: errorMsg })
