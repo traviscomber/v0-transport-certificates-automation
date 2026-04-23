@@ -2,7 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 
-export async function POST() {
+export async function GET() {
   try {
     console.log('[v0] Starting user insertion')
 
