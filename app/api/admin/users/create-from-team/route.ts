@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { randomUUID } from 'crypto'
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,13 +26,15 @@ export async function POST(request: NextRequest) {
 
         const email = userData.email || `${userData.rut.replace(/[^0-9]/g, '')}@labbe.local`
         const rut = userData.rut.trim()
+        const id = randomUUID() // Generate UUID for the profile
 
-        console.log('[v0] Creating user:', rut)
+        console.log('[v0] Creating user:', rut, 'with ID:', id)
 
-        // Direct insert - NO id assignment, let Supabase generate it
+        // Direct insert with UUID
         const { data, error } = await adminClient
           .from('profiles')
           .insert({
+            id: id,
             email: email,
             full_name: userData.full_name,
             role: 'admin',
