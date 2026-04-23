@@ -12,7 +12,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Search, Phone, Mail } from 'lucide-react'
+import { Search, Mail, MessageCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { allTeamMembers } from '@/lib/data/team-members'
 
@@ -134,14 +134,16 @@ export function TeamSearch() {
                         </a>
                       </div>
 
-                      {/* Phone */}
+                      {/* Phone / WhatsApp */}
                       <div className="flex items-center gap-2">
-                        <Phone className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                        <MessageCircle className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
                         <a
-                          href={`tel:+56${member.telefono.replace(/\s/g, '')}`}
-                          className="text-slate-300 hover:text-orange-500 transition-colors text-xs"
+                          href={`https://wa.me/56${member.telefono.replace(/\s/g, '').replace('+56', '')}?text=Hola%20${member.nombre_completo.replace(/\s/g, '%20')},%20quería%20comunicarme%20contigo.`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-slate-300 hover:text-green-500 transition-colors text-xs"
                         >
-                          {member.telefono}
+                          WhatsApp: {member.telefono}
                         </a>
                       </div>
                     </div>
