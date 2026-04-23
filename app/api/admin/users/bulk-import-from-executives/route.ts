@@ -176,16 +176,11 @@ export async function POST(request: NextRequest) {
         const email = userData.email.toLowerCase().trim()
         console.log('[v0] Processing user:', email)
 
-        // Generate a proper UUID for the user ID
-        const userId = randomUUID()
-        console.log('[v0] Generated user ID:', userId)
-
-        // Just insert directly into profiles table
+        // Insert into profiles table - let the database generate the ID or use email as reference
         console.log('[v0] Inserting into profiles table for', email)
         const { data: newProfile, error: profileError } = await adminClient
           .from('profiles')
           .insert({
-            id: userId,
             email: email,
             full_name: userData.full_name,
             role: 'admin',
@@ -210,7 +205,7 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        console.log('[v0] Profile created successfully:', userId, 'for', email)
+        console.log('[v0] Profile created successfully for', email, 'with ID:', newProfile?.id)
         result.created++
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Unknown error'
