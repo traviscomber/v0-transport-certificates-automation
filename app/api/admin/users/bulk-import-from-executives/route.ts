@@ -168,6 +168,7 @@ export async function POST(request: NextRequest) {
             phone: userData.phone || '',
             rut: rut,
             is_active: true,
+            company_id: 'labbe', // Assign to Transportes Labbe company
           })
           .select()
           .single()
@@ -186,6 +187,7 @@ export async function POST(request: NextRequest) {
                 rut: rut,
                 role: 'admin',
                 is_active: true,
+                company_id: 'labbe',
               })
               .eq('email', email)
             
