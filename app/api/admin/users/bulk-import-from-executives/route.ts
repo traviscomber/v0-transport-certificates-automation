@@ -75,16 +75,41 @@ export async function GET(request: NextRequest) {
 
     // Transform to BulkUser format - use whatever fields exist
     const bulkUsers: BulkUser[] = executives.map((exec: any) => {
-      let email = exec.email_auth || exec.email || ''
-      // Convert @transporteslabbe.cl to @labbe.cl if needed
-      email = email.replace('@transporteslabbe.cl', '@labbe.cl')
+      const fullName = exec.full_name || exec.nombre_completo || 'Unknown'
+      
+      // Generate email: first letter of first name + last name in lowercase @labbe.cl
+      // e.g., "Olga Lydia Carrasco Olivares" -> "ocarrasco@labbe.cl"
+      let email = ''
+      if (fullName !== 'Unknown') {
+        const nameParts = fullName.trim().split(/\s+/)
+        if (nameParts.length >= 2) {
+          const firstName = nameParts[0].toLowerCase()
+          const lastName = nameParts[nameParts.length - 1].toLowerCase()
+          // Remove accents from lastName if present
+          const lastNameClean = lastName
+            .replace(/á/g, 'a')
+            .replace(/é/g, 'e')
+            .replace(/í/g, 'i')
+            .replace(/ó/g, 'o')
+            .replace(/ú/g, 'u')
+            .replace(/ñ/g, 'n')
+          email = `${firstName.charAt(0)}${lastNameClean}@labbe.cl`
+        }
+      }
+      
+      // Fallback if email couldn't be generated
+      if (!email) {
+        email = exec.email_auth || exec.email || ''
+        email = email.replace('@transporteslabbe.cl', '@labbe.cl')
+      }
       
       console.log('[v0] Processing executive:', {
-        full_name: exec.full_name,
-        email: email,
+        full_name: fullName,
+        generated_email: email,
       })
+      
       return {
-        full_name: exec.full_name || exec.nombre_completo || 'Unknown',
+        full_name: fullName,
         email: email,
         phone: exec.phone || exec.telefono || '',
         rut: exec.rut || '',
