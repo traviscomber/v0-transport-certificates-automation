@@ -19,8 +19,7 @@ async function getApplicants() {
       license_type,
       status,
       background_check_status,
-      created_at,
-      organizations(razon_social)
+      created_at
     `)
     .order("created_at", { ascending: false })
 
@@ -39,7 +38,7 @@ async function getApplicants() {
     status: app.status,
     backgroundCheckStatus: app.background_check_status,
     createdAt: app.created_at,
-    companyName: app.organizations?.razon_social || "Sin asignar",
+    companyName: "Sin asignar",
   }))
 }
 

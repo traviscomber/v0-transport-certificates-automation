@@ -5,7 +5,7 @@ async function getCompanies() {
   const supabase = await createClient()
 
   const { data, error } = await supabase
-    .from("organizaciones")
+    .from("organizations")
     .select("id, razon_social")
     .eq("service_type", "TRANSPORTE")
     .order("razon_social", { ascending: true })
