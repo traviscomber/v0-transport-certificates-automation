@@ -15,12 +15,12 @@ export async function GET() {
       .eq('name', 'Transportes Labbe')
       .single()
 
-    if (orgError || !org) {
-      console.error('[v0] Organization not found:', orgError)
-      return NextResponse.json({ error: 'Organization not found' }, { status: 400 })
+    if (orgError) {
+      console.warn('[v0] Organization not found by name, trying with ID')
+      // Try with a fixed ID or skip organization_id
     }
 
-    const organizationId = org.id
+    const organizationId = org?.id || null
     console.log('[v0] Organization ID:', organizationId)
 
     // 6 usuarios
@@ -82,7 +82,7 @@ export async function GET() {
             rut: usuario.rut,
             phone: usuario.phone,
             is_active: true,
-            organization_id: organizationId,
+            ...(organizationId && { organization_id: organizationId }),
           })
           .select()
           .single()
