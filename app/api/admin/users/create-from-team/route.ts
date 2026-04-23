@@ -60,9 +60,9 @@ export async function POST(request: NextRequest) {
           email_confirm: true,
         })
 
-        let userId: string = randomUUID()
+        let userId: string = randomUUID() as string
         if (authUser?.user?.id) {
-          userId = authUser.user.id
+          userId = authUser.user.id as string
           console.log('[v0] Auth user created with ID:', userId)
         } else if (authError) {
           console.warn('[v0] Auth user creation issue:', authError.message)
