@@ -1,15 +1,34 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { DriversList } from '@/components/drivers-list'
 import { HelpBox } from '@/components/ui/help-box'
 
 export default function ConductoresPage() {
+  const [drivers, setDrivers] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Fetch drivers from API
+    fetch('/api/company/data')
+      .then((res) => res.json())
+      .then((data) => {
+        console.log('[v0] Fetched drivers:', data.drivers?.length || 0)
+        setDrivers(data.drivers || [])
+      })
+      .catch((err) => {
+        console.error('[v0] Error fetching drivers:', err)
+        setDrivers([])
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Gestión de Conductores</h1>
         <p className="text-muted-foreground">
-          Administra y visualiza los conductores de LABBE
+          Administra y visualiza los conductores de LABBE ({drivers.length} total)
         </p>
       </div>
 
@@ -25,7 +44,17 @@ export default function ConductoresPage() {
         ]}
       />
 
-      <DriversList />
+      {loading ? (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Cargando conductores...</p>
+        </div>
+      ) : drivers.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">No hay conductores disponibles</p>
+        </div>
+      ) : (
+        <DriversList drivers={drivers} />
+      )}
     </div>
   )
 }
