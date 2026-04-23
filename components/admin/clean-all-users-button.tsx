@@ -25,9 +25,10 @@ export function CleanAllUsersButton() {
 
       if (response.ok) {
         setMessage({ type: 'success', text: `✓ Eliminados todos los usuarios. Recargando...` })
+        // Force hard refresh without cache
         setTimeout(() => {
-          window.location.reload()
-        }, 2000)
+          window.location.href = window.location.href + (window.location.href.includes('?') ? '&' : '?') + 't=' + Date.now()
+        }, 1000)
       } else {
         setMessage({ type: 'error', text: data.error || 'Error al limpiar usuarios' })
       }

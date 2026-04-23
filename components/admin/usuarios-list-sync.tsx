@@ -1,6 +1,7 @@
 'use client'
 
 import useSWR from 'swr'
+import React from 'react'
 import { UserListClient } from './user-list-client'
 import { Card, CardContent } from '@/components/ui/card'
 import { AlertCircle } from 'lucide-react'
@@ -30,10 +31,15 @@ export function UsuariosListWithSync({ initialUsers }: { initialUsers: User[] })
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
       revalidateIfStale: true,
-      dedupingInterval: 0, // No deduping to always fetch fresh
-      focusThrottleInterval: 0, // Revalidate immediately on focus
+      dedupingInterval: 0,
+      focusThrottleInterval: 0,
     }
   )
+
+  // Force revalidation immediately on mount to get fresh data
+  React.useEffect(() => {
+    mutate()
+  }, [])
 
   const handleUserDeleted = async (userId: string) => {
     try {
