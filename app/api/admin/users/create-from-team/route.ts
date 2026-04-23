@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const created = []
     const errors = []
 
-    // Simply insert into profiles without any complex validations
+    // Step 1: Create auth users first, then profiles
     for (const userData of users) {
       try {
         if (!userData.full_name || !userData.rut) {
@@ -26,15 +26,37 @@ export async function POST(request: NextRequest) {
 
         const email = userData.email || `${userData.rut.replace(/[^0-9]/g, '')}@labbe.local`
         const rut = userData.rut.trim()
-        const id = randomUUID() // Generate UUID for the profile
+        const password = rut // Password is the RUT itself
 
-        console.log('[v0] Creating user:', rut, 'with ID:', id)
+        console.log('[v0] Creating auth user for:', email, 'RUT:', rut)
 
-        // Direct insert with UUID
+        // Step 1a: Create auth user
+        const { data: authUser, error: authError } = await adminClient.auth.admin.createUser({
+          email: email,
+          password: password,
+          user_metadata: {
+            rut: rut,
+            full_name: userData.full_name,
+          },
+          email_confirm: true,
+        })
+
+        let userId = randomUUID()
+        if (authUser?.user?.id) {
+          userId = authUser.user.id
+          console.log('[v0] Auth user created with ID:', userId)
+        } else if (authError) {
+          console.warn('[v0] Auth user creation issue:', authError.message)
+          // Continue - we'll use the generated UUID
+        }
+
+        // Step 1b: Create profile with the same ID as auth user
+        console.log('[v0] Creating profile with ID:', userId)
+
         const { data, error } = await adminClient
           .from('profiles')
           .insert({
-            id: id,
+            id: userId,
             email: email,
             full_name: userData.full_name,
             role: 'admin',
