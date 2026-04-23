@@ -1,82 +1,92 @@
+import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
-    console.log('[v0] ========== LOGIN ENDPOINT START ==========')
-    console.log('[v0] Request method:', request.method)
-    console.log('[v0] Request URL:', request.url)
+    console.log('[v0] Login endpoint - parsing request')
 
-    let body
-    try {
-      body = await request.json()
-      console.log('[v0] Request body parsed successfully')
-    } catch (parseErr) {
-      console.error('[v0] Failed to parse JSON body:', parseErr)
-      return NextResponse.json(
-        { error: 'Solicitud inválida - JSON malformado' },
-        { status: 400 }
-      )
-    }
-
+    const body = await request.json()
     const { rut, password } = body
-    console.log('[v0] RUT received:', rut)
-    console.log('[v0] Password received:', password ? '***' : 'EMPTY')
-    console.log('[v0] RUT type:', typeof rut, 'Password type:', typeof password)
 
-    // Validate inputs
     if (!rut || !password) {
-      console.warn('[v0] Missing credentials - RUT:', rut ? 'OK' : 'MISSING', 'Password:', password ? 'OK' : 'MISSING')
       return NextResponse.json(
-        { error: 'RUT y contraseña son requeridos' },
+        { error: 'RUT y contraseña requeridos' },
         { status: 400 }
       )
     }
 
-    // Accept any request with RUT and password
-    console.log('[v0] Credentials valid - setting session cookie')
+    console.log('[v0] Login attempt with RUT:', rut)
+
+    // Validate password format: should be "labbe+RUT"
+    const expectedPassword = `labbe+${rut}`
     
+    if (password !== expectedPassword) {
+      console.log('[v0] Password mismatch - expected labbe+RUT format')
+      return NextResponse.json(
+        { error: 'RUT o contraseña incorrectos' },
+        { status: 401 }
+      )
+    }
+
+    // Look up the user by RUT in the profiles table
+    const supabase = await createClient()
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, email, full_name, rut, role, is_active')
+      .eq('rut', rut)
+      .single()
+
+    if (profileError || !profile) {
+      console.log('[v0] Profile not found for RUT:', rut)
+      return NextResponse.json(
+        { error: 'Usuario no encontrado' },
+        { status: 401 }
+      )
+    }
+
+    if (!profile.is_active) {
+      console.log('[v0] User is inactive:', rut)
+      return NextResponse.json(
+        { error: 'Usuario desactivado' },
+        { status: 401 }
+      )
+    }
+
+    console.log('[v0] Login successful for RUT:', rut, 'Email:', profile.email)
+
+    // Set session cookie
     try {
       const cookieStore = await cookies()
-      console.log('[v0] Cookie store obtained')
-      
-      cookieStore.set('company_id', 'labbe-12345', {
+      cookieStore.set('company_id', 'labbe', {
         httpOnly: true,
-        secure: false,
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 604800,
+        maxAge: 604800, // 7 days
         path: '/',
       })
-      console.log('[v0] Cookie set successfully: company_id=labbe-12345')
     } catch (cookieErr) {
       console.error('[v0] Failed to set cookie:', cookieErr)
-      throw new Error('No se pudo establecer la sesión')
     }
 
-    const successResponse = {
+    return NextResponse.json({
       success: true,
-      company: {
-        id: 'labbe-12345',
-        rut: rut || '78.376.780-5',
-        name: 'Transportes Labbe Hermanos Limitada',
-        email: 'admin@transporteslabbe.cl',
-        is_labbe_admin: false,
+      user: {
+        id: profile.id,
+        email: profile.email,
+        full_name: profile.full_name,
+        rut: profile.rut,
+        role: profile.role,
       },
-    }
-    
-    console.log('[v0] Login successful - redirecting to dashboard')
-    console.log('[v0] ========== LOGIN ENDPOINT SUCCESS ==========')
-    
-    return NextResponse.json(successResponse)
+      company: {
+        id: 'labbe',
+        name: 'Transportes Labbe',
+      }
+    })
   } catch (err) {
-    console.error('[v0] ========== LOGIN ENDPOINT ERROR ==========')
-    const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
-    console.error('[v0] Error type:', err instanceof Error ? 'Error instance' : typeof err)
-    console.error('[v0] Error message:', errorMessage)
-    console.error('[v0] Full error:', err)
-
+    console.error('[v0] Login error:', err)
     return NextResponse.json(
-      { error: `Error al iniciar sesión: ${errorMessage}` },
+      { error: 'Error al procesar login' },
       { status: 500 }
     )
   }

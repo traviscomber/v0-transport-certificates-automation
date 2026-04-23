@@ -10,11 +10,9 @@ import Link from 'next/link'
 
 export default function CompanyLoginPage() {
   const [rut, setRut] = useState('78.376.780-5')
-  const [password, setPassword] = useState('labbe2024')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [rutError, setRutError] = useState('')
-  const [passwordError, setPasswordError] = useState('')
   const router = useRouter()
 
   // Formatear RUT
@@ -41,35 +39,14 @@ export default function CompanyLoginPage() {
     return true
   }
 
-  // Validar contraseña
-  const validatePassword = (value: string) => {
-    if (!value) {
-      setPasswordError('La contraseña es requerida')
-      return false
-    }
-    if (value.length < 6) {
-      setPasswordError('Mínimo 6 caracteres')
-      return false
-    }
-    setPasswordError('')
-    return true
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    console.log('[v0] ========== FORM SUBMISSION START ==========')
-    console.log('[v0] RUT value:', rut)
-    console.log('[v0] Password length:', password.length)
+    console.log('[v0] Login attempt with RUT:', rut)
 
     const rutValid = validateRUT(rut)
-    const passwordValid = validatePassword(password)
 
-    console.log('[v0] RUT validation:', rutValid)
-    console.log('[v0] Password validation:', passwordValid)
-
-    if (!rutValid || !passwordValid) {
-      console.log('[v0] Validation failed - aborting submission')
+    if (!rutValid) {
       return
     }
 
@@ -77,43 +54,33 @@ export default function CompanyLoginPage() {
     setError(null)
 
     try {
-      console.log('[v0] Sending login request to /api/auth/login-simple')
+      // Use RUT as both username and password (password is "labbe+RUT")
+      const password = `labbe+${rut}`
+      
+      console.log('[v0] Sending login request with RUT')
       const response = await fetch('/api/auth/login-simple', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rut, password }),
       })
 
-      console.log('[v0] Response status:', response.status)
-      console.log('[v0] Response ok:', response.ok)
-
       let data
       try {
         data = await response.json()
-        console.log('[v0] Response parsed successfully:', data?.success ? 'SUCCESS' : 'FAILURE')
       } catch (parseErr) {
-        console.error('[v0] Failed to parse response JSON:', parseErr)
-        throw new Error('Respuesta inválida del servidor - no es JSON válido')
+        throw new Error('Respuesta inválida del servidor')
       }
-
-      console.log('[v0] Response data:', data)
 
       if (!response.ok) {
         const errorMsg = data?.error || `Error HTTP ${response.status}`
-        console.error('[v0] Login failed:', errorMsg)
         throw new Error(errorMsg)
       }
 
-      console.log('[v0] Login successful - company:', data.company?.name)
-      console.log('[v0] Redirecting to dashboard...')
-      
-      // Redirigir al dashboard
+      console.log('[v0] Login successful')
       router.push('/dashboard/company')
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido al iniciar sesión'
-      console.error('[v0] ========== LOGIN ERROR ==========')
-      console.error('[v0] Error:', errorMessage)
-      console.error('[v0] Error type:', err instanceof Error ? 'Error instance' : typeof err)
+      console.error('[v0] Login error:', errorMessage)
       setError(errorMessage)
       setIsLoading(false)
     }
@@ -132,7 +99,7 @@ export default function CompanyLoginPage() {
         <Card className="border-border bg-card/50 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-foreground">Inicia Sesión</CardTitle>
-            <CardDescription>Usa tu RUT de ejecutivo para acceder</CardDescription>
+            <CardDescription>Ingresa tu RUT para acceder</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             {/* Error Alert */}
@@ -147,7 +114,7 @@ export default function CompanyLoginPage() {
               {/* RUT Field */}
               <div className="space-y-2">
                 <Label htmlFor="rut" className="text-foreground">
-                  RUT de Ejecutivo
+                  Tu RUT
                 </Label>
                 <Input
                   id="rut"
@@ -169,34 +136,10 @@ export default function CompanyLoginPage() {
                 )}
               </div>
 
-              {/* Password Field */}
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-foreground">
-                  Contraseña
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Tu contraseña"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value)
-                    validatePassword(e.target.value)
-                  }}
-                  onBlur={() => validatePassword(password)}
-                  className={`bg-input border-border text-foreground placeholder:text-muted-foreground ${
-                    passwordError ? 'border-destructive' : ''
-                  }`}
-                />
-                {passwordError && (
-                  <p className="mt-1 text-xs text-destructive font-medium">{passwordError}</p>
-                )}
-              </div>
-
               {/* Submit Button */}
               <Button
                 type="submit"
-                disabled={isLoading || !rut || !password || !!rutError || !!passwordError}
+                disabled={isLoading || !rut || !!rutError}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-10 mt-6"
               >
                 {isLoading ? (
