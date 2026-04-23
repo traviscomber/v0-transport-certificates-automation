@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
 
         // Step 1: Create auth user
         console.log('[v0] Creating auth user with email:', email)
-        let authUserId = randomUUID()
+        let authUserId: string = randomUUID()
         
         const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
           email: email,
@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
           console.warn('[v0] Auth user creation issue:', authError.message)
           // Continue - we'll still create the profile even if auth user creation has issues
         } else if (authData?.user?.id) {
-          authUserId = authData.user.id as string
+          authUserId = authData.user.id
           console.log('[v0] Auth user created with ID:', authUserId)
         }
 
