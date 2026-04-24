@@ -13,7 +13,7 @@ async function getConductores() {
     .select(`
       *,
       transportistas(razon_social, rut),
-      conductor_vehiculo(id, vehicle_type, status)
+      conductor_vehiculo(id, vehiculo_id, es_principal)
     `)
     .order("apellido_paterno", { ascending: true })
 
