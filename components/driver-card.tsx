@@ -413,6 +413,7 @@ export function DriverCard({
             console.error('[v0] Error updating status:', error)
             throw error
           }
+        }}
         onDelete={async (docId) => {
           console.log('[v0] Document deleted, refreshing...')
           await refetch(true)
