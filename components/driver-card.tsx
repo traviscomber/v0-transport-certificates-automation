@@ -182,7 +182,7 @@ export function DriverCard({
                         </div>
                       )}
                       {documents.map((doc) => (
-                      <div
+                        <div
                         key={doc.id}
                         className={`flex items-center justify-between rounded bg-slate-800/50 p-2 text-xs hover:bg-slate-800 transition-colors cursor-pointer ${
                           doc.estado === 'rechazado' ? 'opacity-60' : ''
@@ -241,8 +241,8 @@ export function DriverCard({
                             <Eye className="h-3 w-3 text-slate-400" />
                           </button>
                         </div>
-                      </div>
-                    ))
+                      ))}
+                    </>
                   ) : (
                     <div className="text-center py-4 text-slate-500">
                       <p className="text-xs">No hay documentos subidos</p>
