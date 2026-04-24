@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { triggerDocumentStatusAlert } from '@/lib/operations/alert-triggers'
 
 export async function PATCH(
   request: NextRequest,
@@ -37,6 +38,21 @@ export async function PATCH(
     }
 
     console.log('[v0] Document status updated to:', status)
+
+    // Trigger alert for status change
+    if (['approved', 'rejected', 'expired'].includes(status)) {
+      try {
+        await triggerDocumentStatusAlert(
+          documentId,
+          status as 'approved' | 'rejected' | 'expired',
+          `Document ${documentId}`,
+          reason || 'Sin especificar'
+        )
+      } catch (alertError) {
+        console.error('[v0] Error triggering alert:', alertError)
+        // Don't fail the request if alert triggering fails
+      }
+    }
 
     return NextResponse.json({
       success: true,

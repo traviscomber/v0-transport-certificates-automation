@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react'
 import { HelpBox } from '@/components/ui/help-box'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AlertItem } from '@/components/alerts/alert-item'
 import { AlertFilters } from '@/components/alerts/alert-filters'
 import { AlertStats } from '@/components/alerts/alert-stats'
+import { AlertSystemStatus } from '@/components/alerts/alert-system-status'
 import { useGeneratedAlerts } from '@/hooks/useGeneratedAlerts'
 import { RefreshCw, Download } from 'lucide-react'
 
@@ -131,47 +133,60 @@ export default function AlertasPage() {
         title="Centro de Alertas"
         description="Recibe notificaciones automáticas sobre documentos próximos a vencer, cambios de estado y otros eventos importantes de tu operación."
         tips={[
-          "Las alertas se generan automáticamente cada 5 minutos",
+          "Las alertas ahora se actualizan bajo demanda (usa el botón Actualizar)",
           "Presta atención a las alertas de vencimiento de documentos",
-          "Usa los filtros para encontrar alertas específicas rápidamente",
+          "Revisa la pestaña 'Sistema' para ver el estado de integración de alertas",
         ]}
       />
 
-      <AlertStats
-        total={stats.total}
-        warnings={stats.warnings}
-        errors={stats.errors}
-        info={stats.info}
-        unread={stats.unread}
-      />
+      <Tabs defaultValue="alerts" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="alerts">Alertas Activas</TabsTrigger>
+          <TabsTrigger value="system">Sistema</TabsTrigger>
+        </TabsList>
 
-      <AlertFilters
-        selectedType={selectedType}
-        selectedStatus={selectedStatus}
-        searchQuery={searchQuery}
-        onTypeChange={setSelectedType}
-        onStatusChange={setSelectedStatus}
-        onSearchChange={setSearchQuery}
-        onReset={handleReset}
-      />
+        <TabsContent value="alerts" className="space-y-4">
+          <AlertStats
+            total={stats.total}
+            warnings={stats.warnings}
+            errors={stats.errors}
+            info={stats.info}
+            unread={stats.unread}
+          />
 
-      {isLoading ? (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Generando alertas del sistema...</p>
-        </div>
-      ) : filteredAlerts.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">
-            {allAlerts.length === 0 ? 'No hay alertas activas' : 'No hay alertas que coincidan con los filtros'}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filteredAlerts.map((alert) => (
-            <AlertItem key={alert.id} {...alert} />
-          ))}
-        </div>
-      )}
+          <AlertFilters
+            selectedType={selectedType}
+            selectedStatus={selectedStatus}
+            searchQuery={searchQuery}
+            onTypeChange={setSelectedType}
+            onStatusChange={setSelectedStatus}
+            onSearchChange={setSearchQuery}
+            onReset={handleReset}
+          />
+
+          {isLoading ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Generando alertas del sistema...</p>
+            </div>
+          ) : filteredAlerts.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">
+                {allAlerts.length === 0 ? 'No hay alertas activas' : 'No hay alertas que coincidan con los filtros'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredAlerts.map((alert) => (
+                <AlertItem key={alert.id} {...alert} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="system" className="pt-4">
+          <AlertSystemStatus />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

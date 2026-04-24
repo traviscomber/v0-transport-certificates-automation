@@ -47,9 +47,9 @@ export function useGeneratedAlerts() {
   useEffect(() => {
     loadAlerts()
 
-    // Set up auto-refresh every 5 minutes
-    const interval = setInterval(loadAlerts, 5 * 60 * 1000)
-    return () => clearInterval(interval)
+    // Removed auto-refresh interval to prevent losing user state/filters
+    // Users can manually refresh using the Actualizar button instead
+    // This prevents data loss when users are filtering or reading alerts
   }, [loadAlerts])
 
   return {

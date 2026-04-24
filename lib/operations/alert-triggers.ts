@@ -119,6 +119,46 @@ export async function triggerDriverAddedAlert(driverName: string, driverId: stri
 }
 
 /**
+ * Dispara una alerta cuando el estado de un documento cambia
+ */
+export async function triggerDocumentStatusAlert(
+  documentId: string,
+  status: 'approved' | 'rejected' | 'expired',
+  documentName: string,
+  reason?: string
+) {
+  if (status === 'approved') {
+    return triggerDocumentApprovedAlert(documentId, documentName)
+  } else if (status === 'rejected') {
+    return triggerDocumentRejectedAlert(documentId, documentName, reason || 'Sin especificar')
+  } else if (status === 'expired') {
+    return logAlert({
+      type: 'warning',
+      title: 'Documento vencido',
+      description: `El documento "${documentName}" ha vencido y requiere renovación`,
+      entityType: 'document',
+      entityId: documentId,
+      actionUrl: `/dashboard/company/documentos`,
+    })
+  }
+}
+
+/**
+ * Dispara una alerta cuando un documento de subcontratista es subido
+ */
+export async function triggerSubcontractorDocumentUploadedAlert(subcontractorId: string, fileName: string, subcontractorName?: string) {
+  return logAlert({
+    type: 'success',
+    title: 'Documento de subcontratista subido',
+    description: `${subcontractorName || 'Un subcontratista'} ha subido un nuevo documento: ${fileName}`,
+    entityType: 'document',
+    entityId: subcontractorId,
+    entityName: subcontractorName,
+    actionUrl: `/dashboard/company/subcontratistas?search=${encodeURIComponent(subcontractorName || '')}`,
+  })
+}
+
+/**
  * Dispara una alerta de error del sistema
  */
 export async function triggerSystemAlert(title: string, description: string) {
