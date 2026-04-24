@@ -378,15 +378,6 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors }: Su
                       </button>
                     )}
                   </div>
-                        </>
-                      ) : (
-                        <>
-                          <AlertCircle className="w-5 h-5 text-red-500" />
-                          <Badge className="bg-red-500/20 text-red-300">Inactivo</Badge>
-                        </>
-                      )}
-                    </div>
-                  </div>
 
                   {/* Contact Info */}
                   <div className="grid grid-cols-2 gap-3">
