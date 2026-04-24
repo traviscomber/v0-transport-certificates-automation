@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Driver RUT required' }, { status: 400 })
     }
 
-  const adminClient = createAdminClient()
+  const adminClient = await createAdminClient()
     const uploadedDocs = []
 
     // Asegurar que el bucket existe
