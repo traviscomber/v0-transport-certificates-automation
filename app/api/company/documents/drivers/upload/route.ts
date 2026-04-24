@@ -40,23 +40,48 @@ export async function POST(request: NextRequest) {
       console.log('[v0] Bucket check/create attempt (may already exist):', bucketError)
     }
 
-    // Buscar el ID del conductor por RUT
-    const { data: drivers, error: driverError } = await adminClient
+    // Buscar el ID del conductor por RUT (normalizar formato)
+    // Primero intenta búsqueda exacta
+    let { data: drivers, error: driverError } = await adminClient
       .from('conductores')
-      .select('id')
+      .select('id, rut, nombre')
       .eq('rut', driverRut)
       .single()
 
+    // Si no encuentra, busca con búsqueda flexible (ilike)
+    if (driverError && !drivers) {
+      console.log('[v0] Exact RUT match not found, trying flexible search...')
+      const { data: flexDrivers } = await adminClient
+        .from('conductores')
+        .select('id, rut, nombre')
+        .ilike('rut', `%${driverRut}%`)
+        .limit(1)
+
+      if (flexDrivers && flexDrivers.length > 0) {
+        drivers = flexDrivers[0]
+        driverError = null
+        console.log('[v0] Found driver with flexible search:', drivers)
+      }
+    }
+
     if (driverError || !drivers?.id) {
-      console.error('[v0] Driver not found for RUT:', driverRut)
+      console.error('[v0] Driver not found for RUT:', driverRut, 'Error:', driverError)
+      
+      // Log available drivers for debugging
+      const { data: allDrivers } = await adminClient
+        .from('conductores')
+        .select('rut, nombre')
+        .limit(5)
+      console.log('[v0] Sample drivers in database:', allDrivers)
+      
       return NextResponse.json(
-        { error: `Conductor con RUT ${driverRut} no encontrado` },
+        { error: `Conductor con RUT ${driverRut} no encontrado. Verifica el formato del RUT.` },
         { status: 404 }
       )
     }
 
     const driverId = drivers.id
-    console.log('[v0] Found driver:', { driverRut, driverId })
+    console.log('[v0] Found driver:', { driverRut: drivers.rut, driverId, nombre: drivers.nombre })
 
     // Procesar cada archivo
     for (const file of files) {
