@@ -12,6 +12,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Call Supabase Auth REST API directly (no SDK)
+    console.log('[v0] Attempting login for:', email)
+    console.log('[v0] Supabase URL:', supabaseUrl)
+    
     const authResponse = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
       method: 'POST',
       headers: {
@@ -19,7 +22,7 @@ export async function POST(request: NextRequest) {
         'apikey': supabaseAnonKey,
       },
       body: JSON.stringify({
-        email,
+        email: email.toLowerCase(),
         password,
       }),
     })
