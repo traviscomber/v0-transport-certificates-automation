@@ -212,7 +212,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors }: Su
           Filtros
           {hasActiveFilters && (
             <Badge className="ml-1 bg-red-500 text-white">
-              {selectedRegions.length + selectedEjecutivas.length + selectedCertifications.length + (showActiveOnly ? 1 : 0)}
+              {selectedRegions.length + selectedCertifications.length + (showActiveOnly ? 1 : 0)}
             </Badge>
           )}
         </button>
@@ -225,6 +225,26 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors }: Su
             <X className="w-4 h-4" />
           </button>
         )}
+      </div>
+
+      {/* Ejecutivas Filter - Always visible */}
+      <div className="space-y-2">
+        <label className="text-sm font-semibold text-slate-300 block">Ejecutivas</label>
+        <div className="flex flex-wrap gap-2">
+          {ejecutivas.map(ejecutiva => (
+            <button
+              key={ejecutiva}
+              onClick={() => toggleEjecutiva(ejecutiva)}
+              className={`px-3 py-1 rounded text-sm transition-colors ${
+                selectedEjecutivas.includes(ejecutiva)
+                  ? 'bg-green-600 text-white'
+                  : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {ejecutiva}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Advanced Filters */}
@@ -245,26 +265,6 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors }: Su
                   }`}
                 >
                   {region}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Ejecutivas Filter */}
-          <div>
-            <label className="text-sm font-semibold text-slate-300 block mb-2">Ejecutivas ({selectedEjecutivas.length})</label>
-            <div className="flex flex-wrap gap-2">
-              {ejecutivas.map(ejecutiva => (
-                <button
-                  key={ejecutiva}
-                  onClick={() => toggleEjecutiva(ejecutiva)}
-                  className={`px-3 py-1 rounded text-sm transition-colors ${
-                    selectedEjecutivas.includes(ejecutiva)
-                      ? 'bg-green-600 text-white'
-                      : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {ejecutiva}
                 </button>
               ))}
             </div>
