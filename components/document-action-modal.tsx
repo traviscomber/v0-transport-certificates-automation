@@ -209,7 +209,7 @@ export function DocumentActionModal({
                   onClick={() => {
                     setIsChanging(true)
                     if (onStatusChange) {
-                      onStatusChange(document.id, 'pending').then(() => {
+                      onStatusChange(document.id, 'pendiente').then(() => {
                         setIsChanging(false)
                         setTimeout(() => onClose(), 1000)
                       }).catch(err => {
