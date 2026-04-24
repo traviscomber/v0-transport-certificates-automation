@@ -18,7 +18,7 @@ export interface AlertEvent {
  */
 export async function logAlert(event: AlertEvent) {
   try {
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     // Log en consola
     console.log('[v0] Alert triggered:', {
@@ -27,21 +27,97 @@ export async function logAlert(event: AlertEvent) {
       entity: event.entityType,
     })
 
-    // Aquí se podría guardar en la tabla de alertas_log de Supabase si existe
-    // Por ahora solo registramos en logs, pero la estructura está lista para
-    // guardar en base de datos cuando la tabla esté configurada
+    // Obtener la organization_id por defecto (primera organización o hardcodeada)
+    // En un sistema multi-tenant, esto vendría de un contexto
+    const { data: orgs, error: orgsError } = await adminClient
+      .from('organizations')
+      .select('id')
+      .limit(1)
+
+    if (orgsError) {
+      console.warn('[v0] Error fetching organizations:', orgsError.message)
+      return {
+        success: false,
+        error: 'No organization found',
+      }
+    }
+
+    if (!orgs || orgs.length === 0) {
+      console.warn('[v0] No organizations in database')
+      return {
+        success: false,
+        error: 'No organization found',
+      }
+    }
+
+    const organizationId = orgs[0].id
+    console.log('[v0] Found organization:', organizationId)
+
+    // Guardar en la tabla alerts_log
+    const insertPayload = {
+      organization_id: organizationId,
+      alert_type: event.type.toUpperCase(),
+      priority: mapTypeToPriority(event.type),
+      title: event.title,
+      description: event.description,
+      entity_type: event.entityType,
+      entity_id: event.entityId,
+      entity_name: event.entityName,
+      action_url: event.actionUrl,
+      is_read: false,
+      is_resolved: false,
+    }
+
+    console.log('[v0] Inserting alert:', insertPayload)
+
+    const { data: savedAlert, error: insertError } = await adminClient
+      .from('alerts_log')
+      .insert(insertPayload)
+      .select()
+
+    if (insertError) {
+      console.error('[v0] ❌ Error saving alert to database:', insertError)
+      return {
+        success: false,
+        error: insertError.message,
+      }
+    }
+
+    console.log('[v0] ✅ Alert saved to database:', {
+      id: savedAlert?.[0]?.id,
+      title: event.title,
+    })
 
     return {
       success: true,
       event,
       timestamp: new Date(),
+      alertId: savedAlert?.[0]?.id,
     }
   } catch (error) {
-    console.error('[v0] Error logging alert:', error)
+    console.error('[v0] ❌ Exception in logAlert:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
     }
+  }
+}
+
+/**
+ * Mapea el tipo de alerta a prioridad
+ */
+function mapTypeToPriority(type: 'warning' | 'error' | 'success' | 'info'): string {
+  switch (type) {
+    case 'error':
+      return 'high'
+    case 'warning':
+      return 'medium'
+    case 'success':
+      return 'low'
+    case 'info':
+      return 'low'
+    default:
+      return 'medium'
   }
 }
 
