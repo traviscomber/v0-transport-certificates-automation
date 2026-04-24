@@ -33,15 +33,27 @@ export default function AlertasPage() {
   const loadAlerts = async () => {
     setIsLoading(true)
     try {
+      console.log('[v0] Fetching alerts from /api/alerts/generate...')
       const response = await fetch('/api/alerts/generate')
+      console.log('[v0] Response status:', response.status)
       const data = await response.json()
+      console.log('[v0] Response data:', data)
       
       if (data.alerts) {
-        setAlerts(data.alerts)
         console.log('[v0] Loaded', data.alerts.length, 'alerts')
+        // Convert timestamp strings to Date objects
+        const alertsWithDates = data.alerts.map((alert: any) => ({
+          ...alert,
+          timestamp: new Date(alert.timestamp),
+        }))
+        setAlerts(alertsWithDates)
+      } else {
+        console.warn('[v0] No alerts property in response')
+        setAlerts([])
       }
     } catch (error) {
       console.error('[v0] Error loading alerts:', error)
+      setAlerts([])
     } finally {
       setIsLoading(false)
     }
@@ -95,8 +107,8 @@ export default function AlertasPage() {
     }
   }
 
-  const formatTime = (date: Date) => {
-    const d = new Date(date)
+  const formatTime = (date: Date | string) => {
+    const d = typeof date === 'string' ? new Date(date) : date
     const now = new Date()
     const diff = now.getTime() - d.getTime()
     const minutes = Math.floor(diff / 60000)
