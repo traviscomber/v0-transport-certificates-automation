@@ -57,12 +57,9 @@ export async function GET(request: NextRequest) {
       console.log('[v0] Transportistas error response:', JSON.stringify(transportistas).substring(0, 300))
     }
 
-    // Fetch conductores data - ALWAYS filter by ejecutiva name (even for admins)
-    let conductoesUrl = `${supabaseUrl}/rest/v1/conductores`
-    if (userName) {
-      // Use ilike for case-insensitive search to handle name variations
-      conductoesUrl += `?ejecutiva=ilike.%${encodeURIComponent(userName)}%`
-    }
+    // Fetch conductores data - NO filter, get all drivers
+    // They will be linked to subcontractors via rut_proveedor match in the UI
+    const conductoesUrl = `${supabaseUrl}/rest/v1/conductores`
 
     console.log('[v0] Fetching conductores from:', conductoesUrl)
 
