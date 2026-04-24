@@ -65,6 +65,7 @@ export function DriversList({ drivers }: DriversListProps) {
         driver.rut?.toLowerCase().includes(searchLower) ||
         driver.nombre?.toLowerCase().includes(searchLower) ||
         driver.proveedor?.toLowerCase().includes(searchLower) ||
+        driver.rut_proveedor?.toLowerCase().includes(searchLower) ||
         driver.patente_tracto?.toLowerCase().includes(searchLower)
       
       // Filtro por proveedor/subcontratista
