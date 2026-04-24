@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Download, Eye, CheckCircle, XCircle, Clock, Loader } from 'lucide-react'
+import { X, Download, Eye, CheckCircle, XCircle, Clock, Loader, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useDocumentManagement } from '@/hooks/use-document-management'
 
 interface Document {
   id: string
@@ -19,6 +20,7 @@ interface DocumentActionModalProps {
   isOpen: boolean
   onClose: () => void
   onStatusChange?: (documentId: string, newStatus: 'pendiente' | 'aprobado' | 'rechazado') => Promise<void>
+  onDelete?: (documentId: string) => Promise<void>
   isAdmin?: boolean
 }
 
@@ -27,11 +29,14 @@ export function DocumentActionModal({
   isOpen,
   onClose,
   onStatusChange,
+  onDelete,
   isAdmin = false,
 }: DocumentActionModalProps) {
   const [selectedStatus, setSelectedStatus] = useState<'aprobado' | 'rechazado' | null>(null)
   const [isChanging, setIsChanging] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [showPreview, setShowPreview] = useState(true)
+  const { deleteDocument } = useDocumentManagement()
 
   if (!isOpen || !document) return null
 
@@ -58,6 +63,25 @@ export function DocumentActionModal({
       // Fallback if public_url not available
       const link = `/api/documents/download?path=${encodeURIComponent(document.storage_path)}`
       window.open(link, '_blank')
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!isAdmin || !document.storage_path) return
+    if (!confirm('¿Estás seguro de que quieres eliminar este documento?')) return
+    
+    setIsDeleting(true)
+    try {
+      await deleteDocument(document.id, document.storage_path)
+      if (onDelete) {
+        await onDelete(document.id)
+      }
+      setTimeout(() => onClose(), 500)
+    } catch (error) {
+      console.error('[v0] Error deleting document:', error)
+      alert('Error al eliminar el documento')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -182,25 +206,46 @@ export function DocumentActionModal({
             )}
 
             {isAdmin && document.estado !== 'pendiente' && (
+              <>
+                <Button
+                  onClick={() => {
+                    setIsChanging(true)
+                    if (onStatusChange) {
+                      onStatusChange(document.id, 'pending').then(() => {
+                        setIsChanging(false)
+                        setTimeout(() => onClose(), 1000)
+                      }).catch(err => {
+                        console.error('[v0] Error reverting to pending:', err)
+                        setIsChanging(false)
+                      })
+                    }
+                  }}
+                  disabled={isChanging}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  {isChanging ? <Loader className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4" />}
+                  Volver a Pendiente
+                </Button>
+                <Button
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="bg-red-600/80 hover:bg-red-700 text-white flex items-center gap-2"
+                >
+                  {isDeleting ? <Loader className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  Eliminar
+                </Button>
+              </>
+            )}
+
+            {isAdmin && document.estado === 'pendiente' && (
               <Button
-                onClick={() => {
-                  setIsChanging(true)
-                  if (onStatusChange) {
-                    onStatusChange(document.id, 'pending').then(() => {
-                      setIsChanging(false)
-                      setTimeout(() => onClose(), 1000)
-                    }).catch(err => {
-                      console.error('[v0] Error reverting to pending:', err)
-                      setIsChanging(false)
-                    })
-                  }
-                }}
-                disabled={isChanging}
-                variant="outline"
-                className="flex items-center gap-2"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="bg-red-600/80 hover:bg-red-700 text-white flex items-center gap-2"
               >
-                {isChanging ? <Loader className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4" />}
-                Volver a Pendiente
+                {isDeleting ? <Loader className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                Eliminar
               </Button>
             )}
           </div>

@@ -400,6 +400,12 @@ export function DriverCard({
             throw error
           }
         }}
+        onDelete={async (docId) => {
+          console.log('[v0] Document deleted, refreshing...')
+          setRefreshing(true)
+          await refetch()
+          setRefreshing(false)
+        }}
         isAdmin={true}
       />
     </>

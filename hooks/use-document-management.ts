@@ -16,6 +16,7 @@ interface DocumentManagement {
   changeStatus: (documentId: string, status: string, reason?: string) => Promise<any>
   updateMetadata: (documentId: string, customCode?: string, expirationDate?: string) => Promise<any>
   generateCode: (documentId: string, companyCode: string, driverRut: string, documentType: string) => Promise<string>
+  deleteDocument: (documentId: string, storagePath: string) => Promise<any>
   getAlerts: (driverRut?: string, daysThreshold?: number) => Promise<{ critical: DocumentAlert[]; urgent: DocumentAlert[]; warnings: DocumentAlert[] }>
   loading: boolean
   error: string | null
@@ -122,10 +123,32 @@ export function useDocumentManagement(): DocumentManagement {
     }
   }, [])
 
+  const deleteDocument = useCallback(async (documentId: string, storagePath: string) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await fetch(`/api/company/documents/${documentId}/delete`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storage_path: storagePath })
+      })
+
+      if (!response.ok) throw new Error('Failed to delete document')
+      return await response.json()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error deleting document'
+      setError(msg)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
   return {
     changeStatus,
     updateMetadata,
     generateCode,
+    deleteDocument,
     getAlerts,
     loading,
     error
