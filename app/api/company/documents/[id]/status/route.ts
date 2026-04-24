@@ -16,30 +16,42 @@ export async function PATCH(
 
     console.log('[v0] Changing document status:', { documentId, status, reason })
 
-    // Intenta guardar en table document_statuses si existe
-    // Si no existe, simplemente mantiene el status en memoria para esta sesión
-    try {
-      const { error: upsertError } = await adminClient
-        .from('document_statuses')
-        .upsert({
-          document_id: documentId,
-          status: status,
-          reason: reason || 'Sin motivo especificado',
-          changed_at: new Date().toISOString(),
-          changed_by: 'admin'
-        }, {
-          onConflict: 'document_id'
-        })
+    // Obtener documento actual
+    const { data: doc, error: getError } = await adminClient
+      .from('documents')
+      .select('ocr_data')
+      .eq('id', documentId)
+      .single()
 
-      if (upsertError) {
-        console.warn('[v0] Warning - could not save status to DB:', upsertError.message)
-        // Continuamos de todas formas, el status se guarda en memoria
-      }
-    } catch (dbError) {
-      console.warn('[v0] DB operation failed, using in-memory storage:', dbError)
+    if (getError || !doc) {
+      console.warn('[v0] Document not found:', documentId)
+      return NextResponse.json({ error: 'Document not found' }, { status: 404 })
     }
 
-    console.log('[v0] Document status updated:', status)
+    // Preparar ocr_data con status
+    const ocrData = doc.ocr_data || {}
+    ocrData.status = status
+    ocrData.reason = reason || 'Sin motivo especificado'
+    ocrData.changed_at = new Date().toISOString()
+    ocrData.changed_by = 'admin'
+
+    // Actualizar documento con nuevo status
+    const { data: updated, error: updateError } = await adminClient
+      .from('documents')
+      .update({
+        ocr_data: ocrData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', documentId)
+      .select()
+      .single()
+
+    if (updateError) {
+      console.error('[v0] Error updating document status:', updateError)
+      return NextResponse.json({ error: 'Failed to update status' }, { status: 500 })
+    }
+
+    console.log('[v0] Document status updated to:', status)
 
     return NextResponse.json({
       success: true,
@@ -65,34 +77,28 @@ export async function GET(
     const adminClient = createAdminClient()
     const documentId = params.id
 
-    // Intenta obtener status de la tabla
-    try {
-      const { data: statusData, error } = await adminClient
-        .from('document_statuses')
-        .select('*')
-        .eq('document_id', documentId)
-        .single()
+    // Obtener status del documento desde ocr_data
+    const { data: doc, error } = await adminClient
+      .from('documents')
+      .select('ocr_data')
+      .eq('id', documentId)
+      .single()
 
-      if (!error && statusData) {
-        return NextResponse.json({
-          document_id: documentId,
-          status: statusData.status,
-          reason: statusData.reason,
-          changed_at: statusData.changed_at,
-          changed_by: statusData.changed_by
-        })
-      }
-    } catch (dbError) {
-      console.warn('[v0] Could not fetch from DB:', dbError)
+    if (error || !doc) {
+      return NextResponse.json({
+        document_id: documentId,
+        status: 'pending',
+        reason: null
+      })
     }
 
-    // Si no existe en BD, retorna estado por defecto
+    const status = doc.ocr_data?.status || 'pending'
+    
     return NextResponse.json({
       document_id: documentId,
-      status: 'pending',
-      reason: null,
-      changed_at: null,
-      changed_by: null
+      status: status,
+      reason: doc.ocr_data?.reason,
+      changed_at: doc.ocr_data?.changed_at
     })
   } catch (error) {
     console.error('[v0] Error in GET /api/company/documents/[id]/status:', error)
