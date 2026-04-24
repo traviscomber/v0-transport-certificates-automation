@@ -23,10 +23,20 @@ export function useDriverDocuments(driverRut: string) {
     setLoading(true)
     setError(null)
     try {
-      console.log('[v0] Fetching driver documents from unified API:', driverRut)
+      console.log('[v0] Fetching driver documents from unified API:', driverRut, { skipCache })
       // Add cache busting parameter if skipCache is true
       const timestamp = skipCache ? `&_t=${Date.now()}` : ''
-      const response = await fetch(`/api/company/documents/drivers?rut=${encodeURIComponent(driverRut)}${timestamp}`)
+      const headers: HeadersInit = skipCache ? {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      } : {}
+      
+      const response = await fetch(`/api/company/documents/drivers?rut=${encodeURIComponent(driverRut)}${timestamp}`, {
+        method: 'GET',
+        headers,
+        cache: skipCache ? 'no-store' : 'default'
+      })
       const result = await response.json()
 
       if (!response.ok) {

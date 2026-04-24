@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     console.log('[v0] Listing documents for driver:', rut)
 
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     // Buscar conductores para obtener el ID
     const { data: drivers } = await adminClient
