@@ -23,8 +23,18 @@ interface Subcontractor {
   is_active: boolean
 }
 
+interface Driver {
+  id: string
+  rut: string
+  nombre: string
+  rut_proveedor: string
+  proveedor: string
+  is_active: boolean
+}
+
 export default function SubcontratistasPage() {
   const [subcontractors, setSubcontractors] = useState<Subcontractor[]>([])
+  const [drivers, setDrivers] = useState<Driver[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -36,6 +46,9 @@ export default function SubcontratistasPage() {
         const data = await response.json()
         if (data.subcontractors) {
           setSubcontractors(data.subcontractors)
+        }
+        if (data.drivers) {
+          setDrivers(data.drivers)
         }
       } catch (error) {
         console.error('[v0] Error fetching subcontractors:', error)
@@ -84,7 +97,7 @@ export default function SubcontratistasPage() {
         ]}
       />
 
-      <SubcontractorsList subcontractors={subcontractors as any} />
+      <SubcontractorsList subcontractors={subcontractors as any} drivers={drivers as any} />
     </div>
   )
 }

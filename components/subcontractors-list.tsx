@@ -35,11 +35,12 @@ interface Driver {
 
 interface SubcontractorsListProps {
   subcontractors?: Subcontractor[]
+  drivers?: Driver[]
 }
 
-export function SubcontractorsList({ subcontractors: initialSubcontractors }: SubcontractorsListProps) {
+export function SubcontractorsList({ subcontractors: initialSubcontractors, drivers: initialDrivers }: SubcontractorsListProps) {
   const [subcontractors, setSubcontractors] = useState<Subcontractor[]>(initialSubcontractors || [])
-  const [drivers, setDrivers] = useState<Driver[]>([])
+  const [drivers, setDrivers] = useState<Driver[]>(initialDrivers || [])
   const [isLoading, setIsLoading] = useState(!initialSubcontractors)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRegions, setSelectedRegions] = useState<string[]>([])
