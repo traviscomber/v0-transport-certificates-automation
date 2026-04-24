@@ -64,10 +64,9 @@ export function useDriverDocuments(driverRut: string) {
     try {
       console.log('[v0] Uploading document:', { driverRut, tipo, file: file.name, expirationDate })
       const formData = new FormData()
-      formData.append('file', file)
+      formData.append('files', file)
       formData.append('driverRut', driverRut)
-      formData.append('document_type', tipo)
-      formData.append('file_name', nombre)
+      formData.append('category', tipo)
       if (expirationDate) {
         formData.append('expiration_date', expirationDate)
       }
@@ -83,42 +82,50 @@ export function useDriverDocuments(driverRut: string) {
       }
 
       const uploadResult = await response.json()
-      console.log('[v0] Document uploaded:', uploadResult.document.id)
+      console.log('[v0] Document uploaded:', uploadResult.documents?.length, 'file(s)')
+
+      // Procesar cada documento subido
+      const uploadedDoc = uploadResult.documents?.[0] // Tomar el primero
+      if (!uploadedDoc) {
+        throw new Error('No document returned from upload')
+      }
 
       // Validar documento con OpenAI usando la URL pública
-      console.log('[v0] Starting document validation...')
-      const validationResponse = await fetch('/api/company/documents/drivers/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          file_url: uploadResult.document.public_url,
-          document_type: tipo,
-          driver_rut: driverRut,
-        }),
-      })
+      if (uploadedDoc.public_url) {
+        console.log('[v0] Starting document validation...')
+        const validationResponse = await fetch('/api/company/documents/drivers/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            file_url: uploadedDoc.public_url,
+            document_type: tipo,
+            driver_rut: driverRut,
+          }),
+        })
 
-      if (validationResponse.ok) {
-        const validation = await validationResponse.json()
-        console.log('[v0] Document validated:', validation.extracted_data)
-        
-        // Extraer fecha de vencimiento si viene en los datos extraídos
-        if (validation.extracted_data?.expiration_date) {
-          await fetch(`/api/company/documents/${uploadResult.document.id}/metadata`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              expiration_date: validation.extracted_data.expiration_date 
-            })
-          }).catch(err => console.error('Error setting extracted expiration:', err))
+        if (validationResponse.ok) {
+          const validation = await validationResponse.json()
+          console.log('[v0] Document validated:', validation.extracted_data)
+          
+          // Extraer fecha de vencimiento si viene en los datos extraídos
+          if (validation.extracted_data?.expiration_date) {
+            await fetch(`/api/company/documents/${uploadedDoc.id}/metadata`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                expiration_date: validation.extracted_data.expiration_date 
+              })
+            }).catch(err => console.error('Error setting extracted expiration:', err))
+          }
+          
+          uploadedDoc.validation = validation.validation
+          uploadedDoc.extracted_data = validation.extracted_data
         }
-        
-        uploadResult.document.validation = validation.validation
-        uploadResult.document.extracted_data = validation.extracted_data
       }
 
       // Recargar lista de documentos
       await fetchDocuments()
-      return uploadResult.document
+      return uploadedDoc
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Upload failed'
       console.error('[v0] Error uploading document:', errorMsg)
