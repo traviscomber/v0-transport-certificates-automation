@@ -26,10 +26,13 @@ export async function POST(request: NextRequest) {
 
     const authData = await authResponse.json()
 
+    console.log('[v0] Auth response status:', authResponse.status)
+    console.log('[v0] Auth response:', authData)
+
     if (!authResponse.ok) {
       console.error('[v0] Auth error:', authData)
       return NextResponse.json(
-        { error: authData.error_description || 'Authentication failed' },
+        { error: authData.error_description || authData.error || 'Authentication failed' },
         { status: 401 }
       )
     }
