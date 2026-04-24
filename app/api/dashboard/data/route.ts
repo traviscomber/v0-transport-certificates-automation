@@ -30,10 +30,10 @@ export async function GET(request: NextRequest) {
 
     console.log('[v0] Dashboard - User:', userEmail, 'Name:', userName, 'Role:', userRole, 'IsAdmin:', isAdmin)
 
-    // Fetch transportistas data
+    // Fetch transportistas data - ALWAYS filter by ejecutiva name (even for admins)
     let transportistasUrl = `${supabaseUrl}/rest/v1/transportistas`
-    if (!isAdmin && userName) {
-      // Filter by executive name if not admin
+    if (userName) {
+      // Always filter by executive name to get their assigned subcontractors
       transportistasUrl += `?ejecutiva=eq.${encodeURIComponent(userName)}`
     }
 
@@ -49,10 +49,10 @@ export async function GET(request: NextRequest) {
     const transportistas = await transportistasResponse.json()
     console.log('[v0] Transportistas count:', Array.isArray(transportistas) ? transportistas.length : 0)
 
-    // Fetch conductores data
+    // Fetch conductores data - ALWAYS filter by ejecutiva name (even for admins)
     let conductoesUrl = `${supabaseUrl}/rest/v1/conductores`
-    if (!isAdmin && userName) {
-      // Filter by executive name if not admin
+    if (userName) {
+      // Always filter by executive name to get their assigned drivers
       conductoesUrl += `?ejecutiva=eq.${encodeURIComponent(userName)}`
     }
 
