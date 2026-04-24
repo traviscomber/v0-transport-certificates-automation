@@ -143,6 +143,16 @@ export function DriverCard({
                     <span className="text-sm font-semibold text-white">
                       Documentos ({documents.length})
                     </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        refetch(true)
+                      }}
+                      className="ml-1 p-1 rounded hover:bg-slate-700/50 transition-colors"
+                      title="Refrescar documentos"
+                    >
+                      <RefreshCw className="h-3 w-3 text-slate-400 hover:text-slate-200" />
+                    </button>
                   </div>
                   <ChevronDown 
                     className={`h-4 w-4 text-slate-400 transition-transform ${
