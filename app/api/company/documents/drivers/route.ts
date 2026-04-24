@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     // Get all documents for this driver RUT via transportistas table
     const { data: transportistas, error } = await adminClient
       .from('transportistas')
-      .select('document_id, documents(id, file_name, file_size, file_type, document_type, upload_date, created_at)')
+      .select('document_id, uploaded_documents(id, file_name, file_size, file_type, document_type, upload_date, created_at)')
       .eq('rut', rut)
       .order('created_at', { ascending: false })
 
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     // Extract documents from the relationship
     const documents = transportistas
-      ?.map((t: any) => t.documents)
+      ?.map((t: any) => t.uploaded_documents)
       .filter(Boolean) || []
 
     console.log('[v0] Found', documents.length, 'documents for driver:', rut)

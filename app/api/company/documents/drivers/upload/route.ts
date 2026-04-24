@@ -73,9 +73,9 @@ export async function POST(request: NextRequest) {
 
       console.log('[v0] File uploaded to storage:', filePath)
 
-      // Save metadata to documents table (only use columns that exist)
+      // Save metadata to uploaded_documents table (only use columns that exist)
       const { data: doc, error: docError } = await adminClient
-        .from('documents')
+        .from('uploaded_documents')
         .insert({
           file_name: file.name,
           file_size: file.size.toString(),
