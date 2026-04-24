@@ -32,7 +32,8 @@ export async function GET(request: NextRequest) {
 
     // Fetch transportistas data - NO filtering, return all subcontractors
     // Users can filter by ejecutiva name using the UI buttons
-    const transportistasUrl = `${supabaseUrl}/rest/v1/transportistas`
+    // Add limit=1000 to fetch all records (Supabase default is 1000)
+    const transportistasUrl = `${supabaseUrl}/rest/v1/transportistas?limit=1000`
 
     console.log('[v0] Fetching transportistas from:', transportistasUrl)
 
@@ -56,7 +57,8 @@ export async function GET(request: NextRequest) {
 
     // Fetch conductores data - NO filter, get all drivers
     // They will be linked to subcontractors via rut_proveedor match in the UI
-    const conductoesUrl = `${supabaseUrl}/rest/v1/conductores`
+    // Add limit=1000 to fetch all records
+    const conductoesUrl = `${supabaseUrl}/rest/v1/conductores?limit=1000`
 
     console.log('[v0] Fetching conductores from:', conductoesUrl)
 
