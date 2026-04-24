@@ -6,13 +6,13 @@ import { createAdminClient } from '@/lib/supabase/admin'
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
-    const file = formData.get('file') as File | null
+    const files = formData.getAll('files') as File[]
     const driverRut = formData.get('driverRut') as string
-    const documentType = formData.get('document_type') as string || 'Documento'
+    const category = formData.get('category') as string || 'Documento'
 
-    console.log('[v0] Upload start:', { driverRut, documentType, fileName: file?.name })
+    console.log('[v0] Upload start:', { driverRut, category, fileCount: files.length })
 
-    if (!file) {
+    if (!files || files.length === 0) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
@@ -21,48 +21,54 @@ export async function POST(request: NextRequest) {
     }
 
     const adminClient = createAdminClient()
+    const uploadedDocs = []
 
-    // Generar path único
-    const timestamp = Date.now()
-    const sanitizedFileName = file.name.replace(/[^a-z0-9._-]/gi, '_').toLowerCase()
-    const filePath = `drivers/${driverRut}/${timestamp}_${sanitizedFileName}`
+    // Procesar cada archivo
+    for (const file of files) {
+      // Generar path único
+      const timestamp = Date.now()
+      const sanitizedFileName = file.name.replace(/[^a-z0-9._-]/gi, '_').toLowerCase()
+      const filePath = `drivers/${driverRut}/${timestamp}_${sanitizedFileName}`
 
-    console.log('[v0] Uploading file to storage:', filePath)
+      console.log('[v0] Uploading file to storage:', filePath)
 
-    // Subir a Storage
-    const { error: uploadError } = await adminClient.storage
-      .from('documents')
-      .upload(filePath, file, { cacheControl: '3600', upsert: true })
+      // Subir a Storage
+      const { error: uploadError } = await adminClient.storage
+        .from('documents')
+        .upload(filePath, file, { cacheControl: '3600', upsert: true })
 
-    if (uploadError) {
-      console.error('[v0] Storage error:', uploadError)
-      return NextResponse.json({ error: 'Failed to upload to storage' }, { status: 500 })
-    }
+      if (uploadError) {
+        console.error('[v0] Storage error:', uploadError)
+        continue
+      }
 
-    console.log('[v0] File uploaded successfully:', filePath)
+      console.log('[v0] File uploaded successfully:', filePath)
 
-    // Obtener URL pública
-    const { data } = adminClient.storage.from('documents').getPublicUrl(filePath)
-    const publicUrl = data?.publicUrl || ''
+      // Obtener URL pública
+      const { data } = adminClient.storage.from('documents').getPublicUrl(filePath)
+      const publicUrl = data?.publicUrl || ''
 
-    // Crear objeto de documento
-    const doc = {
-      id: `${timestamp}_${driverRut}`,
-      driver_rut: driverRut,
-      file_name: file.name,
-      file_size: file.size,
-      file_type: file.type,
-      document_type: documentType,
-      storage_path: filePath,
-      public_url: publicUrl,
-      upload_date: new Date().toISOString(),
-      status: 'uploaded'
+      // Crear objeto de documento
+      const doc = {
+        id: `${timestamp}_${driverRut}`,
+        driver_rut: driverRut,
+        file_name: file.name,
+        file_size: file.size,
+        file_type: file.type,
+        document_type: category,
+        storage_path: filePath,
+        public_url: publicUrl,
+        upload_date: new Date().toISOString(),
+        status: 'uploaded'
+      }
+
+      uploadedDocs.push(doc)
     }
 
     return NextResponse.json({
       success: true,
-      document: doc,
-      message: 'Document uploaded successfully'
+      documents: uploadedDocs,
+      message: `${uploadedDocs.length} documento(s) subido(s) exitosamente`
     })
   } catch (error) {
     console.error('[v0] Upload error:', error)
