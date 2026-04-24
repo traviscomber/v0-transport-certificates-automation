@@ -69,53 +69,43 @@ async function insertUsuarios() {
     const organizationId = org.id
     console.log('[v0] Found organization ID:', organizationId)
 
-    // Step 2: Create auth users and profiles
-    console.log('[v0] Creating', usuarios.length, 'auth users and profiles...')
+    // Step 2: Check which users already have profiles
+    console.log('[v0] Checking existing profiles...')
+    const { data: existingProfiles } = await supabase
+      .from('profiles')
+      .select('rut, email')
 
-    const createdUsers = []
+    const existingRuts = new Set(existingProfiles?.map(p => p.rut) || [])
+    const existingEmails = new Set(existingProfiles?.map(p => p.email) || [])
+
+    console.log(`[v0] Found ${existingProfiles?.length || 0} existing profiles`)
+
+    // Step 3: Determine which usuarios need to be created
+    const usuariosToCreate = usuarios.filter(u => !existingRuts.has(u.rut))
+    
+    if (usuariosToCreate.length === 0) {
+      console.log('[v0] All usuarios already exist as profiles')
+      return
+    }
+
+    console.log(`[v0] Need to create profiles for ${usuariosToCreate.length} usuarios`)
+    console.log(`[v0]`)
+    console.log(`[v0] IMPORTANT: Auth users must already exist for these emails.`)
+    console.log(`[v0] If they don't exist, first create them via /api/admin/seed-labbe-users`)
+    console.log(`[v0]`)
+
+    // Step 4: Try to create profiles for each usuario
     let successCount = 0
     let errorCount = 0
+    const needsAuthUser = []
 
-    for (const u of usuarios) {
+    for (const u of usuariosToCreate) {
       try {
-        console.log(`[v0] Processing: ${u.email}`)
+        console.log(`[v0] Creating profile for ${u.email}...`)
 
-        // Create auth user with admin API
-        console.log(`[v0] Creating auth user for ${u.email}...`)
-        let userId
-        try {
-          const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-            email: u.email,
-            password: 'TempPassword123!',
-            email_confirm: true,
-          })
-
-          if (authError) {
-            console.error(`[v0] Auth error for ${u.rut}:`, authError?.message || authError)
-            errorCount++
-            continue
-          }
-
-          if (!authData?.user?.id) {
-            console.error(`[v0] No user ID returned for ${u.rut}`, authData)
-            errorCount++
-            continue
-          }
-
-          userId = authData.user.id
-          console.log(`[v0] ✅ Created auth user ${userId} for ${u.email}`)
-        } catch (authErr) {
-          console.error(`[v0] Exception creating auth user for ${u.rut}:`, authErr?.message)
-          errorCount++
-          continue
-        }
-
-        // Create profile with the auth user ID
-        console.log(`[v0] Creating profile for user ${userId}...`)
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .insert({
-            id: userId,
             email: u.email,
             full_name: u.full_name,
             rut: u.rut,
@@ -128,12 +118,17 @@ async function insertUsuarios() {
           .single()
 
         if (profileError) {
-          console.error(`[v0] Profile error for ${u.rut} (${userId}):`, profileError?.message || profileError)
-          errorCount++
+          if (profileError.message.includes('violates foreign key')) {
+            console.error(`[v0] ⚠️  Auth user missing for ${u.email}`)
+            needsAuthUser.push(u)
+            errorCount++
+          } else {
+            console.error(`[v0] Error for ${u.rut}:`, profileError.message)
+            errorCount++
+          }
           continue
         }
 
-        createdUsers.push(profileData)
         successCount++
         console.log(`[v0] ✅ Created profile for ${u.full_name} (${u.rut})`)
       } catch (err) {
@@ -142,53 +137,22 @@ async function insertUsuarios() {
       }
     }
 
-        if (!authData || !authData.user) {
-          console.error(`[v0] No user returned for ${u.rut}`)
-          errorCount++
-          continue
-        }
-
-        const userId = authData.user.id
-        console.log(`[v0] ✅ Created auth user ${userId} for ${u.email}`)
-
-        // Create profile with the auth user ID
-        console.log(`[v0] Creating profile for user ${userId}...`)
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: userId,
-            email: u.email,
-            full_name: u.full_name,
-            rut: u.rut,
-            phone: u.phone,
-            role: 'admin',
-            is_active: true,
-            organization_id: organizationId,
-          })
-          .select()
-          .single()
-
-        if (profileError) {
-          console.error(`[v0] Profile error for ${u.rut} (${userId}):`, profileError)
-          errorCount++
-          continue
-        }
-
-        createdUsers.push(profileData)
-        successCount++
-        console.log(`[v0] ✅ Created profile for ${u.full_name} (${u.rut})`)
-      } catch (err) {
-        console.error(`[v0] Error for ${u.rut} :`, err.message)
-        errorCount++
-      }
-    }
-
+    console.log(`[v0]`)
     console.log(`[v0] ========== COMPLETE ==========`)
     console.log(`[v0] Success: ${successCount}, Errors: ${errorCount}`)
-    console.log('[v0] Created users:')
-    createdUsers.forEach((u) => {
-      console.log(`  - ${u.full_name} (${u.rut}): ${u.email}`)
-    })
+
+    if (needsAuthUser.length > 0) {
+      console.log(`[v0]`)
+      console.log(`[v0] ${needsAuthUser.length} usuarios need auth users created first:`)
+      needsAuthUser.forEach(u => {
+        console.log(`[v0]   - ${u.email} (${u.rut})`)
+      })
+      console.log(`[v0]`)
+      console.log(`[v0] Create auth users by calling:`)
+      console.log(`[v0] POST /api/admin/seed-labbe-users`)
+      console.log(`[v0]`)
+      console.log(`[v0] Then run this script again to create profiles.`)
+    }
 
     if (errorCount > 0) {
       process.exit(1)
