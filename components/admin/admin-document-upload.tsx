@@ -126,8 +126,14 @@ export function AdminDocumentUpload({ onUploadSuccess }: AdminDocumentUploadProp
     for (let i = 0; i < files.length; i++) {
       formData.append('files', files[i])
     }
-    formData.append('documentType', documentType)
-    formData.append('id', selectedId)
+    
+    // Enviar parámetros según el tipo
+    if (documentType === 'driver') {
+      formData.append('driverRut', selectedId)
+    } else {
+      formData.append('subcontractorId', selectedId)
+    }
+    
     formData.append('category', selectedCategory)
 
     try {
