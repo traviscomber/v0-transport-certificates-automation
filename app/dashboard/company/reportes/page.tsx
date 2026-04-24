@@ -31,11 +31,14 @@ export default function ReportesPage() {
     const total = allItems.length
     const activos = allItems.filter(item => item.is_active).length
     const inactivos = total - activos
-    const conDocumentos = allItems.filter(item => (item.documentos || []).length > 0).length
+    const conDocumentos = allItems.filter(item => {
+      const docs = (item as any).documentos
+      return docs && Array.isArray(docs) && docs.length > 0
+    }).length
     const sinDocumentos = total - conDocumentos
-    const approved = allItems.filter(item => item.status === 'approved').length
-    const pending = allItems.filter(item => item.status === 'pending').length
-    const rejected = allItems.filter(item => item.status === 'rejected').length
+    const approved = allItems.filter(item => (item as any).status === 'approved').length
+    const pending = allItems.filter(item => (item as any).status === 'pending').length
+    const rejected = allItems.filter(item => (item as any).status === 'rejected').length
 
     return {
       total,
