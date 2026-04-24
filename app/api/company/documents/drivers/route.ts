@@ -52,32 +52,34 @@ export async function GET(request: NextRequest) {
     }
 
     // Transformar archivos en formato de documento
-    const documents = (files || []).map(file => {
-      const status = statusMap[file.id]
-      const verificationStatus = status ? status.status : 'pending'
-      
-      // Convertir estado a español para compatibilidad con UI
-      let estadoEspanol = 'pendiente'
-      if (verificationStatus === 'approved') estadoEspanol = 'aprobado'
-      else if (verificationStatus === 'rejected') estadoEspanol = 'rechazado'
-      
-      // Generar URL pública del archivo
-      const storagePath = `drivers/${rut}/${file.name}`
-      const { data: publicUrlData } = adminClient.storage
-        .from('documents')
-        .getPublicUrl(storagePath)
-      
-      return {
-        id: file.id,
-        file_name: file.name,
-        upload_date: file.created_at,
-        document_type: 'Documento',
-        verification_status: estadoEspanol,
-        size: file.metadata?.size || 0,
-        storage_path: storagePath,
-        public_url: publicUrlData?.publicUrl || ''
-      }
-    })
+    const documents = (files || [])
+      .filter((file): file is typeof file & { id: string } => file.id !== null && file.id !== undefined)
+      .map(file => {
+        const status = statusMap[file.id]
+        const verificationStatus = status ? status.status : 'pending'
+        
+        // Convertir estado a español para compatibilidad con UI
+        let estadoEspanol = 'pendiente'
+        if (verificationStatus === 'approved') estadoEspanol = 'aprobado'
+        else if (verificationStatus === 'rejected') estadoEspanol = 'rechazado'
+        
+        // Generar URL pública del archivo
+        const storagePath = `drivers/${rut}/${file.name}`
+        const { data: publicUrlData } = adminClient.storage
+          .from('documents')
+          .getPublicUrl(storagePath)
+        
+        return {
+          id: file.id,
+          file_name: file.name,
+          upload_date: file.created_at,
+          document_type: 'Documento',
+          verification_status: estadoEspanol,
+          size: file.metadata?.size || 0,
+          storage_path: storagePath,
+          public_url: publicUrlData?.publicUrl || ''
+        }
+      })
 
     console.log('[v0] Found', documents.length, 'documents for driver:', rut)
 
