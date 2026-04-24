@@ -65,6 +65,23 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors }: Su
         if (response.ok && data.dashboard?.transportistas) {
           console.log('[v0] Fetched subcontractors:', data.dashboard.transportistas.length)
           console.log('[v0] Fetched drivers:', data.dashboard.conductores?.length || 0)
+          
+          // Debug: Log first 5 drivers with their rut_proveedor
+          if (data.dashboard.conductores && data.dashboard.conductores.length > 0) {
+            console.log('[v0] Sample drivers (first 5):')
+            data.dashboard.conductores.slice(0, 5).forEach((d: any, idx: number) => {
+              console.log(`  [${idx}] ${d.nombre} - rut_proveedor: ${d.rut_proveedor}`)
+            })
+          }
+          
+          // Debug: Log first 5 subcontractors with their rut
+          if (data.dashboard.transportistas && data.dashboard.transportistas.length > 0) {
+            console.log('[v0] Sample subcontractors (first 5):')
+            data.dashboard.transportistas.slice(0, 5).forEach((s: any, idx: number) => {
+              console.log(`  [${idx}] ${s.nombre} - rut: ${s.rut}`)
+            })
+          }
+          
           setSubcontractors(data.dashboard.transportistas)
           setDrivers(data.dashboard.conductores || [])
           
@@ -330,17 +347,27 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors }: Su
             </CardContent>
           </Card>
         ) : (
-          filtered.map(sub => {
+          filtered.map((sub, subIdx) => {
             // Normalize RUT format for matching (remove dots, hyphens, spaces)
             const normalizeRut = (rut: string | undefined) => {
               if (!rut) return ''
               return rut.trim().replace(/[.-]/g, '').toUpperCase()
             }
             
+            const normalizedSubRut = normalizeRut(sub.rut)
+            
             // Count drivers for this subcontractor by matching RUT
-            const subDrivers = drivers.filter(d => 
-              normalizeRut(d.rut_proveedor) === normalizeRut(sub.rut)
-            )
+            const subDrivers = drivers.filter((d, dIdx) => {
+              const normalizedDriverRut = normalizeRut(d.rut_proveedor)
+              const matches = normalizedDriverRut === normalizedSubRut
+              
+              // Debug: Log for first subcontractor to see all matches
+              if (subIdx === 0 && dIdx < 10) {
+                console.log(`[v0] Match check - Sub[${subIdx}]: ${sub.nombre} (${normalizedSubRut}) vs Driver[${dIdx}]: ${d.nombre} (${normalizedDriverRut}) = ${matches}`)
+              }
+              
+              return matches
+            })
             const driverCount = subDrivers.length
             const isExpanded = expandedSubcontractor === sub.id
 
