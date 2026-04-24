@@ -98,9 +98,9 @@ export async function POST(request: NextRequest) {
 
       console.log('[v0] Document saved with ID:', doc.id)
 
-      // Link document to driver via transporters table
+      // Link document to driver via transportistas table
       const { error: linkError } = await adminClient
-        .from('transporters')
+        .from('transportistas')
         .insert({
           document_id: doc.id,
           rut: driverRut,
