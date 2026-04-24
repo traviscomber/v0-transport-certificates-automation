@@ -40,14 +40,16 @@ export async function POST(request: NextRequest) {
       console.log('[v0] Bucket check/create attempt (may already exist):', bucketError)
     }
 
-    // Normalizar RUT: remover puntos, espacios, convertir a minúsculas
-    const normalizeRUT = (rut: string) => rut.replace(/\./g, '').trim().toLowerCase()
-    const normalizedRut = normalizeRUT(driverRut)
+    // Normalizar RUT igual que en el componente: remover puntos/guiones, convertir a mayúsculas
+    const normalizeRUT = (rut: string | undefined) => {
+      if (!rut) return ''
+      return rut.trim().replace(/[.-]/g, '').toUpperCase()
+    }
     
-    // Buscar el ID del conductor por RUT (normalizar formato)
-    // Primero obtiene todos los conductores y busca con RUT normalizado
-    console.log('[v0] Searching for driver with RUT:', driverRut, '(normalized:', normalizedRut, ')')
+    const normalizedInputRut = normalizeRUT(driverRut)
+    console.log('[v0] Searching for driver with RUT:', driverRut, '(normalized:', normalizedInputRut, ')')
     
+    // Buscar el ID del conductor por RUT
     const { data: allConductores, error: fetchError } = await adminClient
       .from('conductores')
       .select('id, rut, nombres')
@@ -60,13 +62,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    console.log('[v0] Total conductores in DB:', allConductores.length)
+
     // Buscar coincidencia normalizando ambos lados
     let drivers = null
     for (const conductor of allConductores) {
       const dbRutNormalized = normalizeRUT(conductor.rut)
-      if (dbRutNormalized === normalizedRut) {
+      if (dbRutNormalized === normalizedInputRut) {
         drivers = conductor
-        console.log('[v0] Found driver:', { stored: conductor.rut, normalized: normalizedRut, match: true })
+        console.log('[v0] Found driver:', { 
+          input: driverRut, 
+          stored: conductor.rut, 
+          normalized: normalizedInputRut, 
+          match: true 
+        })
         break
       }
     }
@@ -74,7 +83,10 @@ export async function POST(request: NextRequest) {
     // Si no encuentra, muestra los primeros RUT disponibles para referencia
     if (!drivers?.id) {
       console.error('[v0] Driver not found for RUT:', driverRut)
-      const sampleRuts = allConductores.slice(0, 5).map(d => `${d.rut} (${d.nombres})`)
+      const sampleRuts = allConductores.slice(0, 5).map(d => {
+        const norm = normalizeRUT(d.rut)
+        return `${d.rut} (normalized: ${norm}) - ${d.nombres}`
+      })
       console.log('[v0] Sample RUT values in database:', sampleRuts)
       
       return NextResponse.json(
@@ -87,7 +99,7 @@ export async function POST(request: NextRequest) {
     }
 
     const driverId = drivers.id
-    console.log('[v0] Found driver:', { driverRut: drivers.rut, driverId, nombre: drivers.nombres })
+    console.log('[v0] Found driver ID:', driverId, 'for RUT:', drivers.rut)
 
     // Procesar cada archivo
     for (const file of files) {
