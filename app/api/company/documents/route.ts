@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const { data: documents, error } = await adminClient
       .from('documents')
       .select('*')
-      .order('upload_date', { ascending: false })
+      .order('created_at', { ascending: false })
 
     if (error) {
       console.error('[v0] Error fetching documents:', error)

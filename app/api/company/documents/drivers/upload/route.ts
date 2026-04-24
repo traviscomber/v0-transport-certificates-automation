@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     // Primero intenta búsqueda exacta
     let { data: drivers, error: driverError } = await adminClient
       .from('conductores')
-      .select('id, rut, nombre')
+      .select('id, rut, nombres')
       .eq('rut', driverRut)
       .single()
 
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       console.log('[v0] Exact RUT match not found, trying flexible search...')
       const { data: flexDrivers } = await adminClient
         .from('conductores')
-        .select('id, rut, nombre')
+        .select('id, rut, nombres')
         .ilike('rut', `%${driverRut}%`)
         .limit(1)
 
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       // Log available drivers for debugging
       const { data: allDrivers } = await adminClient
         .from('conductores')
-        .select('rut, nombre')
+        .select('rut, nombres')
         .limit(5)
       console.log('[v0] Sample drivers in database:', allDrivers)
       
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     }
 
     const driverId = drivers.id
-    console.log('[v0] Found driver:', { driverRut: drivers.rut, driverId, nombre: drivers.nombre })
+    console.log('[v0] Found driver:', { driverRut: drivers.rut, driverId, nombre: drivers.nombres })
 
     // Procesar cada archivo
     for (const file of files) {
