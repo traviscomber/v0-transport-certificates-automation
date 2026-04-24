@@ -73,15 +73,17 @@ export async function POST(request: NextRequest) {
 
       console.log('[v0] File uploaded to storage:', filePath)
 
-      // Save metadata to uploaded_documents table (only use columns that exist)
+      // Save metadata to conductor_uploaded_documents table
       const { data: doc, error: docError } = await adminClient
-        .from('uploaded_documents')
+        .from('conductor_uploaded_documents')
         .insert({
-          file_name: file.name,
-          file_size: file.size.toString(),
-          file_type: file.type,
+          driver_id: driverRut,
           document_type: documentType,
-          // upload_date will use DEFAULT CURRENT_DATE from the schema
+          file_name: file.name,
+          file_size: file.size,
+          mime_type: file.type,
+          file_url: filePath,
+          status: 'pending',
         })
         .select()
         .single()
@@ -97,22 +99,6 @@ export async function POST(request: NextRequest) {
       }
 
       console.log('[v0] Document saved with ID:', doc.id)
-
-      // Link document to driver via transportistas table
-      const { error: linkError } = await adminClient
-        .from('transportistas')
-        .insert({
-          document_id: doc.id,
-          rut: driverRut,
-          name: `Documento ${documentType}`,
-        })
-
-      if (linkError) {
-        console.error('[v0] Error linking to transporter:', linkError)
-        // Continue anyway - document was saved
-      } else {
-        console.log('[v0] Linked document to transporter with RUT:', driverRut)
-      }
 
       uploadedDocs.push(doc)
     }
