@@ -33,8 +33,9 @@ export async function GET(request: NextRequest) {
     // Fetch transportistas data - ALWAYS filter by ejecutiva name (even for admins)
     let transportistasUrl = `${supabaseUrl}/rest/v1/transportistas`
     if (userName) {
-      // Use exact match to avoid query syntax errors
-      transportistasUrl += `?ejecutiva=eq.${encodeURIComponent(userName)}`
+      // Use ilike with wildcard for flexible matching - encode the name first, then add wildcards
+      const encodedName = encodeURIComponent(`%${userName}%`)
+      transportistasUrl += `?ejecutiva=ilike.${encodedName}`
     }
 
     console.log('[v0] Fetching transportistas from:', transportistasUrl)
