@@ -38,11 +38,19 @@ export default function DriverDocumentPortal() {
   const [uploading, setUploading] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
   const [searchError, setSearchError] = useState<string>('')
+  const [sampleDrivers, setSampleDrivers] = useState<Array<{rut: string; nombre: string}>>([])
 
   useEffect(() => {
     // Get current driver ID from auth or URL
     const getDriverInfo = async () => {
       try {
+        // Load sample drivers for examples
+        const sampleResponse = await fetch('/api/company/documents/sample-drivers')
+        if (sampleResponse.ok) {
+          const sampleData = await sampleResponse.json()
+          setSampleDrivers(sampleData.drivers || [])
+        }
+
         // Check if there's a driver ID in URL params
         const params = new URLSearchParams(window.location.search)
         const urlId = params.get('id')
@@ -215,9 +223,26 @@ export default function DriverDocumentPortal() {
             </div>
             <div className="bg-blue-50 border border-blue-200 rounded p-3">
               <p className="text-xs text-blue-900">
-                <strong>💡 Tip:</strong> Para testing, puedes usar cualquier RUT de los conductores en el sistema.
-                Ejemplos: 18012757-7, 10907750-K, 12879880-3, 16181677-9, 12481902-4
+                <strong>💡 Tip:</strong> Estos son algunos de los conductores en el sistema:
               </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {sampleDrivers.length > 0 ? (
+                  sampleDrivers.map((driver) => (
+                    <button
+                      key={driver.rut}
+                      onClick={() => {
+                        setDriverRut(driver.rut)
+                        handleSearchDriver()
+                      }}
+                      className="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-xs text-blue-900 rounded transition-colors font-mono"
+                    >
+                      {driver.rut}
+                    </button>
+                  ))
+                ) : (
+                  <p className="text-xs text-blue-700">Cargando ejemplos...</p>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
