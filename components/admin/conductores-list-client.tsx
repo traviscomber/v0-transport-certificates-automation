@@ -280,7 +280,7 @@ export function ConductoresListClient({
                     <LicenseAndCertifications 
                       licenses={c.vencimiento_licencia ? [{
                         id: c.id,
-                        licenseType: c.clase_licencia || 'A2',
+                        licenseType: c.clase_licencia || 'A5',
                         expiryDate: c.vencimiento_licencia,
                         status: expired ? 'expired' : (expiringSoon ? 'pending_renewal' : 'active'),
                       }] : []}
