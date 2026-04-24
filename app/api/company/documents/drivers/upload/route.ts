@@ -156,20 +156,23 @@ export async function POST(request: NextRequest) {
       // Crear objeto de documento
       const doc = {
         driver_id: driverId,
-        document_type: category,
         file_name: file.name,
-        file_url: publicUrl,
+        file_size: file.size,
+        file_type: file.type,
+        document_type: category,
+        storage_path: filePath,
+        public_url: publicUrl,
         status: 'pendiente'
       }
 
-      // Guardar en la base de datos
+      // Guardar en la base de datos tabla `documents`
       const { error: saveError, data: savedDoc } = await adminClient
-        .from('driver_documents')
+        .from('documents')
         .insert([doc])
         .select()
         .single()
 
-      console.log('[v0] Save attempt:', {
+      console.log('[v0] Save attempt to documents table:', {
         driverId,
         documentType: category,
         fileName: file.name,

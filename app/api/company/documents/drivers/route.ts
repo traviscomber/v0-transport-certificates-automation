@@ -19,21 +19,51 @@ export async function GET(request: NextRequest) {
 
     const adminClient = createAdminClient()
 
-    // Listar archivos del storage con el patrón del RUT
-    const { data: files, error } = await adminClient.storage
-      .from('documents')
-      .list(`drivers/${rut}`, {
-        limit: 100,
-        offset: 0,
-        sortBy: { column: 'created_at', order: 'desc' }
-      })
+    // Buscar conductores para obtener el ID
+    const { data: drivers } = await adminClient
+      .from('conductores')
+      .select('id, rut')
+      .like('rut', `%${rut}%`)
+      .limit(1)
+    
+    // Si no encuentra en conductores, buscar en datos locales
+    let driverId = null
+    if (drivers && drivers.length > 0) {
+      driverId = drivers[0].id
+    } else {
+      // Fallback a datos locales
+      const { allDriversData } = await import('@/lib/data/all-drivers')
+      const normalizeRUT = (rutVal: string | undefined) => {
+        if (!rutVal) return ''
+        return rutVal.trim().replace(/[.-]/g, '').toUpperCase()
+      }
+      const normalizedSearch = normalizeRUT(rut)
+      const localDriver = allDriversData.find(d => normalizeRUT(d.rut) === normalizedSearch)
+      if (localDriver) {
+        driverId = localDriver.id || `local_${localDriver.rut}`
+      }
+    }
 
-    if (error) {
-      console.error('[v0] Error listing files:', error)
-      return NextResponse.json(
-        { error: 'Failed to fetch documents' },
-        { status: 500 }
-      )
+    if (!driverId) {
+      console.warn('[v0] Driver not found for RUT:', rut)
+      return NextResponse.json({
+        success: true,
+        driver_rut: rut,
+        documents: []
+      })
+    }
+
+    console.log('[v0] Found driver ID:', driverId)
+
+    // Buscar documentos en tabla desde la base de datos
+    const { data: dbDocuments, error: dbError } = await adminClient
+      .from('documents')
+      .select('id, file_name, document_type, public_url, created_at')
+      .eq('driver_id', driverId)
+      .order('created_at', { ascending: false })
+
+    if (dbError) {
+      console.error('[v0] Error querying documents table:', dbError)
     }
 
     // Obtener estados de documentos de la tabla document_statuses
@@ -49,39 +79,31 @@ export async function GET(request: NextRequest) {
         )
         console.log('[v0] Loaded', statuses.length, 'document statuses')
       }
-    } catch (dbError) {
-      console.warn('[v0] Could not fetch document statuses:', dbError)
+    } catch (statusFetchError) {
+      console.warn('[v0] Could not fetch document statuses:', statusFetchError)
     }
 
-    // Transformar archivos en formato de documento
-    const documents = (files || [])
-      .filter((file): file is typeof file & { id: string } => file.id !== null && file.id !== undefined)
-      .map(file => {
-        const status = statusMap[file.id]
-        const verificationStatus = status ? status.status : 'pending'
-        
-        // Convertir estado a español para compatibilidad con UI
-        let estadoEspanol = 'pendiente'
-        if (verificationStatus === 'approved') estadoEspanol = 'aprobado'
-        else if (verificationStatus === 'rejected') estadoEspanol = 'rechazado'
-        
-        // Generar URL pública del archivo
-        const storagePath = `drivers/${rut}/${file.name}`
-        const { data: publicUrlData } = adminClient.storage
-          .from('documents')
-          .getPublicUrl(storagePath)
-        
-        return {
-          id: file.id,
-          file_name: file.name,
-          upload_date: file.created_at,
-          document_type: 'Documento',
-          verification_status: estadoEspanol,
-          size: file.metadata?.size || 0,
-          storage_path: storagePath,
-          public_url: publicUrlData?.publicUrl || ''
-        }
-      })
+    // Usar documentos de la base de datos si están disponibles
+    const documents = (dbDocuments || []).map(doc => {
+      const status = statusMap[doc.id]
+      const verificationStatus = status ? status.status : 'pending'
+      
+      // Convertir estado a español para compatibilidad con UI
+      let estadoEspanol = 'pendiente'
+      if (verificationStatus === 'approved') estadoEspanol = 'aprobado'
+      else if (verificationStatus === 'rejected') estadoEspanol = 'rechazado'
+      
+      return {
+        id: doc.id,
+        file_name: doc.file_name,
+        upload_date: doc.created_at,
+        document_type: doc.document_type || 'Documento',
+        verification_status: estadoEspanol,
+        size: 0,
+        storage_path: '',
+        public_url: doc.public_url || ''
+      }
+    })
 
     console.log('[v0] Found', documents.length, 'documents for driver:', rut)
 
