@@ -40,42 +40,48 @@ export async function POST(request: NextRequest) {
       console.log('[v0] Bucket check/create attempt (may already exist):', bucketError)
     }
 
+    // Normalizar RUT: remover puntos, espacios, convertir a minúsculas
+    const normalizeRUT = (rut: string) => rut.replace(/\./g, '').trim().toLowerCase()
+    const normalizedRut = normalizeRUT(driverRut)
+    
     // Buscar el ID del conductor por RUT (normalizar formato)
-    // Primero intenta búsqueda exacta
-    let { data: drivers, error: driverError } = await adminClient
+    // Primero obtiene todos los conductores y busca con RUT normalizado
+    console.log('[v0] Searching for driver with RUT:', driverRut, '(normalized:', normalizedRut, ')')
+    
+    const { data: allConductores, error: fetchError } = await adminClient
       .from('conductores')
       .select('id, rut, nombres')
-      .eq('rut', driverRut)
-      .single()
+    
+    if (fetchError || !allConductores) {
+      console.error('[v0] Error fetching conductores:', fetchError)
+      return NextResponse.json(
+        { error: 'Error al buscar conductores' },
+        { status: 500 }
+      )
+    }
 
-    // Si no encuentra, busca con búsqueda flexible (ilike)
-    if (driverError && !drivers) {
-      console.log('[v0] Exact RUT match not found, trying flexible search...')
-      const { data: flexDrivers } = await adminClient
-        .from('conductores')
-        .select('id, rut, nombres')
-        .ilike('rut', `%${driverRut}%`)
-        .limit(1)
-
-      if (flexDrivers && flexDrivers.length > 0) {
-        drivers = flexDrivers[0]
-        driverError = null
-        console.log('[v0] Found driver with flexible search:', drivers)
+    // Buscar coincidencia normalizando ambos lados
+    let drivers = null
+    for (const conductor of allConductores) {
+      const dbRutNormalized = normalizeRUT(conductor.rut)
+      if (dbRutNormalized === normalizedRut) {
+        drivers = conductor
+        console.log('[v0] Found driver:', { stored: conductor.rut, normalized: normalizedRut, match: true })
+        break
       }
     }
 
-    if (driverError || !drivers?.id) {
-      console.error('[v0] Driver not found for RUT:', driverRut, 'Error:', driverError)
-      
-      // Log available drivers for debugging
-      const { data: allDrivers } = await adminClient
-        .from('conductores')
-        .select('rut, nombres')
-        .limit(5)
-      console.log('[v0] Sample drivers in database:', allDrivers)
+    // Si no encuentra, muestra los primeros RUT disponibles para referencia
+    if (!drivers?.id) {
+      console.error('[v0] Driver not found for RUT:', driverRut)
+      const sampleRuts = allConductores.slice(0, 5).map(d => `${d.rut} (${d.nombres})`)
+      console.log('[v0] Sample RUT values in database:', sampleRuts)
       
       return NextResponse.json(
-        { error: `Conductor con RUT ${driverRut} no encontrado. Verifica el formato del RUT.` },
+        { 
+          error: `Conductor con RUT ${driverRut} no encontrado.`,
+          availableSample: sampleRuts
+        },
         { status: 404 }
       )
     }
