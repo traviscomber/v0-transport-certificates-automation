@@ -34,14 +34,50 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Obtener estados de documentos de la tabla document_statuses
+    let statusMap: Record<string, any> = {}
+    try {
+      const { data: statuses, error: statusError } = await adminClient
+        .from('document_statuses')
+        .select('document_id, status, reason, changed_at')
+
+      if (!statusError && statuses) {
+        statusMap = Object.fromEntries(
+          statuses.map(s => [s.document_id, s])
+        )
+        console.log('[v0] Loaded', statuses.length, 'document statuses')
+      }
+    } catch (dbError) {
+      console.warn('[v0] Could not fetch document statuses:', dbError)
+    }
+
     // Transformar archivos en formato de documento
-    const documents = (files || []).map(file => ({
-      id: file.id,
-      file_name: file.name,
-      upload_date: file.created_at,
-      document_type: 'Documento',
-      size: file.metadata?.size || 0
-    }))
+    const documents = (files || []).map(file => {
+      const status = statusMap[file.id]
+      const verificationStatus = status ? status.status : 'pending'
+      
+      // Convertir estado a español para compatibilidad con UI
+      let estadoEspanol = 'pendiente'
+      if (verificationStatus === 'approved') estadoEspanol = 'aprobado'
+      else if (verificationStatus === 'rejected') estadoEspanol = 'rechazado'
+      
+      // Generar URL pública del archivo
+      const storagePath = `drivers/${rut}/${file.name}`
+      const { data: publicUrlData } = adminClient.storage
+        .from('documents')
+        .getPublicUrl(storagePath)
+      
+      return {
+        id: file.id,
+        file_name: file.name,
+        upload_date: file.created_at,
+        document_type: 'Documento',
+        verification_status: estadoEspanol,
+        size: file.metadata?.size || 0,
+        storage_path: storagePath,
+        public_url: publicUrlData?.publicUrl || ''
+      }
+    })
 
     console.log('[v0] Found', documents.length, 'documents for driver:', rut)
 

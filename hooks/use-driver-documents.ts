@@ -7,6 +7,8 @@ export interface DriverDocument {
   nombre: string
   estado: 'pendiente' | 'aprobado' | 'rechazado'
   fecha_subida: string
+  public_url?: string
+  storage_path?: string
 }
 
 export function useDriverDocuments(driverRut: string) {
@@ -37,6 +39,8 @@ export function useDriverDocuments(driverRut: string) {
         nombre: doc.file_name || '',
         estado: doc.verification_status || 'pendiente',
         fecha_subida: doc.upload_date || new Date().toISOString(),
+        public_url: doc.public_url,
+        storage_path: doc.storage_path,
       }))
 
       console.log('[v0] Documents loaded:', transformedDocs.length)
