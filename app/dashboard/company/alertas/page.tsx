@@ -7,7 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AlertItem } from '@/components/alerts/alert-item'
 import { AlertFilters } from '@/components/alerts/alert-filters'
 import { AlertStats } from '@/components/alerts/alert-stats'
-import { AlertSystemStatus } from '@/components/alerts/alert-system-status'
 import { useGeneratedAlerts } from '@/hooks/useGeneratedAlerts'
 import { RefreshCw, Download } from 'lucide-react'
 
@@ -140,9 +139,8 @@ export default function AlertasPage() {
       />
 
       <Tabs defaultValue="alerts" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-1">
           <TabsTrigger value="alerts">Alertas Activas</TabsTrigger>
-          <TabsTrigger value="system">Sistema</TabsTrigger>
         </TabsList>
 
         <TabsContent value="alerts" className="space-y-4">
@@ -181,10 +179,6 @@ export default function AlertasPage() {
               ))}
             </div>
           )}
-        </TabsContent>
-
-        <TabsContent value="system" className="pt-4">
-          <AlertSystemStatus />
         </TabsContent>
       </Tabs>
     </div>
