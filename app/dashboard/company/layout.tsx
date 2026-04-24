@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { LayoutDashboard, Users, FileText, BarChart3, LogOut, Zap, AlertTriangle, Users2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -18,6 +18,16 @@ const navItems = [
 
 export default function CompanyLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST' })
+      router.push('/login')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  }
 
   return (
     <div className="flex h-screen bg-background">
@@ -51,12 +61,15 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
         </nav>
 
         <div className="p-4 border-t mt-auto">
-          <Link href="/auth/logout">
-            <Button variant="outline" size="sm" className="w-full">
-              <LogOut className="mr-2 h-4 w-4" />
-              Cerrar Sesión
-            </Button>
-          </Link>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full"
+            onClick={handleLogout}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Cerrar Sesión
+          </Button>
         </div>
       </div>
 

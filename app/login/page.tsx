@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -16,10 +15,10 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const response = await fetch('/api/login', {
+      const response = await fetch('/api/login-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.toLowerCase() }),
       })
 
       const data = await response.json()
@@ -70,19 +69,6 @@ export default function LoginPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-200">Contraseña</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                disabled={loading}
-                required
-              />
-            </div>
-
             <button
               type="submit"
               disabled={loading}
@@ -93,7 +79,7 @@ export default function LoginPage() {
           </form>
 
           <div className="border-t border-slate-700 pt-4 space-y-3">
-            <p className="text-slate-400 text-xs font-medium text-center">Usuarios de prueba:</p>
+            <p className="text-slate-400 text-xs font-medium text-center">Ejecutivas disponibles:</p>
             <div className="space-y-1 text-xs text-slate-400">
               <p><span className="text-slate-300">ocarrasco@labbe.cl</span> - Olga Carrasco</p>
               <p><span className="text-slate-300">csepulveda@labbe.cl</span> - Carolina Sepúlveda</p>
@@ -101,7 +87,6 @@ export default function LoginPage() {
               <p><span className="text-slate-300">cfarias@labbe.cl</span> - Cecilia Farias</p>
               <p><span className="text-slate-300">dgonzalez@labbe.cl</span> - Diego Gonzalez</p>
               <p><span className="text-slate-300">kcanales@labbe.cl</span> - Katherinne Canales</p>
-              <p className="pt-2 text-slate-500">Contraseña: <span className="text-slate-400">TempPassword123!</span></p>
             </div>
           </div>
         </div>

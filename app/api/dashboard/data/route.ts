@@ -4,8 +4,10 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
-    // Get user email from cookies (set during login)
+    // Get user info from cookies (set during login)
     const userEmail = request.cookies.get('user_email')?.value
+    const userName = request.cookies.get('user_name')?.value
+    const userRole = request.cookies.get('user_role')?.value
 
     if (!userEmail) {
       return NextResponse.json(
@@ -24,37 +26,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch user profile to get their name and role
-    const profileResponse = await fetch(
-      `${supabaseUrl}/rest/v1/profiles?email=eq.${userEmail}`,
-      {
-        headers: {
-          apikey: supabaseServiceKey,
-          Authorization: `Bearer ${supabaseServiceKey}`,
-        },
-      }
-    )
+    const isAdmin = userRole === 'admin'
 
-    const profiles = await profileResponse.json()
-    if (!profiles || profiles.length === 0) {
-      return NextResponse.json(
-        { error: 'Perfil no encontrado' },
-        { status: 404 }
-      )
-    }
-
-    const profile = profiles[0]
-    const isAdmin = profile.role === 'admin'
-    const executiveName = profile.full_name
-
-    console.log('[v0] Dashboard - User:', userEmail, 'Role:', profile.role, 'Executive:', executiveName)
+    console.log('[v0] Dashboard - User:', userEmail, 'Name:', userName, 'Role:', userRole, 'IsAdmin:', isAdmin)
 
     // Fetch transportistas data
     let transportistasUrl = `${supabaseUrl}/rest/v1/transportistas`
-    if (!isAdmin) {
-      // Filter by executive if not admin
-      transportistasUrl += `?ejecutiva=eq.${encodeURIComponent(executiveName)}`
+    if (!isAdmin && userName) {
+      // Filter by executive name if not admin
+      transportistasUrl += `?ejecutiva=eq.${encodeURIComponent(userName)}`
     }
+
+    console.log('[v0] Fetching transportistas from:', transportistasUrl)
 
     const transportistasResponse = await fetch(transportistasUrl, {
       headers: {
@@ -64,13 +47,16 @@ export async function GET(request: NextRequest) {
     })
 
     const transportistas = await transportistasResponse.json()
+    console.log('[v0] Transportistas count:', Array.isArray(transportistas) ? transportistas.length : 0)
 
     // Fetch conductores data
     let conductoesUrl = `${supabaseUrl}/rest/v1/conductores`
-    if (!isAdmin) {
-      // Filter by executive if not admin
-      conductoesUrl += `?ejecutiva=eq.${encodeURIComponent(executiveName)}`
+    if (!isAdmin && userName) {
+      // Filter by executive name if not admin
+      conductoesUrl += `?ejecutiva=eq.${encodeURIComponent(userName)}`
     }
+
+    console.log('[v0] Fetching conductores from:', conductoesUrl)
 
     const conductoesResponse = await fetch(conductoesUrl, {
       headers: {
@@ -80,12 +66,13 @@ export async function GET(request: NextRequest) {
     })
 
     const conductores = await conductoesResponse.json()
+    console.log('[v0] Conductores count:', Array.isArray(conductores) ? conductores.length : 0)
 
     return NextResponse.json({
       user: {
         email: userEmail,
-        full_name: executiveName,
-        role: profile.role,
+        full_name: userName,
+        role: userRole,
         isAdmin,
       },
       dashboard: {
