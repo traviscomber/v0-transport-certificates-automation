@@ -80,20 +80,20 @@ export function DriverCard({
   }
 
   const statusBg = driver.is_active
-    ? 'bg-green-500/20'
-    : 'bg-red-500/20'
-  const statusText = driver.is_active ? 'text-green-200' : 'text-red-200'
+    ? 'bg-green-950/40 border-green-900/50'
+    : 'bg-red-950/40 border-red-900/50'
+  const statusText = driver.is_active ? 'text-green-300' : 'text-red-300'
 
   return (
     <>
-      <Card className={`border-slate-700 hover:border-slate-600 transition-all ${statusBg}`}>
+      <Card className={`bg-slate-900/80 backdrop-blur-sm border-slate-700/60 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all ${statusBg}`}>
         <CardContent className="p-6">
           <div className="space-y-4">
             {/* Header with RUT and status */}
-            <div className="mb-3 flex items-start justify-between">
+            <div className="mb-3 flex items-start justify-between pb-3 border-b border-slate-700/50">
               <div>
-                <p className="text-xs font-semibold uppercase text-slate-400">RUT</p>
-                <p className="font-mono text-lg font-bold text-amber-400">{driver.rut}</p>
+                <p className="text-xs font-semibold uppercase text-slate-500">RUT</p>
+                <p className="font-mono text-lg font-bold text-orange-400">{driver.rut}</p>
               </div>
               <Badge className={`${statusText} bg-transparent border border-current`}>
                 {driver.is_active ? 'Activo' : 'Inactivo'}
@@ -102,30 +102,30 @@ export function DriverCard({
 
             {/* Nombre */}
             <div>
-              <p className="font-semibold text-white">{driver.nombre}</p>
+              <p className="font-semibold text-slate-100">{driver.nombre}</p>
             </div>
 
             {/* Proveedor */}
             {driver.proveedor && (
               <div className="text-sm">
-                <p className="text-xs text-slate-400">PROVEEDOR</p>
-                <p className="text-slate-200">{driver.proveedor}</p>
+                <p className="text-xs font-medium text-slate-500 uppercase">PROVEEDOR</p>
+                <p className="text-slate-300">{driver.proveedor}</p>
               </div>
             )}
 
             {/* Patente Tracto */}
             {driver.patente_tracto && (
               <div className="text-sm">
-                <p className="text-xs text-slate-400">PATENTE TRACTO</p>
-                <p className="font-mono text-blue-400">{driver.patente_tracto}</p>
+                <p className="text-xs font-medium text-slate-500 uppercase">PATENTE TRACTO</p>
+                <p className="font-mono text-cyan-400">{driver.patente_tracto}</p>
               </div>
             )}
 
             {/* Clase de Licencia */}
             {driver.clase_licencia && (
               <div className="text-sm">
-                <p className="text-xs text-slate-400">LICENCIA</p>
-                <Badge className="bg-slate-700 text-slate-200">{driver.clase_licencia}</Badge>
+                <p className="text-xs font-medium text-slate-500 uppercase">LICENCIA</p>
+                <Badge className="bg-slate-800 text-slate-300 border border-slate-700">{driver.clase_licencia}</Badge>
               </div>
             )}
 
@@ -138,15 +138,15 @@ export function DriverCard({
             )}
 
             {/* Documentos Subidos - Sección Expandible SIEMPRE VISIBLE */}
-            <div className="border-t border-slate-700 pt-3 mt-3">
+            <div className="border-t border-slate-700/50 pt-3 mt-3">
               <div className="flex items-center justify-between mb-3">
                 <button
                   onClick={() => toggleDocuments(driver.id)}
-                  className="flex flex-1 items-center justify-between hover:opacity-80 transition-opacity"
+                  className="flex flex-1 items-center justify-between hover:opacity-90 transition-opacity"
                 >
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-blue-400" />
-                    <span className="text-sm font-semibold text-white">
+                    <FileText className="h-4 w-4 text-cyan-400" />
+                    <span className="text-sm font-semibold text-slate-100">
                       Documentos ({documents.length})
                     </span>
                     <button
@@ -154,14 +154,14 @@ export function DriverCard({
                         e.stopPropagation()
                         refetch(true)
                       }}
-                      className="ml-1 p-1 rounded hover:bg-slate-700/50 transition-colors"
+                      className="ml-1 p-1 rounded hover:bg-slate-700/60 transition-colors"
                       title="Refrescar documentos"
                     >
-                      <RefreshCw className="h-3 w-3 text-slate-400 hover:text-slate-200" />
+                      <RefreshCw className="h-3 w-3 text-slate-500 hover:text-slate-300" />
                     </button>
                   </div>
                   <ChevronDown 
-                    className={`h-4 w-4 text-slate-400 transition-transform ${
+                    className={`h-4 w-4 text-slate-500 transition-transform ${
                       expandedDocuments.has(driver.id) ? 'rotate-180' : ''
                     }`}
                   />
@@ -232,8 +232,8 @@ export function DriverCard({
                             </p>
                             <p className={`text-xs ${
                               doc.estado === 'rechazado' 
-                                ? 'text-red-600' 
-                                : 'text-slate-600'
+                                ? 'text-red-400' 
+                                : 'text-slate-500'
                             }`}>
                               {new Date(doc.fecha_subida).toLocaleDateString('es-ES')}
                               {doc.estado === 'rechazado' && ' - RECHAZADO'}
@@ -242,7 +242,7 @@ export function DriverCard({
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                           <Badge 
-                            className={`text-xs cursor-pointer hover:opacity-80 transition-opacity ${getDocumentStatusColor(doc.estado)}`}
+                            className={`text-xs cursor-pointer hover:opacity-90 transition-opacity ${getDocumentStatusColor(doc.estado)}`}
                             onClick={(e) => {
                               e.stopPropagation()
                               setSelectedDocument(doc)
@@ -252,14 +252,14 @@ export function DriverCard({
                             {getDocumentStatusLabel(doc.estado)}
                           </Badge>
                           <button 
-                            className="p-1 hover:bg-slate-700 rounded transition-colors"
+                            className="p-1 hover:bg-slate-700/60 rounded transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               setSelectedDocument(doc)
                               setShowDocumentModal(true)
                             }}
                           >
-                            <Eye className="h-3 w-3 text-slate-400" />
+                            <Eye className="h-3 w-3 text-slate-500 hover:text-slate-300" />
                           </button>
                         </div>
                         </div>
@@ -280,27 +280,27 @@ export function DriverCard({
       {/* Upload Document Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="relative w-full max-w-md rounded-lg border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+          <div className="relative w-full max-w-md rounded-lg border border-slate-700 bg-slate-900/95 backdrop-blur-sm p-6 shadow-2xl">
             <button
               onClick={() => setShowUploadModal(false)}
-              className="absolute right-4 top-4 text-slate-400 hover:text-white"
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-200 transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
 
-            <h2 className="mb-4 text-lg font-semibold text-white">Subir Documento</h2>
+            <h2 className="mb-4 text-lg font-semibold text-slate-100">Subir Documento</h2>
 
             {/* Conductor Info */}
-            <div className="mb-4 rounded bg-slate-800 p-3 text-sm">
-              <p className="text-slate-400">Conductor:</p>
-              <p className="font-semibold text-white">{driver.nombre}</p>
+            <div className="mb-4 rounded bg-slate-800/60 border border-slate-700/50 p-3 text-sm">
+              <p className="text-slate-500 text-xs uppercase font-medium">Conductor:</p>
+              <p className="font-semibold text-slate-100">{driver.nombre}</p>
               <p className="text-xs text-slate-500">{driver.rut}</p>
             </div>
 
             <div className="space-y-4">
               {/* Tipo de Documento */}
               <div>
-                <label className="text-sm font-semibold text-slate-300">Tipo de Documento</label>
+                <label className="text-sm font-semibold text-slate-200">Tipo de Documento</label>
                 <select
                   value={uploadDocType}
                   onChange={(e) => setUploadDocType(e.target.value)}
@@ -317,29 +317,29 @@ export function DriverCard({
 
               {/* Nombre del archivo */}
               <div>
-                <label className="text-sm font-semibold text-slate-300">Nombre del Archivo</label>
+                <label className="text-sm font-semibold text-slate-200">Nombre del Archivo</label>
                 <input
                   type="text"
                   value={uploadFileName}
                   onChange={(e) => setUploadFileName(e.target.value)}
                   placeholder="ej: Licencia_2024.pdf"
-                  className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white placeholder-slate-500"
+                  className="mt-2 w-full rounded border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-orange-500 focus:outline-none transition-colors"
                 />
               </div>
 
               {/* File Upload Area */}
               <div 
-                className="rounded border-2 border-dashed border-slate-700 p-4 text-center cursor-pointer hover:border-slate-500 hover:bg-slate-800/30 transition-all"
+                className="rounded border-2 border-dashed border-slate-700 p-4 text-center cursor-pointer hover:border-orange-500/50 hover:bg-slate-800/40 transition-all"
                 onDragOver={(e) => {
                   e.preventDefault()
-                  e.currentTarget.classList.add('border-blue-500', 'bg-blue-500/10')
+                  e.currentTarget.classList.add('border-orange-500', 'bg-orange-500/10')
                 }}
                 onDragLeave={(e) => {
-                  e.currentTarget.classList.remove('border-blue-500', 'bg-blue-500/10')
+                  e.currentTarget.classList.remove('border-orange-500', 'bg-orange-500/10')
                 }}
                 onDrop={(e) => {
                   e.preventDefault()
-                  e.currentTarget.classList.remove('border-blue-500', 'bg-blue-500/10')
+                  e.currentTarget.classList.remove('border-orange-500', 'bg-orange-500/10')
                   if (e.dataTransfer.files?.[0]) {
                     const file = e.dataTransfer.files[0]
                     setUploadFileName(file.name)
@@ -351,7 +351,7 @@ export function DriverCard({
                   input?.click()
                 }}
               >
-                <Upload className="mx-auto h-8 w-8 text-slate-400 mb-2" />
+                <Upload className="mx-auto h-8 w-8 text-slate-500 mb-2" />
                 <p className="text-sm text-slate-400">Arrastra aquí o haz click para seleccionar archivo</p>
                 <input
                   id={`file-input-${driver.rut}`}
@@ -369,9 +369,12 @@ export function DriverCard({
 
               {/* Error Alert */}
               {uploadError && (
-                <div className="rounded bg-red-500/20 border border-red-500/50 p-3 text-sm text-red-300">
-                  <p className="font-semibold">Error:</p>
-                  <p>{uploadError}</p>
+                <div className="rounded bg-red-950/40 border border-red-900/50 p-3 text-sm text-red-300 flex gap-2 items-start">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold">Error:</p>
+                    <p>{uploadError}</p>
+                  </div>
                 </div>
               )}
 
@@ -380,14 +383,14 @@ export function DriverCard({
                 <button
                   onClick={() => setShowUploadModal(false)}
                   disabled={uploading}
-                  className="flex-1 rounded border border-slate-700 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors disabled:opacity-50"
+                  className="flex-1 rounded border border-slate-700 bg-slate-800/50 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-800 hover:border-slate-600 transition-colors disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleUpload}
                   disabled={!uploadFileName.trim() || uploading}
-                  className="flex-1 rounded bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 rounded bg-orange-600 py-2 text-sm font-semibold text-white hover:bg-orange-700 transition-colors disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-orange-500/20"
                 >
                   {uploading && <Loader className="h-4 w-4 animate-spin" />}
                   {uploading ? 'Subiendo...' : 'Subir Documento'}
