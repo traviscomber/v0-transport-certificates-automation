@@ -346,7 +346,15 @@ export function DriverCard({
           setShowDocumentModal(false)
           setSelectedDocument(null)
         }}
-        onStatusChange={changeStatus}
+        onStatusChange={async (docId, newStatus) => {
+          try {
+            await changeStatus(docId, newStatus, 'Cambio realizado desde dashboard')
+            // The document status will update in the UI
+          } catch (error) {
+            console.error('[v0] Error updating status:', error)
+            throw error
+          }
+        }}
         isAdmin={true}
       />
     </>

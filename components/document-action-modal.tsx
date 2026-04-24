@@ -39,8 +39,11 @@ export function DocumentActionModal({
     if (!onStatusChange) return
     setIsChanging(true)
     try {
-      await onStatusChange(document.id, newStatus)
-      onClose()
+      // Convert Spanish status to English for API
+      const apiStatus = newStatus === 'aprobado' ? 'approved' : 'rejected'
+      await onStatusChange(document.id, apiStatus)
+      console.log('[v0] Document status changed to:', apiStatus)
+      setTimeout(() => onClose(), 1000)
     } catch (error) {
       console.error('[v0] Error changing status:', error)
     } finally {
@@ -180,7 +183,18 @@ export function DocumentActionModal({
 
             {isAdmin && document.estado !== 'pendiente' && (
               <Button
-                onClick={() => handleStatusChange('pendiente')}
+                onClick={() => {
+                  setIsChanging(true)
+                  if (onStatusChange) {
+                    onStatusChange(document.id, 'pending').then(() => {
+                      setIsChanging(false)
+                      setTimeout(() => onClose(), 1000)
+                    }).catch(err => {
+                      console.error('[v0] Error reverting to pending:', err)
+                      setIsChanging(false)
+                    })
+                  }
+                }}
                 disabled={isChanging}
                 variant="outline"
                 className="flex items-center gap-2"
