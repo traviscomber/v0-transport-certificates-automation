@@ -50,15 +50,23 @@ export function useDriverDocuments(driverRut: string) {
     }
   }
 
-  // Subir documento y validar con OpenAI
-  const uploadDocument = async (tipo: string, nombre: string, file: File) => {
+  // Subir documento con fecha de vencimiento y validar con OpenAI
+  const uploadDocument = async (
+    tipo: string,
+    nombre: string,
+    file: File,
+    expirationDate?: string
+  ) => {
     try {
-      console.log('[v0] Uploading document:', { driverRut, tipo, file: file.name })
+      console.log('[v0] Uploading document:', { driverRut, tipo, file: file.name, expirationDate })
       const formData = new FormData()
       formData.append('file', file)
       formData.append('driverRut', driverRut)
       formData.append('document_type', tipo)
       formData.append('file_name', nombre)
+      if (expirationDate) {
+        formData.append('expiration_date', expirationDate)
+      }
 
       const response = await fetch('/api/company/documents/drivers/upload', {
         method: 'POST',
@@ -88,6 +96,18 @@ export function useDriverDocuments(driverRut: string) {
       if (validationResponse.ok) {
         const validation = await validationResponse.json()
         console.log('[v0] Document validated:', validation.extracted_data)
+        
+        // Extraer fecha de vencimiento si viene en los datos extraídos
+        if (validation.extracted_data?.expiration_date) {
+          await fetch(`/api/company/documents/${uploadResult.document.id}/metadata`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              expiration_date: validation.extracted_data.expiration_date 
+            })
+          }).catch(err => console.error('Error setting extracted expiration:', err))
+        }
+        
         uploadResult.document.validation = validation.validation
         uploadResult.document.extracted_data = validation.extracted_data
       }
