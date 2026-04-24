@@ -80,23 +80,38 @@ async function insertUsuarios() {
       try {
         console.log(`[v0] Processing: ${u.email}`)
 
-        // Create auth user
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-          email: u.email,
-          password: 'TempPassword123!',
-          email_confirm: true,
-        })
+        // Create auth user with admin API
+        console.log(`[v0] Creating auth user for ${u.email}...`)
+        let userId
+        try {
+          const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+            email: u.email,
+            password: 'TempPassword123!',
+            email_confirm: true,
+          })
 
-        if (authError) {
-          console.error(`[v0] Error for ${u.rut} : ${authError.message}`)
+          if (authError) {
+            console.error(`[v0] Auth error for ${u.rut}:`, authError?.message || authError)
+            errorCount++
+            continue
+          }
+
+          if (!authData?.user?.id) {
+            console.error(`[v0] No user ID returned for ${u.rut}`, authData)
+            errorCount++
+            continue
+          }
+
+          userId = authData.user.id
+          console.log(`[v0] ✅ Created auth user ${userId} for ${u.email}`)
+        } catch (authErr) {
+          console.error(`[v0] Exception creating auth user for ${u.rut}:`, authErr?.message)
           errorCount++
           continue
         }
 
-        const userId = authData.user.id
-        console.log(`[v0] Created auth user ${userId} for ${u.email}`)
-
         // Create profile with the auth user ID
+        console.log(`[v0] Creating profile for user ${userId}...`)
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .insert({
@@ -113,7 +128,48 @@ async function insertUsuarios() {
           .single()
 
         if (profileError) {
-          console.error(`[v0] Error for ${u.rut} : ${profileError.message}`)
+          console.error(`[v0] Profile error for ${u.rut} (${userId}):`, profileError?.message || profileError)
+          errorCount++
+          continue
+        }
+
+        createdUsers.push(profileData)
+        successCount++
+        console.log(`[v0] ✅ Created profile for ${u.full_name} (${u.rut})`)
+      } catch (err) {
+        console.error(`[v0] Exception for ${u.rut}:`, err?.message)
+        errorCount++
+      }
+    }
+
+        if (!authData || !authData.user) {
+          console.error(`[v0] No user returned for ${u.rut}`)
+          errorCount++
+          continue
+        }
+
+        const userId = authData.user.id
+        console.log(`[v0] ✅ Created auth user ${userId} for ${u.email}`)
+
+        // Create profile with the auth user ID
+        console.log(`[v0] Creating profile for user ${userId}...`)
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            email: u.email,
+            full_name: u.full_name,
+            rut: u.rut,
+            phone: u.phone,
+            role: 'admin',
+            is_active: true,
+            organization_id: organizationId,
+          })
+          .select()
+          .single()
+
+        if (profileError) {
+          console.error(`[v0] Profile error for ${u.rut} (${userId}):`, profileError)
           errorCount++
           continue
         }
