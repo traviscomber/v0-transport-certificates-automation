@@ -91,8 +91,10 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('[v0] Dashboard data error:', error)
+    console.error('[v0] Error message:', error?.message)
+    console.error('[v0] Error stack:', error?.stack)
     return NextResponse.json(
-      { error: 'Error al cargar datos del dashboard' },
+      { error: 'Error al cargar datos del dashboard', details: error?.message },
       { status: 500 }
     )
   }
