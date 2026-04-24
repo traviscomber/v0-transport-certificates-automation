@@ -33,8 +33,8 @@ export async function GET(request: NextRequest) {
     // Fetch transportistas data - ALWAYS filter by ejecutiva name (even for admins)
     let transportistasUrl = `${supabaseUrl}/rest/v1/transportistas`
     if (userName) {
-      // Always filter by executive name to get their assigned subcontractors
-      transportistasUrl += `?ejecutiva=eq.${encodeURIComponent(userName)}`
+      // Use ilike for case-insensitive search to handle name variations
+      transportistasUrl += `?ejecutiva=ilike.%${encodeURIComponent(userName)}%`
     }
 
     console.log('[v0] Fetching transportistas from:', transportistasUrl)
@@ -48,12 +48,20 @@ export async function GET(request: NextRequest) {
 
     const transportistas = await transportistasResponse.json()
     console.log('[v0] Transportistas count:', Array.isArray(transportistas) ? transportistas.length : 0)
+    
+    // Debug: show first transportista to check structure
+    if (Array.isArray(transportistas) && transportistas.length > 0) {
+      console.log('[v0] First transportista sample:', JSON.stringify(transportistas[0]).substring(0, 200))
+    }
+    if (!Array.isArray(transportistas)) {
+      console.log('[v0] Transportistas error response:', JSON.stringify(transportistas).substring(0, 300))
+    }
 
     // Fetch conductores data - ALWAYS filter by ejecutiva name (even for admins)
     let conductoesUrl = `${supabaseUrl}/rest/v1/conductores`
     if (userName) {
-      // Always filter by executive name to get their assigned drivers
-      conductoesUrl += `?ejecutiva=eq.${encodeURIComponent(userName)}`
+      // Use ilike for case-insensitive search to handle name variations
+      conductoesUrl += `?ejecutiva=ilike.%${encodeURIComponent(userName)}%`
     }
 
     console.log('[v0] Fetching conductores from:', conductoesUrl)
