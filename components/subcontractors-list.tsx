@@ -382,4 +382,5 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors }: Su
         )}
       </div>
     </div>
+  )
 }
