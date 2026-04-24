@@ -141,16 +141,24 @@ export function AdminDocumentUpload({ onUploadSuccess }: AdminDocumentUploadProp
         ? '/api/company/documents/drivers/upload'
         : '/api/company/documents/subcontractors/upload'
 
+      console.log('[v0] Admin upload starting:', { endpoint, documentType, selectedId, selectedCategory, fileCount: files.length })
+      
       const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
       })
 
+      console.log('[v0] Admin upload response status:', response.status)
+      
       if (!response.ok) {
         const error = await response.json()
+        console.error('[v0] Admin upload error:', error)
         throw new Error(error.error || 'Error uploading document')
       }
 
+      const result = await response.json()
+      console.log('[v0] Admin upload success:', result)
+      
       setMessage({ type: 'success', text: `${files.length} documento(s) subido(s) exitosamente` })
       setSelectedId('')
       onUploadSuccess?.()
