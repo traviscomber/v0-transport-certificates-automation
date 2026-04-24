@@ -18,8 +18,6 @@ async function seedConductores() {
       nombres: driver.nombres,
       apellido_paterno: driver.apellido_paterno,
       apellido_materno: driver.apellido_materno,
-      telefono: driver.telefono || null,
-      email: driver.email || null,
       is_active: driver.is_active,
       transportista_id: driver.rut_proveedor, // Usar rut_proveedor como transportista_id
     }))
