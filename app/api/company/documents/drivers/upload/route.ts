@@ -179,10 +179,10 @@ export async function POST(request: NextRequest) {
       })
 
       if (saveError) {
-        console.error('[v0] Error saving document to database:', saveError.message)
+        console.error('[v0] ❌ ERROR saving document to database:', saveError.message, saveError.details)
         // Continue anyway - file is in storage
-      } else {
-        console.log('[v0] Document saved to database:', savedDoc?.id)
+      } else if (savedDoc) {
+        console.log('[v0] ✅ DOCUMENTO INSERTADO en database:', { id: savedDoc.id, fileName: file.name, driverId })
         uploadedDocs.push(savedDoc)
       }
     }
