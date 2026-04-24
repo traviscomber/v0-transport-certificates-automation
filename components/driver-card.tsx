@@ -32,7 +32,7 @@ export function DriverCard({
   getDocumentStatusColor,
   getDocumentStatusLabel,
 }: DriverCardProps) {
-  const { documents, loading, uploadDocument } = useDriverDocuments(driver.rut)
+  const { documents, loading, uploadDocument, refetch } = useDriverDocuments(driver.rut)
   const { changeStatus } = useDocumentManagement()
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [uploadDocType, setUploadDocType] = useState('Licencia de Conducir')
@@ -42,6 +42,7 @@ export function DriverCard({
   const [uploadError, setUploadError] = useState<string>('')
   const [selectedDocument, setSelectedDocument] = useState<any>(null)
   const [showDocumentModal, setShowDocumentModal] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
   const handleUpload = async () => {
     if (!uploadFileName.trim() || !uploadFile) {
@@ -159,15 +160,33 @@ export function DriverCard({
               {/* Documentos expandibles */}
               {expandedDocuments.has(driver.id) && (
                 <div className="space-y-2">
-                  {loading ? (
+                  {loading || refreshing ? (
                     <div className="flex items-center justify-center py-4">
                       <Loader className="h-4 w-4 animate-spin text-slate-400" />
+                      <span className="ml-2 text-xs text-slate-400">
+                        {refreshing ? 'Actualizando...' : 'Cargando...'}
+                      </span>
                     </div>
                   ) : documents.length > 0 ? (
-                    documents.map((doc) => (
+                    <>
+                      {/* Banner de documentos rechazados */}
+                      {documents.some(d => d.estado === 'rechazado') && (
+                        <div className="rounded bg-red-500/20 border border-red-500/50 p-3 text-xs text-red-300">
+                          <p className="font-semibold flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4" />
+                            Documentos Rechazados
+                          </p>
+                          <p className="text-xs text-red-300/80 mt-1">
+                            Por favor, vuelve a subir los documentos marcados como rechazados
+                          </p>
+                        </div>
+                      )}
+                      {documents.map((doc) => (
                       <div
                         key={doc.id}
-                        className="flex items-center justify-between rounded bg-slate-800/50 p-2 text-xs hover:bg-slate-800 transition-colors cursor-pointer"
+                        className={`flex items-center justify-between rounded bg-slate-800/50 p-2 text-xs hover:bg-slate-800 transition-colors cursor-pointer ${
+                          doc.estado === 'rechazado' ? 'opacity-60' : ''
+                        }`}
                         onClick={() => {
                           setSelectedDocument(doc)
                           setShowDocumentModal(true)
@@ -176,9 +195,28 @@ export function DriverCard({
                         <div className="flex flex-1 items-center gap-2 min-w-0">
                           <FileText className="h-3 w-3 text-slate-400 flex-shrink-0" />
                           <div className="min-w-0 flex-1">
-                            <p className="font-medium text-slate-300 truncate">{doc.tipo}</p>
-                            <p className="text-slate-500 truncate text-xs">{doc.nombre}</p>
-                            <p className="text-slate-600 text-xs">{new Date(doc.fecha_subida).toLocaleDateString('es-ES')}</p>
+                            <p className={`font-medium truncate ${
+                              doc.estado === 'rechazado' 
+                                ? 'text-red-400 line-through' 
+                                : 'text-slate-300'
+                            }`}>
+                              {doc.tipo}
+                            </p>
+                            <p className={`truncate text-xs ${
+                              doc.estado === 'rechazado' 
+                                ? 'text-red-500/70 line-through' 
+                                : 'text-slate-500'
+                            }`}>
+                              {doc.nombre}
+                            </p>
+                            <p className={`text-xs ${
+                              doc.estado === 'rechazado' 
+                                ? 'text-red-600' 
+                                : 'text-slate-600'
+                            }`}>
+                              {new Date(doc.fecha_subida).toLocaleDateString('es-ES')}
+                              {doc.estado === 'rechazado' && ' - RECHAZADO'}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
@@ -349,7 +387,14 @@ export function DriverCard({
         onStatusChange={async (docId, newStatus) => {
           try {
             await changeStatus(docId, newStatus, 'Cambio realizado desde dashboard')
-            // The document status will update in the UI
+            console.log('[v0] Status changed, refreshing documents...')
+            setRefreshing(true)
+            await refetch()
+            setRefreshing(false)
+            setTimeout(() => {
+              setShowDocumentModal(false)
+              setSelectedDocument(null)
+            }, 500)
           } catch (error) {
             console.error('[v0] Error updating status:', error)
             throw error
