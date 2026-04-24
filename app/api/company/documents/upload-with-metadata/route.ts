@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '50mb',
-    },
-  },
-}
+export const maxDuration = 300 // 5 minutes for file uploads
 
 export async function POST(request: NextRequest) {
   try {
