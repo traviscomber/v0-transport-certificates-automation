@@ -1,27 +1,38 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 import { DriversList } from '@/components/drivers-list'
 import { HelpBox } from '@/components/ui/help-box'
 
-export default function ConductoresPage() {
-  const [drivers, setDrivers] = useState([])
-  const [loading, setLoading] = useState(true)
+const fetcher = (url: string) => fetch(url).then(r => r.json())
 
+export default function ConductoresPage() {
+  const { data, error, isLoading, mutate } = useSWR(
+    '/api/company/data',
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 0, // No deduplication
+      focusThrottleInterval: 0, // Refetch on focus without throttling
+      refreshInterval: 0 // No automatic polling
+    }
+  )
+
+  const drivers = data?.drivers || []
+
+  // Listen for document status changes and refetch
   useEffect(() => {
-    // Fetch drivers from API
-    fetch('/api/company/data')
-      .then((res) => res.json())
-      .then((data) => {
-        console.log('[v0] Fetched drivers:', data.drivers?.length || 0)
-        setDrivers(data.drivers || [])
-      })
-      .catch((err) => {
-        console.error('[v0] Error fetching drivers:', err)
-        setDrivers([])
-      })
-      .finally(() => setLoading(false))
-  }, [])
+    const handleStatusChange = () => {
+      console.log('[v0] Document status changed, refetching drivers list...')
+      mutate() // Refetch drivers
+    }
+
+    // Listen for custom event when status changes
+    window.addEventListener('documentStatusChanged', handleStatusChange)
+    return () => window.removeEventListener('documentStatusChanged', handleStatusChange)
+  }, [mutate])
 
   return (
     <div className="space-y-6">
@@ -44,9 +55,13 @@ export default function ConductoresPage() {
         ]}
       />
 
-      {loading ? (
+      {isLoading ? (
         <div className="text-center py-8">
           <p className="text-muted-foreground">Cargando conductores...</p>
+        </div>
+      ) : error ? (
+        <div className="text-center py-8">
+          <p className="text-red-500">Error cargando conductores</p>
         </div>
       ) : drivers.length === 0 ? (
         <div className="text-center py-8">

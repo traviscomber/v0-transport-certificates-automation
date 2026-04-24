@@ -64,6 +64,12 @@ export function DriverCard({
       setUploadFile(null)
       setUploadDocType('Licencia de Conducir')
       console.log('[v0] Modal cerrado, contador debería estar actualizado')
+      
+      // Dispatch event to notify other components about the new document
+      if (typeof window !== 'undefined') {
+        console.log('[v0] Dispatching documentStatusChanged event after upload')
+        window.dispatchEvent(new Event('documentStatusChanged'))
+      }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Error desconocido al subir documento'
       console.error('[v0] Upload error:', errorMsg, error)
@@ -410,6 +416,12 @@ export function DriverCard({
             
             console.log('[v0] Status changed, refetching documents with cache bypass...')
             await refetch(true)
+            
+            // Dispatch event to notify other components (like the drivers list page)
+            if (typeof window !== 'undefined') {
+              console.log('[v0] Dispatching documentStatusChanged event')
+              window.dispatchEvent(new Event('documentStatusChanged'))
+            }
             
             console.log('[v0] Documents refetched, closing modal...')
             setShowDocumentModal(false)
