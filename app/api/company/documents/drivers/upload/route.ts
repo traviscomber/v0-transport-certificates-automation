@@ -169,8 +169,16 @@ export async function POST(request: NextRequest) {
         .select()
         .single()
 
+      console.log('[v0] Save attempt:', {
+        driverId,
+        documentType: category,
+        fileName: file.name,
+        error: saveError?.message,
+        saved: !!savedDoc
+      })
+
       if (saveError) {
-        console.error('[v0] Error saving document to database:', saveError)
+        console.error('[v0] Error saving document to database:', saveError.message)
         // Continue anyway - file is in storage
       } else {
         console.log('[v0] Document saved to database:', savedDoc?.id)
