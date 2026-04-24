@@ -19,7 +19,7 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.toLowerCase() }),
-        credentials: 'include', // Important: include/send cookies
+        credentials: 'include',
       })
 
       console.log('[v0] Response status:', response.status)
@@ -33,14 +33,21 @@ export default function LoginPage() {
         return
       }
 
-      // Success! Browser has received Set-Cookie headers
-      // Check that cookies are set
-      console.log('[v0] Cookies should be set now, checking:', {
+      // Manually set cookies via document.cookie - ensures they're available immediately
+      const expiryDate = new Date()
+      expiryDate.setTime(expiryDate.getTime() + 7 * 24 * 60 * 60 * 1000) // 7 days
+
+      document.cookie = `user_email=${encodeURIComponent(email.toLowerCase())}; path=/; expires=${expiryDate.toUTCString()}`
+      document.cookie = `user_name=${encodeURIComponent(data.user.full_name)}; path=/; expires=${expiryDate.toUTCString()}`
+      document.cookie = `user_role=${encodeURIComponent(data.user.role)}; path=/; expires=${expiryDate.toUTCString()}`
+
+      console.log('[v0] Cookies set via document.cookie:', {
         user_email: document.cookie.includes('user_email'),
         user_name: document.cookie.includes('user_name'),
+        user_role: document.cookie.includes('user_role'),
       })
 
-      // Wait a bit for cookies to be fully processed, then redirect
+      // Redirect to dashboard
       setTimeout(() => {
         console.log('[v0] Redirecting to dashboard...')
         window.location.href = '/dashboard/company'

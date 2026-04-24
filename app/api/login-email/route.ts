@@ -34,28 +34,7 @@ export async function POST(request: NextRequest) {
 
     console.log('[v0] Login attempt for:', email)
 
-    // Check if user exists in auth.users
-    const authUsersResponse = await fetch(
-      `${supabaseUrl}/rest/v1/auth.users?email=eq.${encodeURIComponent(email)}`,
-      {
-        headers: {
-          apikey: supabaseServiceKey,
-          Authorization: `Bearer ${supabaseServiceKey}`,
-        },
-      }
-    )
-
-    const authUsers = await authUsersResponse.json()
-
-    if (!authUsers || authUsers.length === 0) {
-      console.error('[v0] User not found:', email)
-      return NextResponse.json(
-        { error: 'Usuario no encontrado. Verifica tu email.' },
-        { status: 401 }
-      )
-    }
-
-    // Get user profile to verify executive assignment
+    // Get user profile from profiles table
     const profileResponse = await fetch(
       `${supabaseUrl}/rest/v1/profiles?email=eq.${encodeURIComponent(email)}`,
       {
@@ -71,7 +50,7 @@ export async function POST(request: NextRequest) {
     if (!profiles || profiles.length === 0) {
       console.error('[v0] Profile not found for:', email)
       return NextResponse.json(
-        { error: 'Perfil no encontrado. Contacta a administración.' },
+        { error: 'Usuario no encontrado. Verifica tu email.' },
         { status: 401 }
       )
     }
@@ -80,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     console.log('[v0] Login successful for:', email, 'Name:', profile.full_name)
 
-    // Return success JSON response - let client handle redirect
+    // Return success JSON response
     const response = NextResponse.json({
       success: true,
       user: {
@@ -90,14 +69,15 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Set cookies - these will be included in response headers
+    // Set cookies with permissive settings to ensure they stick
     response.cookies.set({
       name: 'user_email',
       value: email.toLowerCase(),
-      httpOnly: false, // Make visible to client for debugging
+      httpOnly: false,
       secure: false,
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
     })
 
     response.cookies.set({
@@ -107,6 +87,7 @@ export async function POST(request: NextRequest) {
       secure: false,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7,
+      path: '/',
     })
 
     response.cookies.set({
@@ -116,9 +97,10 @@ export async function POST(request: NextRequest) {
       secure: false,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7,
+      path: '/',
     })
 
-    console.log('[v0] Setting cookies, returning success JSON')
+    console.log('[v0] Cookies set with path=/, returning success')
     return response
   } catch (error: any) {
     console.error('[v0] Login error:', error)
