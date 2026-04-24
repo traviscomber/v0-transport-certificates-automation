@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
   // Skip middleware for auth/login routes - they don't need session validation
-  if (path.startsWith('/api/auth/login') || path.startsWith('/login')) {
+  if (path.startsWith('/api/login') || path.startsWith('/login')) {
     return NextResponse.next()
   }
 

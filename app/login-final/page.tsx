@@ -17,7 +17,7 @@ export default function LoginFinal() {
 
     try {
       // Call server-side login endpoint
-      const response = await fetch('/api/auth/login-direct', {
+      const response = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
