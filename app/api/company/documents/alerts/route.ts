@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
         severity: severity,
         alert_type: daysRemaining < 0 ? 'EXPIRED' : daysRemaining < 7 ? 'URGENT' : 'WARNING'
       }
-    }).filter(Boolean)
+    }).filter((a): a is NonNullable<typeof a> => a !== null)
 
     // Agrupar por severidad
     const critical = alerts.filter(a => a.severity === 'critical')
