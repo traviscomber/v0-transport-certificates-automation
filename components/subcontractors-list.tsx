@@ -53,6 +53,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors }: Su
   // Fetch data from API if not provided as prop
   useEffect(() => {
     if (initialSubcontractors) {
+      console.log('[v0] Using provided subcontractors prop, skipping API fetch')
       return // Use provided data
     }
 
@@ -61,6 +62,10 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors }: Su
         console.log('[v0] Fetching subcontractors and drivers from API...')
         const response = await fetch('/api/dashboard/data')
         const data = await response.json()
+        
+        console.log('[v0] API Response status:', response.status)
+        console.log('[v0] API Response keys:', Object.keys(data))
+        console.log('[v0] API Response dashboard keys:', data.dashboard ? Object.keys(data.dashboard) : 'no dashboard')
         
         if (response.ok && data.dashboard?.transportistas) {
           console.log('[v0] Fetched subcontractors:', data.dashboard.transportistas.length)
@@ -72,6 +77,8 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors }: Su
             data.dashboard.conductores.slice(0, 5).forEach((d: any, idx: number) => {
               console.log(`  [${idx}] ${d.nombre} - rut_proveedor: ${d.rut_proveedor}`)
             })
+          } else {
+            console.log('[v0] No conductores in response!')
           }
           
           // Debug: Log first 5 subcontractors with their rut
@@ -97,14 +104,20 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors }: Su
             setSelectedEjecutivas([decodedName])
           }
         } else {
-          console.error('[v0] Failed to fetch:', data.error)
+          console.error('[v0] Failed to fetch - response not ok or no transportistas:', {
+            ok: response.ok,
+            hasTransportistas: !!data.dashboard?.transportistas,
+            error: data.error
+          })
           // Fall back to local data
           setSubcontractors(allSubcontractorsData)
+          setDrivers([])
         }
       } catch (error) {
         console.error('[v0] Error fetching subcontractors:', error)
         // Fall back to local data
         setSubcontractors(allSubcontractorsData)
+        setDrivers([])
       } finally {
         setIsLoading(false)
       }
