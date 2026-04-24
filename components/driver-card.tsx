@@ -55,6 +55,13 @@ export function DriverCard({
     try {
       console.log('[v0] Iniciando upload:', { driverId: driver.id, tipo: uploadDocType, nombre: uploadFileName, fileSize: uploadFile.size })
       await uploadDocument(uploadDocType, uploadFileName, uploadFile)
+      
+      // Refetch documents after successful upload
+      setRefreshing(true)
+      console.log('[v0] Upload exitoso, refrescando documentos...')
+      await refetch()
+      setRefreshing(false)
+      
       setShowUploadModal(false)
       setUploadFileName('')
       setUploadFile(null)
