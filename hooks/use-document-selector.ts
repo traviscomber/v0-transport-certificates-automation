@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react'
-import { DOCUMENT_TYPES, DocumentType } from '@/lib/documents-config'
+import { DOCUMENT_TYPES, DocumentType, DocumentTag } from '@/lib/documents-config'
 
 export function useDocumentSelector() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [selectedTags, setSelectedTags] = useState<DocumentTag[]>([])
 
   // Get unique categories and tags
   const categories = useMemo(() => {
@@ -16,7 +16,7 @@ export function useDocumentSelector() {
   }, [])
 
   const availableTags = useMemo(() => {
-    const tags = new Set<string>()
+    const tags = new Set<DocumentTag>()
     DOCUMENT_TYPES.forEach(doc => {
       doc.tags?.forEach(tag => tags.add(tag))
     })
@@ -53,7 +53,7 @@ export function useDocumentSelector() {
     })
   }, [selectedCategory, selectedTags, searchQuery])
 
-  const toggleTag = (tag: string) => {
+  const toggleTag = (tag: DocumentTag) => {
     setSelectedTags(prev =>
       prev.includes(tag)
         ? prev.filter(t => t !== tag)
