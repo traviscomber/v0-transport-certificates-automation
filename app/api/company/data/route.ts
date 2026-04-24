@@ -18,13 +18,12 @@ export async function GET() {
       .select('*')
       .eq('user_type', 'conductor')
 
+    let driversData = allDriversData
     if (driversError) {
       console.warn('[v0] Error fetching drivers from Supabase, using fallback data:', driversError)
-      var driversData = allDriversData
-    } else {
-      console.log(`[v0] Loaded ${driversFromDb?.length || 0} drivers from Supabase`)
-      // If Supabase has data, use it; otherwise fallback to TypeScript data
-      var driversData = driversFromDb && driversFromDb.length > 0 ? driversFromDb : allDriversData
+    } else if (driversFromDb && driversFromDb.length > 0) {
+      console.log(`[v0] Loaded ${driversFromDb.length} drivers from Supabase`)
+      driversData = driversFromDb
     }
 
     // Fetch subcontractors from Supabase
@@ -33,13 +32,12 @@ export async function GET() {
       .select('*')
       .eq('user_type', 'subcontratista')
 
+    let subcontractorsData = allSubcontractorsData
     if (subError) {
       console.warn('[v0] Error fetching subcontractors from Supabase, using fallback data:', subError)
-      var subcontractorsData = allSubcontractorsData
-    } else {
-      console.log(`[v0] Loaded ${subFromDb?.length || 0} subcontractors from Supabase`)
-      // If Supabase has data, use it; otherwise fallback to TypeScript data
-      var subcontractorsData = subFromDb && subFromDb.length > 0 ? subFromDb : allSubcontractorsData
+    } else if (subFromDb && subFromDb.length > 0) {
+      console.log(`[v0] Loaded ${subFromDb.length} subcontractors from Supabase`)
+      subcontractorsData = subFromDb
     }
 
     const executivesData = [
