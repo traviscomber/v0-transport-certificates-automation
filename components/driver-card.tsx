@@ -42,7 +42,6 @@ export function DriverCard({
   const [uploadError, setUploadError] = useState<string>('')
   const [selectedDocument, setSelectedDocument] = useState<any>(null)
   const [showDocumentModal, setShowDocumentModal] = useState(false)
-  const [refreshing, setRefreshing] = useState(false)
 
   const handleUpload = async () => {
     if (!uploadFileName.trim() || !uploadFile) {
@@ -55,12 +54,8 @@ export function DriverCard({
     try {
       console.log('[v0] Iniciando upload:', { driverId: driver.id, tipo: uploadDocType, nombre: uploadFileName, fileSize: uploadFile.size })
       await uploadDocument(uploadDocType, uploadFileName, uploadFile)
-      
-      // Refetch documents after successful upload
-      setRefreshing(true)
-      console.log('[v0] Upload exitoso, refrescando documentos...')
-      await refetch()
-      setRefreshing(false)
+      // uploadDocument already calls refetch() internally, no need to call it again
+      console.log('[v0] Upload y refetch completados')
       
       setShowUploadModal(false)
       setUploadFileName('')
@@ -167,11 +162,11 @@ export function DriverCard({
               {/* Documentos expandibles */}
               {expandedDocuments.has(driver.id) && (
                 <div className="space-y-2">
-                  {loading || refreshing ? (
+                  {loading ? (
                     <div className="flex items-center justify-center py-4">
                       <Loader className="h-4 w-4 animate-spin text-slate-400" />
                       <span className="ml-2 text-xs text-slate-400">
-                        {refreshing ? 'Actualizando...' : 'Cargando...'}
+                        Cargando...
                       </span>
                     </div>
                   ) : documents.length > 0 ? (
