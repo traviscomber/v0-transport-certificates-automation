@@ -26,54 +26,53 @@ export async function GET(request: NextRequest) {
 
     const adminClient = await createAdminClient()
 
-    // Obtener la organization_id
-    const { data: orgs, error: orgsError } = await adminClient
-      .from('organizations')
-      .select('id')
-      .limit(1)
-
-    if (orgsError || !orgs || orgs.length === 0) {
-      console.warn('[v0] No organization found, returning fallback alerts')
-      // Fallback a datos locales si no hay organización
-      return getFallbackAlerts()
-    }
-
-    const organizationId = orgs[0].id
-
-    // 1. Traer alertas recientes de la base de datos (últimas 24 horas)
+    // 1. Alertas de cambios de estado de documentos (últimas 24 horas)
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
-    const { data: dbAlerts, error: dbError } = await adminClient
-      .from('alerts_log')
-      .select('*')
-      .eq('organization_id', organizationId)
-      .gte('created_at', oneDayAgo)
-      .order('created_at', { ascending: false })
-      .limit(20)
+    try {
+      const { data: statusChanges, error: statusError } = await adminClient
+        .from('document_statuses')
+        .select('*')
+        .gte('changed_at', oneDayAgo)
+        .order('changed_at', { ascending: false })
+        .limit(10)
 
-    if (dbError) {
-      console.warn('[v0] Error fetching alerts from database:', dbError)
-    } else if (dbAlerts && dbAlerts.length > 0) {
-      console.log('[v0] Found', dbAlerts.length, 'alerts from database')
-      
-      // Convertir alertas de BD al formato esperado
-      const dbAlertsFormatted = dbAlerts.map((alert, idx) => ({
-        id: alert.id || `db-alert-${idx}`,
-        type: mapAlertTypeToType(alert.alert_type),
-        title: alert.title,
-        description: alert.description || '',
-        timestamp: new Date(alert.created_at),
-        entityType: (alert.entity_type as any) || undefined,
-        entityId: alert.entity_id,
-        entityName: alert.entity_name,
-        actionUrl: alert.action_url,
-        read: alert.is_read,
-      }))
-      
-      alerts.push(...dbAlertsFormatted)
+      if (!statusError && statusChanges && statusChanges.length > 0) {
+        console.log('[v0] Found', statusChanges.length, 'recent document status changes')
+        
+        statusChanges.forEach((change) => {
+          const statusText = change.status?.toLowerCase() || 'unknown'
+          let alertType: 'warning' | 'error' | 'success' | 'info' = 'info'
+          let title = 'Estado de documento actualizado'
+          
+          if (statusText === 'approved') {
+            alertType = 'success'
+            title = 'Documento aprobado'
+          } else if (statusText === 'rejected') {
+            alertType = 'error'
+            title = 'Documento rechazado'
+          } else if (statusText === 'expired') {
+            alertType = 'warning'
+            title = 'Documento vencido'
+          }
+          
+          alerts.push({
+            id: change.document_id || `status-${change.id}`,
+            type: alertType,
+            title,
+            description: `${title}${change.reason ? ': ' + change.reason : ''}`,
+            timestamp: new Date(change.changed_at),
+            entityType: 'document',
+            entityId: change.document_id,
+            read: false,
+          })
+        })
+      }
+    } catch (statusFetchError) {
+      console.warn('[v0] Could not fetch document status changes:', statusFetchError)
     }
 
-    // 2. Alertas adicionales desde datos locales (como fallback)
+    // 2. Alertas desde datos locales (fallback)
     const drivers = allDriversData || []
     const subcontractors = allSubcontractorsData || []
 
@@ -161,17 +160,6 @@ export async function GET(request: NextRequest) {
       { status: 200 }
     )
   }
-}
-
-/**
- * Mapea tipos de alertas de BD al formato esperado
- */
-function mapAlertTypeToType(alertType: string): 'warning' | 'error' | 'success' | 'info' {
-  const type = alertType.toLowerCase()
-  if (type.includes('error') || type.includes('reject')) return 'error'
-  if (type.includes('warning') || type.includes('expir')) return 'warning'
-  if (type.includes('success') || type.includes('approv')) return 'success'
-  return 'info'
 }
 
 /**
