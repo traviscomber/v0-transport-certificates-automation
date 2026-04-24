@@ -40,22 +40,9 @@ export async function POST(request: NextRequest) {
       2. What type of document is it?
       3. Extract: full name, ID number, expiration date, issue date
       4. Rate confidence 0-1
-      5. List any issues (blurry, expired, damaged, etc)`,
-      messages: [
-        {
-          role: 'user' as const,
-          content: [
-            {
-              type: 'image' as const,
-              image: file_url,
-            },
-            {
-              type: 'text' as const,
-              text: 'Validate this document and extract data',
-            },
-          ],
-        },
-      ],
+      5. List any issues (blurry, expired, damaged, etc)
+      
+      Image URL: ${file_url}`,
     })
 
     console.log('[v0] Document validation result:', result.object)
