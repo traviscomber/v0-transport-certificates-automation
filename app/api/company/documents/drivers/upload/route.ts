@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { allDriversData } from '@/lib/data/all-drivers'
+import { triggerDocumentUploadedAlert } from '@/lib/operations/alert-triggers'
 
 export async function POST(request: NextRequest) {
   try {
@@ -184,6 +185,23 @@ export async function POST(request: NextRequest) {
         console.log('[v0] Document saved to database:', savedDoc?.id)
         uploadedDocs.push(savedDoc)
       }
+    }
+
+    // Trigger alert para cada documento subido
+    if (uploadedDocs.length > 0) {
+      const driverInfo = allDriversData.find((d) => {
+        const normalizeRUT = (rut: string | undefined) => {
+          if (!rut) return ''
+          return rut.trim().replace(/[.-]/g, '').toUpperCase()
+        }
+        return normalizeRUT(d.rut) === normalizeRUT(driverRut)
+      })
+
+      await triggerDocumentUploadedAlert(
+        driverId,
+        uploadedDocs[0]?.file_name || 'Documento',
+        driverInfo?.nombres || 'Un conductor'
+      )
     }
 
     return NextResponse.json({
