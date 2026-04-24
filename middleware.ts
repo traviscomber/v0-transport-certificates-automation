@@ -10,6 +10,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Protect dashboard routes - require authentication
+  if (path.startsWith('/dashboard')) {
+    const userEmail = request.cookies.get('user_email')?.value
+    if (!userEmail) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+  }
+
   // Skip API routes and static files
   if (path.startsWith('/_next') || path.includes('.')) {
     return await updateSession(request)

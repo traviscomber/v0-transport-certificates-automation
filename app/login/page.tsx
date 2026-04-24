@@ -23,6 +23,7 @@ export default function LoginPage() {
       })
 
       const data = await response.json()
+      console.log('[v0] Login response:', response.status)
 
       if (!response.ok) {
         setError(data.error || 'Error al iniciar sesión')
@@ -30,13 +31,11 @@ export default function LoginPage() {
         return
       }
 
-      // Store the session token and user info
-      if (data.session?.access_token) {
-        localStorage.setItem('supabase_token', data.session.access_token)
-        localStorage.setItem('supabase_user', JSON.stringify(data.user))
-        router.push('/dashboard/company')
-      }
+      // Success - redirect to dashboard
+      console.log('[v0] Login successful for:', email)
+      router.push('/dashboard/company')
     } catch (err) {
+      console.error('[v0] Login error:', err)
       setError('Error al conectar con el servidor')
       setLoading(false)
     }

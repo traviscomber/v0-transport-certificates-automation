@@ -1,69 +1,106 @@
-import { cookies } from 'next/headers'
-import { createClient } from '@/lib/supabase/client'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const executiveId = cookieStore.get('company_id')?.value
+    // Get user email from cookies (set during login)
+    const userEmail = request.cookies.get('user_email')?.value
 
-    if (!executiveId) {
+    if (!userEmail) {
       return NextResponse.json(
         { error: 'No autenticado' },
         { status: 401 }
       )
     }
 
-    const supabase = createClient()
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-    // Obtener datos del ejecutivo
-    const { data: executive, error: execError } = await supabase
-      .from('executive_staff')
-      .select('id, rut, full_name, email, cargo, transportista_id')
-      .eq('id', executiveId)
-      .single()
-
-    if (execError || !executive) {
-      throw new Error('Ejecutivo no encontrado')
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
     }
 
-    // Obtener datos de la empresa
-    const { data: company, error: compError } = await supabase
-      .from('transportistas')
-      .select('id, rut, razon_social, email, telefono, direccion, region')
-      .eq('id', executive.transportista_id)
-      .single()
+    // Fetch user profile to get their name and role
+    const profileResponse = await fetch(
+      `${supabaseUrl}/rest/v1/profiles?email=eq.${userEmail}`,
+      {
+        headers: {
+          apikey: supabaseServiceKey,
+          Authorization: `Bearer ${supabaseServiceKey}`,
+        },
+      }
+    )
 
-    if (compError || !company) {
-      throw new Error('Empresa no encontrada')
+    const profiles = await profileResponse.json()
+    if (!profiles || profiles.length === 0) {
+      return NextResponse.json(
+        { error: 'Perfil no encontrado' },
+        { status: 404 }
+      )
     }
 
-    return NextResponse.json({
-      executive: {
-        id: executive.id,
-        rut: executive.rut,
-        full_name: executive.full_name,
-        email: executive.email,
-        cargo: executive.cargo,
-      },
-      company: {
-        id: company.id,
-        rut: company.rut,
-        razon_social: company.razon_social,
-        email: company.email,
-        telefono: company.telefono,
-        direccion: company.direccion,
-        region: company.region,
+    const profile = profiles[0]
+    const isAdmin = profile.role === 'admin'
+    const executiveName = profile.full_name
+
+    console.log('[v0] Dashboard - User:', userEmail, 'Role:', profile.role, 'Executive:', executiveName)
+
+    // Fetch transportistas data
+    let transportistasUrl = `${supabaseUrl}/rest/v1/transportistas`
+    if (!isAdmin) {
+      // Filter by executive if not admin
+      transportistasUrl += `?ejecutiva=eq.${encodeURIComponent(executiveName)}`
+    }
+
+    const transportistasResponse = await fetch(transportistasUrl, {
+      headers: {
+        apikey: supabaseServiceKey,
+        Authorization: `Bearer ${supabaseServiceKey}`,
       },
     })
-  } catch (err) {
-    console.error('[v0] Dashboard data error:', err)
-    const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
 
+    const transportistas = await transportistasResponse.json()
+
+    // Fetch conductores data
+    let conductoesUrl = `${supabaseUrl}/rest/v1/conductores`
+    if (!isAdmin) {
+      // Filter by executive if not admin
+      conductoesUrl += `?ejecutiva=eq.${encodeURIComponent(executiveName)}`
+    }
+
+    const conductoesResponse = await fetch(conductoesUrl, {
+      headers: {
+        apikey: supabaseServiceKey,
+        Authorization: `Bearer ${supabaseServiceKey}`,
+      },
+    })
+
+    const conductores = await conductoesResponse.json()
+
+    return NextResponse.json({
+      user: {
+        email: userEmail,
+        full_name: executiveName,
+        role: profile.role,
+        isAdmin,
+      },
+      dashboard: {
+        transportistas: Array.isArray(transportistas) ? transportistas : [],
+        conductores: Array.isArray(conductores) ? conductores : [],
+        stats: {
+          totalTransportistas: Array.isArray(transportistas) ? transportistas.length : 0,
+          totalConductores: Array.isArray(conductores) ? conductores.length : 0,
+        },
+      },
+    })
+  } catch (error: any) {
+    console.error('[v0] Dashboard data error:', error)
     return NextResponse.json(
-      { error: errorMessage },
+      { error: 'Error al cargar datos del dashboard' },
       { status: 500 }
     )
   }

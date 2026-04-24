@@ -1,4 +1,3 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -26,38 +25,75 @@ export async function POST(request: NextRequest) {
 
     console.log('[v0] Login attempt for:', email)
 
-    // Create a Supabase client with the anon key
-    const supabase = createClient(supabaseUrl, supabaseAnonKey)
+    // Call Supabase Auth REST API directly (no SDK)
+    const authResponse = await fetch(
+      `${supabaseUrl}/auth/v1/token?grant_type=password`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: supabaseAnonKey,
+        },
+        body: JSON.stringify({
+          email: email.toLowerCase(),
+          password,
+        }),
+      }
+    )
 
-    // Use signInWithPassword
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.toLowerCase(),
-      password,
+    const authData = await authResponse.json()
+
+    if (!authResponse.ok) {
+      console.error('[v0] Auth error:', authData)
+      return NextResponse.json(
+        { error: authData.error_description || 'Authentication failed' },
+        { status: 401 }
+      )
+    }
+
+    // Get user data from Supabase
+    const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: {
+        Authorization: `Bearer ${authData.access_token}`,
+        apikey: supabaseAnonKey,
+      },
     })
 
-    if (error) {
-      console.error('[v0] Auth error:', error.message)
-      return NextResponse.json(
-        { error: error.message },
-        { status: 401 }
-      )
-    }
-
-    if (!data.session) {
-      console.error('[v0] No session returned')
-      return NextResponse.json(
-        { error: 'No session received' },
-        { status: 401 }
-      )
-    }
+    const userData = await userResponse.json()
 
     console.log('[v0] Login successful for:', email)
 
-    return NextResponse.json({
-      user: data.user,
-      session: data.session,
+    // Create response with httpOnly cookie
+    const response = NextResponse.json({
+      user: userData,
+      session: {
+        access_token: authData.access_token,
+        refresh_token: authData.refresh_token,
+        expires_in: authData.expires_in,
+      },
       success: true,
     })
+
+    // Set httpOnly cookie with token
+    response.cookies.set({
+      name: 'supabase_token',
+      value: authData.access_token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: authData.expires_in,
+    })
+
+    // Store user info in a regular cookie for client access
+    response.cookies.set({
+      name: 'user_email',
+      value: userData.email || email.toLowerCase(),
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: authData.expires_in,
+    })
+
+    return response
   } catch (error: any) {
     console.error('[v0] Login error:', error)
     return NextResponse.json(
