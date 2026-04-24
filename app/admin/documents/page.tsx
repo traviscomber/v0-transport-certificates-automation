@@ -21,7 +21,7 @@ interface Document {
   driver_rut?: string
 }
 
-export function DocumentManagementPage() {
+export default function DocumentManagementPage() {
   const { getAlerts } = useDocumentManagement()
   const [searchRut, setSearchRut] = useState('')
   const [documents, setDocuments] = useState<Document[]>([])
