@@ -223,9 +223,10 @@ export default function AlertasPage() {
         ) : (
           <div className="space-y-3">
             {filteredAlerts.map((alert) => (
-              <div
+              <a
                 key={alert.id}
-                className={`p-4 border rounded-lg flex items-start gap-4 ${getAlertColor(alert.type)}`}
+                href={alert.actionUrl || '#'}
+                className={`p-4 border rounded-lg flex items-start gap-4 transition-all hover:shadow-lg hover:border-primary/50 cursor-pointer ${getAlertColor(alert.type)}`}
               >
                 <div className="flex-shrink-0 mt-1">
                   {getAlertIcon(alert.type)}
@@ -241,16 +242,13 @@ export default function AlertasPage() {
                       </Badge>
                     )}
                     {alert.actionUrl && (
-                      <a
-                        href={alert.actionUrl}
-                        className="text-xs font-semibold text-primary hover:text-primary/80 underline"
-                      >
+                      <span className="text-xs font-semibold text-primary hover:text-primary/80">
                         {alert.actionLabel || 'Ver'}
-                      </a>
+                      </span>
                     )}
                   </div>
                 </div>
-              </div>
+              </a>
             ))}
           </div>
         )}

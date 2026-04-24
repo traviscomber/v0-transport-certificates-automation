@@ -85,6 +85,12 @@ export async function GET(request: NextRequest) {
             ? `${docName} (${driverName})${change.reason ? ' - ' + change.reason : ''}`
             : `${docName}${change.reason ? ' - ' + change.reason : ''}`
           
+          // Create URL to driver profile
+          const driverId = doc?.driver_id
+          const actionUrl = driverId 
+            ? `/dashboard/company/conductores?driver=${driverId}`
+            : '/dashboard/company/conductores'
+          
           alerts.push({
             id: change.document_id || `status-${change.id}`,
             type: alertType,
@@ -94,6 +100,8 @@ export async function GET(request: NextRequest) {
             entityType: 'document',
             entityId: change.document_id,
             entityName: driverName,
+            actionUrl,
+            actionLabel: 'Ver documento',
             read: false,
           })
         })
