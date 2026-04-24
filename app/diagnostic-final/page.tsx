@@ -51,7 +51,7 @@ export default function DiagnosticPage() {
         console.log('[v0] Auth test response:', response.status)
         const data = await response.json()
         console.log('[v0] Auth response:', data)
-        setResults(prev => ({ ...prev, authWorks: response.status === 200, error: data.error_description || data.error })})
+        setResults(prev => ({ ...prev, authWorks: response.status === 200, error: data.error_description || data.error }))
       } catch (error) {
         console.error('[v0] Auth test failed:', error)
         setResults(prev => ({ ...prev, authWorks: false, error: String(error) }))
