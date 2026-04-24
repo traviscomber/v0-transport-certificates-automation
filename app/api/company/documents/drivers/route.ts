@@ -13,24 +13,35 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log('[v0] Fetching documents for driver RUT:', rut)
+    console.log('[v0] Listing documents for driver:', rut)
 
     const adminClient = createAdminClient()
 
-    // Get all documents for this driver RUT from conductor_uploaded_documents table
-    const { data: documents, error } = await adminClient
-      .from('conductor_uploaded_documents')
-      .select('*')
-      .eq('driver_id', rut)
-      .order('created_at', { ascending: false })
+    // Listar archivos del storage con el patrón del RUT
+    const { data: files, error } = await adminClient.storage
+      .from('documents')
+      .list(`drivers/${rut}`, {
+        limit: 100,
+        offset: 0,
+        sortBy: { column: 'created_at', order: 'desc' }
+      })
 
     if (error) {
-      console.error('[v0] Error fetching documents:', error)
+      console.error('[v0] Error listing files:', error)
       return NextResponse.json(
         { error: 'Failed to fetch documents' },
         { status: 500 }
       )
     }
+
+    // Transformar archivos en formato de documento
+    const documents = (files || []).map(file => ({
+      id: file.id,
+      file_name: file.name,
+      upload_date: file.created_at,
+      document_type: 'Documento',
+      size: file.metadata?.size || 0
+    }))
 
     console.log('[v0] Found', documents.length, 'documents for driver:', rut)
 
