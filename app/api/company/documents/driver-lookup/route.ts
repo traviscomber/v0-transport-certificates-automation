@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,9 +14,9 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const adminClient = createAdminClient()
+    const supabase = await createClient()
 
-    let query = adminClient
+    let query = supabase
       .from('conductores')
       .select('id, rut, nombres, apellido_paterno, transportista_id')
 
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       
       // Try alternative search if first attempt failed
       if (rut) {
-        const altQuery = await adminClient
+        const altQuery = await supabase
           .from('conductores')
           .select('id, rut, nombres, apellido_paterno, transportista_id')
           .ilike('rut', `%${rut.replace(/\s+/g, '')}%`)

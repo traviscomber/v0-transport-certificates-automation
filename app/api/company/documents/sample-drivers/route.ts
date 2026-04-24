@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   try {
     console.log('[v0] Fetching sample drivers from conductores table...')
-    const adminClient = createAdminClient()
+    const supabase = await createClient()
 
-    const { data, error } = await adminClient
+    const { data, error } = await supabase
       .from('conductores')
       .select('id, rut, nombres, apellido_paterno')
       .limit(10)
