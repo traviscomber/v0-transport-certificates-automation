@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       5. List any issues (blurry, expired, damaged, etc)`,
       messages: [
         {
-          role: 'user',
+          role: 'user' as const,
           content: [
             {
               type: 'image',
