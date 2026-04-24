@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
         statusMap = Object.fromEntries(
           statuses.map(s => [s.document_id, s])
         )
-        console.log('[v0] Loaded', statuses.length, 'document statuses')
+        console.log('[v0] Loaded', statuses.length, 'document statuses from DB')
       }
     } catch (statusFetchError) {
       console.warn('[v0] Could not fetch document statuses:', statusFetchError)
@@ -85,10 +85,26 @@ export async function GET(request: NextRequest) {
 
     // Usar documentos de la base de datos si están disponibles
     const documents = (dbDocuments || []).map(doc => {
-      // Usar el status de la tabla si existe, sino usar 'pending'
-      let estadoEspanol = 'pendiente'
-      if (doc.status === 'aprobado') estadoEspanol = 'aprobado'
-      else if (doc.status === 'rechazado') estadoEspanol = 'rechazado'
+      // Primero, revisar si existe status en document_statuses
+      const docStatus = statusMap[doc.id]
+      let estadoEspanol = 'pendiente' // default
+      
+      if (docStatus?.status) {
+        // Mapear desde document_statuses si existe
+        const statusEN = docStatus.status.toLowerCase()
+        if (statusEN === 'approved') estadoEspanol = 'aprobado'
+        else if (statusEN === 'rejected') estadoEspanol = 'rechazado'
+        else if (statusEN === 'pending') estadoEspanol = 'pendiente'
+        else if (statusEN === 'expired') estadoEspanol = 'vencido'
+        else if (statusEN === 'deleted') estadoEspanol = 'eliminado'
+        console.log('[v0] Document', doc.id, 'has status from DB:', estadoEspanol)
+      } else if (doc.status) {
+        // Si no está en document_statuses, usar el status de driver_documents como fallback
+        const statusLower = doc.status.toLowerCase()
+        if (statusLower === 'aprobado') estadoEspanol = 'aprobado'
+        else if (statusLower === 'rechazado') estadoEspanol = 'rechazado'
+        console.log('[v0] Document', doc.id, 'using fallback status:', estadoEspanol)
+      }
       
       return {
         id: doc.id,
