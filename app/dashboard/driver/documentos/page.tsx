@@ -45,10 +45,20 @@ export default function DriverDocumentPortal() {
     const getDriverInfo = async () => {
       try {
         // Load sample drivers for examples
-        const sampleResponse = await fetch('/api/company/documents/sample-drivers')
-        if (sampleResponse.ok) {
-          const sampleData = await sampleResponse.json()
-          setSampleDrivers(sampleData.drivers || [])
+        try {
+          console.log('[v0] Fetching sample drivers...')
+          const sampleResponse = await fetch('/api/company/documents/sample-drivers')
+          console.log('[v0] Sample drivers response status:', sampleResponse.status)
+          
+          if (sampleResponse.ok) {
+            const sampleData = await sampleResponse.json()
+            console.log('[v0] Sample drivers loaded:', sampleData)
+            setSampleDrivers(sampleData.drivers || [])
+          } else {
+            console.warn('[v0] Sample drivers request failed:', sampleResponse.status)
+          }
+        } catch (fetchError) {
+          console.error('[v0] Error fetching sample drivers:', fetchError)
         }
 
         // Check if there's a driver ID in URL params
@@ -223,10 +233,10 @@ export default function DriverDocumentPortal() {
             </div>
             <div className="bg-blue-50 border border-blue-200 rounded p-3">
               <p className="text-xs text-blue-900">
-                <strong>💡 Tip:</strong> Estos son algunos de los conductores en el sistema:
+                <strong>💡 Tip:</strong> Algunos conductores en el sistema:
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
-                {sampleDrivers.length > 0 ? (
+                {sampleDrivers && sampleDrivers.length > 0 ? (
                   sampleDrivers.map((driver) => (
                     <button
                       key={driver.rut}
@@ -240,7 +250,9 @@ export default function DriverDocumentPortal() {
                     </button>
                   ))
                 ) : (
-                  <p className="text-xs text-blue-700">Cargando ejemplos...</p>
+                  <p className="text-xs text-blue-700">
+                    Ingresa un RUT directamente o busca por UUID
+                  </p>
                 )}
               </div>
             </div>
