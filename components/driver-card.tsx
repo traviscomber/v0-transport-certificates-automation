@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Mail, Phone, MapPin, FileText, Download, ChevronDown, Plus, X, Upload, AlertCircle, Loader, Eye } from 'lucide-react'
+import { Mail, Phone, MapPin, FileText, Download, ChevronDown, Plus, X, Upload, AlertCircle, Loader, Eye, RefreshCw } from 'lucide-react'
 import { useDriverDocuments } from '@/hooks/use-driver-documents'
 import { DocumentActionModal } from './document-action-modal'
 import { useDocumentManagement } from '@/hooks/use-document-management'
