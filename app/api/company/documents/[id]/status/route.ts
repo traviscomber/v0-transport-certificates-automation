@@ -43,7 +43,6 @@ export async function PATCH(
         changed_by: 'admin'
       })
       .select()
-      .single()
 
     console.log('[v0] Upsert result:', { error: upsertError?.message, errorCode: upsertError?.code, data: statusRecord })
 
