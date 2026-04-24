@@ -8,7 +8,7 @@ import { AlertCircle, BarChart3, Zap, BookOpen, Loader2 } from 'lucide-react'
 
 interface AIAnalysisPanelProps {
   analysis: Record<string, string>
-  onAnalysisRequest: (type: string) => void
+  onAnalysisRequest: (type: string) => Promise<void>
   loading: boolean
   hasData: boolean
 }
