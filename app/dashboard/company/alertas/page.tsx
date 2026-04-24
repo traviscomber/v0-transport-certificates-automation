@@ -3,12 +3,9 @@
 import { useState, useEffect } from 'react'
 import { HelpBox } from '@/components/ui/help-box'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { AlertItem } from '@/components/alerts/alert-item'
-import { AlertFilters } from '@/components/alerts/alert-filters'
-import { AlertStats } from '@/components/alerts/alert-stats'
-import { useGeneratedAlerts } from '@/hooks/useGeneratedAlerts'
-import { RefreshCw, Download } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { RefreshCw } from 'lucide-react'
+import { AlertTriangle, AlertCircle, CheckCircle, Info } from 'lucide-react'
 
 interface Alert {
   id: string
@@ -16,171 +13,236 @@ interface Alert {
   title: string
   description: string
   timestamp: Date
-  entityType?: 'driver' | 'subcontractor' | 'document' | 'system'
-  entityId?: string
+  entityType?: string
   entityName?: string
   actionUrl?: string
   actionLabel?: string
-  read?: boolean
 }
 
 export default function AlertasPage() {
-  const { alerts: generatedAlerts, isLoading, refetch } = useGeneratedAlerts()
-  const [filteredAlerts, setFilteredAlerts] = useState<Alert[]>([])
-  const [isRefreshing, setIsRefreshing] = useState(false)
-
-  // Filters
-  const [selectedType, setSelectedType] = useState('')
-  const [selectedStatus, setSelectedStatus] = useState('')
+  const [alerts, setAlerts] = useState<Alert[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedType, setSelectedType] = useState('')
 
-  // Combine generated alerts with any stored alerts
-  const [allAlerts, setAllAlerts] = useState<Alert[]>([])
-
+  // Load alerts on mount
   useEffect(() => {
-    // For now, use only generated alerts
-    // In the future, this could also include persisted alerts from the database
-    setAllAlerts(generatedAlerts)
-  }, [generatedAlerts])
+    loadAlerts()
+  }, [])
 
-  // Apply filters whenever they change
-  useEffect(() => {
-    applyFilters()
-  }, [allAlerts, selectedType, selectedStatus, searchQuery])
-
-  const applyFilters = () => {
-    let filtered = allAlerts
-
-    // Filter by type
-    if (selectedType) {
-      filtered = filtered.filter((a) => a.type === selectedType)
+  const loadAlerts = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/alerts/generate')
+      const data = await response.json()
+      
+      if (data.alerts) {
+        setAlerts(data.alerts)
+        console.log('[v0] Loaded', data.alerts.length, 'alerts')
+      }
+    } catch (error) {
+      console.error('[v0] Error loading alerts:', error)
+    } finally {
+      setIsLoading(false)
     }
-
-    // Filter by status
-    if (selectedStatus === 'unread') {
-      filtered = filtered.filter((a) => !a.read)
-    } else if (selectedStatus === 'read') {
-      filtered = filtered.filter((a) => a.read)
-    }
-
-    // Filter by search
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(
-        (a) =>
-          a.title.toLowerCase().includes(query) ||
-          a.description.toLowerCase().includes(query) ||
-          a.entityName?.toLowerCase().includes(query)
-      )
-    }
-
-    setFilteredAlerts(filtered)
   }
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true)
-    await refetch()
-    setIsRefreshing(false)
-  }
+  const filteredAlerts = alerts.filter((alert) => {
+    const matchesSearch = 
+      alert.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      alert.description.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    const matchesType = !selectedType || alert.type === selectedType
+    
+    return matchesSearch && matchesType
+  })
 
-  const handleReset = () => {
-    setSelectedType('')
-    setSelectedStatus('')
-    setSearchQuery('')
-  }
-
-  // Calculate stats
   const stats = {
-    total: allAlerts.length,
-    warnings: allAlerts.filter((a) => a.type === 'warning').length,
-    errors: allAlerts.filter((a) => a.type === 'error').length,
-    info: allAlerts.filter((a) => a.type === 'info' || a.type === 'success').length,
-    unread: allAlerts.filter((a) => !a.read).length,
+    total: alerts.length,
+    warnings: alerts.filter(a => a.type === 'warning').length,
+    errors: alerts.filter(a => a.type === 'error').length,
+    success: alerts.filter(a => a.type === 'success').length,
+    info: alerts.filter(a => a.type === 'info').length,
+  }
+
+  const getAlertIcon = (type: string) => {
+    switch (type) {
+      case 'warning':
+        return <AlertTriangle className="w-5 h-5 text-orange-500" />
+      case 'error':
+        return <AlertCircle className="w-5 h-5 text-red-500" />
+      case 'success':
+        return <CheckCircle className="w-5 h-5 text-green-500" />
+      case 'info':
+        return <Info className="w-5 h-5 text-blue-500" />
+      default:
+        return <Info className="w-5 h-5 text-gray-500" />
+    }
+  }
+
+  const getAlertColor = (type: string) => {
+    switch (type) {
+      case 'warning':
+        return 'border-orange-200 bg-orange-50'
+      case 'error':
+        return 'border-red-200 bg-red-50'
+      case 'success':
+        return 'border-green-200 bg-green-50'
+      case 'info':
+        return 'border-blue-200 bg-blue-50'
+      default:
+        return 'border-gray-200 bg-gray-50'
+    }
+  }
+
+  const formatTime = (date: Date) => {
+    const d = new Date(date)
+    const now = new Date()
+    const diff = now.getTime() - d.getTime()
+    const minutes = Math.floor(diff / 60000)
+    const hours = Math.floor(diff / 3600000)
+    const days = Math.floor(diff / 86400000)
+
+    if (minutes < 1) return 'Ahora'
+    if (minutes < 60) return `Hace ${minutes}m`
+    if (hours < 24) return `Hace ${hours}h`
+    if (days < 7) return `Hace ${days}d`
+    return d.toLocaleDateString('es-ES')
   }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Alertas y Notificaciones</h1>
-          <p className="text-muted-foreground">
-            Mantente informado de eventos importantes en tu operación
-          </p>
+          <h1 className="text-3xl font-bold">Alertas y Notificaciones</h1>
+          <p className="text-gray-600">Mantente informado de eventos importantes en tu operación</p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Actualizar
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Exportar
-          </Button>
-        </div>
+        <Button
+          onClick={loadAlerts}
+          disabled={isLoading}
+          variant="outline"
+          size="sm"
+        >
+          <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          Actualizar
+        </Button>
       </div>
 
+      {/* Help Box */}
       <HelpBox
         variant="info"
         title="Centro de Alertas"
-        description="Recibe notificaciones automáticas sobre documentos próximos a vencer, cambios de estado y otros eventos importantes de tu operación."
+        description="Monitorea eventos importantes en tu operación: documentos próximos a vencer, cambios de estado, y actividad del sistema."
         tips={[
-          "Las alertas ahora se actualizan bajo demanda (usa el botón Actualizar)",
-          "Presta atención a las alertas de vencimiento de documentos",
-          "Revisa la pestaña 'Sistema' para ver el estado de integración de alertas",
+          "Haz clic en 'Actualizar' para generar nuevas alertas",
+          "Usa los filtros para encontrar alertas específicas",
+          "Las alertas se generan en tiempo real desde los datos de tu operación",
         ]}
       />
 
-      <Tabs defaultValue="alerts" className="w-full">
-        <TabsList className="grid w-full grid-cols-1">
-          <TabsTrigger value="alerts">Alertas Activas</TabsTrigger>
-        </TabsList>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-5 gap-4">
+        <div className="p-4 bg-white border border-gray-200 rounded-lg">
+          <div className="text-sm text-gray-600">Total</div>
+          <div className="text-2xl font-bold">{stats.total}</div>
+        </div>
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="text-sm text-red-700">Errores</div>
+          <div className="text-2xl font-bold text-red-700">{stats.errors}</div>
+        </div>
+        <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+          <div className="text-sm text-orange-700">Advertencias</div>
+          <div className="text-2xl font-bold text-orange-700">{stats.warnings}</div>
+        </div>
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="text-sm text-green-700">Éxito</div>
+          <div className="text-2xl font-bold text-green-700">{stats.success}</div>
+        </div>
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="text-sm text-blue-700">Info</div>
+          <div className="text-2xl font-bold text-blue-700">{stats.info}</div>
+        </div>
+      </div>
 
-        <TabsContent value="alerts" className="space-y-4">
-          <AlertStats
-            total={stats.total}
-            warnings={stats.warnings}
-            errors={stats.errors}
-            info={stats.info}
-            unread={stats.unread}
-          />
+      {/* Filters */}
+      <div className="flex gap-4">
+        <input
+          type="text"
+          placeholder="Buscar alertas..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <select
+          value={selectedType}
+          onChange={(e) => setSelectedType(e.target.value)}
+          className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Todos los tipos</option>
+          <option value="error">Errores</option>
+          <option value="warning">Advertencias</option>
+          <option value="success">Éxito</option>
+          <option value="info">Información</option>
+        </select>
+        <Button
+          variant="outline"
+          onClick={() => {
+            setSearchQuery('')
+            setSelectedType('')
+          }}
+        >
+          Limpiar
+        </Button>
+      </div>
 
-          <AlertFilters
-            selectedType={selectedType}
-            selectedStatus={selectedStatus}
-            searchQuery={searchQuery}
-            onTypeChange={setSelectedType}
-            onStatusChange={setSelectedStatus}
-            onSearchChange={setSearchQuery}
-            onReset={handleReset}
-          />
-
-          {isLoading ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Generando alertas del sistema...</p>
-            </div>
-          ) : filteredAlerts.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                {allAlerts.length === 0 ? 'No hay alertas activas' : 'No hay alertas que coincidan con los filtros'}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredAlerts.map((alert) => (
-                <AlertItem key={alert.id} {...alert} />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+      {/* Alerts List */}
+      <div>
+        {isLoading ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600">Cargando alertas...</p>
+          </div>
+        ) : filteredAlerts.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600">
+              {alerts.length === 0 ? 'No hay alertas en este momento' : 'No hay alertas que coincidan con los filtros'}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredAlerts.map((alert) => (
+              <div
+                key={alert.id}
+                className={`p-4 border rounded-lg flex items-start gap-4 ${getAlertColor(alert.type)}`}
+              >
+                <div className="flex-shrink-0 mt-1">
+                  {getAlertIcon(alert.type)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-900">{alert.title}</h3>
+                  <p className="text-sm text-gray-700 mt-1">{alert.description}</p>
+                  <div className="flex items-center gap-3 mt-3">
+                    <span className="text-xs text-gray-500">{formatTime(alert.timestamp)}</span>
+                    {alert.entityType && (
+                      <Badge variant="outline" className="text-xs">
+                        {alert.entityType}
+                      </Badge>
+                    )}
+                    {alert.actionUrl && (
+                      <a
+                        href={alert.actionUrl}
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+                      >
+                        {alert.actionLabel || 'Ver'}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
