@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { allDriversData } from '@/lib/data/all-drivers'
 
 export async function POST(request: NextRequest) {
   try {
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
       const dbRutNormalized = normalizeRUT(conductor.rut)
       if (dbRutNormalized === normalizedInputRut) {
         drivers = conductor
-        console.log('[v0] Found driver:', { 
+        console.log('[v0] Found driver in DB:', { 
           input: driverRut, 
           stored: conductor.rut, 
           normalized: normalizedInputRut, 
@@ -84,14 +85,36 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Si no encuentra, muestra los primeros RUT disponibles para referencia
+    // Si no encuentra en Supabase, buscar en datos locales como fallback
+    if (!drivers?.id) {
+      console.log('[v0] Not found in Supabase, searching in local data...')
+      for (const localDriver of allDriversData) {
+        const localRutNormalized = normalizeRUT(localDriver.rut)
+        if (localRutNormalized === normalizedInputRut) {
+          drivers = {
+            id: localDriver.id || `local_${localDriver.rut}`,
+            rut: localDriver.rut,
+            nombres: localDriver.nombres
+          }
+          console.log('[v0] Found driver in local data:', { 
+            input: driverRut, 
+            stored: localDriver.rut, 
+            normalized: normalizedInputRut, 
+            source: 'local'
+          })
+          break
+        }
+      }
+    }
+
+    // Si aún no encuentra, retornar error con ejemplos
     if (!drivers?.id) {
       console.error('[v0] Driver not found for RUT:', driverRut)
-      const sampleRuts = allConductores.slice(0, 5).map(d => {
+      const sampleRuts = allDriversData.slice(0, 5).map(d => {
         const norm = normalizeRUT(d.rut)
         return `${d.rut} (normalized: ${norm}) - ${d.nombres}`
       })
-      console.log('[v0] Sample RUT values in database:', sampleRuts)
+      console.log('[v0] Sample RUT values available:', sampleRuts)
       
       return NextResponse.json(
         { 
@@ -103,7 +126,7 @@ export async function POST(request: NextRequest) {
     }
 
     const driverId = drivers.id
-    console.log('[v0] Found driver ID:', driverId, 'for RUT:', drivers.rut)
+    console.log('[v0] Using driver ID:', driverId, 'for RUT:', drivers.rut)
 
     // Procesar cada archivo
     for (const file of files) {
