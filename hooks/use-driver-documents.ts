@@ -17,14 +17,16 @@ export function useDriverDocuments(driverRut: string) {
   const [error, setError] = useState<string | null>(null)
 
   // Cargar documentos usando la API unificada
-  const fetchDocuments = async () => {
+  const fetchDocuments = async (skipCache = false) => {
     if (!driverRut) return
     
     setLoading(true)
     setError(null)
     try {
       console.log('[v0] Fetching driver documents from unified API:', driverRut)
-      const response = await fetch(`/api/company/documents/drivers?rut=${encodeURIComponent(driverRut)}`)
+      // Add cache busting parameter if skipCache is true
+      const timestamp = skipCache ? `&_t=${Date.now()}` : ''
+      const response = await fetch(`/api/company/documents/drivers?rut=${encodeURIComponent(driverRut)}${timestamp}`)
       const result = await response.json()
 
       if (!response.ok) {
@@ -125,9 +127,9 @@ export function useDriverDocuments(driverRut: string) {
       }
 
       // Recargar lista de documentos DESPUÉS del upload
-      console.log('[v0] Upload complete, reloading documents...')
+      console.log('[v0] Upload complete, reloading documents with cache bust...')
       await new Promise(resolve => setTimeout(resolve, 500)) // Dar tiempo al servidor
-      await fetchDocuments()
+      await fetchDocuments(true) // Force cache skip
       console.log('[v0] Documents reloaded after upload')
       return uploadedDoc
     } catch (err) {
