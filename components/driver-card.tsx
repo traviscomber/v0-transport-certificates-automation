@@ -54,8 +54,8 @@ export function DriverCard({
     try {
       console.log('[v0] Iniciando upload:', { driverId: driver.id, tipo: uploadDocType, nombre: uploadFileName, fileSize: uploadFile.size })
       await uploadDocument(uploadDocType, uploadFileName, uploadFile)
+      console.log('[v0] Upload completado, verificando documentos...', { docsLength: documents.length })
       // uploadDocument already calls refetch() internally, no need to call it again
-      console.log('[v0] Upload y refetch completados')
       
       setShowUploadModal(false)
       setUploadFileName('')

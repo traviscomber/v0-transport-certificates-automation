@@ -45,6 +45,7 @@ export function useDriverDocuments(driverRut: string) {
 
       console.log('[v0] Documents loaded:', transformedDocs.length)
       setDocuments(transformedDocs)
+      console.log('[v0] State updated, documents count:', transformedDocs.length)
     } catch (err) {
       console.error('[v0] Error fetching documents:', err)
       setError(err instanceof Error ? err.message : 'Unknown error')
@@ -123,8 +124,11 @@ export function useDriverDocuments(driverRut: string) {
         }
       }
 
-      // Recargar lista de documentos
+      // Recargar lista de documentos DESPUÉS del upload
+      console.log('[v0] Upload complete, reloading documents...')
+      await new Promise(resolve => setTimeout(resolve, 500)) // Dar tiempo al servidor
       await fetchDocuments()
+      console.log('[v0] Documents reloaded after upload')
       return uploadedDoc
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Upload failed'
