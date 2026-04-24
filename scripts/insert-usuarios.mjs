@@ -69,34 +69,74 @@ async function insertUsuarios() {
     const organizationId = org.id
     console.log('[v0] Found organization ID:', organizationId)
 
-    // Step 2: Insert users
-    console.log('[v0] Inserting', usuarios.length, 'users...')
+    // Step 2: Create auth users and profiles
+    console.log('[v0] Creating', usuarios.length, 'auth users and profiles...')
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .insert(
-        usuarios.map((u) => ({
+    const createdUsers = []
+    let successCount = 0
+    let errorCount = 0
+
+    for (const u of usuarios) {
+      try {
+        console.log(`[v0] Processing: ${u.email}`)
+
+        // Create auth user
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
           email: u.email,
-          full_name: u.full_name,
-          rut: u.rut,
-          phone: u.phone,
-          role: 'admin',
-          is_active: true,
-          organization_id: organizationId,
-        }))
-      )
-      .select()
+          password: 'TempPassword123!',
+          email_confirm: true,
+        })
 
-    if (error) {
-      console.error('[v0] Error inserting users:', error.message)
-      process.exit(1)
+        if (authError) {
+          console.error(`[v0] Error for ${u.rut} : ${authError.message}`)
+          errorCount++
+          continue
+        }
+
+        const userId = authData.user.id
+        console.log(`[v0] Created auth user ${userId} for ${u.email}`)
+
+        // Create profile with the auth user ID
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            email: u.email,
+            full_name: u.full_name,
+            rut: u.rut,
+            phone: u.phone,
+            role: 'admin',
+            is_active: true,
+            organization_id: organizationId,
+          })
+          .select()
+          .single()
+
+        if (profileError) {
+          console.error(`[v0] Error for ${u.rut} : ${profileError.message}`)
+          errorCount++
+          continue
+        }
+
+        createdUsers.push(profileData)
+        successCount++
+        console.log(`[v0] ✅ Created profile for ${u.full_name} (${u.rut})`)
+      } catch (err) {
+        console.error(`[v0] Error for ${u.rut} :`, err.message)
+        errorCount++
+      }
     }
 
-    console.log('[v0] ✅ Successfully inserted', data.length, 'users')
-    console.log('[v0] Users:')
-    data.forEach((u) => {
+    console.log(`[v0] ========== COMPLETE ==========`)
+    console.log(`[v0] Success: ${successCount}, Errors: ${errorCount}`)
+    console.log('[v0] Created users:')
+    createdUsers.forEach((u) => {
       console.log(`  - ${u.full_name} (${u.rut}): ${u.email}`)
     })
+
+    if (errorCount > 0) {
+      process.exit(1)
+    }
   } catch (err) {
     console.error('[v0] Error:', err)
     process.exit(1)
