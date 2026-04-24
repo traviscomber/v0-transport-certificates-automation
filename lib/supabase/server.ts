@@ -22,7 +22,6 @@ export async function createServerClient() {
     throw new Error("Missing Supabase API key. Please check your environment variables.")
   }
 
-  console.log('[v0] Creating Supabase client with key type:', serviceKey ? 'SERVICE_ROLE' : 'ANON')
   return createSupabaseClient(url, key)
 }
 
