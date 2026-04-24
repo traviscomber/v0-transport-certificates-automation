@@ -192,7 +192,7 @@ export function DriverCard({
                             setShowDocumentModal(true)
                           }}
                         >
-                        <div className="flex flex-1 items-center gap-2 min-w-0">
+                          <div className="flex flex-1 items-center gap-2 min-w-0">
                           <FileText className="h-3 w-3 text-slate-400 flex-shrink-0" />
                           <div className="min-w-0 flex-1">
                             <p className={`font-medium truncate ${
@@ -241,7 +241,8 @@ export function DriverCard({
                             <Eye className="h-3 w-3 text-slate-400" />
                           </button>
                         </div>
-                        ))}
+                        </div>
+                      ))}
                     </>
                   ) : (
                     <div className="text-center py-4 text-slate-500">
