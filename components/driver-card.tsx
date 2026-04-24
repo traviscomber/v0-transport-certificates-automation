@@ -404,9 +404,7 @@ export function DriverCard({
           try {
             await changeStatus(docId, newStatus, 'Cambio realizado desde dashboard')
             console.log('[v0] Status changed, refreshing documents...')
-            setRefreshing(true)
-            await refetch()
-            setRefreshing(false)
+            await refetch(true)
             setTimeout(() => {
               setShowDocumentModal(false)
               setSelectedDocument(null)
@@ -415,7 +413,7 @@ export function DriverCard({
             console.error('[v0] Error updating status:', error)
             throw error
           }
-        }}
+        }}}
         onDelete={async (docId) => {
           console.log('[v0] Document deleted, refreshing...')
           setRefreshing(true)
