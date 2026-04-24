@@ -1,10 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -15,31 +13,30 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
+      // Send JSON to endpoint
       const response = await fetch('/api/login-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.toLowerCase() }),
-        credentials: 'include', // Important: include cookies in request
+        credentials: 'include',
       })
 
-      const data = await response.json()
-      console.log('[v0] Login response:', response.status)
-      console.log('[v0] Response data:', data)
+      console.log('[v0] Response status:', response.status, 'Redirected:', response.redirected, 'URL:', response.url)
 
-      if (!response.ok) {
-        setError(data.error || 'Error al iniciar sesión')
-        setLoading(false)
+      // Server will redirect, so we just need to wait for it
+      // The response.redirected should be true if server sent a redirect
+      if (response.status === 303 || response.redirected) {
+        // Let the server redirect handle it by reloading
+        window.location.href = '/dashboard/company'
         return
       }
 
-      // Success - wait a moment then redirect to dashboard
-      console.log('[v0] Login successful for:', email)
-      
-      // Wait for cookies to be set before redirecting
-      setTimeout(() => {
-        console.log('[v0] Redirecting to dashboard...')
-        router.push('/dashboard/company')
-      }, 500)
+      // If not redirected, try to parse error
+      const data = await response.json()
+      if (!response.ok) {
+        setError(data.error || 'Error al iniciar sesión')
+        setLoading(false)
+      }
     } catch (err) {
       console.error('[v0] Login error:', err)
       setError('Error al conectar con el servidor')

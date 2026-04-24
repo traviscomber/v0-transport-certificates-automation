@@ -2,8 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { email } = body
+    let email = ''
+
+    // Handle both JSON and FormData
+    const contentType = request.headers.get('content-type')
+    if (contentType?.includes('application/json')) {
+      const body = await request.json()
+      email = body.email
+    } else if (contentType?.includes('multipart/form-data')) {
+      const formData = await request.formData()
+      email = formData.get('email') as string
+    }
 
     if (!email) {
       return NextResponse.json(
@@ -46,8 +55,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const user = authUsers[0]
-
     // Get user profile to verify executive assignment
     const profileResponse = await fetch(
       `${supabaseUrl}/rest/v1/profiles?email=eq.${encodeURIComponent(email)}`,
@@ -73,17 +80,12 @@ export async function POST(request: NextRequest) {
 
     console.log('[v0] Login successful for:', email, 'Name:', profile.full_name)
 
-    // Create response with httpOnly cookie
-    const response = NextResponse.json({
-      user: {
-        email: profile.email,
-        full_name: profile.full_name,
-        role: profile.role,
-      },
-      success: true,
+    // Create redirect response to dashboard
+    const response = NextResponse.redirect(new URL('/dashboard/company', request.url), {
+      status: 303, // See Other
     })
 
-    // Set httpOnly cookie with email (used to identify user)
+    // Set httpOnly cookie with email
     response.cookies.set({
       name: 'user_email',
       value: email.toLowerCase(),
@@ -93,7 +95,7 @@ export async function POST(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 7, // 7 days
     })
 
-    // Store user info in a regular cookie for client access
+    // Store user info in a regular cookie
     response.cookies.set({
       name: 'user_name',
       value: profile.full_name || email,
@@ -111,6 +113,7 @@ export async function POST(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 7, // 7 days
     })
 
+    console.log('[v0] Setting cookies and redirecting to dashboard')
     return response
   } catch (error: any) {
     console.error('[v0] Login error:', error)
