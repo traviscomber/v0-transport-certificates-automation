@@ -29,7 +29,8 @@ export default function ReportesPage() {
     type: 'all',
     status: 'all',
     documentStatus: 'all',
-    searchTerm: ''
+    searchTerm: '',
+    entityId: ''
   })
 
   const loadReportData = async (newFilters = filters) => {

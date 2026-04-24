@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { allDriversData } from '@/lib/data/all-drivers'
+import { allSubcontractorsData } from '@/lib/data/all-subcontractors'
 
 interface ReportFiltersProps {
   filters: {
@@ -11,15 +13,31 @@ interface ReportFiltersProps {
     status: string
     documentStatus: string
     searchTerm: string
+    entityId?: string
   }
   onFiltersChange: (filters: any) => void
 }
 
 export function ReportFilters({ filters, onFiltersChange }: ReportFiltersProps) {
   const [localFilters, setLocalFilters] = useState(filters)
+  const [selectedEntities, setSelectedEntities] = useState<any[]>([])
+
+  // Update selected entities when type changes
+  useEffect(() => {
+    if (localFilters.type === 'conductores') {
+      setSelectedEntities(allDriversData || [])
+    } else if (localFilters.type === 'subcontratistas') {
+      setSelectedEntities(allSubcontractorsData || [])
+    } else {
+      setSelectedEntities([])
+    }
+  }, [localFilters.type])
 
   const handleChange = (key: string, value: string) => {
     const newFilters = { ...localFilters, [key]: value }
+    if (key === 'type') {
+      newFilters.entityId = '' // Reset entity selection when changing type
+    }
     setLocalFilters(newFilters)
     onFiltersChange(newFilters)
   }
@@ -35,7 +53,8 @@ export function ReportFilters({ filters, onFiltersChange }: ReportFiltersProps) 
       type: 'all',
       status: 'all',
       documentStatus: 'all',
-      searchTerm: ''
+      searchTerm: '',
+      entityId: ''
     }
     setLocalFilters(resetFilters)
     onFiltersChange(resetFilters)
@@ -67,6 +86,39 @@ export function ReportFilters({ filters, onFiltersChange }: ReportFiltersProps) 
           </SelectContent>
         </Select>
       </div>
+
+      {/* Entity Selection - Conductor/Subcontratista Individual */}
+      {(localFilters.type === 'conductores' || localFilters.type === 'subcontratistas') && selectedEntities.length > 0 && (
+        <div>
+          <label className="text-sm font-medium mb-2 block">
+            Seleccionar {localFilters.type === 'conductores' ? 'Conductor' : 'Subcontratista'} (Opcional)
+          </label>
+          <Select value={localFilters.entityId || ''} onValueChange={(v) => handleChange('entityId', v)}>
+            <SelectTrigger>
+              <SelectValue placeholder={`Ver todos los ${localFilters.type === 'conductores' ? 'conductores' : 'subcontratistas'}`} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Ver Todos</SelectItem>
+              {selectedEntities.slice(0, 50).map((entity) => (
+                <SelectItem key={entity.id || entity.rut} value={entity.id || entity.rut}>
+                  {localFilters.type === 'conductores' 
+                    ? `${entity.nombres} (${entity.rut})`
+                    : `${entity.razon_social || entity.nombre} (${entity.rut})`
+                  }
+                </SelectItem>
+              ))}
+              {selectedEntities.length > 50 && (
+                <SelectItem value="" disabled>
+                  ... y {selectedEntities.length - 50} más
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground mt-2">
+            Mostrando 50 de {selectedEntities.length} disponibles
+          </p>
+        </div>
+      )}
 
       {/* Status Filter */}
       <div>
