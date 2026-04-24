@@ -85,12 +85,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkSession = async () => {
       try {
+        console.log('[v0] Checking session...')
         const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession()
+        
         if (sessionError) {
+          console.error('[v0] Session error:', sessionError.message)
+          // Don't block the UI if session check fails - just proceed without user
           setUser(null)
+          setLoading(false)
           return
         }
+        
         if (session?.user) {
+          console.log('[v0] Session found for:', session.user.email)
           const meta = session.user.user_metadata || {}
           setUser({
             id: session.user.id,
@@ -100,9 +107,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             company_name: meta.company_name,
           })
         } else {
+          console.log('[v0] No session found')
           setUser(null)
         }
-      } catch {
+      } catch (err) {
+        console.error('[v0] Unexpected error in checkSession:', err)
         setUser(null)
       } finally {
         setLoading(false)
@@ -112,6 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkSession()
 
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+      console.log('[v0] Auth state changed:', _event)
       if (!session) {
         setUser(null)
         setError(null)
@@ -135,12 +145,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
+      console.log('[v0] Login attempt for:', email)
       setLoading(true)
       setError(null)
 
       const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password })
 
       if (error) {
+        console.error('[v0] Login error:', error.message)
         const errorMessage = getErrorMessage(error)
         setError(errorMessage)
         setLoading(false)
@@ -148,11 +160,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (!data.session?.user) {
+        console.error('[v0] No session returned')
         setError('No se recibió sesión del servidor')
         setLoading(false)
         throw new Error('No session returned from login')
       }
 
+      console.log('[v0] Login successful for:', email)
       const meta = data.session.user.user_metadata || {}
       setUser({
         id: data.session.user.id,
@@ -163,6 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       setError(null)
     } catch (error) {
+      console.error('[v0] Login catch error:', error)
       const errorMessage = getErrorMessage(error)
       setError(errorMessage)
       setLoading(false)
