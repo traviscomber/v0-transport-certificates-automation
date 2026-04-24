@@ -40,10 +40,35 @@ export async function GET(request: NextRequest) {
       if (!statusError && statusChanges && statusChanges.length > 0) {
         console.log('[v0] Found', statusChanges.length, 'recent document status changes')
         
+        // Fetch document details for enrichment
+        const { data: docDetails, error: docError } = await adminClient
+          .from('driver_documents')
+          .select('id, file_name, driver_id')
+        
+        const docMap = new Map()
+        if (!docError && docDetails) {
+          docDetails.forEach((doc: any) => {
+            docMap.set(doc.id, doc)
+          })
+        }
+        
         statusChanges.forEach((change) => {
           const statusText = change.status?.toLowerCase() || 'unknown'
           let alertType: 'warning' | 'error' | 'success' | 'info' = 'info'
           let title = 'Estado de documento actualizado'
+          let docName = 'Documento'
+          let driverName = ''
+          
+          // Get document details
+          const doc = docMap.get(change.document_id)
+          if (doc) {
+            docName = doc.file_name || 'Documento'
+            // Find driver name from local data
+            const driver = (allDriversData || []).find((d: any) => d.id === doc.driver_id)
+            if (driver) {
+              driverName = driver.nombre || 'Conductor desconocido'
+            }
+          }
           
           if (statusText === 'approved') {
             alertType = 'success'
@@ -56,14 +81,19 @@ export async function GET(request: NextRequest) {
             title = 'Documento vencido'
           }
           
+          const description = driverName 
+            ? `${docName} (${driverName})${change.reason ? ' - ' + change.reason : ''}`
+            : `${docName}${change.reason ? ' - ' + change.reason : ''}`
+          
           alerts.push({
             id: change.document_id || `status-${change.id}`,
             type: alertType,
             title,
-            description: `${title}${change.reason ? ': ' + change.reason : ''}`,
+            description,
             timestamp: new Date(change.changed_at),
             entityType: 'document',
             entityId: change.document_id,
+            entityName: driverName,
             read: false,
           })
         })
