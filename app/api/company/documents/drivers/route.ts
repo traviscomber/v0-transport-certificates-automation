@@ -57,8 +57,8 @@ export async function GET(request: NextRequest) {
 
     // Buscar documentos en tabla desde la base de datos
     const { data: dbDocuments, error: dbError } = await adminClient
-      .from('documents')
-      .select('id, file_name, document_type, public_url, created_at')
+      .from('driver_documents')
+      .select('id, file_name, document_type, file_url, created_at, status')
       .eq('driver_id', driverId)
       .order('created_at', { ascending: false })
 
@@ -85,13 +85,10 @@ export async function GET(request: NextRequest) {
 
     // Usar documentos de la base de datos si están disponibles
     const documents = (dbDocuments || []).map(doc => {
-      const status = statusMap[doc.id]
-      const verificationStatus = status ? status.status : 'pending'
-      
-      // Convertir estado a español para compatibilidad con UI
+      // Usar el status de la tabla si existe, sino usar 'pending'
       let estadoEspanol = 'pendiente'
-      if (verificationStatus === 'approved') estadoEspanol = 'aprobado'
-      else if (verificationStatus === 'rejected') estadoEspanol = 'rechazado'
+      if (doc.status === 'aprobado') estadoEspanol = 'aprobado'
+      else if (doc.status === 'rechazado') estadoEspanol = 'rechazado'
       
       return {
         id: doc.id,
@@ -101,7 +98,7 @@ export async function GET(request: NextRequest) {
         verification_status: estadoEspanol,
         size: 0,
         storage_path: '',
-        public_url: doc.public_url || ''
+        public_url: doc.file_url || ''
       }
     })
 
