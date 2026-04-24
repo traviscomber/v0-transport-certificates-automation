@@ -30,16 +30,26 @@ export function useDocumentManagement(): DocumentManagement {
     setLoading(true)
     setError(null)
     try {
+      console.log('[v0] Hook: changeStatus called with:', { documentId, status, reason })
       const response = await fetch(`/api/company/documents/${documentId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status, reason })
       })
 
-      if (!response.ok) throw new Error('Failed to change status')
-      return await response.json()
+      const responseData = await response.json()
+      console.log('[v0] Hook: Status change response:', { status: response.status, data: responseData })
+
+      if (!response.ok) {
+        const errorMsg = responseData.error || 'Failed to change status'
+        throw new Error(errorMsg)
+      }
+      
+      console.log('[v0] ✅ Hook: Status changed successfully')
+      return responseData
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error changing status'
+      console.error('[v0] ❌ Hook error:', msg)
       setError(msg)
       throw err
     } finally {

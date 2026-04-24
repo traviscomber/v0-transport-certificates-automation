@@ -7,6 +7,8 @@ export async function PATCH(
 ) {
   try {
     const { status: rawStatus, reason } = await request.json()
+    console.log('[v0] PATCH /status called with:', { documentId: params.id, rawStatus, reason })
+    
     const adminClient = await createAdminClient()
     const documentId = params.id
 
@@ -19,7 +21,9 @@ export async function PATCH(
       'approved': 'approved',
       'rejected': 'rejected',
       'pending': 'pending',
-      'expired': 'expired'
+      'expired': 'expired',
+      'eliminar': 'deleted',
+      'deleted': 'deleted'
     }
 
     const status = statusMap[rawStatus?.toLowerCase()]
@@ -29,12 +33,38 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid status', receivedStatus: rawStatus }, { status: 400 })
     }
 
-    console.log('[v0] Changing document status:', { documentId, status, reason })
+    console.log('[v0] Mapped status to:', status)
 
-    // Upsert status en document_statuses
-    const { data: statusRecord, error: upsertError } = await adminClient
+    // Try to update existing status
+    const { data: updateResult, error: updateError } = await adminClient
       .from('document_statuses')
-      .upsert({
+      .update({
+        status: status,
+        reason: reason || 'Sin motivo especificado',
+        changed_at: new Date().toISOString(),
+        changed_by: 'admin'
+      })
+      .eq('document_id', documentId)
+      .select()
+
+    if (updateError) {
+      console.error('[v0] Update error:', updateError)
+    } else if (updateResult && updateResult.length > 0) {
+      console.log('[v0] ✅ Document status updated:', { documentId, status })
+      return NextResponse.json({
+        success: true,
+        document_id: documentId,
+        status: status,
+        message: `Estado actualizado a ${status}`,
+        timestamp: new Date().toISOString()
+      })
+    }
+
+    // If no rows updated, try to insert new status
+    console.log('[v0] No existing status, inserting new one...')
+    const { data: insertResult, error: insertError } = await adminClient
+      .from('document_statuses')
+      .insert({
         document_id: documentId,
         status: status,
         reason: reason || 'Sin motivo especificado',
@@ -43,35 +73,31 @@ export async function PATCH(
       })
       .select()
 
-    console.log('[v0] Upsert result:', { error: upsertError?.message, errorCode: upsertError?.code, data: statusRecord })
-
-    if (upsertError) {
-      console.error('[v0] ❌ Error upserting document status:', {
-        message: upsertError.message,
-        code: upsertError.code,
-        details: upsertError.details,
-        hint: upsertError.hint
+    if (insertError) {
+      console.error('[v0] ❌ Insert error:', {
+        message: insertError.message,
+        code: insertError.code,
+        details: insertError.details
       })
       return NextResponse.json({ 
-        error: 'Failed to update status', 
-        details: upsertError.message,
-        code: upsertError.code
+        error: 'Failed to save status', 
+        details: insertError.message
       }, { status: 500 })
     }
 
-    console.log('[v0] Document status updated to:', status)
-
+    console.log('[v0] ✅ Document status inserted:', { documentId, status })
     return NextResponse.json({
       success: true,
       document_id: documentId,
       status: status,
-      message: `Estado del documento cambiado a ${status}`,
+      message: `Estado creado: ${status}`,
       timestamp: new Date().toISOString()
     })
   } catch (error) {
-    console.error('[v0] Error in PATCH /api/company/documents/[id]/status:', error)
+    console.error('[v0] Exception in PATCH /status:', error)
+    const errorMsg = error instanceof Error ? error.message : String(error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Server error' },
+      { error: 'Server error', details: errorMsg },
       { status: 500 }
     )
   }
