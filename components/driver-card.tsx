@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Mail, Phone, MapPin, FileText, Download, ChevronDown, Plus, X, Upload, AlertCircle, Loader } from 'lucide-react'
+import { Mail, Phone, MapPin, FileText, Download, ChevronDown, Plus, X, Upload, AlertCircle, Loader, Eye } from 'lucide-react'
 import { useDriverDocuments } from '@/hooks/use-driver-documents'
+import { DocumentActionModal } from './document-action-modal'
+import { useDocumentManagement } from '@/hooks/use-document-management'
 
 interface Driver {
   id: string
@@ -31,12 +33,15 @@ export function DriverCard({
   getDocumentStatusLabel,
 }: DriverCardProps) {
   const { documents, loading, uploadDocument } = useDriverDocuments(driver.rut)
+  const { changeStatus } = useDocumentManagement()
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [uploadDocType, setUploadDocType] = useState('Licencia de Conducir')
   const [uploadFileName, setUploadFileName] = useState('')
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string>('')
+  const [selectedDocument, setSelectedDocument] = useState<any>(null)
+  const [showDocumentModal, setShowDocumentModal] = useState(false)
 
   const handleUpload = async () => {
     if (!uploadFileName.trim() || !uploadFile) {
@@ -162,7 +167,11 @@ export function DriverCard({
                     documents.map((doc) => (
                       <div
                         key={doc.id}
-                        className="flex items-center justify-between rounded bg-slate-800/50 p-2 text-xs"
+                        className="flex items-center justify-between rounded bg-slate-800/50 p-2 text-xs hover:bg-slate-800 transition-colors cursor-pointer"
+                        onClick={() => {
+                          setSelectedDocument(doc)
+                          setShowDocumentModal(true)
+                        }}
                       >
                         <div className="flex flex-1 items-center gap-2 min-w-0">
                           <FileText className="h-3 w-3 text-slate-400 flex-shrink-0" />
@@ -173,11 +182,25 @@ export function DriverCard({
                           </div>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                          <Badge className={`text-xs ${getDocumentStatusColor(doc.estado)}`}>
+                          <Badge 
+                            className={`text-xs cursor-pointer hover:opacity-80 transition-opacity ${getDocumentStatusColor(doc.estado)}`}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedDocument(doc)
+                              setShowDocumentModal(true)
+                            }}
+                          >
                             {getDocumentStatusLabel(doc.estado)}
                           </Badge>
-                          <button className="p-1 hover:bg-slate-700 rounded transition-colors">
-                            <Download className="h-3 w-3 text-slate-400" />
+                          <button 
+                            className="p-1 hover:bg-slate-700 rounded transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedDocument(doc)
+                              setShowDocumentModal(true)
+                            }}
+                          >
+                            <Eye className="h-3 w-3 text-slate-400" />
                           </button>
                         </div>
                       </div>
@@ -314,6 +337,18 @@ export function DriverCard({
           </div>
         </div>
       )}
+
+      {/* Document Action Modal */}
+      <DocumentActionModal
+        document={selectedDocument}
+        isOpen={showDocumentModal}
+        onClose={() => {
+          setShowDocumentModal(false)
+          setSelectedDocument(null)
+        }}
+        onStatusChange={changeStatus}
+        isAdmin={true}
+      />
     </>
   )
 }
