@@ -91,18 +91,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors }: Su
           
           setSubcontractors(data.dashboard.transportistas)
           setDrivers(data.dashboard.conductores || [])
-          
-          // Get user name from cookie and pre-select their ejecutiva filter
-          const userNameCookie = document.cookie
-            .split('; ')
-            .find(row => row.startsWith('user_name='))
-            ?.split('=')[1]
-          
-          if (userNameCookie) {
-            const decodedName = decodeURIComponent(userNameCookie)
-            console.log('[v0] Pre-selecting ejecutiva filter for:', decodedName)
-            setSelectedEjecutivas([decodedName])
-          }
+          // Don't pre-select any filter - let user choose
         } else {
           console.error('[v0] Failed to fetch - response not ok or no transportistas:', {
             ok: response.ok,

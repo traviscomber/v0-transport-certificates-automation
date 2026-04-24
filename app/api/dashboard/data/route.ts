@@ -30,13 +30,9 @@ export async function GET(request: NextRequest) {
 
     console.log('[v0] Dashboard - User:', userEmail, 'Name:', userName, 'Role:', userRole, 'IsAdmin:', isAdmin)
 
-    // Fetch transportistas data - ALWAYS filter by ejecutiva name (even for admins)
-    let transportistasUrl = `${supabaseUrl}/rest/v1/transportistas`
-    if (userName) {
-      // Use ilike with wildcard for flexible matching - encode the name first, then add wildcards
-      const encodedName = encodeURIComponent(`%${userName}%`)
-      transportistasUrl += `?ejecutiva=ilike.${encodedName}`
-    }
+    // Fetch transportistas data - NO filtering, return all subcontractors
+    // Users can filter by ejecutiva name using the UI buttons
+    const transportistasUrl = `${supabaseUrl}/rest/v1/transportistas`
 
     console.log('[v0] Fetching transportistas from:', transportistasUrl)
 
