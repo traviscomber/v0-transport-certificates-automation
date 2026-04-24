@@ -183,15 +183,15 @@ export function DriverCard({
                       )}
                       {documents.map((doc) => (
                         <div
-                        key={doc.id}
-                        className={`flex items-center justify-between rounded bg-slate-800/50 p-2 text-xs hover:bg-slate-800 transition-colors cursor-pointer ${
-                          doc.estado === 'rechazado' ? 'opacity-60' : ''
-                        }`}
-                        onClick={() => {
-                          setSelectedDocument(doc)
-                          setShowDocumentModal(true)
-                        }}
-                      >
+                          key={doc.id}
+                          className={`flex items-center justify-between rounded bg-slate-800/50 p-2 text-xs hover:bg-slate-800 transition-colors cursor-pointer ${
+                            doc.estado === 'rechazado' ? 'opacity-60' : ''
+                          }`}
+                          onClick={() => {
+                            setSelectedDocument(doc)
+                            setShowDocumentModal(true)
+                          }}
+                        >
                         <div className="flex flex-1 items-center gap-2 min-w-0">
                           <FileText className="h-3 w-3 text-slate-400 flex-shrink-0" />
                           <div className="min-w-0 flex-1">
@@ -241,7 +241,7 @@ export function DriverCard({
                             <Eye className="h-3 w-3 text-slate-400" />
                           </button>
                         </div>
-                      ))}
+                        ))}
                     </>
                   ) : (
                     <div className="text-center py-4 text-slate-500">
