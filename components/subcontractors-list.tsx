@@ -5,7 +5,6 @@ import { Search, MapPin, Phone, Mail, CheckCircle, AlertCircle, X, Filter, Users
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { allSubcontractorsData } from '@/lib/data/all-subcontractors'
 
 interface Subcontractor {
   id: string
@@ -39,7 +38,7 @@ interface SubcontractorsListProps {
 }
 
 export function SubcontractorsList({ subcontractors: initialSubcontractors }: SubcontractorsListProps) {
-  const [subcontractors, setSubcontractors] = useState<Subcontractor[]>(initialSubcontractors || allSubcontractorsData)
+  const [subcontractors, setSubcontractors] = useState<Subcontractor[]>(initialSubcontractors || [])
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [isLoading, setIsLoading] = useState(!initialSubcontractors)
   const [searchTerm, setSearchTerm] = useState('')
@@ -98,14 +97,14 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors }: Su
             hasTransportistas: !!data.dashboard?.transportistas,
             error: data.error
           })
-          // Fall back to local data
-          setSubcontractors(allSubcontractorsData)
+          // Don't use local demo data - show empty state instead
+          setSubcontractors([])
           setDrivers([])
         }
       } catch (error) {
         console.error('[v0] Error fetching subcontractors:', error)
-        // Fall back to local data
-        setSubcontractors(allSubcontractorsData)
+        // Don't use local demo data - show empty state instead
+        setSubcontractors([])
         setDrivers([])
       } finally {
         setIsLoading(false)
