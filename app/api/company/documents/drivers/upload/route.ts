@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
       console.log('[v0] File uploaded to storage:', filePath)
 
       // Save metadata to conductor_uploaded_documents table
+      console.log('[v0] Inserting into conductor_uploaded_documents with:', { driver_id: driverRut, document_type: documentType })
       const { data: doc, error: docError } = await adminClient
         .from('conductor_uploaded_documents')
         .insert({
