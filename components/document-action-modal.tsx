@@ -44,10 +44,8 @@ export function DocumentActionModal({
     if (!onStatusChange) return
     setIsChanging(true)
     try {
-      // Convert Spanish status to English for API
-      const apiStatus = newStatus === 'aprobado' ? 'approved' : 'rejected'
-      await onStatusChange(document.id, apiStatus)
-      console.log('[v0] Document status changed to:', apiStatus)
+      await onStatusChange(document.id, newStatus)
+      console.log('[v0] Document status changed to:', newStatus)
       setTimeout(() => onClose(), 1000)
     } catch (error) {
       console.error('[v0] Error changing status:', error)
