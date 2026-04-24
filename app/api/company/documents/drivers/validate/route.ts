@@ -46,11 +46,11 @@ export async function POST(request: NextRequest) {
           role: 'user' as const,
           content: [
             {
-              type: 'image',
+              type: 'image' as const,
               image: file_url,
             },
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'Validate this document and extract data',
             },
           ],
