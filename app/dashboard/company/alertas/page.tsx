@@ -83,15 +83,15 @@ export default function AlertasPage() {
   const getAlertColor = (type: string) => {
     switch (type) {
       case 'warning':
-        return 'border-orange-200 bg-orange-50'
+        return 'border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/30'
       case 'error':
-        return 'border-red-200 bg-red-50'
+        return 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
       case 'success':
-        return 'border-green-200 bg-green-50'
+        return 'border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30'
       case 'info':
-        return 'border-blue-200 bg-blue-50'
+        return 'border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30'
       default:
-        return 'border-gray-200 bg-gray-50'
+        return 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/30'
     }
   }
 
