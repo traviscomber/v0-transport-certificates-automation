@@ -39,8 +39,10 @@ export async function GET(request: NextRequest) {
 
     const transportistasResponse = await fetch(transportistasUrl, {
       headers: {
-        apikey: supabaseServiceKey,
-        Authorization: `Bearer ${supabaseServiceKey}`,
+        'Authorization': `Bearer ${supabaseServiceKey}`,
+        'apikey': supabaseServiceKey,
+        'Content-Type': 'application/json',
+        'Prefer': 'count=exact',
       },
     })
 
@@ -64,8 +66,10 @@ export async function GET(request: NextRequest) {
 
     const conductoesResponse = await fetch(conductoesUrl, {
       headers: {
-        apikey: supabaseServiceKey,
-        Authorization: `Bearer ${supabaseServiceKey}`,
+        'Authorization': `Bearer ${supabaseServiceKey}`,
+        'apikey': supabaseServiceKey,
+        'Content-Type': 'application/json',
+        'Prefer': 'count=exact',
       },
     })
 
