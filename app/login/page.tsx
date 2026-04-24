@@ -19,10 +19,12 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.toLowerCase() }),
+        credentials: 'include', // Important: include cookies in request
       })
 
       const data = await response.json()
       console.log('[v0] Login response:', response.status)
+      console.log('[v0] Response data:', data)
 
       if (!response.ok) {
         setError(data.error || 'Error al iniciar sesión')
@@ -30,9 +32,14 @@ export default function LoginPage() {
         return
       }
 
-      // Success - redirect to dashboard
+      // Success - wait a moment then redirect to dashboard
       console.log('[v0] Login successful for:', email)
-      router.push('/dashboard/company')
+      
+      // Wait for cookies to be set before redirecting
+      setTimeout(() => {
+        console.log('[v0] Redirecting to dashboard...')
+        router.push('/dashboard/company')
+      }, 500)
     } catch (err) {
       console.error('[v0] Login error:', err)
       setError('Error al conectar con el servidor')
