@@ -64,22 +64,19 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // 3. Alertas para subcontratistas sin documentos
-    const subWithMissingDocs = subcontractors.filter((sub) => {
-      const docs = sub.documentos || []
-      return docs.length === 0
-    })
+    // 3. Alertas para subcontratistas inactivos
+    const inactiveSubcontractors = subcontractors.filter((sub) => !sub.is_active).slice(0, 5)
 
-    if (subWithMissingDocs.length > 0) {
+    if (inactiveSubcontractors.length > 0) {
       alerts.push({
-        id: 'subcontractors-missing-documents',
+        id: 'inactive-subcontractors',
         type: 'warning',
-        title: 'Subcontratistas sin documentos',
-        description: `${subWithMissingDocs.length} subcontratista(s) sin documentación registrada`,
+        title: 'Subcontratistas inactivos',
+        description: `Hay ${inactiveSubcontractors.length} subcontratista(s) marcado(s) como inactivo(s)`,
         timestamp: new Date(),
         entityType: 'subcontractor',
-        entityName: 'Documentación faltante',
-        actionLabel: 'Ver subcontratistas',
+        entityName: 'Subcontratistas inactivos',
+        actionLabel: 'Revisar',
         actionUrl: '/dashboard/company/subcontratistas',
         read: false,
       })
