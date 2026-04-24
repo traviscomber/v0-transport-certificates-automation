@@ -46,11 +46,10 @@ export function useGeneratedAlerts() {
 
   useEffect(() => {
     loadAlerts()
-
     // Removed auto-refresh interval to prevent losing user state/filters
     // Users can manually refresh using the Actualizar button instead
     // This prevents data loss when users are filtering or reading alerts
-  }, [loadAlerts])
+  }, []) // Empty dependency array - only call once on mount
 
   return {
     alerts,
