@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { HelpBox } from '@/components/ui/help-box'
-import { DriverDocumentUpload } from '@/components/admin/driver-document-upload'
-import { File, Download, Trash2, Eye, Upload as UploadIcon } from 'lucide-react'
+import { DriverDocumentsManager } from '@/components/driver-documents-manager'
+import { File, Download, Eye, Upload as UploadIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 
 interface Document {
   id: string
@@ -14,8 +15,17 @@ interface Document {
   file_type: string
   file_size: number
   document_type: string
+  document_type_id?: string
   upload_date: string
   public_url?: string
+  storage_path?: string
+  category?: string
+  tags?: string[]
+  document_number?: string
+  expiry_date?: string
+  provider?: string
+  notes?: string
+  estado?: 'pendiente' | 'aprobado' | 'rechazado'
 }
 
 export default function DriverDocumentPortal() {
@@ -97,12 +107,13 @@ export default function DriverDocumentPortal() {
       <HelpBox
         variant="info"
         title="Portal de Documentos del Conductor"
-        description="Sube y mantén actualizados tus documentos. Los administradores podrán revisar y verificar tus documentos."
+        description="Sube y mantén actualizados tus documentos de cumplimiento Walmart. Los administradores podrán revisar y verificar tus documentos."
         tips={[
-          "Sube documentos válidos: licencia, seguros, certificados de capacitación",
-          "Formatos permitidos: PDF, JPG, PNG - Máximo 50MB",
-          "Tus documentos están protegidos y accesibles solo para administradores",
-          "Descarga tus documentos en cualquier momento"
+          "Selecciona el tipo de documento de la lista de 40+ documentos requeridos",
+          "Filtra por categoría o busca rápidamente el documento que necesitas",
+          "Ingresa metadatos: número de documento, fecha de vencimiento, proveedor",
+          "Sube fotos o documentos claros - máximo 50MB por archivo",
+          "Tus documentos están protegidos y accesibles solo para administradores"
         ]}
       />
 
@@ -127,8 +138,8 @@ export default function DriverDocumentPortal() {
 
       {driverId && (
         <>
-          {/* Upload Section */}
-          <DriverDocumentUpload
+          {/* New Document Upload Manager */}
+          <DriverDocumentsManager 
             driverId={driverId}
             onUploadSuccess={() => fetchDriverDocuments()}
           />
@@ -145,31 +156,103 @@ export default function DriverDocumentPortal() {
                   <UploadIcon className="mx-auto h-12 w-12 text-gray-400 mb-2" />
                   <p className="text-gray-500">Aún no has subido documentos</p>
                   <p className="text-sm text-gray-400 mt-1">
-                    Comienza subiendo tu licencia de conducir
+                    Comienza subiendo los documentos requeridos por Walmart
                   </p>
                 </CardContent>
               </Card>
             ) : (
               <div className="grid gap-4">
                 {documents.map((doc) => (
-                  <Card key={doc.id}>
+                  <Card key={doc.id} className={doc.estado === 'rechazado' ? 'border-red-300 bg-red-50/30' : ''}>
                     <CardContent className="pt-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex gap-4">
-                          <File className="h-8 w-8 text-gray-400 flex-shrink-0 mt-1" />
-                          <div>
-                            <h3 className="font-semibold text-gray-900">
-                              {doc.file_name}
-                            </h3>
-                            <p className="text-sm text-gray-500">
-                              {doc.document_type} • {formatFileSize(doc.file_size)} • {new Date(doc.upload_date).toLocaleDateString()}
-                            </p>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-start gap-3">
+                            <File className="h-8 w-8 text-gray-400 flex-shrink-0 mt-1" />
+                            <div className="flex-1 min-w-0">
+                              <h3 className={`font-semibold truncate ${
+                                doc.estado === 'rechazado' ? 'text-red-600 line-through' : 'text-gray-900'
+                              }`}>
+                                {doc.file_name}
+                              </h3>
+                              <p className="text-sm text-gray-600">
+                                {doc.document_type} {doc.document_type_id && `(${doc.document_type_id})`}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {new Date(doc.upload_date).toLocaleDateString('es-ES')} • {formatFileSize(doc.file_size)}
+                              </p>
+                              
+                              {/* Metadatos */}
+                              <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+                                {doc.document_number && (
+                                  <div>
+                                    <p className="text-gray-600">Número:</p>
+                                    <p className="font-mono text-gray-900">{doc.document_number}</p>
+                                  </div>
+                                )}
+                                {doc.expiry_date && (
+                                  <div>
+                                    <p className="text-gray-600">Vencimiento:</p>
+                                    <p className="font-mono text-gray-900">{new Date(doc.expiry_date).toLocaleDateString('es-ES')}</p>
+                                  </div>
+                                )}
+                                {doc.provider && (
+                                  <div>
+                                    <p className="text-gray-600">Emisor:</p>
+                                    <p className="font-mono text-gray-900">{doc.provider}</p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Tags */}
+                              {doc.tags && doc.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {doc.tags.map((tag) => (
+                                    <Badge key={tag} variant="secondary" className="text-xs">
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Estado */}
+                              {doc.estado && (
+                                <div className="mt-2">
+                                  <Badge className={
+                                    doc.estado === 'aprobado' ? 'bg-green-600' :
+                                    doc.estado === 'rechazado' ? 'bg-red-600' :
+                                    'bg-yellow-600'
+                                  }>
+                                    {doc.estado === 'aprobado' && '✓ Aprobado'}
+                                    {doc.estado === 'rechazado' && '✗ Rechazado'}
+                                    {doc.estado === 'pendiente' && '⏳ Pendiente'}
+                                  </Badge>
+                                </div>
+                              )}
+
+                              {/* Notas */}
+                              {doc.notes && (
+                                <div className="mt-3 p-2 bg-blue-50 rounded text-xs text-blue-900 border border-blue-200">
+                                  <p className="font-semibold">Notas:</p>
+                                  <p>{doc.notes}</p>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
 
-                        <div className="flex gap-2">
+                        {/* Actions */}
+                        <div className="flex gap-2 flex-shrink-0">
                           {doc.public_url && (
                             <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => window.open(doc.public_url, '_blank')}
+                                title="Ver documento"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -178,24 +261,8 @@ export default function DriverDocumentPortal() {
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => window.open(doc.public_url, '_blank')}
-                                title="Ver"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
                             </>
                           )}
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeleteDocument(doc.id)}
-                            title="Eliminar"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
                         </div>
                       </div>
                     </CardContent>
