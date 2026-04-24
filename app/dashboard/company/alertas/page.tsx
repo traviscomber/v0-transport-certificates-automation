@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { HelpBox } from '@/components/ui/help-box'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Copy, Check } from 'lucide-react'
 import { AlertTriangle, AlertCircle, CheckCircle, Info } from 'lucide-react'
 
 interface Alert {
@@ -24,6 +24,7 @@ export default function AlertasPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedType, setSelectedType] = useState('')
+  const [copiedRut, setCopiedRut] = useState<string | null>(null)
 
   // Load alerts on mount
   useEffect(() => {
@@ -120,6 +121,19 @@ export default function AlertasPage() {
     if (hours < 24) return `Hace ${hours}h`
     if (days < 7) return `Hace ${days}d`
     return d.toLocaleDateString('es-ES')
+  }
+
+  const handleCopyRut = async (rut: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    try {
+      await navigator.clipboard.writeText(rut)
+      setCopiedRut(rut)
+      setTimeout(() => setCopiedRut(null), 2000)
+    } catch (error) {
+      console.error('[v0] Error copying RUT:', error)
+    }
   }
 
   return (
@@ -223,10 +237,9 @@ export default function AlertasPage() {
         ) : (
           <div className="space-y-3">
             {filteredAlerts.map((alert) => (
-              <a
+              <div
                 key={alert.id}
-                href={alert.actionUrl || '#'}
-                className={`p-4 border rounded-lg flex items-start gap-4 transition-all hover:shadow-lg hover:border-primary/50 cursor-pointer ${getAlertColor(alert.type)}`}
+                className={`p-4 border rounded-lg flex items-start gap-4 transition-all ${getAlertColor(alert.type)}`}
               >
                 <div className="flex-shrink-0 mt-1">
                   {getAlertIcon(alert.type)}
@@ -234,7 +247,7 @@ export default function AlertasPage() {
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-foreground">{alert.title}</h3>
                   <p className="text-sm text-foreground/75 mt-1">{alert.description}</p>
-                  <div className="flex items-center gap-3 mt-3">
+                  <div className="flex items-center gap-3 mt-3 flex-wrap">
                     <span className="text-xs text-muted-foreground">{formatTime(alert.timestamp)}</span>
                     {alert.entityType && (
                       <Badge variant="outline" className="text-xs">
@@ -242,13 +255,26 @@ export default function AlertasPage() {
                       </Badge>
                     )}
                     {alert.actionUrl && (
-                      <span className="text-xs font-semibold text-primary hover:text-primary/80">
-                        {alert.actionLabel || 'Ver'}
-                      </span>
+                      <button
+                        onClick={(e) => handleCopyRut(alert.actionUrl!, e)}
+                        className="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10 rounded transition-colors"
+                      >
+                        {copiedRut === alert.actionUrl ? (
+                          <>
+                            <Check className="w-3 h-3" />
+                            Copiado
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            {alert.actionLabel}
+                          </>
+                        )}
+                      </button>
                     )}
                   </div>
                 </div>
-              </a>
+              </div>
             ))}
           </div>
         )}

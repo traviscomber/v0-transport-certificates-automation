@@ -58,15 +58,17 @@ export async function GET(request: NextRequest) {
           let title = 'Estado de documento actualizado'
           let docName = 'Documento'
           let driverName = ''
+          let driverRut = ''
           
           // Get document details
           const doc = docMap.get(change.document_id)
           if (doc) {
             docName = doc.file_name || 'Documento'
-            // Find driver name from local data
+            // Find driver name and RUT from local data
             const driver = (allDriversData || []).find((d: any) => d.id === doc.driver_id)
             if (driver) {
               driverName = driver.nombre || 'Conductor desconocido'
+              driverRut = driver.rut || ''
             }
           }
           
@@ -85,12 +87,6 @@ export async function GET(request: NextRequest) {
             ? `${docName} (${driverName})${change.reason ? ' - ' + change.reason : ''}`
             : `${docName}${change.reason ? ' - ' + change.reason : ''}`
           
-          // Create URL to driver profile
-          const driverId = doc?.driver_id
-          const actionUrl = driverId 
-            ? `/dashboard/company/conductores?driver=${driverId}`
-            : '/dashboard/company/conductores'
-          
           alerts.push({
             id: change.document_id || `status-${change.id}`,
             type: alertType,
@@ -100,8 +96,8 @@ export async function GET(request: NextRequest) {
             entityType: 'document',
             entityId: change.document_id,
             entityName: driverName,
-            actionUrl,
-            actionLabel: 'Ver documento',
+            actionLabel: `RUT: ${driverRut}`,
+            actionUrl: driverRut, // Store RUT in actionUrl for copying
             read: false,
           })
         })
