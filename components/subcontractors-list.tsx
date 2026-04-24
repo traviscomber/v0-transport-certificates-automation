@@ -54,6 +54,18 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors }: Su
         if (response.ok && data.dashboard?.transportistas) {
           console.log('[v0] Fetched subcontractors:', data.dashboard.transportistas.length)
           setSubcontractors(data.dashboard.transportistas)
+          
+          // Get user name from cookie and pre-select their ejecutiva filter
+          const userNameCookie = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('user_name='))
+            ?.split('=')[1]
+          
+          if (userNameCookie) {
+            const decodedName = decodeURIComponent(userNameCookie)
+            console.log('[v0] Pre-selecting ejecutiva filter for:', decodedName)
+            setSelectedEjecutivas([decodedName])
+          }
         } else {
           console.error('[v0] Failed to fetch:', data.error)
           // Fall back to local data
