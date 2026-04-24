@@ -16,38 +16,23 @@ export async function PATCH(
 
     console.log('[v0] Changing document status:', { documentId, status, reason })
 
-    // Obtener documento actual
-    const { data: doc, error: getError } = await adminClient
-      .from('documents')
-      .select('ocr_data')
-      .eq('id', documentId)
-      .single()
-
-    if (getError || !doc) {
-      console.warn('[v0] Document not found:', documentId)
-      return NextResponse.json({ error: 'Document not found' }, { status: 404 })
-    }
-
-    // Preparar ocr_data con status
-    const ocrData = doc.ocr_data || {}
-    ocrData.status = status
-    ocrData.reason = reason || 'Sin motivo especificado'
-    ocrData.changed_at = new Date().toISOString()
-    ocrData.changed_by = 'admin'
-
-    // Actualizar documento con nuevo status
-    const { data: updated, error: updateError } = await adminClient
-      .from('documents')
-      .update({
-        ocr_data: ocrData,
-        updated_at: new Date().toISOString()
+    // Upsert status en document_statuses
+    const { data: statusRecord, error: upsertError } = await adminClient
+      .from('document_statuses')
+      .upsert({
+        document_id: documentId,
+        status: status,
+        reason: reason || 'Sin motivo especificado',
+        changed_at: new Date().toISOString(),
+        changed_by: 'admin'
+      }, {
+        onConflict: 'document_id'
       })
-      .eq('id', documentId)
       .select()
       .single()
 
-    if (updateError) {
-      console.error('[v0] Error updating document status:', updateError)
+    if (upsertError) {
+      console.error('[v0] Error upserting document status:', upsertError)
       return NextResponse.json({ error: 'Failed to update status' }, { status: 500 })
     }
 
@@ -77,14 +62,14 @@ export async function GET(
     const adminClient = createAdminClient()
     const documentId = params.id
 
-    // Obtener status del documento desde ocr_data
-    const { data: doc, error } = await adminClient
-      .from('documents')
-      .select('ocr_data')
-      .eq('id', documentId)
+    // Obtener status de document_statuses
+    const { data: statusRecord, error } = await adminClient
+      .from('document_statuses')
+      .select('*')
+      .eq('document_id', documentId)
       .single()
 
-    if (error || !doc) {
+    if (error || !statusRecord) {
       return NextResponse.json({
         document_id: documentId,
         status: 'pending',
@@ -92,13 +77,12 @@ export async function GET(
       })
     }
 
-    const status = doc.ocr_data?.status || 'pending'
-    
     return NextResponse.json({
       document_id: documentId,
-      status: status,
-      reason: doc.ocr_data?.reason,
-      changed_at: doc.ocr_data?.changed_at
+      status: statusRecord.status,
+      reason: statusRecord.reason,
+      changed_at: statusRecord.changed_at,
+      changed_by: statusRecord.changed_by
     })
   } catch (error) {
     console.error('[v0] Error in GET /api/company/documents/[id]/status:', error)
