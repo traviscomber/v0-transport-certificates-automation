@@ -31,16 +31,28 @@ interface Document {
 export default function DriverDocumentPortal() {
   const router = useRouter()
   const [driverId, setDriverId] = useState<string>('')
+  const [driverRut, setDriverRut] = useState<string>('')
+  const [driverName, setDriverName] = useState<string>('')
   const [documents, setDocuments] = useState<Document[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [searchError, setSearchError] = useState<string>('')
 
   useEffect(() => {
     // Get current driver ID from auth or URL
     const getDriverInfo = async () => {
       try {
-        // This would normally get the current user's driver ID from auth
-        // For now, we'll use a placeholder that gets updated when they upload
+        // Check if there's a driver ID in URL params
+        const params = new URLSearchParams(window.location.search)
+        const urlId = params.get('id')
+        const urlRut = params.get('rut')
+
+        if (urlId) {
+          await lookupDriver(urlId, 'id')
+        } else if (urlRut) {
+          await lookupDriver(urlRut, 'rut')
+        }
         setLoading(false)
       } catch (error) {
         console.error('[v0] Error getting driver info:', error)
@@ -50,6 +62,50 @@ export default function DriverDocumentPortal() {
 
     getDriverInfo()
   }, [])
+
+  const lookupDriver = async (value: string, type: 'rut' | 'id') => {
+    if (!value) return
+
+    setSearchLoading(true)
+    setSearchError('')
+
+    try {
+      const params = new URLSearchParams()
+      if (type === 'rut') {
+        params.append('rut', value)
+      } else {
+        params.append('id', value)
+      }
+
+      const response = await fetch(`/api/company/documents/driver-lookup?${params}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        setDriverId(data.id)
+        setDriverRut(data.rut)
+        setDriverName(data.nombre)
+        setSearchError('')
+      } else {
+        const error = await response.json()
+        setSearchError(error.error || 'Conductor no encontrado')
+        setDriverId('')
+      }
+    } catch (error) {
+      console.error('[v0] Error looking up driver:', error)
+      setSearchError('Error al buscar el conductor')
+    } finally {
+      setSearchLoading(false)
+    }
+  }
+
+  const handleSearchDriver = async () => {
+    const searchValue = driverRut.trim()
+    if (!searchValue) {
+      setSearchError('Ingresa un RUT o ID de conductor')
+      return
+    }
+    await lookupDriver(searchValue, searchValue.includes('-') ? 'rut' : 'id')
+  }
 
   const fetchDriverDocuments = async () => {
     if (!driverId) return
@@ -118,23 +174,78 @@ export default function DriverDocumentPortal() {
       />
 
       {/* Driver ID Input (for demo) */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Tu ID de Conductor</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <input
-            type="text"
-            placeholder="Ingresa tu ID de conductor (UUID)..."
-            value={driverId}
-            onChange={(e) => setDriverId(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-          />
-          <p className="text-sm text-gray-500">
-            En producción, esto se obtendría automáticamente de tu cuenta
-          </p>
-        </CardContent>
-      </Card>
+      {!driverId ? (
+        <Card className="border-orange-500/50 bg-orange-50/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              🔍 Buscar tu Perfil de Conductor
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                RUT o ID de Conductor
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Ej: 12345678-9 o UUID..."
+                  value={driverRut}
+                  onChange={(e) => {
+                    setDriverRut(e.target.value)
+                    setSearchError('')
+                  }}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') handleSearchDriver()
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  disabled={searchLoading}
+                />
+                <Button
+                  onClick={handleSearchDriver}
+                  disabled={searchLoading}
+                  className="bg-orange-600 hover:bg-orange-700"
+                >
+                  {searchLoading ? 'Buscando...' : 'Buscar'}
+                </Button>
+              </div>
+              {searchError && (
+                <p className="mt-2 text-sm text-red-600 font-medium">❌ {searchError}</p>
+              )}
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded p-3">
+              <p className="text-xs text-blue-900">
+                <strong>💡 Tip:</strong> Para testing, puedes usar cualquier RUT de los conductores en el sistema.
+                Ejemplos: 18012757-7, 10907750-K, 12879880-3, 16181677-9, 12481902-4
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-green-500/50 bg-green-50/50">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Conductor identificado:</p>
+                <p className="text-lg font-bold text-gray-900">{driverName} ({driverRut})</p>
+                <p className="text-xs text-gray-500 mt-1 font-mono">ID: {driverId}</p>
+              </div>
+              <Button
+                onClick={() => {
+                  setDriverId('')
+                  setDriverRut('')
+                  setDriverName('')
+                  setDocuments([])
+                }}
+                variant="outline"
+                className="text-red-600"
+              >
+                Cambiar conductor
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {driverId && (
         <>
