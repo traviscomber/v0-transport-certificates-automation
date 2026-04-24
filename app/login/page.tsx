@@ -13,30 +13,38 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      // Send JSON to endpoint
+      console.log('[v0] Login attempt:', email)
+      
       const response = await fetch('/api/login-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.toLowerCase() }),
-        credentials: 'include',
+        credentials: 'include', // Important: include/send cookies
       })
 
-      console.log('[v0] Response status:', response.status, 'Redirected:', response.redirected, 'URL:', response.url)
+      console.log('[v0] Response status:', response.status)
 
-      // Server will redirect, so we just need to wait for it
-      // The response.redirected should be true if server sent a redirect
-      if (response.status === 303 || response.redirected) {
-        // Let the server redirect handle it by reloading
-        window.location.href = '/dashboard/company'
+      const data = await response.json()
+      console.log('[v0] Response data:', data)
+
+      if (!response.ok || !data.success) {
+        setError(data.error || 'Error al iniciar sesión')
+        setLoading(false)
         return
       }
 
-      // If not redirected, try to parse error
-      const data = await response.json()
-      if (!response.ok) {
-        setError(data.error || 'Error al iniciar sesión')
-        setLoading(false)
-      }
+      // Success! Browser has received Set-Cookie headers
+      // Check that cookies are set
+      console.log('[v0] Cookies should be set now, checking:', {
+        user_email: document.cookie.includes('user_email'),
+        user_name: document.cookie.includes('user_name'),
+      })
+
+      // Wait a bit for cookies to be fully processed, then redirect
+      setTimeout(() => {
+        console.log('[v0] Redirecting to dashboard...')
+        window.location.href = '/dashboard/company'
+      }, 300)
     } catch (err) {
       console.error('[v0] Login error:', err)
       setError('Error al conectar con el servidor')

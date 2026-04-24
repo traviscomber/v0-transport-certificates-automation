@@ -80,40 +80,45 @@ export async function POST(request: NextRequest) {
 
     console.log('[v0] Login successful for:', email, 'Name:', profile.full_name)
 
-    // Create redirect response to dashboard
-    const response = NextResponse.redirect(new URL('/dashboard/company', request.url), {
-      status: 303, // See Other
+    // Return success JSON response - let client handle redirect
+    const response = NextResponse.json({
+      success: true,
+      user: {
+        email: email.toLowerCase(),
+        full_name: profile.full_name,
+        role: profile.role,
+      },
     })
 
-    // Set httpOnly cookie with email
+    // Set cookies - these will be included in response headers
     response.cookies.set({
       name: 'user_email',
       value: email.toLowerCase(),
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      httpOnly: false, // Make visible to client for debugging
+      secure: false,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
     })
 
-    // Store user info in a regular cookie
     response.cookies.set({
       name: 'user_name',
       value: profile.full_name || email,
-      secure: process.env.NODE_ENV === 'production',
+      httpOnly: false,
+      secure: false,
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7,
     })
 
-    // Store role in cookie
     response.cookies.set({
       name: 'user_role',
       value: profile.role || 'user',
-      secure: process.env.NODE_ENV === 'production',
+      httpOnly: false,
+      secure: false,
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7,
     })
 
-    console.log('[v0] Setting cookies and redirecting to dashboard')
+    console.log('[v0] Setting cookies, returning success JSON')
     return response
   } catch (error: any) {
     console.error('[v0] Login error:', error)
