@@ -13,7 +13,7 @@ async function getMandantes() {
       *,
       mandante_transportista(count)
     `)
-    .order("razon_social", { ascending: true })
+    .order("name", { ascending: true })
 
   if (error) {
     console.error("Error fetching mandantes:", error)
@@ -96,7 +96,7 @@ export default async function MandantesPage() {
                 </div>
                 
                 <h3 className="font-semibold text-lg mb-1">
-                  {m.nombre_fantasia || m.razon_social}
+                  {m.nombre_fantasia || m.name}
                 </h3>
                 <p className="text-sm font-mono text-muted-foreground mb-3">
                   RUT: {m.rut}
