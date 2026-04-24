@@ -402,13 +402,18 @@ export function DriverCard({
         }}
         onStatusChange={async (docId, newStatus) => {
           try {
+            console.log('[v0] Status change initiated for doc:', docId, 'new status:', newStatus)
             await changeStatus(docId, newStatus, 'Cambio realizado desde dashboard')
-            console.log('[v0] Status changed, refreshing documents...')
+            
+            // Wait a bit for server to process
+            await new Promise(resolve => setTimeout(resolve, 300))
+            
+            console.log('[v0] Status changed, refetching documents with cache bypass...')
             await refetch(true)
-            setTimeout(() => {
-              setShowDocumentModal(false)
-              setSelectedDocument(null)
-            }, 500)
+            
+            console.log('[v0] Documents refetched, closing modal...')
+            setShowDocumentModal(false)
+            setSelectedDocument(null)
           } catch (error) {
             console.error('[v0] Error updating status:', error)
             throw error
