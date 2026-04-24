@@ -8,7 +8,7 @@ export async function PATCH(
 ) {
   try {
     const { status, reason } = await request.json()
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
     const documentId = params.id
 
     if (!['pending', 'approved', 'rejected', 'expired'].includes(status)) {
@@ -75,7 +75,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
     const documentId = params.id
 
     // Obtener status de document_statuses
