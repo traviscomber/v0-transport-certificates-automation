@@ -480,6 +480,9 @@ export const WALMART_REQUIRED_DOCUMENTS: DocumentType[] = [
   },
 ]
 
+// Alias for backward compatibility
+export const DOCUMENT_TYPES = WALMART_REQUIRED_DOCUMENTS
+
 export function getDocumentsByCategory(category: DocumentCategory): DocumentType[] {
   return WALMART_REQUIRED_DOCUMENTS.filter(doc => doc.category === category)
 }
