@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,8 +50,11 @@ export async function POST(request: NextRequest) {
     const normalizedInputRut = normalizeRUT(driverRut)
     console.log('[v0] Searching for driver with RUT:', driverRut, '(normalized:', normalizedInputRut, ')')
     
+    // Usar createClient regular que respeta RLS policies
+    const regularClient = await createClient()
+    
     // Buscar el ID del conductor por RUT
-    const { data: allConductores, error: fetchError } = await adminClient
+    const { data: allConductores, error: fetchError } = await regularClient
       .from('conductores')
       .select('id, rut, nombres')
     
