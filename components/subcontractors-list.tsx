@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { Search, MapPin, Phone, Mail, CheckCircle, AlertCircle, X, Filter } from 'lucide-react'
+import { Search, MapPin, Phone, Mail, CheckCircle, AlertCircle, X, Filter, Users } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -25,12 +25,22 @@ interface Subcontractor {
   is_active: boolean
 }
 
+interface Driver {
+  id: string
+  rut: string
+  nombre: string
+  rut_proveedor: string
+  proveedor: string
+  is_active: boolean
+}
+
 interface SubcontractorsListProps {
   subcontractors?: Subcontractor[]
 }
 
 export function SubcontractorsList({ subcontractors: initialSubcontractors }: SubcontractorsListProps) {
   const [subcontractors, setSubcontractors] = useState<Subcontractor[]>(initialSubcontractors || allSubcontractorsData)
+  const [drivers, setDrivers] = useState<Driver[]>([])
   const [isLoading, setIsLoading] = useState(!initialSubcontractors)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRegions, setSelectedRegions] = useState<string[]>([])
@@ -38,6 +48,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors }: Su
   const [selectedCertifications, setSelectedCertifications] = useState<string[]>([])
   const [showActiveOnly, setShowActiveOnly] = useState(false)
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  const [expandedSubcontractor, setExpandedSubcontractor] = useState<string | null>(null)
 
   // Fetch data from API if not provided as prop
   useEffect(() => {
@@ -47,13 +58,15 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors }: Su
 
     const fetchData = async () => {
       try {
-        console.log('[v0] Fetching subcontractors from API...')
+        console.log('[v0] Fetching subcontractors and drivers from API...')
         const response = await fetch('/api/dashboard/data')
         const data = await response.json()
         
         if (response.ok && data.dashboard?.transportistas) {
           console.log('[v0] Fetched subcontractors:', data.dashboard.transportistas.length)
+          console.log('[v0] Fetched drivers:', data.dashboard.conductores?.length || 0)
           setSubcontractors(data.dashboard.transportistas)
+          setDrivers(data.dashboard.conductores || [])
           
           // Get user name from cookie and pre-select their ejecutiva filter
           const userNameCookie = document.cookie
@@ -317,23 +330,54 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors }: Su
             </CardContent>
           </Card>
         ) : (
-          filtered.map(sub => (
+          filtered.map(sub => {
+            // Count drivers for this subcontractor
+            const subDrivers = drivers.filter(d => d.rut_proveedor?.trim() === sub.rut?.trim())
+            const driverCount = subDrivers.length
+            const isExpanded = expandedSubcontractor === sub.id
+
+            return (
             <Card key={sub.id} className="hover:border-slate-500 transition-colors">
               <CardContent className="p-6">
                 <div className="space-y-4">
                   {/* Header with name and status */}
                   <div className="flex items-start justify-between">
-                    <div>
+                    <div className="flex-1">
                       <h3 className="font-bold text-lg text-white">{sub.nombre}</h3>
                       {sub.nombre_fantasia && (
                         <p className="text-sm text-slate-400 italic">{sub.nombre_fantasia}</p>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       {sub.is_active ? (
                         <>
                           <CheckCircle className="w-5 h-5 text-green-500" />
                           <Badge className="bg-green-500/20 text-green-300">Activo</Badge>
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle className="w-5 h-5 text-red-500" />
+                          <Badge className="bg-red-500/20 text-red-300">Inactivo</Badge>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Driver count badge */}
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-slate-400" />
+                    <span className="text-sm text-slate-300">
+                      <span className="font-semibold text-amber-400">{driverCount}</span> conductores asociados
+                    </span>
+                    {driverCount > 0 && (
+                      <button
+                        onClick={() => setExpandedSubcontractor(isExpanded ? null : sub.id)}
+                        className="ml-auto text-xs px-2 py-1 rounded bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+                      >
+                        {isExpanded ? 'Ocultar' : 'Ver'}
+                      </button>
+                    )}
+                  </div>
                         </>
                       ) : (
                         <>
@@ -387,10 +431,33 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors }: Su
                     {sub.rendic && <Badge className="bg-purple-500/20 text-purple-300">Rendic</Badge>}
                     {sub.interpolar && <Badge className="bg-orange-500/20 text-orange-300">Interpolar</Badge>}
                   </div>
+
+                  {/* Expandable Drivers Section */}
+                  {isExpanded && driverCount > 0 && (
+                    <div className="mt-6 pt-4 border-t border-slate-700 space-y-2">
+                      <p className="text-sm font-semibold text-slate-300">Conductores asociados ({driverCount}):</p>
+                      <div className="grid gap-2 max-h-96 overflow-y-auto">
+                        {subDrivers.map(driver => (
+                          <div key={driver.id} className="p-3 bg-slate-900 rounded border border-slate-700 text-sm">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <p className="font-semibold text-white">{driver.nombre}</p>
+                                <p className="text-xs text-slate-400">RUT: <span className="font-mono text-amber-400">{driver.rut}</span></p>
+                              </div>
+                              {driver.is_active && (
+                                <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
-          ))
+            )
+          })
         )}
       </div>
     </div>
