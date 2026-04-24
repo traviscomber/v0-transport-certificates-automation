@@ -1,4 +1,3 @@
-import { generateText } from 'ai'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface AnalysisRequest {
@@ -130,27 +129,66 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const apiKey = process.env.OPENAI_API_KEY
+    if (!apiKey) {
+      console.error('[v0] ❌ OPENAI_API_KEY not configured')
+      return NextResponse.json(
+        { error: 'API key no configurada' },
+        { status: 500 }
+      )
+    }
+
     console.log('[v0] Analyzing report:', { type: reportType, dataPoints: data?.length || 0 })
 
     const template = REPORT_TEMPLATES[reportType] as (s: any, d: any[]) => string
     const prompt = template(stats, data || [])
 
-    const result = await generateText({
-      model: 'openai/gpt-4-turbo',
-      system: SYSTEM_PROMPT,
-      prompt,
-      temperature: 0.7,
-      maxOutputTokens: 2000,
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: SYSTEM_PROMPT,
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 2000,
+      }),
     })
+
+    if (!response.ok) {
+      const error = await response.json()
+      console.error('[v0] ❌ OpenAI API error:', error)
+      return NextResponse.json(
+        { 
+          error: 'Error generando análisis',
+          details: error.error?.message || 'Error desconocido'
+        },
+        { status: response.status }
+      )
+    }
+
+    const result = await response.json()
+    const analysisText = result.choices[0]?.message?.content || ''
 
     console.log('[v0] ✅ Analysis generated successfully for', reportType)
 
     return NextResponse.json({
       success: true,
-      analysis: result.text,
+      analysis: analysisText,
       reportType,
       generatedAt: new Date().toISOString(),
-      tokensUsed: result.usage?.totalTokens,
+      tokensUsed: result.usage?.total_tokens,
     })
   } catch (error) {
     console.error('[v0] ❌ Error generating analysis:', error)
@@ -163,4 +201,5 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
 
