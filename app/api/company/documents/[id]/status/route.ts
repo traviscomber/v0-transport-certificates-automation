@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { triggerDocumentStatusAlert } from '@/lib/operations/alert-triggers'
 
 export async function PATCH(
   request: NextRequest,
@@ -51,6 +52,22 @@ export async function PATCH(
       console.error('[v0] Update error:', updateError)
     } else if (updateResult && updateResult.length > 0) {
       console.log('[v0] ✅ Document status updated:', { documentId, status })
+      
+      // Trigger alert for status change
+      if (status === 'approved' || status === 'rejected' || status === 'expired') {
+        try {
+          await triggerDocumentStatusAlert(
+            documentId,
+            status as 'approved' | 'rejected' | 'expired',
+            `Documento ${documentId}`,
+            reason
+          )
+          console.log('[v0] ✅ Alert triggered for status change:', status)
+        } catch (alertError) {
+          console.warn('[v0] Error triggering alert:', alertError)
+        }
+      }
+      
       return NextResponse.json({
         success: true,
         document_id: documentId,
@@ -86,6 +103,22 @@ export async function PATCH(
     }
 
     console.log('[v0] ✅ Document status inserted:', { documentId, status })
+    
+    // Trigger alert for new status
+    if (status === 'approved' || status === 'rejected' || status === 'expired') {
+      try {
+        await triggerDocumentStatusAlert(
+          documentId,
+          status as 'approved' | 'rejected' | 'expired',
+          `Documento ${documentId}`,
+          reason
+        )
+        console.log('[v0] ✅ Alert triggered for new status:', status)
+      } catch (alertError) {
+        console.warn('[v0] Error triggering alert:', alertError)
+      }
+    }
+    
     return NextResponse.json({
       success: true,
       document_id: documentId,
