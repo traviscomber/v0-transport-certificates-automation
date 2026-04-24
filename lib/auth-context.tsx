@@ -83,49 +83,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        console.log('[v0] Checking session...')
-        const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession()
-        
-        if (sessionError) {
-          console.error('[v0] Session error:', sessionError.message)
-          // Don't block the UI if session check fails - just proceed without user
-          setUser(null)
-          setLoading(false)
-          return
-        }
-        
-        if (session?.user) {
-          console.log('[v0] Session found for:', session.user.email)
-          const meta = session.user.user_metadata || {}
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            role: (meta.role as UserRole) || getRoleFromEmail(session.user.email || ''),
-            full_name: meta.full_name || session.user.email?.split('@')[0] || '',
-            company_name: meta.company_name,
-          })
-        } else {
-          console.log('[v0] No session found')
-          setUser(null)
-        }
-      } catch (err) {
-        console.error('[v0] Unexpected error in checkSession:', err)
-        setUser(null)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    checkSession()
-
+    // Don't call getSession() on mount - it causes "Database error querying schema"
+    // Instead, just listen for auth state changes
+    console.log('[v0] Setting up auth state listener')
+    
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event, session) => {
       console.log('[v0] Auth state changed:', _event)
       if (!session) {
         setUser(null)
         setError(null)
-        setLoading(false)
       } else if (session.user) {
         const meta = session.user.user_metadata || {}
         setUser({
@@ -136,8 +102,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           company_name: meta.company_name,
         })
         setError(null)
-        setLoading(false)
       }
+      setLoading(false)
     })
 
     return () => subscription?.unsubscribe()
