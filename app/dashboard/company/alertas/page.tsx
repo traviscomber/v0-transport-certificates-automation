@@ -115,8 +115,8 @@ export default function AlertasPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Alertas y Notificaciones</h1>
-          <p className="text-gray-600">Mantente informado de eventos importantes en tu operación</p>
+          <h1 className="text-3xl font-bold text-foreground">Alertas y Notificaciones</h1>
+          <p className="text-foreground/80">Mantente informado de eventos importantes en tu operación</p>
         </div>
         <Button
           onClick={loadAlerts}
@@ -143,25 +143,25 @@ export default function AlertasPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-5 gap-4">
-        <div className="p-4 bg-white border border-gray-200 rounded-lg">
-          <div className="text-sm text-gray-600">Total</div>
-          <div className="text-2xl font-bold">{stats.total}</div>
+        <div className="p-4 bg-card border border-border rounded-lg">
+          <div className="text-sm text-muted-foreground font-medium">Total</div>
+          <div className="text-2xl font-bold text-foreground">{stats.total}</div>
         </div>
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <div className="text-sm text-red-700">Errores</div>
-          <div className="text-2xl font-bold text-red-700">{stats.errors}</div>
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-950/30 dark:border-red-900">
+          <div className="text-sm text-red-700 font-medium dark:text-red-300">Errores</div>
+          <div className="text-2xl font-bold text-red-700 dark:text-red-300">{stats.errors}</div>
         </div>
-        <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-          <div className="text-sm text-orange-700">Advertencias</div>
-          <div className="text-2xl font-bold text-orange-700">{stats.warnings}</div>
+        <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-950/30 dark:border-orange-900">
+          <div className="text-sm text-orange-700 font-medium dark:text-orange-300">Advertencias</div>
+          <div className="text-2xl font-bold text-orange-700 dark:text-orange-300">{stats.warnings}</div>
         </div>
-        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-          <div className="text-sm text-green-700">Éxito</div>
-          <div className="text-2xl font-bold text-green-700">{stats.success}</div>
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg dark:bg-green-950/30 dark:border-green-900">
+          <div className="text-sm text-green-700 font-medium dark:text-green-300">Éxito</div>
+          <div className="text-2xl font-bold text-green-700 dark:text-green-300">{stats.success}</div>
         </div>
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="text-sm text-blue-700">Info</div>
-          <div className="text-2xl font-bold text-blue-700">{stats.info}</div>
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950/30 dark:border-blue-900">
+          <div className="text-sm text-blue-700 font-medium dark:text-blue-300">Info</div>
+          <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.info}</div>
         </div>
       </div>
 
@@ -172,12 +172,12 @@ export default function AlertasPage() {
           placeholder="Buscar alertas..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 px-3 py-2 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <select
           value={selectedType}
           onChange={(e) => setSelectedType(e.target.value)}
-          className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <option value="">Todos los tipos</option>
           <option value="error">Errores</option>
@@ -200,11 +200,11 @@ export default function AlertasPage() {
       <div>
         {isLoading ? (
           <div className="text-center py-12">
-            <p className="text-gray-600">Cargando alertas...</p>
+            <p className="text-muted-foreground">Cargando alertas...</p>
           </div>
         ) : filteredAlerts.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               {alerts.length === 0 ? 'No hay alertas en este momento' : 'No hay alertas que coincidan con los filtros'}
             </p>
           </div>
@@ -219,10 +219,10 @@ export default function AlertasPage() {
                   {getAlertIcon(alert.type)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900">{alert.title}</h3>
-                  <p className="text-sm text-gray-700 mt-1">{alert.description}</p>
+                  <h3 className="font-semibold text-foreground">{alert.title}</h3>
+                  <p className="text-sm text-foreground/75 mt-1">{alert.description}</p>
                   <div className="flex items-center gap-3 mt-3">
-                    <span className="text-xs text-gray-500">{formatTime(alert.timestamp)}</span>
+                    <span className="text-xs text-muted-foreground">{formatTime(alert.timestamp)}</span>
                     {alert.entityType && (
                       <Badge variant="outline" className="text-xs">
                         {alert.entityType}
@@ -231,7 +231,7 @@ export default function AlertasPage() {
                     {alert.actionUrl && (
                       <a
                         href={alert.actionUrl}
-                        className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+                        className="text-xs font-semibold text-primary hover:text-primary/80 underline"
                       >
                         {alert.actionLabel || 'Ver'}
                       </a>
