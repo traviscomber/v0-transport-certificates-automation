@@ -3,22 +3,44 @@ import { NextResponse } from 'next/server'
 import { allSubcontractorsData } from '@/lib/data/all-subcontractors'
 import { allDriversData } from '@/lib/data/all-drivers'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const supabase = await createClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-    console.log('[v0] API company/data called - Loading all subcontractors from TypeScript data')
+    console.log('[v0] API company/data called - Loading from Supabase')
 
-    // Use all 221 subcontractors from TypeScript data file
-    const subcontractorsData = allSubcontractorsData
+    // Fetch drivers from Supabase
+    const { data: driversFromDb, error: driversError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_type', 'conductor')
 
-    console.log(`[v0] Loaded ${subcontractorsData.length} subcontractors from all-subcontractors.ts`)
+    if (driversError) {
+      console.warn('[v0] Error fetching drivers from Supabase, using fallback data:', driversError)
+      var driversData = allDriversData
+    } else {
+      console.log(`[v0] Loaded ${driversFromDb?.length || 0} drivers from Supabase`)
+      // If Supabase has data, use it; otherwise fallback to TypeScript data
+      var driversData = driversFromDb && driversFromDb.length > 0 ? driversFromDb : allDriversData
+    }
 
-    // Use all 291 drivers from TypeScript data file
-    const driversData = allDriversData
+    // Fetch subcontractors from Supabase
+    const { data: subFromDb, error: subError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_type', 'subcontratista')
 
-    console.log(`[v0] Loaded ${driversData.length} drivers from all-drivers.ts`)
+    if (subError) {
+      console.warn('[v0] Error fetching subcontractors from Supabase, using fallback data:', subError)
+      var subcontractorsData = allSubcontractorsData
+    } else {
+      console.log(`[v0] Loaded ${subFromDb?.length || 0} subcontractors from Supabase`)
+      // If Supabase has data, use it; otherwise fallback to TypeScript data
+      var subcontractorsData = subFromDb && subFromDb.length > 0 ? subFromDb : allSubcontractorsData
+    }
 
     const executivesData = [
       { id: '1', full_name: 'Carolina Martinez', rut: '12345678-9', email: 'carolina@labbe.cl', phone: '+56912345678', cargo: 'Ejecutiva de Cuenta' },
