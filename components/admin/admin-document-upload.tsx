@@ -247,22 +247,21 @@ export function AdminDocumentUpload({ onUploadSuccess }: AdminDocumentUploadProp
             accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx"
             disabled={uploading}
           />
-          <label htmlFor="file-input" className="block mt-4">
-            <Button 
-              disabled={uploading || !selectedId} 
-              className="bg-orange-500 hover:bg-orange-600 text-white font-semibold"
-              type="button"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Subiendo...
+          <Button 
+            onClick={() => document.getElementById('file-input')?.click()}
+            disabled={uploading || !selectedId} 
+            className="mt-4 bg-orange-500 hover:bg-orange-600 text-white font-semibold cursor-pointer"
+            type="button"
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Subiendo...
                 </>
               ) : (
                 'Seleccionar Archivos'
               )}
             </Button>
-          </label>
         </div>
 
         {/* Message */}
