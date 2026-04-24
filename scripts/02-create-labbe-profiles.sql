@@ -1,25 +1,20 @@
 -- Insert profiles for existing auth users
--- This script assumes the auth users have been created already with specific emails
+-- This script creates profiles linked to existing auth.users records
+-- The profiles will be linked to the Transportes Labbe organization
 
--- First, get the organization ID
-WITH org AS (
-  SELECT id FROM organizations WHERE name = 'Transportes Labbe' LIMIT 1
-)
-
--- Insert profiles using auth user IDs that match the emails
 INSERT INTO profiles (id, email, full_name, rut, phone, role, is_active, organization_id, created_at, updated_at)
 SELECT 
   u.id,
   u.email,
-  u.raw_user_meta_data->>'full_name' as full_name,
+  COALESCE(u.raw_user_meta_data->>'full_name', u.email) as full_name,
   u.raw_user_meta_data->>'rut' as rut,
   u.raw_user_meta_data->>'phone' as phone,
   'admin' as role,
   true as is_active,
-  org.id as organization_id,
+  (SELECT id FROM organizations WHERE name = 'Transportes Labbe' LIMIT 1) as organization_id,
   NOW() as created_at,
   NOW() as updated_at
-FROM auth.users u, org
+FROM auth.users u
 WHERE u.email IN (
   'olga.carrasco@transporteslabbe.cl',
   'carolina.sepulveda@transporteslabbe.cl',
@@ -29,6 +24,6 @@ WHERE u.email IN (
   'katherinne.canales@transporteslabbe.cl'
 )
 AND NOT EXISTS (
-  SELECT 1 FROM profiles WHERE profiles.id = u.id
+  SELECT 1 FROM profiles p WHERE p.id = u.id
 )
 ON CONFLICT (id) DO NOTHING;
