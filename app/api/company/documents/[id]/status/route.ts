@@ -26,15 +26,13 @@ export async function PATCH(
         reason: reason || 'Sin motivo especificado',
         changed_at: new Date().toISOString(),
         changed_by: 'admin'
-      }, {
-        onConflict: 'document_id'
       })
       .select()
       .single()
 
     if (upsertError) {
       console.error('[v0] Error upserting document status:', upsertError)
-      return NextResponse.json({ error: 'Failed to update status' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to update status', details: upsertError.message }, { status: 500 })
     }
 
     console.log('[v0] Document status updated to:', status)
