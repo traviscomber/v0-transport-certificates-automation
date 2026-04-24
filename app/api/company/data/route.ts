@@ -10,35 +10,12 @@ export async function GET() {
     const supabase = await createClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-    console.log('[v0] API company/data called - Loading from Supabase')
+    console.log('[v0] API company/data called - Using static driver/subcontractor data')
 
-    // Fetch drivers from Supabase
-    const { data: driversFromDb, error: driversError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_type', 'conductor')
-
-    let driversData = allDriversData
-    if (driversError) {
-      console.warn('[v0] Error fetching drivers from Supabase, using fallback data:', driversError)
-    } else if (driversFromDb && driversFromDb.length > 0) {
-      console.log(`[v0] Loaded ${driversFromDb.length} drivers from Supabase`)
-      driversData = driversFromDb
-    }
-
-    // Fetch subcontractors from Supabase
-    const { data: subFromDb, error: subError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_type', 'subcontratista')
-
-    let subcontractorsData = allSubcontractorsData
-    if (subError) {
-      console.warn('[v0] Error fetching subcontractors from Supabase, using fallback data:', subError)
-    } else if (subFromDb && subFromDb.length > 0) {
-      console.log(`[v0] Loaded ${subFromDb.length} subcontractors from Supabase`)
-      subcontractorsData = subFromDb
-    }
+    // Use static data for drivers and subcontractors
+    // (These come from conductores/subcontractores tables, not profiles table)
+    const driversData = allDriversData
+    const subcontractorsData = allSubcontractorsData
 
     const executivesData = [
       { id: '1', full_name: 'Carolina Martinez', rut: '12345678-9', email: 'carolina@labbe.cl', phone: '+56912345678', cargo: 'Ejecutiva de Cuenta' },
