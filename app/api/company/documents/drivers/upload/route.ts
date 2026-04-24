@@ -23,6 +23,23 @@ export async function POST(request: NextRequest) {
     const adminClient = createAdminClient()
     const uploadedDocs = []
 
+    // Asegurar que el bucket existe
+    try {
+      const { data: buckets } = await adminClient.storage.listBuckets()
+      const bucketExists = buckets?.some((b: any) => b.name === 'documents')
+      
+      if (!bucketExists) {
+        console.log('[v0] Creating documents bucket...')
+        await adminClient.storage.createBucket('documents', {
+          public: true,
+          fileSizeLimit: 52428800, // 50MB
+        })
+        console.log('[v0] Bucket created successfully')
+      }
+    } catch (bucketError) {
+      console.log('[v0] Bucket check/create attempt (may already exist):', bucketError)
+    }
+
     // Procesar cada archivo
     for (const file of files) {
       // Generar path único
