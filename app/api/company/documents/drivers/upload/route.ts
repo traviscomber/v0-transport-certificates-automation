@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Driver RUT required' }, { status: 400 })
     }
 
-    const adminClient = createAdminClient()
+  const adminClient = createAdminClient()
     const uploadedDocs = []
 
     // Asegurar que el bucket existe
@@ -39,6 +39,24 @@ export async function POST(request: NextRequest) {
     } catch (bucketError) {
       console.log('[v0] Bucket check/create attempt (may already exist):', bucketError)
     }
+
+    // Buscar el ID del conductor por RUT
+    const { data: drivers, error: driverError } = await adminClient
+      .from('conductores')
+      .select('id')
+      .eq('rut', driverRut)
+      .single()
+
+    if (driverError || !drivers?.id) {
+      console.error('[v0] Driver not found for RUT:', driverRut)
+      return NextResponse.json(
+        { error: `Conductor con RUT ${driverRut} no encontrado` },
+        { status: 404 }
+      )
+    }
+
+    const driverId = drivers.id
+    console.log('[v0] Found driver:', { driverRut, driverId })
 
     // Procesar cada archivo
     for (const file of files) {
@@ -67,19 +85,27 @@ export async function POST(request: NextRequest) {
 
       // Crear objeto de documento
       const doc = {
-        id: `${timestamp}_${driverRut}`,
-        driver_rut: driverRut,
-        file_name: file.name,
-        file_size: file.size,
-        file_type: file.type,
+        driver_id: driverId,
         document_type: category,
-        storage_path: filePath,
-        public_url: publicUrl,
-        upload_date: new Date().toISOString(),
-        status: 'uploaded'
+        file_name: file.name,
+        file_url: publicUrl,
+        status: 'pendiente'
       }
 
-      uploadedDocs.push(doc)
+      // Guardar en la base de datos
+      const { error: saveError, data: savedDoc } = await adminClient
+        .from('driver_documents')
+        .insert([doc])
+        .select()
+        .single()
+
+      if (saveError) {
+        console.error('[v0] Error saving document to database:', saveError)
+        // Continue anyway - file is in storage
+      } else {
+        console.log('[v0] Document saved to database:', savedDoc?.id)
+        uploadedDocs.push(savedDoc)
+      }
     }
 
     return NextResponse.json({
