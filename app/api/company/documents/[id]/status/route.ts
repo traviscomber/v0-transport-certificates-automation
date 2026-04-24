@@ -7,12 +7,27 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { status, reason } = await request.json()
+    const { status: rawStatus, reason } = await request.json()
     const adminClient = await createAdminClient()
     const documentId = params.id
 
-    if (!['pending', 'approved', 'rejected', 'expired'].includes(status)) {
-      return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+    // Map Spanish status values to English
+    const statusMap: Record<string, string> = {
+      'aprobado': 'approved',
+      'rechazado': 'rejected',
+      'pendiente': 'pending',
+      'vencido': 'expired',
+      'approved': 'approved',
+      'rejected': 'rejected',
+      'pending': 'pending',
+      'expired': 'expired'
+    }
+
+    const status = statusMap[rawStatus?.toLowerCase()]
+
+    if (!status) {
+      console.error('[v0] Invalid status value:', rawStatus)
+      return NextResponse.json({ error: 'Invalid status', receivedStatus: rawStatus }, { status: 400 })
     }
 
     console.log('[v0] Changing document status:', { documentId, status, reason })
@@ -30,9 +45,20 @@ export async function PATCH(
       .select()
       .single()
 
+    console.log('[v0] Upsert result:', { error: upsertError?.message, errorCode: upsertError?.code, data: statusRecord })
+
     if (upsertError) {
-      console.error('[v0] Error upserting document status:', upsertError)
-      return NextResponse.json({ error: 'Failed to update status', details: upsertError.message }, { status: 500 })
+      console.error('[v0] ❌ Error upserting document status:', {
+        message: upsertError.message,
+        code: upsertError.code,
+        details: upsertError.details,
+        hint: upsertError.hint
+      })
+      return NextResponse.json({ 
+        error: 'Failed to update status', 
+        details: upsertError.message,
+        code: upsertError.code
+      }, { status: 500 })
     }
 
     console.log('[v0] Document status updated to:', status)
