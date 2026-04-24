@@ -33,8 +33,8 @@ export async function GET(request: NextRequest) {
     // Fetch transportistas data - ALWAYS filter by ejecutiva name (even for admins)
     let transportistasUrl = `${supabaseUrl}/rest/v1/transportistas`
     if (userName) {
-      // Use ilike for case-insensitive search to handle name variations
-      transportistasUrl += `?ejecutiva=ilike.%${encodeURIComponent(userName)}%`
+      // Use exact match to avoid query syntax errors
+      transportistasUrl += `?ejecutiva=eq.${encodeURIComponent(userName)}`
     }
 
     console.log('[v0] Fetching transportistas from:', transportistasUrl)
