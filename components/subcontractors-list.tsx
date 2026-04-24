@@ -331,8 +331,16 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors }: Su
           </Card>
         ) : (
           filtered.map(sub => {
-            // Count drivers for this subcontractor
-            const subDrivers = drivers.filter(d => d.rut_proveedor?.trim() === sub.rut?.trim())
+            // Normalize RUT format for matching (remove dots, hyphens, spaces)
+            const normalizeRut = (rut: string | undefined) => {
+              if (!rut) return ''
+              return rut.trim().replace(/[.-]/g, '').toUpperCase()
+            }
+            
+            // Count drivers for this subcontractor by matching RUT
+            const subDrivers = drivers.filter(d => 
+              normalizeRut(d.rut_proveedor) === normalizeRut(sub.rut)
+            )
             const driverCount = subDrivers.length
             const isExpanded = expandedSubcontractor === sub.id
 
