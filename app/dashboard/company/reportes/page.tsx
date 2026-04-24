@@ -54,8 +54,14 @@ export default function ReportesPage() {
     }
   }
 
-  const generateAnalysis = async (reportType: ReportType) => {
+  const generateAnalysis = async (reportType: string) => {
     if (!stats) return
+
+    // Ensure reportType is a valid ReportType
+    const validTypes: ReportType[] = ['compliance', 'risk', 'summary', 'alerts']
+    if (!validTypes.includes(reportType as ReportType)) return
+
+    const type = reportType as ReportType
 
     setAnalyzing(true)
     try {
@@ -65,7 +71,7 @@ export default function ReportesPage() {
         body: JSON.stringify({
           data,
           stats,
-          reportType
+          reportType: type
         })
       })
 
@@ -73,9 +79,9 @@ export default function ReportesPage() {
       if (result.success) {
         setAnalysis(prev => ({
           ...prev,
-          [reportType]: result.analysis
+          [type]: result.analysis
         }))
-        console.log('[v0] Analysis generated:', reportType)
+        console.log('[v0] Analysis generated:', type)
       }
     } catch (error) {
       console.error('[v0] Error generating analysis:', error)
