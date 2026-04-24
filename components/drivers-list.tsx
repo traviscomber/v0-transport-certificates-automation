@@ -60,13 +60,13 @@ export function DriversList({ drivers }: DriversListProps) {
     return drivers.filter(driver => {
       const searchLower = searchTerm.toLowerCase()
       
-      // Filtro de búsqueda
-      const matchesSearch = 
-        driver.rut?.toLowerCase().includes(searchLower) ||
-        driver.nombre?.toLowerCase().includes(searchLower) ||
-        driver.proveedor?.toLowerCase().includes(searchLower) ||
-        driver.rut_proveedor?.toLowerCase().includes(searchLower) ||
-        driver.patente_tracto?.toLowerCase().includes(searchLower)
+      // Filtro de búsqueda - buscar en todos los campos sin null check inicial
+      const matchesSearch = !searchTerm || 
+        (driver.rut && driver.rut.toLowerCase().includes(searchLower)) ||
+        (driver.nombre && driver.nombre.toLowerCase().includes(searchLower)) ||
+        (driver.proveedor && driver.proveedor.toLowerCase().includes(searchLower)) ||
+        (driver.rut_proveedor && driver.rut_proveedor.toLowerCase().includes(searchLower)) ||
+        (driver.patente_tracto && driver.patente_tracto.toLowerCase().includes(searchLower))
       
       // Filtro por proveedor/subcontratista
       const matchesProvider = 
