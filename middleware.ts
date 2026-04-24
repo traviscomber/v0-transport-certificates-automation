@@ -5,6 +5,11 @@ import type { NextRequest } from "next/server"
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
+  // Skip middleware for auth/login routes - they don't need session validation
+  if (path.startsWith('/api/auth/login') || path.startsWith('/login')) {
+    return NextResponse.next()
+  }
+
   // Skip API routes and static files
   if (path.startsWith('/_next') || path.includes('.')) {
     return await updateSession(request)
