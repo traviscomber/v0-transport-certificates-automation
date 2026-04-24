@@ -54,13 +54,16 @@ export function DriverCard({
     try {
       console.log('[v0] Iniciando upload:', { driverId: driver.id, tipo: uploadDocType, nombre: uploadFileName, fileSize: uploadFile.size })
       await uploadDocument(uploadDocType, uploadFileName, uploadFile)
-      console.log('[v0] Upload completado, verificando documentos...', { docsLength: documents.length })
-      // uploadDocument already calls refetch() internally, no need to call it again
+      console.log('[v0] Upload completado, documentos después de refetch:', { docsLength: documents.length })
+      
+      // Wait a moment for React state to update
+      await new Promise(resolve => setTimeout(resolve, 200))
       
       setShowUploadModal(false)
       setUploadFileName('')
       setUploadFile(null)
       setUploadDocType('Licencia de Conducir')
+      console.log('[v0] Modal cerrado, contador debería estar actualizado')
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Error desconocido al subir documento'
       console.error('[v0] Upload error:', errorMsg, error)
