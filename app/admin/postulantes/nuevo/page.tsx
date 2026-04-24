@@ -6,9 +6,9 @@ async function getCompanies() {
 
   const { data, error } = await supabase
     .from("organizations")
-    .select("id, razon_social")
+    .select("id, name")
     .eq("service_type", "TRANSPORTE")
-    .order("razon_social", { ascending: true })
+    .order("name", { ascending: true })
 
   if (error) {
     console.error("Error fetching companies:", error)
@@ -23,7 +23,7 @@ export default async function NuevoPostulantePage() {
 
   return (
     <CreateApplicantForm 
-      companies={companies.map(c => ({ id: c.id, razon_social: c.razon_social }))} 
+      companies={companies.map(c => ({ id: c.id, razon_social: c.name }))} 
     />
   )
 }
