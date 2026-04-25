@@ -94,9 +94,9 @@ export function TorreControl({ drivers, subcontractors, vehicles = [] }: Control
       {/* Header con explicación */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
-          <h1 className="text-3xl font-bold text-foreground">Centro de Operaciones — N3uralia</h1>
+          <h1 className="text-3xl font-bold text-foreground">Torre de Control</h1>
           <p className="text-sm text-muted-foreground mt-2 max-w-2xl leading-relaxed">
-            Inteligencia operacional minera en tiempo real. Monitorea el estado de equipos, mantenciones pendientes, documentos críticos, repuestos en bodega y órdenes de compra que bloquean la operación.
+            Panel de inteligencia operacional en tiempo real. Monitorea el cumplimiento normativo, identifica cuellos de botella y toma decisiones informadas sobre tu flota.
           </p>
         </div>
       </div>
@@ -104,19 +104,19 @@ export function TorreControl({ drivers, subcontractors, vehicles = [] }: Control
       {/* Summary Metrics con explicaciones */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold text-foreground">Estado Operacional de la Mina</h2>
+          <h2 className="text-lg font-semibold text-foreground">Estado de tu Flota</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Total Entities */}
           <Card className="hover:border-slate-500 transition-colors">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium">Activos Totales</CardTitle>
+                <CardTitle className="text-sm font-medium">Recursos Totales</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{summary.total}</div>
-              <p className="text-xs text-muted-foreground mt-1">Equipos + Personal + Documentos</p>
+              <p className="text-xs text-muted-foreground mt-1">Conductores + Subcontratistas + Vehículos</p>
             </CardContent>
           </Card>
 
@@ -124,12 +124,12 @@ export function TorreControl({ drivers, subcontractors, vehicles = [] }: Control
           <Card className="border-green-200 bg-green-50/50 hover:border-green-300 transition-colors">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-green-900">Operativos</CardTitle>
+                <CardTitle className="text-sm font-medium text-green-900">Operacionales</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-700">{summary.ok}</div>
-              <p className="text-xs text-green-600 mt-1">{summary.compliancePercentage}% en cumplimiento</p>
+              <p className="text-xs text-green-600 mt-1">{summary.compliancePercentage}% cumplimiento</p>
             </CardContent>
           </Card>
 
@@ -137,12 +137,12 @@ export function TorreControl({ drivers, subcontractors, vehicles = [] }: Control
           <Card className="border-yellow-200 bg-yellow-50/50 hover:border-yellow-300 transition-colors">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-yellow-900">Atención Requerida</CardTitle>
+                <CardTitle className="text-sm font-medium text-yellow-900">En Riesgo</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-yellow-700">{summary.risk}</div>
-              <p className="text-xs text-yellow-600 mt-1">Mantenciones, documentos, repuestos</p>
+              <p className="text-xs text-yellow-600 mt-1">Vencimientos próximos</p>
             </CardContent>
           </Card>
 

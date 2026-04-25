@@ -18,7 +18,7 @@ export function FloatingChatWidget() {
     {
       id: '1',
       type: 'bot',
-      content: '¡Hola! Soy tu Asistente IA Operacional de N3uralia. Estoy aquí para ayudarte con preguntas sobre tu operación minera. ¿En qué puedo asistirte?',
+      content: '¡Hola! Soy el asistente de DocuFleet. Me gustaría conocerte primero para brindarte la mejor atención posible.',
       timestamp: new Date(),
     },
   ])
@@ -120,8 +120,8 @@ export function FloatingChatWidget() {
       {/* Header */}
       <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-4 flex items-center justify-between">
         <div>
-          <h3 className="text-white font-bold text-lg">N3uralia IA Operacional</h3>
-          <p className="text-orange-100 text-xs">Inteligencia minera 24/7</p>
+          <h3 className="text-white font-bold text-lg">DocuFleet Chat</h3>
+          <p className="text-orange-100 text-xs">Respuestas instantáneas 24/7</p>
         </div>
         <button
           onClick={() => setIsOpen(false)}
@@ -202,34 +202,6 @@ export function FloatingChatWidget() {
         </div>
       ) : (
         <form onSubmit={handleSendMessage} className="border-t border-slate-700 p-4 bg-slate-900 space-y-3">
-          {/* Suggested Questions */}
-          {messages.length === 1 && (
-            <div className="space-y-2 mb-3">
-              <p className="text-xs text-slate-400 font-semibold">Ejemplos de preguntas:</p>
-              <div className="grid grid-cols-1 gap-2">
-                {[
-                  '¿Qué equipos tienen mayor riesgo de falla?',
-                  '¿Qué documentos vencen en 30 días?',
-                  '¿Qué repuestos están bajo stock?',
-                  '¿Qué mantenciones están atrasadas?',
-                  '¿Qué órdenes de compra bloquean la operación?',
-                  'Resume el estado operacional de hoy'
-                ].map((example, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      setInput(example)
-                    }}
-                    className="text-left text-xs px-2 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded transition-colors"
-                  >
-                    {example}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          
           <div className="flex gap-2">
             <input
               type="text"

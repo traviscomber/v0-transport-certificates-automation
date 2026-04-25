@@ -40,8 +40,8 @@ export function Header() {
               <TruckIcon />
             </div>
             <div className="flex flex-col">
-              <span className="text-base sm:text-xl font-bold text-foreground leading-tight">N3uralia ERP</span>
-              <span className="text-[8px] sm:text-[10px] text-muted-foreground leading-tight">by SegurIA</span>
+              <span className="text-base sm:text-xl font-bold text-foreground leading-tight">DocuFleet</span>
+              <span className="text-[8px] sm:text-[10px] text-muted-foreground leading-tight">by Segur-ia</span>
             </div>
           </div>
 
