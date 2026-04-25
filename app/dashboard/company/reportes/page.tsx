@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { HelpBox } from '@/components/ui/help-box'
 import {
   Download,
+  FileText,
   BarChart3,
   TrendingUp,
   AlertCircle,
