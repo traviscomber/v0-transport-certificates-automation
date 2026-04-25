@@ -3,17 +3,25 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Users, FileText, BarChart3, LogOut, Zap, AlertTriangle, Users2 } from 'lucide-react'
+import { LayoutDashboard, Zap, Wrench, Package, Shield, FileText, ShoppingCart, DollarSign, BarChart3, LogOut, AlertTriangle, Brain, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const navItems = [
-  { href: '/dashboard/company', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/company/equipo', label: 'Gestión de Equipo', icon: Users2 },
-  { href: '/dashboard/company/subcontratistas', label: 'Subcontratistas', icon: Zap },
-  { href: '/dashboard/company/conductores', label: 'Conductores', icon: Users },
+  { href: '/dashboard/company', label: 'Centro de Operaciones', icon: LayoutDashboard },
+  // Operación Crítica
+  { href: '/dashboard/company/produccion', label: 'Producción', icon: Zap },
+  { href: '/dashboard/company/mantencion', label: 'Mantención', icon: Wrench },
+  { href: '/dashboard/company/bodega', label: 'Bodega', icon: Package },
+  { href: '/dashboard/company/hse', label: 'HSE / Seguridad', icon: Shield },
   { href: '/dashboard/company/documentos', label: 'Documentos', icon: FileText },
+  // Gestión Empresarial
+  { href: '/dashboard/company/compras', label: 'Compras', icon: ShoppingCart },
+  { href: '/dashboard/company/finanzas', label: 'Finanzas', icon: DollarSign },
+  { href: '/dashboard/company/reportes', label: 'Reportes IA', icon: BarChart3 },
+  { href: '/dashboard/company/usuarios', label: 'Usuarios', icon: Users },
+  // Herramientas
   { href: '/dashboard/company/alertas', label: 'Alertas', icon: AlertTriangle },
-  { href: '/dashboard/company/reportes', label: 'Reportes', icon: BarChart3 },
+  { href: '/dashboard/company/asistente', label: 'Asistente IA', icon: Brain },
 ]
 
 export default function CompanyLayout({ children }: { children: React.ReactNode }) {
@@ -34,7 +42,8 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
       {/* Sidebar */}
       <div className="w-64 border-r bg-card">
         <div className="p-6 border-b">
-          <h2 className="text-lg font-bold">Portal de Empresa</h2>
+          <h2 className="text-lg font-bold">N3uralia ERP Minería</h2>
+          <p className="text-xs text-muted-foreground mt-1">Cía. Minera La Patagua</p>
         </div>
 
         <nav className="p-4 space-y-2">

@@ -9,20 +9,22 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-context'
 import {
   LayoutDashboard,
+  Zap,
+  Wrench,
+  Package,
+  Shield,
   FileText,
-  Users,
-  Truck,
-  Bell,
+  ShoppingCart,
+  DollarSign,
   BarChart3,
+  Users,
+  Bell,
   Settings,
   LogOut,
   Menu,
   X,
   Building2,
-  Shield,
-  Upload,
-  CheckCircle,
-  AlertTriangle,
+  Brain,
 } from 'lucide-react'
 
 interface NavItem {
@@ -33,16 +35,23 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
-  { label: 'Certificados', href: '/certificates', icon: <FileText className="h-5 w-5" /> },
-  { label: 'Conductores', href: '/drivers-management', icon: <Users className="h-5 w-5" />, roles: ['admin', 'dispatcher', 'transportista'] },
-  { label: 'Vehiculos', href: '/vehicles-management', icon: <Truck className="h-5 w-5" />, roles: ['admin', 'dispatcher', 'transportista'] },
-  { label: 'Organizaciones', href: '/organizations', icon: <Building2 className="h-5 w-5" />, roles: ['admin', 'mandante'] },
-  { label: 'Subir Documentos', href: '/upload', icon: <Upload className="h-5 w-5" /> },
-  { label: 'Portal OCR', href: '/ocr', icon: <CheckCircle className="h-5 w-5" /> },
-  { label: 'Alertas', href: '/alerts', icon: <Bell className="h-5 w-5" /> },
-  { label: 'Reportes', href: '/reports', icon: <BarChart3 className="h-5 w-5" /> },
-  { label: 'Compliance', href: '/compliance', icon: <Shield className="h-5 w-5" />, roles: ['admin', 'mandante'] },
+  { label: 'Centro de Operaciones', href: '/dashboard/company', icon: <LayoutDashboard className="h-5 w-5" /> },
+  
+  // Operación Crítica
+  { label: 'Producción', href: '/dashboard/company/produccion', icon: <Zap className="h-5 w-5" /> },
+  { label: 'Mantención', href: '/dashboard/company/mantencion', icon: <Wrench className="h-5 w-5" /> },
+  { label: 'Bodega', href: '/dashboard/company/bodega', icon: <Package className="h-5 w-5" /> },
+  { label: 'HSE / Seguridad', href: '/dashboard/company/hse', icon: <Shield className="h-5 w-5" /> },
+  { label: 'Documentos', href: '/dashboard/company/documentos', icon: <FileText className="h-5 w-5" /> },
+  
+  // Gestión Empresarial
+  { label: 'Compras', href: '/dashboard/company/compras', icon: <ShoppingCart className="h-5 w-5" /> },
+  { label: 'Finanzas', href: '/dashboard/company/finanzas', icon: <DollarSign className="h-5 w-5" /> },
+  { label: 'Reportes', href: '/dashboard/company/reportes', icon: <BarChart3 className="h-5 w-5" /> },
+  { label: 'Usuarios', href: '/dashboard/company/usuarios', icon: <Users className="h-5 w-5" /> },
+  
+  { label: 'Alertas', href: '/dashboard/company/alertas', icon: <Bell className="h-5 w-5" /> },
+  { label: 'Asistente IA', href: '/dashboard/company/asistente', icon: <Brain className="h-5 w-5" /> },
 ]
 
 const adminItems: NavItem[] = [
