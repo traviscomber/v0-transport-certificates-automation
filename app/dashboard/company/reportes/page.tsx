@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { HelpBox } from '@/components/ui/help-box'
 import {
   Download,
-  FileText,
   BarChart3,
   TrendingUp,
   AlertCircle,
@@ -117,9 +116,9 @@ export default function ReportesPage() {
   return (
     <div className="space-y-6">
       <HelpBox
-        icon={FileText}
         title="Reportes y Análisis"
         description="Genera reportes profesionales impulsados por IA. Obtén insights sobre cumplimiento, riesgos y alertas críticas."
+        variant="info"
       />
 
       {/* Key Metrics */}
