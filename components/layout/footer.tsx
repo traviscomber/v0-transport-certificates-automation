@@ -19,64 +19,63 @@ export function Footer() {
                 <TruckIcon />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-bold text-foreground leading-tight">DocuFleet</span>
-                <span className="text-xs text-muted-foreground leading-tight">by Segur-ia</span>
+                <span className="text-xl font-bold text-foreground leading-tight">N3uralia ERP Minería</span>
+                <span className="text-xs text-muted-foreground leading-tight">by SegurIA</span>
               </div>
             </div>
             <p className="text-muted-foreground mb-4 max-w-md">
-              La plataforma lider en gestion documental y certificados para flotas de transporte en Chile.
-              Automatiza el cumplimiento normativo de tu flota.
+              Plataforma integral para operaciones mineras chilenas. Producción, mantención, bodega, HSE, documentos, compras, finanzas e inteligencia operacional conectadas en una sola fuente de verdad.
             </p>
-            <div className="text-sm text-muted-foreground">© 2025 DocuFleet by Segur-ia. Todos los derechos reservados.</div>
+            <div className="text-sm text-muted-foreground">N3uralia ERP Minería © 2026 — Desarrollado por SegurIA para Cía. Minera La Patagua.</div>
           </div>
 
           <div>
-            <h3 className="font-semibold text-foreground mb-4">Producto</h3>
+            <h3 className="font-semibold text-foreground mb-4">Operación</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <a href="#" className="hover:text-foreground transition-colors">
-                  Características
+                  Producción
                 </a>
               </li>
               <li>
                 <a href="#" className="hover:text-foreground transition-colors">
-                  Precios
+                  Mantención
                 </a>
               </li>
               <li>
                 <a href="#" className="hover:text-foreground transition-colors">
-                  Integraciones
+                  Bodega
                 </a>
               </li>
               <li>
                 <a href="#" className="hover:text-foreground transition-colors">
-                  API
+                  HSE / Seguridad
                 </a>
               </li>
             </ul>
           </div>
 
           <div>
-            <h3 className="font-semibold text-foreground mb-4">Soporte</h3>
+            <h3 className="font-semibold text-foreground mb-4">Gestión</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <a href="#" className="hover:text-foreground transition-colors">
-                  Centro de Ayuda
+                  Compras
                 </a>
               </li>
               <li>
                 <a href="#" className="hover:text-foreground transition-colors">
-                  Documentación
+                  Finanzas
                 </a>
               </li>
               <li>
                 <a href="#" className="hover:text-foreground transition-colors">
-                  Contacto
+                  Reportes
                 </a>
               </li>
               <li>
                 <a href="#" className="hover:text-foreground transition-colors">
-                  Estado del Sistema
+                  IA Operacional
                 </a>
               </li>
             </ul>
@@ -86,20 +85,19 @@ export function Footer() {
         <div className="border-t border-border mt-8 pt-8">
           <div className="text-center text-sm text-muted-foreground mb-4">
             <p>
-              Desarrollado con ❤️ para revolucionar el transporte chileno. Cumplimos con todas las normativas de protección
-              de datos de Chile.
+              Una plataforma construida para ordenar, controlar y escalar la operación minera de La Patagua con trazabilidad, seguridad e inteligencia operacional.
             </p>
           </div>
           <div className="text-center text-sm">
             <p className="text-muted-foreground">
-              <span className="font-semibold text-foreground">DocuFleet</span> powered by{' '}
+              <span className="font-semibold text-foreground">N3uralia ERP Minería</span> by{' '}
               <a 
-                href="https://n3uralia.com" 
+                href="https://seguria.cl" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="font-semibold text-primary hover:text-primary/80 transition-colors"
               >
-                n3uralia
+                SegurIA
               </a>
             </p>
           </div>
