@@ -53,17 +53,17 @@ export async function POST(request: Request) {
       }
 
       try {
-        // Check if profile already exists first
+        // Check if profile already exists by email (not ID) to prevent duplicate email constraint errors
         const { data: existing } = await supabase
           .from('profiles')
           .select('id')
-          .eq('id', matchingUser.id)
-          .single()
+          .eq('email', matchingUser.email)
+          .maybeSingle()
 
         if (existing) {
-          console.log(`[v0] Profile already exists for ${rut}`)
+          console.log(`[v0] Profile already exists for email ${matchingUser.email} (RUT: ${rut})`)
           created++
-          results.push({ rut, status: 'SUCCESS', userId: matchingUser.id, note: 'already_exists' })
+          results.push({ rut, status: 'SUCCESS', userId: existing.id, note: 'already_exists' })
           continue
         }
 
