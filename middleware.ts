@@ -40,8 +40,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(newPath, request.url), { status: 308 })
   }
 
-  // For other routes, just update the session
-  return await updateSession(request)
+  // For other routes, just continue
+  return NextResponse.next()
 }
 
 export const config = {
