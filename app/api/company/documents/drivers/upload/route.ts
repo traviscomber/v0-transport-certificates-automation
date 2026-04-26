@@ -143,6 +143,8 @@ export async function POST(request: NextRequest) {
       
       console.log('[v0] Final public URL for storage:', { filePath, publicUrl, urlLength: publicUrl?.length })
 
+      console.log('[v0] ==================== ABOUT TO CREATE DOC OBJECT ====================')
+      
       // Crear objeto de documento con la URL completa
       const doc = {
         driver_id: String(driverId),  // Ensure it's a string
