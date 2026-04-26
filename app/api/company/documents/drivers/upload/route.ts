@@ -73,13 +73,25 @@ export async function POST(request: NextRequest) {
     // Buscar en conductores table para obtener el driver_id correcto
     const { data: allConductores, error: fetchError } = await adminClient
       .from('conductores')
-      .select('id, rut, nombres, apellidos')
+      .select('id, rut, nombres')
       .limit(1000)
 
-    if (fetchError || !allConductores) {
-      console.error('[v0] Error fetching conductores:', fetchError)
+    if (fetchError) {
+      console.error('[v0] Error fetching conductores:', {
+        code: fetchError.code,
+        message: fetchError.message,
+        details: fetchError.details
+      })
       return NextResponse.json(
-        { error: 'Error al buscar conductores' },
+        { error: `Error al buscar conductores: ${fetchError.message}` },
+        { status: 500 }
+      )
+    }
+
+    if (!allConductores) {
+      console.error('[v0] No data returned from conductores query')
+      return NextResponse.json(
+        { error: 'No conductores data returned' },
         { status: 500 }
       )
     }
