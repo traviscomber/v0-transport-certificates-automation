@@ -145,12 +145,14 @@ export async function POST(request: NextRequest) {
 
       // Crear objeto de documento con la URL completa
       const doc = {
-        driver_id: driverId,
+        driver_id: String(driverId),  // Ensure it's a string
         file_name: file.name,
         document_type: category,
         file_url: publicUrl,  // Guardar la URL completa
         status: 'pendiente'
       }
+
+      console.log('[v0] Document object to insert:', doc)
 
       // Guardar en la base de datos tabla `driver_documents`
       const { error: saveError, data: savedDocs } = await adminClient
@@ -164,7 +166,7 @@ export async function POST(request: NextRequest) {
         fileName: file.name,
         hasError: !!saveError,
         savedDocsArray: Array.isArray(savedDocs) && savedDocs.length > 0,
-        arrayLength: Array.isArray(savedDocs) ? savedDocs.length : 0,
+        arrayLength: Array.isArray(savedDocs) ? savedDocs.length : 'not_array',
         errorCode: saveError?.code,
         errorMessage: saveError?.message,
         errorDetails: saveError?.details,
@@ -184,7 +186,11 @@ export async function POST(request: NextRequest) {
         console.log('[v0] ✅ DOCUMENTO INSERTADO en database:', { id: savedDoc.id, fileName: file.name, driverId })
         uploadedDocs.push(savedDoc)
       } else {
-        console.warn('[v0] ⚠️ INSERT returned no error but no data in array')
+        console.warn('[v0] ⚠️ INSERT returned no error but savedDocs is:', {
+          type: typeof savedDocs,
+          isArray: Array.isArray(savedDocs),
+          value: savedDocs
+        })
       }
     }
 
