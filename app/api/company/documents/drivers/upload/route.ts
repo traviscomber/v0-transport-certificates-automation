@@ -70,75 +70,33 @@ export async function POST(request: NextRequest) {
     const normalizedInputRut = normalizeRUT(driverRut)
     console.log('[v0] Searching for driver with RUT:', driverRut, '(normalized:', normalizedInputRut, ')')
     
-    // Usar createClient regular que respeta RLS policies
-    const regularClient = await createClient()
-    
-    // Buscar el ID del conductor por RUT
-    const { data: allConductores, error: fetchError } = await regularClient
-      .from('conductores')
-      .select('id, rut, nombres')
-    
-    if (fetchError || !allConductores) {
-      console.error('[v0] Error fetching conductores:', fetchError)
-      return NextResponse.json(
-        { error: 'Error al buscar conductores' },
-        { status: 500 }
-      )
-    }
-
-    console.log('[v0] Total conductores in DB:', allConductores.length)
-
-    // Buscar coincidencia normalizando ambos lados
+    // ONLY use local allDriversData (same as GET endpoint)
     let drivers = null
-    for (const conductor of allConductores) {
-      const dbRutNormalized = normalizeRUT(conductor.rut)
-      if (dbRutNormalized === normalizedInputRut) {
-        drivers = conductor
-        console.log('[v0] Found driver in DB:', { 
-          input: driverRut, 
-          stored: conductor.rut, 
-          normalized: normalizedInputRut, 
-          match: true 
+    for (const localDriver of allDriversData) {
+      const localRutNormalized = normalizeRUT(localDriver.rut)
+      if (localRutNormalized === normalizedInputRut) {
+        drivers = {
+          id: localDriver.id,
+          rut: localDriver.rut,
+          nombres: localDriver.nombres,
+          apellidos: localDriver.apellidos
+        }
+        console.log('[v0] Found driver in local data:', { 
+          driverId: drivers.id,
+          rut: drivers.rut, 
+          name: `${drivers.nombres} ${drivers.apellidos}`
         })
         break
       }
     }
 
-    // Si no encuentra en Supabase, buscar en datos locales como fallback
-    if (!drivers?.id) {
-      console.log('[v0] Not found in Supabase, searching in local data...')
-      for (const localDriver of allDriversData) {
-        const localRutNormalized = normalizeRUT(localDriver.rut)
-        if (localRutNormalized === normalizedInputRut) {
-          drivers = {
-            id: localDriver.id || `local_${localDriver.rut}`,
-            rut: localDriver.rut,
-            nombres: localDriver.nombres
-          }
-          console.log('[v0] Found driver in local data:', { 
-            input: driverRut, 
-            stored: localDriver.rut, 
-            normalized: normalizedInputRut, 
-            source: 'local'
-          })
-          break
-        }
-      }
-    }
-
-    // Si aún no encuentra, retornar error con ejemplos
+    // Si no encuentra, retornar error
     if (!drivers?.id) {
       console.error('[v0] Driver not found for RUT:', driverRut)
-      const sampleRuts = allDriversData.slice(0, 5).map(d => {
-        const norm = normalizeRUT(d.rut)
-        return `${d.rut} (normalized: ${norm}) - ${d.nombres}`
-      })
-      console.log('[v0] Sample RUT values available:', sampleRuts)
-      
       return NextResponse.json(
         { 
-          error: `Conductor con RUT ${driverRut} no encontrado.`,
-          availableSample: sampleRuts
+          error: `Conductor con RUT ${driverRut} no encontrado en el sistema.`,
+          details: 'Verify the RUT is correct and exists in the system.'
         },
         { status: 404 }
       )

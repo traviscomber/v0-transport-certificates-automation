@@ -33,29 +33,24 @@ export async function GET(request: NextRequest) {
     const driver = allDriversData.find(d => normalizeRUT(d.rut) === normalizedInputRut)
     
     if (driver) {
-      driverId = driver.id || `local_${driver.rut}`
-      console.log('[v0] Found driver in local data:', { driverId, rut: driver.rut })
-    } else {
-      // Fallback: intentar buscar en conductores table
-      const { data: drivers } = await adminClient
-        .from('conductores')
-        .select('id, rut')
-        .like('rut', `%${normalizedInputRut}%`)
-        .limit(1)
-      
-      if (drivers?.length) {
-        driverId = drivers[0].id
-        console.log('[v0] Found driver in conductores table:', { driverId, rut: drivers[0].rut })
-      }
+      driverId = driver.id
+      console.log('[v0] Found driver in local data:', { driverId, driverName: `${driver.nombres} ${driver.apellidos}`, rut: driver.rut })
     }
     
-    // Si aún no encuentra el driver
+    // Si no encuentra el driver en datos locales, retornar documentos vacíos
     if (!driverId) {
       console.warn('[v0] Driver not found for RUT:', rut)
       return NextResponse.json({
         success: true,
         driver_rut: rut,
-        documents: []
+        documents: [],
+        message: 'Driver not found in system'
+      }, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       })
     }
 
