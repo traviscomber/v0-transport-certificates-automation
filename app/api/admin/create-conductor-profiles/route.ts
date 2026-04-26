@@ -53,17 +53,31 @@ export async function POST(request: Request) {
       }
 
       try {
-        // Skip if a profile already exists for this RUT (by rut OR by email)
-        const { data: existing } = await supabase
+        // Skip if a profile already exists for this RUT
+        const { data: existingByRut } = await supabase
           .from('profiles')
           .select('id, email')
-          .or(`rut.eq.${rut},email.eq.${matchingUser.email}`)
+          .eq('rut', rut)
           .maybeSingle()
 
-        if (existing) {
-          console.log(`[v0] Profile already exists for RUT ${rut} (${existing.email}) — skipping`)
+        if (existingByRut) {
+          console.log(`[v0] Profile already exists for RUT ${rut} (${existingByRut.email}) — skipping`)
           created++
-          results.push({ rut, status: 'SKIPPED', reason: 'profile_already_exists', existingEmail: existing.email })
+          results.push({ rut, status: 'SKIPPED', reason: 'profile_already_exists', existingEmail: existingByRut.email })
+          continue
+        }
+
+        // Also check by email to catch mismatched RUT/email pairs
+        const { data: existingByEmail } = await supabase
+          .from('profiles')
+          .select('id, rut')
+          .eq('email', matchingUser.email)
+          .maybeSingle()
+
+        if (existingByEmail) {
+          console.log(`[v0] Profile already exists for email ${matchingUser.email} (RUT: ${existingByEmail.rut}) — skipping ${rut}`)
+          created++
+          results.push({ rut, status: 'SKIPPED', reason: 'email_already_in_use', existingRut: existingByEmail.rut })
           continue
         }
 
