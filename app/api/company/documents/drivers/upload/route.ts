@@ -241,19 +241,6 @@ export async function POST(request: NextRequest) {
       message: `${uploadedDocs.length} documento(s) subido(s) exitosamente`,
       documents: uploadedDocs
     })
-
-      await triggerDocumentUploadedAlert(
-        driverId,
-        uploadedDocs[0]?.file_name || 'Documento',
-        driverInfo?.nombres || 'Un conductor'
-      )
-    }
-
-    return NextResponse.json({
-      success: true,
-      documents: uploadedDocs,
-      message: `${uploadedDocs.length} documento(s) subido(s) exitosamente`
-    })
   } catch (error) {
     console.error('[v0] Upload error:', error)
     return NextResponse.json(
