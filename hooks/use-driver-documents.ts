@@ -77,14 +77,14 @@ export function useDriverDocuments(driverRut: string) {
     try {
       console.log('[v0] Uploading document:', { driverRut, tipo, file: file.name, expirationDate })
       const formData = new FormData()
-      formData.append('files', file)
+      formData.append('file', file)
       formData.append('driverRut', driverRut)
-      formData.append('category', tipo)
+      formData.append('documentType', tipo)
       if (expirationDate) {
         formData.append('expiration_date', expirationDate)
       }
 
-      const response = await fetch('/api/company/documents/drivers/upload', {
+      const response = await fetch('/api/drivers/upload-doc', {
         method: 'POST',
         body: formData,
       })
