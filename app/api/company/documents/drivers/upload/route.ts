@@ -230,6 +230,7 @@ export async function POST(request: NextRequest) {
 
     // Debug: Verificar qué se guardó en la BD
     console.log('[v0] Upload completed successfully with', uploadedDocs.length, 'documents')
+    console.log('[v0] ========== DOCUMENT UPLOAD END ==========')
 
     return NextResponse.json({
       success: true,
