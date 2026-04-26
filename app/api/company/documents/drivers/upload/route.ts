@@ -51,9 +51,6 @@ export async function POST(request: NextRequest) {
     } catch (bucketError) {
       console.log('[v0] Bucket check/create result:', bucketError)
     }
-    } catch (bucketError) {
-      console.log('[v0] Bucket check/create attempt (may already exist):', bucketError)
-    }
 
     // Normalizar RUT igual que en el componente: remover puntos/guiones, convertir a mayúsculas
     const normalizeRUT = (rut: string | undefined) => {
