@@ -159,20 +159,31 @@ export async function POST(request: NextRequest) {
         .select()
         .single()
 
-      console.log('[v0] Save attempt to driver_documents table:', {
+      console.log('[v0] ✅ INSERT attempt result:', {
         driverId,
         documentType: category,
         fileName: file.name,
-        error: saveError?.message,
-        saved: !!savedDoc
+        hasError: !!saveError,
+        hasSavedDoc: !!savedDoc,
+        errorCode: saveError?.code,
+        errorMessage: saveError?.message,
+        errorDetails: saveError?.details,
+        savedDocId: savedDoc?.id
       })
 
       if (saveError) {
-        console.error('[v0] ❌ ERROR saving document to database:', saveError.message, saveError.details)
+        console.error('[v0] ❌ ERROR saving document to database:', {
+          code: saveError.code,
+          message: saveError.message,
+          details: saveError.details,
+          hint: saveError.hint
+        })
         // Continue anyway - file is in storage
       } else if (savedDoc) {
         console.log('[v0] ✅ DOCUMENTO INSERTADO en database:', { id: savedDoc.id, fileName: file.name, driverId })
         uploadedDocs.push(savedDoc)
+      } else {
+        console.warn('[v0] ⚠️ INSERT returned no error but also no data (NULL result)')
       }
     }
 
