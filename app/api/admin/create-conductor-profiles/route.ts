@@ -42,65 +42,43 @@ export async function POST(request: Request) {
 
     // Create profiles for RUTs that have auth users
     for (const rut of conductoresRuts) {
-      // Find matching email for this RUT
-      const matchingUser = users?.find(u => u.email?.includes(rut.split('-')[0]))
+      // Find matching user by checking their stored RUT in raw_user_meta_data
+      const matchingUser = users?.find(u => u.user_metadata?.rut === rut)
 
       if (!matchingUser) {
-        console.log(`[v0] No auth user found for RUT ${rut}`)
+        console.log(`[v0] No auth user found with RUT ${rut}`)
         failed++
         results.push({ rut, status: 'FAILED', reason: 'No matching auth user' })
         continue
       }
 
+      console.log(`[v0] Found auth user for ${rut}: ${matchingUser.email}`)
+
       try {
-        // Skip if a profile already exists for this RUT
-        const { data: existingByRut } = await supabase
-          .from('profiles')
-          .select('id, email')
-          .eq('rut', rut)
-          .maybeSingle()
-
-        if (existingByRut) {
-          console.log(`[v0] Profile already exists for RUT ${rut} (${existingByRut.email}) — skipping`)
-          created++
-          results.push({ rut, status: 'SKIPPED', reason: 'profile_already_exists', existingEmail: existingByRut.email })
-          continue
-        }
-
-        // Also check by email to catch mismatched RUT/email pairs
-        const { data: existingByEmail } = await supabase
-          .from('profiles')
-          .select('id, rut')
-          .eq('email', matchingUser.email)
-          .maybeSingle()
-
-        if (existingByEmail) {
-          console.log(`[v0] Profile already exists for email ${matchingUser.email} (RUT: ${existingByEmail.rut}) — skipping ${rut}`)
-          created++
-          results.push({ rut, status: 'SKIPPED', reason: 'email_already_in_use', existingRut: existingByEmail.rut })
-          continue
-        }
-
-        // Safe to insert — no existing profile for this RUT or email
+        // Upsert profile — if email exists, update it; if not, create it
+        // This handles both new profiles and updates to existing ones
         const { error } = await supabase
           .from('profiles')
-          .insert({
-            id: matchingUser.id,
-            email: matchingUser.email,
-            full_name: matchingUser.user_metadata?.full_name || 'Unknown',
-            rut: rut,
-            phone: matchingUser.user_metadata?.phone || null,
-            role: 'conductor',
-            is_active: true,
-            organization_id: org.id,
-          })
+          .upsert(
+            {
+              id: matchingUser.id,
+              email: matchingUser.email,
+              full_name: matchingUser.user_metadata?.full_name || 'Unknown',
+              rut: rut,
+              phone: matchingUser.user_metadata?.phone || null,
+              role: 'conductor',
+              is_active: true,
+              organization_id: org.id,
+            },
+            { onConflict: 'email', ignoreDuplicates: false }
+          )
 
         if (error) {
           console.error(`[v0] Error for ${rut} : ${error.message}`)
           failed++
           results.push({ rut, status: 'FAILED', reason: error.message })
         } else {
-          console.log(`[v0] Profile created for ${rut}`)
+          console.log(`[v0] Profile upserted for ${rut}`)
           created++
           results.push({ rut, status: 'SUCCESS', userId: matchingUser.id })
         }
