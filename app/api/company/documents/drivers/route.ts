@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { allDriversData } from '@/lib/data/all-drivers'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,29 +28,13 @@ export async function GET(request: NextRequest) {
     const normalizedInputRut = normalizeRUT(rut)
     console.log('[v0] Normalized input RUT:', { input: rut, normalized: normalizedInputRut })
 
-    // Buscar en la tabla conductores para obtener el driver_id correcto
-    const { data: drivers, error: driverError } = await adminClient
-      .from('conductores')
-      .select('id, rut')
-      .limit(1000)
-
-    if (driverError) {
-      console.error('[v0] Error fetching conductores:', driverError)
-      return NextResponse.json(
-        { error: 'Error fetching drivers' },
-        { status: 500 }
-      )
-    }
-
-    // Buscar coincidencia normalizando ambos lados
+    // Buscar en datos locales allDriversData
     let driverId = null
-    for (const conductor of drivers || []) {
-      const dbRutNormalized = normalizeRUT(conductor.rut)
-      if (dbRutNormalized === normalizedInputRut) {
-        driverId = conductor.id
-        console.log('[v0] Found driver in conductores table:', { id: driverId, rut: conductor.rut })
-        break
-      }
+    const driver = allDriversData.find(d => normalizeRUT(d.rut) === normalizedInputRut)
+    
+    if (driver) {
+      driverId = driver.id
+      console.log('[v0] Found driver in local data:', { driverId, driverName: `${driver.nombres} ${driver.apellidos}`, rut: driver.rut })
     }
 
     if (!driverId) {

@@ -70,44 +70,16 @@ export async function POST(request: NextRequest) {
     const normalizedInputRut = normalizeRUT(driverRut)
     console.log('[v0] Searching for driver with RUT:', driverRut, '(normalized:', normalizedInputRut, ')')
 
-    // Buscar en conductores table para obtener el driver_id correcto
-    const { data: allConductores, error: fetchError } = await adminClient
-      .from('conductores')
-      .select('id, rut, nombres')
-      .limit(1000)
-
-    if (fetchError) {
-      console.error('[v0] Error fetching conductores:', {
-        code: fetchError.code,
-        message: fetchError.message,
-        details: fetchError.details
-      })
-      return NextResponse.json(
-        { error: `Error al buscar conductores: ${fetchError.message}` },
-        { status: 500 }
-      )
-    }
-
-    if (!allConductores) {
-      console.error('[v0] No data returned from conductores query')
-      return NextResponse.json(
-        { error: 'No conductores data returned' },
-        { status: 500 }
-      )
-    }
-
-    console.log('[v0] Total conductores in DB:', allConductores.length)
-
-    // Buscar coincidencia normalizando ambos lados
+    // Buscar en datos locales allDriversData
     let drivers = null
-    for (const conductor of allConductores) {
-      const dbRutNormalized = normalizeRUT(conductor.rut)
-      if (dbRutNormalized === normalizedInputRut) {
-        drivers = conductor
-        console.log('[v0] Found driver in conductores table:', { 
+    for (const localDriver of allDriversData) {
+      const localRutNormalized = normalizeRUT(localDriver.rut)
+      if (localRutNormalized === normalizedInputRut) {
+        drivers = localDriver
+        console.log('[v0] Found driver in local data:', { 
           id: drivers.id,
-          rut: conductor.rut,
-          name: `${conductor.nombres} ${conductor.apellidos}`
+          rut: localDriver.rut,
+          name: `${localDriver.nombres} ${localDriver.apellidos}`
         })
         break
       }
