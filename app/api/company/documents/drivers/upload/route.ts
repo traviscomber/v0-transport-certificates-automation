@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       console.log('[v0] Bucket check/create result:', bucketError)
     }
 
-    // Normalizar RUT igual que en el componente: remover puntos/guiones, convertir a mayúsculas
+    // Normalizar RUT
     const normalizeRUT = (rut: string | undefined) => {
       if (!rut) return ''
       return rut.trim().replace(/[.-]/g, '').toUpperCase()
@@ -69,22 +69,33 @@ export async function POST(request: NextRequest) {
     
     const normalizedInputRut = normalizeRUT(driverRut)
     console.log('[v0] Searching for driver with RUT:', driverRut, '(normalized:', normalizedInputRut, ')')
-    
-    // ONLY use local allDriversData (same as GET endpoint)
+
+    // Buscar en conductores table para obtener el driver_id correcto
+    const { data: allConductores, error: fetchError } = await adminClient
+      .from('conductores')
+      .select('id, rut, nombres, apellidos')
+      .limit(1000)
+
+    if (fetchError || !allConductores) {
+      console.error('[v0] Error fetching conductores:', fetchError)
+      return NextResponse.json(
+        { error: 'Error al buscar conductores' },
+        { status: 500 }
+      )
+    }
+
+    console.log('[v0] Total conductores in DB:', allConductores.length)
+
+    // Buscar coincidencia normalizando ambos lados
     let drivers = null
-    for (const localDriver of allDriversData) {
-      const localRutNormalized = normalizeRUT(localDriver.rut)
-      if (localRutNormalized === normalizedInputRut) {
-        drivers = {
-          id: localDriver.id,
-          rut: localDriver.rut,
-          nombres: localDriver.nombres,
-          apellidos: localDriver.apellidos
-        }
-        console.log('[v0] Found driver in local data:', { 
-          driverId: drivers.id,
-          rut: drivers.rut, 
-          name: `${drivers.nombres} ${drivers.apellidos}`
+    for (const conductor of allConductores) {
+      const dbRutNormalized = normalizeRUT(conductor.rut)
+      if (dbRutNormalized === normalizedInputRut) {
+        drivers = conductor
+        console.log('[v0] Found driver in conductores table:', { 
+          id: drivers.id,
+          rut: conductor.rut,
+          name: `${conductor.nombres} ${conductor.apellidos}`
         })
         break
       }
@@ -95,8 +106,7 @@ export async function POST(request: NextRequest) {
       console.error('[v0] Driver not found for RUT:', driverRut)
       return NextResponse.json(
         { 
-          error: `Conductor con RUT ${driverRut} no encontrado en el sistema.`,
-          details: 'Verify the RUT is correct and exists in the system.'
+          error: `Conductor con RUT ${driverRut} no encontrado en el sistema.`
         },
         { status: 404 }
       )

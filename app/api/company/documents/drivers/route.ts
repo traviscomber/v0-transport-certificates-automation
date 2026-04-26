@@ -1,6 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
-import { allDriversData } from '@/lib/data/all-drivers'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,20 +23,35 @@ export async function GET(request: NextRequest) {
 
     const adminClient = await createAdminClient()
 
-    // Normalizar el RUT de entrada igual que en el upload
+    // Normalizar el RUT de entrada
     const normalizedInputRut = normalizeRUT(rut)
     console.log('[v0] Normalized input RUT:', { input: rut, normalized: normalizedInputRut })
 
-    // Buscar en datos locales igual que el upload hace
-    let driverId = null
-    const driver = allDriversData.find(d => normalizeRUT(d.rut) === normalizedInputRut)
-    
-    if (driver) {
-      driverId = driver.id
-      console.log('[v0] Found driver in local data:', { driverId, driverName: `${driver.nombres} ${driver.apellidos}`, rut: driver.rut })
+    // Buscar en la tabla conductores para obtener el driver_id correcto
+    const { data: drivers, error: driverError } = await adminClient
+      .from('conductores')
+      .select('id, rut')
+      .limit(1000)
+
+    if (driverError) {
+      console.error('[v0] Error fetching conductores:', driverError)
+      return NextResponse.json(
+        { error: 'Error fetching drivers' },
+        { status: 500 }
+      )
     }
-    
-    // Si no encuentra el driver en datos locales, retornar documentos vacíos
+
+    // Buscar coincidencia normalizando ambos lados
+    let driverId = null
+    for (const conductor of drivers || []) {
+      const dbRutNormalized = normalizeRUT(conductor.rut)
+      if (dbRutNormalized === normalizedInputRut) {
+        driverId = conductor.id
+        console.log('[v0] Found driver in conductores table:', { id: driverId, rut: conductor.rut })
+        break
+      }
+    }
+
     if (!driverId) {
       console.warn('[v0] Driver not found for RUT:', rut)
       return NextResponse.json({
@@ -54,7 +68,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    console.log('[v0] Found driver ID:', driverId)
+    console.log('[v0] Using driver ID:', driverId)
 
     // Buscar documentos en tabla desde la base de datos
     // IMPORTANTE: usar preferCount=false para evitar cache
