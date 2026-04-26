@@ -13,9 +13,9 @@ const normalizeRUT = (rut: string | undefined) => {
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
-    const file = formData.get('file') as File
+    const file = formData.get('files') as File  // Hook sends 'files'
     const driverRut = formData.get('driverRut') as string
-    const documentType = formData.get('documentType') as string
+    const documentType = formData.get('category') as string  // Hook sends 'category'
 
     console.log('[v0] Upload request:', { driverRut, documentType, fileName: file?.name, fileSize: file?.size })
 
