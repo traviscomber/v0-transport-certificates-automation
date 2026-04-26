@@ -53,41 +53,31 @@ export async function POST(request: Request) {
       }
 
       try {
-        // Check if profile already exists by email (not ID) to prevent duplicate email constraint errors
-        const { data: existing } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('email', matchingUser.email)
-          .maybeSingle()
-
-        if (existing) {
-          console.log(`[v0] Profile already exists for email ${matchingUser.email} (RUT: ${rut})`)
-          created++
-          results.push({ rut, status: 'SUCCESS', userId: existing.id, note: 'already_exists' })
-          continue
-        }
-
+        // Use upsert with email as conflict column to handle duplicates gracefully
         const { data, error } = await supabase
           .from('profiles')
-          .insert({
-            id: matchingUser.id,
-            email: matchingUser.email,
-            full_name: matchingUser.user_metadata?.full_name || 'Unknown',
-            rut: rut,
-            phone: matchingUser.user_metadata?.phone || null,
-            role: 'admin',
-            is_active: true,
-            organization_id: org.id,
-          })
+          .upsert(
+            {
+              id: matchingUser.id,
+              email: matchingUser.email,
+              full_name: matchingUser.user_metadata?.full_name || 'Unknown',
+              rut: rut,
+              phone: matchingUser.user_metadata?.phone || null,
+              role: 'admin',
+              is_active: true,
+              organization_id: org.id,
+            },
+            { onConflict: 'email' }
+          )
           .select()
           .single()
 
         if (error) {
-          console.error(`[v0] Error creating profile for ${rut}:`, error.message)
+          console.error(`[v0] Error for ${rut} : ${error.message}`)
           failed++
           results.push({ rut, status: 'FAILED', reason: error.message })
         } else {
-          console.log(`[v0] ✅ Created profile for ${rut}`)
+          console.log(`[v0] ✅ Profile created or updated for ${rut}`)
           created++
           results.push({ rut, status: 'SUCCESS', userId: matchingUser.id })
         }
