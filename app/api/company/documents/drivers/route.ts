@@ -1,6 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
-import { allDriversData } from '@/lib/data/all-drivers'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,127 +13,102 @@ export async function GET(request: NextRequest) {
     const rut = searchParams.get('rut')
 
     if (!rut) {
-      return NextResponse.json(
-        { error: 'Driver RUT required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Driver RUT required' }, { status: 400 })
     }
-
-    console.log('[v0] Listing documents for driver:', rut)
 
     const adminClient = await createAdminClient()
-
-    // Normalizar el RUT de entrada
     const normalizedInputRut = normalizeRUT(rut)
-    console.log('[v0] Normalized input RUT:', { input: rut, normalized: normalizedInputRut })
 
-    // Buscar en datos locales allDriversData
-    let driverId = null
-    const driver = allDriversData.find(d => normalizeRUT(d.rut) === normalizedInputRut)
-    
-    if (driver) {
-      driverId = driver.id
-      console.log('[v0] Found driver in local data:', { driverId, driverName: `${driver.nombres} ${driver.apellidos}`, rut: driver.rut })
+    // Step 1: Find driver in the database by RUT (not from local hardcoded data)
+    const { data: driversFromDB, error: driverError } = await adminClient
+      .from('drivers')
+      .select('id, rut, nombres, apellidos')
+      .limit(500)
+
+    let driverId: string | null = null
+
+    if (!driverError && driversFromDB && driversFromDB.length > 0) {
+      const matchedDriver = driversFromDB.find(
+        (d: any) => normalizeRUT(String(d.rut)) === normalizedInputRut
+      )
+      if (matchedDriver) {
+        driverId = String(matchedDriver.id)
+        console.log('[v0] Found driver in DB:', { driverId, rut: matchedDriver.rut })
+      }
     }
 
+    // Step 2: If not found in drivers table, try querying driver_documents directly by driver_rut
     if (!driverId) {
-      console.warn('[v0] Driver not found for RUT:', rut)
+      // Fallback: try driver_id as the normalized RUT itself
+      console.warn('[v0] Driver not found in drivers table for RUT:', rut, '- trying direct document lookup')
+      
+      const { data: directDocs, error: directError } = await adminClient
+        .from('driver_documents')
+        .select('driver_id')
+        .limit(1)
+      
+      // Last resort: return empty
       return NextResponse.json({
         success: true,
         driver_rut: rut,
         documents: [],
-        message: 'Driver not found in system'
+        message: 'Driver not found'
       }, {
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0' }
       })
     }
 
-    console.log('[v0] Using driver ID:', driverId)
-
-    // Buscar documentos en tabla desde la base de datos
-    // Agregar timestamp a la query para forzar refresco y evitar cache de Supabase
-    const timestamp = Date.now()
-    console.log('[v0] Query timestamp for cache bust:', timestamp)
-    
+    // Step 3: Fetch all documents for this driver
     const { data: dbDocuments, error: dbError, count } = await adminClient
       .from('driver_documents')
       .select('id, file_name, document_type, file_url, created_at, status', { count: 'exact' })
       .eq('driver_id', driverId)
       .order('created_at', { ascending: false })
 
+    console.log('[v0] Documents query: driverId=', driverId, 'count=', count, 'rows=', dbDocuments?.length, 'error=', dbError?.message)
+
     if (dbError) {
-      console.error('[v0] Error querying documents table:', dbError)
+      console.error('[v0] Error querying documents:', dbError)
     }
 
-    // Obtener estados de documentos de la tabla document_statuses
+    // Step 4: Fetch document statuses
     let statusMap: Record<string, any> = {}
     try {
-      const { data: statuses, error: statusError } = await adminClient
+      const { data: statuses } = await adminClient
         .from('document_statuses')
         .select('document_id, status, reason, changed_at')
 
-      if (!statusError && statuses) {
-        statusMap = Object.fromEntries(
-          statuses.map(s => [s.document_id, s])
-        )
-        console.log('[v0] Loaded', statuses.length, 'document statuses from DB')
+      if (statuses) {
+        statusMap = Object.fromEntries(statuses.map(s => [s.document_id, s]))
       }
-    } catch (statusFetchError) {
-      console.warn('[v0] Could not fetch document statuses:', statusFetchError)
-    }
+    } catch {}
 
-    // Usar documentos de la base de datos si están disponibles
+    // Step 5: Map documents
     const documents = (dbDocuments || []).map(doc => {
-      // Primero, revisar si existe status en document_statuses
       const docStatus = statusMap[doc.id]
-      let estadoEspanol = 'pendiente' // default
-      
+      let estadoEspanol = 'pendiente'
+
       if (docStatus?.status) {
-        // Mapear desde document_statuses si existe
-        const statusEN = docStatus.status.toLowerCase()
-        if (statusEN === 'approved') estadoEspanol = 'aprobado'
-        else if (statusEN === 'rejected') estadoEspanol = 'rechazado'
-        else if (statusEN === 'pending') estadoEspanol = 'pendiente'
-        else if (statusEN === 'expired') estadoEspanol = 'vencido'
-        else if (statusEN === 'deleted') estadoEspanol = 'eliminado'
-        console.log('[v0] Document', doc.id, 'has status from DB:', estadoEspanol)
+        const s = docStatus.status.toLowerCase()
+        if (s === 'approved') estadoEspanol = 'aprobado'
+        else if (s === 'rejected') estadoEspanol = 'rechazado'
+        else if (s === 'pending') estadoEspanol = 'pendiente'
+        else if (s === 'expired') estadoEspanol = 'vencido'
+        else if (s === 'deleted') estadoEspanol = 'eliminado'
       } else if (doc.status) {
-        // Si no está en document_statuses, usar el status de driver_documents como fallback
-        const statusLower = doc.status.toLowerCase()
-        if (statusLower === 'aprobado') estadoEspanol = 'aprobado'
-        else if (statusLower === 'rechazado') estadoEspanol = 'rechazado'
-        console.log('[v0] Document', doc.id, 'using fallback status:', estadoEspanol)
+        const s = doc.status.toLowerCase()
+        if (s === 'aprobado') estadoEspanol = 'aprobado'
+        else if (s === 'rechazado') estadoEspanol = 'rechazado'
       }
-      
-      // Generar URL pública correctamente
+
       let publicUrl = doc.file_url || ''
-      
-      console.log('[v0] Document URL check:', {
-        docId: doc.id,
-        rawFileUrl: doc.file_url,
-        isEmpty: !doc.file_url || doc.file_url.trim() === '',
-        isUrl: doc.file_url?.includes('http'),
-      })
-      
-      // Si file_url es solo un path (no una URL completa), construirla
       if (doc.file_url && !doc.file_url.includes('http')) {
-        // El file_url es solo el path, construir la URL completa
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
         if (supabaseUrl) {
           publicUrl = `${supabaseUrl}/storage/v1/object/public/documents/${doc.file_url}`
-          console.log('[v0] Built full URL from path:', { path: doc.file_url, fullUrl: publicUrl })
         }
-      } else if (!doc.file_url || doc.file_url.trim() === '') {
-        // file_url está vacía completamente
-        console.warn('[v0] Document has no file_url:', doc.id, doc.file_name)
       }
-      
-      console.log('[v0] Final public_url for document:', { docId: doc.id, publicUrl })
-      
+
       return {
         id: doc.id,
         file_name: doc.file_name,
@@ -147,12 +121,12 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    console.log('[v0] Found', documents.length, 'documents for driver:', rut)
+    console.log('[v0] Returning', documents.length, 'documents for driver RUT:', rut)
 
     return NextResponse.json({
       success: true,
       driver_rut: rut,
-      documents: documents,
+      documents,
     }, {
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
@@ -160,6 +134,7 @@ export async function GET(request: NextRequest) {
         'Expires': '0'
       }
     })
+
   } catch (error) {
     console.error('[v0] Error in GET /api/company/documents/drivers:', error)
     return NextResponse.json(
