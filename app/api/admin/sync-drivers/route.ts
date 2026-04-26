@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       id: driver.id,
       rut: driver.rut,
       nombres: driver.nombres,
-      apellidos: driver.apellidos,
+      apellidos: `${driver.apellido_paterno} ${driver.apellido_materno}`.trim(),
       transportista_id: null
     }))
 
