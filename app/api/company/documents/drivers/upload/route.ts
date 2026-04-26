@@ -101,6 +101,8 @@ export async function POST(request: NextRequest) {
 
     // Procesar cada archivo
     for (const file of files) {
+      console.log('[v0] LOOP START: Processing file:', file.name, 'Size:', file.size)
+      
       // Generar path único
       const timestamp = Date.now()
       const sanitizedFileName = file.name.replace(/[^a-z0-9._-]/gi, '_').toLowerCase()
