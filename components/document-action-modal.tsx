@@ -110,8 +110,8 @@ export function DocumentActionModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg border border-slate-700 bg-slate-900 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 overflow-y-auto">
+      <div className="relative w-full max-w-2xl rounded-lg border border-slate-700 bg-slate-900 shadow-2xl my-8">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -151,16 +151,28 @@ export function DocumentActionModal({
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <div className="p-4 bg-slate-900">
+              <div className="p-4 bg-slate-900 min-h-64 flex items-center justify-center overflow-auto max-h-96">
                 {/* Image Preview */}
                 {['jpg', 'jpeg', 'png', 'gif', 'webp'].some(ext => document.public_url?.toLowerCase().includes(ext)) ? (
-                  <img
-                    src={document.public_url}
-                    alt={document.nombre}
-                    className="w-full max-h-96 object-contain rounded"
-                  />
+                  <div className="flex flex-col items-center justify-center w-full">
+                    <img
+                      src={document.public_url}
+                      alt={document.nombre}
+                      className="max-w-full max-h-96 object-contain rounded"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                        const errorMsg = e.currentTarget.nextElementSibling as HTMLElement
+                        if (errorMsg) errorMsg.style.display = 'block'
+                      }}
+                    />
+                    <div className="hidden text-center py-8 w-full">
+                      <Eye className="h-12 w-12 text-slate-600 mx-auto mb-2" />
+                      <p className="text-slate-400">No se pudo cargar la vista previa</p>
+                      <p className="text-slate-500 text-sm mt-1">{document.nombre}</p>
+                    </div>
+                  </div>
                 ) : (
-                  <div className="text-center py-8">
+                  <div className="text-center py-8 w-full">
                     <Eye className="h-12 w-12 text-slate-600 mx-auto mb-2" />
                     <p className="text-slate-400">Vista previa no disponible</p>
                     <p className="text-slate-500 text-sm mt-1">Tipo de archivo: {document.public_url?.split('.').pop()?.toUpperCase()}</p>
