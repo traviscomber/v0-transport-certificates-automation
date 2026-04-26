@@ -98,7 +98,9 @@ export function useDriverDocuments(driverRut: string) {
       }
 
       const uploadResult = await response.json()
+      console.log('[v0] Upload response JSON:', uploadResult)
       console.log('[v0] Document uploaded:', uploadResult.documents?.length, 'file(s)')
+      console.log('[v0] Documents array:', uploadResult.documents)
 
       // Procesar cada documento subido
       const uploadedDoc = uploadResult.documents?.[0] // Tomar el primero

@@ -23,6 +23,9 @@ export function createAdminClient() {
       autoRefreshToken: false,
       persistSession: false,
     },
+    realtime: {
+      enabled: false,  // Disable Realtime WebSocket for admin client
+    },
   })
 
   console.log('[v0] Admin client created successfully')

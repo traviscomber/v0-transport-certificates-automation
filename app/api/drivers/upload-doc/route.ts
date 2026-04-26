@@ -76,6 +76,16 @@ export async function POST(request: NextRequest) {
       ])
       .select()
 
+    console.log('[v0] INSERT response:', {
+      hasError: !!insertError,
+      errorCode: insertError?.code,
+      errorMessage: insertError?.message,
+      dataType: typeof insertedDocs,
+      isArray: Array.isArray(insertedDocs),
+      length: Array.isArray(insertedDocs) ? insertedDocs.length : 'n/a',
+      data: insertedDocs
+    })
+
     if (insertError) {
       console.error('[v0] INSERT error:', insertError)
       return NextResponse.json({ error: 'Database insert failed', details: insertError }, { status: 500 })
@@ -85,7 +95,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      documents: insertedDocs,
+      documents: insertedDocs || [],
     })
   } catch (error) {
     console.error('[v0] Upload error:', error)
