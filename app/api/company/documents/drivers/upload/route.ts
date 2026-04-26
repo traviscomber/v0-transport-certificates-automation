@@ -11,8 +11,11 @@ const normalizeRUT = (rut: string | undefined) => {
 }
 
 export async function POST(request: NextRequest) {
+  console.log('[v0] ==================== POST ENDPOINT CALLED ====================')
   try {
     const formData = await request.formData()
+    console.log('[v0] FormData entries:', Array.from(formData.entries()).map(([k, v]) => [k, v instanceof File ? `File(${v.name})` : v]))
+    
     const file = formData.get('files') as File  // Hook sends 'files'
     const driverRut = formData.get('driverRut') as string
     const documentType = formData.get('category') as string  // Hook sends 'category'
