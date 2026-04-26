@@ -33,7 +33,7 @@ export function DriverCard({
   getDocumentStatusLabel,
 }: DriverCardProps) {
   const isExpanded = expandedDocuments.has(driver.id)
-  const { documents, loading, uploadDocument, refetch } = useDriverDocuments(driver.rut, isExpanded)
+  const { documents, loading, uploadDocument, refetch, updateDocumentStatus } = useDriverDocuments(driver.rut, isExpanded)
   const { changeStatus } = useDocumentManagement()
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [uploadDocType, setUploadDocType] = useState('Licencia de Conducir')
@@ -434,7 +434,8 @@ export function DriverCard({
         }}
         onStatusChange={async (docId, newStatus) => {
           try {
-            console.log('[v0] Status change initiated for doc:', docId, 'new status:', newStatus)
+            // Optimistically update UI immediately
+            updateDocumentStatus(docId, newStatus)
             await changeStatus(docId, newStatus, 'Cambio realizado desde dashboard')
             
             // Wait a bit for server to process

@@ -169,6 +169,13 @@ export function useDriverDocuments(driverRut: string, enabled = false) {
     }
   }
 
+  // Optimistically update document status in local state immediately
+  const updateDocumentStatus = (documentId: string, newStatus: string) => {
+    setDocuments(prev => prev.map(doc =>
+      doc.id === documentId ? { ...doc, estado: newStatus } : doc
+    ))
+  }
+
   // Eliminar documento y refrescar lista
   const deleteDocument = async (documentId: string) => {
     try {
@@ -203,6 +210,7 @@ export function useDriverDocuments(driverRut: string, enabled = false) {
     error,
     uploadDocument,
     deleteDocument,
+    updateDocumentStatus,
     refetch: fetchDocuments,
   }
 }
