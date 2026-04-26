@@ -10,9 +10,7 @@ export function createClient() {
       autoRefreshToken: true,
       detectSessionInUrl: true,
     },
-    realtime: {
-      enabled: false,  // Disable Realtime WebSocket to fix connection issues
-    },
+
     global: {
       headers: {
         'X-Client-Info': 'supabase-js-web',
