@@ -227,12 +227,15 @@ export async function POST(request: NextRequest) {
     // Trigger alert para cada documento subido
     for (const doc of uploadedDocs) {
       try {
-        await triggerDocumentUploadedAlert({
-          driver_id: driverId,
-          document_id: doc.id,
-          document_type: doc.document_type,
-          file_name: doc.file_name
-        })
+        // Obtener nombre del conductor desde allDriversData
+        const driver = allDriversData.find(d => d.id === driverId)
+        const driverName = driver ? `${driver.nombres} ${driver.apellidos}` : undefined
+        
+        await triggerDocumentUploadedAlert(
+          driverId,
+          doc.file_name,
+          driverName
+        )
       } catch (alertError) {
         console.error('[v0] Error triggering alert:', alertError)
       }

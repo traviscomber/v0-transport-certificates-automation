@@ -96,15 +96,15 @@ export default function AlertasPage() {
   const getAlertColor = (type: string) => {
     switch (type) {
       case 'warning':
-        return 'border-orange-300 bg-orange-100 dark:border-orange-700 dark:bg-orange-900/50'
+        return 'border-l-4 border-l-orange-500 bg-orange-900/25 backdrop-blur-sm'
       case 'error':
-        return 'border-red-300 bg-red-100 dark:border-red-700 dark:bg-red-900/50'
+        return 'border-l-4 border-l-red-500 bg-red-900/25 backdrop-blur-sm'
       case 'success':
-        return 'border-green-300 bg-green-100 dark:border-green-700 dark:bg-green-900/50'
+        return 'border-l-4 border-l-green-500 bg-green-900/25 backdrop-blur-sm'
       case 'info':
-        return 'border-blue-300 bg-blue-100 dark:border-blue-700 dark:bg-blue-900/50'
+        return 'border-l-4 border-l-blue-500 bg-blue-900/25 backdrop-blur-sm'
       default:
-        return 'border-gray-300 bg-gray-100 dark:border-gray-700 dark:bg-gray-900/50'
+        return 'border-l-4 border-l-slate-500 bg-slate-900/25 backdrop-blur-sm'
     }
   }
 

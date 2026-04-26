@@ -25,10 +25,43 @@ export async function logAlert(event: AlertEvent) {
       timestamp: new Date().toISOString(),
     })
 
+    // Guardar en la tabla de alertas en Supabase
+    const adminClient = await createAdminClient()
+    
+    const alertData = {
+      type: event.type,
+      title: event.title,
+      description: event.description,
+      entity_type: event.entityType || null,
+      entity_id: event.entityId || null,
+      entity_name: event.entityName || null,
+      action_url: event.actionUrl || null,
+      created_at: new Date().toISOString(),
+      is_read: false
+    }
+
+    console.log('[v0] Saving alert to database:', alertData)
+
+    const { data, error } = await adminClient
+      .from('alerts')
+      .insert([alertData])
+      .select()
+
+    if (error) {
+      console.error('[v0] Error saving alert to database:', error)
+      return {
+        success: false,
+        error: error.message,
+      }
+    }
+
+    console.log('[v0] Alert saved successfully:', data)
+
     return {
       success: true,
       event,
       timestamp: new Date(),
+      savedAlert: data?.[0]
     }
   } catch (error) {
     console.error('[v0] ❌ Exception in logAlert:', error)
