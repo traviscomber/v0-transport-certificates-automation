@@ -53,9 +53,23 @@ export async function POST(request: Request) {
       }
 
       try {
+        // Check if profile already exists first
+        const { data: existing } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', matchingUser.id)
+          .single()
+
+        if (existing) {
+          console.log(`[v0] Profile already exists for ${rut}`)
+          created++
+          results.push({ rut, status: 'SUCCESS', userId: matchingUser.id, note: 'already_exists' })
+          continue
+        }
+
         const { data, error } = await supabase
           .from('profiles')
-          .upsert({
+          .insert({
             id: matchingUser.id,
             email: matchingUser.email,
             full_name: matchingUser.user_metadata?.full_name || 'Unknown',

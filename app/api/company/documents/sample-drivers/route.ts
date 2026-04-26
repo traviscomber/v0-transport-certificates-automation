@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('[v0] Fetching sample drivers from conductores table...')
+
     const supabase = await createClient()
 
     const { data, error } = await supabase
@@ -11,9 +11,6 @@ export async function GET(request: NextRequest) {
       .select('id, rut, nombres, apellido_paterno')
       .limit(10)
       .order('apellido_paterno', { ascending: true })
-
-    console.log('[v0] Query error:', error)
-    console.log('[v0] Query data count:', data?.length)
 
     if (error) {
       console.error('[v0] Error fetching sample drivers:', error)
@@ -29,7 +26,6 @@ export async function GET(request: NextRequest) {
       nombre: `${d.nombres} ${d.apellido_paterno || ''}`.trim()
     }))
 
-    console.log('[v0] Returning sample drivers:', drivers)
 
     return NextResponse.json({
       drivers: drivers,
