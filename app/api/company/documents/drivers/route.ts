@@ -62,9 +62,10 @@ export async function GET(request: NextRequest) {
     console.log('[v0] Found driver ID:', driverId)
 
     // Buscar documentos en tabla desde la base de datos
-    const { data: dbDocuments, error: dbError } = await adminClient
+    // IMPORTANTE: usar preferCount=false para evitar cache
+    const { data: dbDocuments, error: dbError, count } = await adminClient
       .from('driver_documents')
-      .select('id, file_name, document_type, file_url, created_at, status')
+      .select('id, file_name, document_type, file_url, created_at, status', { count: 'exact' })
       .eq('driver_id', driverId)
       .order('created_at', { ascending: false })
 
@@ -155,6 +156,12 @@ export async function GET(request: NextRequest) {
       success: true,
       driver_rut: rut,
       documents: documents,
+    }, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     })
   } catch (error) {
     console.error('[v0] Error in GET /api/company/documents/drivers:', error)
