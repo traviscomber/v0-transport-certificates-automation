@@ -37,7 +37,29 @@ export async function PATCH(
 
     console.log('[v0] Mapped status to:', status)
 
-    // Try to update existing status
+    // Map back to Spanish for driver_documents.status column
+    const spanishStatusMap: Record<string, string> = {
+      'approved': 'aprobado',
+      'rejected': 'rechazado',
+      'pending': 'pendiente',
+      'expired': 'vencido',
+      'deleted': 'eliminado'
+    }
+    const spanishStatus = spanishStatusMap[status] || status
+
+    // Always update driver_documents.status directly so the UI syncs
+    const { error: directUpdateError } = await adminClient
+      .from('driver_documents')
+      .update({ status: spanishStatus })
+      .eq('id', documentId)
+
+    if (directUpdateError) {
+      console.error('[v0] Error updating driver_documents.status:', directUpdateError)
+    } else {
+      console.log('[v0] ✅ driver_documents.status updated to:', spanishStatus)
+    }
+
+    // Also update document_statuses table (for audit trail)
     const { data: updateResult, error: updateError } = await adminClient
       .from('document_statuses')
       .update({
@@ -50,9 +72,9 @@ export async function PATCH(
       .select()
 
     if (updateError) {
-      console.error('[v0] Update error:', updateError)
+      console.error('[v0] Update error on document_statuses:', updateError)
     } else if (updateResult && updateResult.length > 0) {
-      console.log('[v0] ✅ Document status updated:', { documentId, status })
+      console.log('[v0] ✅ document_statuses updated:', { documentId, status })
       
       // Get document details for alert
       const { data: document } = await adminClient
@@ -94,8 +116,8 @@ export async function PATCH(
       })
     }
 
-    // If no rows updated, try to insert new status
-    console.log('[v0] No existing status, inserting new one...')
+    // If no rows updated in document_statuses, try to insert new status
+    console.log('[v0] No existing status row, inserting new one...')
     const { data: insertResult, error: insertError } = await adminClient
       .from('document_statuses')
       .insert({
