@@ -23,13 +23,18 @@ export async function GET(request: Request) {
           .maybeSingle()
         
         if (!profile) {
-          // Create default profile with 'driver' role
-          await supabase.from('profiles').insert({
+          // Create default profile with 'driver' role if it doesn't exist
+          const { error: insertError } = await supabase.from('profiles').insert({
             id: user.id,
             email: user.email,
             role: 'driver',
             full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario'
           })
+          
+          if (insertError && insertError.code !== '23505') {
+            // 23505 = unique constraint violation, which means profile exists (ignore)
+            console.error('[v0] Profile insert error:', insertError)
+          }
         }
         
         // Redirect based on role

@@ -98,6 +98,24 @@ export async function GET() {
         const userId = authData.user.id
         console.log(`[v0] Auth user created: ${userId}`)
 
+        // Check if profile already exists
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', userId)
+          .maybeSingle()
+
+        if (existingProfile) {
+          console.log(`[v0] Profile already exists for: ${exec.email}`)
+          results.push({
+            email: exec.email,
+            name: exec.full_name,
+            status: 'success',
+            message: 'already_exists',
+          })
+          continue
+        }
+
         // Create profile
         const { error: profileError } = await supabase.from('profiles').insert({
           id: userId,
