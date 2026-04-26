@@ -26,25 +26,35 @@ export async function POST(request: NextRequest) {
   const adminClient = await createAdminClient()
     const uploadedDocs = []
 
-    // Asegurar que el bucket existe y está configurado correctamente
+    // Asegurar que el bucket existe y está configurado correctamente como PUBLIC
     try {
       const { data: buckets } = await adminClient.storage.listBuckets()
       const bucket = buckets?.find((b: any) => b.name === 'documents')
       
       if (!bucket) {
-        console.log('[v0] Creating documents bucket...')
+        console.log('[v0] Creating documents bucket as PUBLIC...')
         await adminClient.storage.createBucket('documents', {
           public: true,
           fileSizeLimit: 52428800, // 50MB
           allowedMimeTypes: ['image/*', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
         })
-        console.log('[v0] Bucket created successfully')
+        console.log('[v0] Bucket created successfully as PUBLIC')
+      } else if (!bucket.public) {
+        // Si el bucket existe pero NO es público, intentar actualizarlo
+        console.log('[v0] Bucket exists but is PRIVATE. Attempting to make it PUBLIC...')
+        try {
+          await adminClient.storage.updateBucket('documents', {
+            public: true
+          })
+          console.log('[v0] Bucket updated to PUBLIC')
+        } catch (updateError) {
+          console.log('[v0] Could not update bucket to public:', updateError)
+        }
       } else {
-        console.log('[v0] Bucket exists, details:', {
+        console.log('[v0] Bucket exists and is PUBLIC:', {
           name: bucket.name,
           public: bucket.public,
-          created_at: bucket.created_at,
-          id: bucket.id
+          created_at: bucket.created_at
         })
       }
     } catch (bucketError) {
