@@ -153,22 +153,22 @@ export async function POST(request: NextRequest) {
       }
 
       // Guardar en la base de datos tabla `driver_documents`
-      const { error: saveError, data: savedDoc } = await adminClient
+      const { error: saveError, data: savedDocs } = await adminClient
         .from('driver_documents')
         .insert([doc])
         .select()
-        .single()
 
       console.log('[v0] ✅ INSERT attempt result:', {
         driverId,
         documentType: category,
         fileName: file.name,
         hasError: !!saveError,
-        hasSavedDoc: !!savedDoc,
+        savedDocsArray: Array.isArray(savedDocs) && savedDocs.length > 0,
+        arrayLength: Array.isArray(savedDocs) ? savedDocs.length : 0,
         errorCode: saveError?.code,
         errorMessage: saveError?.message,
         errorDetails: saveError?.details,
-        savedDocId: savedDoc?.id
+        firstDocId: Array.isArray(savedDocs) && savedDocs[0] ? savedDocs[0].id : null
       })
 
       if (saveError) {
@@ -179,11 +179,12 @@ export async function POST(request: NextRequest) {
           hint: saveError.hint
         })
         // Continue anyway - file is in storage
-      } else if (savedDoc) {
+      } else if (Array.isArray(savedDocs) && savedDocs.length > 0) {
+        const savedDoc = savedDocs[0]
         console.log('[v0] ✅ DOCUMENTO INSERTADO en database:', { id: savedDoc.id, fileName: file.name, driverId })
         uploadedDocs.push(savedDoc)
       } else {
-        console.warn('[v0] ⚠️ INSERT returned no error but also no data (NULL result)')
+        console.warn('[v0] ⚠️ INSERT returned no error but no data in array')
       }
     }
 
@@ -204,7 +205,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Debug: Verificar qué se guardó en la BD
+    // Debug: Verificar qué se guard�� en la BD
     console.log('[v0] Upload completed successfully with', uploadedDocs.length, 'documents')
     console.log('[v0] ========== DOCUMENT UPLOAD END ==========')
 
