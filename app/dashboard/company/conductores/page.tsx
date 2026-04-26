@@ -5,7 +5,27 @@ import useSWR from 'swr'
 import { DriversList } from '@/components/drivers-list'
 import { HelpBox } from '@/components/ui/help-box'
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
+const fetcher = (url: string) => 
+  fetch(url)
+    .then(async (r) => {
+      if (!r.ok) {
+        const errorText = await r.text()
+        throw new Error(`API error ${r.status}: ${errorText}`)
+      }
+      const text = await r.text()
+      if (!text) {
+        throw new Error('Empty response from API')
+      }
+      try {
+        return JSON.parse(text)
+      } catch (e) {
+        throw new Error(`Invalid JSON response: ${text.substring(0, 100)}`)
+      }
+    })
+    .catch((err) => {
+      console.error('[v0] Fetch error:', err)
+      throw err
+    })
 
 export default function ConductoresPage() {
   const { data, error, isLoading, mutate } = useSWR(

@@ -22,7 +22,11 @@ export async function createServerClient() {
     throw new Error("Missing Supabase API key. Please check your environment variables.")
   }
 
-  return createSupabaseClient(url, key)
+  return createSupabaseClient(url, key, {
+    realtime: {
+      enabled: false,  // Disable Realtime WebSocket on server
+    },
+  })
 }
 
 // Re-export for compatibility with existing imports
