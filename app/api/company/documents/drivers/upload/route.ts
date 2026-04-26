@@ -155,41 +155,48 @@ export async function POST(request: NextRequest) {
       console.log('[v0] Document object to insert:', doc)
 
       // Guardar en la base de datos tabla `driver_documents`
-      const { error: saveError, data: savedDocs } = await adminClient
-        .from('driver_documents')
-        .insert([doc])
-        .select()
+      try {
+        const { error: saveError, data: savedDocs } = await adminClient
+          .from('driver_documents')
+          .insert([doc])
+          .select()
 
-      console.log('[v0] ✅ INSERT attempt result:', {
-        driverId,
-        documentType: category,
-        fileName: file.name,
-        hasError: !!saveError,
-        savedDocsArray: Array.isArray(savedDocs) && savedDocs.length > 0,
-        arrayLength: Array.isArray(savedDocs) ? savedDocs.length : 'not_array',
-        errorCode: saveError?.code,
-        errorMessage: saveError?.message,
-        errorDetails: saveError?.details,
-        firstDocId: Array.isArray(savedDocs) && savedDocs[0] ? savedDocs[0].id : null
-      })
-
-      if (saveError) {
-        console.error('[v0] ❌ ERROR saving document to database:', {
-          code: saveError.code,
-          message: saveError.message,
-          details: saveError.details,
-          hint: saveError.hint
+        console.log('[v0] ✅ INSERT attempt result:', {
+          driverId,
+          documentType: category,
+          fileName: file.name,
+          hasError: !!saveError,
+          savedDocsArray: Array.isArray(savedDocs) && savedDocs.length > 0,
+          arrayLength: Array.isArray(savedDocs) ? savedDocs.length : 'not_array',
+          errorCode: saveError?.code,
+          errorMessage: saveError?.message,
+          errorDetails: saveError?.details,
+          firstDocId: Array.isArray(savedDocs) && savedDocs[0] ? savedDocs[0].id : null
         })
-        // Continue anyway - file is in storage
-      } else if (Array.isArray(savedDocs) && savedDocs.length > 0) {
-        const savedDoc = savedDocs[0]
-        console.log('[v0] ✅ DOCUMENTO INSERTADO en database:', { id: savedDoc.id, fileName: file.name, driverId })
-        uploadedDocs.push(savedDoc)
-      } else {
-        console.warn('[v0] ⚠️ INSERT returned no error but savedDocs is:', {
-          type: typeof savedDocs,
-          isArray: Array.isArray(savedDocs),
-          value: savedDocs
+
+        if (saveError) {
+          console.error('[v0] ❌ ERROR saving document to database:', {
+            code: saveError.code,
+            message: saveError.message,
+            details: saveError.details,
+            hint: saveError.hint
+          })
+          // Continue anyway - file is in storage
+        } else if (Array.isArray(savedDocs) && savedDocs.length > 0) {
+          const savedDoc = savedDocs[0]
+          console.log('[v0] ✅ DOCUMENTO INSERTADO en database:', { id: savedDoc.id, fileName: file.name, driverId })
+          uploadedDocs.push(savedDoc)
+        } else {
+          console.warn('[v0] ⚠️ INSERT returned no error but savedDocs is:', {
+            type: typeof savedDocs,
+            isArray: Array.isArray(savedDocs),
+            value: savedDocs
+          })
+        }
+      } catch (insertException) {
+        console.error('[v0] ❌ EXCEPTION during INSERT:', {
+          message: insertException instanceof Error ? insertException.message : String(insertException),
+          stack: insertException instanceof Error ? insertException.stack : undefined
         })
       }
     }
