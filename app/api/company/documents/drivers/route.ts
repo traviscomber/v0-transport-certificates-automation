@@ -106,6 +106,24 @@ export async function GET(request: NextRequest) {
         console.log('[v0] Document', doc.id, 'using fallback status:', estadoEspanol)
       }
       
+      // Generar URL pública correctamente
+      let publicUrl = doc.file_url || ''
+      
+      // Si file_url no existe o está vacía, intentar construirla desde el storage path
+      if (!publicUrl || publicUrl.trim() === '') {
+        try {
+          // Obtener la URL pública desde Supabase Storage
+          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+          if (supabaseUrl && doc.file_url) {
+            // Construir la URL correctamente
+            publicUrl = `${supabaseUrl}/storage/v1/object/public/documents/${doc.file_url}`
+            console.log('[v0] Generated public URL:', publicUrl)
+          }
+        } catch (urlError) {
+          console.warn('[v0] Could not generate public URL:', urlError)
+        }
+      }
+      
       return {
         id: doc.id,
         file_name: doc.file_name,
@@ -113,8 +131,8 @@ export async function GET(request: NextRequest) {
         document_type: doc.document_type || 'Documento',
         verification_status: estadoEspanol,
         size: 0,
-        storage_path: '',
-        public_url: doc.file_url || ''
+        storage_path: doc.file_url || '',
+        public_url: publicUrl
       }
     })
 

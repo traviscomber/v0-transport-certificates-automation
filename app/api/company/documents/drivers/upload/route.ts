@@ -152,14 +152,24 @@ export async function POST(request: NextRequest) {
 
       // Obtener URL pública
       const { data } = adminClient.storage.from('documents').getPublicUrl(filePath)
-      const publicUrl = data?.publicUrl || ''
+      let publicUrl = data?.publicUrl || ''
+      
+      // Asegurar que la URL es correcta - si getPublicUrl falla, construirla manualmente
+      if (!publicUrl || publicUrl.trim() === '') {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        if (supabaseUrl) {
+          publicUrl = `${supabaseUrl}/storage/v1/object/public/documents/${filePath}`
+        }
+      }
+      
+      console.log('[v0] Public URL generated:', publicUrl)
 
-      // Crear objeto de documento
+      // Crear objeto de documento con la URL completa
       const doc = {
         driver_id: driverId,
         file_name: file.name,
         document_type: category,
-        file_url: publicUrl,
+        file_url: publicUrl,  // Guardar la URL completa
         status: 'pendiente'
       }
 
