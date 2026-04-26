@@ -163,9 +163,9 @@ export function DriverCard({
             {/* Documentos Subidos - Sección Expandible SIEMPRE VISIBLE */}
             <div className="border-t border-slate-700/50 pt-3 mt-3">
               <div className="flex items-center justify-between mb-3">
-                <button
+                <div
                   onClick={() => toggleDocuments(driver.id)}
-                  className="flex flex-1 items-center justify-between hover:opacity-90 transition-opacity"
+                  className="flex flex-1 items-center justify-between hover:opacity-90 transition-opacity cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-cyan-400" />
@@ -188,7 +188,7 @@ export function DriverCard({
                       isExpanded ? 'rotate-180' : ''
                     }`}
                   />
-                </button>
+                </div>
                 
                 {/* Botón de upload para LABBE */}
                 <button
