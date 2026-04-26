@@ -154,6 +154,27 @@ export function useDriverDocuments(driverRut: string) {
     }
   }
 
+  // Eliminar documento y refrescar lista
+  const deleteDocument = async (documentId: string) => {
+    try {
+      const response = await fetch(`/api/company/documents/${documentId}/delete`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const result = await response.json()
+        throw new Error(result.error || 'Failed to delete document')
+      }
+
+      // Refetch after delete to sync UI
+      await fetchDocuments(true)
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Delete failed'
+      console.error('[v0] Error deleting document:', errorMsg)
+      throw err
+    }
+  }
+
   // Cargar documentos al montar o cuando cambia driverRut
   useEffect(() => {
     if (driverRut) {
@@ -166,6 +187,7 @@ export function useDriverDocuments(driverRut: string) {
     loading,
     error,
     uploadDocument,
+    deleteDocument,
     refetch: fetchDocuments,
   }
 }

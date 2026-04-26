@@ -9,23 +9,31 @@ export async function DELETE(
     const documentId = params.id
     const adminClient = createAdminClient()
 
-    console.log('[v0] Deleting document from storage:', documentId)
+    // 1. First fetch the document to get the storage path before deleting
+    const { data: docData } = await adminClient
+      .from('driver_documents')
+      .select('file_url')
+      .eq('id', documentId)
+      .single()
 
-    // El documentId es el path del archivo en storage
-    // Formato: drivers/RUT/timestamp_filename.jpg
-    const { error: deleteError } = await adminClient.storage
-      .from('documents')
-      .remove([documentId])
+    // 2. Delete from database
+    const { error: dbError } = await adminClient
+      .from('driver_documents')
+      .delete()
+      .eq('id', documentId)
 
-    if (deleteError) {
-      console.error('[v0] Storage delete error:', deleteError)
-      return NextResponse.json(
-        { error: 'Failed to delete document from storage' },
-        { status: 500 }
-      )
+    if (dbError) {
+      console.error('[v0] DB delete error:', dbError)
     }
 
-    console.log('[v0] Document deleted successfully:', documentId)
+    // 3. Delete from storage using the file_url we fetched before deletion
+    if (docData?.file_url) {
+      const storagePathMatch = docData.file_url.match(/\/storage\/v1\/object\/public\/documents\/(.+)/)
+      if (storagePathMatch) {
+        const storagePath = storagePathMatch[1]
+        await adminClient.storage.from('documents').remove([storagePath])
+      }
+    }
 
     return NextResponse.json({
       success: true,
