@@ -42,32 +42,15 @@ export async function GET(request: NextRequest) {
       console.error('[v0] Error querying documents:', dbError.message)
     }
 
-    // Fetch document statuses
-    let statusMap: Record<string, any> = {}
-    try {
-      const { data: statuses } = await adminClient
-        .from('document_statuses')
-        .select('document_id, status, reason, changed_at')
-      if (statuses) {
-        statusMap = Object.fromEntries(statuses.map(s => [s.document_id, s]))
-      }
-    } catch {}
-
     const documents = (dbDocuments || []).map(doc => {
-      const docStatus = statusMap[doc.id]
+      // Read status directly from driver_documents.status — single source of truth
       let estadoEspanol = 'pendiente'
-
-      if (docStatus?.status) {
-        const s = docStatus.status.toLowerCase()
-        if (s === 'approved') estadoEspanol = 'aprobado'
-        else if (s === 'rejected') estadoEspanol = 'rechazado'
-        else if (s === 'pending') estadoEspanol = 'pendiente'
-        else if (s === 'expired') estadoEspanol = 'vencido'
-      } else if (doc.status) {
+      if (doc.status) {
         const s = doc.status.toLowerCase()
         if (s === 'aprobado') estadoEspanol = 'aprobado'
         else if (s === 'rechazado') estadoEspanol = 'rechazado'
         else if (s === 'pendiente') estadoEspanol = 'pendiente'
+        else if (s === 'vencido') estadoEspanol = 'vencido'
       }
 
       let publicUrl = doc.file_url || ''
