@@ -100,12 +100,12 @@ export default function LoginPage() {
           <div className="border-t border-slate-700 pt-4 space-y-3">
             <p className="text-slate-400 text-xs font-medium text-center">Ejecutivas disponibles:</p>
             <div className="space-y-1 text-xs text-slate-400">
-              <p><span className="text-slate-300">ocarrasco@labbe.cl</span> - Olga Carrasco</p>
-              <p><span className="text-slate-300">csepulveda@labbe.cl</span> - Carolina Sepúlveda</p>
-              <p><span className="text-slate-300">dsilva@labbe.cl</span> - Daniela Silva</p>
-              <p><span className="text-slate-300">cfarias@labbe.cl</span> - Cecilia Farias</p>
-              <p><span className="text-slate-300">dgonzalez@labbe.cl</span> - Diego Gonzalez</p>
-              <p><span className="text-slate-300">kcanales@labbe.cl</span> - Katherinne Canales</p>
+              <p><span className="text-slate-300">olga.carrasco@transporteslabbe.cl</span> - Olga Carrasco</p>
+              <p><span className="text-slate-300">carolina.sepulveda@transporteslabbe.cl</span> - Carolina Sepúlveda</p>
+              <p><span className="text-slate-300">daniela.silva@transporteslabbe.cl</span> - Daniela Silva</p>
+              <p><span className="text-slate-300">cecilia.farias@transporteslabbe.cl</span> - Cecilia Farias</p>
+              <p><span className="text-slate-300">diego.gonzalez@transporteslabbe.cl</span> - Diego Gonzalez</p>
+              <p><span className="text-slate-300">katherinne.canales@transporteslabbe.cl</span> - Katherinne Canales</p>
             </div>
           </div>
         </div>
