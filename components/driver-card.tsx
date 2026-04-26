@@ -457,8 +457,9 @@ export function DriverCard({
           }
         }}
         onDelete={async (docId) => {
-          console.log('[v0] Document deleted, refreshing...')
           await refetch(true)
+          setShowDocumentModal(false)
+          setSelectedDocument(null)
         }}
         isAdmin={true}
       />

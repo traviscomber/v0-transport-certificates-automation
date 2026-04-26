@@ -65,16 +65,23 @@ export function DocumentActionModal({
   }
 
   const handleDelete = async () => {
-    if (!isAdmin || !document.storage_path) return
+    if (!isAdmin) return
     if (!confirm('¿Estás seguro de que quieres eliminar este documento?')) return
     
     setIsDeleting(true)
     try {
-      await deleteDocument(document.id, document.storage_path)
+      // Call delete endpoint directly by document ID — no storage_path needed
+      const response = await fetch(`/api/company/documents/${document.id}/delete`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        const result = await response.json()
+        throw new Error(result.error || 'Failed to delete document')
+      }
       if (onDelete) {
         await onDelete(document.id)
       }
-      setTimeout(() => onClose(), 500)
+      onClose()
     } catch (error) {
       console.error('[v0] Error deleting document:', error)
       alert('Error al eliminar el documento')
