@@ -4,7 +4,6 @@ import { Badge } from '@/components/ui/badge'
 import { Mail, Phone, MapPin, FileText, Download, ChevronDown, Plus, X, Upload, AlertCircle, Loader, Eye, RefreshCw } from 'lucide-react'
 import { useDriverDocuments } from '@/hooks/use-driver-documents'
 import { DocumentActionModal } from './document-action-modal'
-import { useDocumentManagement } from '@/hooks/use-document-management'
 
 interface Driver {
   id: string
@@ -34,7 +33,7 @@ export function DriverCard({
 }: DriverCardProps) {
   const isExpanded = expandedDocuments.has(driver.id)
   const { documents, loading, uploadDocument, refetch, updateDocumentStatus } = useDriverDocuments(driver.rut, isExpanded)
-  const { changeStatus } = useDocumentManagement()
+
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [uploadDocType, setUploadDocType] = useState('Licencia de Conducir')
   const [uploadFileName, setUploadFileName] = useState('')
@@ -434,27 +433,30 @@ export function DriverCard({
         }}
         onStatusChange={async (docId, newStatus) => {
           try {
-            // Optimistically update UI immediately
+            // Optimistically update local state immediately so badge changes on close
             updateDocumentStatus(docId, newStatus)
-            await changeStatus(docId, newStatus, 'Cambio realizado desde dashboard')
-            
-            // Wait a bit for server to process
-            await new Promise(resolve => setTimeout(resolve, 300))
-            
-            console.log('[v0] Status changed, refetching documents with cache bypass...')
-            await refetch(true)
-            
-            // Dispatch event to notify other components (like the drivers list page)
-            if (typeof window !== 'undefined') {
-              console.log('[v0] Dispatching documentStatusChanged event')
-              window.dispatchEvent(new Event('documentStatusChanged'))
+
+            // PATCH status to database directly
+            const res = await fetch(`/api/company/documents/${docId}/status`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: newStatus, reason: 'Cambio realizado desde dashboard' }),
+            })
+            if (!res.ok) {
+              const err = await res.json()
+              throw new Error(err.error || 'Status update failed')
             }
-            
-            console.log('[v0] Documents refetched, closing modal...')
+
+            // Close modal first (optimistic state already applied above)
             setShowDocumentModal(false)
             setSelectedDocument(null)
+
+            // Then refetch in background to confirm DB state
+            await refetch(true)
           } catch (error) {
             console.error('[v0] Error updating status:', error)
+            // Revert optimistic update on error by refetching
+            await refetch(true)
             throw error
           }
         }}
