@@ -65,6 +65,18 @@ export function DriverCard({
       setUploadDocType('Licencia de Conducir')
       console.log('[v0] Modal cerrado, contador debería estar actualizado')
       
+      // Show success message
+      if (typeof window !== 'undefined') {
+        // Create a simple success toast
+        const successMsg = document.createElement('div')
+        successMsg.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100] animate-in'
+        successMsg.textContent = `✅ Documento "${uploadFileName}" subido exitosamente`
+        document.body.appendChild(successMsg)
+        setTimeout(() => {
+          successMsg.remove()
+        }, 3000)
+      }
+      
       // Dispatch event to notify other components about the new document
       if (typeof window !== 'undefined') {
         console.log('[v0] Dispatching documentStatusChanged event after upload')
