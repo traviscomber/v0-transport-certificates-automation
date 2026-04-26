@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { allDriversData } from '@/lib/data/all-drivers'
 
 const normalizeRUT = (rut: string) => rut.replace(/[^0-9kK]/g, '').toUpperCase()
 
@@ -13,32 +14,18 @@ export async function POST(request: NextRequest) {
     if (!file) return NextResponse.json({ error: 'No file' }, { status: 400 })
     if (!driverRut) return NextResponse.json({ error: 'No driver RUT' }, { status: 400 })
 
-    const adminClient = await createAdminClient()
     const normalizedInputRut = normalizeRUT(driverRut)
 
-    // 1. Find driver in the database by RUT
-    const { data: driversFromDB, error: driverError } = await adminClient
-      .from('drivers')
-      .select('id, rut')
-      .limit(500)
+    // Find driver in allDriversData (source of truth for 291 conductores)
+    const driver = allDriversData.find(d => normalizeRUT(d.rut) === normalizedInputRut)
 
-    let driverId: string | null = null
-
-    if (!driverError && driversFromDB) {
-      const matched = driversFromDB.find(
-        (d: any) => normalizeRUT(String(d.rut)) === normalizedInputRut
-      )
-      if (matched) {
-        driverId = String(matched.id)
-      }
-    }
-
-    if (!driverId) {
-      console.error('[v0] Driver not found for RUT:', driverRut)
+    if (!driver) {
+      console.error('[v0] Driver not found for RUT:', driverRut, 'normalized:', normalizedInputRut)
       return NextResponse.json({ error: 'Driver not found' }, { status: 404 })
     }
 
-    console.log('[v0] Found driver ID:', driverId, 'for RUT:', driverRut)
+    const driverId = String(driver.id)
+    const adminClient = await createAdminClient()
 
     // 2. Upload file to Supabase Storage
     const timestamp = Date.now()
