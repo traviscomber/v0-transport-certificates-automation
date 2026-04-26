@@ -88,25 +88,20 @@ export async function POST(request: NextRequest) {
     console.log('[v0] Public URL:', publicUrl)
 
     // Insert to database
-    console.log('[v0] Inserting document to database:', {
+    const docData = {
       driver_id: String(driverId),
       file_name: file.name,
       document_type: documentType,
       file_url: publicUrl,
       status: 'pendiente'
-    })
+    }
+    
+    console.log('[v0] Inserting document to database:', docData)
 
-    const { data: savedDoc, error: saveError } = await adminClient
+    const { data: insertResult, error: saveError } = await adminClient
       .from('driver_documents')
-      .insert({
-        driver_id: String(driverId),
-        file_name: file.name,
-        document_type: documentType,
-        file_url: publicUrl,
-        status: 'pendiente'
-      })
+      .insert([docData])
       .select()
-      .single()
 
     if (saveError) {
       console.error('[v0] Database insert error:', {
@@ -114,9 +109,15 @@ export async function POST(request: NextRequest) {
         message: saveError.message,
         details: saveError.details
       })
-    } else {
-      console.log('[v0] ✅ Document inserted successfully:', { id: savedDoc?.id })
+      // Don't return error - file is already in storage
     }
+    
+    const savedDoc = Array.isArray(insertResult) && insertResult.length > 0 ? insertResult[0] : null
+    console.log('[v0] ✅ Document insert result:', { 
+      success: !saveError, 
+      id: savedDoc?.id,
+      fileName: savedDoc?.file_name 
+    })
 
     // Trigger alert
     try {
