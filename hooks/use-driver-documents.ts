@@ -89,9 +89,12 @@ export function useDriverDocuments(driverRut: string) {
         body: formData,
       })
 
+      console.log('[v0] Upload response status:', response.status, 'ok:', response.ok)
+      
       if (!response.ok) {
         const result = await response.json()
-        throw new Error(result.error || 'Upload failed')
+        console.error('[v0] Upload failed with status', response.status, ':', result)
+        throw new Error(result.error || `Upload failed with status ${response.status}`)
       }
 
       const uploadResult = await response.json()
