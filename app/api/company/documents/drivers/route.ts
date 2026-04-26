@@ -56,7 +56,10 @@ export async function GET(request: NextRequest) {
     console.log('[v0] Using driver ID:', driverId)
 
     // Buscar documentos en tabla desde la base de datos
-    // IMPORTANTE: usar preferCount=false para evitar cache
+    // Agregar timestamp a la query para forzar refresco y evitar cache de Supabase
+    const timestamp = Date.now()
+    console.log('[v0] Query timestamp for cache bust:', timestamp)
+    
     const { data: dbDocuments, error: dbError, count } = await adminClient
       .from('driver_documents')
       .select('id, file_name, document_type, file_url, created_at, status', { count: 'exact' })

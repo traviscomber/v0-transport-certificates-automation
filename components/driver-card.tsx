@@ -45,15 +45,18 @@ export function DriverCard({
 
   const handleUpload = async () => {
     if (!uploadFileName.trim() || !uploadFile) {
+      console.log('[v0] Upload blocked - missing fields:', { hasFileName: !!uploadFileName.trim(), hasFile: !!uploadFile })
       setUploadError('Por favor selecciona un archivo')
       return
     }
 
+    console.log('[v0] handleUpload triggered for:', { driver: driver.rut, fileName: uploadFileName, fileSize: uploadFile.size })
     setUploading(true)
     setUploadError('')
     try {
-      console.log('[v0] Iniciando upload:', { driverId: driver.id, tipo: uploadDocType, nombre: uploadFileName, fileSize: uploadFile.size })
+      console.log('[v0] Calling uploadDocument with:', { driverId: driver.id, tipo: uploadDocType, nombre: uploadFileName, fileSize: uploadFile.size })
       await uploadDocument(uploadDocType, uploadFileName, uploadFile)
+      console.log('[v0] uploadDocument returned successfully')
       console.log('[v0] Upload completado, documentos después de refetch:', { docsLength: documents.length })
       
       // Wait a moment for React state to update
@@ -72,6 +75,7 @@ export function DriverCard({
         successMsg.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100] animate-in'
         successMsg.textContent = `✅ Documento "${uploadFileName}" subido exitosamente`
         document.body.appendChild(successMsg)
+        console.log('[v0] Success toast created')
         setTimeout(() => {
           successMsg.remove()
         }, 3000)
@@ -84,7 +88,7 @@ export function DriverCard({
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Error desconocido al subir documento'
-      console.error('[v0] Upload error:', errorMsg, error)
+      console.error('[v0] handleUpload error:', errorMsg, error)
       setUploadError(errorMsg)
     } finally {
       setUploading(false)
