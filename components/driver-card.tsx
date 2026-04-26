@@ -42,6 +42,7 @@ export function DriverCard({
   const [uploadError, setUploadError] = useState<string>('')
   const [selectedDocument, setSelectedDocument] = useState<any>(null)
   const [showDocumentModal, setShowDocumentModal] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const handleUpload = async () => {
     if (!uploadFileName.trim() || !uploadFile) {
@@ -66,6 +67,11 @@ export function DriverCard({
       setUploadFileName('')
       setUploadFile(null)
       setUploadDocType('Licencia de Conducir')
+      
+      // Force re-render by incrementing key
+      console.log('[v0] Incrementing refresh key to force re-render')
+      setRefreshKey(prev => prev + 1)
+      
       console.log('[v0] Modal cerrado, contador debería estar actualizado')
       
       // Show success message
@@ -102,7 +108,7 @@ export function DriverCard({
 
   return (
     <>
-      <Card className={`bg-slate-900/80 backdrop-blur-sm border-slate-700/60 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all ${statusBg}`}>
+      <Card className={`bg-slate-900/80 backdrop-blur-sm border-slate-700/60 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all ${statusBg}`} key={`card-${driver.id}-${refreshKey}`}>
         <CardContent className="p-6">
           <div className="space-y-4">
             {/* Header with RUT and status */}
