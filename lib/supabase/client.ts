@@ -11,9 +11,7 @@ export function createClient() {
       detectSessionInUrl: true,
     },
     realtime: {
-      params: {
-        eventsPerSecond: 10,
-      },
+      enabled: false,  // Disable Realtime WebSocket to fix connection issues
     },
     global: {
       headers: {
