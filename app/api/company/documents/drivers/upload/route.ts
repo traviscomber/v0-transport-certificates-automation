@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
 
     const driverId = drivers.id
     console.log('[v0] Using driver ID:', driverId, 'for RUT:', drivers.rut)
+    console.log('[v0] About to start file loop. Files array:', { length: files.length, files: files.map(f => f.name) })
 
     // Procesar cada archivo
     for (const file of files) {
