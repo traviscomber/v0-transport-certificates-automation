@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     const driverId = drivers.id
-    console.log('[v0] Found driver:', { driverId, rut: drivers.rut, name: `${drivers.nombres} ${drivers.apellidos}` })
+    console.log('[v0] Found driver:', { driverId, rut: drivers.rut, name: `${drivers.nombres} ${drivers.apellido_paterno} ${drivers.apellido_materno}`.trim() })
 
     // Initialize Supabase
     const adminClient = await createAdminClient()
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       await triggerDocumentUploadedAlert(
         driverId,
         file.name,
-        `${drivers.nombres} ${drivers.apellidos}`
+        `${drivers.nombres} ${drivers.apellido_paterno} ${drivers.apellido_materno}`.trim()
       )
     } catch (alertError) {
       console.error('[v0] Alert trigger error:', alertError)
