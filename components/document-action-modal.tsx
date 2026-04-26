@@ -152,30 +152,44 @@ export function DocumentActionModal({
                 </button>
               </div>
               <div className="p-4 bg-slate-900 min-h-64 flex items-center justify-center overflow-auto max-h-96">
+                {/* Debug Info */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="text-xs text-slate-500 mb-2 absolute top-2 right-2 bg-slate-800 p-2 rounded max-w-xs">
+                    URL: {document.public_url?.substring(0, 50)}...
+                  </div>
+                )}
+                
                 {/* Image Preview */}
-                {['jpg', 'jpeg', 'png', 'gif', 'webp'].some(ext => document.public_url?.toLowerCase().includes(ext)) ? (
+                {document.public_url ? (
                   <div className="flex flex-col items-center justify-center w-full">
                     <img
                       src={document.public_url}
                       alt={document.nombre}
                       className="max-w-full max-h-96 object-contain rounded"
+                      crossOrigin="anonymous"
                       onError={(e) => {
+                        console.error('[v0] Image failed to load:', document.public_url)
                         e.currentTarget.style.display = 'none'
                         const errorMsg = e.currentTarget.nextElementSibling as HTMLElement
                         if (errorMsg) errorMsg.style.display = 'block'
+                      }}
+                      onLoad={() => {
+                        console.log('[v0] Image loaded successfully:', document.public_url)
                       }}
                     />
                     <div className="hidden text-center py-8 w-full">
                       <Eye className="h-12 w-12 text-slate-600 mx-auto mb-2" />
                       <p className="text-slate-400">No se pudo cargar la vista previa</p>
                       <p className="text-slate-500 text-sm mt-1">{document.nombre}</p>
+                      <p className="text-slate-600 text-xs mt-2 break-all">{document.public_url}</p>
                     </div>
                   </div>
                 ) : (
                   <div className="text-center py-8 w-full">
                     <Eye className="h-12 w-12 text-slate-600 mx-auto mb-2" />
-                    <p className="text-slate-400">Vista previa no disponible</p>
-                    <p className="text-slate-500 text-sm mt-1">Tipo de archivo: {document.public_url?.split('.').pop()?.toUpperCase()}</p>
+                    <p className="text-slate-400">URL no disponible</p>
+                    <p className="text-slate-500 text-sm mt-1">{document.nombre}</p>
+                    <p className="text-slate-600 text-xs mt-2">Storage Path: {document.storage_path}</p>
                   </div>
                 )}
               </div>

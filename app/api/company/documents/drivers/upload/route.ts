@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { allDriversData } from '@/lib/data/all-drivers'
 import { triggerDocumentUploadedAlert } from '@/lib/operations/alert-triggers'
+import { debugDocuments } from '@/lib/debug/document-checker'
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,19 +27,30 @@ export async function POST(request: NextRequest) {
   const adminClient = await createAdminClient()
     const uploadedDocs = []
 
-    // Asegurar que el bucket existe
+    // Asegurar que el bucket existe y está configurado correctamente
     try {
       const { data: buckets } = await adminClient.storage.listBuckets()
-      const bucketExists = buckets?.some((b: any) => b.name === 'documents')
+      const bucket = buckets?.find((b: any) => b.name === 'documents')
       
-      if (!bucketExists) {
+      if (!bucket) {
         console.log('[v0] Creating documents bucket...')
         await adminClient.storage.createBucket('documents', {
           public: true,
           fileSizeLimit: 52428800, // 50MB
+          allowedMimeTypes: ['image/*', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
         })
         console.log('[v0] Bucket created successfully')
+      } else {
+        console.log('[v0] Bucket exists, details:', {
+          name: bucket.name,
+          public: bucket.public,
+          created_at: bucket.created_at,
+          id: bucket.id
+        })
       }
+    } catch (bucketError) {
+      console.log('[v0] Bucket check/create result:', bucketError)
+    }
     } catch (bucketError) {
       console.log('[v0] Bucket check/create attempt (may already exist):', bucketError)
     }
@@ -148,21 +160,30 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      console.log('[v0] File uploaded successfully:', filePath)
+      console.log('[v0] File uploaded successfully to storage:', filePath)
 
-      // Obtener URL pública
-      const { data } = adminClient.storage.from('documents').getPublicUrl(filePath)
-      let publicUrl = data?.publicUrl || ''
+      // IMPORTANTE: getPublicUrl es síncrono y siempre retorna una URL
+      // No necesita await, retorna {data: {publicUrl: '...'}}
+      const publicUrlResponse = adminClient.storage.from('documents').getPublicUrl(filePath)
       
-      // Asegurar que la URL es correcta - si getPublicUrl falla, construirla manualmente
-      if (!publicUrl || publicUrl.trim() === '') {
+      console.log('[v0] getPublicUrl response:', {
+        hasData: !!publicUrlResponse.data,
+        publicUrl: publicUrlResponse.data?.publicUrl,
+        pathUsed: filePath,
+        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL
+      })
+      
+      // Usar la URL retornada por getPublicUrl - siempre construye correctamente
+      let publicUrl = publicUrlResponse.data?.publicUrl || ''
+      
+      // Fallback: si por alguna razón no retorna nada, construir manualmente
+      if (!publicUrl) {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-        if (supabaseUrl) {
-          publicUrl = `${supabaseUrl}/storage/v1/object/public/documents/${filePath}`
-        }
+        publicUrl = `${supabaseUrl}/storage/v1/object/public/documents/${filePath}`
+        console.log('[v0] Using fallback URL construction:', publicUrl)
       }
       
-      console.log('[v0] Public URL generated:', publicUrl)
+      console.log('[v0] Final public URL for storage:', { filePath, publicUrl, urlLength: publicUrl?.length })
 
       // Crear objeto de documento con la URL completa
       const doc = {
@@ -198,14 +219,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Trigger alert para cada documento subido
-    if (uploadedDocs.length > 0) {
-      const driverInfo = allDriversData.find((d) => {
-        const normalizeRUT = (rut: string | undefined) => {
-          if (!rut) return ''
-          return rut.trim().replace(/[.-]/g, '').toUpperCase()
-        }
-        return normalizeRUT(d.rut) === normalizeRUT(driverRut)
-      })
+    for (const doc of uploadedDocs) {
+      try {
+        await triggerDocumentUploadedAlert({
+          driver_id: driverId,
+          document_id: doc.id,
+          document_type: doc.document_type,
+          file_name: doc.file_name
+        })
+      } catch (alertError) {
+        console.error('[v0] Error triggering alert:', alertError)
+      }
+    }
+
+    // Debug: Verificar qué se guardó en la BD
+    console.log('[v0] === CALLING DEBUG AFTER UPLOAD ===')
+    await debugDocuments()
+
+    return NextResponse.json({
+      success: true,
+      message: `${uploadedDocs.length} documento(s) subido(s) exitosamente`,
+      documents: uploadedDocs
+    })
 
       await triggerDocumentUploadedAlert(
         driverId,

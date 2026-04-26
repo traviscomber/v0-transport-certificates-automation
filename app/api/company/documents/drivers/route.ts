@@ -109,20 +109,27 @@ export async function GET(request: NextRequest) {
       // Generar URL pública correctamente
       let publicUrl = doc.file_url || ''
       
-      // Si file_url no existe o está vacía, intentar construirla desde el storage path
-      if (!publicUrl || publicUrl.trim() === '') {
-        try {
-          // Obtener la URL pública desde Supabase Storage
-          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-          if (supabaseUrl && doc.file_url) {
-            // Construir la URL correctamente
-            publicUrl = `${supabaseUrl}/storage/v1/object/public/documents/${doc.file_url}`
-            console.log('[v0] Generated public URL:', publicUrl)
-          }
-        } catch (urlError) {
-          console.warn('[v0] Could not generate public URL:', urlError)
+      console.log('[v0] Document URL check:', {
+        docId: doc.id,
+        rawFileUrl: doc.file_url,
+        isEmpty: !doc.file_url || doc.file_url.trim() === '',
+        isUrl: doc.file_url?.includes('http'),
+      })
+      
+      // Si file_url es solo un path (no una URL completa), construirla
+      if (doc.file_url && !doc.file_url.includes('http')) {
+        // El file_url es solo el path, construir la URL completa
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        if (supabaseUrl) {
+          publicUrl = `${supabaseUrl}/storage/v1/object/public/documents/${doc.file_url}`
+          console.log('[v0] Built full URL from path:', { path: doc.file_url, fullUrl: publicUrl })
         }
+      } else if (!doc.file_url || doc.file_url.trim() === '') {
+        // file_url está vacía completamente
+        console.warn('[v0] Document has no file_url:', doc.id, doc.file_name)
       }
+      
+      console.log('[v0] Final public_url for document:', { docId: doc.id, publicUrl })
       
       return {
         id: doc.id,
