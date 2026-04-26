@@ -96,15 +96,15 @@ export default function AlertasPage() {
   const getAlertColor = (type: string) => {
     switch (type) {
       case 'warning':
-        return 'border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/30'
+        return 'border-orange-300 bg-orange-100 dark:border-orange-700 dark:bg-orange-900/50'
       case 'error':
-        return 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
+        return 'border-red-300 bg-red-100 dark:border-red-700 dark:bg-red-900/50'
       case 'success':
-        return 'border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30'
+        return 'border-green-300 bg-green-100 dark:border-green-700 dark:bg-green-900/50'
       case 'info':
-        return 'border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30'
+        return 'border-blue-300 bg-blue-100 dark:border-blue-700 dark:bg-blue-900/50'
       default:
-        return 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/30'
+        return 'border-gray-300 bg-gray-100 dark:border-gray-700 dark:bg-gray-900/50'
     }
   }
 
@@ -245,10 +245,10 @@ export default function AlertasPage() {
                   {getAlertIcon(alert.type)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground">{alert.title}</h3>
-                  <p className="text-sm text-foreground/75 mt-1">{alert.description}</p>
+                  <h3 className="font-semibold text-foreground dark:text-white">{alert.title}</h3>
+                  <p className="text-sm text-foreground/85 dark:text-slate-200 mt-1">{alert.description}</p>
                   <div className="flex items-center gap-3 mt-3 flex-wrap">
-                    <span className="text-xs text-muted-foreground">{formatTime(alert.timestamp)}</span>
+                    <span className="text-xs text-foreground/70 dark:text-slate-400">{formatTime(alert.timestamp)}</span>
                     {alert.entityType && (
                       <Badge variant="outline" className="text-xs">
                         {alert.entityType}
