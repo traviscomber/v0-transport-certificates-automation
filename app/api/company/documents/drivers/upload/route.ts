@@ -5,7 +5,6 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { allDriversData } from '@/lib/data/all-drivers'
 import { triggerDocumentUploadedAlert } from '@/lib/operations/alert-triggers'
-import { debugDocuments } from '@/lib/debug/document-checker'
 
 export async function POST(request: NextRequest) {
   try {
@@ -230,8 +229,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Debug: Verificar qué se guardó en la BD
-    console.log('[v0] === CALLING DEBUG AFTER UPLOAD ===')
-    await debugDocuments()
+    console.log('[v0] Upload completed successfully with', uploadedDocs.length, 'documents')
 
     return NextResponse.json({
       success: true,
