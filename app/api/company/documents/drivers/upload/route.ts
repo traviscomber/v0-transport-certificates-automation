@@ -11,7 +11,8 @@ const normalizeRUT = (rut: string | undefined) => {
 }
 
 export async function POST(request: NextRequest) {
-  console.log('[v0] ==================== POST ENDPOINT CALLED ====================')
+  console.log('[v0] ==================== UPLOAD POST CALLED AT:', new Date().toISOString(), '====================')
+  console.log('[v0] Upload endpoint called')
   try {
     const formData = await request.formData()
     console.log('[v0] FormData entries:', Array.from(formData.entries()).map(([k, v]) => [k, v instanceof File ? `File(${v.name})` : v]))
