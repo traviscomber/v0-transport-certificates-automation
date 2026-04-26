@@ -28,16 +28,33 @@ export async function logAlert(event: AlertEvent) {
     // Guardar en la tabla de alertas en Supabase
     const adminClient = await createAdminClient()
     
+    // Construir mensaje descriptivo
+    const message = event.description || event.title
+    
+    // Construir metadata si hay información adicional
+    const metadata = {
+      entityType: event.entityType,
+      entityId: event.entityId,
+      entityName: event.entityName,
+    }
+
+    // Mapear el tipo de alerta a prioridad
+    const priorityMap: Record<string, string> = {
+      'error': 'high',
+      'warning': 'normal',
+      'success': 'normal',
+      'info': 'low'
+    }
+
     const alertData = {
-      type: event.type,
       title: event.title,
-      description: event.description,
-      entity_type: event.entityType || null,
-      entity_id: event.entityId || null,
-      entity_name: event.entityName || null,
+      message: message,
+      type: event.type,
+      category: event.entityType || 'general',
+      priority: priorityMap[event.type] || 'normal',
       action_url: event.actionUrl || null,
-      created_at: new Date().toISOString(),
-      is_read: false
+      metadata: metadata,
+      read: false
     }
 
     console.log('[v0] Saving alert to database:', alertData)
@@ -55,7 +72,7 @@ export async function logAlert(event: AlertEvent) {
       }
     }
 
-    console.log('[v0] Alert saved successfully:', data)
+    console.log('[v0] ✅ Alert saved successfully to database')
 
     return {
       success: true,
