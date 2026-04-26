@@ -1,7 +1,12 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { allDriversData } from '@/lib/data/all-drivers'
 
 export const dynamic = 'force-dynamic'
+
+const normalizeRUT = (rut: string) => {
+  return rut.replace(/[^0-9kK]/g, '').toUpperCase()
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,31 +24,32 @@ export async function GET(request: NextRequest) {
 
     const adminClient = await createAdminClient()
 
-    // Buscar conductores para obtener el ID
-    const { data: drivers } = await adminClient
-      .from('conductores')
-      .select('id, rut')
-      .like('rut', `%${rut}%`)
-      .limit(1)
-    
-    // Si no encuentra en conductores, buscar en datos locales
+    // Normalizar el RUT de entrada igual que en el upload
+    const normalizedInputRut = normalizeRUT(rut)
+    console.log('[v0] Normalized input RUT:', { input: rut, normalized: normalizedInputRut })
+
+    // Buscar en datos locales igual que el upload hace
     let driverId = null
-    if (drivers && drivers.length > 0) {
-      driverId = drivers[0].id
+    const driver = allDriversData.find(d => normalizeRUT(d.rut) === normalizedInputRut)
+    
+    if (driver) {
+      driverId = driver.id || `local_${driver.rut}`
+      console.log('[v0] Found driver in local data:', { driverId, rut: driver.rut })
     } else {
-      // Fallback a datos locales
-      const { allDriversData } = await import('@/lib/data/all-drivers')
-      const normalizeRUT = (rutVal: string | undefined) => {
-        if (!rutVal) return ''
-        return rutVal.trim().replace(/[.-]/g, '').toUpperCase()
-      }
-      const normalizedSearch = normalizeRUT(rut)
-      const localDriver = allDriversData.find(d => normalizeRUT(d.rut) === normalizedSearch)
-      if (localDriver) {
-        driverId = localDriver.id || `local_${localDriver.rut}`
+      // Fallback: intentar buscar en conductores table
+      const { data: drivers } = await adminClient
+        .from('conductores')
+        .select('id, rut')
+        .like('rut', `%${normalizedInputRut}%`)
+        .limit(1)
+      
+      if (drivers?.length) {
+        driverId = drivers[0].id
+        console.log('[v0] Found driver in conductores table:', { driverId, rut: drivers[0].rut })
       }
     }
-
+    
+    // Si aún no encuentra el driver
     if (!driverId) {
       console.warn('[v0] Driver not found for RUT:', rut)
       return NextResponse.json({
