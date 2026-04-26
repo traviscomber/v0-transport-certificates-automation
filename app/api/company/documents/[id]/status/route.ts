@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { triggerDocumentStatusAlert } from '@/lib/operations/alert-triggers'
+import { allDriversData } from '@/lib/data/all-drivers'
 
 export async function PATCH(
   request: NextRequest,
@@ -53,13 +54,29 @@ export async function PATCH(
     } else if (updateResult && updateResult.length > 0) {
       console.log('[v0] ✅ Document status updated:', { documentId, status })
       
+      // Get document details for alert
+      const { data: document } = await adminClient
+        .from('driver_documents')
+        .select('file_name, document_type, driver_id')
+        .eq('id', documentId)
+        .single()
+      
+      // Find driver info from local data
+      let driverName = 'Un conductor'
+      if (document?.driver_id) {
+        const driver = allDriversData.find(d => d.id === String(document.driver_id) || d.rut === String(document.driver_id))
+        if (driver) {
+          driverName = `${driver.nombres} ${driver.apellidos}`
+        }
+      }
+      
       // Trigger alert for status change
       if (status === 'approved' || status === 'rejected' || status === 'expired') {
         try {
           await triggerDocumentStatusAlert(
             documentId,
             status as 'approved' | 'rejected' | 'expired',
-            `Documento ${documentId}`,
+            document?.document_type || `Documento ${documentId}`,
             reason
           )
           console.log('[v0] ✅ Alert triggered for status change:', status)
@@ -104,13 +121,29 @@ export async function PATCH(
 
     console.log('[v0] ✅ Document status inserted:', { documentId, status })
     
+    // Get document details for alert
+    const { data: document } = await adminClient
+      .from('driver_documents')
+      .select('file_name, document_type, driver_id')
+      .eq('id', documentId)
+      .single()
+    
+    // Find driver info from local data
+    let driverName = 'Un conductor'
+    if (document?.driver_id) {
+      const driver = allDriversData.find(d => d.id === String(document.driver_id) || d.rut === String(document.driver_id))
+      if (driver) {
+        driverName = `${driver.nombres} ${driver.apellidos}`
+      }
+    }
+    
     // Trigger alert for new status
     if (status === 'approved' || status === 'rejected' || status === 'expired') {
       try {
         await triggerDocumentStatusAlert(
           documentId,
           status as 'approved' | 'rejected' | 'expired',
-          `Documento ${documentId}`,
+          document?.document_type || `Documento ${documentId}`,
           reason
         )
         console.log('[v0] ✅ Alert triggered for new status:', status)
