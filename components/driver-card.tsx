@@ -32,7 +32,8 @@ export function DriverCard({
   getDocumentStatusColor,
   getDocumentStatusLabel,
 }: DriverCardProps) {
-  const { documents, loading, uploadDocument, refetch } = useDriverDocuments(driver.rut)
+  const isExpanded = expandedDocuments.has(driver.id)
+  const { documents, loading, uploadDocument, refetch } = useDriverDocuments(driver.rut, isExpanded)
   const { changeStatus } = useDocumentManagement()
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [uploadDocType, setUploadDocType] = useState('Licencia de Conducir')
@@ -184,7 +185,7 @@ export function DriverCard({
                   </div>
                   <ChevronDown 
                     className={`h-4 w-4 text-slate-500 transition-transform ${
-                      expandedDocuments.has(driver.id) ? 'rotate-180' : ''
+                      isExpanded ? 'rotate-180' : ''
                     }`}
                   />
                 </button>
@@ -201,7 +202,7 @@ export function DriverCard({
               </div>
 
               {/* Documentos expandibles */}
-              {expandedDocuments.has(driver.id) && (
+              {isExpanded && (
                 <div className="space-y-2">
                   {loading ? (
                     <div className="flex items-center justify-center py-4">

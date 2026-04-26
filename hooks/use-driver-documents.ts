@@ -11,7 +11,7 @@ export interface DriverDocument {
   storage_path?: string
 }
 
-export function useDriverDocuments(driverRut: string) {
+export function useDriverDocuments(driverRut: string, enabled = false) {
   const [documents, setDocuments] = useState<DriverDocument[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -37,7 +37,22 @@ export function useDriverDocuments(driverRut: string) {
         headers,
         cache: skipCache ? 'no-store' : 'default'
       })
-      const result = await response.json()
+
+      // Read as text first to avoid "Unexpected end of JSON input" crash
+      const text = await response.text()
+      if (!text || text.trim() === '') {
+        setDocuments([])
+        return
+      }
+
+      let result: any
+      try {
+        result = JSON.parse(text)
+      } catch {
+        console.error('[v0] Invalid JSON from documents API:', text.substring(0, 100))
+        setDocuments([])
+        return
+      }
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to fetch documents')
@@ -175,12 +190,12 @@ export function useDriverDocuments(driverRut: string) {
     }
   }
 
-  // Cargar documentos al montar o cuando cambia driverRut
+  // Only fetch when explicitly enabled (e.g. card is expanded)
   useEffect(() => {
-    if (driverRut) {
+    if (driverRut && enabled) {
       fetchDocuments()
     }
-  }, [driverRut])
+  }, [driverRut, enabled])
 
   return {
     documents,
