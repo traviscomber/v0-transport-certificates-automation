@@ -62,6 +62,13 @@ export default function ConductoresPage() {
       ) : error ? (
         <div className="text-center py-8">
           <p className="text-red-500">Error cargando conductores</p>
+          <p className="text-red-400 text-sm mt-2">{error?.message || 'Error desconocido'}</p>
+          <button
+            onClick={() => mutate()}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Reintentar
+          </button>
         </div>
       ) : drivers.length === 0 ? (
         <div className="text-center py-8">

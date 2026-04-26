@@ -10,12 +10,14 @@ export async function GET() {
     const supabase = await createClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-    console.log('[v0] API company/data called - Using static driver/subcontractor data')
+    console.log('[v0] API company/data called')
+    console.log('[v0] Using static driver/subcontractor data')
 
     // Use static data for drivers and subcontractors
-    // (These come from conductores/subcontractores tables, not profiles table)
     const driversData = allDriversData
     const subcontractorsData = allSubcontractorsData
+
+    console.log('[v0] Loaded drivers:', driversData.length, 'subcontractors:', subcontractorsData.length)
 
     const executivesData = [
       { id: '1', full_name: 'Carolina Martinez', rut: '12345678-9', email: 'carolina@labbe.cl', phone: '+56912345678', cargo: 'Ejecutiva de Cuenta' },
@@ -24,8 +26,7 @@ export async function GET() {
       { id: '4', full_name: 'Cecilia Herrera', rut: '14567890-3', email: 'cecilia@labbe.cl', phone: '+56914567891', cargo: 'Ejecutiva de Cuenta' },
     ]
 
-    // Enrich response with all data
-    return NextResponse.json({
+    const response = {
       company: {
         id: '1',
         rut: '78376780-5',
@@ -45,10 +46,14 @@ export async function GET() {
         totalSubcontractors: subcontractorsData.length,
         totalDrivers: driversData.length
       }
-    })
+    }
+
+    console.log('[v0] Returning response with', driversData.length, 'drivers')
+    return NextResponse.json(response)
   } catch (error) {
     console.error('[v0] Error in company data endpoint:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('[v0] Error details:', errorMessage)
     return NextResponse.json(
       { error: 'Failed to fetch company data', details: errorMessage },
       { status: 500 }
