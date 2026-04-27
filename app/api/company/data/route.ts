@@ -32,11 +32,11 @@ export async function GET() {
         rut: '78376780-5',
         razon_social: 'LABBE TRANSPORTES Y CIAS LTDA.',
         nombre_fantasia: 'LABBE TRANSPORTES',
-        email: 'contacto@labbe.cl',
+        email: 'contacto@transporteslabbe.cl',
         telefono: '+56912345678',
         region: 'RM',
         ciudad: 'Santiago',
-        representante_legal: 'Juan Perez',
+        representante_legal: 'Juan Pérez',
         is_active: true
       },
       executives: executivesData,
