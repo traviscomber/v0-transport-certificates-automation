@@ -13,6 +13,7 @@ interface Subcontractor {
   region: string
   ejecutiva: string
   comuna: string
+  direccion?: string
   representante: string
   telefono: string
   email: string
@@ -61,6 +62,7 @@ export default function SubcontratistasPage() {
             region: s.region || 'N/A',
             ejecutiva: s.ejecutiva || 'N/A',
             comuna: s.comuna || 'N/A',
+            direccion: s.direccion || 'N/A',
             representante: s.nombre_contacto || '',
             telefono: s.telefono || '',
             email: s.email || '',
