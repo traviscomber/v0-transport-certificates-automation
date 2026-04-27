@@ -163,19 +163,6 @@ export function DashboardSidebar() {
             </Link>
           </div>
 
-          {/* Admin Panel Button */}
-          <div className="p-4 border-b border-slate-700/50">
-            <Link href="/admin/metrics" className="block">
-              <Button
-                size="sm"
-                className="w-full justify-start bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white"
-              >
-                <Lock className="h-4 w-4 mr-2" />
-                Panel de Admin
-              </Button>
-            </Link>
-          </div>
-
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Menu Principal</p>
@@ -237,6 +224,19 @@ export function DashboardSidebar() {
             ))}
 
           </nav>
+
+          {/* Admin Panel */}
+          <div className="p-4 border-t border-slate-700/50">
+            <Link href="/admin/metrics">
+              <Button
+                size="sm"
+                className="w-full justify-start bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                <Lock className="h-5 w-5 mr-3" />
+                Panel de Admin
+              </Button>
+            </Link>
+          </div>
 
           {/* Logout */}
           <div className="p-4 border-t border-slate-700/50">
