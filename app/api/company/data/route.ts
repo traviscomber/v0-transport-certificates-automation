@@ -26,7 +26,7 @@ export async function GET() {
     // Fetch real conductores (drivers)
     const { data: conductores, error: conductoresError } = await supabase
       .from('conductores')
-      .select('id, rut, nombres, apellido_paterno, apellido_materno, transportista_id, is_active, created_at')
+      .select('id, rut, nombres, apellido_paterno, apellido_materno, transportista_id, rut_proveedor, is_active, created_at')
       .order('nombres', { ascending: true })
 
     if (conductoresError) {
@@ -57,12 +57,12 @@ export async function GET() {
       created_at: t.created_at,
     }))
 
-    // Format drivers
+    // Format drivers - use rut_proveedor directly from database
     const driversData = (conductores || []).map(c => ({
       id: c.id,
       rut: c.rut || '',
       nombre: `${c.nombres || ''} ${c.apellido_paterno || ''} ${c.apellido_materno || ''}`.trim(),
-      rut_proveedor: transportistaMap.get(c.transportista_id)?.rut || '',
+      rut_proveedor: c.rut_proveedor || '',
       proveedor: transportistaMap.get(c.transportista_id)?.razon_social || 'N/A',
       is_active: c.is_active || true,
     }))
