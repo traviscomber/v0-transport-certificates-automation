@@ -358,10 +358,10 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
             
             const normalizedSubRut = normalizeRut(sub.rut)
             
-            // Count drivers for this subcontractor by matching RUT
+            // Count active drivers for this subcontractor by matching RUT
             const subDrivers = drivers.filter((d, dIdx) => {
               const normalizedDriverRut = normalizeRut(d.rut_proveedor)
-              const matches = normalizedDriverRut === normalizedSubRut
+              const matches = normalizedDriverRut === normalizedSubRut && d.is_active
               
               // Debug: Log for first subcontractor to see all matches
               if (subIdx === 0 && dIdx < 10) {
