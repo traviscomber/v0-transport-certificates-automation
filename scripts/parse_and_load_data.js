@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
-const csvPath = '/vercel/share/v0-project/user_read_only_context/text_attachments/44-db1kM.csv'
+const csvPath = path.join(process.cwd(), 'user_read_only_context/text_attachments/44-db1kM.csv')
 const csvContent = fs.readFileSync(csvPath, 'utf-8')
 const lines = csvContent.trim().split('\n')
 
