@@ -54,51 +54,19 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
   // Fetch data from API if not provided as prop
   useEffect(() => {
     if (initialSubcontractors) {
-      console.log('[v0] Using provided subcontractors prop, skipping API fetch')
       return // Use provided data
     }
 
     const fetchData = async () => {
       try {
-        console.log('[v0] Fetching subcontractors and drivers from API...')
         const response = await fetch('/api/dashboard/data')
         const data = await response.json()
         
-        console.log('[v0] API Response status:', response.status)
-        console.log('[v0] API Response keys:', Object.keys(data))
-        console.log('[v0] API Response dashboard keys:', data.dashboard ? Object.keys(data.dashboard) : 'no dashboard')
-        
         if (response.ok && data.dashboard?.transportistas) {
-          console.log('[v0] Fetched subcontractors:', data.dashboard.transportistas.length)
-          console.log('[v0] Fetched drivers:', data.dashboard.conductores?.length || 0)
-          
-          // Debug: Log first 5 drivers with their rut_proveedor
-          if (data.dashboard.conductores && data.dashboard.conductores.length > 0) {
-            console.log('[v0] Sample drivers (first 5):')
-            data.dashboard.conductores.slice(0, 5).forEach((d: any, idx: number) => {
-              console.log(`  [${idx}] ${d.nombre} - rut_proveedor: ${d.rut_proveedor}`)
-            })
-          } else {
-            console.log('[v0] No conductores in response!')
-          }
-          
-          // Debug: Log first 5 subcontractors with their rut
-          if (data.dashboard.transportistas && data.dashboard.transportistas.length > 0) {
-            console.log('[v0] Sample subcontractors (first 5):')
-            data.dashboard.transportistas.slice(0, 5).forEach((s: any, idx: number) => {
-              console.log(`  [${idx}] ${s.nombre} - rut: ${s.rut}`)
-            })
-          }
-          
           setSubcontractors(data.dashboard.transportistas)
           setDrivers(data.dashboard.conductores || [])
           // Don't pre-select any filter - let user choose
         } else {
-          console.error('[v0] Failed to fetch - response not ok or no transportistas:', {
-            ok: response.ok,
-            hasTransportistas: !!data.dashboard?.transportistas,
-            error: data.error
-          })
           // Don't use local demo data - show empty state instead
           setSubcontractors([])
           setDrivers([])
@@ -365,11 +333,6 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
               const normalizedDriverRut = normalizeRut(d.rut_proveedor)
               return normalizedDriverRut === normalizedSubRut && d.is_active
             })
-            
-            // Debug: log first 3 subcontractors
-            if (subIdx < 3) {
-              console.log(`[v0] Sub ${subIdx}: ${sub.nombre}, conductores_count=${sub.conductores_count}, filtered count=${subDrivers.length}`)
-            }
             
             // If conductores_count is not available from API, use the filtered count
             if (driverCount === 0 && drivers.length > 0) {

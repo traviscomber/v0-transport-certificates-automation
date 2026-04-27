@@ -48,21 +48,11 @@ export async function GET(request: NextRequest) {
 
     const subcontratistas = await subcontratistasResponse.json()
     console.log('[v0] Subcontratistas count:', Array.isArray(subcontratistas) ? subcontratistas.length : 0)
-    
-    // Debug: show first subcontratista to check structure
-    if (Array.isArray(subcontratistas) && subcontratistas.length > 0) {
-      console.log('[v0] First subcontratista sample:', JSON.stringify(subcontratistas[0]).substring(0, 200))
-    }
-    if (!Array.isArray(subcontratistas)) {
-      console.log('[v0] Subcontratistas error response:', JSON.stringify(subcontratistas).substring(0, 300))
-    }
 
     // Fetch conductores data - NO filter, get all drivers
     // They will be linked to subcontractors via rut_proveedor match in the UI
     // Add limit=1000 to fetch all records
     const conductoesUrl = `${supabaseUrl}/rest/v1/conductores?limit=1000`
-
-    console.log('[v0] Fetching conductores from:', conductoesUrl)
 
     const conductoesResponse = await fetch(conductoesUrl, {
       headers: {
@@ -87,22 +77,12 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Debug: show the first few RUT counts
-    const rutsWithCounts = Array.from(driverCountByRut.entries()).slice(0, 5)
-    console.log('[v0] RUTs with counts:', rutsWithCounts)
-
     // Add driver count to each subcontractista
     const subcontratistasWithCounts = Array.isArray(subcontratistas) 
-      ? subcontratistas.map((s, idx) => {
-          const count = driverCountByRut.get(s.rut) || 0
-          if (idx < 3) {
-            console.log(`[v0] Subcontratista ${idx}: rut=${s.rut}, count=${count}`)
-          }
-          return {
-            ...s,
-            conductores_count: count,
-          }
-        })
+      ? subcontratistas.map((s) => ({
+          ...s,
+          conductores_count: driverCountByRut.get(s.rut) || 0,
+        }))
       : []
 
     return NextResponse.json({
