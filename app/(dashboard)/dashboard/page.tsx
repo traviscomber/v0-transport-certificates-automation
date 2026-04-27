@@ -3,7 +3,7 @@
 import { useAuth } from '@/lib/auth-context'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { BarChart3, FileText, Users, AlertTriangle } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import { DocumentAlertsWidget } from '@/components/admin/document-alerts-widget'
 
 export default function DashboardPage() {
@@ -42,60 +42,7 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-slate-700 bg-slate-900/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
-              <FileText className="w-4 h-4 text-orange-500" />
-              Documentos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">0</div>
-            <p className="text-xs text-slate-500 mt-1">Certificados cargados</p>
-          </CardContent>
-        </Card>
 
-        <Card className="border-slate-700 bg-slate-900/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-yellow-500" />
-              Alertas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">0</div>
-            <p className="text-xs text-slate-500 mt-1">Alertas activas</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-700 bg-slate-900/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-blue-500" />
-              Compliance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">0%</div>
-            <p className="text-xs text-slate-500 mt-1">Estado de cumplimiento</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-700 bg-slate-900/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
-              <Users className="w-4 h-4 text-green-500" />
-              {user.role === 'driver' ? 'Equipo' : 'Conductores'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">0</div>
-            <p className="text-xs text-slate-500 mt-1">Miembros del equipo</p>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
