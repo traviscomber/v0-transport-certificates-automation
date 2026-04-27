@@ -42,6 +42,7 @@ interface SubcontractorsListProps {
 }
 
 export function SubcontractorsList({ subcontractors: initialSubcontractors, drivers: initialDrivers }: SubcontractorsListProps) {
+  // Load subcontractors and drivers
   const [subcontractors, setSubcontractors] = useState<Subcontractor[]>(initialSubcontractors || [])
   const [drivers, setDrivers] = useState<Driver[]>(initialDrivers || [])
   const [isLoading, setIsLoading] = useState(!initialSubcontractors)
