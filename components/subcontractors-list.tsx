@@ -17,6 +17,7 @@ interface Subcontractor {
   representante_legal?: string
   telefono: string
   email?: string
+  correo?: string
   ejecutivo_nombre?: string
   ariztia?: boolean
   lts?: boolean
@@ -393,10 +394,10 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
                         {sub.telefono}
                       </a>
                     )}
-                    {sub.email && (
-                      <a href={`mailto:${sub.email}`} className="flex items-center gap-1 text-blue-400 hover:text-blue-300">
+                    {(sub.correo || sub.email) && (
+                      <a href={`mailto:${sub.correo || sub.email}`} className="flex items-center gap-1 text-blue-400 hover:text-blue-300">
                         <Mail className="w-4 h-4" />
-                        {sub.email}
+                        {sub.correo || sub.email}
                       </a>
                     )}
                   </div>

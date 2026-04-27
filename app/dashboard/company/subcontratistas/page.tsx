@@ -65,6 +65,7 @@ export default function SubcontratistasPage() {
             representante_legal: s.representante_legal || '',
             telefono: s.telefono || '',
             email: s.email || '',
+            correo: s.correo || '',
             ejecutivo_nombre: s.ejecutivo_nombre || 'Sin asignar',
             ariztia: s.ariztia || false,
             lts: s.lts || false,
