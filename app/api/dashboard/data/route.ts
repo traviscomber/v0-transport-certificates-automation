@@ -30,14 +30,13 @@ export async function GET(request: NextRequest) {
 
     console.log('[v0] Dashboard - User:', userEmail, 'Name:', userName, 'Role:', userRole, 'IsAdmin:', isAdmin)
 
-    // Fetch transportistas data - NO filtering, return all subcontractors
-    // Users can filter by ejecutiva name using the UI buttons
+    // Fetch subcontratistas data - NO filtering, return all subcontractors
     // Add limit=1000 to fetch all records (Supabase default is 1000)
-    const transportistasUrl = `${supabaseUrl}/rest/v1/transportistas?limit=1000`
+    const subcontratistasUrl = `${supabaseUrl}/rest/v1/subcontratistas?limit=1000`
 
-    console.log('[v0] Fetching transportistas from:', transportistasUrl)
+    console.log('[v0] Fetching subcontratistas from:', subcontratistasUrl)
 
-    const transportistasResponse = await fetch(transportistasUrl, {
+    const subcontratistasResponse = await fetch(subcontratistasUrl, {
       headers: {
         'Authorization': `Bearer ${supabaseServiceKey}`,
         'apikey': supabaseServiceKey,
@@ -46,15 +45,15 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    const transportistas = await transportistasResponse.json()
-    console.log('[v0] Transportistas count:', Array.isArray(transportistas) ? transportistas.length : 0)
+    const subcontratistas = await subcontratistasResponse.json()
+    console.log('[v0] Subcontratistas count:', Array.isArray(subcontratistas) ? subcontratistas.length : 0)
     
-    // Debug: show first transportista to check structure
-    if (Array.isArray(transportistas) && transportistas.length > 0) {
-      console.log('[v0] First transportista sample:', JSON.stringify(transportistas[0]).substring(0, 200))
+    // Debug: show first subcontratista to check structure
+    if (Array.isArray(subcontratistas) && subcontratistas.length > 0) {
+      console.log('[v0] First subcontratista sample:', JSON.stringify(subcontratistas[0]).substring(0, 200))
     }
-    if (!Array.isArray(transportistas)) {
-      console.log('[v0] Transportistas error response:', JSON.stringify(transportistas).substring(0, 300))
+    if (!Array.isArray(subcontratistas)) {
+      console.log('[v0] Subcontratistas error response:', JSON.stringify(subcontratistas).substring(0, 300))
     }
 
     // Fetch conductores data - NO filter, get all drivers
@@ -84,10 +83,10 @@ export async function GET(request: NextRequest) {
         isAdmin,
       },
       dashboard: {
-        transportistas: Array.isArray(transportistas) ? transportistas : [],
+        transportistas: Array.isArray(subcontratistas) ? subcontratistas : [],
         conductores: Array.isArray(conductores) ? conductores : [],
         stats: {
-          totalTransportistas: Array.isArray(transportistas) ? transportistas.length : 0,
+          totalTransportistas: Array.isArray(subcontratistas) ? subcontratistas.length : 0,
           totalConductores: Array.isArray(conductores) ? conductores.length : 0,
         },
       },
