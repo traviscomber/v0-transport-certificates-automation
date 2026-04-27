@@ -21,6 +21,7 @@ interface Subcontractor {
   rendic?: boolean
   interpolar?: boolean
   is_active: boolean
+  conductores_count?: number
 }
 
 interface Driver {
@@ -62,17 +63,35 @@ export default function SubcontratistasPage() {
             rendic: s.rendic || false,
             interpolar: s.interpolar || false,
             is_active: s.is_active !== false,
+            conductores_count: s.conductores_count || 0,
           }))
           setSubcontractors(mappedSubcontractors)
-        }
-        if (data.dashboard?.conductores) {
-          // Map conductores fields
+          
+          // Create a RUT -> company name map for driver lookup
+          const rutToCompanyMap = new Map(
+            mappedSubcontractors.map(s => [s.rut, s.nombre])
+          )
+          
+          if (data.dashboard?.conductores) {
+            // Map conductores fields with company name lookup
+            const mappedDrivers = data.dashboard.conductores.map((c: any) => ({
+              id: c.id,
+              rut: c.rut || '',
+              nombre: `${c.nombres || ''} ${c.apellido_paterno || ''} ${c.apellido_materno || ''}`.trim(),
+              rut_proveedor: c.rut_proveedor || '',
+              proveedor: rutToCompanyMap.get(c.rut_proveedor) || c.rut_proveedor || 'N/A',
+              is_active: c.is_active !== false,
+            }))
+            setDrivers(mappedDrivers)
+          }
+        } else if (data.dashboard?.conductores) {
+          // Fallback if transportistas not available
           const mappedDrivers = data.dashboard.conductores.map((c: any) => ({
             id: c.id,
             rut: c.rut || '',
             nombre: `${c.nombres || ''} ${c.apellido_paterno || ''} ${c.apellido_materno || ''}`.trim(),
             rut_proveedor: c.rut_proveedor || '',
-            proveedor: 'N/A',
+            proveedor: c.proveedor || c.rut_proveedor || 'N/A',
             is_active: c.is_active !== false,
           }))
           setDrivers(mappedDrivers)
