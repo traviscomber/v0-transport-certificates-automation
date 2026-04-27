@@ -376,7 +376,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
                     </div>
                     <div>
                       <p className="text-xs text-slate-400 font-semibold">REPRESENTANTE</p>
-                      <p className="text-sm text-white">{sub.representante || sub.representante_legal || 'N/A'}</p>
+                      <p className="text-sm text-white">{sub.representante_legal || 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-xs text-slate-400 font-semibold">EJECUTIVA ASIGNADA</p>
