@@ -30,14 +30,14 @@ export async function GET(request: NextRequest) {
 
     console.log('[v0] Dashboard - User:', userEmail, 'Name:', userName, 'Role:', userRole, 'IsAdmin:', isAdmin)
 
-    // Fetch subcontratistas data - NO filtering, return all subcontractors
+    // Fetch transportistas data - NO filtering, return all subcontractors
     // Users can filter by ejecutiva name using the UI buttons
     // Add limit=1000 to fetch all records (Supabase default is 1000)
-    const subcontratistasUrl = `${supabaseUrl}/rest/v1/subcontratistas?limit=1000`
+    const transportistasUrl = `${supabaseUrl}/rest/v1/transportistas?limit=1000`
 
-    console.log('[v0] Fetching subcontratistas from:', subcontratistasUrl)
+    console.log('[v0] Fetching transportistas from:', transportistasUrl)
 
-    const subcontratistasResponse = await fetch(subcontratistasUrl, {
+    const transportistasResponse = await fetch(transportistasUrl, {
       headers: {
         'Authorization': `Bearer ${supabaseServiceKey}`,
         'apikey': supabaseServiceKey,
@@ -46,8 +46,8 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    const subcontratistas = await subcontratistasResponse.json()
-    console.log('[v0] Subcontratistas count:', Array.isArray(subcontratistas) ? subcontratistas.length : 0)
+    const transportistas = await transportistasResponse.json()
+    console.log('[v0] Transportistas count:', Array.isArray(transportistas) ? transportistas.length : 0)
 
     // Fetch conductores data - NO filter, get all drivers
     // They will be linked to subcontractors via rut_proveedor match in the UI
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     const conductores = await conductoesResponse.json()
     console.log('[v0] Conductores count:', Array.isArray(conductores) ? conductores.length : 0)
 
-    // Count drivers per subcontractor (by rut_proveedor match with subcontratista rut)
+    // Count drivers per transportista (by rut_proveedor match with transportista rut)
     const driverCountByRut = new Map<string, number>()
     if (Array.isArray(conductores)) {
       conductores.forEach((conductor) => {
@@ -77,9 +77,9 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Add driver count to each subcontractista
-    const subcontratistasWithCounts = Array.isArray(subcontratistas) 
-      ? subcontratistas.map((s) => ({
+    // Add driver count to each transportista
+    const transportistasWithCounts = Array.isArray(transportistas) 
+      ? transportistas.map((s) => ({
           ...s,
           conductores_count: driverCountByRut.get(s.rut) || 0,
         }))
@@ -93,10 +93,10 @@ export async function GET(request: NextRequest) {
         isAdmin,
       },
       dashboard: {
-        transportistas: subcontratistasWithCounts,
+        transportistas: transportistasWithCounts,
         conductores: Array.isArray(conductores) ? conductores : [],
         stats: {
-          totalTransportistas: Array.isArray(subcontratistas) ? subcontratistas.length : 0,
+          totalTransportistas: Array.isArray(transportistas) ? transportistas.length : 0,
           totalConductores: Array.isArray(conductores) ? conductores.length : 0,
         },
       },
