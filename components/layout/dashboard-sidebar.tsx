@@ -163,6 +163,19 @@ export function DashboardSidebar() {
             </Link>
           </div>
 
+          {/* Admin Panel Button */}
+          <div className="p-4 border-b border-slate-700/50">
+            <Link href="/admin/metrics" className="block">
+              <Button
+                size="sm"
+                className="w-full justify-start bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white"
+              >
+                <Lock className="h-4 w-4 mr-2" />
+                Panel de Admin
+              </Button>
+            </Link>
+          </div>
+
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Menu Principal</p>
@@ -223,20 +236,6 @@ export function DashboardSidebar() {
               </Link>
             ))}
 
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-3">Admin</p>
-            <Link
-              href="/admin/metrics"
-              onClick={() => setIsOpen(false)}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all',
-                pathname === '/admin/metrics'
-                  ? 'bg-orange-500/20 text-orange-400 font-medium'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              )}
-            >
-              <Lock className="h-5 w-5" />
-              Métricas de Usuarios
-            </Link>
           </nav>
 
           {/* Logout */}
