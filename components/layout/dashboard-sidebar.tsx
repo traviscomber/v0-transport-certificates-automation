@@ -23,6 +23,7 @@ import {
   Upload,
   CheckCircle,
   AlertTriangle,
+  Lock,
 } from 'lucide-react'
 
 interface NavItem {
@@ -222,6 +223,20 @@ export function DashboardSidebar() {
               </Link>
             ))}
           </nav>
+
+          {/* Admin Panel */}
+          <div className="px-4 py-2 border-t border-slate-700/50">
+            <Link href="/admin/metrics">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start text-slate-300 hover:bg-orange-500/20 hover:text-orange-400 hover:border-orange-500/50 border-slate-500"
+              >
+                <Lock className="h-5 w-5 mr-3" />
+                Panel de Admin
+              </Button>
+            </Link>
+          </div>
 
           {/* Logout */}
           <div className="p-4 border-t border-slate-700/50">
