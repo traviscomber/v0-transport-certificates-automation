@@ -34,6 +34,11 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
+  { label: 'Torre de Control', href: '/dashboard/torre-control', icon: <BarChart3 className="h-5 w-5" /> },
+  { label: 'Subcontratistas', href: '/dashboard/subcontratistas', icon: <Building2 className="h-5 w-5" /> },
+  { label: 'Conductores', href: '/dashboard/conductores', icon: <Users className="h-5 w-5" /> },
+  { label: 'Documentos', href: '/dashboard/documentos', icon: <FileText className="h-5 w-5" /> },
+  { label: 'Equipos', href: '/dashboard/equipos', icon: <Truck className="h-5 w-5" /> },
   { label: 'Certificados', href: '/certificates', icon: <FileText className="h-5 w-5" /> },
   { label: 'Conductores', href: '/drivers-management', icon: <Users className="h-5 w-5" />, roles: ['admin', 'dispatcher', 'transportista'] },
   { label: 'Vehiculos', href: '/vehicles-management', icon: <Truck className="h-5 w-5" />, roles: ['admin', 'dispatcher', 'transportista'] },
