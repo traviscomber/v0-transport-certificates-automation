@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export async function GET(request: NextRequest) {
   try {
@@ -85,7 +86,9 @@ export async function GET(request: NextRequest) {
         }))
       : []
 
-    return NextResponse.json({
+    console.log('[v0] Dashboard stats - Transportistas:', Array.isArray(transportistasWithCounts) ? transportistasWithCounts.length : 0, ', Conductores:', Array.isArray(conductores) ? conductores.length : 0)
+
+    const response_obj = NextResponse.json({
       user: {
         email: userEmail,
         full_name: userName,
@@ -101,6 +104,12 @@ export async function GET(request: NextRequest) {
         },
       },
     })
+
+    // Add cache-busting headers
+    response_obj.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+    response_obj.headers.set('Pragma', 'no-cache')
+    response_obj.headers.set('Expires', '0')
+    return response_obj
   } catch (error: any) {
     console.error('[v0] Dashboard data error:', error)
     console.error('[v0] Error message:', error?.message)

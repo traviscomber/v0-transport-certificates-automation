@@ -41,7 +41,13 @@ export default function SubcontratistasPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/dashboard/data')
+        const response = await fetch('/api/dashboard/data', {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        })
         if (!response.ok) throw new Error('Failed to fetch')
         
         const data = await response.json()
