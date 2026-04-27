@@ -12,15 +12,15 @@ export async function GET() {
   try {
     console.log('[v0] Fetching real data from Supabase for subcontractors and drivers')
 
-    // Fetch real transportistas (221 total)
-    const { data: transportistas, error: transportistasError } = await supabase
-      .from('transportistas')
-      .select('id, rut, razon_social, nombre_fantasia, direccion, comuna, region, is_active, created_at')
+    // Fetch real subcontratistas from the subcontratistas table
+    const { data: subcontratistas, error: subcontratistasError } = await supabase
+      .from('subcontratistas')
+      .select('*')
       .order('razon_social', { ascending: true })
 
-    if (transportistasError) {
-      console.error('[v0] Error fetching transportistas:', transportistasError)
-      throw transportistasError
+    if (subcontratistasError) {
+      console.error('[v0] Error fetching subcontratistas:', subcontratistasError)
+      throw subcontratistasError
     }
 
     // Fetch real conductores (drivers)
@@ -35,27 +35,35 @@ export async function GET() {
     }
 
     // Create a map of transportista_id to transportista for quick lookup
-    const transportistaMap = new Map(transportistas?.map(t => [t.id, t]) || [])
+    const transportistaMap = new Map(subcontratistas?.map(s => [s.id, s]) || [])
 
-    // Format subcontractors with ejecutiva info
-    const subcontractorsData = (transportistas || []).map(t => ({
-      id: t.id,
-      nombre: t.razon_social,
-      nombre_fantasia: t.nombre_fantasia || '',
-      rut: t.rut || '',
-      region: t.region || 'N/A',
-      ejecutiva: 'N/A', // Se asigna por RUT en el frontend si es necesario
-      comuna: t.comuna || 'N/A',
-      representante: '',
-      telefono: '',
-      email: '',
-      ariztia: false,
-      lts: false,
-      rendic: false,
-      interpolar: false,
-      is_active: t.is_active || true,
-      created_at: t.created_at,
-    }))
+    // Format subcontractors with active driver count
+    const subcontractorsData = (subcontratistas || []).map(s => {
+      // Count active drivers for this subcontractor by matching rut_proveedor
+      const activeDriverCount = (conductores || []).filter(c => 
+        c.rut_proveedor === s.rut && c.is_active === true
+      ).length
+
+      return {
+        id: s.id,
+        nombre: s.razon_social,
+        nombre_fantasia: s.razon_social || '',
+        rut: s.rut || '',
+        region: s.region || 'N/A',
+        ejecutiva: 'N/A', // Se asigna por RUT en el frontend si es necesario
+        comuna: s.comuna || 'N/A',
+        representante: s.nombre_contacto || '',
+        telefono: s.telefono || '',
+        email: s.email || '',
+        ariztia: false,
+        lts: false,
+        rendic: false,
+        interpolar: false,
+        is_active: s.is_active || true,
+        created_at: s.created_at,
+        activeDriverCount: activeDriverCount,
+      }
+    })
 
     // Format drivers - use rut_proveedor directly from database
     const driversData = (conductores || []).map(c => ({
@@ -63,7 +71,7 @@ export async function GET() {
       rut: c.rut || '',
       nombre: `${c.nombres || ''} ${c.apellido_paterno || ''} ${c.apellido_materno || ''}`.trim(),
       rut_proveedor: c.rut_proveedor || '',
-      proveedor: transportistaMap.get(c.transportista_id)?.razon_social || 'N/A',
+      proveedor: 'N/A',
       is_active: c.is_active || true,
     }))
 
