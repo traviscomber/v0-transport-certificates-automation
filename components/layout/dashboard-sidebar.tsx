@@ -48,12 +48,8 @@ const navItems: NavItem[] = [
   { label: 'Portal OCR', href: '/ocr', icon: <CheckCircle className="h-5 w-5" /> },
   { label: 'Alertas', href: '/alerts', icon: <Bell className="h-5 w-5" /> },
   { label: 'Reportes', href: '/reports', icon: <BarChart3 className="h-5 w-5" /> },
+  { label: 'Métricas de Usuarios', href: '/admin/metrics', icon: <Lock className="h-5 w-5" />, roles: ['admin'] },
   { label: 'Compliance', href: '/compliance', icon: <Shield className="h-5 w-5" />, roles: ['admin', 'mandante'] },
-]
-
-const adminItems: NavItem[] = [
-  { label: 'Admin', href: '/admin', icon: <Settings className="h-5 w-5" />, roles: ['admin'] },
-  { label: 'Métricas de Usuarios', href: '/admin/metrics', icon: <BarChart3 className="h-5 w-5" />, roles: ['admin'] },
 ]
 
 const settingsItems: NavItem[] = [
@@ -84,11 +80,6 @@ export function DashboardSidebar() {
   const userName = user.full_name || user.email
 
   const filteredNavItems = navItems.filter(item => {
-    if (!item.roles) return true
-    return item.roles.includes(userRole)
-  })
-
-  const filteredAdminItems = adminItems.filter(item => {
     if (!item.roles) return true
     return item.roles.includes(userRole)
   })
@@ -183,28 +174,6 @@ export function DashboardSidebar() {
               </Link>
             ))}
 
-            {filteredAdminItems.length > 0 && (
-              <>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-3">Administracion</p>
-                {filteredAdminItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setIsOpen(false)}
-                    className={cn(
-                      'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all',
-                      pathname === item.href
-                        ? 'bg-orange-500/20 text-orange-400 font-medium'
-                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                    )}
-                  >
-                    {item.icon}
-                    {item.label}
-                  </Link>
-                ))}
-              </>
-            )}
-
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-3">Configuracion</p>
             {settingsItems.map((item) => (
               <Link
@@ -224,19 +193,6 @@ export function DashboardSidebar() {
             ))}
 
           </nav>
-
-          {/* Admin Panel - fixed at bottom */}
-          <div className="border-t border-slate-700/50 p-4">
-            <Link href="/admin/metrics" className="block">
-              <Button
-                size="sm"
-                className="w-full justify-start bg-orange-600 hover:bg-orange-700 text-white"
-              >
-                <Lock className="h-5 w-5 mr-3" />
-                Panel de Admin
-              </Button>
-            </Link>
-          </div>
 
           {/* Logout - fixed at bottom */}
           <div className="border-t border-slate-700/50 p-4">
