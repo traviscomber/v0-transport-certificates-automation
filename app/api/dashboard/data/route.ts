@@ -31,24 +31,82 @@ export async function GET(request: NextRequest) {
 
     console.log('[v0] Dashboard - User:', userEmail, 'Name:', userName, 'Role:', userRole, 'IsAdmin:', isAdmin)
 
-    // Fetch transportistas data - NO filtering, return all subcontractors
-    // Users can filter by ejecutivo_nombre using the UI buttons
-    // Add limit=1000 to fetch all records (Supabase default is 1000)
-    const transportistasUrl = `${supabaseUrl}/rest/v1/transportistas?limit=1000`
+    // Fetch transportistas with contact data from subcontratistas via JOIN
+    // Using PostgreSQL WITH clause to join the tables on RUT
+    const transportistasUrl = `${supabaseUrl}/rest/v1/rpc/get_transportistas_with_contact`
 
-    console.log('[v0] Fetching transportistas from:', transportistasUrl)
+    console.log('[v0] Fetching transportistas with contact data from:', transportistasUrl)
 
-    const transportistasResponse = await fetch(transportistasUrl, {
-      headers: {
-        'Authorization': `Bearer ${supabaseServiceKey}`,
-        'apikey': supabaseServiceKey,
-        'Content-Type': 'application/json',
-        'Prefer': 'count=exact',
-      },
-    })
+    // First try the RPC function, if it doesn't exist, fall back to fetching separately
+    let transportistas: any[] = []
+    
+    try {
+      const rpcResponse = await fetch(transportistasUrl, {
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'apikey': supabaseServiceKey,
+          'Content-Type': 'application/json',
+        },
+      })
 
-    const transportistas = await transportistasResponse.json()
-    console.log('[v0] Transportistas count:', Array.isArray(transportistas) ? transportistas.length : 0)
+      if (rpcResponse.ok) {
+        transportistas = await rpcResponse.json()
+        console.log('[v0] Got transportistas from RPC:', transportistas.length)
+      } else {
+        throw new Error('RPC not available, using fallback')
+      }
+    } catch (rpcError) {
+      // Fallback: fetch both tables separately and merge
+      console.log('[v0] RPC failed, using fallback method')
+      
+      const transportistasUrl2 = `${supabaseUrl}/rest/v1/transportistas?limit=1000`
+      const subcontratistasUrl = `${supabaseUrl}/rest/v1/subcontratistas?limit=1000`
+
+      const [transportistasResp, subcontratistasResp] = await Promise.all([
+        fetch(transportistasUrl2, {
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'apikey': supabaseServiceKey,
+            'Content-Type': 'application/json',
+          },
+        }),
+        fetch(subcontratistasUrl, {
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'apikey': supabaseServiceKey,
+            'Content-Type': 'application/json',
+          },
+        })
+      ])
+
+      const transportistasData = await transportistasResp.json()
+      const subcontratistasData = await subcontratistasResp.json()
+
+      // Create a map of subcontratistas by RUT for quick lookup
+      const subMap = new Map()
+      if (Array.isArray(subcontratistasData)) {
+        subcontratistasData.forEach((sub: any) => {
+          subMap.set(sub.rut, sub)
+        })
+      }
+
+      // Merge data: use transportistas as base, add contact info from subcontratistas
+      transportistas = Array.isArray(transportistasData) 
+        ? transportistasData.map((t: any) => {
+            const sub = subMap.get(t.rut)
+            return {
+              ...t,
+              // Use subcontratistas contact info if available
+              email: sub?.email || t.email || '',
+              telefono: sub?.telefono || t.telefono || '',
+              correo: sub?.email || t.correo || '',
+              ejecutivo_nombre: sub?.ejecutiva || t.ejecutivo_nombre || 'Sin asignar',
+              direccion: sub?.direccion || t.direccion || '',
+              comuna: sub?.comuna || t.comuna || '',
+            }
+          })
+        : []
+    }
 
     // Fetch conductores data - NO filter, get all drivers
     // They will be linked to subcontractors via rut_proveedor match in the UI
