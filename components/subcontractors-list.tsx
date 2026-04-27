@@ -93,7 +93,6 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
   }, [initialSubcontractors])
 
   // Get unique values for filters
-  const regions = useMemo(() => Array.from(new Set(subcontractors.map(s => s.region || 'Sin región'))).sort(), [subcontractors])
   const ejecutivas = useMemo(() => Array.from(new Set(subcontractors.map(s => s.ejecutivo_nombre || 'Sin asignar'))).filter(Boolean).sort(), [subcontractors])
   const certifications = { ariztia: 'Ariztia', lts: 'LTS', rendic: 'Rendic', interpolar: 'Interpolar' }
 
@@ -248,26 +247,6 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
       {/* Advanced Filters */}
       {showAdvancedFilters && (
         <div className="space-y-4 p-4 bg-slate-900 rounded-lg border border-slate-800">
-          {/* Regions Filter */}
-          <div>
-            <label className="text-sm font-semibold text-slate-300 block mb-2">Regiones ({selectedRegions.length})</label>
-            <div className="flex flex-wrap gap-2">
-              {regions.map(region => (
-                <button
-                  key={region}
-                  onClick={() => toggleRegion(region)}
-                  className={`px-3 py-1 rounded text-sm transition-colors ${
-                    selectedRegions.includes(region)
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {region}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Certifications Filter */}
           <div>
             <label className="text-sm font-semibold text-slate-300 block mb-2">Certificaciones ({selectedCertifications.length})</label>
