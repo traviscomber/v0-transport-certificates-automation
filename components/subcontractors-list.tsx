@@ -359,25 +359,20 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
             
             const normalizedSubRut = normalizeRut(sub.rut)
             
-            // Use the driver count from API (conductores_count), or fall back to client-side matching
+            // Get or calculate driver count and filter drivers for this subcontractor
             let driverCount = sub.conductores_count ?? 0
+            let subDrivers = drivers.filter((d) => {
+              const normalizedDriverRut = normalizeRut(d.rut_proveedor)
+              return normalizedDriverRut === normalizedSubRut && d.is_active
+            })
             
-            // If conductores_count is not available, fall back to client-side matching
+            // If conductores_count is not available from API, use the filtered count
             if (driverCount === 0 && drivers.length > 0) {
-              // Count active drivers for this subcontractor by matching RUT
-              const subDrivers = drivers.filter((d, dIdx) => {
-                const normalizedDriverRut = normalizeRut(d.rut_proveedor)
-                const matches = normalizedDriverRut === normalizedSubRut && d.is_active
-                
-                // Debug: Log for first subcontractor to see all matches
-                if (subIdx === 0 && dIdx < 10) {
-                  console.log(`[v0] Match check - Sub[${subIdx}]: ${sub.nombre} (${normalizedSubRut}) vs Driver[${dIdx}]: ${d.nombre} (${normalizedDriverRut}) = ${matches}`)
-                }
-                
-                return matches
-              })
               driverCount = subDrivers.length
             }
+            
+            const normalizedSubRut = normalizeRut(sub.rut)
+            
             const isExpanded = expandedSubcontractor === sub.id
 
             return (
