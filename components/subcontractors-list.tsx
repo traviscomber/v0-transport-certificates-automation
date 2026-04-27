@@ -46,7 +46,6 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
   const [drivers, setDrivers] = useState<Driver[]>(initialDrivers || [])
   const [isLoading, setIsLoading] = useState(!initialSubcontractors)
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedRegions, setSelectedRegions] = useState<string[]>([])
   const [selectedEjecutivas, setSelectedEjecutivas] = useState<string[]>([])
   const [selectedCertifications, setSelectedCertifications] = useState<string[]>([])
   const [showActiveOnly, setShowActiveOnly] = useState(false)
@@ -116,11 +115,6 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
         if (!matchesSearch) return false
       }
 
-      // Region filter
-      if (selectedRegions.length > 0 && !selectedRegions.includes(sub.region)) {
-        return false
-      }
-
       // Ejecutiva filter
       const subEjecutiva = sub.ejecutivo_nombre || 'Sin asignar'
       if (selectedEjecutivas.length > 0 && subEjecutiva && !selectedEjecutivas.includes(subEjecutiva)) {
@@ -146,15 +140,9 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
 
       return true
     })
-  }, [searchTerm, selectedRegions, selectedEjecutivas, selectedCertifications, showActiveOnly, subcontractors])
+  }, [searchTerm, selectedEjecutivas, selectedCertifications, showActiveOnly, subcontractors])
 
   // Toggle filter functions
-  const toggleRegion = (region: string) => {
-    setSelectedRegions(prev => 
-      prev.includes(region) ? prev.filter(r => r !== region) : [...prev, region]
-    )
-  }
-
   const toggleEjecutiva = (ejecutiva: string) => {
     setSelectedEjecutivas(prev =>
       prev.includes(ejecutiva) ? prev.filter(e => e !== ejecutiva) : [...prev, ejecutiva]
@@ -169,14 +157,13 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
 
   const clearAllFilters = () => {
     setSearchTerm('')
-    setSelectedRegions([])
     setSelectedEjecutivas([])
     setSelectedCertifications([])
     setShowActiveOnly(false)
     setShowAdvancedFilters(false)
   }
 
-  const hasActiveFilters = searchTerm.length > 0 || selectedRegions.length > 0 || selectedEjecutivas.length > 0 || selectedCertifications.length > 0 || showActiveOnly
+  const hasActiveFilters = searchTerm.length > 0 || selectedEjecutivas.length > 0 || selectedCertifications.length > 0 || showActiveOnly
 
   if (isLoading) {
     return <div className="text-center py-8 text-slate-400">Cargando subcontratistas...</div>
@@ -223,7 +210,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
           Filtros
           {hasActiveFilters && (
             <Badge className="ml-1 bg-red-500 text-white">
-              {selectedRegions.length + selectedCertifications.length + (showActiveOnly ? 1 : 0)}
+              {selectedCertifications.length + (showActiveOnly ? 1 : 0)}
             </Badge>
           )}
         </button>
