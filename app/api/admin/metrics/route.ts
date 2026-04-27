@@ -21,7 +21,7 @@ export async function GET() {
     // 1. Profiles — deduplicate by RUT (keep earliest created_at)
     const { data: allProfiles, error: profilesError } = await supabase
       .from('profiles')
-      .select('id, email, rut, role, full_name, created_at')
+      .select('id, email, rut, role, created_at')
       .order('created_at', { ascending: true })
     if (profilesError) throw profilesError
 
@@ -118,7 +118,7 @@ export async function GET() {
         : 0
       return {
         rut: ej.rut,
-        nombre: profile?.full_name || ej.nombre,
+        nombre: profile?.email?.split('@')[0]?.toUpperCase() || ej.nombre,
         email: profile?.email || '',
         role: profile?.role || 'admin',
         dias_en_plataforma: diasEnPlataforma,
@@ -134,7 +134,7 @@ export async function GET() {
       const alertas = alertsByUser[p.id] || { total: 0, criticas: 0, no_leidas: 0 }
       return {
         id: p.id,
-        full_name: p.full_name,
+        full_name: p.email?.split('@')[0] || 'Usuario',
         email: p.email,
         rut: p.rut,
         role: p.role,
