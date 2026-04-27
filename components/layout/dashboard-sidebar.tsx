@@ -52,6 +52,7 @@ const navItems: NavItem[] = [
 
 const adminItems: NavItem[] = [
   { label: 'Admin', href: '/admin', icon: <Settings className="h-5 w-5" />, roles: ['admin'] },
+  { label: 'Métricas de Usuarios', href: '/admin/metrics', icon: <BarChart3 className="h-5 w-5" />, roles: ['admin'] },
 ]
 
 const settingsItems: NavItem[] = [
