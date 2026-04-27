@@ -411,14 +411,6 @@ export default function CompanyDashboard() {
                 <p className="text-sm text-slate-400">Representante Legal</p>
                 <p className="text-lg font-semibold text-white">{company.representante_legal}</p>
               </div>
-              <div>
-                <p className="text-sm text-slate-400">Email</p>
-                <p className="text-white">{company.email}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-400">Teléfono</p>
-                <p className="text-white">{company.telefono}</p>
-              </div>
             </div>
           </CardContent>
         </Card>
