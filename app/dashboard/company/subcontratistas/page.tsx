@@ -69,7 +69,7 @@ export default function SubcontratistasPage() {
           
           // Create a RUT -> company name map for driver lookup
           const rutToCompanyMap = new Map(
-            mappedSubcontractors.map(s => [s.rut, s.nombre])
+            mappedSubcontractors.map((s: Subcontractor) => [s.rut, s.nombre])
           )
           
           if (data.dashboard?.conductores) {
