@@ -87,12 +87,22 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // Debug: show the first few RUT counts
+    const rutsWithCounts = Array.from(driverCountByRut.entries()).slice(0, 5)
+    console.log('[v0] RUTs with counts:', rutsWithCounts)
+
     // Add driver count to each subcontractista
     const subcontratistasWithCounts = Array.isArray(subcontratistas) 
-      ? subcontratistas.map((s) => ({
-          ...s,
-          conductores_count: driverCountByRut.get(s.rut) || 0,
-        }))
+      ? subcontratistas.map((s, idx) => {
+          const count = driverCountByRut.get(s.rut) || 0
+          if (idx < 3) {
+            console.log(`[v0] Subcontratista ${idx}: rut=${s.rut}, count=${count}`)
+          }
+          return {
+            ...s,
+            conductores_count: count,
+          }
+        })
       : []
 
     return NextResponse.json({

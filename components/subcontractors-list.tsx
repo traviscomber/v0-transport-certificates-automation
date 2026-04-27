@@ -366,6 +366,11 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
               return normalizedDriverRut === normalizedSubRut && d.is_active
             })
             
+            // Debug: log first 3 subcontractors
+            if (subIdx < 3) {
+              console.log(`[v0] Sub ${subIdx}: ${sub.nombre}, conductores_count=${sub.conductores_count}, filtered count=${subDrivers.length}`)
+            }
+            
             // If conductores_count is not available from API, use the filtered count
             if (driverCount === 0 && drivers.length > 0) {
               driverCount = subDrivers.length
