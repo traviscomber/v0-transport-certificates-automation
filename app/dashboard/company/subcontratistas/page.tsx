@@ -40,15 +40,42 @@ export default function SubcontratistasPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/company/data')
+        const response = await fetch('/api/dashboard/data')
         if (!response.ok) throw new Error('Failed to fetch')
         
         const data = await response.json()
-        if (data.subcontractors) {
-          setSubcontractors(data.subcontractors)
+        if (data.dashboard?.transportistas) {
+          // Map subcontratistas fields to component interface
+          const mappedSubcontractors = data.dashboard.transportistas.map((s: any) => ({
+            id: s.id,
+            nombre: s.razon_social || s.nombre || '',
+            nombre_fantasia: s.nombre_fantasia || '',
+            rut: s.rut || '',
+            region: s.region || 'N/A',
+            ejecutiva: s.ejecutiva || 'N/A',
+            comuna: s.comuna || 'N/A',
+            representante: s.nombre_contacto || '',
+            telefono: s.telefono || '',
+            email: s.email || '',
+            ariztia: s.ariztia || false,
+            lts: s.lts || false,
+            rendic: s.rendic || false,
+            interpolar: s.interpolar || false,
+            is_active: s.is_active !== false,
+          }))
+          setSubcontractors(mappedSubcontractors)
         }
-        if (data.drivers) {
-          setDrivers(data.drivers)
+        if (data.dashboard?.conductores) {
+          // Map conductores fields
+          const mappedDrivers = data.dashboard.conductores.map((c: any) => ({
+            id: c.id,
+            rut: c.rut || '',
+            nombre: `${c.nombres || ''} ${c.apellido_paterno || ''} ${c.apellido_materno || ''}`.trim(),
+            rut_proveedor: c.rut_proveedor || '',
+            proveedor: 'N/A',
+            is_active: c.is_active !== false,
+          }))
+          setDrivers(mappedDrivers)
         }
       } catch (error) {
         console.error('[v0] Error fetching subcontractors:', error)
