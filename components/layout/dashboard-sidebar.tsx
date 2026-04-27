@@ -163,8 +163,8 @@ export function DashboardSidebar() {
             </Link>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {/* Navigation - scrollable */}
+          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Menu Principal</p>
             {filteredNavItems.map((item) => (
               <Link
@@ -225,9 +225,9 @@ export function DashboardSidebar() {
 
           </nav>
 
-          {/* Admin Panel */}
-          <div className="p-4 border-t border-slate-700/50">
-            <Link href="/admin/metrics">
+          {/* Admin Panel - fixed at bottom */}
+          <div className="border-t border-slate-700/50 p-4">
+            <Link href="/admin/metrics" className="block">
               <Button
                 size="sm"
                 className="w-full justify-start bg-orange-600 hover:bg-orange-700 text-white"
@@ -238,8 +238,8 @@ export function DashboardSidebar() {
             </Link>
           </div>
 
-          {/* Logout */}
-          <div className="p-4 border-t border-slate-700/50">
+          {/* Logout - fixed at bottom */}
+          <div className="border-t border-slate-700/50 p-4">
             <Button
               variant="ghost"
               size="sm"
