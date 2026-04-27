@@ -12,9 +12,11 @@ interface Subcontractor {
   nombre_fantasia?: string
   rut: string
   region: string
-  ejecutiva: string
+  ejecutiva?: string
+  ejecutivo_nombre?: string
   comuna: string
-  representante: string
+  representante?: string
+  representante_legal?: string
   telefono: string
   email: string
   ariztia?: boolean
@@ -23,6 +25,7 @@ interface Subcontractor {
   interpolar?: boolean
   is_active: boolean
   conductores_count?: number
+  razon_social?: string
 }
 
 interface Driver {
@@ -94,8 +97,8 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
   }, [initialSubcontractors])
 
   // Get unique values for filters
-  const regions = useMemo(() => Array.from(new Set(subcontractors.map(s => s.region))).sort(), [subcontractors])
-  const ejecutivas = useMemo(() => Array.from(new Set(subcontractors.map(s => s.ejecutiva))).sort(), [subcontractors])
+  const regions = useMemo(() => Array.from(new Set(subcontractors.map(s => s.region || 'Sin región'))).sort(), [subcontractors])
+  const ejecutivas = useMemo(() => Array.from(new Set(subcontractors.map(s => s.ejecutivo_nombre || s.ejecutiva || 'Sin asignar'))).filter(Boolean).sort(), [subcontractors])
   const certifications = { ariztia: 'Ariztia', lts: 'LTS', rendic: 'Rendic', interpolar: 'Interpolar' }
 
   // Smart search and filtering
@@ -106,10 +109,11 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
         const query = searchTerm.toLowerCase()
         const matchesSearch =
           sub.nombre.toLowerCase().includes(query) ||
-          sub.nombre_fantasia?.toLowerCase().includes(query) ||
-          sub.rut.includes(query) ||
-          sub.representante.toLowerCase().includes(query) ||
-          sub.ejecutiva.toLowerCase().includes(query) ||
+                          sub.nombre_fantasia?.toLowerCase().includes(query) ||
+                          sub.razon_social?.toLowerCase().includes(query) ||
+                          sub.rut.includes(query) ||
+                          (sub.representante || sub.representante_legal)?.toLowerCase().includes(query) ||
+                          (sub.ejecutivo_nombre || sub.ejecutiva)?.toLowerCase().includes(query) ||
           sub.comuna.toLowerCase().includes(query) ||
           sub.telefono.includes(query) ||
           sub.email.toLowerCase().includes(query)
@@ -122,7 +126,8 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
       }
 
       // Ejecutiva filter
-      if (selectedEjecutivas.length > 0 && !selectedEjecutivas.includes(sub.ejecutiva)) {
+      const subEjecutiva = sub.ejecutivo_nombre || sub.ejecutiva
+      if (selectedEjecutivas.length > 0 && !selectedEjecutivas.includes(subEjecutiva)) {
         return false
       }
 
@@ -405,11 +410,11 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
                     </div>
                     <div>
                       <p className="text-xs text-slate-400 font-semibold">REPRESENTANTE</p>
-                      <p className="text-sm text-white">{sub.representante}</p>
+                      <p className="text-sm text-white">{sub.representante || sub.representante_legal || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-slate-400 font-semibold">EJECUTIVA</p>
-                      <p className="text-sm text-white">{sub.ejecutiva}</p>
+                      <p className="text-xs text-slate-400 font-semibold">EJECUTIVO ASIGNADO</p>
+                      <p className="text-sm text-white">{sub.ejecutivo_nombre || sub.ejecutiva || 'Sin asignar'}</p>
                     </div>
                   </div>
 
