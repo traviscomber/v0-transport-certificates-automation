@@ -164,7 +164,7 @@ export function DashboardSidebar() {
           </div>
 
           {/* Navigation - scrollable */}
-          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+          <nav className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Menu Principal</p>
             {filteredNavItems.map((item) => (
               <Link
