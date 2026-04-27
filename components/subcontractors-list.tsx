@@ -126,8 +126,8 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
       }
 
       // Ejecutiva filter
-      const subEjecutiva = sub.ejecutivo_nombre || sub.ejecutiva
-      if (selectedEjecutivas.length > 0 && !selectedEjecutivas.includes(subEjecutiva)) {
+      const subEjecutiva = sub.ejecutivo_nombre || sub.ejecutiva || 'Sin asignar'
+      if (selectedEjecutivas.length > 0 && subEjecutiva && !selectedEjecutivas.includes(subEjecutiva)) {
         return false
       }
 
