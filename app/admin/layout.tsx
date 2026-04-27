@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { FileText, LayoutDashboard, Settings, LogOut, Shield, BarChart3, UserPlus, UsersIcon } from "lucide-react"
+import { FileText, LayoutDashboard, Settings, LogOut, Shield, BarChart3, UserPlus, UsersIcon, Lock } from "lucide-react"
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -24,7 +24,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="flex h-16 items-center px-6 border-b border-slate-700/30">
           <Link href="/admin" className="flex items-center gap-3 font-bold text-lg group">
             <div className="w-9 h-9 rounded-lg gradient-accent flex items-center justify-center shadow-lg glow-orange group-hover:scale-110 transition-transform">
-              <Truck className="w-5 h-5 text-white font-bold" />
+              <Lock className="w-5 h-5 text-white font-bold" />
             </div>
             <div className="group-hover:text-orange-400 transition-colors">
               <div>DocuFleet</div>
