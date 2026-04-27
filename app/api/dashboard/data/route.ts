@@ -31,12 +31,12 @@ export async function GET(request: NextRequest) {
 
     console.log('[v0] Dashboard - User:', userEmail, 'Name:', userName, 'Role:', userRole, 'IsAdmin:', isAdmin)
 
-    // Fetch transportistas (subcontratistas) data - NO filtering, return all subcontractors
-    // Users can filter by ejecutiva name using the UI buttons
+    // Fetch transportistas data - NO filtering, return all subcontractors
+    // Users can filter by ejecutivo_nombre using the UI buttons
     // Add limit=1000 to fetch all records (Supabase default is 1000)
-    const transportistasUrl = `${supabaseUrl}/rest/v1/subcontratistas?limit=1000`
+    const transportistasUrl = `${supabaseUrl}/rest/v1/transportistas?limit=1000`
 
-    console.log('[v0] Fetching subcontratistas from:', transportistasUrl)
+    console.log('[v0] Fetching transportistas from:', transportistasUrl)
 
     const transportistasResponse = await fetch(transportistasUrl, {
       headers: {

@@ -8,25 +8,23 @@ import { Input } from '@/components/ui/input'
 
 interface Subcontractor {
   id: string
-  nombre: string
+  nombre?: string
   nombre_fantasia?: string
-  rut: string
-  region: string
-  ejecutiva?: string
-  direccion?: string
   razon_social?: string
-  nombre_contacto?: string
-  representante?: string
+  rut: string
+  comuna: string
+  direccion?: string
   representante_legal?: string
   telefono: string
-  email: string
+  email?: string
+  ejecutivo_nombre?: string
   ariztia?: boolean
   lts?: boolean
   rendic?: boolean
   interpolar?: boolean
   is_active: boolean
   conductores_count?: number
-  comuna?: string
+  region?: string
 }
 
 interface Driver {
@@ -80,7 +78,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
             console.log('[v0] Sample subcontractor:', data.dashboard.transportistas[0])
             console.log('[v0] Sample has direccion?', data.dashboard.transportistas[0]?.direccion)
             console.log('[v0] Sample has comuna?', data.dashboard.transportistas[0]?.comuna)
-            console.log('[v0] Sample has ejecutiva?', data.dashboard.transportistas[0]?.ejecutiva)
+            console.log('[v0] Sample has ejecutivo_nombre?', data.dashboard.transportistas[0]?.ejecutivo_nombre)
             setSubcontractors(data.dashboard.transportistas)
             setDrivers(data.dashboard.conductores || [])
           }
@@ -103,7 +101,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
 
   // Get unique values for filters
   const regions = useMemo(() => Array.from(new Set(subcontractors.map(s => s.region || 'Sin región'))).sort(), [subcontractors])
-  const ejecutivas = useMemo(() => Array.from(new Set(subcontractors.map(s => s.ejecutiva || 'Sin asignar'))).filter(Boolean).sort(), [subcontractors])
+  const ejecutivas = useMemo(() => Array.from(new Set(subcontractors.map(s => s.ejecutivo_nombre || 'Sin asignar'))).filter(Boolean).sort(), [subcontractors])
   const certifications = { ariztia: 'Ariztia', lts: 'LTS', rendic: 'Rendic', interpolar: 'Interpolar' }
 
   // Smart search and filtering
@@ -113,16 +111,14 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
       if (searchTerm) {
         const query = searchTerm.toLowerCase()
         const matchesSearch =
-          sub.nombre.toLowerCase().includes(query) ||
+          (sub.razon_social || sub.nombre || '').toLowerCase().includes(query) ||
           sub.nombre_fantasia?.toLowerCase().includes(query) ||
-          sub.razon_social?.toLowerCase().includes(query) ||
           sub.rut.includes(query) ||
-          (sub.nombre_contacto || sub.representante || sub.representante_legal)?.toLowerCase().includes(query) ||
-          sub.ejecutiva?.toLowerCase().includes(query) ||
-          sub.region?.toLowerCase().includes(query) ||
+          sub.representante_legal?.toLowerCase().includes(query) ||
+          sub.ejecutivo_nombre?.toLowerCase().includes(query) ||
           sub.comuna?.toLowerCase().includes(query) ||
           sub.telefono.includes(query) ||
-          sub.email.toLowerCase().includes(query)
+          sub.email?.toLowerCase().includes(query)
         if (!matchesSearch) return false
       }
 
@@ -132,7 +128,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
       }
 
       // Ejecutiva filter
-      const subEjecutiva = sub.ejecutiva || 'Sin asignar'
+      const subEjecutiva = sub.ejecutivo_nombre || 'Sin asignar'
       if (selectedEjecutivas.length > 0 && subEjecutiva && !selectedEjecutivas.includes(subEjecutiva)) {
         return false
       }
@@ -424,7 +420,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
                     </div>
                     <div>
                       <p className="text-xs text-slate-400 font-semibold">EJECUTIVA ASIGNADA</p>
-                      <p className="text-sm text-white">{sub.ejecutiva || 'Sin asignar'}</p>
+                      <p className="text-sm text-white">{sub.ejecutivo_nombre || 'Sin asignar'}</p>
                     </div>
                   </div>
 

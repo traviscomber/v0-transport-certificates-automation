@@ -7,16 +7,16 @@ import { Card } from '@/components/ui/card'
 
 interface Subcontractor {
   id?: string
-  nombre: string
+  nombre?: string
   nombre_fantasia?: string
+  razon_social?: string
   rut: string
-  region: string
-  ejecutiva: string
   comuna: string
   direccion?: string
-  representante: string
+  representante_legal?: string
   telefono: string
-  email: string
+  email?: string
+  ejecutivo_nombre?: string
   ariztia?: boolean
   lts?: boolean
   rendic?: boolean
@@ -53,19 +53,19 @@ export default function SubcontratistasPage() {
         
         const data = await response.json()
         if (data.dashboard?.transportistas) {
-          // Map subcontratistas fields to component interface
+          // Map transportistas fields to component interface
           const mappedSubcontractors = data.dashboard.transportistas.map((s: any) => ({
             id: s.id,
-            nombre: s.razon_social || s.nombre || '',
+            nombre: s.razon_social || s.nombre_fantasia || '',
             nombre_fantasia: s.nombre_fantasia || '',
+            razon_social: s.razon_social || '',
             rut: s.rut || '',
-            region: s.region || 'N/A',
-            ejecutiva: s.ejecutiva || 'N/A',
             comuna: s.comuna || 'N/A',
             direccion: s.direccion || 'N/A',
-            representante: s.nombre_contacto || '',
+            representante_legal: s.representante_legal || '',
             telefono: s.telefono || '',
             email: s.email || '',
+            ejecutivo_nombre: s.ejecutivo_nombre || 'Sin asignar',
             ariztia: s.ariztia || false,
             lts: s.lts || false,
             rendic: s.rendic || false,
