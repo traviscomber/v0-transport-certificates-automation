@@ -222,21 +222,22 @@ export function DashboardSidebar() {
                 {item.label}
               </Link>
             ))}
-          </nav>
 
-          {/* Admin Panel */}
-          <div className="px-4 py-2 border-t border-slate-700/50">
-            <Link href="/admin/metrics">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-start text-slate-300 hover:bg-orange-500/20 hover:text-orange-400 hover:border-orange-500/50 border-slate-500"
-              >
-                <Lock className="h-5 w-5 mr-3" />
-                Panel de Admin
-              </Button>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-3">Admin</p>
+            <Link
+              href="/admin/metrics"
+              onClick={() => setIsOpen(false)}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all',
+                pathname === '/admin/metrics'
+                  ? 'bg-orange-500/20 text-orange-400 font-medium'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              )}
+            >
+              <Lock className="h-5 w-5" />
+              Métricas de Usuarios
             </Link>
-          </div>
+          </nav>
 
           {/* Logout */}
           <div className="p-4 border-t border-slate-700/50">
