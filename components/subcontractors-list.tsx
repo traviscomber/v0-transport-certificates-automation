@@ -75,14 +75,13 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
         if (response.ok) {
           const data = await response.json()
           if (data.dashboard?.transportistas && Array.isArray(data.dashboard.transportistas)) {
-            // Filter only active transportistas from the database
-            const activeTransportistas = data.dashboard.transportistas.filter((t: any) => t.is_active !== false)
-            console.log('[v0] Loaded', activeTransportistas.length, 'active transportistas from database')
-            console.log('[v0] Sample subcontractor:', activeTransportistas[0])
-            console.log('[v0] Sample has direccion?', activeTransportistas[0]?.direccion)
-            console.log('[v0] Sample has comuna?', activeTransportistas[0]?.comuna)
-            console.log('[v0] Sample has ejecutiva?', activeTransportistas[0]?.ejecutiva)
-            setSubcontractors(activeTransportistas)
+            // Load ALL transportistas regardless of active status
+            console.log('[v0] Loaded', data.dashboard.transportistas.length, 'total transportistas from database')
+            console.log('[v0] Sample subcontractor:', data.dashboard.transportistas[0])
+            console.log('[v0] Sample has direccion?', data.dashboard.transportistas[0]?.direccion)
+            console.log('[v0] Sample has comuna?', data.dashboard.transportistas[0]?.comuna)
+            console.log('[v0] Sample has ejecutiva?', data.dashboard.transportistas[0]?.ejecutiva)
+            setSubcontractors(data.dashboard.transportistas)
             setDrivers(data.dashboard.conductores || [])
           }
         } else {
