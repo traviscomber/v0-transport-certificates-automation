@@ -75,41 +75,24 @@ export async function GET(request: NextRequest) {
 
     const conductores = await conductoesResponse.json()
     console.log('[v0] Conductores count:', Array.isArray(conductores) ? conductores.length : 0)
-    
-    // Debug: show first conductor to check structure
-    if (Array.isArray(conductores) && conductores.length > 0) {
-      console.log('[v0] First conductor sample:', JSON.stringify(conductores[0]).substring(0, 300))
-    }
 
     // Count drivers per subcontractor (by rut_proveedor match with subcontratista rut)
     const driverCountByRut = new Map<string, number>()
     if (Array.isArray(conductores)) {
-      conductores.forEach((conductor, idx) => {
+      conductores.forEach((conductor) => {
         if (conductor.rut_proveedor) {
           const currentCount = driverCountByRut.get(conductor.rut_proveedor) || 0
           driverCountByRut.set(conductor.rut_proveedor, currentCount + 1)
-          
-          // Debug: log first few RUTs being counted
-          if (idx < 5) {
-            console.log(`[v0] Conductor ${idx}: rut_proveedor = "${conductor.rut_proveedor}"`)
-          }
         }
       })
     }
 
     // Add driver count to each subcontractista
     const subcontratistasWithCounts = Array.isArray(subcontratistas) 
-      ? subcontratistas.map((s, idx) => {
-          const rutCount = driverCountByRut.get(s.rut) || 0
-          // Debug: log first few subcontractistas with their counts
-          if (idx < 5) {
-            console.log(`[v0] Subcontratista ${idx}: rut = "${s.rut}", count = ${rutCount}`)
-          }
-          return {
-            ...s,
-            conductores_count: rutCount,
-          }
-        })
+      ? subcontratistas.map((s) => ({
+          ...s,
+          conductores_count: driverCountByRut.get(s.rut) || 0,
+        }))
       : []
 
     return NextResponse.json({
