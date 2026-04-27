@@ -12,14 +12,14 @@ export async function GET() {
   try {
     console.log('[v0] Fetching real data from Supabase for subcontractors and drivers')
 
-    // Fetch real subcontratistas from the subcontratistas table
+    // Fetch real transportistas from the transportistas table
     const { data: subcontratistas, error: subcontratistasError } = await supabase
-      .from('subcontratistas')
+      .from('transportistas')
       .select('*')
       .order('razon_social', { ascending: true })
 
     if (subcontratistasError) {
-      console.error('[v0] Error fetching subcontratistas:', subcontratistasError)
+      console.error('[v0] Error fetching transportistas:', subcontratistasError)
       throw subcontratistasError
     }
 
@@ -65,18 +65,18 @@ export async function GET() {
       }
     })
 
-    // Create a map of RUT to subcontratista for quick lookup of provider names
+    // Create a map of RUT to transportista for quick lookup of provider names
     const rutToSubcontratista = new Map(subcontratistas?.map(s => [s.rut, s]) || [])
 
-    // Format drivers - use rut_proveedor to lookup the actual company name from subcontratistas
+    // Format drivers - use rut_proveedor to lookup the actual company name from transportistas
     const driversData = (conductores || []).map(c => {
-      const subcontratista = rutToSubcontratista.get(c.rut_proveedor)
+      const transportista = rutToSubcontratista.get(c.rut_proveedor)
       return {
         id: c.id,
         rut: c.rut || '',
         nombre: `${c.nombres || ''} ${c.apellido_paterno || ''} ${c.apellido_materno || ''}`.trim(),
         rut_proveedor: c.rut_proveedor || '',
-        proveedor: subcontratista?.razon_social || c.rut_proveedor || 'N/A',
+        proveedor: transportista?.razon_social || c.rut_proveedor || 'N/A',
         is_active: c.is_active || true,
       }
     })
@@ -113,7 +113,7 @@ export async function GET() {
       }
     }
 
-    console.log('[v0] Loaded:', subcontractorsData.length, 'subcontractors,', driversData.length, 'drivers')
+    console.log('[v0] Loaded:', subcontractorsData.length, 'transportistas,', driversData.length, 'drivers')
     return NextResponse.json(response)
   } catch (error) {
     console.error('[v0] Error in company data endpoint:', error)
