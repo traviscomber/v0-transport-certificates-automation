@@ -53,7 +53,7 @@ export default function MetricsPage() {
   const [error, setError] = useState('')
   const [data, setData] = useState<MetricsData | null>(null)
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'ejecutivas' | 'subcontratistas'>('ejecutivas')
+  const [activeTab] = useState<'ejecutivas'>('ejecutivas')
 
   const CORRECT_PASSWORD = 'mono2026'
 
@@ -170,69 +170,34 @@ export default function MetricsPage() {
 
         {/* Tabs */}
         <div className="flex gap-2 border-b border-slate-700">
-          <button
-            onClick={() => setActiveTab('ejecutivas')}
-            className={`pb-3 px-4 text-sm font-semibold transition-colors ${activeTab === 'ejecutivas' ? 'text-orange-400 border-b-2 border-orange-400' : 'text-slate-400 hover:text-slate-300'}`}
-          >
+          <button className="pb-3 px-4 text-sm font-semibold text-orange-400 border-b-2 border-orange-400">
             Ejecutivas Labbe ({ejecutivas.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('subcontratistas')}
-            className={`pb-3 px-4 text-sm font-semibold transition-colors ${activeTab === 'subcontratistas' ? 'text-orange-400 border-b-2 border-orange-400' : 'text-slate-400 hover:text-slate-300'}`}
-          >
-            Subcontratistas ({subcontratistas.length})
           </button>
         </div>
 
         {/* EJECUTIVAS TAB */}
-        {activeTab === 'ejecutivas' && (
-          <div className="space-y-3">
-            {ejecutivas.map((ej) => (
-              <Card key={ej.rut} className="bg-slate-800 border-slate-700">
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 font-bold text-lg">
-                        {ej.nombre.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-white">{ej.nombre}</p>
-                        <p className="text-xs text-slate-400">{ej.email}</p>
-                      </div>
+        <div className="space-y-3">
+          {ejecutivas.map((ej) => (
+            <Card key={ej.rut} className="bg-slate-800 border-slate-700">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 font-bold text-lg">
+                      {ej.nombre.charAt(0)}
                     </div>
-                    <span className="px-3 py-1 rounded-full text-xs bg-green-500/20 text-green-300 font-medium">
-                      Activa
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {/* SUBCONTRATISTAS TAB */}
-        {activeTab === 'subcontratistas' && (
-          <div className="space-y-2">
-            {subcontratistas.map((sub) => (
-              <Card key={sub.id} className="bg-slate-800 border-slate-700">
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full ${sub.is_active ? 'bg-green-400' : 'bg-slate-500'}`} />
-                      <div>
-                        <p className="font-medium text-white">{sub.razon_social}</p>
-                        <p className="text-xs text-slate-400">{sub.nombre_fantasia}</p>
-                      </div>
+                    <div>
+                      <p className="font-semibold text-white">{ej.nombre}</p>
+                      <p className="text-xs text-slate-400">{ej.email}</p>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${sub.is_active ? 'bg-green-500/20 text-green-300' : 'bg-slate-600/50 text-slate-400'}`}>
-                      {sub.is_active ? 'Activo' : 'Inactivo'}
-                    </span>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                  <span className="px-3 py-1 rounded-full text-xs bg-green-500/20 text-green-300 font-medium">
+                    Activa
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
       </div>
     </div>

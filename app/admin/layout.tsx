@@ -3,14 +3,10 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Building2, Truck, Users, Car, FileText, LayoutDashboard, Settings, LogOut, Shield, BarChart3, UserPlus, UsersIcon } from "lucide-react"
+import { FileText, LayoutDashboard, Settings, LogOut, Shield, BarChart3, UserPlus, UsersIcon } from "lucide-react"
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/mandantes", label: "Mandantes", icon: Building2 },
-  { href: "/admin/transportistas", label: "Transportistas", icon: Truck },
-  { href: "/admin/vehiculos", label: "Vehiculos", icon: Car },
-  { href: "/admin/conductores", label: "Conductores", icon: Users },
   { href: "/admin/postulantes", label: "Postulantes", icon: UserPlus },
   { href: "/admin/usuarios", label: "Usuarios", icon: UsersIcon },
   { href: "/admin/documentos", label: "Documentos", icon: FileText },
