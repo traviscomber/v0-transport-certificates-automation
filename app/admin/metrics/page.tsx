@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Lock, Eye, EyeOff, Users, Truck, Building2, FileText, Bell, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react'
+import { Lock, Eye, EyeOff } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface Ejecutiva {
@@ -54,7 +54,6 @@ export default function MetricsPage() {
   const [data, setData] = useState<MetricsData | null>(null)
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'ejecutivas' | 'subcontratistas'>('ejecutivas')
-  const [expandedSub, setExpandedSub] = useState<string | null>(null)
 
   const CORRECT_PASSWORD = 'mono2026'
 
@@ -167,23 +166,7 @@ export default function MetricsPage() {
           </Button>
         </div>
 
-        {/* Resumen global */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {[
-            { label: 'Usuarios', value: resumen.total_usuarios, color: 'text-orange-400', icon: <Users className="w-5 h-5" /> },
-            { label: 'Conductores', value: resumen.total_conductores, color: 'text-blue-400', icon: <Truck className="w-5 h-5" /> },
-            { label: 'Subcontratistas', value: resumen.total_subcontratistas, color: 'text-purple-400', icon: <Building2 className="w-5 h-5" /> },
-            { label: 'Documentos', value: resumen.total_documentos, color: 'text-green-400', icon: <FileText className="w-5 h-5" /> },
-            { label: 'Alertas', value: resumen.total_alertas, color: 'text-red-400', icon: <Bell className="w-5 h-5" /> },
-          ].map(({ label, value, color, icon }) => (
-            <Card key={label} className="bg-slate-800 border-slate-700">
-              <CardContent className="p-4">
-                <div className={`flex items-center gap-2 ${color} mb-1`}>{icon}<span className="text-xs font-medium text-slate-400">{label}</span></div>
-                <div className={`text-3xl font-bold ${color}`}>{value.toLocaleString()}</div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+
 
         {/* Tabs */}
         <div className="flex gap-2 border-b border-slate-700">
@@ -205,59 +188,21 @@ export default function MetricsPage() {
         {activeTab === 'ejecutivas' && (
           <div className="space-y-3">
             {ejecutivas.map((ej) => (
-              <Card key={ej.rut} className="bg-slate-800 border-slate-700 hover:border-slate-500 transition-colors">
+              <Card key={ej.rut} className="bg-slate-800 border-slate-700">
                 <CardContent className="p-5">
-                  <div className="flex flex-col md:flex-row md:items-center gap-4">
-                    {/* Identity */}
-                    <div className="flex items-center gap-4 md:w-64 shrink-0">
-                      <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 font-bold text-lg shrink-0">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 font-bold text-lg">
                         {ej.nombre.charAt(0)}
                       </div>
                       <div>
                         <p className="font-semibold text-white">{ej.nombre}</p>
                         <p className="text-xs text-slate-400">{ej.email}</p>
-                        <p className="text-xs text-slate-500">RUT {ej.rut}</p>
                       </div>
                     </div>
-
-                    {/* Stats */}
-                    <div className="flex flex-wrap gap-6 flex-1">
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">Días en plataforma</p>
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4 text-blue-400" />
-                          <span className="text-lg font-bold text-blue-400">{ej.dias_en_plataforma}</span>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">Alertas totales</p>
-                        <div className="flex items-center gap-1">
-                          <Bell className="w-4 h-4 text-yellow-400" />
-                          <span className="text-lg font-bold text-yellow-400">{ej.alertas_total}</span>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">Alertas criticas</p>
-                        <div className="flex items-center gap-1">
-                          <AlertTriangle className="w-4 h-4 text-red-400" />
-                          <span className="text-lg font-bold text-red-400">{ej.alertas_criticas}</span>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500 mb-1">No leidas</p>
-                        <div className="flex items-center gap-1">
-                          <Bell className="w-4 h-4 text-orange-400" />
-                          <span className="text-lg font-bold text-orange-400">{ej.alertas_no_leidas}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Badge */}
-                    <div className="shrink-0">
-                      <span className="px-3 py-1 rounded-full text-xs bg-green-500/20 text-green-300 font-medium">
-                        {ej.created_at ? 'Activa' : 'Sin cuenta'}
-                      </span>
-                    </div>
+                    <span className="px-3 py-1 rounded-full text-xs bg-green-500/20 text-green-300 font-medium">
+                      Activa
+                    </span>
                   </div>
                 </CardContent>
               </Card>
@@ -269,79 +214,20 @@ export default function MetricsPage() {
         {activeTab === 'subcontratistas' && (
           <div className="space-y-2">
             {subcontratistas.map((sub) => (
-              <Card key={sub.id} className="bg-slate-800 border-slate-700 hover:border-slate-500 transition-colors">
-                <CardContent className="p-0">
-                  {/* Row */}
-                  <button
-                    className="w-full text-left p-5"
-                    onClick={() => setExpandedSub(expandedSub === sub.id ? null : sub.id)}
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`w-2 h-2 rounded-full shrink-0 ${sub.is_active ? 'bg-green-400' : 'bg-slate-500'}`} />
-                        <div className="min-w-0">
-                          <p className="font-medium text-white truncate">{sub.razon_social}</p>
-                          <p className="text-xs text-slate-500">RUT {sub.rut}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-6 shrink-0">
-                        <div className="text-center hidden md:block">
-                          <p className="text-sm font-bold text-blue-400">{sub.conductores}</p>
-                          <p className="text-xs text-slate-500">Conductores</p>
-                        </div>
-                        <div className="text-center hidden md:block">
-                          <p className="text-sm font-bold text-green-400">{sub.documentos}</p>
-                          <p className="text-xs text-slate-500">Documentos</p>
-                        </div>
-                        <div className="text-center hidden md:block">
-                          <p className="text-sm font-bold text-orange-400">{sub.documentos_pendientes}</p>
-                          <p className="text-xs text-slate-500">Pendientes</p>
-                        </div>
-                        {expandedSub === sub.id
-                          ? <ChevronUp className="w-4 h-4 text-slate-400" />
-                          : <ChevronDown className="w-4 h-4 text-slate-400" />}
+              <Card key={sub.id} className="bg-slate-800 border-slate-700">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${sub.is_active ? 'bg-green-400' : 'bg-slate-500'}`} />
+                      <div>
+                        <p className="font-medium text-white">{sub.razon_social}</p>
+                        <p className="text-xs text-slate-400">{sub.nombre_fantasia}</p>
                       </div>
                     </div>
-                  </button>
-                  {/* Expanded detail */}
-                  {expandedSub === sub.id && (
-                    <div className="px-5 pb-5 pt-0 border-t border-slate-700/50">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                        <div className="bg-slate-900/50 rounded-lg p-3">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Truck className="w-4 h-4 text-blue-400" />
-                            <span className="text-xs text-slate-400">Conductores</span>
-                          </div>
-                          <p className="text-2xl font-bold text-blue-400">{sub.conductores}</p>
-                          <p className="text-xs text-slate-500">{sub.conductores_activos} activos</p>
-                        </div>
-                        <div className="bg-slate-900/50 rounded-lg p-3">
-                          <div className="flex items-center gap-2 mb-1">
-                            <FileText className="w-4 h-4 text-slate-400" />
-                            <span className="text-xs text-slate-400">Documentos</span>
-                          </div>
-                          <p className="text-2xl font-bold text-white">{sub.documentos}</p>
-                          <p className="text-xs text-slate-500">total subidos</p>
-                        </div>
-                        <div className="bg-slate-900/50 rounded-lg p-3">
-                          <div className="flex items-center gap-2 mb-1">
-                            <CheckCircle className="w-4 h-4 text-green-400" />
-                            <span className="text-xs text-slate-400">Aprobados</span>
-                          </div>
-                          <p className="text-2xl font-bold text-green-400">{sub.documentos_aprobados}</p>
-                          <p className="text-xs text-slate-500">docs validados</p>
-                        </div>
-                        <div className="bg-slate-900/50 rounded-lg p-3">
-                          <div className="flex items-center gap-2 mb-1">
-                            <AlertTriangle className="w-4 h-4 text-red-400" />
-                            <span className="text-xs text-slate-400">Vencidos/Rechazados</span>
-                          </div>
-                          <p className="text-2xl font-bold text-red-400">{sub.documentos_vencidos}</p>
-                          <p className="text-xs text-slate-500">requieren atención</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${sub.is_active ? 'bg-green-500/20 text-green-300' : 'bg-slate-600/50 text-slate-400'}`}>
+                      {sub.is_active ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
             ))}
