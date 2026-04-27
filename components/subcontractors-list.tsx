@@ -56,7 +56,6 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
   // Fetch data from API if not provided as prop
   useEffect(() => {
     if (initialSubcontractors) {
-      console.log('[v0] Using provided subcontractors, sample:', initialSubcontractors[0])
       return // Use provided data
     }
 
@@ -74,11 +73,6 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
           const data = await response.json()
           if (data.dashboard?.transportistas && Array.isArray(data.dashboard.transportistas)) {
             // Load ALL transportistas regardless of active status
-            console.log('[v0] Loaded', data.dashboard.transportistas.length, 'total transportistas from database')
-            console.log('[v0] Sample subcontractor:', data.dashboard.transportistas[0])
-            console.log('[v0] Sample has direccion?', data.dashboard.transportistas[0]?.direccion)
-            console.log('[v0] Sample has comuna?', data.dashboard.transportistas[0]?.comuna)
-            console.log('[v0] Sample has ejecutivo_nombre?', data.dashboard.transportistas[0]?.ejecutivo_nombre)
             setSubcontractors(data.dashboard.transportistas)
             setDrivers(data.dashboard.conductores || [])
           }
