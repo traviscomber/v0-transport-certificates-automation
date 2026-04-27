@@ -371,8 +371,6 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
               driverCount = subDrivers.length
             }
             
-            const normalizedSubRut = normalizeRut(sub.rut)
-            
             const isExpanded = expandedSubcontractor === sub.id
 
             return (
