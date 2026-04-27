@@ -76,6 +76,25 @@ export async function GET(request: NextRequest) {
     const conductores = await conductoesResponse.json()
     console.log('[v0] Conductores count:', Array.isArray(conductores) ? conductores.length : 0)
 
+    // Count drivers per subcontractor (by rut_proveedor match with subcontratista rut)
+    const driverCountByRut = new Map<string, number>()
+    if (Array.isArray(conductores)) {
+      conductores.forEach(conductor => {
+        if (conductor.rut_proveedor) {
+          const currentCount = driverCountByRut.get(conductor.rut_proveedor) || 0
+          driverCountByRut.set(conductor.rut_proveedor, currentCount + 1)
+        }
+      })
+    }
+
+    // Add driver count to each subcontractista
+    const subcontratistasWithCounts = Array.isArray(subcontratistas) 
+      ? subcontratistas.map(s => ({
+          ...s,
+          conductores_count: driverCountByRut.get(s.rut) || 0,
+        }))
+      : []
+
     return NextResponse.json({
       user: {
         email: userEmail,
@@ -84,7 +103,7 @@ export async function GET(request: NextRequest) {
         isAdmin,
       },
       dashboard: {
-        transportistas: Array.isArray(subcontratistas) ? subcontratistas : [],
+        transportistas: subcontratistasWithCounts,
         conductores: Array.isArray(conductores) ? conductores : [],
         stats: {
           totalTransportistas: Array.isArray(subcontratistas) ? subcontratistas.length : 0,

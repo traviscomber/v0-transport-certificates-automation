@@ -22,6 +22,7 @@ interface Subcontractor {
   rendic?: boolean
   interpolar?: boolean
   is_active: boolean
+  conductores_count?: number
 }
 
 interface Driver {
@@ -358,19 +359,25 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
             
             const normalizedSubRut = normalizeRut(sub.rut)
             
-            // Count active drivers for this subcontractor by matching RUT
-            const subDrivers = drivers.filter((d, dIdx) => {
-              const normalizedDriverRut = normalizeRut(d.rut_proveedor)
-              const matches = normalizedDriverRut === normalizedSubRut && d.is_active
-              
-              // Debug: Log for first subcontractor to see all matches
-              if (subIdx === 0 && dIdx < 10) {
-                console.log(`[v0] Match check - Sub[${subIdx}]: ${sub.nombre} (${normalizedSubRut}) vs Driver[${dIdx}]: ${d.nombre} (${normalizedDriverRut}) = ${matches}`)
-              }
-              
-              return matches
-            })
-            const driverCount = subDrivers.length
+            // Use the driver count from API (conductores_count), or fall back to client-side matching
+            let driverCount = sub.conductores_count ?? 0
+            
+            // If conductores_count is not available, fall back to client-side matching
+            if (driverCount === 0 && drivers.length > 0) {
+              // Count active drivers for this subcontractor by matching RUT
+              const subDrivers = drivers.filter((d, dIdx) => {
+                const normalizedDriverRut = normalizeRut(d.rut_proveedor)
+                const matches = normalizedDriverRut === normalizedSubRut && d.is_active
+                
+                // Debug: Log for first subcontractor to see all matches
+                if (subIdx === 0 && dIdx < 10) {
+                  console.log(`[v0] Match check - Sub[${subIdx}]: ${sub.nombre} (${normalizedSubRut}) vs Driver[${dIdx}]: ${d.nombre} (${normalizedDriverRut}) = ${matches}`)
+                }
+                
+                return matches
+              })
+              driverCount = subDrivers.length
+            }
             const isExpanded = expandedSubcontractor === sub.id
 
             return (
