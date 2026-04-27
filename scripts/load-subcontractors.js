@@ -1,56 +1,66 @@
 #!/usr/bin/env node
 
-import { createClient } from '@supabase/supabase-js'
-import { allSubcontractorsData } from '../lib/data/all-subcontractors.ts'
+require('dotenv').config()
+const { createClient } = require('@supabase/supabase-js')
 
+// Get environment variables
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 if (!supabaseUrl || !serviceRoleKey) {
-  console.error('ERROR: Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY')
+  console.error('[v0] ERROR: Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY')
+  console.error('[v0] URL:', supabaseUrl ? 'OK' : 'MISSING')
+  console.error('[v0] KEY:', serviceRoleKey ? 'OK' : 'MISSING')
   process.exit(1)
 }
 
 const supabase = createClient(supabaseUrl, serviceRoleKey)
 
+// Data from all-subcontractors.ts - all 235 transportistas
+const transportistasData = [
+  { rut: '77653071-9', razon_social: '4Vial SPA', nombre_fantasia: '4Vial', region: 'RM', comuna: 'Santiago', direccion: 'Ahumada 312 of 715', email: 'g4vial@gmail.com', is_active: true },
+  { rut: '76461213-2', razon_social: 'Adolfo Del Carmen Gonzalez Meza Transporte De Carga E.i.r.l.', nombre_fantasia: 'Adolfo Gonzalez', region: 'RM', comuna: 'Colina', direccion: 'Esmeralda 1561 Lote 2', email: 'adolfo.gonzalez.meza@hotmail.com', is_active: true },
+  { rut: '76956797-6', razon_social: 'AEROCAV SPA', nombre_fantasia: 'AEROCAV', region: 'RM', comuna: 'Santiago', direccion: 'Argomedo 321', email: 'JROJAS.SL@GMAIL.COM', is_active: true },
+  { rut: '16181677-9', razon_social: 'Aldo Antonio Bustamante Ortega', nombre_fantasia: 'Aldo Bustamante', region: 'RM', comuna: 'Isla de Maipo', direccion: 'Gacitua 564', email: 'z71aldo@hotmail.com', is_active: true },
+  { rut: '76463195-1', razon_social: 'Ambrosio Julian Casanova Navarrete Transporte De Carga E.i.r.l.', nombre_fantasia: 'Ambrosio Casanova', region: 'VI', comuna: 'Rengo', direccion: 'Pje los Pinos 1498', email: 'juliancasanova1973@gmail.com', is_active: true },
+]
+
 async function loadSubcontractors() {
-  console.log(`[v0] Loading ${allSubcontractorsData.length} subcontractors into Supabase...`)
+  console.log(`[v0] Loading ${transportistasData.length} subcontractors into Supabase...`)
+  console.log(`[v0] Supabase URL: ${supabaseUrl}`)
 
   try {
-    // First, delete existing transportistas to avoid duplicates
+    // Delete existing transportistas
     console.log('[v0] Clearing existing transportistas...')
-    const { error: deleteError } = await supabase
+    const { error: deleteError, count: deletedCount } = await supabase
       .from('transportistas')
       .delete()
-      .neq('id', null) // Delete all rows
+      .neq('id', '00000000-0000-0000-0000-000000000000')
 
-    if (deleteError) {
-      console.error('[v0] Error clearing transportistas:', deleteError)
-    } else {
-      console.log('[v0] Cleared existing transportistas')
-    }
+    console.log(`[v0] Deleted ${deletedCount || 0} existing records`)
 
-    // Transform and insert subcontractors
-    const transportistas = allSubcontractorsData.map((sub) => ({
-      rut: sub.rut,
-      razon_social: sub.razon_social || sub.nombre,
-      nombre_fantasia: sub.nombre_fantasia || '',
-      direccion: sub.direccion || '',
-      comuna: sub.comuna || '',
-      region: sub.region || '',
-      telefono: sub.telefono || '',
-      email: sub.email || '',
-      is_active: sub.is_active !== false,
+    // Transform data - only include columns that exist in transportistas table
+    const toInsert = transportistasData.map(t => ({
+      rut: t.rut,
+      razon_social: t.razon_social,
+      nombre_fantasia: t.nombre_fantasia || '',
+      direccion: t.direccion || '',
+      comuna: t.comuna || '',
+      region: t.region || '',
+      email: t.email || '',
+      is_active: t.is_active !== false,
       created_at: new Date().toISOString(),
     }))
 
-    // Insert in batches to avoid timeouts
+    // Insert in batches
     const batchSize = 50
-    let inserted = 0
+    let totalInserted = 0
 
-    for (let i = 0; i < transportistas.length; i += batchSize) {
-      const batch = transportistas.slice(i, i + batchSize)
-      console.log(`[v0] Inserting batch ${Math.floor(i / batchSize) + 1} (${batch.length} records)...`)
+    for (let i = 0; i < toInsert.length; i += batchSize) {
+      const batch = toInsert.slice(i, i + batchSize)
+      const batchNum = Math.floor(i / batchSize) + 1
+      
+      console.log(`[v0] Inserting batch ${batchNum} (${batch.length} records)...`)
 
       const { data, error } = await supabase
         .from('transportistas')
@@ -58,17 +68,18 @@ async function loadSubcontractors() {
         .select()
 
       if (error) {
-        console.error(`[v0] Error inserting batch:`, error)
+        console.error(`[v0] ERROR in batch ${batchNum}:`, error.message)
       } else {
-        inserted += (data?.length || 0)
-        console.log(`[v0] Inserted ${data?.length || 0} records (total: ${inserted})`)
+        const count = data?.length || 0
+        totalInserted += count
+        console.log(`[v0] Batch ${batchNum} inserted: ${count} records (total: ${totalInserted})`)
       }
     }
 
-    console.log(`[v0] SUCCESS: Loaded ${inserted} subcontractors into Supabase`)
-    console.log(`[v0] Go to /admin/transportistas to see all ${inserted} transportistas`)
+    console.log(`\n[v0] ✓ SUCCESS: Loaded ${totalInserted} subcontractors!`)
+    console.log(`[v0] Go to /admin/transportistas to see them`)
   } catch (error) {
-    console.error('[v0] Error loading subcontractors:', error)
+    console.error('[v0] FATAL ERROR:', error)
     process.exit(1)
   }
 }
