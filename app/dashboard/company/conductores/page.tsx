@@ -6,7 +6,13 @@ import { DriversList } from '@/components/drivers-list'
 import { HelpBox } from '@/components/ui/help-box'
 
 const fetcher = (url: string) => 
-  fetch(url)
+  fetch(url, {
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache'
+    }
+  })
     .then(async (r) => {
       if (!r.ok) {
         const errorText = await r.text()

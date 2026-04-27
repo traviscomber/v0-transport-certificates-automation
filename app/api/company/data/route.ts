@@ -7,8 +7,9 @@ const supabase = createClient(
 )
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     console.log('[v0] Fetching real data from Supabase for subcontractors and drivers')
 
@@ -114,7 +115,13 @@ export async function GET() {
     }
 
     console.log('[v0] Loaded:', subcontractorsData.length, 'transportistas,', driversData.length, 'drivers')
-    return NextResponse.json(response)
+    
+    // Add cache-busting headers to ensure fresh data
+    const response_obj = NextResponse.json(response)
+    response_obj.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+    response_obj.headers.set('Pragma', 'no-cache')
+    response_obj.headers.set('Expires', '0')
+    return response_obj
   } catch (error) {
     console.error('[v0] Error in company data endpoint:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
