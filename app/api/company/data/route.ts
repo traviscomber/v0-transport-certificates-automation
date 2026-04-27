@@ -65,15 +65,21 @@ export async function GET() {
       }
     })
 
-    // Format drivers - use rut_proveedor directly from database
-    const driversData = (conductores || []).map(c => ({
-      id: c.id,
-      rut: c.rut || '',
-      nombre: `${c.nombres || ''} ${c.apellido_paterno || ''} ${c.apellido_materno || ''}`.trim(),
-      rut_proveedor: c.rut_proveedor || '',
-      proveedor: 'N/A',
-      is_active: c.is_active || true,
-    }))
+    // Create a map of RUT to subcontratista for quick lookup of provider names
+    const rutToSubcontratista = new Map(subcontratistas?.map(s => [s.rut, s]) || [])
+
+    // Format drivers - use rut_proveedor to lookup the actual company name from subcontratistas
+    const driversData = (conductores || []).map(c => {
+      const subcontratista = rutToSubcontratista.get(c.rut_proveedor)
+      return {
+        id: c.id,
+        rut: c.rut || '',
+        nombre: `${c.nombres || ''} ${c.apellido_paterno || ''} ${c.apellido_materno || ''}`.trim(),
+        rut_proveedor: c.rut_proveedor || '',
+        proveedor: subcontratista?.razon_social || c.rut_proveedor || 'N/A',
+        is_active: c.is_active || true,
+      }
+    })
 
     // Hard-coded executives (6 de Labbe)
     const executivesData = [
