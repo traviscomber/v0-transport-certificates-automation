@@ -58,6 +58,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
   // Fetch data from API if not provided as prop
   useEffect(() => {
     if (initialSubcontractors) {
+      console.log('[v0] Using provided subcontractors, sample:', initialSubcontractors[0])
       return // Use provided data
     }
 
@@ -77,6 +78,10 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
             // Filter only active transportistas from the database
             const activeTransportistas = data.dashboard.transportistas.filter((t: any) => t.is_active !== false)
             console.log('[v0] Loaded', activeTransportistas.length, 'active transportistas from database')
+            console.log('[v0] Sample subcontractor:', activeTransportistas[0])
+            console.log('[v0] Sample has direccion?', activeTransportistas[0]?.direccion)
+            console.log('[v0] Sample has comuna?', activeTransportistas[0]?.comuna)
+            console.log('[v0] Sample has ejecutiva?', activeTransportistas[0]?.ejecutiva)
             setSubcontractors(activeTransportistas)
             setDrivers(data.dashboard.conductores || [])
           }
@@ -408,7 +413,15 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
                     </div>
                     <div>
                       <p className="text-xs text-slate-400 font-semibold">REGIÓN</p>
-                      <p className="text-sm text-white">{sub.region}</p>
+                      <p className="text-sm text-white">{sub.region || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 font-semibold">COMUNA</p>
+                      <p className="text-sm text-white">{sub.comuna || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 font-semibold">DIRECCIÓN</p>
+                      <p className="text-sm text-white">{sub.direccion || 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-xs text-slate-400 font-semibold">REPRESENTANTE</p>
