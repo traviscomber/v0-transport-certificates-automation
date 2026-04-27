@@ -36,7 +36,7 @@ export async function GET() {
         telefono: '+56912345678',
         region: 'RM',
         ciudad: 'Santiago',
-        representante_legal: 'Juan Pérez',
+        representante_legal: 'José Patricio Armando Labbé Cereceda',
         is_active: true
       },
       executives: executivesData,
