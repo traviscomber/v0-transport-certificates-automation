@@ -412,10 +412,6 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
                       <p className="font-mono text-sm text-amber-400">{sub.rut}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-slate-400 font-semibold">REGIÓN</p>
-                      <p className="text-sm text-white">{sub.region || 'N/A'}</p>
-                    </div>
-                    <div>
                       <p className="text-xs text-slate-400 font-semibold">COMUNA</p>
                       <p className="text-sm text-white">{sub.comuna || 'N/A'}</p>
                     </div>
