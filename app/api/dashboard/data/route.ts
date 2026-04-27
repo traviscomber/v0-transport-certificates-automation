@@ -90,19 +90,20 @@ export async function GET(request: NextRequest) {
         })
       }
 
-      // Merge data: use transportistas as base, add contact info from subcontratistas
+      // Merge data: use transportistas as base, enhance with contact info from subcontratistas
       transportistas = Array.isArray(transportistasData) 
         ? transportistasData.map((t: any) => {
             const sub = subMap.get(t.rut)
             return {
               ...t,
-              // Use subcontratistas contact info if available
+              // Use subcontratistas contact info if available (estos tienen los datos que actualizamos)
               email: sub?.email || t.email || '',
               telefono: sub?.telefono || t.telefono || '',
               correo: sub?.email || t.correo || '',
               ejecutivo_nombre: sub?.ejecutiva || t.ejecutivo_nombre || 'Sin asignar',
               direccion: sub?.direccion || t.direccion || '',
-              comuna: sub?.comuna || t.comuna || '',
+              // Keep transportistas comune (no overwrite with subcontratistas if null)
+              comuna: t.comuna || sub?.comuna || '',
             }
           })
         : []
