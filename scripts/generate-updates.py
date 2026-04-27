@@ -7,7 +7,7 @@ csv_file = '/vercel/share/v0-project/scripts/subcontratistas.csv'
 
 try:
     with open(csv_file, 'r', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
+        reader = csv.DictReader(f, delimiter=';')
         
         print("-- Auto-generated SQL to update transportistas table with complete data")
         print("-- This updates 229 records with teléfono, correo, ejecutiva, dirección, comuna, representante_legal")
@@ -15,13 +15,13 @@ try:
         
         count = 0
         for row in reader:
-            rut = row.get('RUT', '').strip()
-            nombre = row.get('Nombre', '').replace("'", "''").strip()
-            representante = row.get('Representante', '').replace("'", "''").strip()
+            rut = row.get('Rut_Proveedor', '').strip()
+            nombre = row.get('Proveedor', '').replace("'", "''").strip()
+            representante = row.get('Representante Legal', '').replace("'", "''").strip()
             ejecutiva = row.get('Ejecutiva', '').replace("'", "''").strip()
-            direccion = row.get('Dirección', '').replace("'", "''").strip()
+            direccion = row.get('Direccion', '').replace("'", "''").strip()
             comuna = row.get('Comuna', '').replace("'", "''").strip()
-            telefono = row.get('Teléfono', '').replace("'", "''").strip()
+            telefono = row.get('Telefono', '').replace("'", "''").strip()
             correo = row.get('Correo', '').replace("'", "''").strip()
             
             if not rut:
