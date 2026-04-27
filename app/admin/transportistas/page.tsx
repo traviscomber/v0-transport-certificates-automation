@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, Search, MoreHorizontal, Building2, Car, Users, HelpCircle } from "lucide-react"
+import { Plus, Search, MoreHorizontal, Building2, Car, Users, HelpCircle, CheckCircle2, XCircle } from "lucide-react"
 import Link from "next/link"
 import { HelpBox, QuickHelp } from "@/components/ui/help-box"
 
@@ -94,54 +94,89 @@ export default async function TransportistasPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {transportistas.map((t: any) => (
-            <Card key={t.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                      <Building2 className="h-6 w-6 text-green-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg">{t.razon_social}</h3>
-                      {t.nombre_fantasia && (
-                        <p className="text-sm text-muted-foreground">{t.nombre_fantasia}</p>
-                      )}
-                      <p className="text-sm font-mono text-muted-foreground mt-1">
-                        RUT: {t.rut}
-                      </p>
-                      <div className="flex gap-4 mt-2">
-                        <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Car className="h-4 w-4" />
-                          {t.vehiculos?.[0]?.count || 0} vehiculos
+        <Card>
+          <CardHeader>
+            <CardTitle>Lista de Transportistas</CardTitle>
+            <CardDescription>
+              Total: {transportistas.length} transportistas registrados
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left py-3 px-4 font-semibold">RUT</th>
+                    <th className="text-left py-3 px-4 font-semibold">Razón Social</th>
+                    <th className="text-left py-3 px-4 font-semibold">Representante Legal</th>
+                    <th className="text-left py-3 px-4 font-semibold">Ejecutivo</th>
+                    <th className="text-left py-3 px-4 font-semibold">Teléfono</th>
+                    <th className="text-left py-3 px-4 font-semibold">Correo</th>
+                    <th className="text-left py-3 px-4 font-semibold">Comuna</th>
+                    <th className="text-center py-3 px-4 font-semibold">Certificaciones</th>
+                    <th className="text-center py-3 px-4 font-semibold">Estado</th>
+                    <th className="text-center py-3 px-4 font-semibold">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transportistas.map((t: any) => (
+                    <tr key={t.id} className="border-b hover:bg-muted/50 transition-colors">
+                      <td className="py-3 px-4 font-mono text-xs">{t.rut}</td>
+                      <td className="py-3 px-4">
+                        <div>
+                          <p className="font-medium">{t.razon_social}</p>
+                          {t.nombre_fantasia && (
+                            <p className="text-xs text-muted-foreground">{t.nombre_fantasia}</p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-sm">{t.representante_legal || "-"}</td>
+                      <td className="py-3 px-4 text-sm">{t.ejecutivo_nombre || "-"}</td>
+                      <td className="py-3 px-4 text-sm">{t.telefono || "-"}</td>
+                      <td className="py-3 px-4 text-sm">
+                        {t.correo ? (
+                          <a href={`mailto:${t.correo}`} className="text-blue-600 hover:underline">
+                            {t.correo}
+                          </a>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-sm">{t.comuna || "-"}</td>
+                      <td className="py-3 px-4">
+                        <div className="flex gap-2 justify-center">
+                          {t.ariztia && <span title="Ariztia" className="text-green-600"><CheckCircle2 className="h-4 w-4" /></span>}
+                          {t.lts && <span title="LTS" className="text-blue-600"><CheckCircle2 className="h-4 w-4" /></span>}
+                          {t.rendic && <span title="Rendic" className="text-purple-600"><CheckCircle2 className="h-4 w-4" /></span>}
+                          {t.interpolar && <span title="Interpolar" className="text-orange-600"><CheckCircle2 className="h-4 w-4" /></span>}
+                          {!t.ariztia && !t.lts && !t.rendic && !t.interpolar && (
+                            <span className="text-muted-foreground text-xs">Ninguna</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          t.is_active 
+                            ? "bg-green-100 text-green-700" 
+                            : "bg-red-100 text-red-700"
+                        }`}>
+                          {t.is_active ? "Activo" : "Inactivo"}
                         </span>
-                        <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Users className="h-4 w-4" />
-                          {t.conductores?.[0]?.count || 0} conductores
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      t.is_active 
-                        ? "bg-green-100 text-green-700" 
-                        : "bg-red-100 text-red-700"
-                    }`}>
-                      {t.is_active ? "Activo" : "Inactivo"}
-                    </span>
-                    <Link href={`/admin/transportistas/${t.id}`}>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <Link href={`/admin/transportistas/${t.id}`}>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   )
