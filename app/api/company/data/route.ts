@@ -1,24 +1,73 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-import { allSubcontractorsData } from '@/lib/data/all-subcontractors'
-import { allDriversData } from '@/lib/data/all-drivers'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+)
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const supabase = await createClient()
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    console.log('[v0] Fetching real data from Supabase for subcontractors and drivers')
 
-    console.log('[v0] API company/data called')
-    console.log('[v0] Using static driver/subcontractor data')
+    // Fetch real transportistas (221 total)
+    const { data: transportistas, error: transportistasError } = await supabase
+      .from('transportistas')
+      .select('id, rut, razon_social, nombre_fantasia, direccion, comuna, region, is_active, created_at')
+      .order('razon_social', { ascending: true })
 
-    // Use static data for drivers and subcontractors
-    const driversData = allDriversData
-    const subcontractorsData = allSubcontractorsData
+    if (transportistasError) {
+      console.error('[v0] Error fetching transportistas:', transportistasError)
+      throw transportistasError
+    }
 
-    console.log('[v0] Loaded drivers:', driversData.length, 'subcontractors:', subcontractorsData.length)
+    // Fetch real conductores (drivers)
+    const { data: conductores, error: conductoresError } = await supabase
+      .from('conductores')
+      .select('id, rut, nombres, apellido_paterno, apellido_materno, transportista_id, is_active, created_at')
+      .order('nombres', { ascending: true })
 
+    if (conductoresError) {
+      console.error('[v0] Error fetching conductores:', conductoresError)
+      throw conductoresError
+    }
+
+    // Create a map of transportista_id to transportista for quick lookup
+    const transportistaMap = new Map(transportistas?.map(t => [t.id, t]) || [])
+
+    // Format subcontractors with ejecutiva info
+    const subcontractorsData = (transportistas || []).map(t => ({
+      id: t.id,
+      nombre: t.razon_social,
+      nombre_fantasia: t.nombre_fantasia || '',
+      rut: t.rut || '',
+      region: t.region || 'N/A',
+      ejecutiva: 'N/A', // Se asigna por RUT en el frontend si es necesario
+      comuna: t.comuna || 'N/A',
+      representante: '',
+      telefono: '',
+      email: '',
+      ariztia: false,
+      lts: false,
+      rendic: false,
+      interpolar: false,
+      is_active: t.is_active || true,
+      created_at: t.created_at,
+    }))
+
+    // Format drivers
+    const driversData = (conductores || []).map(c => ({
+      id: c.id,
+      rut: c.rut || '',
+      nombre: `${c.nombres || ''} ${c.apellido_paterno || ''} ${c.apellido_materno || ''}`.trim(),
+      rut_proveedor: transportistaMap.get(c.transportista_id)?.rut || '',
+      proveedor: transportistaMap.get(c.transportista_id)?.razon_social || 'N/A',
+      is_active: c.is_active || true,
+    }))
+
+    // Hard-coded executives (6 de Labbe)
     const executivesData = [
       { id: '1', full_name: 'Olga Carrasco', rut: '10574005-0', email: 'ocarrasco@labbe.cl', phone: '+56912345678', cargo: 'Ejecutiva de Cuenta' },
       { id: '2', full_name: 'Carolina Sepúlveda', rut: '15464094-0', email: 'csepulveda@labbe.cl', phone: '+56913456789', cargo: 'Ejecutiva de Cuenta' },
@@ -50,12 +99,11 @@ export async function GET() {
       }
     }
 
-    console.log('[v0] Returning response with', driversData.length, 'drivers')
+    console.log('[v0] Loaded:', subcontractorsData.length, 'subcontractors,', driversData.length, 'drivers')
     return NextResponse.json(response)
   } catch (error) {
     console.error('[v0] Error in company data endpoint:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    console.error('[v0] Error details:', errorMessage)
     return NextResponse.json(
       { error: 'Failed to fetch company data', details: errorMessage },
       { status: 500 }
