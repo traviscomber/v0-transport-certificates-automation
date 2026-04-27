@@ -59,21 +59,30 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
 
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/dashboard/data')
-        const data = await response.json()
+        const response = await fetch('/api/dashboard/data', {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        })
         
-        if (response.ok && data.dashboard?.transportistas) {
-          setSubcontractors(data.dashboard.transportistas)
-          setDrivers(data.dashboard.conductores || [])
-          // Don't pre-select any filter - let user choose
+        if (response.ok) {
+          const data = await response.json()
+          if (data.dashboard?.transportistas && Array.isArray(data.dashboard.transportistas)) {
+            // Filter only active transportistas from the database
+            const activeTransportistas = data.dashboard.transportistas.filter((t: any) => t.is_active !== false)
+            console.log('[v0] Loaded', activeTransportistas.length, 'active transportistas from database')
+            setSubcontractors(activeTransportistas)
+            setDrivers(data.dashboard.conductores || [])
+          }
         } else {
-          // Don't use local demo data - show empty state instead
+          console.error('[v0] API error:', response.status)
           setSubcontractors([])
           setDrivers([])
         }
       } catch (error) {
         console.error('[v0] Error fetching subcontractors:', error)
-        // Don't use local demo data - show empty state instead
         setSubcontractors([])
         setDrivers([])
       } finally {
