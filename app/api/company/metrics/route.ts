@@ -23,10 +23,10 @@ export async function GET(request: NextRequest) {
     // Get Supabase client for queries
     const supabase = await createClient()
 
-    // Fetch ALL documents (not just validated) to calculate more metrics
+    // Fetch ALL documents to calculate metrics
     const { data: allDocsDetail, error: allDocsDetailError } = await supabase
       .from('uploaded_documents')
-      .select('id, conductor_id, validation_status, created_at, validated_at, validated_by')
+      .select('id, conductor_id, validation_status, created_at, validated_at')
       .gte('created_at', startDate.toISOString())
       .lte('created_at', endDate.toISOString())
 
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     // Get validated documents for faster processing
     const { data: validatedDocs, error: validatedError } = await supabase
       .from('uploaded_documents')
-      .select('id, conductor_id, validation_status, created_at, validated_at, validated_by')
+      .select('id, conductor_id, validation_status, created_at, validated_at')
       .eq('validation_status', 'validated')
       .gte('created_at', startDate.toISOString())
       .lte('created_at', endDate.toISOString())
@@ -167,7 +167,7 @@ export async function GET(request: NextRequest) {
       .lte('created_at', endDate.toISOString())
 
     const totalDocuments = allDocs?.length || 0
-    const totalValidated = dbDocuments?.length || 0
+    const totalValidated = validatedDocs?.length || 0
 
     console.log('[v0] Total documents:', totalDocuments, 'Validated:', totalValidated)
 
