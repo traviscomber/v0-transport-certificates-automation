@@ -34,13 +34,12 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         'Expires': '0'
       } : {}
       
-      console.log('[v0] Fetching documents for driver_rut:', driverRut, 'driver_id:', driverId)
+      console.log('[v0] Fetching documents for driver_id:', driverId)
       const urlParams = new URLSearchParams({
-        driver_rut: driverRut,
-        driver_id: driverId
+        driver_id: driverId,
+        ...(driverRut && { driver_rut: driverRut })
       })
       const fetchUrl = `/api/company/documents/drivers?${urlParams.toString()}`
-      console.log('[v0] Full fetch URL:', fetchUrl)
       const response = await fetch(fetchUrl, {
         method: 'GET',
         headers,
@@ -195,10 +194,10 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
 
   // Only fetch when explicitly enabled (card expanded)
   useEffect(() => {
-    if (driverId && driverRut && enabled) {
+    if (driverId && enabled) {
       fetchDocuments()
     }
-  }, [driverId, driverRut, enabled])
+  }, [driverId, enabled])
 
   return {
     documents,

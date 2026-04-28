@@ -6,57 +6,44 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
+    // Accept driver_id (UUID) directly from the driver object
+    let conductorId = searchParams.get('driver_id')
     const driverRut = searchParams.get('driver_rut') || searchParams.get('rut')
 
-    if (!driverRut) {
-      return NextResponse.json({ error: 'driver_rut required' }, { status: 400 })
-    }
-
-    console.log('[v0] Fetching documents for driver_rut:', driverRut, 'Type:', typeof driverRut, 'Length:', driverRut?.length)
-    // Log raw request URL to see encoding
-    console.log('[v0] Request URL:', request.url)
-    console.log('[v0] All search params:', Array.from(searchParams.entries()))
-
-    const adminClient = await createAdminClient()
-
-    // Try exact match first, then fallback to ILIKE for partial matches
-    let conductorRow = null
-    let conductorError = null
-
-    // First try exact match
-    const exactResult = await adminClient
-      .from('conductores')
-      .select('id')
-      .eq('rut', driverRut)
-      .single()
-
-    if (!exactResult.error && exactResult.data) {
-      conductorRow = exactResult.data
-    } else {
-      // Fallback to ILIKE for flexible matching (handles formatting differences)
-      const flexResult = await adminClient
+    // If no driver_id but have RUT, look it up
+    if (!conductorId && driverRut) {
+      console.log('[v0] Looking up conductor UUID for RUT:', driverRut)
+      
+      const exactResult = await (await createAdminClient())
         .from('conductores')
         .select('id')
-        .ilike('rut', `%${driverRut}%`)
-        .limit(1)
+        .eq('rut', driverRut)
         .single()
 
-      if (!flexResult.error && flexResult.data) {
-        conductorRow = flexResult.data
+      if (exactResult.data?.id) {
+        conductorId = exactResult.data.id
       } else {
-        conductorError = flexResult.error
+        // Fallback to flexible matching
+        const flexResult = await (await createAdminClient())
+          .from('conductores')
+          .select('id')
+          .ilike('rut', `%${driverRut}%`)
+          .limit(1)
+          .single()
+
+        if (flexResult.data?.id) {
+          conductorId = flexResult.data.id
+        }
       }
     }
 
-    if (conductorError || !conductorRow?.id) {
-      console.log('[v0] Conductor not found for RUT:', driverRut)
+    if (!conductorId) {
       return NextResponse.json({ success: true, documents: [] }, {
         headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
       })
     }
 
-    const conductorId = conductorRow.id
-    console.log('[v0] Resolved conductor_id:', conductorId)
+    const adminClient = await createAdminClient()
 
     const { data: dbDocuments, error: dbError } = await adminClient
       .from('uploaded_documents')
@@ -99,7 +86,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ success: true, driver_rut: driverRut, documents }, {
+    return NextResponse.json({ success: true, driver_id: conductorId, documents }, {
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
         'Pragma': 'no-cache',
