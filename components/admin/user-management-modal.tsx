@@ -80,7 +80,7 @@ export function UserManagementModal({ user, isCreate, onClose, onSuccess }: User
         if (signUpError) throw signUpError
       } else if (user) {
         // Update existing user
-        const { error: updateError } = await supabase
+        const { error: updateError } = await (supabase as any)
           .from("profiles")
           .update({
             full_name: formData.full_name,
