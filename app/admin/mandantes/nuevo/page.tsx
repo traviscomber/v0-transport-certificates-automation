@@ -36,9 +36,14 @@ export default function NuevoMandantePage() {
     }
 
     const supabase = createClient()
+    if (!supabase) {
+      setError("Error de conexión: no se pudo conectar a la base de datos")
+      setLoading(false)
+      return
+    }
     const { error: insertError } = await supabase
       .from("mandantes")
-      .insert(data)
+      .insert(data as any)
 
     if (insertError) {
       setError(insertError.message)

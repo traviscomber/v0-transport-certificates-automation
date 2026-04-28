@@ -20,6 +20,10 @@ export default function NuevoVehiculoPage() {
   useEffect(() => {
     async function loadTransportistas() {
       const supabase = createClient()
+      if (!supabase) {
+        console.error('[v0] Supabase client not available')
+        return
+      }
       const { data } = await supabase
         .from("transportistas")
         .select("id, razon_social, rut")
@@ -53,9 +57,14 @@ export default function NuevoVehiculoPage() {
     }
 
     const supabase = createClient()
+    if (!supabase) {
+      setError("Error de conexión: no se pudo conectar a la base de datos")
+      setLoading(false)
+      return
+    }
     const { error: insertError } = await supabase
       .from("vehiculos")
-      .insert(data)
+      .insert(data as any)
 
     if (insertError) {
       setError(insertError.message)
