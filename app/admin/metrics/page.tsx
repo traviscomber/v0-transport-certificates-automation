@@ -87,7 +87,7 @@ export default function MetricsPage() {
   const fetchDebugData = async () => {
     try {
       console.log('[v0] Fetching debug data...')
-      const res = await fetch('/api/company/metrics/debug')
+      const res = await fetch('/api/company/metrics/debug-documents')
       const json = await res.json()
       console.log('[v0] Debug data:', json)
       setDebugData(json)
