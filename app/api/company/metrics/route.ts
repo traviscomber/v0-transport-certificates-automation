@@ -42,7 +42,36 @@ export async function GET(request: Request) {
       executives = []
     }
 
-    console.log('[v0] Found documents from uploaded_documents table:', documents?.length || 0)
+    // Step 2: Fetch documents from uploaded_documents table
+    const adminClient = await createAdminClient()
+    const { data: dbDocuments, error: dbError } = await adminClient
+      .from('uploaded_documents')
+      .select('id, conductor_id, validation_status, created_at, validated_at, validated_by')
+      .eq('validation_status', 'validated')
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString())
+
+    if (dbError) {
+      console.error('[v0] Error fetching documents:', dbError)
+    }
+
+    console.log('[v0] Found documents from uploaded_documents table:', dbDocuments?.length || 0)
+
+    // Step 3: Get executives from /api/company/data (real data, not hardcoded)
+    try {
+      const companyDataRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/company/data`)
+      if (!companyDataRes.ok) throw new Error('Failed to fetch company data')
+      const companyData = await companyDataRes.json()
+      executives = companyData.executives || []
+      totalConductores = (companyData.drivers || []).length
+      totalSubcontratistas = (companyData.subcontractors || []).length
+      console.log('[v0] Loaded from company data:', { executives: executives.length, drivers: totalConductores, subcontractors: totalSubcontratistas })
+    } catch (error) {
+      console.error('[v0] Failed to fetch company data:', error)
+      executives = []
+    }
+
+    console.log('[v0] Found documents from uploaded_documents table:', dbDocuments?.length || 0)
 
     // Step 2: Get executives from /api/company/data (real data, not hardcoded)
     try {
@@ -75,8 +104,8 @@ export async function GET(request: Request) {
     let totalValidationTime = 0
 
     // Step 4: Process documents - link to executives by validated_by UUID
-    if (documents && documents.length > 0) {
-      documents.forEach((doc: any) => {
+    if (dbDocuments && dbDocuments.length > 0) {
+      dbDocuments.forEach((doc: any) => {
         // Only count documents that have been validated
         if (!doc.validated_by || doc.validation_status !== 'validated') {
           return
