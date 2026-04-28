@@ -91,11 +91,11 @@ export class EnhancedDocumentsModule extends DocumentsModule {
     }
   }
 
-  async query(query: ModuleQuery) {
-    if (query.type === 'documents_by_entity') {
-      return this.getDocumentsForEntity(query.parameters.entityId)
+  async executeAction(action: any) {
+    if (action.type === 'validate_document') {
+      return this.validateDocument(action.parameters.documentId)
     }
-    return super.query(query)
+    return super.executeAction(action)
   }
 
   private async getDocumentsForEntity(entityId: string) {
@@ -144,6 +144,11 @@ export class EnhancedDocumentsModule extends DocumentsModule {
     const expiry = new Date(expirationDate)
     const diff = expiry.getTime() - today.getTime()
     return Math.ceil(diff / (1000 * 3600 * 24))
+  }
+
+  private async validateDocument(documentId: string) {
+    // Implementar lógica
+    return { valid: true }
   }
 }
 
