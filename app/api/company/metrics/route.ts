@@ -26,14 +26,13 @@ export async function GET(request: NextRequest) {
     // Fetch certificates with validation data
     const { data: certificates, error } = await (supabase as any)
       .from('certificates')
-      .select('id, status, validated_by, validated_at, validation_time_seconds, ai_confidence')
+      .select('id, status, validated_by, validated_at, created_at')
       .gte('validated_at', startDate.toISOString())
-      .eq('company_id', 'current_company') // This should come from session
 
     if (error) {
       console.error('[v0] Error fetching certificates:', error)
       return NextResponse.json(
-        { error: 'Failed to fetch metrics' },
+        { error: 'Failed to fetch metrics: ' + error.message },
         { status: 500 }
       )
     }
@@ -49,7 +48,14 @@ export async function GET(request: NextRequest) {
 
       totalDocuments++
       if (cert.status === 'approved') totalApprovals++
-      if (cert.validation_time_seconds) totalValidationTime += cert.validation_time_seconds
+
+      // Calculate validation time from created_at to validated_at
+      if (cert.created_at && cert.validated_at) {
+        const createdTime = new Date(cert.created_at).getTime()
+        const validatedTime = new Date(cert.validated_at).getTime()
+        const timeSeconds = Math.round((validatedTime - createdTime) / 1000)
+        totalValidationTime += timeSeconds
+      }
 
       if (!metricsMap.has(cert.validated_by)) {
         metricsMap.set(cert.validated_by, {
@@ -58,15 +64,20 @@ export async function GET(request: NextRequest) {
           documents_processed: 0,
           approved: 0,
           total_validation_time: 0,
-          confidence_scores: [],
         })
       }
 
       const metrics = metricsMap.get(cert.validated_by)
       metrics.documents_processed++
       if (cert.status === 'approved') metrics.approved++
-      if (cert.validation_time_seconds) metrics.total_validation_time += cert.validation_time_seconds
-      if (cert.ai_confidence) metrics.confidence_scores.push(cert.ai_confidence)
+      
+      // Calculate validation time
+      if (cert.created_at && cert.validated_at) {
+        const createdTime = new Date(cert.created_at).getTime()
+        const validatedTime = new Date(cert.validated_at).getTime()
+        const timeSeconds = Math.round((validatedTime - createdTime) / 1000)
+        metrics.total_validation_time += timeSeconds
+      }
     })
 
     // Format response
@@ -80,11 +91,7 @@ export async function GET(request: NextRequest) {
       avg_validation_time: m.documents_processed > 0
         ? Math.round(m.total_validation_time / m.documents_processed)
         : 0,
-      avg_ai_confidence: m.confidence_scores.length > 0
-        ? Math.round(
-            m.confidence_scores.reduce((a: number, b: number) => a + b, 0) / m.confidence_scores.length
-          )
-        : 0,
+      avg_ai_confidence: 0, // Placeholder - will be updated when AI fields are added
     }))
 
     const summary = {
