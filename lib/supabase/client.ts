@@ -1,15 +1,27 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 
-export function createClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+let clientInstance: ReturnType<typeof createSupabaseClient> | null = null
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('[v0] Missing Supabase environment variables')
-    throw new Error('Supabase configuration missing')
+export function createClient() {
+  // Return cached instance if already created
+  if (clientInstance) {
+    return clientInstance
   }
 
-  return createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('[v0] Missing Supabase environment variables:', {
+      url: supabaseUrl ? 'SET' : 'MISSING',
+      key: supabaseAnonKey ? 'SET' : 'MISSING',
+    })
+    return null
+  }
+
+  console.log('[v0] Creating Supabase client with URL:', supabaseUrl)
+
+  clientInstance = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
@@ -26,4 +38,6 @@ export function createClient() {
       schema: 'public',
     },
   })
+
+  return clientInstance
 }

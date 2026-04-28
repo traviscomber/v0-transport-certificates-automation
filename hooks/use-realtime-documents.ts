@@ -71,7 +71,8 @@ export function useRealtimeDocuments(driverRut: string) {
       try {
         const client = createClient()
         if (!client) {
-          console.warn('[v0] Supabase client not available')
+          console.warn('[v0] Supabase client not available, retrying in 3s...')
+          reconnectTimeoutRef.current = setTimeout(setupListener, 3000)
           return
         }
 
