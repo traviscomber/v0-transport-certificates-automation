@@ -55,15 +55,18 @@ export async function POST(request: NextRequest) {
       .from('uploaded_documents')
       .insert({
         conductor_id: driverId,
-        document_type_id: documentTypeId,
         original_filename: file.name,
         file_url: publicUrlData?.publicUrl || '',
         file_path: storagePath,
         file_size: file.size,
         mime_type: file.type,
         validation_status: 'pending',
-        expiry_date: metadata.expiry_date || null,
-        issue_date: metadata.issue_date || null,
+        metadata: {
+          document_type_id: documentTypeId,
+          expiry_date: metadata.expiry_date || null,
+          issue_date: metadata.issue_date || null,
+          ...metadata
+        }
       })
       .select()
       .single()
