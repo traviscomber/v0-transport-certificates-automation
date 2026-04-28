@@ -103,15 +103,20 @@ export async function GET(request: NextRequest) {
 
 // Helper function to process metrics
 async function processMetrics(documents: any[], supabase: any) {
+  console.log('[v0] ProcessMetrics: Starting with', documents.length, 'documents')
+  
   // Get profile info for validated_by executivas
   const validatedByIds = [...new Set(documents.map((d: any) => d.validated_by).filter(Boolean))]
+  console.log('[v0] ProcessMetrics: Found', validatedByIds.length, 'unique validated_by IDs')
   
   const profileMap = new Map()
   if (validatedByIds.length > 0) {
-    const { data: profiles } = await (supabase as any)
+    const { data: profiles, error: profileError } = await (supabase as any)
       .from('profiles')
       .select('id, full_name')
       .in('id', validatedByIds)
+    
+    console.log('[v0] ProcessMetrics: Profile query result:', { count: profiles?.length || 0, error: profileError })
     
     if (profiles) {
       profiles.forEach((p: any) => profileMap.set(p.id, p))
@@ -125,7 +130,10 @@ async function processMetrics(documents: any[], supabase: any) {
   let totalValidationTime = 0
 
   documents.forEach((doc: any) => {
-    if (!doc.validated_by) return
+    if (!doc.validated_by) {
+      console.log('[v0] Skipping document without validated_by')
+      return
+    }
 
     const profile = profileMap.get(doc.validated_by)
     const executiveName = profile?.full_name || doc.validated_by
@@ -162,6 +170,8 @@ async function processMetrics(documents: any[], supabase: any) {
       metrics.total_validation_time += timeSeconds
     }
   })
+
+  console.log('[v0] ProcessMetrics: Calculated metrics for', metricsMap.size, 'executives')
 
   // Format response
   const executives = Array.from(metricsMap.values()).map((m: any) => ({

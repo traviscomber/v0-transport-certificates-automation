@@ -56,13 +56,21 @@ export default function MetricsPage() {
   const fetchMetrics = async () => {
     try {
       setLoading(true)
+      console.log('[v0] Fetching metrics with timeRange:', timeRange)
       const res = await fetch(`/api/company/metrics?range=${timeRange}`)
-      if (!res.ok) throw new Error('Error fetching metrics')
+      console.log('[v0] Metrics API response status:', res.status)
+      
+      if (!res.ok) {
+        console.error('[v0] Metrics API error status:', res.status)
+        throw new Error('Error fetching metrics')
+      }
+      
       const json = await res.json()
+      console.log('[v0] Metrics API response:', json)
       setData(json)
     } catch (err) {
+      console.error('[v0] Error fetching metrics:', err)
       setError('Error al cargar las métricas')
-      console.error(err)
     } finally {
       setLoading(false)
     }
@@ -76,6 +84,7 @@ export default function MetricsPage() {
 
   const generateAIInsights = async (executive: ExecutiveMetrics) => {
     try {
+      console.log('[v0] Generating AI insights for:', executive.executive_name)
       setGeneratingInsights(prev => new Set(prev).add(executive.executive_id))
       
       const prompt = `Analiza el desempeño de la ejecutiva "${executive.executive_name}" basado en estos datos:
@@ -86,6 +95,8 @@ export default function MetricsPage() {
 
 Proporciona 2-3 insights accionables y específicos para mejorar su desempeño.`
 
+      console.log('[v0] OpenAI API Key available:', !!process.env.NEXT_PUBLIC_OPENAI_API_KEY)
+      
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -103,11 +114,14 @@ Proporciona 2-3 insights accionables y específicos para mejorar su desempeño.`
         })
       })
 
+      console.log('[v0] OpenAI response status:', response.status)
+
       if (!response.ok) {
         throw new Error(`OpenAI API error: ${response.status}`)
       }
 
       const result = await response.json()
+      console.log('[v0] OpenAI response:', result)
       const insights = result.choices[0].message.content
 
       // Update the data with insights
