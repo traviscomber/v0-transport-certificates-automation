@@ -17,6 +17,12 @@ export async function GET() {
 
     // Obtener perfil de la empresa
     const supabase = createClient()
+    if (!supabase) {
+      return Response.json(
+        { error: 'Error de conexión a base de datos' },
+        { status: 500 }
+      )
+    }
     const { data: profile, error } = await supabase
       .from('companies')
       .select('id, rut, name, representative, email, phone, address, region')

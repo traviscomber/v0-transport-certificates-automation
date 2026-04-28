@@ -3,6 +3,11 @@ import { createClient } from '@/lib/supabase/client'
 export async function GET() {
   try {
     const supabase = createClient()
+    if (!supabase) {
+      return Response.json({
+        error: 'Error de conexión a base de datos',
+      }, { status: 500 })
+    }
 
     const { data, error } = await supabase
       .from('executive_staff')

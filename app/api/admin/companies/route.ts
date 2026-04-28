@@ -19,6 +19,12 @@ export async function GET() {
 
     // Obtener todas las empresas
     const supabase = createClient()
+    if (!supabase) {
+      return Response.json(
+        { error: 'Error de conexión a base de datos' },
+        { status: 500 }
+      )
+    }
     const { data: companies, error } = await supabase
       .from('companies')
       .select('id, rut, name, representative, email, phone, region, is_labbe_admin')

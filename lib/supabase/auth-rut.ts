@@ -38,6 +38,9 @@ export async function loginByRUT(
   password: string
 ): Promise<CompanyLoginResponse> {
   const supabase = createClient()
+  if (!supabase) {
+    throw new Error('Error de conexión a base de datos')
+  }
   const normalizedInput = normalizeRUT(rut)
   const formattedRUT = formatRUT(normalizedInput)
 

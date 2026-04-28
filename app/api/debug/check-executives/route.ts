@@ -6,6 +6,12 @@ import { NextResponse } from 'next/server'
 export async function GET() {
   try {
     const supabase = createClient()
+    if (!supabase) {
+      return NextResponse.json({
+        success: false,
+        error: 'Error de conexión a base de datos',
+      }, { status: 500 })
+    }
 
     console.log('[v0] Checking executive_staff table...')
 
