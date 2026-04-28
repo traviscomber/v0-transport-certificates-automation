@@ -6,42 +6,15 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    // Accept driver_id (UUID) directly from the driver object
-    let conductorId = searchParams.get('driver_id')
-    const driverRut = searchParams.get('driver_rut') || searchParams.get('rut')
-
-    // If no driver_id but have RUT, look it up
-    if (!conductorId && driverRut) {
-      console.log('[v0] Looking up conductor UUID for RUT:', driverRut)
-      
-      const exactResult = await (await createAdminClient())
-        .from('conductores')
-        .select('id')
-        .eq('rut', driverRut)
-        .single()
-
-      if (exactResult.data?.id) {
-        conductorId = exactResult.data.id
-      } else {
-        // Fallback to flexible matching
-        const flexResult = await (await createAdminClient())
-          .from('conductores')
-          .select('id')
-          .ilike('rut', `%${driverRut}%`)
-          .limit(1)
-          .single()
-
-        if (flexResult.data?.id) {
-          conductorId = flexResult.data.id
-        }
-      }
-    }
+    // driver_id from the conductores page IS already the real UUID from the conductores table
+    // Use it directly - do NOT try RUT lookup when driver_id is provided
+    const conductorId = searchParams.get('driver_id')
 
     if (!conductorId) {
-      return NextResponse.json({ success: true, documents: [] }, {
-        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
-      })
+      return NextResponse.json({ error: 'driver_id required' }, { status: 400 })
     }
+
+    console.log('[v0] Fetching documents for conductor_id:', conductorId)
 
     const adminClient = await createAdminClient()
 
