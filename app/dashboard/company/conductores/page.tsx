@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import useSWR from 'swr'
 import { DriversList } from '@/components/drivers-list'
 import { HelpBox } from '@/components/ui/help-box'
+import { createClient } from '@/lib/supabase/client'
 
 const fetcher = (url: string) => 
   fetch(url, {
@@ -40,24 +41,57 @@ export default function ConductoresPage() {
     {
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
-      dedupingInterval: 0, // No deduplication
-      focusThrottleInterval: 0, // Refetch on focus without throttling
-      refreshInterval: 0 // No automatic polling
+      dedupingInterval: 0,
+      focusThrottleInterval: 0,
+      refreshInterval: 0
     }
   )
 
   const drivers = data?.drivers || []
 
-  // Listen for document status changes and refetch
+  // Escuchar cambios en tiempo real de Supabase
   useEffect(() => {
-    const handleStatusChange = () => {
-      console.log('[v0] Document status changed, refetching drivers list...')
-      mutate() // Refetch drivers
-    }
+    const client = createClient()
+    if (!client) return
+
+    console.log('[v0] Setting up realtime listener for driver_documents changes')
+
+    // Escuchar cambios en tabla driver_documents
+    const subscription = client
+      .channel('conductores_documents_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'driver_documents',
+        },
+        (payload: any) => {
+          console.log('[v0] Document change detected in conductores page:', payload.eventType, payload.new?.id)
+          // Refetch drivers cuando cambia un documento
+          mutate()
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('[v0] ✅ Subscribed to driver_documents realtime changes')
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('[v0] ❌ Error subscribing to driver_documents changes')
+        }
+      })
 
     // Listen for custom event when status changes
+    const handleStatusChange = () => {
+      console.log('[v0] Document status changed event, refetching drivers list...')
+      mutate()
+    }
+
     window.addEventListener('documentStatusChanged', handleStatusChange)
-    return () => window.removeEventListener('documentStatusChanged', handleStatusChange)
+
+    return () => {
+      client.removeChannel(subscription)
+      window.removeEventListener('documentStatusChanged', handleStatusChange)
+    }
   }, [mutate])
 
   return (

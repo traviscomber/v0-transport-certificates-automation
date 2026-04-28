@@ -47,6 +47,11 @@ export function DocumentManagementPanel({
     try {
       await changeStatus(document.id, selectedStatus, changeReason)
       setChangeReason('')
+      
+      // Disparar evento para que otras componentes se enteren del cambio
+      console.log('[v0] Dispatching documentStatusChanged event')
+      window.dispatchEvent(new Event('documentStatusChanged'))
+      
       onUpdate?.()
     } catch (error) {
       console.error('Error changing status:', error)
