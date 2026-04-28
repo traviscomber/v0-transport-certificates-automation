@@ -36,8 +36,8 @@ export function DriverCard({
   getDocumentStatusLabel,
 }: DriverCardProps) {
   const isExpanded = expandedDocuments.has(driver.id)
-  // Pass enabled=true always so the count is always up-to-date, not just when expanded
-  const { documents, loading, uploadDocument, refetch, updateDocumentStatus } = useDriverDocuments(driver.id, true, driver.rut)
+  // Only fetch documents when card is expanded to avoid 500+ simultaneous API calls
+  const { documents, loading, uploadDocument, refetch, updateDocumentStatus } = useDriverDocuments(driver.id, isExpanded, driver.rut)
 
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [uploadDocTypeId, setUploadDocTypeId] = useState<string>('')

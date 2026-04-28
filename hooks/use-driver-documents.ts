@@ -186,42 +186,12 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
     }
   }
 
-  // Solo cargar cuando está habilitado (e.g. la tarjeta está expandida)
+  // Only fetch when explicitly enabled (card expanded)
   useEffect(() => {
-    if (driverId && enabled) {
+    if (driverId && driverRut && enabled) {
       fetchDocuments()
-      
-      // Configurar suscripción en tiempo real
-      console.log('[v0] Setting up realtime subscription for driver documents:', driverId)
-      const channel = supabase
-        .channel(`driver_docs_${driverId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'uploaded_documents',
-            filter: `conductor_id=eq.${driverId}`,
-          },
-          (payload) => {
-            console.log('[v0] Document change detected for driver:', driverId, payload.eventType)
-            // Refetch cuando hay cambios
-            fetchDocuments(true)
-          }
-        )
-        .subscribe((status) => {
-          console.log('[v0] Subscription status for driver docs:', status)
-        })
-
-      unsubscribeRef.current = () => channel.unsubscribe()
-
-      return () => {
-        if (unsubscribeRef.current) {
-          unsubscribeRef.current()
-        }
-      }
     }
-  }, [driverId, enabled, supabase])
+  }, [driverId, driverRut, enabled])
 
   return {
     documents,
