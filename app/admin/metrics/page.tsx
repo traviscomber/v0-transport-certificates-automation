@@ -38,6 +38,8 @@ export default function MetricsPage() {
   const [loading, setLoading] = useState(false)
   const [generatingInsights, setGeneratingInsights] = useState<Set<string>>(new Set())
   const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month'>('week')
+  const [debugData, setDebugData] = useState<any>(null)
+  const [showDebug, setShowDebug] = useState(false)
 
   const CORRECT_PASSWORD = 'mono2026'
 
@@ -81,6 +83,19 @@ export default function MetricsPage() {
       fetchMetrics()
     }
   }, [timeRange])
+
+  const fetchDebugData = async () => {
+    try {
+      console.log('[v0] Fetching debug data...')
+      const res = await fetch('/api/company/metrics/debug')
+      const json = await res.json()
+      console.log('[v0] Debug data:', json)
+      setDebugData(json)
+      setShowDebug(true)
+    } catch (err) {
+      console.error('[v0] Error fetching debug data:', err)
+    }
+  }
 
   const generateAIInsights = async (executive: ExecutiveMetrics) => {
     try {
@@ -242,6 +257,14 @@ Proporciona 2-3 insights accionables y específicos para mejorar su desempeño.`
               {range === 'day' ? 'Hoy' : range === 'week' ? 'Esta Semana' : 'Este Mes'}
             </Button>
           ))}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchDebugData}
+            className="border-slate-600 ml-auto"
+          >
+            🐛 Debug Data
+          </Button>
         </div>
 
         {/* Summary Cards */}
@@ -291,6 +314,20 @@ Proporciona 2-3 insights accionables y específicos para mejorar su desempeño.`
             </CardContent>
           </Card>
         </div>
+
+        {/* Debug Panel */}
+        {showDebug && debugData && (
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white">Debug Data</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <pre className="bg-slate-900 p-4 rounded text-xs text-slate-300 overflow-auto max-h-96">
+                {JSON.stringify(debugData, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Ejecutivas List */}
         <div className="space-y-3">
