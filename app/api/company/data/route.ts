@@ -91,8 +91,59 @@ export async function GET(request: Request) {
 
     if (docTypesError) {
       console.error('[v0] Error fetching document types:', docTypesError)
-      // Don't fail the entire request if we can't get document types
     }
+
+    // Fallback document types if database fetch fails
+    const defaultDocumentTypes = [
+      { 
+        id: '550e8400-e29b-41d4-a716-446655440001',
+        code: 'LICENCIA_CONDUCIR',
+        name: 'Licencia de Conducir Profesional',
+        category: 'Licencias',
+        is_mandatory: true,
+        validity_days: 365
+      },
+      {
+        id: '550e8400-e29b-41d4-a716-446655440002',
+        code: 'ANTECEDENTES_PENALES',
+        name: 'Certificado de Antecedentes Penales',
+        category: 'Certificados',
+        is_mandatory: true,
+        validity_days: 365
+      },
+      {
+        id: '550e8400-e29b-41d4-a716-446655440003',
+        code: 'CERTIFICADO_MEDICO',
+        name: 'Certificado Médico Ocupacional',
+        category: 'Certificados',
+        is_mandatory: true,
+        validity_days: 365
+      },
+      {
+        id: '550e8400-e29b-41d4-a716-446655440004',
+        code: 'COMPROBANTE_DOMICILIO',
+        name: 'Comprobante de Domicilio',
+        category: 'Identificación',
+        is_mandatory: false,
+        validity_days: 180
+      },
+      {
+        id: '550e8400-e29b-41d4-a716-446655440005',
+        code: 'CONTRATO',
+        name: 'Contrato de Trabajo',
+        category: 'Documentos',
+        is_mandatory: false,
+        validity_days: null
+      },
+      {
+        id: '550e8400-e29b-41d4-a716-446655440006',
+        code: 'OTRO',
+        name: 'Otro',
+        category: 'General',
+        is_mandatory: false,
+        validity_days: null
+      }
+    ]
 
     // Hard-coded executives (6 de Labbe)
     const executivesData = [
@@ -120,7 +171,7 @@ export async function GET(request: Request) {
       executives: executivesData,
       drivers: driversData,
       subcontractors: subcontractorsData,
-      documentTypes: documentTypes || [],
+      documentTypes: (documentTypes && documentTypes.length > 0) ? documentTypes : defaultDocumentTypes,
       stats: {
         totalSubcontractors: subcontractorsData.length,
         totalDrivers: driversData.length
