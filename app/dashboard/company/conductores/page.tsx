@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import useSWR from 'swr'
 import { DriversList } from '@/components/drivers-list'
 import { HelpBox } from '@/components/ui/help-box'
-import { createClient } from '@/lib/supabase/client'
 import { Badge } from '@/components/ui/badge'
 
 const fetcher = (url: string) => 
@@ -49,42 +48,6 @@ export default function ConductoresPage() {
       refreshInterval: 0
     }
   )
-
-  const supabase = createClient()
-  const unsubscribeRef = useRef<(() => void) | null>(null)
-
-  useEffect(() => {
-    // Set up real-time subscription to uploaded_documents changes
-    console.log('[v0] Setting up real-time subscription for drivers page')
-    const channel = supabase
-      .channel('uploaded_documents_changes_drivers')
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to all events: INSERT, UPDATE, DELETE
-          schema: 'public',
-          table: 'uploaded_documents',
-        },
-        (payload) => {
-          console.log('[v0] Document change detected on drivers page:', payload.eventType)
-          // Refetch driver data when any document change occurs
-          mutate()
-        }
-      )
-      .subscribe((status) => {
-        console.log('[v0] Subscription status on drivers page:', status)
-      })
-
-    // Store unsubscribe function
-    unsubscribeRef.current = () => channel.unsubscribe()
-
-    // Cleanup subscription on unmount
-    return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current()
-      }
-    }
-  }, [mutate, supabase])
 
   const drivers = data?.dashboard?.conductores || []
   
