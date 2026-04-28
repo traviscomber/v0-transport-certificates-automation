@@ -57,7 +57,7 @@ export function DriversList({ drivers }: DriversListProps) {
   const [expandedDocuments, setExpandedDocuments] = useState<Set<string>>(new Set())
 
   const filteredDrivers = useMemo(() => {
-    return drivers.filter(driver => {
+    const filtered = drivers.filter(driver => {
       const searchLower = searchTerm.toLowerCase()
       
       // Filtro de búsqueda - buscar en todos los campos sin null check inicial
@@ -80,6 +80,13 @@ export function DriversList({ drivers }: DriversListProps) {
         (selectedStatus === 'inactive' && !driver.is_active)
       
       return matchesSearch && matchesProvider && matchesStatus
+    })
+
+    // Sort alphabetically by nombre
+    return filtered.sort((a, b) => {
+      const nameA = (a.nombre || '').toLowerCase()
+      const nameB = (b.nombre || '').toLowerCase()
+      return nameA.localeCompare(nameB)
     })
   }, [drivers, searchTerm, selectedProviders, selectedStatus])
 
@@ -280,19 +287,22 @@ export function DriversList({ drivers }: DriversListProps) {
         )}
       </div>
 
-      {/* Drivers Grid */}
+      {/* Drivers Grid with scrollable container */}
       {filteredDrivers.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredDrivers.map((driver) => (
-            <DriverCard
-              key={driver.id}
-              driver={driver}
-              expandedDocuments={expandedDocuments}
-              toggleDocuments={toggleDocuments}
-              getDocumentStatusColor={getDocumentStatusColor}
-              getDocumentStatusLabel={getDocumentStatusLabel}
-            />
-          ))}
+        <div className="max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredDrivers.map((driver, driverIdx) => (
+              <DriverCard
+                key={driver.id}
+                driver={driver}
+                driverNumber={driverIdx + 1}
+                expandedDocuments={expandedDocuments}
+                toggleDocuments={toggleDocuments}
+                getDocumentStatusColor={getDocumentStatusColor}
+                getDocumentStatusLabel={getDocumentStatusLabel}
+              />
+            ))}
+          </div>
         </div>
       ) : (
         <Card className="border-slate-700">

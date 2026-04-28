@@ -18,6 +18,7 @@ interface Driver {
 
 interface DriverCardProps {
   driver: Driver
+  driverNumber?: number
   expandedDocuments: Set<string>
   toggleDocuments: (id: string) => void
   getDocumentStatusColor: (estado: string) => string
@@ -26,6 +27,7 @@ interface DriverCardProps {
 
 export function DriverCard({
   driver,
+  driverNumber,
   expandedDocuments,
   toggleDocuments,
   getDocumentStatusColor,
@@ -122,8 +124,13 @@ export function DriverCard({
               </Badge>
             </div>
 
-            {/* Nombre */}
-            <div>
+            {/* Nombre with number */}
+            <div className="flex items-baseline gap-3">
+              {driverNumber && (
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-500 text-white text-sm font-bold flex-shrink-0">
+                  {driverNumber}
+                </span>
+              )}
               <p className="font-semibold text-slate-100">{driver.nombre}</p>
             </div>
 
