@@ -215,15 +215,21 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
 
   // Only fetch when explicitly enabled (card expanded) AND when driverRut is available
   useEffect(() => {
+    console.log('[v0] Initial fetch effect - driverRut:', !!driverRut, 'enabled:', enabled)
     if (driverRut && enabled) {
+      console.log('[v0] Calling initial fetchDocuments from useEffect')
       fetchDocuments()
     }
-  }, [driverRut, enabled])
+  }, [driverRut, enabled, fetchDocuments])
 
   // Subscribe to realtime changes in uploaded_documents for this conductor
   useEffect(() => {
-    if (!driverRut || !enabled || !driverId) return
+    if (!driverRut || !enabled || !driverId) {
+      console.log('[v0] Realtime subscription skipped - driverRut:', !!driverRut, 'enabled:', enabled, 'driverId:', !!driverId)
+      return
+    }
 
+    console.log('[v0] ========== SETTING UP REALTIME ==========')
     console.log('[v0] Setting up Realtime subscription for conductor:', driverId, 'rut:', driverRut)
 
     // Subscribe to changes on uploaded_documents table
@@ -232,34 +238,38 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       .on(
         'postgres_changes',
         {
-          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          event: '*',
           schema: 'public',
           table: 'uploaded_documents',
-          filter: `conductor_id.eq.${driverId}` // PostgreSQL filter syntax - dot not equals
+          filter: `conductor_id.eq.${driverId}`
         },
         (payload) => {
-          console.log('[v0] Realtime change detected for conductor', driverId, ':', payload.eventType, payload.new?.validation_status)
-          // Refetch documents when any change is detected
-          fetchDocuments(true) // skipCache=true to get fresh data
+          console.log('[v0] ⭐️ REALTIME EVENT FIRED ⭐️')
+          console.log('[v0] Event type:', payload.eventType)
+          console.log('[v0] New data:', payload.new)
+          console.log('[v0] Old data:', payload.old)
+          console.log('[v0] Calling fetchDocuments with skipCache=true')
+          fetchDocuments(true)
         }
       )
       .subscribe((status) => {
-        console.log('[v0] Realtime subscription status:', status)
+        console.log('[v0] ✅ Realtime subscription established, status:', status)
       })
 
     // Store unsubscribe function
     unsubscribeRef.current = () => {
+      console.log('[v0] 🔌 UNSUBSCRIBING FROM REALTIME')
       subscription.unsubscribe()
-      console.log('[v0] Realtime subscription unsubscribed')
     }
 
     // Cleanup on unmount or when dependencies change
     return () => {
+      console.log('[v0] Realtime cleanup called')
       if (unsubscribeRef.current) {
         unsubscribeRef.current()
       }
     }
-  }, [driverRut, driverId, enabled])
+  }, [driverRut, driverId, enabled, fetchDocuments])
 
   return {
     documents,
