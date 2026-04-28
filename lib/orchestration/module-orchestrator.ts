@@ -325,7 +325,7 @@ export class ModuleOrchestrator {
 
   private async handleNotificationDecision(decision: SystemDecision) {
     // Crear acciones de notificación
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
 
     for (const entityId of decision.affectedEntities) {
       // Obtener datos de la entidad
@@ -336,14 +336,23 @@ export class ModuleOrchestrator {
         .single()
 
       if (entity?.correo) {
-        const action = new ModuleAction()
-        action.type = 'send_notification'
-        action.targetModule = 'notifications'
-        action.parameters = {
-          email: entity.correo,
-          template: 'alerta_7_dias',
-          entityName: entity.nombre,
-        }
+        const action = createModuleAction(
+          'send_notification',
+          'notifications',
+          {
+            userId: 'system',
+            entityId: entity.id,
+            entityType: 'driver',
+            entityName: entity.nombre,
+            timestamp: new Date(),
+            metadata: { decisionId: decision.id }
+          },
+          {
+            email: entity.correo,
+            template: 'alerta_7_dias',
+            entityName: entity.nombre,
+          }
+        )
         this.executeAction(action)
       }
     }
