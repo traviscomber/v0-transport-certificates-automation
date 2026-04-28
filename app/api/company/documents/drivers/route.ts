@@ -6,31 +6,54 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    // driver_id in all-drivers.ts is '1','2','12' etc — NOT a UUID
-    // driver_rut is the reliable identifier to resolve the real conductor UUID
     const driverRut = searchParams.get('driver_rut') || searchParams.get('rut')
 
     if (!driverRut) {
       return NextResponse.json({ error: 'driver_rut required' }, { status: 400 })
     }
 
+    console.log('[v0] Fetching documents for driver_rut:', driverRut)
+
     const adminClient = await createAdminClient()
 
-    // Look up the real conductor UUID from the conductores table by RUT
-    const { data: conductorRow, error: conductorError } = await adminClient
+    // Try exact match first, then fallback to ILIKE for partial matches
+    let conductorRow = null
+    let conductorError = null
+
+    // First try exact match
+    const exactResult = await adminClient
       .from('conductores')
       .select('id')
       .eq('rut', driverRut)
       .single()
 
+    if (!exactResult.error && exactResult.data) {
+      conductorRow = exactResult.data
+    } else {
+      // Fallback to ILIKE for flexible matching (handles formatting differences)
+      const flexResult = await adminClient
+        .from('conductores')
+        .select('id')
+        .ilike('rut', `%${driverRut}%`)
+        .limit(1)
+        .single()
+
+      if (!flexResult.error && flexResult.data) {
+        conductorRow = flexResult.data
+      } else {
+        conductorError = flexResult.error
+      }
+    }
+
     if (conductorError || !conductorRow?.id) {
-      // Return empty — conductor not yet in DB
+      console.log('[v0] Conductor not found for RUT:', driverRut)
       return NextResponse.json({ success: true, documents: [] }, {
         headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
       })
     }
 
     const conductorId = conductorRow.id
+    console.log('[v0] Resolved conductor_id:', conductorId)
 
     const { data: dbDocuments, error: dbError } = await adminClient
       .from('uploaded_documents')

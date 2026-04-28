@@ -34,6 +34,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         'Expires': '0'
       } : {}
       
+      console.log('[v0] Fetching documents for driver_rut:', driverRut, 'driver_id:', driverId)
       const response = await fetch(`/api/company/documents/drivers?driver_rut=${encodeURIComponent(driverRut)}&driver_id=${encodeURIComponent(driverId)}${timestamp}`, {
         method: 'GET',
         headers,
