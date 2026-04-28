@@ -49,23 +49,27 @@ export function useRealtimeDocuments(driverRut: string) {
     const oldStatus = change.old?.verification_status
     const newStatus = change.new?.verification_status
 
-    // 1. Emitir evento al orquestador
-    const eventContext = {
-      documentId: change.id,
-      driverRut,
-      changeType: change.type,
-      oldStatus,
-      newStatus,
-      documentType: doc.document_type,
-      timestamp: new Date().toISOString(),
-      source: 'realtime-documents-hook',
+    // 1. Crear contexto compatible con ModuleContext
+    const moduleContext = {
+      userId: 'system', // Sistema automático
+      entityId: driverRut, // El conductor es la entidad
+      entityType: 'driver' as const,
+      entityName: doc.driver_name || 'Conductor desconocido',
+      timestamp: new Date(),
+      metadata: {
+        documentId: change.id,
+        documentType: doc.document_type,
+        changeType: change.type,
+        oldStatus,
+        newStatus,
+      }
     }
 
     // Emit al sistema orquestador
     OrchestrationAPI.emitEvent(
       'document_state_changed',
       'documents',
-      eventContext,
+      moduleContext,
       {
         documentId: change.id,
         driverRut,
@@ -78,7 +82,7 @@ export function useRealtimeDocuments(driverRut: string) {
       }
     )
 
-    console.log('[v0] Event emitted to orchestrator:', eventContext)
+    console.log('[v0] Event emitted to orchestrator:', moduleContext)
 
     // 2. Acciones específicas según tipo de cambio
     if (change.type === 'UPDATE' && oldStatus !== newStatus) {
@@ -90,8 +94,8 @@ export function useRealtimeDocuments(driverRut: string) {
       if (newStatus === 'approved' && oldStatus !== 'approved') {
         OrchestrationAPI.emitEvent(
           'document_approved',
-          'conductors',
-          { documentId: change.id, driverRut },
+          'documents',
+          moduleContext,
           { documentType: doc.document_type }
         )
       }
@@ -100,8 +104,8 @@ export function useRealtimeDocuments(driverRut: string) {
       if (newStatus === 'rejected') {
         OrchestrationAPI.emitEvent(
           'document_rejected',
-          'alerts',
-          { documentId: change.id, driverRut },
+          'documents',
+          moduleContext,
           { reason: doc.rejection_reason }
         )
       }
@@ -110,8 +114,8 @@ export function useRealtimeDocuments(driverRut: string) {
       if (newStatus === 'expired') {
         OrchestrationAPI.emitEvent(
           'document_expired',
-          'alerts',
-          { documentId: change.id, driverRut },
+          'documents',
+          moduleContext,
           { expirationDate: doc.expiration_date }
         )
       }
@@ -215,10 +219,24 @@ export function useDocumentStatusUpdate() {
         console.log('[v0] Document status updated in DB:', result)
 
         // 2. Emitir evento de actualización manual (desde UI)
+        const updateContext = {
+          userId: 'system',
+          entityId: driverRut,
+          entityType: 'driver' as const,
+          entityName: 'Conductor',
+          timestamp: new Date(),
+          metadata: {
+            documentId,
+            newStatus,
+            reason,
+            source: 'manual-update-from-ui'
+          }
+        }
+
         OrchestrationAPI.emitEvent(
           'document_status_manual_update',
           'documents',
-          { documentId, driverRut, newStatus, reason },
+          updateContext,
           { timestamp: new Date().toISOString() }
         )
 
@@ -277,14 +295,23 @@ export function useRealtimeMultipleDrivers(driverRuts: string[]) {
               `[v0] Document change for driver ${rut}: ${count} total changes`
             )
 
-            // Emitir al orquestador para procesamiento
+          // Emitir al orquestador para procesamiento
+            const bulkContext = {
+              userId: 'system',
+              entityId: 'bulk-update',
+              entityType: 'driver' as const,
+              entityName: 'Bulk Document Changes',
+              timestamp: new Date(),
+              metadata: {
+                affectedDrivers: Array.from(changesRef.current.keys()),
+                changesCounts: Object.fromEntries(changesRef.current),
+              }
+            }
+
             OrchestrationAPI.emitEvent(
               'bulk_document_changes',
               'documents',
-              {
-                affectedDrivers: Array.from(changesRef.current.keys()),
-                changesCounts: Object.fromEntries(changesRef.current),
-              },
+              bulkContext,
               {}
             )
           }
