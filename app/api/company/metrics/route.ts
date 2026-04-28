@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const { data: documents, error } = await (supabase as any)
       .from('uploaded_documents')
       .select('*')
-      .filter('validated_at', 'is not', null)
+      .not('validated_at', 'is', null)
       .gte('validated_at', startDate.toISOString())
 
     if (error) {
