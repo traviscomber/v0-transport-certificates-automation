@@ -6,10 +6,6 @@
 
 import { initializeOrchestrationSystem, OrchestrationAPI } from '@/lib/orchestration'
 import {
-  AlertsModule,
-  DocumentsModule,
-  NotificationsModule,
-  ModuleReceiver,
   ModuleQuery,
   ModuleEvent,
   ModuleAction,
@@ -19,7 +15,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 /**
  * PASO 1: Integrar con el sistema de alertas existente
  */
-export class EnhancedAlertsModule extends AlertsModule {
+export class EnhancedAlertsModule {
   async processEvent(event: ModuleEvent) {
     console.log(`[EnhancedAlertsModule] Processing: ${event.type}`)
 
@@ -76,7 +72,7 @@ export class EnhancedAlertsModule extends AlertsModule {
 /**
  * PASO 2: Integrar con el sistema de documentos existente
  */
-export class EnhancedDocumentsModule extends DocumentsModule {
+export class EnhancedDocumentsModule {
   async processEvent(event: ModuleEvent) {
     console.log(`[EnhancedDocumentsModule] Processing: ${event.type}`)
 
@@ -95,15 +91,15 @@ export class EnhancedDocumentsModule extends DocumentsModule {
     if (action.type === 'validate_document') {
       return this.validateDocument(action.parameters.documentId)
     }
-    return super.executeAction(action)
+    return { success: true }
   }
 
-  private async getDocumentsForEntity(entityId: string) {
-    const supabase = createAdminClient()
+  private async getDocumentsForEntity(entityId: string): Promise<any[]> {
+    const supabase = await createAdminClient()
     const { data } = await supabase
-      .from('documents')
+      .from('driver_documents')
       .select('*')
-      .eq('entity_id', entityId)
+      .eq('driver_rut', entityId)
 
     return data || []
   }
@@ -121,15 +117,15 @@ export class EnhancedDocumentsModule extends DocumentsModule {
         source: 'documents' as const,
         context: {
           userId: 'system',
-          entityId: doc.entity_id,
+          entityId: doc.driver_rut,
           entityType: 'driver',
-          entityName: doc.entity_name,
+          entityName: 'Conductor',
           timestamp: new Date(),
           metadata: {},
         },
         payload: {
           documentId: doc.id,
-          documentType: doc.type,
+          documentType: doc.document_type,
           expirationDate: doc.expiration_date,
         },
         timestamp: new Date(),
@@ -155,7 +151,7 @@ export class EnhancedDocumentsModule extends DocumentsModule {
 /**
  * PASO 3: Integrar con el sistema de notificaciones existente
  */
-export class EnhancedNotificationsModule extends NotificationsModule {
+export class EnhancedNotificationsModule {
   async processEvent(event: ModuleEvent) {
     console.log(`[EnhancedNotificationsModule] Processing: ${event.type}`)
 
@@ -166,7 +162,7 @@ export class EnhancedNotificationsModule extends NotificationsModule {
 
   private async sendNotification(event: ModuleEvent) {
     // Obtener información de contacto
-    const supabase = createAdminClient()
+    const supabase = await createAdminClient()
     const { data: entity } = await supabase
       .from('transportistas')
       .select('correo, telefono')
