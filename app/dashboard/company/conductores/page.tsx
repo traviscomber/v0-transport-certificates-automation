@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import useSWR from 'swr'
 import { DriversList } from '@/components/drivers-list'
 import { HelpBox } from '@/components/ui/help-box'
 import { createClient } from '@/lib/supabase/client'
+import { Badge } from '@/components/ui/badge'
 
 const fetcher = (url: string) => 
   fetch(url, {
@@ -35,6 +36,8 @@ const fetcher = (url: string) =>
     })
 
 export default function ConductoresPage() {
+  const [selectedEjecutiva, setSelectedEjecutiva] = useState<string | null>(null)
+  
   const { data, error, isLoading, mutate } = useSWR(
     '/api/dashboard/data',
     fetcher,
@@ -84,6 +87,16 @@ export default function ConductoresPage() {
   }, [mutate, supabase])
 
   const drivers = data?.dashboard?.conductores || []
+  
+  // Get unique ejecutivas from drivers
+  const ejecutivas = Array.from(
+    new Set(drivers.map((d: any) => d.ejecutivo_nombre).filter(Boolean))
+  ).sort() as string[]
+
+  // Filter drivers by selected ejecutiva
+  const filteredDrivers = selectedEjecutiva
+    ? drivers.filter((d: any) => d.ejecutivo_nombre === selectedEjecutiva)
+    : drivers
 
   return (
     <div className="space-y-6">
@@ -100,11 +113,40 @@ export default function ConductoresPage() {
         description="Accede a la información de los conductores operacionales. Puedes buscar, editar y gestionar datos de conductores y sus vehículos."
         tips={[
           "Busca conductores por nombre, RUT o proveedor",
-          "Filtra por proveedor para ver conductores asociados",
+          "Filtra por ejecutiva para ver conductores asignados",
           "Cada conductor tiene información de vehículos (patentes)",
           "Mantén actualizada la información de contacto de los conductores",
         ]}
       />
+
+      {/* Ejecutiva Filter Tags */}
+      {ejecutivas.length > 0 && (
+        <div className="space-y-3">
+          <div className="text-sm font-semibold text-muted-foreground">Filtrar por Ejecutiva</div>
+          <div className="flex flex-wrap gap-2">
+            <Badge
+              variant={selectedEjecutiva === null ? 'default' : 'outline'}
+              className="cursor-pointer hover:bg-primary/80 transition"
+              onClick={() => setSelectedEjecutiva(null)}
+            >
+              Todos ({drivers.length})
+            </Badge>
+            {ejecutivas.map((ejecutiva) => {
+              const count = drivers.filter((d: any) => d.ejecutivo_nombre === ejecutiva).length
+              return (
+                <Badge
+                  key={ejecutiva}
+                  variant={selectedEjecutiva === ejecutiva ? 'default' : 'outline'}
+                  className="cursor-pointer hover:bg-primary/80 transition"
+                  onClick={() => setSelectedEjecutiva(ejecutiva)}
+                >
+                  {ejecutiva} ({count})
+                </Badge>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="text-center py-8">
@@ -121,12 +163,16 @@ export default function ConductoresPage() {
             Reintentar
           </button>
         </div>
-      ) : drivers.length === 0 ? (
+      ) : filteredDrivers.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-muted-foreground">No hay conductores disponibles</p>
+          <p className="text-muted-foreground">
+            {selectedEjecutiva 
+              ? `No hay conductores para ${selectedEjecutiva}`
+              : 'No hay conductores disponibles'}
+          </p>
         </div>
       ) : (
-        <DriversList drivers={drivers} />
+        <DriversList drivers={filteredDrivers} />
       )}
     </div>
   )
