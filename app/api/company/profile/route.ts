@@ -33,11 +33,12 @@ export async function GET() {
       throw new Error('Perfil no encontrado')
     }
 
-    console.log(`[v0] Company profile loaded: ${profile.rut}`)
+    const companyProfile = profile as { rut: string; id: string; name: string; representative: string; email: string; phone: string; address: string; region: string }
+    console.log(`[v0] Company profile loaded: ${companyProfile.rut}`)
 
     return Response.json({
       success: true,
-      profile,
+      profile: companyProfile,
     })
   } catch (err) {
     console.error('[v0] Error fetching profile:', err)
