@@ -44,12 +44,12 @@ export async function GET(request: NextRequest) {
 
     console.log('[v0] Fetching metrics for company:', companyId, 'range:', range, 'from:', startDate.toISOString())
 
-    // Step 1: Get executives for this company (cargo = 'Ejecutiva')
+    // Step 1: Get executives for this company - need to join with transportistas table
+    // since executive_staff.transportista_id links to transportistas(id)
     const { data: executives, error: execError } = await adminClient
       .from('executive_staff')
-      .select('id, full_name, rut, email, cargo, company_id')
+      .select('id, full_name, rut, email, cargo, transportista_id')
       .eq('cargo', 'Ejecutiva')
-      .eq('company_id', companyId)
 
     if (execError) {
       console.error('[v0] Error fetching executives:', execError)
@@ -64,9 +64,37 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    console.log('[v0] Found executives for company:', executives?.length || 0)
+    console.log('[v0] Found all executives:', executives?.length || 0)
 
-    if (!executives || executives.length === 0) {
+    // Step 1b: Get transportista info to find which executives belong to this company
+    const { data: transportista, error: transportError } = await adminClient
+      .from('transportistas')
+      .select('id')
+      .eq('id', companyId)
+      .single()
+
+    if (transportError || !transportista) {
+      console.error('[v0] Error fetching transportista:', transportError)
+      // If company doesn't exist, still return empty metrics gracefully
+      return NextResponse.json({
+        executives: [],
+        summary: {
+          total_documents: 0,
+          documents_increase: 0,
+          avg_approval_rate: 0,
+          avg_validation_time: 0,
+        },
+      })
+    }
+
+    // Filter executives to only those belonging to this transportista (company)
+    const filteredExecutives = executives.filter(
+      (exec: any) => exec.transportista_id === companyId
+    )
+
+    console.log('[v0] Found executives for transportista:', filteredExecutives?.length || 0)
+
+    if (!filteredExecutives || filteredExecutives.length === 0) {
       return NextResponse.json({
         executives: [],
         summary: {
@@ -90,8 +118,8 @@ export async function GET(request: NextRequest) {
     // Step 3: Build metrics for each executive
     const metricsMap = new Map<string, any>()
 
-    // Initialize all executives with 0 metrics
-    executives.forEach((exec: any) => {
+    // Initialize all executives with 0 metrics (only filtered executives)
+    filteredExecutives.forEach((exec: any) => {
       metricsMap.set(exec.id, {
         executive_id: exec.id,
         executive_name: exec.full_name,
@@ -112,12 +140,12 @@ export async function GET(request: NextRequest) {
         const validatedBy = doc.validated_by || doc.executor_id || doc.reviewed_by
         if (!validatedBy) return
 
-        // Find matching executive by ID
-        let matchingExec = executives.find((e: any) => e.id === validatedBy)
+        // Find matching executive by ID (only from filtered list)
+        let matchingExec = filteredExecutives.find((e: any) => e.id === validatedBy)
 
-        // If not found by ID, try by email or name
+        // If not found by ID, try by email (only from filtered list)
         if (!matchingExec && doc.validated_by_email) {
-          matchingExec = executives.find((e: any) => e.email === doc.validated_by_email)
+          matchingExec = filteredExecutives.find((e: any) => e.email === doc.validated_by_email)
         }
 
         if (!matchingExec) return
