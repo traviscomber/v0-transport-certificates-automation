@@ -7,11 +7,14 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const driverRut = formData.get('driver_rut') as string
+    const driverId = formData.get('driver_id') as string
     const documentTypeId = formData.get('document_type_id') as string
     const metadataStr = formData.get('metadata') as string
 
-    if (!file || !driverRut || !documentTypeId) {
+    console.log('[v0] Upload request received:', { driverId, documentTypeId, fileName: file?.name })
+
+    if (!file || !driverId || !documentTypeId) {
+      console.error('[v0] Missing required fields:', { file: !!file, driverId, documentTypeId })
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -23,7 +26,9 @@ export async function POST(request: NextRequest) {
 
     // Upload file to storage
     const fileName = `${Date.now()}_${file.name}`
-    const storagePath = `drivers/${driverRut}/${fileName}`
+    const storagePath = `drivers/${driverId}/${fileName}`
+
+    console.log('[v0] Uploading to storage:', { storagePath })
 
     const arrayBuffer = await file.arrayBuffer()
     const { data: uploadData, error: uploadError } = await adminClient.storage
@@ -43,34 +48,34 @@ export async function POST(request: NextRequest) {
       .from('documents')
       .getPublicUrl(storagePath)
 
-    // Create document record in database
+    console.log('[v0] Inserting document record to database in uploaded_documents table')
+
+    // Create document record in database - use uploaded_documents table
     const { data: docRecord, error: dbError } = await adminClient
-      .from('documents')
+      .from('uploaded_documents')
       .insert({
-        driver_rut: driverRut,
-        file_name: file.name,
-        storage_path: storagePath,
-        public_url: publicUrlData?.publicUrl || '',
+        conductor_id: driverId,
         document_type_id: documentTypeId,
-        document_number: metadata.document_number || null,
+        original_filename: file.name,
+        file_url: publicUrlData?.publicUrl || '',
+        file_path: storagePath,
+        file_size: file.size,
+        mime_type: file.type,
+        validation_status: 'pending',
         expiry_date: metadata.expiry_date || null,
-        provider: metadata.provider || null,
-        notes: metadata.notes || null,
-        category: metadata.category || null,
-        tags: metadata.tags || [],
-        status: 'pending',
+        issue_date: metadata.issue_date || null,
       })
       .select()
       .single()
 
     if (dbError) {
       console.error('[v0] Database insert error:', dbError)
-      return NextResponse.json({ error: 'Failed to save document' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to save document', details: dbError.message }, { status: 500 })
     }
 
     console.log('[v0] Document uploaded successfully:', {
-      documentTypeId,
-      driverRut,
+      documentId: docRecord.id,
+      driverId,
       fileName,
     })
 
