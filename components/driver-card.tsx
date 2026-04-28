@@ -155,7 +155,7 @@ export function DriverCard({
 
   return (
     <>
-      <Card className={`bg-slate-900/80 backdrop-blur-sm border-slate-700/60 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all ${statusBg}`} key={`card-${driver.id}-${refreshKey}`}>
+      <Card className={`bg-slate-900/80 backdrop-blur-sm border-slate-700/60 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all ${statusBg}`} key={`card-${driver.id}`}>
         <CardContent className="p-6">
           <div className="space-y-4">
             {/* Header with RUT and status */}
