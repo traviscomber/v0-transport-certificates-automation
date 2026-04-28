@@ -67,6 +67,9 @@ export default function VerifyPage() {
   const handleResendEmail = async () => {
     setIsResending(true)
     try {
+      if (!supabase) {
+        throw new Error('Error de conexión a base de datos')
+      }
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user?.email) {
         setStatus('error')
