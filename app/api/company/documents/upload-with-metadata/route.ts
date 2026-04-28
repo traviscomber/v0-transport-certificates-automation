@@ -74,9 +74,7 @@ export async function POST(request: NextRequest) {
           expiry_date: metadata.expiry_date || null,
           issue_date: metadata.issue_date || null,
           ...metadata
-        },
-        expiry_date: metadata.expiry_date ? new Date(metadata.expiry_date as string).toISOString().split('T')[0] : null,
-        issue_date: metadata.issue_date ? new Date(metadata.issue_date as string).toISOString().split('T')[0] : null,
+        }
       })
       .select()
       .single()
