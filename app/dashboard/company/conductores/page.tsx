@@ -1,10 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import useSWR from 'swr'
 import { DriversList } from '@/components/drivers-list'
 import { HelpBox } from '@/components/ui/help-box'
-import { createClient } from '@/lib/supabase/client'
 
 const fetcher = (url: string) => 
   fetch(url, {
@@ -49,67 +48,13 @@ export default function ConductoresPage() {
 
   const drivers = data?.drivers || []
 
-  // Escuchar cambios en tiempo real de Supabase
+  // Escuchar el evento custom que se dispara al cambiar estado de documento
   useEffect(() => {
-    const client = createClient()
-    if (!client) return
-
-    console.log('[v0] 🔌 Setting up realtime listener on conductores page')
-
-    let subscription: any = null
-    let timeoutId: NodeJS.Timeout
-
-    const setupListener = () => {
-      // Escuchar cambios en tabla driver_documents
-      subscription = client
-        .channel('public:driver_documents')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'driver_documents',
-          },
-          (payload: any) => {
-            console.log('[v0] 📨 Document change received:', {
-              event: payload.eventType,
-              docId: payload.new?.id || payload.old?.id,
-              status: payload.new?.status || payload.old?.status,
-            })
-            
-            // Refetch drivers cuando cambia un documento
-            console.log('[v0] ⏳ Refetching drivers list...')
-            mutate()
-          }
-        )
-        .subscribe((status: string) => {
-          console.log('[v0] Subscription status:', status)
-          if (status === 'SUBSCRIBED') {
-            console.log('[v0] ✅ Successfully subscribed to driver_documents')
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error('[v0] ❌ Channel error, retrying in 3s...')
-            timeoutId = setTimeout(setupListener, 3000)
-          } else if (status === 'CLOSED') {
-            console.warn('[v0] Channel closed, attempting to resubscribe...')
-            timeoutId = setTimeout(setupListener, 1000)
-          }
-        })
-    }
-
-    setupListener()
-
-    // Listen for custom event when status changes (backup mechanism)
     const handleStatusChange = () => {
-      console.log('[v0] 🎯 Custom documentStatusChanged event, refetching...')
       mutate()
     }
-
     window.addEventListener('documentStatusChanged', handleStatusChange)
-
     return () => {
-      console.log('[v0] Cleaning up realtime listener')
-      if (timeoutId) clearTimeout(timeoutId)
-      if (subscription) client.removeChannel(subscription)
       window.removeEventListener('documentStatusChanged', handleStatusChange)
     }
   }, [mutate])

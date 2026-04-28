@@ -451,6 +451,9 @@ export function DriverCard({
             setShowDocumentModal(false)
             setSelectedDocument(null)
 
+            // Notify conductores page to refetch its list
+            window.dispatchEvent(new Event('documentStatusChanged'))
+
             // Then refetch in background to confirm DB state
             await refetch(true)
           } catch (error) {
