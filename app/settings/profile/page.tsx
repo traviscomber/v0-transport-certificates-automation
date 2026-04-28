@@ -56,7 +56,7 @@ export default function ProfilePage() {
         .from('profiles')
         .update({
           full_name: formData.fullName,
-        })
+        } as any)
         .eq('id', user?.id)
 
       if (error) throw error
