@@ -10,8 +10,13 @@ interface ExecutiveMetrics {
   ejecutiva: string
   documentos_procesados: number
   documentos_validados: number
+  documentos_rechazados: number
+  documentos_pendientes: number
+  conductores_activos: number
   tasa_validacion: string
+  tasa_rechazo: string
   tiempo_promedio: string
+  performance_score: number
 }
 
 interface MetricsResponse {
@@ -285,24 +290,48 @@ export default function MetricsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-slate-700">
-                      <th className="text-left py-4 px-4 text-slate-300 font-semibold text-sm">Ejecutiva</th>
-                      <th className="text-right py-4 px-4 text-slate-300 font-semibold text-sm">Documentos</th>
-                      <th className="text-right py-4 px-4 text-slate-300 font-semibold text-sm">Validados</th>
-                      <th className="text-right py-4 px-4 text-slate-300 font-semibold text-sm">Tasa</th>
-                      <th className="text-right py-4 px-4 text-slate-300 font-semibold text-sm">Tiempo</th>
+                    <tr className="border-b border-slate-700 bg-slate-700/30">
+                      <th className="text-left py-4 px-4 text-slate-300 font-semibold text-xs uppercase tracking-wider">Ejecutiva</th>
+                      <th className="text-right py-4 px-4 text-slate-300 font-semibold text-xs uppercase tracking-wider">Procesados</th>
+                      <th className="text-right py-4 px-4 text-slate-300 font-semibold text-xs uppercase tracking-wider">Validados</th>
+                      <th className="text-right py-4 px-4 text-slate-300 font-semibold text-xs uppercase tracking-wider">Rechazados</th>
+                      <th className="text-right py-4 px-4 text-slate-300 font-semibold text-xs uppercase tracking-wider">Pendientes</th>
+                      <th className="text-right py-4 px-4 text-slate-300 font-semibold text-xs uppercase tracking-wider">Conductores</th>
+                      <th className="text-right py-4 px-4 text-slate-300 font-semibold text-xs uppercase tracking-wider">% Validación</th>
+                      <th className="text-right py-4 px-4 text-slate-300 font-semibold text-xs uppercase tracking-wider">% Rechazo</th>
+                      <th className="text-right py-4 px-4 text-slate-300 font-semibold text-xs uppercase tracking-wider">Tiempo Prom.</th>
+                      <th className="text-center py-4 px-4 text-slate-300 font-semibold text-xs uppercase tracking-wider">Score</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {metrics.map((m, idx) => (
-                      <tr key={idx} className="border-b border-slate-700/50 hover:bg-slate-700/30 transition">
-                        <td className="py-4 px-4 text-white font-medium">{m.ejecutiva}</td>
-                        <td className="py-4 px-4 text-right text-slate-300 text-sm">{m.documentos_procesados}</td>
-                        <td className="py-4 px-4 text-right text-green-400 text-sm font-semibold">{m.documentos_validados}</td>
-                        <td className="py-4 px-4 text-right text-orange-400 text-sm font-bold">{m.tasa_validacion}</td>
-                        <td className="py-4 px-4 text-right text-slate-400 text-sm">{m.tiempo_promedio}</td>
-                      </tr>
-                    ))}
+                    {metrics
+                      .sort((a, b) => b.performance_score - a.performance_score)
+                      .map((m, idx) => (
+                        <tr key={idx} className="border-b border-slate-700/50 hover:bg-slate-700/50 transition">
+                          <td className="py-4 px-4 text-white font-semibold">{m.ejecutiva}</td>
+                          <td className="py-4 px-4 text-right text-slate-300 text-sm">{m.documentos_procesados}</td>
+                          <td className="py-4 px-4 text-right text-green-400 font-semibold">{m.documentos_validados}</td>
+                          <td className="py-4 px-4 text-right text-red-400 font-semibold">{m.documentos_rechazados}</td>
+                          <td className="py-4 px-4 text-right text-yellow-400 font-semibold">{m.documentos_pendientes}</td>
+                          <td className="py-4 px-4 text-right text-blue-400 font-semibold">{m.conductores_activos}</td>
+                          <td className="py-4 px-4 text-right text-orange-400 font-bold text-sm">{m.tasa_validacion}</td>
+                          <td className="py-4 px-4 text-right text-red-500 font-medium text-sm">{m.tasa_rechazo}</td>
+                          <td className="py-4 px-4 text-right text-slate-400 text-sm">{m.tiempo_promedio}</td>
+                          <td className="py-4 px-4 text-center">
+                            <div className="flex items-center justify-center">
+                              <div className="relative w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center">
+                                <span className={`text-sm font-bold ${
+                                  m.performance_score >= 75 ? 'text-green-400' :
+                                  m.performance_score >= 50 ? 'text-yellow-400' :
+                                  'text-red-400'
+                                }`}>
+                                  {m.performance_score}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>
