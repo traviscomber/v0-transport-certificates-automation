@@ -52,13 +52,14 @@ export async function POST(request: NextRequest) {
       .from('documents')
       .getPublicUrl(storagePath)
 
-    // Insert using the real UUID from conductores table
+    // Insert using only columns that exist in the uploaded_documents table
     const { data: docRecord, error: dbError } = await adminClient
       .from('uploaded_documents')
       .insert([{
         conductor_id: conductorUUID,
         document_type_id: documentTypeId,
         original_filename: file.name,
+        file_url: publicUrlData?.publicUrl || '',
         validation_status: 'pending'
       }])
       .select()
@@ -67,19 +68,6 @@ export async function POST(request: NextRequest) {
     if (dbError) {
       console.error('[v0] Database insert error:', dbError)
       return NextResponse.json({ error: 'Failed to save document', details: dbError.message }, { status: 500 })
-    }
-
-    // Update with uploaded_by if provided (separate call to avoid schema cache issues)
-    if (uploadedBy && docRecord?.id) {
-      const { error: updateError } = await adminClient
-        .from('uploaded_documents')
-        .update({ uploaded_by: uploadedBy })
-        .eq('id', docRecord.id)
-      
-      if (updateError) {
-        console.warn('[v0] Could not update uploaded_by field:', updateError)
-        // Don't fail the upload if we can't set the uploader name - the document is already saved
-      }
     }
 
     return NextResponse.json({
