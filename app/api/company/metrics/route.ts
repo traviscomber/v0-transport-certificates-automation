@@ -43,8 +43,7 @@ export async function GET(request: Request) {
     }
 
     // Step 2: Fetch documents from uploaded_documents table
-    const adminClient = await createAdminClient()
-    const { data: dbDocuments, error: dbError } = await adminClient
+    const { data: dbDocuments, error: dbError } = await supabase
       .from('uploaded_documents')
       .select('id, conductor_id, validation_status, created_at, validated_at, validated_by')
       .eq('validation_status', 'validated')
