@@ -355,27 +355,3 @@ export function useRealtimeMultipleDrivers(driverRuts: string[]) {
     changeStats: Object.fromEntries(changesRef.current),
   }
 }
-            }
-
-            OrchestrationAPI.emitEvent(
-              'bulk_document_changes',
-              'documents',
-              bulkContext,
-              {}
-            )
-          }
-        )
-        .subscribe()
-
-      return () => {
-        client.removeChannel(subscription)
-      }
-    } catch (error) {
-      console.error('[v0] Error setting up multi-driver listener:', error)
-    }
-  }, [driverRuts])
-
-  return {
-    changeStats: Object.fromEntries(changesRef.current),
-  }
-}
