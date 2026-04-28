@@ -123,7 +123,6 @@ export function DriverCard({
       
       // Force refetch from DB to update count
       refetch(true)
-      setRefreshKey(prev => prev + 1)
       
       // Show success message
       if (typeof window !== 'undefined') {
