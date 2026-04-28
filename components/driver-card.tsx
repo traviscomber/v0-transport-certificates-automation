@@ -55,7 +55,13 @@ export function DriverCard({
       return
     }
 
-    console.log('[v0] handleUpload triggered for:', { driver: driver.rut, fileName: uploadFileName, fileSize: uploadFile.size })
+    if (!uploadingEjecutiva) {
+      console.log('[v0] Upload blocked - no ejecutiva selected')
+      setUploadError('Por favor selecciona la ejecutiva que sube el documento')
+      return
+    }
+
+    console.log('[v0] handleUpload triggered for:', { driver: driver.rut, fileName: uploadFileName, fileSize: uploadFile.size, ejecutiva: uploadingEjecutiva })
     setUploading(true)
     setUploadError('')
     try {
@@ -71,6 +77,7 @@ export function DriverCard({
       setUploadFileName('')
       setUploadFile(null)
       setUploadDocType('Licencia de Conducir')
+      setUploadingEjecutiva('')
       
       // Force re-render by incrementing key
       console.log('[v0] Incrementing refresh key to force re-render')
@@ -337,6 +344,29 @@ export function DriverCard({
             </div>
 
             <div className="space-y-4">
+              {/* Ejecutiva que sube el documento */}
+              <div>
+                <label className="text-sm font-semibold text-slate-200">Ejecutiva que sube el documento</label>
+                <select
+                  value={uploadingEjecutiva}
+                  onChange={(e) => setUploadingEjecutiva(e.target.value)}
+                  disabled={loadingEjecutivas}
+                  className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="">
+                    {loadingEjecutivas ? 'Cargando...' : 'Selecciona una ejecutiva'}
+                  </option>
+                  {ejecutivas.map((exec) => (
+                    <option key={exec.id} value={exec.full_name}>
+                      {exec.full_name}
+                    </option>
+                  ))}
+                </select>
+                {ejecutivas.length === 0 && !loadingEjecutivas && (
+                  <p className="text-xs text-slate-500 mt-1">No hay ejecutivas disponibles</p>
+                )}
+              </div>
+
               {/* Tipo de Documento */}
               <div>
                 <label className="text-sm font-semibold text-slate-200">Tipo de Documento</label>
