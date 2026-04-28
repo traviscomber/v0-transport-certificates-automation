@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export interface DriverDocument {
@@ -21,7 +21,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
   const unsubscribeRef = useRef<(() => void) | null>(null)
 
   // Cargar documentos usando la API unificada
-  const fetchDocuments = async (skipCache = false) => {
+  const fetchDocuments = useCallback(async (skipCache = false) => {
     console.log('[v0] fetchDocuments called - driverRut:', driverRut, 'driverId:', driverId, 'skipCache:', skipCache)
     if (!driverRut) {
       console.log('[v0] Early return - no driverRut')
@@ -108,7 +108,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
     } finally {
       setLoading(false)
     }
-  }
+  }, [driverRut, driverId])
 
   // Subir documento
   const uploadDocument = async (
