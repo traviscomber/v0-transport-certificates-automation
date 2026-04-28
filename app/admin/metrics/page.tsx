@@ -1,48 +1,31 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Lock, Eye, EyeOff } from 'lucide-react'
+import { Lock, Eye, EyeOff, TrendingUp, FileCheck, Clock, Zap, Activity } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
-interface Ejecutiva {
-  rut: string
-  nombre: string
-  email: string
-  role: string
-  dias_en_plataforma: number
-  created_at: string | null
-  alertas_total: number
-  alertas_criticas: number
-  alertas_no_leidas: number
+interface ExecutiveMetrics {
+  executive_id: string
+  executive_name: string
+  documents_processed: number
+  approval_rate: number
+  avg_validation_time: number
+  avg_ai_confidence: number
+  ai_insights?: string
 }
 
-interface Subcontratista {
-  id: string
-  rut: string
-  razon_social: string
-  nombre_fantasia: string
-  is_active: boolean
-  created_at: string
-  conductores: number
-  conductores_activos: number
-  documentos: number
-  documentos_aprobados: number
-  documentos_pendientes: number
-  documentos_vencidos: number
+interface MetricsSummary {
+  total_documents: number
+  documents_increase: number
+  avg_approval_rate: number
+  avg_validation_time: number
 }
 
 interface MetricsData {
-  resumen: {
-    total_usuarios: number
-    total_conductores: number
-    total_subcontratistas: number
-    total_documentos: number
-    total_alertas: number
-  }
-  ejecutivas: Ejecutiva[]
-  subcontratistas: Subcontratista[]
+  executives: ExecutiveMetrics[]
+  summary: MetricsSummary
 }
 
 export default function MetricsPage() {
@@ -53,7 +36,8 @@ export default function MetricsPage() {
   const [error, setError] = useState('')
   const [data, setData] = useState<MetricsData | null>(null)
   const [loading, setLoading] = useState(false)
-  const [activeTab] = useState<'ejecutivas'>('ejecutivas')
+  const [generatingInsights, setGeneratingInsights] = useState<Set<string>>(new Set())
+  const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month'>('week')
 
   const CORRECT_PASSWORD = 'mono2026'
 
@@ -72,14 +56,80 @@ export default function MetricsPage() {
   const fetchMetrics = async () => {
     try {
       setLoading(true)
-      const res = await fetch('/api/admin/metrics')
+      const res = await fetch(`/api/company/metrics?range=${timeRange}`)
       if (!res.ok) throw new Error('Error fetching metrics')
       const json = await res.json()
       setData(json)
     } catch (err) {
       setError('Error al cargar las métricas')
+      console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchMetrics()
+    }
+  }, [timeRange])
+
+  const generateAIInsights = async (executive: ExecutiveMetrics) => {
+    try {
+      setGeneratingInsights(prev => new Set(prev).add(executive.executive_id))
+      
+      const prompt = `Analiza el desempeño de la ejecutiva "${executive.executive_name}" basado en estos datos:
+- Documentos procesados: ${executive.documents_processed}
+- Tasa de aprobación: ${executive.approval_rate}%
+- Tiempo promedio de validación: ${executive.avg_validation_time}s
+- Confianza IA promedio: ${executive.avg_ai_confidence}%
+
+Proporciona 2-3 insights accionables y específicos para mejorar su desempeño.`
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{
+            role: 'user',
+            content: prompt
+          }],
+          temperature: 0.7,
+          max_tokens: 200
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`)
+      }
+
+      const result = await response.json()
+      const insights = result.choices[0].message.content
+
+      // Update the data with insights
+      setData(prev => {
+        if (!prev) return null
+        return {
+          ...prev,
+          executives: prev.executives.map(exec => 
+            exec.executive_id === executive.executive_id
+              ? { ...exec, ai_insights: insights }
+              : exec
+          )
+        }
+      })
+    } catch (err) {
+      console.error('[v0] Error generating insights:', err)
+    } finally {
+      setGeneratingInsights(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(executive.executive_id)
+        return newSet
+      })
     }
   }
 
@@ -144,17 +194,16 @@ export default function MetricsPage() {
     )
   }
 
-  const { resumen, ejecutivas, subcontratistas } = data
+  const { executives, summary } = data
 
   return (
     <div className="min-h-screen bg-slate-900 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">Panel de Admin — Métricas Labbe</h1>
-            <p className="text-slate-400 text-sm mt-1">Data en tiempo real desde Supabase</p>
+            <h1 className="text-3xl font-bold text-white">Panel de Admin — Métricas Labbe</h1>
+            <p className="text-slate-400 text-sm mt-1">Data en tiempo real desde Supabase + OpenAI Insights</p>
           </div>
           <Button
             variant="outline"
@@ -166,39 +215,136 @@ export default function MetricsPage() {
           </Button>
         </div>
 
-
-
-        {/* Tabs */}
-        <div className="flex gap-2 border-b border-slate-700">
-          <button className="pb-3 px-4 text-sm font-semibold text-orange-400 border-b-2 border-orange-400">
-            Ejecutivas Labbe ({ejecutivas.length})
-          </button>
+        {/* Time Range Selector */}
+        <div className="flex gap-2">
+          {(['day', 'week', 'month'] as const).map((range) => (
+            <Button
+              key={range}
+              variant={timeRange === range ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTimeRange(range)}
+              className={timeRange === range ? 'bg-orange-500 hover:bg-orange-600' : 'border-slate-600'}
+            >
+              {range === 'day' ? 'Hoy' : range === 'week' ? 'Esta Semana' : 'Este Mes'}
+            </Button>
+          ))}
         </div>
 
-        {/* EJECUTIVAS TAB */}
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="bg-slate-800 border-slate-700">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-slate-400 text-sm">Total Documentos</p>
+                  <p className="text-3xl font-bold text-white mt-2">{summary.total_documents}</p>
+                </div>
+                <FileCheck className="w-10 h-10 text-orange-500/50" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-slate-800 border-slate-700">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-slate-400 text-sm">Tasa Aprobación</p>
+                  <p className="text-3xl font-bold text-white mt-2">{summary.avg_approval_rate}%</p>
+                </div>
+                <TrendingUp className="w-10 h-10 text-green-500/50" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-slate-800 border-slate-700">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-slate-400 text-sm">Tiempo Promedio</p>
+                  <p className="text-3xl font-bold text-white mt-2">{summary.avg_validation_time}s</p>
+                </div>
+                <Clock className="w-10 h-10 text-blue-500/50" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-slate-800 border-slate-700">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-slate-400 text-sm">Ejecutivas Activas</p>
+                  <p className="text-3xl font-bold text-white mt-2">{executives.length}</p>
+                </div>
+                <Activity className="w-10 h-10 text-purple-500/50" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Ejecutivas List */}
         <div className="space-y-3">
-          {ejecutivas.map((ej) => (
-            <Card key={ej.rut} className="bg-slate-800 border-slate-700">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 font-bold text-lg">
-                      {ej.nombre.charAt(0)}
+          <h2 className="text-lg font-semibold text-white">Ejecutivas Labbe ({executives.length})</h2>
+          {executives.map((executive, idx) => (
+            <Card key={executive.executive_id} className="bg-slate-800 border-slate-700 hover:border-slate-600 transition-colors">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 font-bold text-lg">
+                        {idx + 1}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-white text-lg">{executive.executive_name}</p>
+                        <p className="text-xs text-slate-400">ID: {executive.executive_id}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-white">{ej.nombre}</p>
-                      <p className="text-xs text-slate-400">{ej.email}</p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-orange-500 text-orange-400 hover:bg-orange-500/10"
+                      onClick={() => generateAIInsights(executive)}
+                      disabled={generatingInsights.has(executive.executive_id)}
+                    >
+                      <Zap className="w-4 h-4 mr-2" />
+                      {generatingInsights.has(executive.executive_id) ? 'Analizando...' : 'IA Insights'}
+                    </Button>
+                  </div>
+
+                  {/* Metrics Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-slate-900/50 rounded-lg p-4">
+                      <p className="text-slate-400 text-xs">Documentos</p>
+                      <p className="text-2xl font-bold text-white mt-1">{executive.documents_processed}</p>
+                    </div>
+                    <div className="bg-slate-900/50 rounded-lg p-4">
+                      <p className="text-slate-400 text-xs">Tasa Aprobación</p>
+                      <p className="text-2xl font-bold text-green-400 mt-1">{executive.approval_rate}%</p>
+                    </div>
+                    <div className="bg-slate-900/50 rounded-lg p-4">
+                      <p className="text-slate-400 text-xs">Tiempo Promedio</p>
+                      <p className="text-2xl font-bold text-blue-400 mt-1">{executive.avg_validation_time}s</p>
+                    </div>
+                    <div className="bg-slate-900/50 rounded-lg p-4">
+                      <p className="text-slate-400 text-xs">Confianza IA</p>
+                      <p className="text-2xl font-bold text-purple-400 mt-1">{executive.avg_ai_confidence}%</p>
                     </div>
                   </div>
-                  <span className="px-3 py-1 rounded-full text-xs bg-green-500/20 text-green-300 font-medium">
-                    Activa
-                  </span>
+
+                  {/* AI Insights */}
+                  {executive.ai_insights && (
+                    <div className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/30 rounded-lg p-4">
+                      <div className="flex gap-2 items-start">
+                        <Zap className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-semibold text-orange-400 mb-1">Insights IA</p>
+                          <p className="text-sm text-slate-300">{executive.ai_insights}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
-
       </div>
     </div>
   )
