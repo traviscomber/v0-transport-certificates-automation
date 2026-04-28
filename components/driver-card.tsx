@@ -433,7 +433,7 @@ export function DriverCard({
         }}
         onStatusChange={async (docId, newStatus) => {
           try {
-            // Optimistically update local state immediately so badge changes on close
+            // Optimistically update local state immediately so badge changes
             updateDocumentStatus(docId, newStatus)
 
             console.log('[v0] Sending PATCH request to update document status...')
@@ -453,15 +453,12 @@ export function DriverCard({
 
             console.log('[v0] PATCH successful, BD updated')
 
-            // Close modal first (optimistic state already applied above)
+            // Close modal (optimistic state already applied and will persist)
             setShowDocumentModal(false)
             setSelectedDocument(null)
 
-            // Wait a bit to ensure DB is updated, then notify conductores page
-            await new Promise(resolve => setTimeout(resolve, 500))
-            
-            console.log('[v0] Dispatching documentStatusChanged event to notify conductores page')
-            window.dispatchEvent(new Event('documentStatusChanged'))
+            // DO NOT dispatch event - SWR will handle eventual consistency
+            // The optimistic update is already visible and will stay until real data arrives
           } catch (error) {
             console.error('[v0] Error updating status:', error)
             // Revert optimistic update on error by refetching

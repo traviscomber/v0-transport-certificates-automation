@@ -48,19 +48,6 @@ export default function ConductoresPage() {
 
   const drivers = data?.drivers || []
 
-  // Escuchar el evento custom que se dispara al cambiar estado de documento
-  useEffect(() => {
-    const handleStatusChange = () => {
-      console.log('[v0] documentStatusChanged event received, refetching drivers list')
-      // Force immediate refetch by passing true
-      mutate(undefined, { revalidate: true })
-    }
-    window.addEventListener('documentStatusChanged', handleStatusChange)
-    return () => {
-      window.removeEventListener('documentStatusChanged', handleStatusChange)
-    }
-  }, [mutate])
-
   return (
     <div className="space-y-6">
       <div>
