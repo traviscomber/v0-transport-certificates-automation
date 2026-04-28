@@ -31,24 +31,27 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
     setLoading(true)
     setError(null)
     try {
-      const timestamp = skipCache ? `&_t=${Date.now()}` : ''
-      const headers: HeadersInit = skipCache ? {
+      // ALWAYS add timestamp to force unique URL and bypass cache
+      const timestamp = Date.now()
+      
+      const headers: HeadersInit = {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0'
-      } : {}
+      }
       
-      console.log('[v0] Fetching documents for driver_rut:', driverRut, 'driver_id:', driverId)
+      console.log('[v0] Fetching documents for driver_rut:', driverRut, 'skipCache:', skipCache, 'timestamp:', timestamp)
       const urlParams = new URLSearchParams({
         driver_rut: driverRut,
-        driver_id: driverId
+        driver_id: driverId,
+        _t: timestamp.toString() // Force unique URL
       })
       const fetchUrl = `/api/company/documents/drivers?${urlParams.toString()}`
       console.log('[v0] Fetch URL:', fetchUrl)
       const response = await fetch(fetchUrl, {
         method: 'GET',
         headers,
-        cache: skipCache ? 'no-store' : 'default'
+        cache: 'no-store'
       })
 
       const text = await response.text()

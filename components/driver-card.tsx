@@ -235,9 +235,12 @@ export function DriverCard({
                     <button
                       onClick={async (e) => {
                         e.stopPropagation()
+                        console.log('[v0] Refresh button clicked')
                         setIsRefreshing(true)
                         try {
-                          await refetch(true)
+                          console.log('[v0] Calling refetch(true)...')
+                          const result = await refetch(true)
+                          console.log('[v0] Refetch returned:', result)
                           console.log('[v0] Documents refreshed successfully')
                         } catch (error) {
                           console.error('[v0] Error refreshing documents:', error)
