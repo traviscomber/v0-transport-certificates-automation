@@ -56,8 +56,6 @@ export async function POST(request: NextRequest) {
         document_type_id: documentTypeId,
         original_filename: file.name,
         file_url: publicUrlData?.publicUrl || '',
-        file_path: storagePath,
-        file_size: file.size,
         mime_type: file.type,
         validation_status: 'pending'
       })
