@@ -23,19 +23,23 @@ export async function GET(request: NextRequest) {
     startDate.setDate(startDate.getDate() - daysBack)
     startDate.setHours(0, 0, 0, 0)
 
-    // Fetch certificates with validation data
+    // Fetch certificates with validation data - use simple select without RLS filters
     const { data: certificates, error } = await (supabase as any)
       .from('certificates')
-      .select('id, status, validated_by, validated_at, created_at')
+      .select('id, status, driver_id, validated_by, validated_at, created_at, validation_notes')
+      .not('validated_at', 'is', null)
       .gte('validated_at', startDate.toISOString())
 
     if (error) {
       console.error('[v0] Error fetching certificates:', error)
+      console.error('[v0] Error details:', { code: error.code, message: error.message })
       return NextResponse.json(
-        { error: 'Failed to fetch metrics: ' + error.message },
+        { error: 'Failed to fetch metrics: ' + error.message, details: error },
         { status: 500 }
       )
     }
+
+    console.log('[v0] Fetched certificates:', certificates?.length || 0)
 
     // Process metrics
     const metricsMap = new Map<string, any>()
