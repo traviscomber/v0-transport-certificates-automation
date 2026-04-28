@@ -25,9 +25,9 @@ export async function GET(request: Request) {
 
     console.log('[v0] Fetching metrics for range:', range, 'from:', startDate.toISOString())
 
-    // Step 1: Get uploaded documents 
+    // Step 1: Get documents from the documents table (not uploaded_documents)
     const { data: documents, error: docsError } = await supabase
-      .from('uploaded_documents')
+      .from('documents')
       .select('*')
       .gte('created_at', startDate.toISOString())
 
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
       console.error('[v0] Error fetching documents:', docsError)
     }
 
-    console.log('[v0] Found documents:', documents?.length || 0)
+    console.log('[v0] Found documents from documents table:', documents?.length || 0)
 
     // Step 2: Get the 6 executives (hardcoded from Labbe - same as /api/company/data)
     const executives = [
@@ -65,29 +65,22 @@ export async function GET(request: Request) {
     let totalValidated = 0
     let totalValidationTime = 0
 
-    // Step 4: Process documents - link to executives by validated_by or email field
+    // Step 4: Process documents - link to executives by status and other fields
     if (documents && documents.length > 0) {
       documents.forEach((doc: any) => {
-        // Try to find matching executive by various fields
+        // Try to find matching executive
         let matchingExec = null
 
-        // Try to match by validated_by (if it's an executive email or ID)
+        // Match by validated_by field if present
         if (doc.validated_by) {
-          // Check if it's an email
           if (doc.validated_by.includes('@')) {
             matchingExec = executives.find((e: any) => e.email === doc.validated_by)
           } else {
-            // Try as ID
             matchingExec = executives.find((e: any) => e.id === doc.validated_by)
           }
         }
 
-        // Try to match by validated_by_email if not found
-        if (!matchingExec && doc.validated_by_email) {
-          matchingExec = executives.find((e: any) => e.email === doc.validated_by_email)
-        }
-
-        // Try to match by reviewed_by if present
+        // Match by reviewed_by field if not found
         if (!matchingExec && doc.reviewed_by) {
           if (doc.reviewed_by.includes('@')) {
             matchingExec = executives.find((e: any) => e.email === doc.reviewed_by)
@@ -96,21 +89,20 @@ export async function GET(request: Request) {
           }
         }
 
-        // If still no match, skip this document
+        // If no specific executive assigned, but document has been reviewed (status not pending), 
+        // for now skip it (until validation workflow is implemented)
         if (!matchingExec) return
 
         totalDocuments++
 
-        // Check if document is validated
-        const isValidated = doc.validation_status === 'validated' || 
-                           doc.status === 'approved' || 
-                           doc.status === 'validated'
+        // Check if document is approved/validated
+        const isValidated = doc.status === 'approved' || doc.status === 'validated'
         if (isValidated) totalValidated++
 
-        // Calculate validation time
-        if (doc.created_at && doc.validated_at) {
+        // Calculate validation time if both timestamps exist
+        if (doc.created_at && doc.updated_at) {
           const createdTime = new Date(doc.created_at).getTime()
-          const validatedTime = new Date(doc.validated_at).getTime()
+          const validatedTime = new Date(doc.updated_at).getTime()
           const timeSeconds = Math.round((validatedTime - createdTime) / 1000)
           totalValidationTime += timeSeconds
         }
@@ -118,9 +110,9 @@ export async function GET(request: Request) {
         const metrics = metricsMap.get(matchingExec.id)
         metrics.documents_processed++
         if (isValidated) metrics.validated_count++
-        if (doc.created_at && doc.validated_at) {
+        if (doc.created_at && doc.updated_at) {
           const createdTime = new Date(doc.created_at).getTime()
-          const validatedTime = new Date(doc.validated_at).getTime()
+          const validatedTime = new Date(doc.updated_at).getTime()
           const timeSeconds = Math.round((validatedTime - createdTime) / 1000)
           metrics.total_validation_time += timeSeconds
         }
