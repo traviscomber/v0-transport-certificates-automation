@@ -25,27 +25,36 @@ export async function GET(request: Request) {
 
     console.log('[v0] Fetching metrics for range:', range, 'from:', startDate.toISOString())
 
-    // Step 1: Get documents from the uploaded_documents table
-    const { data: documents, error: docsError } = await supabase
-      .from('uploaded_documents')
-      .select('*')
-      .gte('created_at', startDate.toISOString())
-
-    if (docsError) {
-      console.error('[v0] Error fetching documents:', docsError)
+    // Step 2: Get executives from /api/company/data (real data, not hardcoded)
+    let executives: any[] = []
+    let totalConductores = 0
+    let totalSubcontratistas = 0
+    try {
+      const companyDataRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/company/data`)
+      if (!companyDataRes.ok) throw new Error('Failed to fetch company data')
+      const companyData = await companyDataRes.json()
+      executives = companyData.executives || []
+      totalConductores = (companyData.drivers || []).length
+      totalSubcontratistas = (companyData.subcontractors || []).length
+      console.log('[v0] Loaded from company data:', { executives: executives.length, drivers: totalConductores, subcontractors: totalSubcontratistas })
+    } catch (error) {
+      console.error('[v0] Failed to fetch company data:', error)
+      executives = []
     }
 
     console.log('[v0] Found documents from uploaded_documents table:', documents?.length || 0)
 
-    // Step 2: Get the 6 executives (hardcoded from Labbe - same as /api/company/data)
-    const executives = [
-      { id: '1', full_name: 'Olga Carrasco', rut: '10574005-0', email: 'ocarrasco@labbe.cl' },
-      { id: '2', full_name: 'Carolina Sepúlveda', rut: '15464094-0', email: 'csepulveda@labbe.cl' },
-      { id: '3', full_name: 'Daniela Silva', rut: '17768246-2', email: 'dsilva@labbe.cl' },
-      { id: '4', full_name: 'Cecilia Farias', rut: '9888992-2', email: 'cfarias@labbe.cl' },
-      { id: '5', full_name: 'Diego González', rut: '20114106-0', email: 'dgonzalez@labbe.cl' },
-      { id: '6', full_name: 'Katherinne Canales', rut: '18717311-6', email: 'kcanales@labbe.cl' },
-    ]
+    // Step 2: Get executives from /api/company/data (real data, not hardcoded)
+    try {
+      const companyDataRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/company/data`)
+      if (!companyDataRes.ok) throw new Error('Failed to fetch company data')
+      const companyData = await companyDataRes.json()
+      executives = companyData.executives || []
+      console.log('[v0] Loaded executives from company data:', executives.length)
+    } catch (error) {
+      console.error('[v0] Failed to fetch executives from company data, using empty list:', error)
+      executives = []
+    }
 
     // Step 3: Build metrics for each executive
     const metricsMap = new Map<string, any>()
@@ -135,8 +144,8 @@ export async function GET(request: Request) {
     const summary = {
       total_documentos: totalDocuments,
       total_validados: totalValidated,
-      total_conductores: 0, // TODO: Get from database
-      total_subcontratistas: 0, // TODO: Get from database
+      total_conductores: totalConductores,
+      total_subcontratistas: totalSubcontratistas,
     }
 
     console.log('[v0] Metrics calculated:', { 
