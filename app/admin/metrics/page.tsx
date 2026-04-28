@@ -68,19 +68,16 @@ export default function MetricsPage() {
         total_subcontratistas: 0,
       })
 
-      // Process executives
-      const executivesMetrics: ExecutiveMetrics[] = (data.executives || []).map((exec: any) => {
-        const tasa = exec.documents_processed > 0 
-          ? Math.round((exec.validated_count / exec.documents_processed) * 100)
-          : 0
-        return {
-          ejecutiva: exec.executive_name || 'Sin nombre',
-          documentos_procesados: exec.documents_processed || 0,
-          documentos_validados: exec.validated_count || 0,
-          tasa_validacion: `${tasa}%`,
-          tiempo_promedio: '—',
-        }
-      })
+      // Process executives - use correct field names from API
+      const executivesMetrics: ExecutiveMetrics[] = (data.executives || [])
+        .filter((exec: any) => exec.documentos_procesados > 0) // Only show executives with documents
+        .map((exec: any) => ({
+          ejecutiva: exec.ejecutiva || 'Sin nombre',
+          documentos_procesados: exec.documentos_procesados || 0,
+          documentos_validados: exec.documentos_validados || 0,
+          tasa_validacion: exec.tasa_validacion || '0%',
+          tiempo_promedio: exec.tiempo_promedio || '—',
+        }))
       
       setMetrics(executivesMetrics)
     } catch (error) {

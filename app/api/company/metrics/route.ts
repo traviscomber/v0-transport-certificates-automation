@@ -114,32 +114,37 @@ export async function GET(request: Request) {
       })
     }
 
-    // Format response
-    const executivesMetrics = Array.from(metricsMap.values()).map((m: any) => ({
-      executive_id: m.executive_id,
-      executive_name: m.executive_name,
-      documents_processed: m.documents_processed,
-      approval_rate: m.documents_processed > 0 
+    // Format response with correct field names for frontend
+    const executivesMetrics = Array.from(metricsMap.values()).map((m: any) => {
+      const tasa = m.documents_processed > 0 
         ? Math.round((m.validated_count / m.documents_processed) * 100) 
-        : 0,
-      avg_validation_time: m.documents_processed > 0
+        : 0
+      const tiempo = m.documents_processed > 0
         ? Math.round(m.total_validation_time / m.documents_processed)
-        : 0,
-      avg_ai_confidence: 0,
-    }))
+        : 0
+      
+      return {
+        ejecutiva: m.executive_name,
+        documentos_procesados: m.documents_processed,
+        documentos_validados: m.validated_count,
+        tasa_validacion: `${tasa}%`,
+        tiempo_promedio: tiempo > 0 ? `${Math.floor(tiempo / 60)}m ${tiempo % 60}s` : '-',
+      }
+    })
 
     const summary = {
-      total_documents: totalDocuments,
-      documents_increase: 0,
-      avg_approval_rate: totalDocuments > 0 
-        ? Math.round((totalValidated / totalDocuments) * 100)
-        : 0,
-      avg_validation_time: totalDocuments > 0
-        ? Math.round(totalValidationTime / totalDocuments)
-        : 0,
+      total_documentos: totalDocuments,
+      total_validados: totalValidated,
+      total_conductores: 0, // TODO: Get from database
+      total_subcontratistas: 0, // TODO: Get from database
     }
 
-    console.log('[v0] Metrics calculated:', { executives: executivesMetrics.length, total_docs: totalDocuments })
+    console.log('[v0] Metrics calculated:', { 
+      executives: executivesMetrics.length, 
+      total_docs: totalDocuments,
+      total_validated: totalValidated,
+      metrics_by_exec: executivesMetrics.map(e => ({ name: e.ejecutiva, count: e.documentos_procesados }))
+    })
 
     return NextResponse.json({
       executives: executivesMetrics.sort((a: any, b: any) => b.documents_processed - a.documents_processed),
