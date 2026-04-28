@@ -64,23 +64,26 @@ export async function POST(request: NextRequest) {
 
     if (dbError) {
       console.error('[v0] Database insert error:', dbError)
-      return NextResponse.json({ error: 'Failed to save document', details: dbError.message }, { status: 500 })
+      const errorResponse = { error: 'Failed to save document', details: dbError.message }
+      console.log('[v0] Returning error response:', errorResponse)
+      return NextResponse.json(errorResponse, { status: 500 })
     }
 
     console.log('[v0] Document uploaded successfully:', docRecord)
 
-    return NextResponse.json({
+    const successResponse = {
       success: true,
       document: docRecord,
       message: 'Documento subido exitosamente',
-    })
+    }
+    console.log('[v0] Returning success response:', successResponse)
+    return NextResponse.json(successResponse)
   } catch (error) {
     console.error('[v0] Error in POST /api/company/documents/upload-with-metadata:', error)
     const errorMessage = error instanceof Error ? error.message : 'Server error'
     console.error('[v0] Error message:', errorMessage)
-    return NextResponse.json(
-      { error: errorMessage, success: false },
-      { status: 500 }
-    )
+    const errorResponse = { error: errorMessage, success: false }
+    console.log('[v0] Returning error response from catch:', errorResponse)
+    return NextResponse.json(errorResponse, { status: 500 })
   }
 }
