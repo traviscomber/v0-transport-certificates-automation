@@ -18,6 +18,10 @@ export default function SimpleLoginPage() {
     setError('')
 
     try {
+      if (!supabase) {
+        throw new Error('Error de conexión a base de datos')
+      }
+      
       console.log('[v0] Simple login attempt for:', email)
       
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
