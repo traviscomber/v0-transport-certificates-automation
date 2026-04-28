@@ -221,7 +221,7 @@ export function useOrchestration() {
   return {
     // Emitir evento
     emitEvent: (type: string, payload: any, context?: any) => {
-      OrchestrationAPI.emitEvent(type, 'ui', context || {}, payload)
+      OrchestrationAPI.emitEvent(type, 'documents', context || {}, payload)
     },
 
     // Obtener información del sistema
@@ -318,7 +318,7 @@ export async function handleDocumentUploadAPI(req: any, res: any) {
     // Emitir evento al sistema de orquestación
     OrchestrationAPI.emitEvent(
       'document_uploaded',
-      'api',
+      'documents',
       {
         userId: req.user.id,
         entityId,
