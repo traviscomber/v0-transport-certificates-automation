@@ -22,7 +22,11 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
 
   // Cargar documentos usando la API unificada
   const fetchDocuments = async (skipCache = false) => {
-    if (!driverId) return
+    console.log('[v0] fetchDocuments called - driverId:', driverId, 'enabled:', enabled)
+    if (!driverId) {
+      console.log('[v0] Early return - no driverId')
+      return
+    }
     
     setLoading(true)
     setError(null)
@@ -62,6 +66,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       }
 
       if (!response.ok) {
+        console.log('[v0] API error response:', response.status, text)
         throw new Error(result.error || 'Failed to fetch documents')
       }
 
@@ -194,7 +199,9 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
 
   // Only fetch when explicitly enabled (card expanded)
   useEffect(() => {
+    console.log('[v0] Hook effect - driverId:', driverId, 'enabled:', enabled)
     if (driverId && enabled) {
+      console.log('[v0] Calling fetchDocuments')
       fetchDocuments()
     }
   }, [driverId, enabled])

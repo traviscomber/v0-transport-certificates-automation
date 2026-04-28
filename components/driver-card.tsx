@@ -43,6 +43,7 @@ export function DriverCard({
   
   // Only fetch documents when card is expanded to avoid 500+ simultaneous API calls
   const { documents, loading, uploadDocument, refetch, updateDocumentStatus } = useDriverDocuments(driver.id, isExpanded, driver.rut)
+  console.log('[v0] DriverCard hook returned - documents:', documents.length, 'loading:', loading, 'driver.id:', driver.id)
 
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [uploadDocTypeId, setUploadDocTypeId] = useState<string>('')
