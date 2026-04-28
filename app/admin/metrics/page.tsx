@@ -41,8 +41,6 @@ export default function MetricsPage() {
   const [debugData, setDebugData] = useState<any>(null)
   const [showDebug, setShowDebug] = useState(false)
 
-  // Hardcoded Transportes Labbe company_id - UPDATE THIS if needed
-  const LABBE_COMPANY_ID = 'empresa-transportes-labbe'
   const CORRECT_PASSWORD = 'mono2026'
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
@@ -61,7 +59,7 @@ export default function MetricsPage() {
     try {
       setLoading(true)
       console.log('[v0] Fetching metrics with timeRange:', timeRange)
-      const res = await fetch(`/api/company/metrics?range=${timeRange}&company_id=${LABBE_COMPANY_ID}`)
+      const res = await fetch(`/api/company/metrics?range=${timeRange}`)
       console.log('[v0] Metrics API response status:', res.status)
       
       if (!res.ok) {
