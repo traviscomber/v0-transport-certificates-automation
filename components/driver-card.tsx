@@ -42,7 +42,7 @@ export function DriverCard({
   }, [driver.id, driver.rut, driver.nombre])
   
   // Only fetch documents when card is expanded to avoid 500+ simultaneous API calls
-  const { documents, loading, uploadDocument, refetch, updateDocumentStatus } = useDriverDocuments(driver.id, isExpanded, driver.rut)
+  const { documents, loading, uploadDocument, refetch } = useDriverDocuments(driver.id, isExpanded, driver.rut)
   console.log('[v0] DriverCard hook returned - documents:', documents.length, 'loading:', loading, 'driver.id:', driver.id)
 
   const [showUploadModal, setShowUploadModal] = useState(false)
@@ -544,11 +544,7 @@ export function DriverCard({
         }}
         onStatusChange={async (docId, newStatus) => {
           try {
-            // Optimistically update local state immediately so badge changes
-            updateDocumentStatus(docId, newStatus)
-
-            console.log('[v0] Sending PATCH request to update document status...')
-            // PATCH status to database directly
+            console.log('[v0] Sending PATCH request to update document status:', { docId, newStatus })
             const res = await fetch(`/api/company/documents/${docId}/status`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
@@ -566,7 +562,10 @@ export function DriverCard({
             const result = await res.json()
             console.log('[v0] PATCH successful, response:', result)
 
-            // Refetch FIRST to sync with DB before closing modal
+            // Wait a bit for DB to sync
+            await new Promise(resolve => setTimeout(resolve, 500))
+            
+            // Refetch with cache skip to get fresh data from DB
             console.log('[v0] Refetching documents after status update...')
             await refetch(true)
             
@@ -575,7 +574,7 @@ export function DriverCard({
             setSelectedDocument(null)
           } catch (error) {
             console.error('[v0] Error updating status:', error)
-            // Revert optimistic update on error by refetching
+            // On error, refetch to restore current state from DB
             await refetch(true)
             throw error
           }
