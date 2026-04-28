@@ -70,18 +70,18 @@ export async function PATCH(
 
     // STEP 1: Get document details BEFORE update for logging
     const { data: documentBefore } = await adminClient
-      .from('driver_documents')
+      .from('uploaded_documents')
       .select('*')
       .eq('id', documentId)
       .single()
 
-    // STEP 2: Update driver_documents.status — single source of truth for UI
+    // STEP 2: Update uploaded_documents.validation_status — the table being used in the UI
     console.log('[v0] Executing UPDATE query for document:', documentId, 'to status:', spanishStatus)
     
     const { error: updateError, data: updateData } = await adminClient
-      .from('driver_documents')
+      .from('uploaded_documents')
       .update({ 
-        status: spanishStatus,
+        validation_status: spanishStatus,
         updated_at: new Date().toISOString()
       })
       .eq('id', documentId)
@@ -94,7 +94,7 @@ export async function PATCH(
 
     console.log('[v0] ✅ UPDATE executed successfully:', { 
       documentId, 
-      from: documentBefore?.status, 
+      from: documentBefore?.validation_status, 
       to: spanishStatus,
       rowsUpdated: updateData?.length || 0,
       responseData: updateData
@@ -116,7 +116,7 @@ export async function PATCH(
       success: true,
       document_id: documentId,
       status: spanishStatus,
-      previous_status: documentBefore?.status,
+      previous_status: documentBefore?.validation_status,
       message: 'Document status updated and broadcast to clients',
       realtime_enabled: true,
     })
@@ -135,8 +135,8 @@ export async function GET(
     const adminClient = await createAdminClient()
 
     const { data, error } = await adminClient
-      .from('driver_documents')
-      .select('status')
+      .from('uploaded_documents')
+      .select('validation_status')
       .eq('id', params.id)
       .single()
 
@@ -144,7 +144,7 @@ export async function GET(
       return NextResponse.json({ document_id: params.id, status: 'pendiente' })
     }
 
-    return NextResponse.json({ document_id: params.id, status: data.status })
+    return NextResponse.json({ document_id: params.id, status: data.validation_status })
   } catch (error) {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
