@@ -28,48 +28,47 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const driverId = String(driver.id)
-
     const adminClient = await createAdminClient()
 
+    // Query uploaded_documents table using conductor_id (which is the driver RUT)
+    console.log('[v0] Querying uploaded_documents for conductor:', rut)
     const { data: dbDocuments, error: dbError } = await adminClient
-      .from('driver_documents')
-      .select('id, file_name, document_type, file_url, uploaded_at, created_at, status')
-      .eq('driver_id', driverId)
+      .from('uploaded_documents')
+      .select('id, original_filename, document_type_id, file_url, file_path, created_at, validation_status')
+      .eq('conductor_id', rut)
       .order('created_at', { ascending: false })
 
     if (dbError) {
-      console.error('[v0] Error querying documents:', dbError.message)
+      console.error('[v0] Error querying uploaded_documents:', dbError.message)
+      return NextResponse.json({ success: true, driver_rut: rut, documents: [] }, {
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+      })
     }
 
-    const documents = (dbDocuments || []).map(doc => {
-      // Read status directly from driver_documents.status — single source of truth
-      let estadoEspanol = 'pendiente'
-      if (doc.status) {
-        const s = doc.status.toLowerCase()
-        if (s === 'aprobado') estadoEspanol = 'aprobado'
-        else if (s === 'rechazado') estadoEspanol = 'rechazado'
-        else if (s === 'pendiente') estadoEspanol = 'pendiente'
-        else if (s === 'vencido') estadoEspanol = 'vencido'
-      }
+    console.log('[v0] Found documents:', dbDocuments?.length || 0)
 
-      let publicUrl = doc.file_url || ''
-      if (doc.file_url && !doc.file_url.startsWith('http')) {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-        if (supabaseUrl) {
-          publicUrl = `${supabaseUrl}/storage/v1/object/public/documents/${doc.file_url}`
-        }
+    const documents = (dbDocuments || []).map((doc: any) => {
+      // Map validation_status to Spanish status
+      let estadoEspanol = 'pendiente'
+      if (doc.validation_status) {
+        const s = doc.validation_status.toLowerCase()
+        if (s === 'validated') estadoEspanol = 'aprobado'
+        else if (s === 'rejected') estadoEspanol = 'rechazado'
+        else if (s === 'pending') estadoEspanol = 'pendiente'
       }
 
       return {
         id: doc.id,
-        file_name: doc.file_name,
-        upload_date: doc.uploaded_at || doc.created_at,
-        document_type: doc.document_type || 'Documento',
+        file_name: doc.original_filename,
+        original_filename: doc.original_filename,
+        upload_date: doc.created_at,
+        created_at: doc.created_at,
+        document_type: doc.document_type_id || 'Documento',
         verification_status: estadoEspanol,
+        validation_status: doc.validation_status,
         size: 0,
-        storage_path: doc.file_url || '',
-        public_url: publicUrl,
+        storage_path: doc.file_path || '',
+        public_url: doc.file_url || '',
       }
     })
 

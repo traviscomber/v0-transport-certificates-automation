@@ -115,11 +115,19 @@ export function useDriverDocuments(driverRut: string, enabled = false) {
       const uploadResult = await response.json()
       console.log('[v0] Document uploaded:', uploadResult.document)
 
-      // Esperar a que el documento se guarde y recargar
-      console.log('[v0] Waiting for document to be saved...')
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Refresh documents IMMEDIATELY and forcefully multiple times
+      console.log('[v0] Forcing immediate document refresh after upload')
       await fetchDocuments(true)
-      console.log('[v0] Documents reloaded after upload')
+      
+      // Second refresh after a short delay
+      await new Promise(resolve => setTimeout(resolve, 300))
+      await fetchDocuments(true)
+      
+      // Third refresh after another delay for safety
+      await new Promise(resolve => setTimeout(resolve, 700))
+      await fetchDocuments(true)
+      
+      console.log('[v0] Documents refreshed after upload')
       
       return uploadResult.document
     } catch (err) {
