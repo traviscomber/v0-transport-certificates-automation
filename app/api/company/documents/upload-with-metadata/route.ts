@@ -57,32 +57,62 @@ export async function POST(request: NextRequest) {
 
     console.log('[v0] Inserting document record to database in uploaded_documents table')
 
-    // Create document record in database - use uploaded_documents table
-    const { data: docRecord, error: dbError } = await adminClient
-      .from('uploaded_documents')
-      .insert({
-        conductor_id: driverId,
+    // Use raw SQL to bypass TypeScript schema cache issues
+    const { data: docRecord, error: dbError } = await adminClient.rpc('insert_uploaded_document', {
+      p_conductor_id: driverId,
+      p_document_type_id: documentTypeId,
+      p_original_filename: file.name,
+      p_file_url: publicUrlData?.publicUrl || '',
+      p_file_size: file.size,
+      p_mime_type: file.type,
+      p_validation_status: 'pending',
+      p_ocr_data: {
         document_type_id: documentTypeId,
-        original_filename: file.name,
-        file_url: publicUrlData?.publicUrl || '',
-        file_size: file.size,
-        mime_type: file.type,
-        validation_status: 'pending',
-        ocr_structured_data: {
-          document_type_id: documentTypeId,
-          expiry_date: metadata.expiry_date || null,
-          issue_date: metadata.issue_date || null,
-          ...metadata
-        }
-      })
-      .select()
-      .single()
+        expiry_date: metadata.expiry_date || null,
+        issue_date: metadata.issue_date || null,
+        ...metadata
+      }
+    })
 
     if (dbError) {
-      console.error('[v0] Database insert error:', dbError)
-      return NextResponse.json({ error: 'Failed to save document', details: dbError.message }, { status: 500 })
+      console.error('[v0] Database RPC error:', dbError)
+      // Fallback: try simple insert with only basic fields
+      console.log('[v0] Trying fallback insert with minimal fields')
+      const { data: fallbackDoc, error: fallbackError } = await adminClient
+        .from('uploaded_documents')
+        .insert({
+          conductor_id: driverId,
+          document_type_id: documentTypeId,
+          validation_status: 'pending',
+          ocr_structured_data: {
+            original_filename: file.name,
+            file_url: publicUrlData?.publicUrl || '',
+            file_size: file.size,
+            mime_type: file.type,
+            document_type_id: documentTypeId,
+            expiry_date: metadata.expiry_date || null,
+            issue_date: metadata.issue_date || null,
+            ...metadata
+          }
+        })
+        .select()
+        .single()
+      
+      if (fallbackError) {
+        console.error('[v0] Fallback insert also failed:', fallbackError)
+        return NextResponse.json({ error: 'Failed to save document', details: fallbackError.message }, { status: 500 })
+      }
+      
+      const responseData = {
+        success: true,
+        document: fallbackDoc,
+        message: 'Documento subido exitosamente (fallback mode)',
+      }
+      console.log('[v0] Fallback insert successful, returning response')
+      return NextResponse.json(responseData)
     }
 
+    // RPC worked, return the result
     console.log('[v0] Document uploaded successfully:', {
       documentId: docRecord.id,
       driverId,
