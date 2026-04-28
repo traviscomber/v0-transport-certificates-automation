@@ -72,6 +72,10 @@ export default function ComplianceDashboardPage() {
       setLoading(true)
       setError('')
 
+      if (!supabase) {
+        throw new Error('Error de conexión a base de datos')
+      }
+
       const { data: types, error: typesError } = await supabase
         .from('document_types')
         .select('*')
