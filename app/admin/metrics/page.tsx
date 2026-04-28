@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Lock, Eye, EyeOff, FileCheck, TrendingUp, Clock, Users } from 'lucide-react'
+import { Lock, Eye, EyeOff, FileCheck, TrendingUp, Users, Building2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 interface ExecutiveMetrics {
@@ -14,11 +14,18 @@ interface ExecutiveMetrics {
   tiempo_promedio: string
 }
 
-interface MetricsSummary {
-  total_documentos: number
-  total_validados: number
-  total_conductores: number
-  total_subcontratistas: number
+interface MetricsResponse {
+  summary: {
+    total_documentos: number
+    total_validados: number
+    total_conductores: number
+    total_subcontratistas: number
+  }
+  executives: Array<{
+    executive_name: string
+    documents_processed: number
+    validated_count: number
+  }>
 }
 
 export default function MetricsPage() {
@@ -26,7 +33,7 @@ export default function MetricsPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [metrics, setMetrics] = useState<ExecutiveMetrics[]>([])
-  const [summary, setSummary] = useState<MetricsSummary>({
+  const [summary, setSummary] = useState({
     total_documentos: 0,
     total_validados: 0,
     total_conductores: 0,
@@ -51,9 +58,31 @@ export default function MetricsPage() {
     setLoading(true)
     try {
       const response = await fetch(`/api/company/metrics?range=${timeRange}`)
-      const data = await response.json()
-      setMetrics(data.executives || [])
-      setSummary(data.summary || {})
+      const data: MetricsResponse = await response.json()
+      
+      // Process summary
+      setSummary(data.summary || {
+        total_documentos: 0,
+        total_validados: 0,
+        total_conductores: 0,
+        total_subcontratistas: 0,
+      })
+
+      // Process executives
+      const executivesMetrics: ExecutiveMetrics[] = (data.executives || []).map((exec: any) => {
+        const tasa = exec.documents_processed > 0 
+          ? Math.round((exec.validated_count / exec.documents_processed) * 100)
+          : 0
+        return {
+          ejecutiva: exec.executive_name || 'Sin nombre',
+          documentos_procesados: exec.documents_processed || 0,
+          documentos_validados: exec.validated_count || 0,
+          tasa_validacion: `${tasa}%`,
+          tiempo_promedio: '—',
+        }
+      })
+      
+      setMetrics(executivesMetrics)
     } catch (error) {
       console.error('[v0] Error fetching metrics:', error)
     } finally {
@@ -65,7 +94,7 @@ export default function MetricsPage() {
     if (isAuthenticated) {
       fetchMetrics()
 
-      // Real-time subscription to document changes
+      // Real-time subscription
       const channel = supabase
         .channel('metrics_realtime')
         .on(
@@ -82,16 +111,18 @@ export default function MetricsPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4">
-        <Card className="bg-slate-800 border-slate-700 w-full max-w-md">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center p-4">
+        <Card className="bg-slate-800/80 border-slate-700 w-full max-w-md backdrop-blur">
           <CardHeader className="text-center pb-2">
             <div className="flex justify-center mb-4">
-              <Lock className="w-6 h-6 text-orange-500" />
+              <div className="bg-orange-500/20 p-3 rounded-full">
+                <Lock className="w-6 h-6 text-orange-500" />
+              </div>
             </div>
-            <CardTitle className="text-white">Métricas Ejecutivas</CardTitle>
-            <p className="text-slate-400 text-sm mt-1">Panel de desempeño</p>
+            <CardTitle className="text-white text-2xl">Ejecutivo</CardTitle>
+            <p className="text-slate-400 text-sm mt-1">Dashboard de métricas</p>
           </CardHeader>
-          <CardContent className="pt-4">
+          <CardContent className="pt-6">
             <div className="space-y-4">
               <div className="relative">
                 <input
@@ -100,19 +131,19 @@ export default function MetricsPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAuth()}
                   placeholder="Contraseña"
-                  className="w-full bg-slate-900 border border-slate-600 rounded px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
+                  className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:bg-slate-900 transition"
                   autoFocus
                 />
                 <button
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-300"
+                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-300 transition"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
               <Button
                 onClick={handleAuth}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-lg transition"
               >
                 Acceder
               </Button>
@@ -124,32 +155,37 @@ export default function MetricsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-6 md:p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-6 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white">Métricas</h1>
-            <p className="text-slate-400 text-sm">Panel de validación de documentos</p>
+            <h1 className="text-4xl font-bold text-white mb-1">Métricas Ejecutivas</h1>
+            <p className="text-slate-400">Panel de desempeño de validación</p>
           </div>
           <Button
             variant="outline"
-            onClick={() => setIsAuthenticated(false)}
-            className="border-slate-600 text-slate-300 hover:bg-slate-700"
+            onClick={() => {
+              setIsAuthenticated(false)
+              setPassword('')
+            }}
+            className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
           >
             Salir
           </Button>
         </div>
 
-        {/* Time Range */}
-        <div className="flex gap-2">
+        {/* Time Range Selector */}
+        <div className="flex gap-3">
           {(['day', 'week', 'month'] as const).map((range) => (
             <Button
               key={range}
               onClick={() => setTimeRange(range)}
-              variant={timeRange === range ? 'default' : 'outline'}
-              size="sm"
-              className={timeRange === range ? 'bg-orange-500 hover:bg-orange-600' : 'border-slate-600 text-slate-300'}
+              className={`px-6 py-2 rounded-lg font-medium transition ${
+                timeRange === range
+                  ? 'bg-orange-500 hover:bg-orange-600 text-white'
+                  : 'bg-slate-700/50 hover:bg-slate-700 text-slate-300 border border-slate-600'
+              }`}
             >
               {range === 'day' && 'Hoy'}
               {range === 'week' && 'Esta Semana'}
@@ -158,87 +194,110 @@ export default function MetricsPage() {
           ))}
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-slate-800 border-slate-700">
+        {/* KPI Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Documentos Card */}
+          <Card className="bg-gradient-to-br from-slate-800 to-slate-800/50 border-slate-700 hover:border-slate-600 transition">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between mb-4">
                 <div>
-                  <p className="text-slate-400 text-sm">Documentos</p>
-                  <p className="text-3xl font-bold text-white mt-2">{summary.total_documentos}</p>
+                  <p className="text-slate-400 text-sm font-medium">Documentos Procesados</p>
+                  <p className="text-4xl font-bold text-white mt-2">{summary.total_documentos}</p>
                 </div>
-                <FileCheck className="text-orange-500" size={32} />
+                <div className="bg-blue-500/20 p-3 rounded-lg">
+                  <FileCheck className="text-blue-400" size={24} />
+                </div>
+              </div>
+              <div className="h-1 bg-slate-700 rounded-full overflow-hidden">
+                <div className="h-full bg-blue-500 w-3/4 rounded-full"></div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800 border-slate-700">
+          {/* Validados Card */}
+          <Card className="bg-gradient-to-br from-slate-800 to-slate-800/50 border-slate-700 hover:border-slate-600 transition">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between mb-4">
                 <div>
-                  <p className="text-slate-400 text-sm">Validados</p>
-                  <p className="text-3xl font-bold text-green-400 mt-2">{summary.total_validados}</p>
+                  <p className="text-slate-400 text-sm font-medium">Validados</p>
+                  <p className="text-4xl font-bold text-green-400 mt-2">{summary.total_validados}</p>
                 </div>
-                <TrendingUp className="text-green-500" size={32} />
+                <div className="bg-green-500/20 p-3 rounded-lg">
+                  <TrendingUp className="text-green-400" size={24} />
+                </div>
+              </div>
+              <div className="text-slate-400 text-xs">
+                Tasa: {summary.total_documentos > 0 ? Math.round((summary.total_validados / summary.total_documentos) * 100) : 0}%
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800 border-slate-700">
+          {/* Conductores Card */}
+          <Card className="bg-gradient-to-br from-slate-800 to-slate-800/50 border-slate-700 hover:border-slate-600 transition">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between mb-4">
                 <div>
-                  <p className="text-slate-400 text-sm">Conductores</p>
-                  <p className="text-3xl font-bold text-blue-400 mt-2">{summary.total_conductores}</p>
+                  <p className="text-slate-400 text-sm font-medium">Conductores</p>
+                  <p className="text-4xl font-bold text-purple-400 mt-2">{summary.total_conductores}</p>
                 </div>
-                <Users className="text-blue-500" size={32} />
+                <div className="bg-purple-500/20 p-3 rounded-lg">
+                  <Users className="text-purple-400" size={24} />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800 border-slate-700">
+          {/* Subcontratistas Card */}
+          <Card className="bg-gradient-to-br from-slate-800 to-slate-800/50 border-slate-700 hover:border-slate-600 transition">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between mb-4">
                 <div>
-                  <p className="text-slate-400 text-sm">Subcontratistas</p>
-                  <p className="text-3xl font-bold text-purple-400 mt-2">{summary.total_subcontratistas}</p>
+                  <p className="text-slate-400 text-sm font-medium">Subcontratistas</p>
+                  <p className="text-4xl font-bold text-amber-400 mt-2">{summary.total_subcontratistas}</p>
                 </div>
-                <Clock className="text-purple-500" size={32} />
+                <div className="bg-amber-500/20 p-3 rounded-lg">
+                  <Building2 className="text-amber-400" size={24} />
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Ejecutivas Table */}
-        <Card className="bg-slate-800 border-slate-700">
-          <CardHeader>
-            <CardTitle className="text-white">Desempeño por Ejecutiva</CardTitle>
+        {/* Executives Performance Table */}
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-white text-xl">Desempeño por Ejecutiva</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <p className="text-slate-400 text-center py-8">Cargando...</p>
+              <div className="py-12 text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                <p className="text-slate-400 mt-4">Cargando datos...</p>
+              </div>
             ) : metrics.length === 0 ? (
-              <p className="text-slate-400 text-center py-8">Sin datos</p>
+              <div className="py-12 text-center">
+                <p className="text-slate-400">Sin datos disponibles</p>
+              </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full">
                   <thead>
                     <tr className="border-b border-slate-700">
-                      <th className="text-left py-3 px-4 text-slate-300 font-semibold">Ejecutiva</th>
-                      <th className="text-right py-3 px-4 text-slate-300 font-semibold">Documentos</th>
-                      <th className="text-right py-3 px-4 text-slate-300 font-semibold">Validados</th>
-                      <th className="text-right py-3 px-4 text-slate-300 font-semibold">Tasa</th>
-                      <th className="text-right py-3 px-4 text-slate-300 font-semibold">Tiempo</th>
+                      <th className="text-left py-4 px-4 text-slate-300 font-semibold text-sm">Ejecutiva</th>
+                      <th className="text-right py-4 px-4 text-slate-300 font-semibold text-sm">Documentos</th>
+                      <th className="text-right py-4 px-4 text-slate-300 font-semibold text-sm">Validados</th>
+                      <th className="text-right py-4 px-4 text-slate-300 font-semibold text-sm">Tasa</th>
+                      <th className="text-right py-4 px-4 text-slate-300 font-semibold text-sm">Tiempo</th>
                     </tr>
                   </thead>
                   <tbody>
                     {metrics.map((m, idx) => (
-                      <tr key={idx} className="border-b border-slate-700 hover:bg-slate-700/50 transition">
-                        <td className="py-3 px-4 text-white">{m.ejecutiva}</td>
-                        <td className="py-3 px-4 text-right text-slate-300">{m.documentos_procesados}</td>
-                        <td className="py-3 px-4 text-right text-green-400">{m.documentos_validados}</td>
-                        <td className="py-3 px-4 text-right text-orange-400 font-semibold">{m.tasa_validacion}</td>
-                        <td className="py-3 px-4 text-right text-slate-300">{m.tiempo_promedio}</td>
+                      <tr key={idx} className="border-b border-slate-700/50 hover:bg-slate-700/30 transition">
+                        <td className="py-4 px-4 text-white font-medium">{m.ejecutiva}</td>
+                        <td className="py-4 px-4 text-right text-slate-300 text-sm">{m.documentos_procesados}</td>
+                        <td className="py-4 px-4 text-right text-green-400 text-sm font-semibold">{m.documentos_validados}</td>
+                        <td className="py-4 px-4 text-right text-orange-400 text-sm font-bold">{m.tasa_validacion}</td>
+                        <td className="py-4 px-4 text-right text-slate-400 text-sm">{m.tiempo_promedio}</td>
                       </tr>
                     ))}
                   </tbody>
