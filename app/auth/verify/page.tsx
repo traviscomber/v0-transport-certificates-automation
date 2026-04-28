@@ -19,6 +19,9 @@ export default function VerifyPage() {
   useEffect(() => {
     const verifyEmail = async () => {
       try {
+        if (!supabase) {
+          throw new Error('Error de conexión a base de datos')
+        }
         // Check for verification token in URL
         const token = searchParams.get('token')
         const type = searchParams.get('type')

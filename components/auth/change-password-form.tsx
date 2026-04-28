@@ -41,6 +41,9 @@ export function ChangePasswordForm() {
 
     try {
       const supabase = createClient()
+      if (!supabase) {
+        throw new Error('Error de conexión a base de datos')
+      }
 
       // First verify current password by attempting to sign in
       const { data: user } = await supabase.auth.getUser()

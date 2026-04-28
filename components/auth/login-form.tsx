@@ -30,6 +30,9 @@ export function LoginForm() {
 
     try {
       const supabase = createClient()
+      if (!supabase) {
+        throw new Error('Error de conexión a base de datos')
+      }
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,

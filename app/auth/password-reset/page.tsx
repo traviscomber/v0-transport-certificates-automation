@@ -26,6 +26,9 @@ export default function PasswordResetPage() {
     setIsLoading(true)
 
     try {
+      if (!supabase) {
+        throw new Error('Error de conexión a base de datos')
+      }
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/password-reset?type=recovery`,
       })
@@ -60,6 +63,9 @@ export default function PasswordResetPage() {
     setIsLoading(true)
 
     try {
+      if (!supabase) {
+        throw new Error('Error de conexión a base de datos')
+      }
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       })
