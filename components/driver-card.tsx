@@ -566,13 +566,13 @@ export function DriverCard({
             const result = await res.json()
             console.log('[v0] PATCH successful, response:', result)
 
-            // Close modal
-            setShowDocumentModal(false)
-            setSelectedDocument(null)
-            
-            // Refetch after successful update to sync with DB
+            // Refetch FIRST to sync with DB before closing modal
             console.log('[v0] Refetching documents after status update...')
             await refetch(true)
+            
+            // Close modal AFTER refetch completes
+            setShowDocumentModal(false)
+            setSelectedDocument(null)
           } catch (error) {
             console.error('[v0] Error updating status:', error)
             // Revert optimistic update on error by refetching
