@@ -220,6 +220,45 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
     }
   }, [driverRut, enabled])
 
+  // Subscribe to realtime changes in uploaded_documents for this conductor
+  useEffect(() => {
+    if (!driverRut || !enabled) return
+
+    console.log('[v0] Setting up Realtime subscription for conductor:', driverRut)
+
+    // Subscribe to changes on uploaded_documents table
+    const subscription = supabase
+      .channel(`uploaded_documents:conductor_rut:eq.${driverRut}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'uploaded_documents',
+          filter: `conductor_id=eq.${driverId}` // Only for this conductor
+        },
+        (payload) => {
+          console.log('[v0] Realtime change detected:', payload)
+          // Refetch documents when any change is detected
+          fetchDocuments(true) // skipCache=true to get fresh data
+        }
+      )
+      .subscribe()
+
+    // Store unsubscribe function
+    unsubscribeRef.current = () => {
+      subscription.unsubscribe()
+    }
+
+    // Cleanup on unmount or when dependencies change
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current()
+        console.log('[v0] Realtime subscription cleaned up')
+      }
+    }
+  }, [driverRut, driverId, enabled])
+
   return {
     documents,
     loading,
