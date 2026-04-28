@@ -100,7 +100,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
 
   // Smart search and filtering
   const filtered = useMemo(() => {
-    return subcontractors.filter(sub => {
+    const results = subcontractors.filter(sub => {
       // Search term filter
       if (searchTerm) {
         const query = searchTerm.toLowerCase()
@@ -140,6 +140,13 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
       }
 
       return true
+    })
+
+    // Sort alphabetically by nombre
+    return results.sort((a, b) => {
+      const nameA = (a.nombre || a.razon_social || '').toLowerCase()
+      const nameB = (b.nombre || b.razon_social || '').toLowerCase()
+      return nameA.localeCompare(nameB)
     })
   }, [searchTerm, selectedEjecutivas, selectedCertifications, showActiveOnly, subcontractors])
 
@@ -326,9 +333,14 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
                   {/* Header with name and status */}
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="font-bold text-lg text-white">{sub.nombre}</h3>
+                      <div className="flex items-baseline gap-3 mb-1">
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-500 text-white text-sm font-bold flex-shrink-0">
+                          {subIdx + 1}
+                        </span>
+                        <h3 className="font-bold text-lg text-white">{sub.nombre}</h3>
+                      </div>
                       {sub.nombre_fantasia && (
-                        <p className="text-sm text-slate-400 italic">{sub.nombre_fantasia}</p>
+                        <p className="text-sm text-slate-400 italic ml-9">{sub.nombre_fantasia}</p>
                       )}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
