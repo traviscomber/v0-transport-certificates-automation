@@ -6,17 +6,34 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    // driver_id from the conductores page IS already the real UUID from the conductores table
-    // Use it directly - do NOT try RUT lookup when driver_id is provided
-    const conductorId = searchParams.get('driver_id')
+    const driverId = searchParams.get('driver_id')
+    const driverRut = searchParams.get('driver_rut')
 
-    if (!conductorId) {
-      return NextResponse.json({ error: 'driver_id required' }, { status: 400 })
+    if (!driverRut) {
+      console.log('[v0] Missing driver_rut parameter')
+      return NextResponse.json({ error: 'driver_rut required' }, { status: 400 })
     }
 
-    console.log('[v0] Fetching documents for conductor_id:', conductorId)
+    console.log('[v0] Fetching documents for driver_rut:', driverRut, 'driver_id:', driverId)
 
     const adminClient = await createAdminClient()
+
+    // First, resolve the RUT to get the real conductor UUID
+    const { data: conductorData, error: conductorError } = await adminClient
+      .from('conductores')
+      .select('id')
+      .eq('rut', driverRut)
+      .single()
+
+    if (conductorError || !conductorData?.id) {
+      console.log('[v0] Conductor not found for RUT:', driverRut)
+      return NextResponse.json({ success: true, documents: [] }, {
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+      })
+    }
+
+    const conductorId = conductorData.id
+    console.log('[v0] Resolved conductor_id from RUT:', conductorId)
 
     const { data: dbDocuments, error: dbError } = await adminClient
       .from('uploaded_documents')

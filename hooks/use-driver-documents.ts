@@ -22,11 +22,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
 
   // Cargar documentos usando la API unificada
   const fetchDocuments = async (skipCache = false) => {
-    console.log('[v0] fetchDocuments called - driverId:', driverId, 'enabled:', enabled)
-    if (!driverId) {
-      console.log('[v0] Early return - no driverId')
-      return
-    }
+    if (!driverRut) return
     
     setLoading(true)
     setError(null)
@@ -38,12 +34,13 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         'Expires': '0'
       } : {}
       
-      console.log('[v0] Fetching documents for driver_id:', driverId)
+      console.log('[v0] Fetching documents for driver_rut:', driverRut, 'driver_id:', driverId)
       const urlParams = new URLSearchParams({
-        driver_id: driverId,
-        ...(driverRut && { driver_rut: driverRut })
+        driver_rut: driverRut,
+        driver_id: driverId
       })
       const fetchUrl = `/api/company/documents/drivers?${urlParams.toString()}`
+      console.log('[v0] Fetch URL:', fetchUrl)
       const response = await fetch(fetchUrl, {
         method: 'GET',
         headers,
@@ -197,14 +194,12 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
     }
   }
 
-  // Only fetch when explicitly enabled (card expanded)
+  // Only fetch when explicitly enabled (card expanded) AND when driverRut is available
   useEffect(() => {
-    console.log('[v0] Hook effect - driverId:', driverId, 'enabled:', enabled)
-    if (driverId && enabled) {
-      console.log('[v0] Calling fetchDocuments')
+    if (driverRut && enabled) {
       fetchDocuments()
     }
-  }, [driverId, enabled])
+  }, [driverRut, enabled])
 
   return {
     documents,
