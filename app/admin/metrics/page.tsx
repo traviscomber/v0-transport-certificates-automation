@@ -39,8 +39,7 @@ export default function MetricsPage() {
   const [loading, setLoading] = useState(false)
   const [generatingInsights, setGeneratingInsights] = useState<Set<string>>(new Set())
   const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month'>('week')
-  const [debugData, setDebugData] = useState<any>(null)
-  const [showDebug, setShowDebug] = useState(false)
+  const [debugRutInput, setDebugRutInput] = useState('')
 
   const CORRECT_PASSWORD = 'mono2026'
   const supabase = createClient()
@@ -121,9 +120,22 @@ export default function MetricsPage() {
   const fetchDebugData = async () => {
     try {
       console.log('[v0] Fetching debug data...')
-      const res = await fetch('/api/company/metrics/debug-documents')
+      const res = await fetch('/api/company/documents/debug')
       const json = await res.json()
       console.log('[v0] Debug data:', json)
+      setDebugData(json)
+      setShowDebug(true)
+    } catch (err) {
+      console.error('[v0] Error fetching debug data:', err)
+    }
+  }
+
+  const fetchDebugByRut = async (rut: string) => {
+    try {
+      console.log('[v0] Fetching debug data for RUT:', rut)
+      const res = await fetch(`/api/company/documents/debug?rut=${encodeURIComponent(rut)}`)
+      const json = await res.json()
+      console.log('[v0] Debug data for RUT:', json)
       setDebugData(json)
       setShowDebug(true)
     } catch (err) {
@@ -353,9 +365,25 @@ Proporciona 2-3 insights accionables y específicos para mejorar su desempeño.`
         {showDebug && debugData && (
           <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-white">Debug Data</CardTitle>
+              <CardTitle className="text-white">Debug Data - Documentos</CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-6 space-y-4">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Ingresa RUT del conductor (ej: 18012757-7)"
+                  value={debugRutInput}
+                  onChange={(e) => setDebugRutInput(e.target.value)}
+                  className="flex-1 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500"
+                />
+                <Button
+                  size="sm"
+                  onClick={() => fetchDebugByRut(debugRutInput)}
+                  className="bg-orange-500 hover:bg-orange-600"
+                >
+                  Buscar
+                </Button>
+              </div>
               <pre className="bg-slate-900 p-4 rounded text-xs text-slate-300 overflow-auto max-h-96">
                 {JSON.stringify(debugData, null, 2)}
               </pre>
