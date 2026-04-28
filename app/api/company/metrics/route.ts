@@ -11,6 +11,41 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      console.error('[v0] Error getting user:', userError)
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    console.log('[v0] Current user:', user.id)
+
+    // Get user profile to find company
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, full_name, company_id')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError || !profile) {
+      console.error('[v0] Error fetching profile:', profileError)
+      return NextResponse.json({
+        executives: [],
+        summary: {
+          total_documents: 0,
+          documents_increase: 0,
+          avg_approval_rate: 0,
+          avg_validation_time: 0,
+        },
+      })
+    }
+
+    const companyId = profile.company_id
+    console.log('[v0] User company_id:', companyId)
+
     const searchParams = request.nextUrl.searchParams
     const range = searchParams.get('range') || 'week'
 
@@ -23,13 +58,29 @@ export async function GET(request: NextRequest) {
     startDate.setDate(startDate.getDate() - daysBack)
     startDate.setHours(0, 0, 0, 0)
 
-    console.log('[v0] Fetching Labbe metrics for range:', range, 'from', startDate.toISOString())
+    console.log('[v0] Fetching metrics for company:', companyId, 'range:', range)
 
-    // Step 1: Get all Labbe executives (cargo = 'Ejecutiva')
+    // Step 1: Get executives for this company (cargo = 'Ejecutiva')
     const { data: executives, error: execError } = await (supabase as any)
       .from('executive_staff')
-      .select('id, full_name, rut, email, cargo')
+      .select('id, full_name, rut, email, cargo, company_id')
       .eq('cargo', 'Ejecutiva')
+      .eq('company_id', companyId)
+
+    if (execError) {
+      console.error('[v0] Error fetching executives:', execError)
+      return NextResponse.json({
+        executives: [],
+        summary: {
+          total_documents: 0,
+          documents_increase: 0,
+          avg_approval_rate: 0,
+          avg_validation_time: 0,
+        },
+      })
+    }
+
+    console.log('[v0] Found executives for company:', executives?.length || 0)
 
     if (execError) {
       console.error('[v0] Error fetching executives:', execError)
@@ -58,10 +109,11 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Step 2: Try to fetch documents from uploaded_documents table
+    // Step 2: Get documents from this company
     const { data: documents, error: docsError } = await (supabase as any)
       .from('uploaded_documents')
       .select('*')
+      .eq('company_id', companyId)
       .gte('created_at', startDate.toISOString())
 
     console.log('[v0] Fetched documents from uploaded_documents:', documents?.length || 0, 'error:', docsError?.message)
