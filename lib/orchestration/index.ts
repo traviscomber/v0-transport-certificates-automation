@@ -129,8 +129,14 @@ export const OrchestrationAPI = {
   /**
    * Emitir un evento desde un módulo
    */
-  emitEvent(type: string, source: string, context: ModuleContext, payload: any, priority = 5) {
-    const event = {
+  emitEvent(
+    type: string,
+    source: 'alerts' | 'documents' | 'compliance' | 'notifications',
+    context: ModuleContext,
+    payload: any,
+    priority = 5
+  ) {
+    const event: ModuleEvent = {
       id: `evt-${Date.now()}`,
       type,
       source,
