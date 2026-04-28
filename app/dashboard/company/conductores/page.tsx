@@ -51,7 +51,9 @@ export default function ConductoresPage() {
   // Escuchar el evento custom que se dispara al cambiar estado de documento
   useEffect(() => {
     const handleStatusChange = () => {
-      mutate()
+      console.log('[v0] documentStatusChanged event received, refetching drivers list')
+      // Force immediate refetch by passing true
+      mutate(undefined, { revalidate: true })
     }
     window.addEventListener('documentStatusChanged', handleStatusChange)
     return () => {

@@ -452,9 +452,11 @@ export function DriverCard({
             setSelectedDocument(null)
 
             // Notify conductores page to refetch its list
+            console.log('[v0] Dispatching documentStatusChanged event to notify conductores page')
             window.dispatchEvent(new Event('documentStatusChanged'))
 
             // Then refetch in background to confirm DB state
+            console.log('[v0] Refetching driver documents')
             await refetch(true)
           } catch (error) {
             console.error('[v0] Error updating status:', error)
