@@ -294,8 +294,9 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
         Mostrando {filtered.length} de {subcontractors.length} subcontratistas
       </div>
 
-      {/* Results Grid */}
-      <div className="grid gap-4">
+      {/* Results Grid with scrollable container */}
+      <div className="max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
+        <div className="grid gap-4">
         {filtered.length === 0 ? (
           <Card className="col-span-full">
             <CardContent className="p-8 text-center">
@@ -449,6 +450,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
             )
           })
         )}
+        </div>
       </div>
     </div>
   )
