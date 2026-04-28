@@ -157,8 +157,23 @@ export async function GET(request: NextRequest) {
     const conductoesEnriquecidos = Array.isArray(conductores)
       ? conductores.map((conductor: any) => {
           const subcontractor = subMap.get(conductor.rut_proveedor)
+          
+          // Build full name from available fields
+          let fullName = conductor.nombre || ''
+          if (!fullName) {
+            // If no 'nombre' field, try to build from apellido_paterno and nombres
+            const nombres = conductor.nombres || conductor.nombre_conductor || ''
+            const apellidoPaterno = conductor.apellido_paterno || ''
+            const apellidoMaterno = conductor.apellido_materno || ''
+            fullName = [apellidoPaterno, apellidoMaterno, nombres]
+              .filter(Boolean)
+              .join(' ')
+              .trim() || `Conductor ${conductor.rut || 'N/A'}`
+          }
+          
           return {
             ...conductor,
+            nombre: fullName,
             ejecutivo_nombre: subcontractor?.ejecutiva || subcontractor?.ejecutivo_nombre || 'Sin asignar',
             nombre_subcontratista: subcontractor?.razon_social || subcontractor?.nombre_fantasia || conductor.rut_proveedor || 'N/A',
           }
