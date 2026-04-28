@@ -67,14 +67,11 @@ export function DriverCard({
           if (driver.ejecutivo_nombre && !uploadingEjecutiva) {
             setUploadingEjecutiva(driver.ejecutivo_nombre)
           }
-          // Auto-select first document type (Licencia de Conducir if available)
+          // Auto-select Licencia de Conducir Profesional by default
           if (!uploadDocTypeId && data.documentTypes && data.documentTypes.length > 0) {
-            const licencia = data.documentTypes.find((dt: any) => dt.code === 'LICENCIA_CONDUCIR')
-            if (licencia) {
-              setUploadDocTypeId(licencia.id)
-            } else {
-              setUploadDocTypeId(data.documentTypes[0].id)
-            }
+            const conductorTypes = data.documentTypes.filter((dt: any) => !dt.category || dt.category === 'conductor')
+            const licencia = conductorTypes.find((dt: any) => dt.code === 'LICENCIA-CONDUCIR')
+            setUploadDocTypeId(licencia?.id || conductorTypes[0]?.id || data.documentTypes[0].id)
           }
         })
         .catch(err => {
@@ -430,11 +427,13 @@ export function DriverCard({
                   <option value="">
                     {loadingDocTypes ? 'Cargando tipos de documento...' : 'Selecciona un tipo de documento'}
                   </option>
-                  {documentTypes.map((docType) => (
-                    <option key={docType.id} value={docType.id}>
-                      {docType.name}
-                    </option>
-                  ))}
+                  {documentTypes
+                    .filter((dt) => !dt.category || dt.category === 'conductor')
+                    .map((docType) => (
+                      <option key={docType.id} value={docType.id}>
+                        {docType.name}
+                      </option>
+                    ))}
                 </select>
                 {documentTypes.length === 0 && !loadingDocTypes && (
                   <p className="text-xs text-red-400 mt-1">⚠️ No hay tipos de documento disponibles</p>
