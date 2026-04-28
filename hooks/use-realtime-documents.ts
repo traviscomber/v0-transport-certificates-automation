@@ -46,19 +46,21 @@ export function useRealtimeDocuments(driverRut: string) {
 
     // Extraer información del cambio
     const doc = change.new || change.old
-    const oldStatus = change.old?.verification_status
-    const newStatus = change.new?.verification_status
+    const oldStatus = change.old?.status
+    const newStatus = change.new?.status
+
+    console.log('[v0] Status change:', { oldStatus, newStatus, docType: doc?.document_type })
 
     // 1. Crear contexto compatible con ModuleContext
     const moduleContext = {
       userId: 'system', // Sistema automático
-      entityId: driverRut, // El conductor es la entidad
+      entityId: doc?.driver_rut || 'unknown', // El conductor es la entidad
       entityType: 'driver' as const,
-      entityName: doc.driver_name || 'Conductor desconocido',
+      entityName: doc?.driver_name || 'Conductor desconocido',
       timestamp: new Date(),
       metadata: {
         documentId: change.id,
-        documentType: doc.document_type,
+        documentType: doc?.document_type,
         changeType: change.type,
         oldStatus,
         newStatus,
@@ -72,13 +74,13 @@ export function useRealtimeDocuments(driverRut: string) {
       moduleContext,
       {
         documentId: change.id,
-        driverRut,
+        driverRut: doc?.driver_rut,
         oldStatus,
         newStatus,
-        documentType: doc.document_type,
-        expirationDate: doc.expiration_date,
-        uploadDate: doc.upload_date,
-        fileName: doc.file_name,
+        documentType: doc?.document_type,
+        expirationDate: doc?.expiration_date,
+        uploadDate: doc?.upload_date,
+        fileName: doc?.file_name,
       }
     )
 
@@ -137,7 +139,8 @@ export function useRealtimeDocuments(driverRut: string) {
       if (!client) return
 
       try {
-        // Escuchar cambios en tabla documentos
+        // Escuchar cambios en tabla driver_documents
+        console.log('[v0] Setting up realtime listener for driver:', driverRut)
         const subscription = client
           .channel('documents_changes')
           .on(
@@ -145,13 +148,19 @@ export function useRealtimeDocuments(driverRut: string) {
             {
               event: '*', // INSERT, UPDATE, DELETE
               schema: 'public',
-              table: 'documentos',
-              filter: `driver_rut=eq.${driverRut}`, // Solo documentos de este conductor
+              table: 'driver_documents', // Nombre correcto de la tabla
             },
             (payload: any) => {
               const newData = payload.new as any
               const oldData = payload.old as any
               
+              // Filtrar por driver_rut si es necesario
+              const changeDriverRut = newData?.driver_rut || oldData?.driver_rut
+              if (changeDriverRut !== driverRut) {
+                console.log('[v0] Ignoring change for different driver:', changeDriverRut)
+                return
+              }
+
               const change: RealtimeDocumentChange = {
                 id: newData?.id || oldData?.id || '',
                 type: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
@@ -160,15 +169,22 @@ export function useRealtimeDocuments(driverRut: string) {
               }
 
               if (change.id) {
+                console.log('[v0] Processing change:', change.type, change.id)
                 handleDocumentChange(change)
               }
             }
           )
           .subscribe((status) => {
-            console.log('[v0] Supabase realtime status:', status)
+            console.log('[v0] Supabase realtime subscription status:', status)
+            if (status === 'SUBSCRIBED') {
+              console.log('[v0] ✅ Successfully subscribed to document changes')
+            } else if (status === 'CHANNEL_ERROR') {
+              console.error('[v0] ❌ Error subscribing to document changes')
+            }
           })
 
         unsubscribeRef.current = () => {
+          console.log('[v0] Unsubscribing from document changes')
           client.removeChannel(subscription)
         }
       } catch (error) {
@@ -205,23 +221,25 @@ export function useDocumentStatusUpdate() {
       reason?: string
     ) => {
       try {
+        console.log('[v0] Updating document status:', { documentId, newStatus })
+        
         // 1. Actualizar en Supabase (dispara realtime)
-        const response = await fetch('/api/company/documents/update-status', {
+        const response = await fetch(`/api/company/documents/${documentId}/status`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            documentId,
             status: newStatus,
             reason,
           }),
         })
 
         if (!response.ok) {
-          throw new Error('Failed to update document status')
+          const error = await response.json()
+          throw new Error(error.error || 'Failed to update document status')
         }
 
         const result = await response.json()
-        console.log('[v0] Document status updated in DB:', result)
+        console.log('[v0] Document status updated successfully:', result)
 
         // 2. Emitir evento de actualización manual (desde UI)
         const updateContext = {
@@ -277,10 +295,6 @@ export function useRealtimeMultipleDrivers(driverRuts: string[]) {
     if (!client) return
 
     try {
-      const filters = driverRuts
-        .map((rut) => `driver_rut=eq.${rut}`)
-        .join(',')
-
       const subscription = client
         .channel('multi_documents_changes')
         .on(
@@ -288,15 +302,14 @@ export function useRealtimeMultipleDrivers(driverRuts: string[]) {
           {
             event: '*',
             schema: 'public',
-            table: 'documentos',
-            filter: filters,
+            table: 'driver_documents', // Tabla correcta
           },
           (payload: any) => {
             const newData = payload.new as any
             const oldData = payload.old as any
             
             const rut = newData?.driver_rut || oldData?.driver_rut
-            if (!rut) return
+            if (!rut || !driverRuts.includes(rut)) return
             
             const count = (changesRef.current.get(rut) || 0) + 1
             changesRef.current.set(rut, count)
@@ -305,7 +318,7 @@ export function useRealtimeMultipleDrivers(driverRuts: string[]) {
               `[v0] Document change for driver ${rut}: ${count} total changes`
             )
 
-          // Emitir al orquestador para procesamiento
+          // Emitir al orquestrador para procesamiento
             const bulkContext = {
               userId: 'system',
               entityId: 'bulk-update',
@@ -316,6 +329,32 @@ export function useRealtimeMultipleDrivers(driverRuts: string[]) {
                 affectedDrivers: Array.from(changesRef.current.keys()),
                 changesCounts: Object.fromEntries(changesRef.current),
               }
+            }
+
+            OrchestrationAPI.emitEvent(
+              'bulk_document_changes',
+              'documents',
+              bulkContext,
+              {}
+            )
+          }
+        )
+        .subscribe((status) => {
+          console.log('[v0] Multi-driver realtime subscription status:', status)
+        })
+
+      return () => {
+        client.removeChannel(subscription)
+      }
+    } catch (error) {
+      console.error('[v0] Error setting up multi-driver listener:', error)
+    }
+  }, [driverRuts])
+
+  return {
+    changeStats: Object.fromEntries(changesRef.current),
+  }
+}
             }
 
             OrchestrationAPI.emitEvent(
