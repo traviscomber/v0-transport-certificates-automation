@@ -324,16 +324,18 @@ export function TrackedCall(target: any, propertyKey: string, descriptor: Proper
 
   descriptor.value = async function (...args: any[]) {
     const startTime = Date.now()
+    const moduleName = (this as any)?.name || target.constructor?.name || 'Unknown'
+    
     try {
       const result = await originalMethod.apply(this, args)
       const duration = Date.now() - startTime
       console.log(
-        `[${this.name}] ${propertyKey} completed in ${duration}ms`
+        `[${moduleName}] ${propertyKey} completed in ${duration}ms`
       )
       return result
     } catch (error) {
       console.error(
-        `[${this.name}] ${propertyKey} failed:`,
+        `[${moduleName}] ${propertyKey} failed:`,
         error
       )
       throw error
