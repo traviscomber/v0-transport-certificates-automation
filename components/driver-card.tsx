@@ -58,7 +58,7 @@ export function DriverCard({
   const [loadingDocTypes, setLoadingDocTypes] = useState(false)
   const [selectedDocument, setSelectedDocument] = useState<any>(null)
   const [showDocumentModal, setShowDocumentModal] = useState(false)
-  const [refreshKey, setRefreshKey] = useState(0)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   // Fetch ejecutivas and document types when upload modal opens
   useEffect(() => {
@@ -233,14 +233,23 @@ export function DriverCard({
                       Documentos ({documents.length})
                     </span>
                     <button
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation()
-                        refetch(true)
+                        setIsRefreshing(true)
+                        try {
+                          await refetch(true)
+                          console.log('[v0] Documents refreshed successfully')
+                        } catch (error) {
+                          console.error('[v0] Error refreshing documents:', error)
+                        } finally {
+                          setIsRefreshing(false)
+                        }
                       }}
-                      className="ml-1 p-1 rounded hover:bg-slate-700/60 transition-colors"
+                      disabled={isRefreshing}
+                      className="ml-1 p-1 rounded hover:bg-slate-700/60 transition-colors disabled:opacity-50"
                       title="Refrescar documentos"
                     >
-                      <RefreshCw className="h-3 w-3 text-slate-500 hover:text-slate-300" />
+                      <RefreshCw className={`h-3 w-3 text-slate-500 hover:text-slate-300 ${isRefreshing ? 'animate-spin' : ''}`} />
                     </button>
                   </div>
                   <ChevronDown 
