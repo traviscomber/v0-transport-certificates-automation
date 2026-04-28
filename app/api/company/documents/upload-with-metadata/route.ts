@@ -1,53 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { allDriversData } from '@/lib/data/all-drivers'
 
 export const maxDuration = 300 // 5 minutes for file uploads
-
-const normalizeRUT = (rut: string) => rut.replace(/[^0-9kK]/g, '').toUpperCase()
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const driverIdOrRut = formData.get('driver_id') as string
+    // driver_id is '1','2','12' etc — NOT a UUID. Use driver_rut to resolve.
     const driverRut = formData.get('driver_rut') as string
     const documentTypeId = formData.get('document_type_id') as string
     const uploadedBy = formData.get('uploaded_by') as string
 
-    if (!file || !driverIdOrRut || !documentTypeId) {
+    if (!file || !driverRut || !documentTypeId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     const adminClient = createAdminClient()
 
-    // Resolve real UUID from conductores table by RUT
-    // driver_id from frontend is the static list index ("12"), not a real UUID
-    // We use driver_rut to look up the real UUID from the DB
-    const rutToLookup = driverRut || (() => {
-      const found = allDriversData.find(d => d.id === driverIdOrRut)
-      return found?.rut || null
-    })()
+    // Resolve real conductor UUID from conductores table by RUT
+    const { data: conductorRow, error: conductorError } = await adminClient
+      .from('conductores')
+      .select('id')
+      .eq('rut', driverRut)
+      .single()
 
-    let conductorUUID: string | null = null
-
-    if (rutToLookup) {
-      const normalizedRut = normalizeRUT(rutToLookup)
-      const { data: conductorRow } = await adminClient
-        .from('conductores')
-        .select('id')
-        .or(`rut.eq.${rutToLookup},rut.ilike.%${normalizedRut}%`)
-        .limit(1)
-        .single()
-      conductorUUID = conductorRow?.id || null
+    if (conductorError || !conductorRow?.id) {
+      return NextResponse.json({ error: 'Conductor no encontrado en la base de datos', details: `RUT ${driverRut} not found` }, { status: 400 })
     }
 
-    if (!conductorUUID) {
-      console.error('[v0] Could not resolve conductor UUID for driver_id:', driverIdOrRut, 'rut:', rutToLookup)
-      return NextResponse.json({ error: 'Conductor no encontrado en la base de datos', details: 'Could not resolve conductor UUID from RUT' }, { status: 400 })
-    }
+    const conductorUUID = conductorRow.id
 
-    // Upload file to storage using the real UUID path
     const fileName = `${Date.now()}_${file.name}`
     const storagePath = `drivers/${conductorUUID}/${fileName}`
 

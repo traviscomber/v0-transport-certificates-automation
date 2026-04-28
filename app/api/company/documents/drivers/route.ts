@@ -1,55 +1,37 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
-import { allDriversData } from '@/lib/data/all-drivers'
 
 export const dynamic = 'force-dynamic'
-
-const normalizeRUT = (rut: string) => {
-  return rut.replace(/[^0-9kK]/g, '').toUpperCase()
-}
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const driverIdParam = searchParams.get('driver_id') || searchParams.get('id')
-    const rutParam = searchParams.get('rut')
+    // driver_id in all-drivers.ts is '1','2','12' etc — NOT a UUID
+    // driver_rut is the reliable identifier to resolve the real conductor UUID
+    const driverRut = searchParams.get('driver_rut') || searchParams.get('rut')
 
-    if (!driverIdParam && !rutParam) {
-      return NextResponse.json({ error: 'Driver ID or RUT required' }, { status: 400 })
+    if (!driverRut) {
+      return NextResponse.json({ error: 'driver_rut required' }, { status: 400 })
     }
 
     const adminClient = await createAdminClient()
 
-    // Resolve the RUT: either from param or look up in allDriversData by static id
-    let rut = rutParam
-    if (!rut && driverIdParam) {
-      const found = allDriversData.find(d => d.id === driverIdParam)
-      rut = found?.rut || null
-    }
-
-    if (!rut) {
-      return NextResponse.json({ success: true, documents: [] }, {
-        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
-      })
-    }
-
-    // Strip formatting from RUT (e.g. "12457226-6" -> "124572266") to match DB format
-    const normalizedRut = normalizeRUT(rut)
-    // Try exact match first, then partial
-    const { data: conductorRow } = await adminClient
+    // Look up the real conductor UUID from the conductores table by RUT
+    const { data: conductorRow, error: conductorError } = await adminClient
       .from('conductores')
       .select('id')
-      .or(`rut.eq.${rut},rut.ilike.%${normalizedRut}%`)
-      .limit(1)
+      .eq('rut', driverRut)
       .single()
 
-    if (!conductorRow?.id) {
+    if (conductorError || !conductorRow?.id) {
+      // Return empty — conductor not yet in DB
       return NextResponse.json({ success: true, documents: [] }, {
         headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
       })
     }
 
     const conductorId = conductorRow.id
+
     const { data: dbDocuments, error: dbError } = await adminClient
       .from('uploaded_documents')
       .select('id, original_filename, document_type_id, file_url, file_path, created_at, validation_status, uploaded_by')

@@ -34,7 +34,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         'Expires': '0'
       } : {}
       
-      const response = await fetch(`/api/company/documents/drivers?driver_id=${encodeURIComponent(driverId)}${timestamp}`, {
+      const response = await fetch(`/api/company/documents/drivers?driver_rut=${encodeURIComponent(driverRut)}&driver_id=${encodeURIComponent(driverId)}${timestamp}`, {
         method: 'GET',
         headers,
         cache: skipCache ? 'no-store' : 'default'
