@@ -72,12 +72,21 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       }
 
       // Transformar respuesta de la API
+      // Map English validation_status values to Spanish estado for display
+      const statusMap: Record<string, string> = {
+        'approved': 'aprobado',
+        'rejected': 'rechazado',
+        'pending': 'pendiente',
+        'expired': 'vencido',
+        'validated': 'aprobado', // legacy value
+      }
+
       const transformedDocs = (result.documents || []).map((doc: any) => ({
         id: doc.id,
         driver_rut: doc.driver_rut || '',
         tipo: doc.document_type || 'Documento',
         nombre: doc.original_filename || doc.file_name || '',
-        estado: doc.validation_status === 'validated' ? 'aprobado' : 'pendiente',
+        estado: statusMap[doc.validation_status] || 'pendiente',
         fecha_subida: doc.created_at || new Date().toISOString(),
         public_url: doc.file_url || doc.public_url,
         storage_path: doc.file_path || doc.storage_path,
