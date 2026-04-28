@@ -57,43 +57,32 @@ export default function MetricsPage() {
   const fetchMetrics = async () => {
     setLoading(true)
     try {
-      // Fetch from /api/dashboard/data which has all the real data
-      const response = await fetch('/api/dashboard/data', {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
-      })
-      const data = await response.json()
-      
-      // Extract ejecutivas from dashboard data
-      const ejecutivas = data.dashboard?.ejecutivas || []
-      const conductores = data.dashboard?.conductores || []
-      const transportistas = data.dashboard?.transportistas || []
-
-      // Get document metrics
+      // Get document metrics which now includes all executives
       const metricsResponse = await fetch(`/api/company/metrics?range=${timeRange}`)
       const metricsData = await metricsResponse.json()
 
-      // Combine real data (ejecutivas) with metrics (validated documents)
-      const executivesMetrics: ExecutiveMetrics[] = ejecutivas.map((exec: any) => {
-        const execMetrics = metricsData.executives?.find((m: any) => 
-          m.ejecutiva?.toLowerCase() === exec.nombre?.toLowerCase() || 
-          m.ejecutiva?.toLowerCase() === exec.full_name?.toLowerCase()
-        )
-        return {
-          ejecutiva: exec.nombre || exec.full_name || 'Sin nombre',
-          documentos_procesados: execMetrics?.documentos_procesados || 0,
-          documentos_validados: execMetrics?.documentos_validados || 0,
-          tasa_validacion: execMetrics?.tasa_validacion || '0%',
-          tiempo_promedio: execMetrics?.tiempo_promedio || '—',
-        }
+      console.log('[v0] Metrics data:', metricsData)
+
+      // Fetch from /api/dashboard/data for counts
+      const dashboardResponse = await fetch('/api/dashboard/data', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
       })
+      const dashboardData = await dashboardResponse.json()
+      const conductores = dashboardData.dashboard?.conductores || []
+      const transportistas = dashboardData.dashboard?.transportistas || []
+
+      // Use metrics data directly - API already has all executives with proper formatting
+      const executivesMetrics: ExecutiveMetrics[] = metricsData.executives || []
+
+      console.log('[v0] Executives metrics:', executivesMetrics)
 
       // Update summary with real counts
       setSummary({
         total_documentos: metricsData.summary?.total_documentos || 0,
         total_validados: metricsData.summary?.total_validados || 0,
-        total_conductores: conductores.length,
-        total_subcontratistas: transportistas.length,
+        total_conductores: metricsData.summary?.total_conductores || conductores.length || 0,
+        total_subcontratistas: metricsData.summary?.total_subcontratistas || transportistas.length || 0,
       })
 
       setMetrics(executivesMetrics)

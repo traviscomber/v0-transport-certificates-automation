@@ -39,6 +39,8 @@ export async function GET(request: NextRequest) {
 
     // Get executives from company API
     let executives: any[] = []
+    let totalConductores = 0
+    let totalSubcontratistas = 0
     try {
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
       const companyDataRes = await fetch(`${siteUrl}/api/company/data`, { 
@@ -48,7 +50,19 @@ export async function GET(request: NextRequest) {
       if (!companyDataRes.ok) throw new Error('Failed to fetch company data')
       const companyData = await companyDataRes.json()
       executives = companyData.executives || []
-      console.log('[v0] Loaded executives:', executives.length)
+      
+      // Also try to get counts from dashboard data
+      const dashboardRes = await fetch(`${siteUrl}/api/dashboard/data`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      })
+      if (dashboardRes.ok) {
+        const dashboardData = await dashboardRes.json()
+        totalConductores = dashboardData.dashboard?.stats?.totalConductores || dashboardData.dashboard?.conductores?.length || 0
+        totalSubcontratistas = dashboardData.dashboard?.stats?.totalTransportistas || dashboardData.dashboard?.transportistas?.length || 0
+      }
+      
+      console.log('[v0] Loaded executives:', executives.length, 'conductores:', totalConductores, 'subcontratistas:', totalSubcontratistas)
     } catch (error) {
       console.error('[v0] Failed to fetch executives:', error)
       executives = []
@@ -100,8 +114,8 @@ export async function GET(request: NextRequest) {
     const summary = {
       total_documentos: totalDocuments,
       total_validados: totalValidated,
-      total_conductores: 0,
-      total_subcontratistas: 0,
+      total_conductores: totalConductores,
+      total_subcontratistas: totalSubcontratistas,
     }
 
     console.log('[v0] Metrics response:', { executives: executivesMetrics.length, summary })
