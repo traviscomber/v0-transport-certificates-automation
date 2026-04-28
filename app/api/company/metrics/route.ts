@@ -23,26 +23,27 @@ export async function GET(request: NextRequest) {
     startDate.setDate(startDate.getDate() - daysBack)
     startDate.setHours(0, 0, 0, 0)
 
-    // Fetch certificates with validation data
-    const { data: certificates, error } = await (supabase as any)
-      .from('certificates')
-      .select('id, status, driver_id, validated_at, created_at')
+    console.log('[v0] Fetching metrics for range:', range, 'from', startDate.toISOString())
+
+    // Fetch uploaded_documents with validation data (has validated_by, validated_at, validation_status)
+    const { data: documents, error } = await (supabase as any)
+      .from('uploaded_documents')
+      .select('id, validation_status, validated_by, validated_at, created_at')
       .not('validated_at', 'is', null)
       .gte('validated_at', startDate.toISOString())
 
     if (error) {
-      console.error('[v0] Error fetching certificates:', error)
-      console.error('[v0] Error details:', { code: error.code, message: error.message })
+      console.error('[v0] Error fetching documents:', error)
       return NextResponse.json(
-        { error: 'Failed to fetch metrics: ' + error.message, details: error },
+        { error: 'Failed to fetch metrics: ' + error.message },
         { status: 500 }
       )
     }
 
-    console.log('[v0] Fetched certificates:', certificates?.length || 0)
+    console.log('[v0] Fetched documents:', documents?.length || 0)
 
-    // If no certificates, return empty metrics
-    if (!certificates || certificates.length === 0) {
+    // If no documents, return empty metrics
+    if (!documents || documents.length === 0) {
       return NextResponse.json({
         executives: [],
         summary: {
@@ -54,57 +55,59 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Get driver info to map to executives
-    const driverIds = [...new Set(certificates.map((c: any) => c.driver_id))]
-    const { data: drivers, error: driversError } = await (supabase as any)
-      .from('drivers')
-      .select('id, nombre, ejecutivo_nombre')
-      .in('id', driverIds)
+    // Get profile info for validated_by executivas
+    const validatedByIds = [...new Set(documents.map((d: any) => d.validated_by).filter(Boolean))]
+    const { data: profiles, error: profilesError } = await (supabase as any)
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', validatedByIds)
 
-    if (driversError) {
-      console.error('[v0] Error fetching drivers:', driversError)
+    if (profilesError) {
+      console.error('[v0] Error fetching profiles:', profilesError)
     }
 
-    const driverMap = new Map(drivers?.map((d: any) => [d.id, d]) || [])
+    const profileMap = new Map(profiles?.map((p: any) => [p.id, p]) || [])
 
-    // Process metrics grouped by executive
+    // Process metrics grouped by executive (validated_by)
     const metricsMap = new Map<string, any>()
-    let totalApprovals = 0
+    let totalValidated = 0
     let totalDocuments = 0
     let totalValidationTime = 0
 
-    certificates.forEach((cert: any) => {
-      const driver = driverMap.get(cert.driver_id)
-      const executiveName = driver?.ejecutivo_nombre || 'Sin ejecutiva'
+    documents.forEach((doc: any) => {
+      if (!doc.validated_by) return
+
+      const profile = profileMap.get(doc.validated_by)
+      const executiveName = profile?.full_name || doc.validated_by
 
       totalDocuments++
-      if (cert.status === 'approved') totalApprovals++
+      if (doc.validation_status === 'validated') totalValidated++
 
       // Calculate validation time
-      if (cert.created_at && cert.validated_at) {
-        const createdTime = new Date(cert.created_at).getTime()
-        const validatedTime = new Date(cert.validated_at).getTime()
+      if (doc.created_at && doc.validated_at) {
+        const createdTime = new Date(doc.created_at).getTime()
+        const validatedTime = new Date(doc.validated_at).getTime()
         const timeSeconds = Math.round((validatedTime - createdTime) / 1000)
         totalValidationTime += timeSeconds
       }
 
-      if (!metricsMap.has(executiveName)) {
-        metricsMap.set(executiveName, {
-          executive_id: executiveName,
+      if (!metricsMap.has(doc.validated_by)) {
+        metricsMap.set(doc.validated_by, {
+          executive_id: doc.validated_by,
           executive_name: executiveName,
           documents_processed: 0,
-          approved: 0,
+          validated_count: 0,
           total_validation_time: 0,
         })
       }
 
-      const metrics = metricsMap.get(executiveName)
+      const metrics = metricsMap.get(doc.validated_by)
       metrics.documents_processed++
-      if (cert.status === 'approved') metrics.approved++
+      if (doc.validation_status === 'validated') metrics.validated_count++
 
-      if (cert.created_at && cert.validated_at) {
-        const createdTime = new Date(cert.created_at).getTime()
-        const validatedTime = new Date(cert.validated_at).getTime()
+      if (doc.created_at && doc.validated_at) {
+        const createdTime = new Date(doc.created_at).getTime()
+        const validatedTime = new Date(doc.validated_at).getTime()
         const timeSeconds = Math.round((validatedTime - createdTime) / 1000)
         metrics.total_validation_time += timeSeconds
       }
@@ -116,19 +119,19 @@ export async function GET(request: NextRequest) {
       executive_name: m.executive_name,
       documents_processed: m.documents_processed,
       approval_rate: m.documents_processed > 0 
-        ? Math.round((m.approved / m.documents_processed) * 100) 
+        ? Math.round((m.validated_count / m.documents_processed) * 100) 
         : 0,
       avg_validation_time: m.documents_processed > 0
         ? Math.round(m.total_validation_time / m.documents_processed)
         : 0,
-      avg_ai_confidence: 0, // Placeholder - will be updated when AI fields are added
+      avg_ai_confidence: 0,
     }))
 
     const summary = {
       total_documents: totalDocuments,
-      documents_increase: 0, // TODO: Calculate from previous period
+      documents_increase: 0,
       avg_approval_rate: totalDocuments > 0 
-        ? Math.round((totalApprovals / totalDocuments) * 100)
+        ? Math.round((totalValidated / totalDocuments) * 100)
         : 0,
       avg_validation_time: totalDocuments > 0
         ? Math.round(totalValidationTime / totalDocuments)
