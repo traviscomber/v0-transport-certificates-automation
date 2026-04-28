@@ -27,7 +27,6 @@ export function useDriverDocuments(driverRut: string, enabled = false) {
     setLoading(true)
     setError(null)
     try {
-      console.log('[v0] Fetching driver documents from API:', driverRut)
       const timestamp = skipCache ? `&_t=${Date.now()}` : ''
       const headers: HeadersInit = skipCache ? {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -93,15 +92,12 @@ export function useDriverDocuments(driverRut: string, enabled = false) {
     uploadedBy?: string
   ) => {
     try {
-      console.log('[v0] Uploading document:', { driverRut, tipo, file: file.name, uploadedBy })
-      
       // Use provided uploadedBy or get from authenticated user
       let uploaderName = uploadedBy
       if (!uploaderName) {
         const { data: { user } } = await supabase.auth.getUser()
         uploaderName = user?.user_metadata?.full_name || user?.email || 'Unknown'
       }
-      console.log('[v0] Uploader name:', uploaderName)
       
       const formData = new FormData()
       formData.append('file', file)

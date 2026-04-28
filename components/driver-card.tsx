@@ -58,7 +58,6 @@ export function DriverCard({
       fetch('/api/company/data')
         .then(res => res.json())
         .then(data => {
-          console.log('[v0] Ejecutivas fetched:', data.executives)
           setEjecutivas(data.executives || [])
           // Auto-select driver's ejecutivo if available
           if (driver.ejecutivo_nombre && !uploadingEjecutiva) {
@@ -71,26 +70,22 @@ export function DriverCard({
         .finally(() => setLoadingEjecutivas(false))
     }
   }, [showUploadModal, ejecutivas.length, driver.ejecutivo_nombre, uploadingEjecutiva])
+
+  const handleUpload = async () => {
     if (!uploadFileName.trim() || !uploadFile) {
-      console.log('[v0] Upload blocked - missing fields:', { hasFileName: !!uploadFileName.trim(), hasFile: !!uploadFile })
       setUploadError('Por favor selecciona un archivo')
       return
     }
 
     if (!uploadingEjecutiva) {
-      console.log('[v0] Upload blocked - no ejecutiva selected')
       setUploadError('Por favor selecciona la ejecutiva que sube el documento')
       return
     }
 
-    console.log('[v0] handleUpload triggered for:', { driver: driver.rut, fileName: uploadFileName, fileSize: uploadFile.size, ejecutiva: uploadingEjecutiva })
     setUploading(true)
     setUploadError('')
     try {
-      console.log('[v0] Calling uploadDocument with:', { driverId: driver.id, tipo: uploadDocType, nombre: uploadFileName, fileSize: uploadFile.size, uploadedBy: uploadingEjecutiva })
       await uploadDocument(uploadDocType, uploadFileName, uploadFile, undefined, uploadingEjecutiva)
-      console.log('[v0] uploadDocument returned successfully')
-      console.log('[v0] Upload completado, documentos después de refetch:', { docsLength: documents.length })
       
       // Wait a moment for React state to update
       await new Promise(resolve => setTimeout(resolve, 200))
@@ -102,10 +97,7 @@ export function DriverCard({
       setUploadingEjecutiva('')
       
       // Force re-render by incrementing key
-      console.log('[v0] Incrementing refresh key to force re-render')
       setRefreshKey(prev => prev + 1)
-      
-      console.log('[v0] Modal cerrado, contador debería estar actualizado')
       
       // Show success message
       if (typeof window !== 'undefined') {
@@ -114,7 +106,6 @@ export function DriverCard({
         successMsg.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100] animate-in'
         successMsg.textContent = `✅ Documento "${uploadFileName}" subido exitosamente`
         document.body.appendChild(successMsg)
-        console.log('[v0] Success toast created')
         setTimeout(() => {
           successMsg.remove()
         }, 3000)
@@ -122,7 +113,6 @@ export function DriverCard({
       
       // Dispatch event to notify other components about the new document
       if (typeof window !== 'undefined') {
-        console.log('[v0] Dispatching documentStatusChanged event after upload')
         window.dispatchEvent(new Event('documentStatusChanged'))
       }
     } catch (error) {
