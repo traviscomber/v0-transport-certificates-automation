@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useDocumentManagement } from '@/hooks/use-document-management'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -35,6 +35,9 @@ export function DocumentManagementPanel({
   const [expirationDate, setExpirationDate] = useState(document.expiration_date || '')
   const [selectedStatus, setSelectedStatus] = useState(document.status || 'pending')
   const [changeReason, setChangeReason] = useState('')
+  const [selectedEjecutiva, setSelectedEjecutiva] = useState('')
+  const [ejecutivas, setEjecutivas] = useState<Array<{ id: string; full_name: string }>>([])
+  const [loadingEjecutivas, setLoadingEjecutivas] = useState(true)
 
   const statusOptions = [
     { value: 'pending', label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800' },
@@ -43,13 +46,37 @@ export function DocumentManagementPanel({
     { value: 'expired', label: 'Vencido', color: 'bg-gray-100 text-gray-800' }
   ]
 
+  // Fetch ejecutivas when component mounts
+  useEffect(() => {
+    const fetchEjecutivas = async () => {
+      try {
+        setLoadingEjecutivas(true)
+        const response = await fetch('/api/company/data')
+        if (response.ok) {
+          const data = await response.json()
+          setEjecutivas(data.executives || [])
+        }
+      } catch (error) {
+        console.error('[v0] Error fetching ejecutivas:', error)
+      } finally {
+        setLoadingEjecutivas(false)
+      }
+    }
+    fetchEjecutivas()
+  }, [])
+
   const handleChangeStatus = async () => {
+    // Require ejecutiva selection if changing from pending
+    if (selectedStatus !== 'pending' && !selectedEjecutiva) {
+      alert('Debes seleccionar una ejecutiva para validar el documento')
+      return
+    }
+    
     try {
       await changeStatus(document.id, selectedStatus, changeReason)
       setChangeReason('')
       
-      // Disparar evento para que otras componentes se enteren del cambio
-      console.log('[v0] Dispatching documentStatusChanged event')
+      console.log('[v0] Document validated by:', selectedEjecutiva, 'New status:', selectedStatus)
       window.dispatchEvent(new Event('documentStatusChanged'))
       
       onUpdate?.()
@@ -97,6 +124,29 @@ export function DocumentManagementPanel({
               {statusOptions.find(s => s.value === document.status)?.label || 'Pendiente'}
             </Badge>
           </div>
+        </div>
+
+        {/* Seleccionar Ejecutiva para Validación */}
+        <div className="space-y-3 border-t pt-4">
+          <label className="text-sm font-medium">Ejecutiva que Valida</label>
+          <div className="flex gap-2">
+            <select
+              value={selectedEjecutiva}
+              onChange={(e) => setSelectedEjecutiva(e.target.value)}
+              disabled={loadingEjecutivas || selectedStatus === 'pending'}
+              className="flex-1 px-3 py-2 border rounded-md text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value="">
+                {loadingEjecutivas ? 'Cargando...' : 'Selecciona una ejecutiva'}
+              </option>
+              {ejecutivas.map((exec) => (
+                <option key={exec.id} value={exec.full_name}>
+                  {exec.full_name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <p className="text-xs text-gray-500">Requerido si cambias el estado a aprobado o rechazado</p>
         </div>
 
         {/* Cambiar Estado */}
