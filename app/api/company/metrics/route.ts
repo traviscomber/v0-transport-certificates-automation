@@ -2,34 +2,14 @@ export const dynamic = 'force-dynamic'
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   try {
     const adminClient = createAdminClient()
 
-    // Get company_id from query params or cookies
+    // Get company_id/transportista_id from query params
     const searchParams = request.nextUrl.searchParams
-    let companyId = searchParams.get('company_id')
-    
-    if (!companyId) {
-      const cookieStore = await cookies()
-      companyId = cookieStore.get('company_id')?.value
-    }
-
-    // If no company_id, return empty metrics (for public /admin/metrics page)
-    if (!companyId) {
-      console.log('[v0] No company_id provided, returning empty metrics')
-      return NextResponse.json({
-        executives: [],
-        summary: {
-          total_documents: 0,
-          documents_increase: 0,
-          avg_approval_rate: 0,
-          avg_validation_time: 0,
-        },
-      })
-    }
+    let transportistaId = searchParams.get('company_id') || searchParams.get('transportista_id')
 
     const range = searchParams.get('range') || 'week'
 
@@ -42,14 +22,38 @@ export async function GET(request: NextRequest) {
     startDate.setDate(startDate.getDate() - daysBack)
     startDate.setHours(0, 0, 0, 0)
 
-    console.log('[v0] Fetching metrics for company:', companyId, 'range:', range, 'from:', startDate.toISOString())
+    console.log('[v0] Fetching metrics for transportista:', transportistaId, 'range:', range)
 
-    // Step 1: Get executives for this company - need to join with transportistas table
-    // since executive_staff.transportista_id links to transportistas(id)
+    // If no transportista specified, get Labbe (Transportes Labbe Hermanos Limitada)
+    if (!transportistaId) {
+      const { data: labbe, error: labbeError } = await adminClient
+        .from('transportistas')
+        .select('id')
+        .or('nombre_fantasia.eq.Transportes Labbe,razon_social.eq.Transportes Labbe Hermanos Limitada,rut.eq.78.376.780-5')
+        .single()
+
+      if (labbeError || !labbe) {
+        console.error('[v0] Error finding Labbe transportista:', labbeError)
+        return NextResponse.json({
+          executives: [],
+          summary: {
+            total_documents: 0,
+            documents_increase: 0,
+            avg_approval_rate: 0,
+            avg_validation_time: 0,
+          },
+        })
+      }
+      transportistaId = labbe.id
+      console.log('[v0] Found Labbe transportista ID:', transportistaId)
+    }
+
+    // Step 1: Get executives for this transportista
     const { data: executives, error: execError } = await adminClient
       .from('executive_staff')
       .select('id, full_name, rut, email, cargo, transportista_id')
       .eq('cargo', 'Ejecutiva')
+      .eq('transportista_id', transportistaId)
 
     if (execError) {
       console.error('[v0] Error fetching executives:', execError)
@@ -72,10 +76,8 @@ export async function GET(request: NextRequest) {
       .select('id')
       .eq('id', companyId)
       .single()
-
-    if (transportError || !transportista) {
-      console.error('[v0] Error fetching transportista:', transportError)
-      // If company doesn't exist, still return empty metrics gracefully
+    if (execError) {
+      console.error('[v0] Error fetching executives:', execError)
       return NextResponse.json({
         executives: [],
         summary: {
@@ -87,14 +89,9 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Filter executives to only those belonging to this transportista (company)
-    const filteredExecutives = executives.filter(
-      (exec: any) => exec.transportista_id === companyId
-    )
+    console.log('[v0] Found executives:', executives?.length || 0)
 
-    console.log('[v0] Found executives for transportista:', filteredExecutives?.length || 0)
-
-    if (!filteredExecutives || filteredExecutives.length === 0) {
+    if (!executives || executives.length === 0) {
       return NextResponse.json({
         executives: [],
         summary: {
@@ -106,11 +103,11 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Step 2: Get documents from this company
+    // Step 2: Get documents from this transportista
     const { data: documents, error: docsError } = await adminClient
       .from('uploaded_documents')
       .select('*')
-      .eq('company_id', companyId)
+      .eq('transportista_id', transportistaId)
       .gte('created_at', startDate.toISOString())
 
     console.log('[v0] Fetched documents:', documents?.length || 0, 'error:', docsError?.message)
@@ -118,8 +115,8 @@ export async function GET(request: NextRequest) {
     // Step 3: Build metrics for each executive
     const metricsMap = new Map<string, any>()
 
-    // Initialize all executives with 0 metrics (only filtered executives)
-    filteredExecutives.forEach((exec: any) => {
+    // Initialize all executives with 0 metrics
+    executives.forEach((exec: any) => {
       metricsMap.set(exec.id, {
         executive_id: exec.id,
         executive_name: exec.full_name,
@@ -140,12 +137,12 @@ export async function GET(request: NextRequest) {
         const validatedBy = doc.validated_by || doc.executor_id || doc.reviewed_by
         if (!validatedBy) return
 
-        // Find matching executive by ID (only from filtered list)
-        let matchingExec = filteredExecutives.find((e: any) => e.id === validatedBy)
+        // Find matching executive by ID
+        let matchingExec = executives.find((e: any) => e.id === validatedBy)
 
-        // If not found by ID, try by email (only from filtered list)
+        // If not found by ID, try by email
         if (!matchingExec && doc.validated_by_email) {
-          matchingExec = filteredExecutives.find((e: any) => e.email === doc.validated_by_email)
+          matchingExec = executives.find((e: any) => e.email === doc.validated_by_email)
         }
 
         if (!matchingExec) return
