@@ -76,6 +76,8 @@ export async function PATCH(
       .single()
 
     // STEP 2: Update driver_documents.status — single source of truth for UI
+    console.log('[v0] Executing UPDATE query for document:', documentId, 'to status:', spanishStatus)
+    
     const { error: updateError, data: updateData } = await adminClient
       .from('driver_documents')
       .update({ 
@@ -90,11 +92,17 @@ export async function PATCH(
       return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
 
-    console.log('[v0] ✅ Status update successful:', { 
+    console.log('[v0] ✅ UPDATE executed successfully:', { 
       documentId, 
       from: documentBefore?.status, 
-      to: spanishStatus 
+      to: spanishStatus,
+      rowsUpdated: updateData?.length || 0,
+      responseData: updateData
     })
+
+    // Small delay to ensure Supabase broadcast is queued
+    await new Promise(resolve => setTimeout(resolve, 100))
+    console.log('[v0] ⏳ Broadcast delay completed')
 
     // STEP 3: Emit event to orchestration system (non-blocking)
     emitToOrchestrator(documentId, spanishStatus, reason).catch(err => {

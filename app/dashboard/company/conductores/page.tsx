@@ -54,45 +54,112 @@ export default function ConductoresPage() {
     const client = createClient()
     if (!client) return
 
-    console.log('[v0] Setting up realtime listener for driver_documents changes')
+    console.log('[v0] 🔌 Setting up realtime listener on conductores page')
 
-    // Escuchar cambios en tabla driver_documents
-    const subscription = client
-      .channel('conductores_documents_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'driver_documents',
-        },
-        (payload: any) => {
-          console.log('[v0] Document change detected in conductores page:', payload.eventType, payload.new?.id)
-          // Refetch drivers cuando cambia un documento
-          mutate()
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('[v0] ✅ Subscribed to driver_documents realtime changes')
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('[v0] ❌ Error subscribing to driver_documents changes')
-        }
-      })
+    let subscription: any = null
+    let timeoutId: NodeJS.Timeout
 
-    // Listen for custom event when status changes
+    const setupListener = () => {
+      // Escuchar cambios en tabla driver_documents
+      subscription = client
+        .channel('public:driver_documents')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'driver_documents',
+          },
+          (payload: any) => {
+            console.log('[v0] 📨 Document change received:', {
+              event: payload.eventType,
+              docId: payload.new?.id || payload.old?.id,
+              status: payload.new?.status || payload.old?.status,
+            })
+            
+            // Refetch drivers cuando cambia un documento
+            console.log('[v0] ⏳ Refetching drivers list...')
+            mutate()
+          }
+        )
+        .subscribe((status: string) => {
+          console.log('[v0] Subscription status:', status)
+          if (status === 'SUBSCRIBED') {
+            console.log('[v0] ✅ Successfully subscribed to driver_documents')
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('[v0] ❌ Channel error, retrying in 3s...')
+            timeoutId = setTimeout(setupListener, 3000)
+          } else if (status === 'CLOSED') {
+            console.warn('[v0] Channel closed, attempting to resubscribe...')
+            timeoutId = setTimeout(setupListener, 1000)
+          }
+        })
+    }
+
+    setupListener()
+
+    // Listen for custom event when status changes (backup mechanism)
     const handleStatusChange = () => {
-      console.log('[v0] Document status changed event, refetching drivers list...')
+      console.log('[v0] 🎯 Custom documentStatusChanged event, refetching...')
       mutate()
     }
 
     window.addEventListener('documentStatusChanged', handleStatusChange)
 
     return () => {
-      client.removeChannel(subscription)
+      console.log('[v0] Cleaning up realtime listener')
+      if (timeoutId) clearTimeout(timeoutId)
+      if (subscription) client.removeChannel(subscription)
       window.removeEventListener('documentStatusChanged', handleStatusChange)
     }
   }, [mutate])
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Gestión de Conductores</h1>
+        <p className="text-muted-foreground">
+          Administra y visualiza los conductores de LABBE ({drivers.length} total)
+        </p>
+      </div>
+
+      <HelpBox
+        variant="info"
+        title="Gestión de Conductores"
+        description="Accede a la información de los conductores operacionales. Puedes buscar, editar y gestionar datos de conductores y sus vehículos."
+        tips={[
+          "Busca conductores por nombre, RUT o proveedor",
+          "Filtra por proveedor para ver conductores asociados",
+          "Cada conductor tiene información de vehículos (patentes)",
+          "Mantén actualizada la información de contacto de los conductores",
+        ]}
+      />
+
+      {isLoading ? (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Cargando conductores...</p>
+        </div>
+      ) : error ? (
+        <div className="text-center py-8">
+          <p className="text-red-500">Error cargando conductores</p>
+          <p className="text-red-400 text-sm mt-2">{error?.message || 'Error desconocido'}</p>
+          <button
+            onClick={() => mutate()}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Reintentar
+          </button>
+        </div>
+      ) : drivers.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">No hay conductores disponibles</p>
+        </div>
+      ) : (
+        <DriversList drivers={drivers} />
+      )}
+    </div>
+  )
+}
 
   return (
     <div className="space-y-6">
