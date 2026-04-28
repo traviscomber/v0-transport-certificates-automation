@@ -13,7 +13,7 @@ export interface DriverDocument {
   uploaded_by?: string
 }
 
-export function useDriverDocuments(driverRut: string, enabled = false) {
+export function useDriverDocuments(driverId: string, enabled = false) {
   const [documents, setDocuments] = useState<DriverDocument[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -22,7 +22,7 @@ export function useDriverDocuments(driverRut: string, enabled = false) {
 
   // Cargar documentos usando la API unificada
   const fetchDocuments = async (skipCache = false) => {
-    if (!driverRut) return
+    if (!driverId) return
     
     setLoading(true)
     setError(null)
@@ -34,7 +34,7 @@ export function useDriverDocuments(driverRut: string, enabled = false) {
         'Expires': '0'
       } : {}
       
-      const response = await fetch(`/api/company/documents/drivers?rut=${encodeURIComponent(driverRut)}${timestamp}`, {
+      const response = await fetch(`/api/company/documents/drivers?driver_id=${encodeURIComponent(driverId)}${timestamp}`, {
         method: 'GET',
         headers,
         cache: skipCache ? 'no-store' : 'default'
@@ -62,7 +62,7 @@ export function useDriverDocuments(driverRut: string, enabled = false) {
       // Transformar respuesta de la API
       const transformedDocs = (result.documents || []).map((doc: any) => ({
         id: doc.id,
-        driver_rut: driverRut,
+        driver_rut: doc.driver_rut || '',
         tipo: doc.document_type || 'Documento',
         nombre: doc.original_filename || doc.file_name || '',
         estado: doc.validation_status === 'validated' ? 'aprobado' : 'pendiente',
@@ -101,7 +101,7 @@ export function useDriverDocuments(driverRut: string, enabled = false) {
       
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('driver_id', driverRut)
+      formData.append('driver_id', driverId)
       formData.append('document_type_id', tipo || 'general')
       formData.append('uploaded_by', uploaderName || '')
       const metadata: any = {}
@@ -187,23 +187,23 @@ export function useDriverDocuments(driverRut: string, enabled = false) {
 
   // Solo cargar cuando está habilitado (e.g. la tarjeta está expandida)
   useEffect(() => {
-    if (driverRut && enabled) {
+    if (driverId && enabled) {
       fetchDocuments()
       
       // Configurar suscripción en tiempo real
-      console.log('[v0] Setting up realtime subscription for driver documents:', driverRut)
+      console.log('[v0] Setting up realtime subscription for driver documents:', driverId)
       const channel = supabase
-        .channel(`driver_docs_${driverRut}`)
+        .channel(`driver_docs_${driverId}`)
         .on(
           'postgres_changes',
           {
             event: '*',
             schema: 'public',
             table: 'uploaded_documents',
-            filter: `conductor_id=eq.${driverRut}`,
+            filter: `conductor_id=eq.${driverId}`,
           },
           (payload) => {
-            console.log('[v0] Document change detected for driver:', driverRut, payload.eventType)
+            console.log('[v0] Document change detected for driver:', driverId, payload.eventType)
             // Refetch cuando hay cambios
             fetchDocuments(true)
           }
@@ -220,7 +220,7 @@ export function useDriverDocuments(driverRut: string, enabled = false) {
         }
       }
     }
-  }, [driverRut, enabled, supabase])
+  }, [driverId, enabled, supabase])
 
   return {
     documents,

@@ -11,36 +11,40 @@ const normalizeRUT = (rut: string) => {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
+    const driverId = searchParams.get('driver_id') || searchParams.get('id')
     const rut = searchParams.get('rut')
 
-    if (!rut) {
-      return NextResponse.json({ error: 'Driver RUT required' }, { status: 400 })
+    if (!driverId && !rut) {
+      return NextResponse.json({ error: 'Driver ID or RUT required' }, { status: 400 })
     }
 
-    const normalizedInputRut = normalizeRUT(rut)
+    let conductorId = driverId
 
-    // Find driver in allDriversData (source of truth for conductores)
-    const driver = allDriversData.find(d => normalizeRUT(d.rut) === normalizedInputRut)
-
-    if (!driver) {
-      return NextResponse.json({ success: true, driver_rut: rut, documents: [] }, {
-        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
-      })
+    // If RUT is provided, find the driver to get their UUID
+    if (!driverId && rut) {
+      const normalizedInputRut = normalizeRUT(rut)
+      const driver = allDriversData.find(d => normalizeRUT(d.rut) === normalizedInputRut)
+      if (!driver) {
+        return NextResponse.json({ success: true, driver_rut: rut, documents: [] }, {
+          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+        })
+      }
+      conductorId = driver.id
     }
 
     const adminClient = await createAdminClient()
 
-    // Query uploaded_documents table using conductor_id (which is the driver RUT)
-    console.log('[v0] Querying uploaded_documents for conductor:', rut)
+    // Query uploaded_documents table using conductor_id (UUID)
+    console.log('[v0] Querying uploaded_documents for conductor_id:', conductorId)
     const { data: dbDocuments, error: dbError } = await adminClient
       .from('uploaded_documents')
       .select('id, original_filename, document_type_id, file_url, file_path, created_at, validation_status, uploaded_by')
-      .eq('conductor_id', rut)
+      .eq('conductor_id', conductorId)
       .order('created_at', { ascending: false })
 
     if (dbError) {
       console.error('[v0] Error querying uploaded_documents:', dbError.message)
-      return NextResponse.json({ success: true, driver_rut: rut, documents: [] }, {
+      return NextResponse.json({ success: true, documents: [] }, {
         headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
       })
     }

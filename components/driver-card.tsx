@@ -36,7 +36,7 @@ export function DriverCard({
   getDocumentStatusLabel,
 }: DriverCardProps) {
   const isExpanded = expandedDocuments.has(driver.id)
-  const { documents, loading, uploadDocument, refetch, updateDocumentStatus } = useDriverDocuments(driver.rut, isExpanded)
+  const { documents, loading, uploadDocument, refetch, updateDocumentStatus } = useDriverDocuments(driver.id, isExpanded)
 
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [uploadDocType, setUploadDocType] = useState('Licencia de Conducir')
