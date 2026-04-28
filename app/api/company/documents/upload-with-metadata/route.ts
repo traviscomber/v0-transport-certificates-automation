@@ -1,25 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { allDriversData } from '@/lib/data/all-drivers'
 
 export const maxDuration = 300 // 5 minutes for file uploads
+
+const normalizeRUT = (rut: string) => rut.replace(/[^0-9kK]/g, '').toUpperCase()
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const driverId = formData.get('driver_id') as string
+    const driverIdOrRut = formData.get('driver_id') as string
+    const driverRut = formData.get('driver_rut') as string
     const documentTypeId = formData.get('document_type_id') as string
     const uploadedBy = formData.get('uploaded_by') as string
 
-    if (!file || !driverId || !documentTypeId) {
+    if (!file || !driverIdOrRut || !documentTypeId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     const adminClient = createAdminClient()
 
-    // Upload file to storage
+    // Resolve real UUID from conductores table by RUT
+    // driver_id from frontend is the static list index ("12"), not a real UUID
+    // We use driver_rut to look up the real UUID from the DB
+    const rutToLookup = driverRut || (() => {
+      const found = allDriversData.find(d => d.id === driverIdOrRut)
+      return found?.rut || null
+    })()
+
+    let conductorUUID: string | null = null
+
+    if (rutToLookup) {
+      const normalizedRut = normalizeRUT(rutToLookup)
+      const { data: conductorRow } = await adminClient
+        .from('conductores')
+        .select('id')
+        .or(`rut.eq.${rutToLookup},rut.ilike.%${normalizedRut}%`)
+        .limit(1)
+        .single()
+      conductorUUID = conductorRow?.id || null
+    }
+
+    if (!conductorUUID) {
+      console.error('[v0] Could not resolve conductor UUID for driver_id:', driverIdOrRut, 'rut:', rutToLookup)
+      return NextResponse.json({ error: 'Conductor no encontrado en la base de datos', details: 'Could not resolve conductor UUID from RUT' }, { status: 400 })
+    }
+
+    // Upload file to storage using the real UUID path
     const fileName = `${Date.now()}_${file.name}`
-    const storagePath = `drivers/${driverId}/${fileName}`
+    const storagePath = `drivers/${conductorUUID}/${fileName}`
 
     const arrayBuffer = await file.arrayBuffer()
     const { data: uploadData, error: uploadError } = await adminClient.storage
@@ -39,11 +69,11 @@ export async function POST(request: NextRequest) {
       .from('documents')
       .getPublicUrl(storagePath)
 
-    // Direct table insert with only core fields - this bypasses schema cache issues
+    // Insert using the real UUID from conductores table
     const { data: docRecord, error: dbError } = await adminClient
       .from('uploaded_documents')
       .insert([{
-        conductor_id: driverId,
+        conductor_id: conductorUUID,
         document_type_id: documentTypeId,
         original_filename: file.name,
         validation_status: 'pending'

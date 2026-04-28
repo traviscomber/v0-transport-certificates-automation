@@ -13,7 +13,7 @@ export interface DriverDocument {
   uploaded_by?: string
 }
 
-export function useDriverDocuments(driverId: string, enabled = false) {
+export function useDriverDocuments(driverId: string, enabled = false, driverRut = '') {
   const [documents, setDocuments] = useState<DriverDocument[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -102,6 +102,7 @@ export function useDriverDocuments(driverId: string, enabled = false) {
       const formData = new FormData()
       formData.append('file', file)
       formData.append('driver_id', driverId)
+      formData.append('driver_rut', driverRut)
       formData.append('document_type_id', tipo || 'general')
       formData.append('uploaded_by', uploaderName || '')
       const metadata: any = {}
