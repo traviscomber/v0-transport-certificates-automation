@@ -106,13 +106,21 @@ export function useDriverDocuments(driverRut: string, enabled = false) {
 
       console.log('[v0] Upload response status:', response.status)
       
+      let uploadResult
+      try {
+        const responseText = await response.text()
+        console.log('[v0] Response text:', responseText.substring(0, 100))
+        uploadResult = JSON.parse(responseText)
+      } catch (parseErr) {
+        console.error('[v0] Failed to parse response JSON:', parseErr)
+        throw new Error(`Server error: Invalid response format`)
+      }
+      
       if (!response.ok) {
-        const result = await response.json()
-        console.error('[v0] Upload failed:', result)
-        throw new Error(result.error || `Upload failed`)
+        console.error('[v0] Upload failed:', uploadResult)
+        throw new Error(uploadResult.error || `Upload failed with status ${response.status}`)
       }
 
-      const uploadResult = await response.json()
       console.log('[v0] Document uploaded:', uploadResult.document)
 
       // Refresh documents IMMEDIATELY and forcefully multiple times

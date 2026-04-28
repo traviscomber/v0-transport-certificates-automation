@@ -21,7 +21,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const metadata = JSON.parse(metadataStr || '{}')
+    let metadata = {}
+    try {
+      metadata = JSON.parse(metadataStr || '{}')
+    } catch (parseErr) {
+      console.warn('[v0] Failed to parse metadata, using empty object:', parseErr)
+      metadata = {}
+    }
+
     const adminClient = createAdminClient()
 
     // Upload file to storage
@@ -40,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error('[v0] Storage upload error:', uploadError)
-      return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
+      return NextResponse.json({ error: 'Upload failed', details: uploadError.message }, { status: 500 })
     }
 
     // Get public URL
@@ -68,8 +75,8 @@ export async function POST(request: NextRequest) {
           issue_date: metadata.issue_date || null,
           ...metadata
         },
-        expiry_date: metadata.expiry_date ? new Date(metadata.expiry_date).toISOString().split('T')[0] : null,
-        issue_date: metadata.issue_date ? new Date(metadata.issue_date).toISOString().split('T')[0] : null,
+        expiry_date: metadata.expiry_date ? new Date(metadata.expiry_date as string).toISOString().split('T')[0] : null,
+        issue_date: metadata.issue_date ? new Date(metadata.issue_date as string).toISOString().split('T')[0] : null,
       })
       .select()
       .single()
@@ -85,15 +92,20 @@ export async function POST(request: NextRequest) {
       fileName,
     })
 
-    return NextResponse.json({
+    const responseData = {
       success: true,
       document: docRecord,
       message: 'Documento subido exitosamente',
-    })
+    }
+
+    console.log('[v0] Returning response:', responseData)
+    return NextResponse.json(responseData)
   } catch (error) {
     console.error('[v0] Error in POST /api/company/documents/upload-with-metadata:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Server error'
+    console.error('[v0] Error message:', errorMessage)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Server error' },
+      { error: errorMessage, success: false },
       { status: 500 }
     )
   }
