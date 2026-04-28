@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Lock, Eye, EyeOff, TrendingUp, FileCheck, Clock, Zap, Activity } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 interface ExecutiveMetrics {
   executive_id: string
@@ -42,6 +43,8 @@ export default function MetricsPage() {
   const [showDebug, setShowDebug] = useState(false)
 
   const CORRECT_PASSWORD = 'mono2026'
+  const supabase = createClient()
+  const unsubscribeRef = useRef<(() => void) | null>(null)
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -81,8 +84,39 @@ export default function MetricsPage() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchMetrics()
+      
+      // Set up real-time subscription to uploaded_documents changes
+      console.log('[v0] Setting up real-time subscription for metrics')
+      const channel = supabase
+        .channel('uploaded_documents_changes_metrics')
+        .on(
+          'postgres_changes',
+          {
+            event: '*', // Listen to all events: INSERT, UPDATE, DELETE
+            schema: 'public',
+            table: 'uploaded_documents',
+          },
+          (payload) => {
+            console.log('[v0] Document change detected on metrics page:', payload.eventType)
+            // Refetch metrics when any document change occurs
+            fetchMetrics()
+          }
+        )
+        .subscribe((status) => {
+          console.log('[v0] Subscription status on metrics page:', status)
+        })
+
+      // Store unsubscribe function
+      unsubscribeRef.current = () => channel.unsubscribe()
+
+      // Cleanup subscription on unmount
+      return () => {
+        if (unsubscribeRef.current) {
+          unsubscribeRef.current()
+        }
+      }
     }
-  }, [timeRange])
+  }, [timeRange, isAuthenticated, supabase])
 
   const fetchDebugData = async () => {
     try {

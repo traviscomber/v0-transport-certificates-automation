@@ -6,6 +6,7 @@ import { HelpBox } from '@/components/ui/help-box'
 import { AdminDocumentUpload } from '@/components/admin/admin-document-upload'
 import { FileText, File, Download, Trash2, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { createClient } from '@/lib/supabase/client'
 
 interface Document {
   id: string
@@ -24,12 +25,14 @@ export default function DocumentosPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'all' | 'drivers' | 'subcontractors'>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const supabase = createClient()
 
   const fetchDocuments = async () => {
     try {
       const response = await fetch('/api/company/documents')
       if (response.ok) {
         const data = await response.json()
+        console.log('[v0] Documents fetched:', data.length)
         setDocuments(data)
       }
     } catch (error) {
@@ -41,6 +44,32 @@ export default function DocumentosPage() {
 
   useEffect(() => {
     fetchDocuments()
+
+    // Set up real-time subscription to uploaded_documents changes
+    console.log('[v0] Setting up real-time subscription')
+    const channel = supabase
+      .channel('uploaded_documents_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events: INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'uploaded_documents',
+        },
+        (payload) => {
+          console.log('[v0] Document change detected:', payload.eventType, payload)
+          // Refetch documents when any change occurs
+          fetchDocuments()
+        }
+      )
+      .subscribe((status) => {
+        console.log('[v0] Subscription status:', status)
+      })
+
+    // Cleanup subscription on unmount
+    return () => {
+      channel.unsubscribe()
+    }
   }, [])
 
   const filteredDocuments = documents.filter((doc) => {
