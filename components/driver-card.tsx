@@ -39,7 +39,7 @@ export function DriverCard({
   const { documents, loading, uploadDocument, refetch, updateDocumentStatus } = useDriverDocuments(driver.id, isExpanded)
 
   const [showUploadModal, setShowUploadModal] = useState(false)
-  const [uploadDocType, setUploadDocType] = useState('Licencia de Conducir')
+  const [uploadDocTypeId, setUploadDocTypeId] = useState<string>('')
   const [uploadFileName, setUploadFileName] = useState('')
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -47,35 +47,102 @@ export function DriverCard({
   const [uploadingEjecutiva, setUploadingEjecutiva] = useState<string>('')
   const [ejecutivas, setEjecutivas] = useState<Array<{ id: string; full_name: string }>>([])
   const [loadingEjecutivas, setLoadingEjecutivas] = useState(false)
+  const [documentTypes, setDocumentTypes] = useState<Array<{ id: string; code: string; name: string; category: string }>>([])
+  const [loadingDocTypes, setLoadingDocTypes] = useState(false)
   const [selectedDocument, setSelectedDocument] = useState<any>(null)
   const [showDocumentModal, setShowDocumentModal] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
 
-  // Fetch ejecutivas when upload modal opens
+  // Fetch ejecutivas and document types when upload modal opens
   useEffect(() => {
-    if (showUploadModal && ejecutivas.length === 0) {
+    if (showUploadModal) {
       setLoadingEjecutivas(true)
+      setLoadingDocTypes(true)
       fetch('/api/company/data')
         .then(res => res.json())
         .then(data => {
           setEjecutivas(data.executives || [])
+          setDocumentTypes(data.documentTypes || [])
           // Auto-select driver's ejecutivo if available
           if (driver.ejecutivo_nombre && !uploadingEjecutiva) {
             setUploadingEjecutiva(driver.ejecutivo_nombre)
           }
+          // Auto-select first document type (Licencia de Conducir if available)
+          if (!uploadDocTypeId && data.documentTypes && data.documentTypes.length > 0) {
+            const licencia = data.documentTypes.find((dt: any) => dt.code === 'LICENCIA_CONDUCIR')
+            if (licencia) {
+              setUploadDocTypeId(licencia.id)
+            } else {
+              setUploadDocTypeId(data.documentTypes[0].id)
+            }
+          }
         })
         .catch(err => {
-          console.error('[v0] Error fetching ejecutivas:', err)
+          console.error('[v0] Error fetching data:', err)
         })
-        .finally(() => setLoadingEjecutivas(false))
+        .finally(() => {
+          setLoadingEjecutivas(false)
+          setLoadingDocTypes(false)
+        })
     }
-  }, [showUploadModal, ejecutivas.length, driver.ejecutivo_nombre, uploadingEjecutiva])
+  }, [showUploadModal, uploadingEjecutiva, uploadDocTypeId, driver.ejecutivo_nombre])
 
   const handleUpload = async () => {
     if (!uploadFileName.trim() || !uploadFile) {
       setUploadError('Por favor selecciona un archivo')
       return
     }
+
+    if (!uploadDocTypeId) {
+      setUploadError('Por favor selecciona un tipo de documento')
+      return
+    }
+
+    if (!uploadingEjecutiva) {
+      setUploadError('Por favor selecciona la ejecutiva que sube el documento')
+      return
+    }
+
+    setUploading(true)
+    setUploadError('')
+    try {
+      await uploadDocument(uploadDocTypeId, uploadFileName, uploadFile, undefined, uploadingEjecutiva)
+      
+      // Wait a moment for React state to update
+      await new Promise(resolve => setTimeout(resolve, 200))
+      
+      setShowUploadModal(false)
+      setUploadFileName('')
+      setUploadFile(null)
+      setUploadDocTypeId('')
+      setUploadingEjecutiva('')
+      
+      // Force re-render by incrementing key
+      setRefreshKey(prev => prev + 1)
+      
+      // Show success message
+      if (typeof window !== 'undefined') {
+        const successMsg = document.createElement('div')
+        successMsg.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100] animate-in'
+        successMsg.textContent = `✅ Documento "${uploadFileName}" subido exitosamente`
+        document.body.appendChild(successMsg)
+        setTimeout(() => {
+          successMsg.remove()
+        }, 3000)
+      }
+      
+      // Dispatch event to notify other components about the new document
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('documentStatusChanged'))
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Error desconocido al subir documento'
+      console.error('[v0] handleUpload error:', errorMsg, error)
+      setUploadError(errorMsg)
+    } finally {
+      setUploading(false)
+    }
+  }
 
     if (!uploadingEjecutiva) {
       setUploadError('Por favor selecciona la ejecutiva que sube el documento')
@@ -402,17 +469,23 @@ export function DriverCard({
               <div>
                 <label className="text-sm font-semibold text-slate-200">Tipo de Documento</label>
                 <select
-                  value={uploadDocType}
-                  onChange={(e) => setUploadDocType(e.target.value)}
-                  className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                  value={uploadDocTypeId}
+                  onChange={(e) => setUploadDocTypeId(e.target.value)}
+                  disabled={loadingDocTypes || documentTypes.length === 0}
+                  className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <option>Licencia de Conducir</option>
-                  <option>Antecedentes Penales</option>
-                  <option>Certificado Médico</option>
-                  <option>Comprobante Domicilio</option>
-                  <option>Contrato</option>
-                  <option>Otro</option>
+                  <option value="">
+                    {loadingDocTypes ? 'Cargando tipos de documento...' : 'Selecciona un tipo de documento'}
+                  </option>
+                  {documentTypes.map((docType) => (
+                    <option key={docType.id} value={docType.id}>
+                      {docType.name}
+                    </option>
+                  ))}
                 </select>
+                {documentTypes.length === 0 && !loadingDocTypes && (
+                  <p className="text-xs text-red-400 mt-1">⚠️ No hay tipos de documento disponibles</p>
+                )}
               </div>
 
               {/* Nombre del archivo */}

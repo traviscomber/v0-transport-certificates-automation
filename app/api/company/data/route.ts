@@ -82,6 +82,18 @@ export async function GET(request: Request) {
       }
     })
 
+    // Fetch document types
+    const { data: documentTypes, error: docTypesError } = await supabase
+      .from('document_types')
+      .select('id, code, name, category, is_mandatory, validity_days')
+      .eq('is_active', true)
+      .order('category', { ascending: true })
+
+    if (docTypesError) {
+      console.error('[v0] Error fetching document types:', docTypesError)
+      // Don't fail the entire request if we can't get document types
+    }
+
     // Hard-coded executives (6 de Labbe)
     const executivesData = [
       { id: '1', full_name: 'Olga Carrasco', rut: '10574005-0', email: 'ocarrasco@labbe.cl', phone: '+56912345678', cargo: 'Ejecutiva de Cuenta' },
@@ -108,6 +120,7 @@ export async function GET(request: Request) {
       executives: executivesData,
       drivers: driversData,
       subcontractors: subcontractorsData,
+      documentTypes: documentTypes || [],
       stats: {
         totalSubcontractors: subcontractorsData.length,
         totalDrivers: driversData.length
