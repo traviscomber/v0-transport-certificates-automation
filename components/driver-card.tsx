@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Mail, Phone, MapPin, FileText, Download, ChevronDown, Plus, X, Upload, AlertCircle, Loader, Eye, RefreshCw } from 'lucide-react'
@@ -44,11 +44,33 @@ export function DriverCard({
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string>('')
+  const [uploadingEjecutiva, setUploadingEjecutiva] = useState<string>('')
+  const [ejecutivas, setEjecutivas] = useState<Array<{ id: string; full_name: string }>>([])
+  const [loadingEjecutivas, setLoadingEjecutivas] = useState(false)
   const [selectedDocument, setSelectedDocument] = useState<any>(null)
   const [showDocumentModal, setShowDocumentModal] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
 
-  const handleUpload = async () => {
+  // Fetch ejecutivas when upload modal opens
+  useEffect(() => {
+    if (showUploadModal && ejecutivas.length === 0) {
+      setLoadingEjecutivas(true)
+      fetch('/api/company/data')
+        .then(res => res.json())
+        .then(data => {
+          console.log('[v0] Ejecutivas fetched:', data.executives)
+          setEjecutivas(data.executives || [])
+          // Auto-select driver's ejecutivo if available
+          if (driver.ejecutivo_nombre && !uploadingEjecutiva) {
+            setUploadingEjecutiva(driver.ejecutivo_nombre)
+          }
+        })
+        .catch(err => {
+          console.error('[v0] Error fetching ejecutivas:', err)
+        })
+        .finally(() => setLoadingEjecutivas(false))
+    }
+  }, [showUploadModal, ejecutivas.length, driver.ejecutivo_nombre, uploadingEjecutiva])
     if (!uploadFileName.trim() || !uploadFile) {
       console.log('[v0] Upload blocked - missing fields:', { hasFileName: !!uploadFileName.trim(), hasFile: !!uploadFile })
       setUploadError('Por favor selecciona un archivo')
@@ -65,8 +87,8 @@ export function DriverCard({
     setUploading(true)
     setUploadError('')
     try {
-      console.log('[v0] Calling uploadDocument with:', { driverId: driver.id, tipo: uploadDocType, nombre: uploadFileName, fileSize: uploadFile.size })
-      await uploadDocument(uploadDocType, uploadFileName, uploadFile)
+      console.log('[v0] Calling uploadDocument with:', { driverId: driver.id, tipo: uploadDocType, nombre: uploadFileName, fileSize: uploadFile.size, uploadedBy: uploadingEjecutiva })
+      await uploadDocument(uploadDocType, uploadFileName, uploadFile, undefined, uploadingEjecutiva)
       console.log('[v0] uploadDocument returned successfully')
       console.log('[v0] Upload completado, documentos después de refetch:', { docsLength: documents.length })
       
@@ -282,6 +304,7 @@ export function DriverCard({
                                 : 'text-slate-500'
                             }`}>
                               {new Date(doc.fecha_subida).toLocaleDateString('es-ES')}
+                              {doc.uploaded_by && ` por ${doc.uploaded_by}`}
                               {doc.estado === 'rechazado' && ' - RECHAZADO'}
                             </p>
                           </div>
@@ -347,23 +370,41 @@ export function DriverCard({
               {/* Ejecutiva que sube el documento */}
               <div>
                 <label className="text-sm font-semibold text-slate-200">Ejecutiva que sube el documento</label>
-                <select
-                  value={uploadingEjecutiva}
-                  onChange={(e) => setUploadingEjecutiva(e.target.value)}
-                  disabled={loadingEjecutivas}
-                  className="mt-2 w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <option value="">
-                    {loadingEjecutivas ? 'Cargando...' : 'Selecciona una ejecutiva'}
-                  </option>
-                  {ejecutivas.map((exec) => (
-                    <option key={exec.id} value={exec.full_name}>
-                      {exec.full_name}
+                <div className="space-y-2 mt-2">
+                  {/* Auto-selected option using driver's ejecutivo */}
+                  {driver.ejecutivo_nombre && (
+                    <button
+                      type="button"
+                      onClick={() => setUploadingEjecutiva(driver.ejecutivo_nombre!)}
+                      className={`w-full rounded border px-3 py-2 text-sm text-left transition-colors ${
+                        uploadingEjecutiva === driver.ejecutivo_nombre
+                          ? 'border-orange-500 bg-orange-500/20 text-orange-200'
+                          : 'border-slate-600 bg-slate-700/50 text-slate-300 hover:bg-slate-700'
+                      }`}
+                    >
+                      ✓ {driver.ejecutivo_nombre} <span className="text-xs text-slate-400">(Asignada)</span>
+                    </button>
+                  )}
+                  
+                  {/* Full ejecutivas list selector */}
+                  <select
+                    value={uploadingEjecutiva}
+                    onChange={(e) => setUploadingEjecutiva(e.target.value)}
+                    disabled={loadingEjecutivas}
+                    className="w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value="">
+                      {loadingEjecutivas ? 'Cargando ejecutivas...' : 'O selecciona otra ejecutiva'}
                     </option>
-                  ))}
-                </select>
-                {ejecutivas.length === 0 && !loadingEjecutivas && (
-                  <p className="text-xs text-slate-500 mt-1">No hay ejecutivas disponibles</p>
+                    {ejecutivas.map((exec) => (
+                      <option key={exec.id} value={exec.full_name}>
+                        {exec.full_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {ejecutivas.length === 0 && !loadingEjecutivas && !driver.ejecutivo_nombre && (
+                  <p className="text-xs text-red-400 mt-1">⚠️ No hay ejecutivas disponibles</p>
                 )}
               </div>
 

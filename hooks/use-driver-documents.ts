@@ -10,6 +10,7 @@ export interface DriverDocument {
   fecha_subida: string
   public_url?: string
   storage_path?: string
+  uploaded_by?: string
 }
 
 export function useDriverDocuments(driverRut: string, enabled = false) {
@@ -69,6 +70,7 @@ export function useDriverDocuments(driverRut: string, enabled = false) {
         fecha_subida: doc.created_at || new Date().toISOString(),
         public_url: doc.file_url || doc.public_url,
         storage_path: doc.file_path || doc.storage_path,
+        uploaded_by: doc.uploaded_by || '',
       }))
 
       console.log('[v0] Documents loaded:', transformedDocs.length)
@@ -87,21 +89,25 @@ export function useDriverDocuments(driverRut: string, enabled = false) {
     tipo: string,
     nombre: string,
     file: File,
-    expirationDate?: string
+    expirationDate?: string,
+    uploadedBy?: string
   ) => {
     try {
-      console.log('[v0] Uploading document:', { driverRut, tipo, file: file.name })
+      console.log('[v0] Uploading document:', { driverRut, tipo, file: file.name, uploadedBy })
       
-      // Get authenticated user name
-      const { data: { user } } = await supabase.auth.getUser()
-      const uploaderName = user?.user_metadata?.full_name || user?.email || 'Unknown'
+      // Use provided uploadedBy or get from authenticated user
+      let uploaderName = uploadedBy
+      if (!uploaderName) {
+        const { data: { user } } = await supabase.auth.getUser()
+        uploaderName = user?.user_metadata?.full_name || user?.email || 'Unknown'
+      }
       console.log('[v0] Uploader name:', uploaderName)
       
       const formData = new FormData()
       formData.append('file', file)
       formData.append('driver_id', driverRut)
       formData.append('document_type_id', tipo || 'general')
-      formData.append('uploaded_by', uploaderName)
+      formData.append('uploaded_by', uploaderName || '')
       const metadata: any = {}
       if (expirationDate) metadata.expiry_date = expirationDate
       formData.append('metadata', JSON.stringify(metadata))

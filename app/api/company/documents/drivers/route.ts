@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     console.log('[v0] Querying uploaded_documents for conductor:', rut)
     const { data: dbDocuments, error: dbError } = await adminClient
       .from('uploaded_documents')
-      .select('id, original_filename, document_type_id, file_url, file_path, created_at, validation_status')
+      .select('id, original_filename, document_type_id, file_url, file_path, created_at, validation_status, uploaded_by')
       .eq('conductor_id', rut)
       .order('created_at', { ascending: false })
 
@@ -66,6 +66,7 @@ export async function GET(request: NextRequest) {
         document_type: doc.document_type_id || 'Documento',
         verification_status: estadoEspanol,
         validation_status: doc.validation_status,
+        uploaded_by: doc.uploaded_by || '',
         size: 0,
         storage_path: doc.file_path || '',
         public_url: doc.file_url || '',
