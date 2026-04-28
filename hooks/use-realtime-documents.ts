@@ -148,15 +148,20 @@ export function useRealtimeDocuments(driverRut: string) {
               table: 'documentos',
               filter: `driver_rut=eq.${driverRut}`, // Solo documentos de este conductor
             },
-            (payload) => {
+            (payload: any) => {
+              const newData = payload.new as any
+              const oldData = payload.old as any
+              
               const change: RealtimeDocumentChange = {
-                id: payload.new?.id || payload.old?.id,
+                id: newData?.id || oldData?.id || '',
                 type: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
-                old: payload.old,
-                new: payload.new,
+                old: oldData,
+                new: newData,
               }
 
-              handleDocumentChange(change)
+              if (change.id) {
+                handleDocumentChange(change)
+              }
             }
           )
           .subscribe((status) => {
@@ -286,8 +291,13 @@ export function useRealtimeMultipleDrivers(driverRuts: string[]) {
             table: 'documentos',
             filter: filters,
           },
-          (payload) => {
-            const rut = payload.new?.driver_rut || payload.old?.driver_rut
+          (payload: any) => {
+            const newData = payload.new as any
+            const oldData = payload.old as any
+            
+            const rut = newData?.driver_rut || oldData?.driver_rut
+            if (!rut) return
+            
             const count = (changesRef.current.get(rut) || 0) + 1
             changesRef.current.set(rut, count)
 
