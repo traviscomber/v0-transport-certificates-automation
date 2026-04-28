@@ -58,7 +58,8 @@ export default function MetricsPage() {
     setLoading(true)
     try {
       const response = await fetch(`/api/company/metrics?range=${timeRange}`)
-      const data: MetricsResponse = await response.json()
+      const data = await response.json()
+      console.log('[v0] Metrics API response:', data)
       
       // Process summary
       setSummary(data.summary || {
@@ -70,7 +71,6 @@ export default function MetricsPage() {
 
       // Process executives - use correct field names from API
       const executivesMetrics: ExecutiveMetrics[] = (data.executives || [])
-        .filter((exec: any) => exec.documentos_procesados > 0) // Only show executives with documents
         .map((exec: any) => ({
           ejecutiva: exec.ejecutiva || 'Sin nombre',
           documentos_procesados: exec.documentos_procesados || 0,
@@ -79,6 +79,7 @@ export default function MetricsPage() {
           tiempo_promedio: exec.tiempo_promedio || '—',
         }))
       
+      console.log('[v0] Processed executives:', executivesMetrics)
       setMetrics(executivesMetrics)
     } catch (error) {
       console.error('[v0] Error fetching metrics:', error)

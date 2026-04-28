@@ -146,8 +146,10 @@ export async function GET(request: Request) {
       metrics_by_exec: executivesMetrics.map(e => ({ name: e.ejecutiva, count: e.documentos_procesados }))
     })
 
+    console.log('[v0] All executives being returned:', executivesMetrics)
+
     return NextResponse.json({
-      executives: executivesMetrics.sort((a: any, b: any) => b.documents_processed - a.documents_processed),
+      executives: executivesMetrics,
       summary,
     })
   } catch (error) {
