@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let metadata = {}
+    let metadata: any = {}
     try {
       metadata = JSON.parse(metadataStr || '{}')
     } catch (parseErr) {
