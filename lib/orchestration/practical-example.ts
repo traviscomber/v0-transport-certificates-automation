@@ -29,10 +29,10 @@ export class EnhancedAlertsModule extends AlertsModule {
       const alert = this.analyzeDocument(event.payload)
 
       // Emitir evento de alerta generada
-      const alertEvent = {
+      const alertEvent: ModuleEvent = {
         id: `alert-${Date.now()}`,
         type: 'alert_generated',
-        source: 'alerts',
+        source: 'alerts' as const,
         context: event.context,
         payload: alert,
         timestamp: new Date(),
@@ -115,10 +115,10 @@ export class EnhancedDocumentsModule extends DocumentsModule {
     if (days < 0) {
       // Emitir evento de documento vencido
       const { orchestrator } = await import('@/lib/orchestration')
-      const event = {
+      const event: ModuleEvent = {
         id: `event-${Date.now()}`,
         type: 'document_expired',
-        source: 'documents',
+        source: 'documents' as const,
         context: {
           userId: 'system',
           entityId: doc.entity_id,
