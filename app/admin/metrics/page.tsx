@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Lock, Eye, EyeOff, FileCheck, TrendingUp, Users, Building2 } from 'lucide-react'
@@ -48,7 +48,6 @@ export default function MetricsPage() {
   const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month'>('week')
   const CORRECT_PASSWORD = 'mono2026'
   const supabase = createClient()
-  const unsubscribeRef = useRef<(() => void) | null>(null)
 
   const handleAuth = () => {
     if (password === CORRECT_PASSWORD) {
@@ -101,21 +100,8 @@ export default function MetricsPage() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchMetrics()
-
-      // Real-time subscription
-      const channel = supabase
-        .channel('metrics_realtime')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'uploaded_documents' },
-          () => fetchMetrics()
-        )
-        .subscribe()
-
-      unsubscribeRef.current = () => channel.unsubscribe()
-      return () => unsubscribeRef.current?.()
     }
-  }, [timeRange, isAuthenticated, supabase])
+  }, [timeRange, isAuthenticated])
 
   if (!isAuthenticated) {
     return (

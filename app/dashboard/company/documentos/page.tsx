@@ -44,32 +44,6 @@ export default function DocumentosPage() {
 
   useEffect(() => {
     fetchDocuments()
-
-    // Set up real-time subscription to uploaded_documents changes
-    console.log('[v0] Setting up real-time subscription')
-    const channel = supabase
-      .channel('uploaded_documents_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to all events: INSERT, UPDATE, DELETE
-          schema: 'public',
-          table: 'uploaded_documents',
-        },
-        (payload) => {
-          console.log('[v0] Document change detected:', payload.eventType, payload)
-          // Refetch documents when any change occurs
-          fetchDocuments()
-        }
-      )
-      .subscribe((status) => {
-        console.log('[v0] Subscription status:', status)
-      })
-
-    // Cleanup subscription on unmount
-    return () => {
-      channel.unsubscribe()
-    }
   }, [])
 
   const filteredDocuments = documents.filter((doc) => {
