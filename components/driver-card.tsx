@@ -436,22 +436,30 @@ export function DriverCard({
             // Optimistically update local state immediately so badge changes on close
             updateDocumentStatus(docId, newStatus)
 
+            console.log('[v0] Sending PATCH request to update document status...')
             // PATCH status to database directly
             const res = await fetch(`/api/company/documents/${docId}/status`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ status: newStatus, reason: 'Cambio realizado desde dashboard' }),
             })
+            
+            console.log('[v0] PATCH response status:', res.status)
+            
             if (!res.ok) {
               const err = await res.json()
               throw new Error(err.error || 'Status update failed')
             }
 
+            console.log('[v0] PATCH successful, BD updated')
+
             // Close modal first (optimistic state already applied above)
             setShowDocumentModal(false)
             setSelectedDocument(null)
 
-            // Notify conductores page to refetch its list
+            // Wait a bit to ensure DB is updated, then notify conductores page
+            await new Promise(resolve => setTimeout(resolve, 500))
+            
             console.log('[v0] Dispatching documentStatusChanged event to notify conductores page')
             window.dispatchEvent(new Event('documentStatusChanged'))
 
