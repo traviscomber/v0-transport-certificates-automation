@@ -49,20 +49,20 @@ export async function PATCH(
       return NextResponse.json({ error: 'Missing status' }, { status: 400 })
     }
 
-    // Normalize to Spanish — this is what driver_documents.status stores
-    const toSpanish: Record<string, string> = {
-      'aprobado': 'aprobado',
-      'rechazado': 'rechazado',
-      'pendiente': 'pendiente',
-      'vencido': 'vencido',
-      'approved': 'aprobado',
-      'rejected': 'rechazado',
-      'pending': 'pendiente',
-      'expired': 'vencido',
+    // Normalize to English lowercase — this is what uploaded_documents.validation_status stores
+    const toEnglish: Record<string, string> = {
+      'aprobado': 'approved',
+      'rechazado': 'rejected',
+      'pendiente': 'pending',
+      'vencido': 'expired',
+      'approved': 'approved',
+      'rejected': 'rejected',
+      'pending': 'pending',
+      'expired': 'expired',
     }
 
-    const spanishStatus = toSpanish[rawStatus?.toLowerCase()]
-    if (!spanishStatus) {
+    const dbStatus = toEnglish[rawStatus?.toLowerCase()]
+    if (!dbStatus) {
       return NextResponse.json({ error: 'Invalid status: ' + rawStatus }, { status: 400 })
     }
 
@@ -76,12 +76,12 @@ export async function PATCH(
       .single()
 
     // STEP 2: Update uploaded_documents.validation_status — the table being used in the UI
-    console.log('[v0] Updating uploaded_documents - documentId:', documentId, 'spanishStatus:', spanishStatus, 'type of spanishStatus:', typeof spanishStatus)
+    console.log('[v0] Updating uploaded_documents - documentId:', documentId, 'dbStatus:', dbStatus, 'type of dbStatus:', typeof dbStatus)
     
     const { error: updateError, data: updateData } = await adminClient
       .from('uploaded_documents')
       .update({ 
-        validation_status: spanishStatus,
+        validation_status: dbStatus,
         updated_at: new Date().toISOString()
       })
       .eq('id', documentId)
@@ -97,7 +97,7 @@ export async function PATCH(
     console.log('[v0] ✅ UPDATE executed successfully:', { 
       documentId, 
       from: documentBefore?.validation_status, 
-      to: spanishStatus,
+      to: dbStatus,
       rowsUpdated: updateData?.length || 0,
       responseData: updateData
     })
@@ -107,7 +107,7 @@ export async function PATCH(
     console.log('[v0] ⏳ Broadcast delay completed')
 
     // STEP 3: Emit event to orchestration system (non-blocking)
-    emitToOrchestrator(documentId, spanishStatus, reason).catch(err => {
+    emitToOrchestrator(documentId, dbStatus, reason).catch(err => {
       console.error('[v0] Orchestrator emit failed:', err)
     })
 
@@ -117,7 +117,7 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       document_id: documentId,
-      status: spanishStatus,
+      status: dbStatus,
       previous_status: documentBefore?.validation_status,
       message: 'Document status updated and broadcast to clients',
       realtime_enabled: true,
