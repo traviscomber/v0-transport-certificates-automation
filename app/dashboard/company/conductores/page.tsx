@@ -36,7 +36,7 @@ const fetcher = (url: string) =>
 
 export default function ConductoresPage() {
   const { data, error, isLoading, mutate } = useSWR(
-    '/api/company/data',
+    '/api/dashboard/data',
     fetcher,
     {
       revalidateOnFocus: true,
@@ -83,7 +83,7 @@ export default function ConductoresPage() {
     }
   }, [mutate, supabase])
 
-  const drivers = data?.drivers || []
+  const drivers = data?.dashboard?.conductores || []
 
   return (
     <div className="space-y-6">

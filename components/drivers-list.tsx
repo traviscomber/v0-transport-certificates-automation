@@ -35,6 +35,8 @@ interface Driver {
   patente_tracto?: string
   clase_licencia?: string
   is_active?: boolean
+  ejecutivo_nombre?: string
+  nombre_subcontratista?: string
   documentos?: Array<{
     id: string
     tipo: string

@@ -14,6 +14,8 @@ interface Driver {
   clase_licencia?: string
   is_active?: boolean
   rut_proveedor?: string
+  ejecutivo_nombre?: string
+  nombre_subcontratista?: string
 }
 
 interface DriverCardProps {
@@ -163,6 +165,14 @@ export function DriverCard({
               <div className="border-t border-slate-700 pt-3">
                 <p className="text-xs font-semibold uppercase text-slate-400">RUT Proveedor</p>
                 <p className="font-mono text-sm text-slate-400">{driver.rut_proveedor}</p>
+              </div>
+            )}
+
+            {/* Ejecutiva Asociada */}
+            {driver.ejecutivo_nombre && (
+              <div className="border-t border-slate-700 pt-3">
+                <p className="text-xs font-semibold uppercase text-slate-400">Ejecutiva Asignada</p>
+                <Badge className="bg-purple-600/40 text-purple-200 border border-purple-500/50">{driver.ejecutivo_nombre}</Badge>
               </div>
             )}
 

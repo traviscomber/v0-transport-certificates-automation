@@ -126,6 +126,14 @@ export async function GET(request: NextRequest) {
     const conductores = await conductoesResponse.json()
     console.log('[v0] Conductores count:', Array.isArray(conductores) ? conductores.length : 0)
 
+    // Create a map of subcontratistas by RUT to get ejecutivo info
+    const subMap = new Map()
+    if (Array.isArray(transportistas)) {
+      transportistas.forEach((sub: any) => {
+        subMap.set(sub.rut, sub)
+      })
+    }
+
     // Count drivers per transportista (by rut_proveedor match with transportista rut)
     const driverCountByRut = new Map<string, number>()
     if (Array.isArray(conductores)) {
@@ -145,7 +153,19 @@ export async function GET(request: NextRequest) {
         }))
       : []
 
-    console.log('[v0] Dashboard stats - Transportistas:', Array.isArray(transportistasWithCounts) ? transportistasWithCounts.length : 0, ', Conductores:', Array.isArray(conductores) ? conductores.length : 0)
+    // Enrich conductores with ejecutivo information from their associated subcontractor
+    const conductoesEnriquecidos = Array.isArray(conductores)
+      ? conductores.map((conductor: any) => {
+          const subcontractor = subMap.get(conductor.rut_proveedor)
+          return {
+            ...conductor,
+            ejecutivo_nombre: subcontractor?.ejecutiva || subcontractor?.ejecutivo_nombre || 'Sin asignar',
+            nombre_subcontratista: subcontractor?.razon_social || subcontractor?.nombre_fantasia || conductor.rut_proveedor || 'N/A',
+          }
+        })
+      : []
+
+    console.log('[v0] Dashboard stats - Transportistas:', Array.isArray(transportistasWithCounts) ? transportistasWithCounts.length : 0, ', Conductores:', Array.isArray(conductoesEnriquecidos) ? conductoesEnriquecidos.length : 0)
 
     const response_obj = NextResponse.json({
       user: {
@@ -156,10 +176,10 @@ export async function GET(request: NextRequest) {
       },
       dashboard: {
         transportistas: transportistasWithCounts,
-        conductores: Array.isArray(conductores) ? conductores : [],
+        conductores: conductoesEnriquecidos,
         stats: {
           totalTransportistas: Array.isArray(transportistas) ? transportistas.length : 0,
-          totalConductores: Array.isArray(conductores) ? conductores.length : 0,
+          totalConductores: Array.isArray(conductoesEnriquecidos) ? conductoesEnriquecidos.length : 0,
         },
       },
     })
