@@ -136,11 +136,11 @@ export function DriverCard({
               <p className="font-semibold text-slate-100">{driver.nombre}</p>
             </div>
 
-            {/* Proveedor */}
-            {driver.proveedor && (
+            {/* Proveedor - Razón Social */}
+            {(driver.nombre_subcontratista || driver.proveedor) && (
               <div className="text-sm">
-                <p className="text-xs font-medium text-slate-500 uppercase">PROVEEDOR</p>
-                <p className="text-slate-300">{driver.proveedor}</p>
+                <p className="text-xs font-medium text-slate-500 uppercase">Subcontratista</p>
+                <p className="text-slate-300">{driver.nombre_subcontratista || driver.proveedor}</p>
               </div>
             )}
 
