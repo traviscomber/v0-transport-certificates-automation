@@ -29,9 +29,6 @@ export function createClient() {
           'X-Client-Info': 'supabase-js-web',
         },
       },
-      db: {
-        schema: 'public',
-      },
     })
     return clientInstance
   }
@@ -49,10 +46,6 @@ export function createClient() {
       headers: {
         'X-Client-Info': 'supabase-js-web',
       },
-    },
-    
-    db: {
-      schema: 'public',
     },
   })
 
