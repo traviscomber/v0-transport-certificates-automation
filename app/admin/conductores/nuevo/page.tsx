@@ -66,7 +66,7 @@ export default function NuevoConductorPage() {
     
     const { error: insertError } = await supabase
       .from("conductores")
-      .insert(data)
+      .insert(data as any)
 
     if (insertError) {
       setError(insertError.message)
