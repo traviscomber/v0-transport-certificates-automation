@@ -9,8 +9,9 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File
     const driverId = formData.get('driver_id') as string
     const documentTypeId = formData.get('document_type_id') as string
+    const uploadedBy = formData.get('uploaded_by') as string
 
-    console.log('[v0] Upload request received:', { driverId, documentTypeId, fileName: file?.name })
+    console.log('[v0] Upload request received:', { driverId, documentTypeId, fileName: file?.name, uploadedBy })
 
     if (!file || !driverId || !documentTypeId) {
       console.error('[v0] Missing required fields:', { file: !!file, driverId, documentTypeId })
@@ -56,7 +57,8 @@ export async function POST(request: NextRequest) {
           file_path,
           file_size,
           mime_type,
-          validation_status
+          validation_status,
+          uploaded_by
         ) VALUES (
           $1::uuid,
           $2::uuid,
@@ -65,11 +67,12 @@ export async function POST(request: NextRequest) {
           $5::text,
           $6::integer,
           $7::text,
-          'pending'::text
+          'pending'::text,
+          $8::text
         )
-        RETURNING id, conductor_id, document_type_id, original_filename, file_url, created_at
+        RETURNING id, conductor_id, document_type_id, original_filename, file_url, uploaded_by, created_at
       `,
-      params: [driverId, documentTypeId, file.name, publicUrlData?.publicUrl || '', storagePath, file.size, file.type]
+      params: [driverId, documentTypeId, file.name, publicUrlData?.publicUrl || '', storagePath, file.size, file.type, uploadedBy]
     })
 
     if (sqlError) {
@@ -82,16 +85,18 @@ export async function POST(request: NextRequest) {
             conductor_id,
             document_type_id,
             original_filename,
-            validation_status
+            validation_status,
+            uploaded_by
           ) VALUES (
             $1::uuid,
             $2::uuid,
             $3::text,
-            'pending'::text
+            'pending'::text,
+            $4::text
           )
-          RETURNING id, conductor_id, document_type_id, original_filename, created_at
+          RETURNING id, conductor_id, document_type_id, original_filename, created_at, uploaded_by
         `,
-        params: [driverId, documentTypeId, file.name]
+        params: [driverId, documentTypeId, file.name, uploadedBy]
       })
 
       if (minimalError) {

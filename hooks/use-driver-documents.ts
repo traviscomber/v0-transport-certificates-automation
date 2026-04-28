@@ -91,10 +91,17 @@ export function useDriverDocuments(driverRut: string, enabled = false) {
   ) => {
     try {
       console.log('[v0] Uploading document:', { driverRut, tipo, file: file.name })
+      
+      // Get authenticated user name
+      const { data: { user } } = await supabase.auth.getUser()
+      const uploaderName = user?.user_metadata?.full_name || user?.email || 'Unknown'
+      console.log('[v0] Uploader name:', uploaderName)
+      
       const formData = new FormData()
       formData.append('file', file)
       formData.append('driver_id', driverRut)
       formData.append('document_type_id', tipo || 'general')
+      formData.append('uploaded_by', uploaderName)
       const metadata: any = {}
       if (expirationDate) metadata.expiry_date = expirationDate
       formData.append('metadata', JSON.stringify(metadata))
