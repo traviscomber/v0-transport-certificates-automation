@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ success: true, driver_rut: rut, documents }, {
+    return NextResponse.json({ success: true, driver_rut: driverRut, documents }, {
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
         'Pragma': 'no-cache',
