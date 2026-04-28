@@ -40,6 +40,8 @@ export default function MetricsPage() {
   const [generatingInsights, setGeneratingInsights] = useState<Set<string>>(new Set())
   const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month'>('week')
   const [debugRutInput, setDebugRutInput] = useState('')
+  const [debugData, setDebugData] = useState<any>(null)
+  const [showDebug, setShowDebug] = useState(false)
 
   const CORRECT_PASSWORD = 'mono2026'
   const supabase = createClient()
