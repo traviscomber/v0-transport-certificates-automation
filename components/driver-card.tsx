@@ -36,6 +36,11 @@ export function DriverCard({
   getDocumentStatusLabel,
 }: DriverCardProps) {
   const isExpanded = expandedDocuments.has(driver.id)
+  // Log driver object to verify rut exists
+  useEffect(() => {
+    console.log('[v0] DriverCard mounted with driver:', { id: driver.id, rut: driver.rut, nombre: driver.nombre })
+  }, [driver.id, driver.rut, driver.nombre])
+  
   // Only fetch documents when card is expanded to avoid 500+ simultaneous API calls
   const { documents, loading, uploadDocument, refetch, updateDocumentStatus } = useDriverDocuments(driver.id, isExpanded, driver.rut)
 

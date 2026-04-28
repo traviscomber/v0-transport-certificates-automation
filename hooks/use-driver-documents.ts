@@ -35,7 +35,13 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       } : {}
       
       console.log('[v0] Fetching documents for driver_rut:', driverRut, 'driver_id:', driverId)
-      const response = await fetch(`/api/company/documents/drivers?driver_rut=${encodeURIComponent(driverRut)}&driver_id=${encodeURIComponent(driverId)}${timestamp}`, {
+      const urlParams = new URLSearchParams({
+        driver_rut: driverRut,
+        driver_id: driverId
+      })
+      const fetchUrl = `/api/company/documents/drivers?${urlParams.toString()}`
+      console.log('[v0] Full fetch URL:', fetchUrl)
+      const response = await fetch(fetchUrl, {
         method: 'GET',
         headers,
         cache: skipCache ? 'no-store' : 'default'

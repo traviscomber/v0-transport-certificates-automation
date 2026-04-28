@@ -12,7 +12,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'driver_rut required' }, { status: 400 })
     }
 
-    console.log('[v0] Fetching documents for driver_rut:', driverRut)
+    console.log('[v0] Fetching documents for driver_rut:', driverRut, 'Type:', typeof driverRut, 'Length:', driverRut?.length)
+    // Log raw request URL to see encoding
+    console.log('[v0] Request URL:', request.url)
+    console.log('[v0] All search params:', Array.from(searchParams.entries()))
 
     const adminClient = await createAdminClient()
 
