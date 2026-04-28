@@ -144,53 +144,6 @@ export function DriverCard({
     }
   }
 
-    if (!uploadingEjecutiva) {
-      setUploadError('Por favor selecciona la ejecutiva que sube el documento')
-      return
-    }
-
-    setUploading(true)
-    setUploadError('')
-    try {
-      await uploadDocument(uploadDocType, uploadFileName, uploadFile, undefined, uploadingEjecutiva)
-      
-      // Wait a moment for React state to update
-      await new Promise(resolve => setTimeout(resolve, 200))
-      
-      setShowUploadModal(false)
-      setUploadFileName('')
-      setUploadFile(null)
-      setUploadDocType('Licencia de Conducir')
-      setUploadingEjecutiva('')
-      
-      // Force re-render by incrementing key
-      setRefreshKey(prev => prev + 1)
-      
-      // Show success message
-      if (typeof window !== 'undefined') {
-        // Create a simple success toast
-        const successMsg = document.createElement('div')
-        successMsg.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100] animate-in'
-        successMsg.textContent = `✅ Documento "${uploadFileName}" subido exitosamente`
-        document.body.appendChild(successMsg)
-        setTimeout(() => {
-          successMsg.remove()
-        }, 3000)
-      }
-      
-      // Dispatch event to notify other components about the new document
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('documentStatusChanged'))
-      }
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Error desconocido al subir documento'
-      console.error('[v0] handleUpload error:', errorMsg, error)
-      setUploadError(errorMsg)
-    } finally {
-      setUploading(false)
-    }
-  }
-
   const statusBg = driver.is_active
     ? 'bg-green-950/40 border-green-900/50'
     : 'bg-red-950/40 border-red-900/50'
