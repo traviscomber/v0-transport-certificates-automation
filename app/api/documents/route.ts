@@ -19,83 +19,56 @@ export async function POST(request: NextRequest) {
     const savedDocuments = []
 
     for (const doc of documents) {
-      // First, save the document
+      // Get conductor_id from form data (use RUT as reference to find conductor)
+      const conductorRut = doc.formData?.transporterRut || null
+      
+      if (!conductorRut) {
+        console.error("[v0] API: No conductor RUT provided")
+        continue
+      }
+
+      // Find the conductor by RUT
+      const { data: conductors, error: conductorError } = await supabase
+        .from("conductores")
+        .select("id, rut")
+        .eq("rut", conductorRut)
+        .single()
+
+      if (conductorError || !conductors) {
+        console.error("[v0] API: Error finding conductor:", conductorError)
+        continue
+      }
+
+      // Save to uploaded_documents table with proper structure
       const { data: documentData, error: documentError } = await supabase
-        .from("documents")
+        .from("uploaded_documents")
         .insert({
+          conductor_id: conductors.id,
           file_name: doc.fileName,
           file_size: doc.fileSize,
           file_type: doc.fileType,
           document_type: doc.documentType,
           upload_date: doc.uploadDate,
-          ocr_data: doc.ocrData || {},
+          validation_status: 'pending',
+          created_at: new Date().toISOString(),
+          metadata: {
+            ocr_data: doc.ocrData || {},
+            confidence: doc.confidence || 'low',
+            form_data: doc.formData || {}
+          }
         })
         .select()
         .single()
 
       if (documentError) {
-        console.error("[v0] API: Error saving document:", documentError)
-        continue
+        console.error("[v0] API: Error saving document to uploaded_documents:", documentError)
+        return NextResponse.json({ 
+          success: false,
+          error: `Error al guardar documento: ${documentError.message}` 
+        }, { status: 400 })
       }
 
-      if (process.env.NODE_ENV === 'development') console.log("[v0] API: Document saved:", documentData)
-
-      // Then, save to appropriate table based on document type
-      if (doc.documentType === "Licencia de Conducir") {
-        // Save to transporters table
-        const ocrData = doc.ocrData || {}
-        const formData = doc.formData || {}
-
-        const { data: transporterData, error: transporterError } = await supabase
-          .from("transporters")
-          .insert({
-            document_id: documentData.id,
-            rut: formData.transporterRut || ocrData.rutConductor || null,
-            name: formData.transporterName || ocrData.nombreConductor || null,
-            license_number: ocrData.numeroLicencia || null,
-            license_class: ocrData.claseLicencia || null,
-            issue_date: ocrData.fechaEmision ? new Date(ocrData.fechaEmision).toISOString().split("T")[0] : null,
-            expiry_date: ocrData.fechaVencimiento
-              ? new Date(ocrData.fechaVencimiento).toISOString().split("T")[0]
-              : null,
-            restrictions: ocrData.restricciones || null,
-          })
-          .select()
-          .single()
-
-        if (transporterError) {
-          console.error("[v0] API: Error saving transporter:", transporterError)
-        } else {
-          if (process.env.NODE_ENV === 'development') console.log("[v0] API: Transporter saved:", transporterData)
-        }
-      } else {
-        // Save to machines table for vehicle-related documents
-        const ocrData = doc.ocrData || {}
-        const formData = doc.formData || {}
-
-        const { data: machineData, error: machineError } = await supabase
-          .from("machines")
-          .insert({
-            document_id: documentData.id,
-            patent: formData.vehiclePlate || ocrData.patenteVehiculo || ocrData.patente || null,
-            transporter_name: formData.transporterName || ocrData.nombreTransportista || null,
-            transporter_rut: formData.transporterRut || ocrData.rutTransportista || null,
-            document_number: ocrData.numeroDocumento || null,
-            issue_date: ocrData.fechaEmision ? new Date(ocrData.fechaEmision).toISOString().split("T")[0] : null,
-            expiry_date: ocrData.fechaVencimiento
-              ? new Date(ocrData.fechaVencimiento).toISOString().split("T")[0]
-              : null,
-          })
-          .select()
-          .single()
-
-        if (machineError) {
-          console.error("[v0] API: Error saving machine:", machineError)
-        } else {
-          if (process.env.NODE_ENV === 'development') console.log("[v0] API: Machine saved:", machineData)
-        }
-      }
-
+      if (process.env.NODE_ENV === 'development') console.log("[v0] API: Document saved successfully:", documentData)
       savedDocuments.push(documentData)
     }
 
