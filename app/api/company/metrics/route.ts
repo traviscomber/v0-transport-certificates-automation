@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     // Step 1: Get all Labbe executives (cargo = 'Ejecutiva')
     const { data: executives, error: execError } = await (supabase as any)
       .from('executive_staff')
-      .select('id, nombre_completo, rut, email, cargo')
+      .select('id, full_name, rut, email, cargo')
       .eq('cargo', 'Ejecutiva')
 
     if (execError) {
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
     executives.forEach((exec: any) => {
       metricsMap.set(exec.id, {
         executive_id: exec.id,
-        executive_name: exec.nombre_completo,
+        executive_name: exec.full_name,
         documents_processed: 0,
         validated_count: 0,
         total_validation_time: 0,
