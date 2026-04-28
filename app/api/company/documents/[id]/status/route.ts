@@ -76,7 +76,7 @@ export async function PATCH(
       .single()
 
     // STEP 2: Update uploaded_documents.validation_status — the table being used in the UI
-    console.log('[v0] Executing UPDATE query for document:', documentId, 'to status:', spanishStatus)
+    console.log('[v0] Updating uploaded_documents - documentId:', documentId, 'spanishStatus:', spanishStatus, 'type of spanishStatus:', typeof spanishStatus)
     
     const { error: updateError, data: updateData } = await adminClient
       .from('uploaded_documents')
@@ -86,6 +86,8 @@ export async function PATCH(
       })
       .eq('id', documentId)
       .select()
+    
+    console.log('[v0] Update result - error:', updateError, 'data length:', updateData?.length, 'data:', updateData)
 
     if (updateError) {
       console.error('[v0] ❌ Failed to update driver_documents.status:', updateError.message)

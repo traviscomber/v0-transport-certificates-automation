@@ -559,17 +559,20 @@ export function DriverCard({
             
             if (!res.ok) {
               const err = await res.json()
+              console.error('[v0] PATCH error response:', err)
               throw new Error(err.error || 'Status update failed')
             }
 
-            console.log('[v0] PATCH successful, BD updated')
+            const result = await res.json()
+            console.log('[v0] PATCH successful, response:', result)
 
-            // Close modal (optimistic state already applied and will persist)
+            // Close modal
             setShowDocumentModal(false)
             setSelectedDocument(null)
-
-            // DO NOT dispatch event - SWR will handle eventual consistency
-            // The optimistic update is already visible and will stay until real data arrives
+            
+            // Refetch after successful update to sync with DB
+            console.log('[v0] Refetching documents after status update...')
+            await refetch(true)
           } catch (error) {
             console.error('[v0] Error updating status:', error)
             // Revert optimistic update on error by refetching
