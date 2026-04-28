@@ -52,11 +52,11 @@ export default function ProfilePage() {
     setMessage(null)
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('profiles')
         .update({
           full_name: formData.fullName,
-        } as any)
+        })
         .eq('id', user?.id)
 
       if (error) throw error
