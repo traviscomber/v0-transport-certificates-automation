@@ -92,7 +92,7 @@ export function CertificateUpload({ onClose, onSuccess }: CertificateUploadProps
       } = supabase.storage.from("certificates").getPublicUrl(fileName)
 
       // Insert certificate record
-      const { error: insertError } = await supabase.from("certificates").insert({
+      const { error: insertError } = await (supabase as any).from("certificates").insert({
         driver_id: user.id,
         certificate_type: formData.certificate_type,
         certificate_number: formData.certificate_number,
