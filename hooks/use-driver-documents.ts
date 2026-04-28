@@ -22,7 +22,11 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
 
   // Cargar documentos usando la API unificada
   const fetchDocuments = async (skipCache = false) => {
-    if (!driverRut) return
+    console.log('[v0] fetchDocuments called - driverRut:', driverRut, 'driverId:', driverId, 'skipCache:', skipCache)
+    if (!driverRut) {
+      console.log('[v0] Early return - no driverRut')
+      return
+    }
     
     setLoading(true)
     setError(null)
@@ -80,7 +84,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         uploaded_by: doc.uploaded_by || '',
       }))
 
-      console.log('[v0] Documents loaded:', transformedDocs.length)
+      console.log('[v0] API returned documents:', result.documents?.length, 'Transformed:', transformedDocs.length, 'conductor_id resolved:', result.conductor_id)
       setDocuments(transformedDocs)
     } catch (err) {
       console.error('[v0] Error fetching documents:', err)
