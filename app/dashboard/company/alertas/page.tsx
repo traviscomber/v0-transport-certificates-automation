@@ -9,18 +9,18 @@ import { AlertTriangle, AlertCircle, Info } from 'lucide-react'
 
 interface Alert {
   id: string
-  user_id: string
+  alert_type: string
   title: string
-  message: string
-  type: string
-  priority: 'critical' | 'high' | 'normal' | 'low'
-  level: 'error' | 'warning' | 'info' | 'success'
-  category: string
-  read: boolean
+  description: string
+  priority: 'critical' | 'high' | 'medium' | 'low'
+  entity_type?: string
+  entity_id?: string
+  entity_name?: string
+  is_read: boolean
   is_resolved: boolean
-  metadata?: Record<string, any>
   action_url?: string
   created_at: string
+  updated_at?: string
   timestamp?: Date
 }
 
@@ -60,10 +60,10 @@ export default function AlertasPage() {
   const filteredAlerts = alerts.filter((alert) => {
     const matchesSearch = 
       alert.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      alert.message.toLowerCase().includes(searchQuery.toLowerCase())
+      alert.description?.toLowerCase().includes(searchQuery.toLowerCase())
     
     const matchesPriority = !selectedPriority || alert.priority === selectedPriority
-    const matchesCategory = !selectedCategory || alert.category === selectedCategory
+    const matchesCategory = !selectedCategory || alert.alert_type === selectedCategory
     
     return matchesSearch && matchesPriority && matchesCategory
   })
@@ -223,10 +223,10 @@ export default function AlertasPage() {
           className="px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <option value="">Todas las categorías</option>
-          <option value="document_approved">Aprobados</option>
-          <option value="document_rejected">Rechazados</option>
-          <option value="document_expiration">Vencimiento</option>
-          <option value="document_uploaded">Uploadados</option>
+          <option value="DOCUMENT_REJECTED">Documentos Rechazados</option>
+          <option value="DOCUMENT_EXPIRATION">Vencimientos</option>
+          <option value="DOCUMENT_UPLOADED">Documentos Uploadados</option>
+          <option value="DOCUMENT_APPROVED">Documentos Aprobados</option>
         </select>
         <Button
           variant="outline"
@@ -275,12 +275,12 @@ export default function AlertasPage() {
                       <div className="w-2 h-2 rounded-full bg-primary"></div>
                     )}
                   </div>
-                  <p className="text-sm text-foreground/85 dark:text-slate-200">{alert.message}</p>
+                  <p className="text-sm text-foreground/85 dark:text-slate-200">{alert.description}</p>
                   <div className="flex items-center gap-3 mt-3 flex-wrap">
                     <span className="text-xs text-foreground/70 dark:text-slate-400">{formatTime(alert.created_at)}</span>
-                    {alert.category && (
+                    {alert.entity_type && (
                       <Badge variant="outline" className="text-xs">
-                        {alert.category.replace('_', ' ')}
+                        {alert.entity_type}
                       </Badge>
                     )}
                     {alert.action_url && (

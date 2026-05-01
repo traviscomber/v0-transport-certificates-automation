@@ -6,14 +6,15 @@ export const dynamic = 'force-dynamic'
 /**
  * GET /api/alerts
  * 
- * Obtiene todas las alertas del usuario autenticado con opciones de filtrado
+ * Obtiene todas las alertas con opciones de filtrado
  * 
  * Query Parameters:
- * - type: Filtrar por tipo (document_upload, document_validated, etc)
- * - priority: Filtrar por prioridad (critical, high, normal, low)
- * - read: Filtrar alertas leídas (true/false)
- * - limit: Número máximo (default: 50)
+ * - alert_type: Filtrar por tipo (DOCUMENT_REJECTED, DOCUMENT_EXPIRATION, etc)
+ * - priority: Filtrar por prioridad (critical, high, medium, low)
+ * - is_read: Filtrar alertas leídas (true/false)
+ * - limit: Número máximo (default: 100)
  * - offset: Para paginación (default: 0)
+ * - sort: Ordenar por campo (default: created_at.desc)
  */
 export async function GET(request: Request) {
   const supabase = await createClient()
@@ -25,29 +26,32 @@ export async function GET(request: Request) {
     }
 
     const url = new URL(request.url)
-    const type = url.searchParams.get('type')
+    const alert_type = url.searchParams.get('alert_type')
     const priority = url.searchParams.get('priority')
-    const read = url.searchParams.get('read')
-    const limit = parseInt(url.searchParams.get('limit') || '50')
+    const is_read = url.searchParams.get('is_read')
+    const limit = parseInt(url.searchParams.get('limit') || '100')
     const offset = parseInt(url.searchParams.get('offset') || '0')
+    const sort = url.searchParams.get('sort') || 'created_at.desc'
 
     let query = supabase
-      .from('alerts')
+      .from('alerts_log')
       .select('*', { count: 'exact' })
-      .eq('user_id', user.id)
 
-    if (type) query = query.eq('type', type)
+    if (alert_type) query = query.eq('alert_type', alert_type)
     if (priority) query = query.eq('priority', priority)
-    if (read !== null) query = query.eq('read', read === 'true')
+    if (is_read !== null) query = query.eq('is_read', is_read === 'true')
+
+    // Parse sort parameter (format: "field.direction")
+    const [sortField, sortDir] = sort.split('.')
+    query = query.order(sortField || 'created_at', { ascending: sortDir === 'asc' })
 
     const { data: alerts, error, count } = await query
-      .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
     if (error) throw error
 
     return NextResponse.json({ 
-      data: alerts,
+      alerts: alerts,
       total: count,
       limit,
       offset,
@@ -62,16 +66,18 @@ export async function GET(request: Request) {
 /**
  * POST /api/alerts
  * 
- * Crea una nueva alerta para el usuario autenticado
+ * Crea una nueva alerta global
  * 
  * Body:
  * {
+ *   alert_type: string (DOCUMENT_REJECTED, DOCUMENT_EXPIRATION, etc),
  *   title: string,
- *   message: string,
- *   type: string (document_upload, document_validated, etc),
- *   category: string (document, compliance, entity, etc),
- *   priority: string (critical, high, normal, low),
- *   action_url?: string (link a donde ir)
+ *   description: string,
+ *   priority: string (critical, high, medium, low),
+ *   entity_type?: string (document, conductor, etc),
+ *   entity_id?: string,
+ *   entity_name?: string,
+ *   action_url?: string
  * }
  */
 export async function POST(request: Request) {
@@ -84,28 +90,29 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { title, message, type, category, priority, action_url, metadata } = body
+    const { alert_type, title, description, priority, entity_type, entity_id, entity_name, action_url } = body
 
     // Validar campos requeridos
-    if (!title || !message) {
+    if (!alert_type || !title) {
       return NextResponse.json(
-        { error: "title y message son requeridos" },
+        { error: "alert_type y title son requeridos" },
         { status: 400 }
       )
     }
 
     const { data: alert, error } = await supabase
-      .from('alerts')
+      .from('alerts_log')
       .insert({
-        user_id: user.id,
+        alert_type,
         title,
-        message,
-        type: type || 'info',
-        category: category || 'general',
-        priority: priority || 'normal',
-        action_url,
-        metadata,
-        read: false
+        description: description || null,
+        priority: priority || 'medium',
+        entity_type: entity_type || null,
+        entity_id: entity_id || null,
+        entity_name: entity_name || null,
+        action_url: action_url || null,
+        is_read: false,
+        is_resolved: false
       })
       .select()
       .single()
@@ -122,13 +129,13 @@ export async function POST(request: Request) {
 /**
  * PATCH /api/alerts
  * 
- * Actualiza múltiples alertas (marcar como leídas, eliminar, etc)
+ * Actualiza múltiples alertas (marcar como leídas, resueltas, etc)
  * 
  * Body:
  * {
  *   ids: string[], // IDs de alertas a actualizar
- *   read?: boolean, // Marcar como leída
- *   deleted?: boolean // Marcar como eliminada
+ *   is_read?: boolean, // Marcar como leída
+ *   is_resolved?: boolean // Marcar como resuelta
  * }
  */
 export async function PATCH(request: Request) {
@@ -141,7 +148,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json()
-    const { ids, read, deleted } = body
+    const { ids, is_read, is_resolved } = body
 
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
       return NextResponse.json(
@@ -152,14 +159,14 @@ export async function PATCH(request: Request) {
 
     // Construir objeto de actualización solo con campos que se proporcionan
     const updateData: any = {}
-    if (read !== undefined) updateData.read = read
-    if (deleted !== undefined) updateData.deleted_at = deleted ? new Date().toISOString() : null
+    if (is_read !== undefined) updateData.is_read = is_read
+    if (is_resolved !== undefined) updateData.is_resolved = is_resolved
+    updateData.updated_at = new Date().toISOString()
 
     const { data: updated, error } = await supabase
-      .from('alerts')
+      .from('alerts_log')
       .update(updateData)
       .in('id', ids)
-      .eq('user_id', user.id)
       .select()
 
     if (error) throw error

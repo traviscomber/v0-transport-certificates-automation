@@ -60,7 +60,7 @@ export async function logAlert(event: AlertEvent) {
     console.log('[v0] Saving alert to database:', alertData)
 
     const { data, error } = await adminClient
-      .from('alerts')
+      .from('alerts_log')
       .insert([alertData])
       .select()
 
