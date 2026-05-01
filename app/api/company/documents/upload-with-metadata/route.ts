@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { extractDocumentMetadata, getDocumentStatus } from '@/lib/ai-document-processor'
+import { normalizeDocumentType, determineValidationStatus } from '@/lib/document-classification'
 
 export const maxDuration = 300 // 5 minutes for file uploads
 
@@ -52,16 +54,68 @@ export async function POST(request: NextRequest) {
       .from('documents')
       .getPublicUrl(storagePath)
 
+    // STEP 2: Extract document metadata using AI (async, 5-10 seconds)
+    console.log('[v0] Starting AI document processing...')
+    let aiExtraction = null
+    let extractionError = null
+
+    try {
+      // Convert file to base64 for AI processing
+      const buffer = Buffer.from(arrayBuffer)
+      const base64 = buffer.toString('base64')
+      
+      // Call AI document processor
+      aiExtraction = await extractDocumentMetadata(base64, file.type as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp')
+      console.log('[v0] AI extraction successful:', aiExtraction)
+    } catch (error) {
+      extractionError = error instanceof Error ? error.message : 'AI extraction failed'
+      console.warn('[v0] AI extraction failed (non-blocking):', extractionError)
+      // Continue with document upload — AI failure doesn't block the flow
+    }
+
+    // STEP 3: Determine validation status based on AI extraction
+    let validationStatus = 'pending'
+    let aiConfidence = 0
+
+    if (aiExtraction && aiExtraction.confidence >= 0.7) {
+      aiConfidence = aiExtraction.confidence
+      const daysUntilExp = aiExtraction.expirationDate 
+        ? Math.floor((new Date(aiExtraction.expirationDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+        : null
+      
+      validationStatus = determineValidationStatus(
+        aiExtraction.confidence,
+        daysUntilExp,
+        !!aiExtraction.documentNumber
+      )
+    }
+
     // Insert using only columns that exist in the uploaded_documents table
+    const insertPayload: any = {
+      conductor_id: conductorUUID,
+      document_type_id: documentTypeId,
+      original_filename: file.name,
+      file_url: publicUrlData?.publicUrl || '',
+      validation_status: validationStatus
+    }
+
+    // Add AI-extracted fields if extraction was successful
+    if (aiExtraction) {
+      insertPayload.extracted_document_type = normalizeDocumentType(aiExtraction.documentType)
+      insertPayload.extracted_expiration_date = aiExtraction.expirationDate
+      insertPayload.extraction_confidence = aiExtraction.confidence
+      insertPayload.extraction_warnings = aiExtraction.warnings || []
+      insertPayload.ai_processing_status = 'completed'
+    } else {
+      insertPayload.ai_processing_status = 'failed'
+      if (extractionError) {
+        insertPayload.extraction_warnings = [extractionError]
+      }
+    }
+
     const { data: docRecord, error: dbError } = await adminClient
       .from('uploaded_documents')
-      .insert([{
-        conductor_id: conductorUUID,
-        document_type_id: documentTypeId,
-        original_filename: file.name,
-        file_url: publicUrlData?.publicUrl || '',
-        validation_status: 'pending'
-      }])
+      .insert([insertPayload])
       .select()
       .single()
 
@@ -70,10 +124,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to save document', details: dbError.message }, { status: 500 })
     }
 
+    // Send notification to ejecutivas if document was auto-rejected by AI
+    if (validationStatus === 'rejected' && aiExtraction) {
+      console.log('[v0] Document auto-rejected by AI, would trigger notification here')
+      // In production: call notifyExecutivas with auto-rejection reason
+    }
+
     return NextResponse.json({
       success: true,
       document: docRecord,
-      message: 'Documento subido exitosamente'
+      aiExtraction: aiExtraction || null,
+      validationStatus,
+      message: 'Documento subido y procesado con IA'
     })
   } catch (error) {
     console.error('[v0] Error in upload:', error)
