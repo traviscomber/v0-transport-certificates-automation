@@ -285,14 +285,14 @@ export function DriverCard({
                   ) : documents.length > 0 ? (
                     <>
                       {/* Banner for rejected documents */}
-                      {documents.some(d => d.estado === 'rejected') && (
+                      {documents.some(d => d.estado === 'rechazado') && (
                         <div className="rounded bg-red-500/20 border border-red-500/50 p-3 text-xs text-red-300">
                           <p className="font-semibold flex items-center gap-2">
                             <AlertCircle className="h-4 w-4" />
-                            Rejected Documents
+                            Documentos Rechazados
                           </p>
                           <p className="text-xs text-red-300/80 mt-1">
-                            Please re-upload the documents marked as rejected
+                            Por favor, vuelve a subir los documentos marcados como rechazados
                           </p>
                         </div>
                       )}
@@ -300,7 +300,7 @@ export function DriverCard({
                         <div
                           key={doc.id}
                           className={`flex items-center justify-between rounded bg-slate-800/50 p-2 text-xs hover:bg-slate-800 transition-colors cursor-pointer ${
-                            doc.estado === 'rejected' ? 'opacity-60' : ''
+                            doc.estado === 'rechazado' ? 'opacity-60' : ''
                           }`}
                           onClick={() => {
                             setSelectedDocument(doc)
@@ -311,27 +311,27 @@ export function DriverCard({
                           <FileText className="h-3 w-3 text-slate-400 flex-shrink-0" />
                           <div className="min-w-0 flex-1">
                             <p className={`font-medium truncate ${
-                              doc.estado === 'rejected' 
+                              doc.estado === 'rechazado' 
                                 ? 'text-red-400 line-through' 
                                 : 'text-slate-300'
                             }`}>
                               {doc.tipo}
                             </p>
                             <p className={`truncate text-xs ${
-                              doc.estado === 'rejected' 
+                              doc.estado === 'rechazado' 
                                 ? 'text-red-500/70 line-through' 
                                 : 'text-slate-500'
                             }`}>
                               {doc.nombre}
                             </p>
                             <p className={`text-xs ${
-                              doc.estado === 'rejected' 
+                              doc.estado === 'rechazado' 
                                 ? 'text-red-400' 
                                 : 'text-slate-500'
                             }`}>
                               {new Date(doc.fecha_subida).toLocaleDateString('es-ES')}
-                              {doc.uploaded_by && ` by ${doc.uploaded_by}`}
-                              {doc.estado === 'rejected' && ' - REJECTED'}
+                              {doc.uploaded_by && ` por ${doc.uploaded_by}`}
+                              {doc.estado === 'rechazado' && ' - RECHAZADO'}
                             </p>
                           </div>
                         </div>
