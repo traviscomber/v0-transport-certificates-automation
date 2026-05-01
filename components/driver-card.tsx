@@ -42,7 +42,7 @@ export function DriverCard({
   }, [driver.id, driver.rut, driver.nombre])
   
   // Only fetch documents when card is expanded to avoid 500+ simultaneous API calls
-  const { documents, loading, uploadDocument, refetch } = useDriverDocuments(driver.id, isExpanded, driver.rut)
+  const { documents, loading, uploadDocument, refetch, updateDocumentStatus } = useDriverDocuments(driver.id, isExpanded, driver.rut)
   console.log('[v0] DriverCard hook returned - documents:', documents.length, 'loading:', loading, 'driver.id:', driver.id)
 
   const [showUploadModal, setShowUploadModal] = useState(false)
@@ -554,38 +554,31 @@ export function DriverCard({
           setSelectedDocument(null)
         }}
         onStatusChange={async (docId, newStatus) => {
+          // 1. Optimistic update — UI changes instantly, no waiting
+          updateDocumentStatus(docId, newStatus)
+          
+          // 2. Close modal immediately so user sees the change
+          setShowDocumentModal(false)
+          setSelectedDocument(null)
+
           try {
-            console.log('[v0] Sending PATCH request to update document status:', { docId, newStatus })
+            // 3. Send PATCH to DB in background
             const res = await fetch(`/api/company/documents/${docId}/status`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ status: newStatus, reason: 'Cambio realizado desde dashboard' }),
             })
-            
-            console.log('[v0] PATCH response status:', res.status)
-            
+
             if (!res.ok) {
               const err = await res.json()
-              console.error('[v0] PATCH error response:', err)
               throw new Error(err.error || 'Status update failed')
             }
 
-            const result = await res.json()
-            console.log('[v0] PATCH successful, response:', result)
-
-            // Wait a bit for DB to sync
-            await new Promise(resolve => setTimeout(resolve, 500))
-            
-            // Refetch with cache skip to get fresh data from DB
-            console.log('[v0] Refetching documents after status update...')
+            // 4. Confirm with a background refetch to sync any DB-side changes
             await refetch(true)
-            
-            // Close modal AFTER refetch completes
-            setShowDocumentModal(false)
-            setSelectedDocument(null)
           } catch (error) {
             console.error('[v0] Error updating status:', error)
-            // On error, refetch to restore current state from DB
+            // On error revert by refetching real DB state
             await refetch(true)
             throw error
           }

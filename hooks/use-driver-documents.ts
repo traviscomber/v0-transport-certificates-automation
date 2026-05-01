@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export interface DriverDocument {
@@ -18,7 +18,6 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
-  const unsubscribeRef = useRef<(() => void) | null>(null)
 
   // Cargar documentos usando la API unificada
   const fetchDocuments = useCallback(async (skipCache = false) => {
@@ -74,28 +73,14 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         throw new Error(result.error || 'Failed to fetch documents')
       }
 
-      // Transformar respuesta de la API
-      // Map validation_status values to Spanish estado for display (keep Spanish for UI consistency)
-      const statusMap: Record<string, string> = {
-        // English values (current DB storage)
-        'approved': 'aprobado',
-        'rejected': 'rechazado',
-        'pending': 'pendiente',
-        'expired': 'vencido',
-        'validated': 'aprobado', // legacy value
-        // Spanish values (legacy/old documents)
-        'aprobado': 'aprobado',
-        'rechazado': 'rechazado',
-        'pendiente': 'pendiente',
-        'vencido': 'vencido',
-      }
-
+      // The API route already maps validation_status → Spanish verification_status
+      // Read verification_status directly — no double-mapping needed
       const transformedDocs = (result.documents || []).map((doc: any) => ({
         id: doc.id,
         driver_rut: doc.driver_rut || '',
         tipo: doc.document_type || 'Documento',
         nombre: doc.original_filename || doc.file_name || '',
-        estado: statusMap[doc.validation_status?.toLowerCase()] || 'pendiente',
+        estado: (doc.verification_status || 'pendiente') as DriverDocument['estado'],
         fecha_subida: doc.created_at || new Date().toISOString(),
         public_url: doc.file_url || doc.public_url,
         storage_path: doc.file_path || doc.storage_path,
@@ -216,63 +201,12 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
     }
   }
 
-  // Only fetch when explicitly enabled (card expanded) AND when driverRut is available
+  // Fetch when card expands
   useEffect(() => {
-    console.log('[v0] Initial fetch effect - driverRut:', !!driverRut, 'enabled:', enabled)
     if (driverRut && enabled) {
-      console.log('[v0] Calling initial fetchDocuments from useEffect')
       fetchDocuments()
     }
   }, [driverRut, enabled, fetchDocuments])
-
-  // Subscribe to realtime changes in uploaded_documents for this conductor
-  useEffect(() => {
-    if (!driverRut || !enabled || !driverId) {
-      console.log('[v0] Realtime subscription skipped - driverRut:', !!driverRut, 'enabled:', enabled, 'driverId:', !!driverId)
-      return
-    }
-
-    console.log('[v0] ========== SETTING UP REALTIME ==========')
-    console.log('[v0] Setting up Realtime subscription for conductor:', driverId, 'rut:', driverRut)
-
-    // Subscribe to changes on uploaded_documents table
-    const subscription = supabase
-      .channel(`uploaded_documents:conductor:${driverId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'uploaded_documents',
-          filter: `conductor_id.eq.${driverId}`
-        },
-        (payload) => {
-          console.log('[v0] ⭐️ REALTIME EVENT FIRED ⭐️')
-          console.log('[v0] Event type:', payload.eventType)
-          console.log('[v0] New data:', payload.new)
-          console.log('[v0] Old data:', payload.old)
-          console.log('[v0] Calling fetchDocuments with skipCache=true')
-          fetchDocuments(true)
-        }
-      )
-      .subscribe((status) => {
-        console.log('[v0] ✅ Realtime subscription established, status:', status)
-      })
-
-    // Store unsubscribe function
-    unsubscribeRef.current = () => {
-      console.log('[v0] 🔌 UNSUBSCRIBING FROM REALTIME')
-      subscription.unsubscribe()
-    }
-
-    // Cleanup on unmount or when dependencies change
-    return () => {
-      console.log('[v0] Realtime cleanup called')
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current()
-      }
-    }
-  }, [driverRut, driverId, enabled, fetchDocuments])
 
   return {
     documents,

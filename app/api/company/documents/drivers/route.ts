@@ -50,15 +50,22 @@ export async function GET(request: NextRequest) {
 
     console.log('[v0] Found documents:', dbDocuments?.length || 0)
 
+    const statusMap: Record<string, string> = {
+      'approved':  'aprobado',
+      'validated': 'aprobado',
+      'rejected':  'rechazado',
+      'pending':   'pendiente',
+      'expired':   'vencido',
+      // legacy Spanish values already stored in DB
+      'aprobado':  'aprobado',
+      'rechazado': 'rechazado',
+      'pendiente': 'pendiente',
+      'vencido':   'vencido',
+    }
+
     const documents = (dbDocuments || []).map((doc: any) => {
-      // Map validation_status to Spanish status
-      let estadoEspanol = 'pendiente'
-      if (doc.validation_status) {
-        const s = doc.validation_status.toLowerCase()
-        if (s === 'validated') estadoEspanol = 'aprobado'
-        else if (s === 'rejected') estadoEspanol = 'rechazado'
-        else if (s === 'pending') estadoEspanol = 'pendiente'
-      }
+      const rawStatus = (doc.validation_status || 'pending').toLowerCase()
+      const estadoEspanol = statusMap[rawStatus] || 'pendiente'
 
       return {
         id: doc.id,
@@ -67,7 +74,9 @@ export async function GET(request: NextRequest) {
         upload_date: doc.created_at,
         created_at: doc.created_at,
         document_type: doc.document_type_id || 'Documento',
+        // verification_status is the already-mapped Spanish value used by the hook
         verification_status: estadoEspanol,
+        // keep raw value for debugging
         validation_status: doc.validation_status,
         expiration_date: doc.expiration_date || null,
         size: 0,
