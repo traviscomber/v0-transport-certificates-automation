@@ -9,13 +9,15 @@ import { createClient } from '@supabase/supabase-js'
 import { crossReferenceValidation } from '@/lib/chilean-public-records'
 import { validateDocumentData } from '@/lib/chilean-validators'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-)
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+    )
     const { documentId, extractedData, ocrConfidence } = await request.json()
 
     if (!documentId || !extractedData) {
