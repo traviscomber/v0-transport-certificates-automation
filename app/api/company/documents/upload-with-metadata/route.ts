@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     // STEP 3: Determine validation status based on AI extraction
-    let validationStatus = 'pending'
+    let validationStatus: string = 'pending'
     let aiConfidence = 0
 
     if (aiExtraction && aiExtraction.confidence >= 0.7) {
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
         aiExtraction.confidence,
         daysUntilExp,
         !!aiExtraction.documentNumber
-      )
+      ) as string
     }
 
     // Insert using only columns that exist in the uploaded_documents table
