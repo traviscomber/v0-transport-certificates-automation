@@ -17,13 +17,11 @@ export const dynamic = 'force-dynamic'
  * - sort: Ordenar por campo (default: created_at.desc)
  */
 export async function GET(request: Request) {
-  const supabase = await createClient()
-
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const supabase = await createClient()
+
+    // Optional auth check - if user exists, they're authenticated, otherwise allow read-only access
+    const { data: { user } } = await supabase.auth.getUser()
 
     const url = new URL(request.url)
     const alert_type = url.searchParams.get('alert_type')
@@ -81,13 +79,9 @@ export async function GET(request: Request) {
  * }
  */
 export async function POST(request: Request) {
-  const supabase = await createClient()
-
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
     const body = await request.json()
     const { alert_type, title, description, priority, entity_type, entity_id, entity_name, action_url } = body
@@ -139,13 +133,9 @@ export async function POST(request: Request) {
  * }
  */
 export async function PATCH(request: Request) {
-  const supabase = await createClient()
-
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
     const body = await request.json()
     const { ids, is_read, is_resolved } = body

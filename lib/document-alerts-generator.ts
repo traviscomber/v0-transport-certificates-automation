@@ -101,6 +101,14 @@ export async function generateDocumentStatusChangeAlert(
     const priority = isApproved ? 'normal' : 'high'
     const category = isApproved ? 'document_approved' : 'document_rejected'
 
+    console.log('[v0] 📢 Starting generateDocumentStatusChangeAlert:', {
+      documentId: uploadedDocumentId,
+      documentType,
+      conductorName,
+      newStatus,
+      isApproved,
+    })
+
     // Alert for conductors/clients (via notifications table)
     const conductorNotification = {
       user_id: conductorId,
@@ -109,7 +117,7 @@ export async function generateDocumentStatusChangeAlert(
         ? `Tu ${documentType} ha sido revisado y aprobado.`
         : `Tu ${documentType} ha sido rechazado. Razón: ${reason || 'Revisar con supervisores'}`,
       type: `document_${isApproved ? 'approved' : 'rejected'}`,
-      read: false,
+      is_read: false,
       created_at: new Date().toISOString(),
       metadata: {
         document_id: uploadedDocumentId,
@@ -118,9 +126,15 @@ export async function generateDocumentStatusChangeAlert(
       },
     }
 
-    await supabase
+    const { error: notifError } = await supabase
       .from('notifications')
       .insert(conductorNotification)
+
+    if (notifError) {
+      console.error('[v0] ❌ Error inserting conductor notification:', notifError)
+    } else {
+      console.log('[v0] ✅ Conductor notification created successfully')
+    }
 
     // Alert for admins/managers (only on rejection, to alerts_log)
     if (!isApproved) {
@@ -148,15 +162,17 @@ export async function generateDocumentStatusChangeAlert(
           .insert(adminAlerts)
 
         if (alertError) {
-          console.error('[v0] Error creating admin alerts:', alertError)
+          console.error('[v0] ❌ Error creating admin alerts:', alertError)
+        } else {
+          console.log('[v0] ✅ Admin rejection alerts created successfully')
         }
       }
     }
 
-    console.log(`[v0] Created status change alert: ${newStatus} for document ${uploadedDocumentId}`)
+    console.log('[v0] ✅ Completed status change alert generation for:', newStatus)
 
   } catch (error) {
-    console.error('[v0] Error in generateDocumentStatusChangeAlert:', error)
+    console.error('[v0] ❌ Error in generateDocumentStatusChangeAlert:', error)
   }
 }
 
