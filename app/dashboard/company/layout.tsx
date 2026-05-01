@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Users, FileText, BarChart3, LogOut, Zap, AlertTriangle, Users2, Lock } from 'lucide-react'
+import { LayoutDashboard, Users, FileText, BarChart3, LogOut, Zap, AlertTriangle, Users2, Lock, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { NotificationCenter } from '@/components/notification-center'
 
@@ -13,6 +13,7 @@ const navItems = [
   { href: '/dashboard/company/subcontratistas', label: 'Subcontratistas', icon: Zap },
   { href: '/dashboard/company/conductores', label: 'Conductores', icon: Users },
   { href: '/dashboard/company/documentos', label: 'Documentos', icon: FileText },
+  { href: '/dashboard/company/analytics/conductores', label: 'Analytics', icon: TrendingUp },
   { href: '/dashboard/company/alertas', label: 'Alertas', icon: AlertTriangle },
   { href: '/dashboard/company/reportes', label: 'Reportes', icon: BarChart3 },
   { href: '/admin/metrics', label: 'Métricas de Usuarios', icon: Lock },
