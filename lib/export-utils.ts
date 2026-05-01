@@ -9,6 +9,16 @@ export interface ExportOptions {
   reportType?: string
 }
 
+export interface ComplianceDocumentData {
+  vehiclePatent: string
+  driverName: string
+  documentType: string
+  expirationDate: string
+  status: 'vigente' | 'por vencer' | 'vencido'
+  uploadDate: string
+  observations?: string
+}
+
 /**
  * Export report data to CSV (Excel compatible)
  */
@@ -153,4 +163,140 @@ Para más información, contacte al administrador del sistema.
 `
 
   return content
+}
+
+/**
+ * Export compliance document matrix to Excel
+ */
+export function exportComplianceToExcel(documents: ComplianceDocumentData[], companyName: string) {
+  try {
+    const XLSX = require('xlsx')
+    const workbook = XLSX.utils.book_new()
+    
+    // Summary sheet
+    const summaryData = [
+      ['MATRIZ DOCUMENTAL DE CUMPLIMIENTO'],
+      ['Empresa:', companyName],
+      ['Fecha de generación:', new Date().toLocaleDateString('es-ES')],
+      [],
+      ['RESUMEN ESTADÍSTICO'],
+      ['Total Documentos:', documents.length],
+      ['Vigentes:', documents.filter(d => d.status === 'vigente').length],
+      ['Por Vencer:', documents.filter(d => d.status === 'por vencer').length],
+      ['Vencidos:', documents.filter(d => d.status === 'vencido').length],
+    ]
+    
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData)
+    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Resumen')
+    
+    // Details sheet
+    const detailsData = [
+      ['Patente', 'Conductor', 'Tipo Documento', 'Vencimiento', 'Estado', 'Fecha Subida', 'Observaciones'],
+      ...documents.map(doc => [
+        doc.vehiclePatent,
+        doc.driverName,
+        doc.documentType,
+        doc.expirationDate,
+        doc.status === 'vigente' ? '✓ Vigente' : doc.status === 'por vencer' ? '⚠ Por vencer' : '✗ Vencido',
+        doc.uploadDate,
+        doc.observations || ''
+      ])
+    ]
+    
+    const detailsSheet = XLSX.utils.aoa_to_sheet(detailsData)
+    XLSX.utils.book_append_sheet(workbook, detailsSheet, 'Documentos')
+    
+    XLSX.writeFile(workbook, `docufleet-matriz-${new Date().toISOString().split('T')[0]}.xlsx`)
+    console.log('[v0] Exported compliance matrix to Excel')
+  } catch (error) {
+    console.error('[v0] Error exporting to Excel:', error)
+    throw error
+  }
+}
+
+/**
+ * Export compliance document matrix to PDF
+ */
+export function exportComplianceToPDF(documents: ComplianceDocumentData[], companyName: string) {
+  try {
+    const jsPDF = require('jspdf').default
+    const doc = new jsPDF()
+    
+    // Header
+    doc.setFontSize(16)
+    doc.text('MATRIZ DOCUMENTAL DE CUMPLIMIENTO', 10, 15)
+    doc.setFontSize(10)
+    doc.text(`Empresa: ${companyName}`, 10, 22)
+    doc.text(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, 10, 28)
+    
+    // Summary
+    const vigentes = documents.filter(d => d.status === 'vigente').length
+    const porVencer = documents.filter(d => d.status === 'por vencer').length
+    const vencidos = documents.filter(d => d.status === 'vencido').length
+    
+    doc.setFontSize(9)
+    doc.text(`Total: ${documents.length} | Vigentes: ${vigentes} | Por Vencer: ${porVencer} | Vencidos: ${vencidos}`, 10, 35)
+    
+    // Table header
+    const columns = ['Patente', 'Conductor', 'Documento', 'Vencimiento', 'Estado', 'Subido']
+    const colWidths = [16, 28, 24, 20, 20, 20]
+    let startY = 42
+    const lineHeight = 6
+    
+    // Draw header row
+    doc.setFontSize(8)
+    doc.setFillColor(220, 220, 220)
+    let xPos = 10
+    columns.forEach((col, idx) => {
+      doc.rect(xPos, startY, colWidths[idx], lineHeight, 'F')
+      doc.text(col, xPos + 1, startY + 4, { maxWidth: colWidths[idx] - 2 })
+      xPos += colWidths[idx]
+    })
+    
+    // Draw data rows
+    startY += lineHeight
+    const pageHeight = doc.internal.pageSize.height
+    let pageNum = 1
+    
+    documents.forEach((doc, rowIdx) => {
+      // Check if we need a new page
+      if (startY + lineHeight > pageHeight - 10) {
+        jsPDF.addPage()
+        startY = 10
+        // Redraw header on new page
+        let xPos = 10
+        columns.forEach((col, idx) => {
+          jsPDF.rect(xPos, startY, colWidths[idx], lineHeight, 'F')
+          jsPDF.text(col, xPos + 1, startY + 4, { maxWidth: colWidths[idx] - 2 })
+          xPos += colWidths[idx]
+        })
+        startY += lineHeight
+        pageNum++
+      }
+      
+      xPos = 10
+      const rowData = [
+        doc.vehiclePatent,
+        doc.driverName,
+        doc.documentType,
+        doc.expirationDate,
+        doc.status === 'vigente' ? '✓' : doc.status === 'por vencer' ? '⚠' : '✗',
+        doc.uploadDate
+      ]
+      
+      rowData.forEach((cell, colIdx) => {
+        jsPDF.rect(xPos, startY, colWidths[colIdx], lineHeight)
+        jsPDF.text(cell.substring(0, 18), xPos + 1, startY + 4, { maxWidth: colWidths[colIdx] - 2 })
+        xPos += colWidths[colIdx]
+      })
+      
+      startY += lineHeight
+    })
+    
+    jsPDF.save(`docufleet-matriz-${new Date().toISOString().split('T')[0]}.pdf`)
+    console.log('[v0] Exported compliance matrix to PDF')
+  } catch (error) {
+    console.error('[v0] Error exporting to PDF:', error)
+    throw error
+  }
 }

@@ -5,8 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { FileText, Shield, Truck, AlertTriangle, CheckCircle, Clock, Download, Filter } from "lucide-react"
 import { useState } from "react"
-import jsPDF from "jspdf"
-import * as XLSX from "xlsx"
+import { exportComplianceToExcel, exportComplianceToPDF } from "@/lib/export-utils"
 
 export function ComplianceDashboard() {
   const [filterStatus, setFilterStatus] = useState<string>("all")
