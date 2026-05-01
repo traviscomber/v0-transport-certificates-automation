@@ -127,12 +127,14 @@ export function DriversList({ drivers }: DriversListProps) {
 
   const getDocumentStatusColor = (estado: string) => {
     switch (estado) {
-      case 'approved':
+      case 'aprobado':
         return 'bg-green-500/30 text-green-200'
-      case 'rejected':
+      case 'rechazado':
         return 'bg-red-500/30 text-red-200'
-      case 'pending':
+      case 'pendiente':
         return 'bg-yellow-500/30 text-yellow-200'
+      case 'vencido':
+        return 'bg-red-500/40 text-red-300'
       default:
         return 'bg-slate-500/30 text-slate-200'
     }
@@ -140,12 +142,14 @@ export function DriversList({ drivers }: DriversListProps) {
 
   const getDocumentStatusLabel = (estado: string) => {
     switch (estado) {
-      case 'approved':
-        return 'Approved'
-      case 'rejected':
-        return 'Rejected'
-      case 'pending':
-        return 'Pending'
+      case 'aprobado':
+        return 'Aprobado'
+      case 'rechazado':
+        return 'Rechazado'
+      case 'pendiente':
+        return 'Pendiente'
+      case 'vencido':
+        return 'Vencido'
       default:
         return estado
     }
