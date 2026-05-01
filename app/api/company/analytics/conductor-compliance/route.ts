@@ -9,6 +9,8 @@ export async function GET() {
     console.log('[v0] Fetching conductor compliance metrics...')
     const report = await getConductorComplianceMetrics()
     console.log('[v0] Fetched', report.conductors.length, 'conductors')
+    console.log('[v0] First conductor:', report.conductors[0])
+    console.log('[v0] Risk levels:', report.conductors.map(c => ({ name: c.conductorName, risk: c.riskLevel })))
     
     return NextResponse.json(report)
   } catch (error) {
