@@ -373,6 +373,8 @@ async function generateReviewAlerts(decision: ReviewDecision): Promise<void> {
     const supabase = getSupabaseAdmin()
     
     console.log('[HITL] 📢 Generating alerts for review decision:', decision.decision)
+    console.log('[HITL] Queue ID:', decision.queueId)
+    console.log('[HITL] Rejection reason:', decision.rejectionReason)
     
     // Obtener información de la cola de revisión
     const { data: queueItem, error: queueError } = await supabase
@@ -381,12 +383,15 @@ async function generateReviewAlerts(decision: ReviewDecision): Promise<void> {
       .eq('id', decision.queueId)
       .single()
     
+    console.log('[HITL] Queue fetch result:', { queueItem, queueError })
+    
     if (queueError || !queueItem) {
-      console.error('[HITL] Error fetching queue item:', queueError)
+      console.error('[HITL] ❌ Error fetching queue item:', queueError)
       return
     }
 
     const documentId = queueItem.document_id
+    console.log('[HITL] Document ID from queue:', documentId)
     
     // Obtener documento uploadado
     const { data: uploadedDoc, error: docError } = await supabase
@@ -400,17 +405,21 @@ async function generateReviewAlerts(decision: ReviewDecision): Promise<void> {
       .eq('id', documentId)
       .single()
     
+    console.log('[HITL] Document fetch result:', { uploadedDoc, docError })
+    
     if (docError || !uploadedDoc) {
-      console.error('[HITL] Error fetching uploaded document:', docError)
+      console.error('[HITL] ❌ Error fetching uploaded document:', docError)
       return
     }
 
     // Obtener nombre del conductor
-    const { data: conductorData } = await supabase
+    const { data: conductorData, error: conductorError } = await supabase
       .from('conductores')
       .select('nombres, apellido_paterno, apellido_materno')
       .eq('id', uploadedDoc.conductor_id)
       .single()
+
+    console.log('[HITL] Conductor fetch result:', { conductorData, conductorError })
 
     const conductorName = conductorData 
       ? [conductorData.nombres, conductorData.apellido_paterno, conductorData.apellido_materno]
@@ -419,7 +428,15 @@ async function generateReviewAlerts(decision: ReviewDecision): Promise<void> {
           .trim()
       : 'Conductor'
 
-    console.log('[HITL] Generating alert for conductor:', conductorName)
+    console.log('[HITL] Conductor name:', conductorName)
+    console.log('[HITL] Calling generateDocumentStatusChangeAlert with:', {
+      documentId: uploadedDoc.id,
+      documentType: (uploadedDoc as any).document_types?.name,
+      conductorName,
+      conductorId: uploadedDoc.conductor_id,
+      status: decision.decision === 'approved' ? 'approved' : 'rejected',
+      reason: decision.rejectionReason
+    })
 
     // Generar alerta con el nuevo sistema
     await generateDocumentStatusChangeAlert(
