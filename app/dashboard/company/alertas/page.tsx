@@ -72,9 +72,9 @@ export default function AlertasPage() {
     total: alerts.length,
     critical: alerts.filter(a => a.priority === 'critical').length,
     high: alerts.filter(a => a.priority === 'high').length,
-    normal: alerts.filter(a => a.priority === 'normal').length,
+    medium: alerts.filter(a => a.priority === 'medium').length,
     low: alerts.filter(a => a.priority === 'low').length,
-    unread: alerts.filter(a => !a.read).length,
+    unread: alerts.filter(a => !a.is_read).length,
   }
 
   const getAlertIcon = (priority: string) => {
@@ -83,7 +83,7 @@ export default function AlertasPage() {
         return <AlertTriangle className="w-5 h-5 text-red-500" />
       case 'high':
         return <AlertCircle className="w-5 h-5 text-orange-500" />
-      case 'normal':
+      case 'medium':
         return <Info className="w-5 h-5 text-blue-500" />
       case 'low':
         return <Info className="w-5 h-5 text-gray-500" />
@@ -99,7 +99,7 @@ export default function AlertasPage() {
         return 'border-l-4 border-l-red-500 bg-red-900/25'
       case 'high':
         return 'border-l-4 border-l-orange-500 bg-orange-900/25'
-      case 'normal':
+      case 'medium':
         return 'border-l-4 border-l-blue-500 bg-blue-900/25'
       case 'low':
         return 'border-l-4 border-l-slate-500 bg-slate-900/25'
@@ -114,7 +114,7 @@ export default function AlertasPage() {
         return 'bg-red-600 text-white'
       case 'high':
         return 'bg-orange-600 text-white'
-      case 'normal':
+      case 'medium':
         return 'bg-blue-600 text-white'
       case 'low':
         return 'bg-gray-600 text-white'
@@ -184,8 +184,8 @@ export default function AlertasPage() {
           <div className="text-2xl font-bold text-orange-700 dark:text-orange-300">{stats.high}</div>
         </div>
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950/30 dark:border-blue-900">
-          <div className="text-sm text-blue-700 font-medium dark:text-blue-300">Normales</div>
-          <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.normal}</div>
+          <div className="text-sm text-blue-700 font-medium dark:text-blue-300">Medias</div>
+          <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.medium}</div>
         </div>
         <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg dark:bg-gray-950/30 dark:border-gray-900">
           <div className="text-sm text-gray-700 font-medium dark:text-gray-300">Bajas</div>
