@@ -107,7 +107,7 @@ Respond ONLY with valid JSON matching this structure:
 export function getDocumentStatus(
   expirationDate: string | null,
   daysWarningThreshold: number = 30
-): 'vigente' | 'por-vencer' | 'vencido' {
+): 'vigente' | 'por-vencer' | 'vencido' | 'pendiente' {
   if (!expirationDate) {
     return 'pendiente'
   }
