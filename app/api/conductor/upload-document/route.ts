@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { v4 as uuidv4 } from 'uuid'
 import { generateDocumentUploadAlerts } from '@/lib/document-alerts-generator'
+import { extractDocumentMetadata } from '@/lib/ai-document-processor'
+import { normalizeDocumentType, determineValidationStatus } from '@/lib/document-classification'
+import { notifyExecutivas } from '@/lib/notifications-helper'
 
 // Set max duration for the route (30 seconds - Vercel free plan limit)
 export const maxDuration = 30
@@ -116,21 +119,70 @@ export async function POST(request: NextRequest) {
       .from('documents')
       .getPublicUrl(filePath)
 
-    // Create uploaded_documents record
+    // STEP 1: Process document with AI (async, 5-10 seconds)
+    console.log('[v0] Starting AI document processing for conductor upload...')
+    let aiExtraction = null
+    let extractionError = null
+    let validationStatus = 'pending'
+
+    try {
+      // Convert file to base64 for AI processing
+      const buffer = Buffer.from(fileBuffer)
+      const base64 = buffer.toString('base64')
+      
+      // Call AI document processor
+      aiExtraction = await extractDocumentMetadata(base64, file.type as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp')
+      console.log('[v0] AI extraction successful:', { confidence: aiExtraction.confidence })
+      
+      // Determine validation status based on AI extraction
+      if (aiExtraction.confidence >= 0.7) {
+        const daysUntilExp = aiExtraction.expirationDate 
+          ? Math.floor((new Date(aiExtraction.expirationDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+          : null
+        
+        validationStatus = determineValidationStatus(
+          aiExtraction.confidence,
+          daysUntilExp,
+          !!aiExtraction.documentNumber
+        ) as string
+      }
+    } catch (error) {
+      extractionError = error instanceof Error ? error.message : 'AI extraction failed'
+      console.warn('[v0] AI extraction failed (non-blocking):', extractionError)
+      // Continue with document upload — AI failure doesn't block the flow
+    }
+
+    // STEP 2: Create uploaded_documents record with AI metadata
+    const insertPayload: any = {
+      document_type_id: docType.id,
+      conductor_id: profile.id,
+      uploaded_by: user.id,
+      original_filename: file.name,
+      file_url: publicUrl,
+      file_path: filePath,
+      file_size: file.size,
+      mime_type: file.type,
+      validation_status: validationStatus,
+      created_at: new Date().toISOString(),
+    }
+
+    // Add AI-extracted fields if extraction was successful
+    if (aiExtraction) {
+      insertPayload.extracted_document_type = normalizeDocumentType(aiExtraction.documentType)
+      insertPayload.extracted_expiration_date = aiExtraction.expirationDate
+      insertPayload.extraction_confidence = aiExtraction.confidence
+      insertPayload.extraction_warnings = aiExtraction.warnings || []
+      insertPayload.ai_processing_status = 'completed'
+    } else {
+      insertPayload.ai_processing_status = 'failed'
+      if (extractionError) {
+        insertPayload.extraction_warnings = [extractionError]
+      }
+    }
+
     const { data: uploadedDoc, error: dbError } = await supabase
       .from('uploaded_documents')
-      .insert({
-        document_type_id: docType.id,
-        conductor_id: profile.id,
-        uploaded_by: user.id,
-        original_filename: file.name,
-        file_url: publicUrl,
-        file_path: filePath,
-        file_size: file.size,
-        mime_type: file.type,
-        validation_status: 'pending',
-        created_at: new Date().toISOString(),
-      })
+      .insert(insertPayload)
       .select()
       .single()
 
@@ -150,13 +202,31 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: user.id,
         title: 'Documento Subido',
-        message: `Tu ${docType.name} ha sido recibido y se procesará en breve.`,
-        type: 'info',
+        message: `Tu ${docType.name} ha sido procesado${validationStatus === 'approved' ? ' y aprobado.' : validationStatus === 'rejected' ? ' pero fue rechazado.' : ' y está en revisión.'}`,
+        type: validationStatus === 'rejected' ? 'warning' : 'info',
         metadata: {
           document_id: uploadedDoc.id,
           document_type: documentType,
+          validation_status: validationStatus,
+          ai_confidence: aiExtraction?.confidence || 0,
         },
       })
+
+    // STEP 3: Notify ejecutivas if document was auto-rejected by AI
+    if (validationStatus === 'rejected' && aiExtraction) {
+      console.log('[v0] Document auto-rejected by AI, notifying ejecutivas...')
+      await notifyExecutivas({
+        type: 'auto_rejection' as const,
+        conductorName: profile.first_name || 'Conductor',
+        documentType: docType.name,
+        oldStatus: 'pending',
+        newStatus: 'rejected',
+        documentId: uploadedDoc.id,
+        reason: `Auto-rechazado por IA: ${aiExtraction.warnings?.join(', ') || 'Documento inválido'}`,
+      }).catch(err => {
+        console.error('[v0] Failed to notify ejecutivas:', err)
+      })
+    }
 
     // Generate alerts for admins about the new document
     await generateDocumentUploadAlerts(
@@ -167,14 +237,17 @@ export async function POST(request: NextRequest) {
       user.id
     )
 
-    // Optionally trigger OCR processing (would be handled by a background job)
-    // You could emit an event or call another service here
-
     return NextResponse.json(
       {
         success: true,
         documentId: uploadedDoc.id,
-        message: 'Document uploaded successfully',
+        validationStatus,
+        aiExtraction: aiExtraction ? {
+          confidence: aiExtraction.confidence,
+          documentType: aiExtraction.documentType,
+          expirationDate: aiExtraction.expirationDate,
+        } : null,
+        message: `Documento subido ${validationStatus === 'approved' ? 'y aprobado automáticamente' : validationStatus === 'rejected' ? 'pero fue rechazado por IA' : 'y está en revisión'}`,
       },
       { status: 200 }
     )
