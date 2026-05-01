@@ -14,7 +14,7 @@ export interface ComplianceDocumentData {
   driverName: string
   documentType: string
   expirationDate: string
-  status: 'vigente' | 'por vencer' | 'vencido'
+  status: 'vigente' | 'por vencer' | 'vencido' | 'pending' | 'approved' | 'rejected' | 'pendiente' | 'aprobado' | 'rechazado'
   uploadDate: string
   observations?: string
 }

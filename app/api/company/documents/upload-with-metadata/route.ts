@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { extractDocumentMetadata, getDocumentStatus } from '@/lib/ai-document-processor'
+import { extractDocumentMetadata } from '@/lib/ai-document-processor'
 import { normalizeDocumentType, determineValidationStatus } from '@/lib/document-classification'
 
 export const maxDuration = 300 // 5 minutes for file uploads
