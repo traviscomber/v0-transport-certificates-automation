@@ -36,7 +36,7 @@ export async function getConductorComplianceMetrics(): Promise<ConductorComplian
 
   // STEP 1: Get all conductors first
   const { data: allConductors, error: conductorsError } = await supabase
-    .from('conductors')
+    .from('conductores')
     .select('id, first_name, last_name, rut')
 
   if (conductorsError) {
