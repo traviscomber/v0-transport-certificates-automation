@@ -4,27 +4,32 @@ import { useState, useEffect } from 'react'
 import { HelpBox } from '@/components/ui/help-box'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { RefreshCw, Copy, Check } from 'lucide-react'
-import { AlertTriangle, AlertCircle, CheckCircle, Info } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
+import { AlertTriangle, AlertCircle, Info } from 'lucide-react'
 
 interface Alert {
   id: string
-  type: 'warning' | 'error' | 'success' | 'info'
+  user_id: string
   title: string
-  description: string
-  timestamp: Date
-  entityType?: string
-  entityName?: string
-  actionUrl?: string
-  actionLabel?: string
+  message: string
+  type: string
+  priority: 'critical' | 'high' | 'normal' | 'low'
+  level: 'error' | 'warning' | 'info' | 'success'
+  category: string
+  read: boolean
+  is_resolved: boolean
+  metadata?: Record<string, any>
+  action_url?: string
+  created_at: string
+  timestamp?: Date
 }
 
 export default function AlertasPage() {
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedType, setSelectedType] = useState('')
-  const [copiedRut, setCopiedRut] = useState<string | null>(null)
+  const [selectedPriority, setSelectedPriority] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('')
 
   // Load alerts on mount
   useEffect(() => {
@@ -34,47 +39,15 @@ export default function AlertasPage() {
   const loadAlerts = async () => {
     setIsLoading(true)
     try {
-      console.log('[v0] Fetching alerts from /api/company/notifications...')
-      const response = await fetch('/api/company/notifications')
-      console.log('[v0] Response status:', response.status)
-      const data = await response.json()
-      console.log('[v0] Response data:', data)
+      const response = await fetch('/api/alerts?limit=100&sort=created_at.desc')
+      if (!response.ok) throw new Error('Failed to fetch alerts')
       
-      if (data.notifications && data.notifications.length > 0) {
-        console.log('[v0] Loaded', data.notifications.length, 'notifications')
-        // Convert notifications to alerts format
-        const alertsFromNotifications = data.notifications.map((notif: any) => ({
-          id: notif.id,
-          type: notif.notification_type === 'status_change' ? 'info' : 'warning',
-          title: `Cambio de estado: ${notif.document_type}`,
-          description: `El documento de ${notif.conductor_name} cambió de ${notif.old_status} a ${notif.new_status}`,
-          timestamp: new Date(notif.created_at),
-          entityType: notif.document_type,
-          entityName: notif.conductor_name,
-        }))
-        
-        // Also fetch generated alerts from /api/alerts/generate for legacy alerts
-        try {
-          const legacyResponse = await fetch('/api/alerts/generate')
-          if (legacyResponse.ok) {
-            const legacyData = await legacyResponse.json()
-            if (legacyData.alerts) {
-              const legacyAlerts = legacyData.alerts.map((alert: any) => ({
-                ...alert,
-                timestamp: new Date(alert.timestamp),
-              }))
-              setAlerts([...alertsFromNotifications, ...legacyAlerts])
-              return
-            }
-          }
-        } catch (err) {
-          console.warn('[v0] Legacy alerts fetch failed, using notifications only')
-        }
-        
-        setAlerts(alertsFromNotifications)
-      } else {
-        console.warn('[v0] No notifications found')
-        setAlerts([])
+      const data = await response.json()
+      if (data.alerts) {
+        setAlerts(data.alerts.map((alert: any) => ({
+          ...alert,
+          timestamp: new Date(alert.created_at),
+        })))
       }
     } catch (error) {
       console.error('[v0] Error loading alerts:', error)
@@ -87,52 +60,70 @@ export default function AlertasPage() {
   const filteredAlerts = alerts.filter((alert) => {
     const matchesSearch = 
       alert.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      alert.description.toLowerCase().includes(searchQuery.toLowerCase())
+      alert.message.toLowerCase().includes(searchQuery.toLowerCase())
     
-    const matchesType = !selectedType || alert.type === selectedType
+    const matchesPriority = !selectedPriority || alert.priority === selectedPriority
+    const matchesCategory = !selectedCategory || alert.category === selectedCategory
     
-    return matchesSearch && matchesType
+    return matchesSearch && matchesPriority && matchesCategory
   })
 
   const stats = {
     total: alerts.length,
-    warnings: alerts.filter(a => a.type === 'warning').length,
-    errors: alerts.filter(a => a.type === 'error').length,
-    success: alerts.filter(a => a.type === 'success').length,
-    info: alerts.filter(a => a.type === 'info').length,
+    critical: alerts.filter(a => a.priority === 'critical').length,
+    high: alerts.filter(a => a.priority === 'high').length,
+    normal: alerts.filter(a => a.priority === 'normal').length,
+    low: alerts.filter(a => a.priority === 'low').length,
+    unread: alerts.filter(a => !a.read).length,
   }
 
-  const getAlertIcon = (type: string) => {
-    switch (type) {
-      case 'warning':
-        return <AlertTriangle className="w-5 h-5 text-orange-500" />
-      case 'error':
-        return <AlertCircle className="w-5 h-5 text-red-500" />
-      case 'success':
-        return <CheckCircle className="w-5 h-5 text-green-500" />
-      case 'info':
+  const getAlertIcon = (priority: string) => {
+    switch (priority) {
+      case 'critical':
+        return <AlertTriangle className="w-5 h-5 text-red-500" />
+      case 'high':
+        return <AlertCircle className="w-5 h-5 text-orange-500" />
+      case 'normal':
         return <Info className="w-5 h-5 text-blue-500" />
+      case 'low':
+        return <Info className="w-5 h-5 text-gray-500" />
       default:
         return <Info className="w-5 h-5 text-gray-500" />
     }
   }
 
-  const getAlertColor = (type: string) => {
-    switch (type) {
-      case 'warning':
-        return 'border-l-4 border-l-orange-500 bg-orange-900/25 backdrop-blur-sm'
-      case 'error':
-        return 'border-l-4 border-l-red-500 bg-red-900/25 backdrop-blur-sm'
-      case 'success':
-        return 'border-l-4 border-l-green-500 bg-green-900/25 backdrop-blur-sm'
-      case 'info':
-        return 'border-l-4 border-l-blue-500 bg-blue-900/25 backdrop-blur-sm'
+  const getAlertColor = (priority: string, isResolved: boolean) => {
+    if (isResolved) return 'border-l-4 border-l-gray-400 bg-gray-900/25 opacity-60'
+    switch (priority) {
+      case 'critical':
+        return 'border-l-4 border-l-red-500 bg-red-900/25'
+      case 'high':
+        return 'border-l-4 border-l-orange-500 bg-orange-900/25'
+      case 'normal':
+        return 'border-l-4 border-l-blue-500 bg-blue-900/25'
+      case 'low':
+        return 'border-l-4 border-l-slate-500 bg-slate-900/25'
       default:
-        return 'border-l-4 border-l-slate-500 bg-slate-900/25 backdrop-blur-sm'
+        return 'border-l-4 border-l-slate-500 bg-slate-900/25'
     }
   }
 
-  const formatTime = (date: Date | string) => {
+  const getPriorityBadgeColor = (priority: string) => {
+    switch (priority) {
+      case 'critical':
+        return 'bg-red-600 text-white'
+      case 'high':
+        return 'bg-orange-600 text-white'
+      case 'normal':
+        return 'bg-blue-600 text-white'
+      case 'low':
+        return 'bg-gray-600 text-white'
+      default:
+        return 'bg-gray-600 text-white'
+    }
+  }
+
+  const formatTime = (date: string | Date) => {
     const d = typeof date === 'string' ? new Date(date) : date
     const now = new Date()
     const diff = now.getTime() - d.getTime()
@@ -192,54 +183,70 @@ export default function AlertasPage() {
       />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-6 gap-4">
         <div className="p-4 bg-card border border-border rounded-lg">
           <div className="text-sm text-muted-foreground font-medium">Total</div>
           <div className="text-2xl font-bold text-foreground">{stats.total}</div>
         </div>
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-950/30 dark:border-red-900">
-          <div className="text-sm text-red-700 font-medium dark:text-red-300">Errores</div>
-          <div className="text-2xl font-bold text-red-700 dark:text-red-300">{stats.errors}</div>
+          <div className="text-sm text-red-700 font-medium dark:text-red-300">Críticas</div>
+          <div className="text-2xl font-bold text-red-700 dark:text-red-300">{stats.critical}</div>
         </div>
         <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-950/30 dark:border-orange-900">
-          <div className="text-sm text-orange-700 font-medium dark:text-orange-300">Advertencias</div>
-          <div className="text-2xl font-bold text-orange-700 dark:text-orange-300">{stats.warnings}</div>
-        </div>
-        <div className="p-4 bg-green-50 border border-green-200 rounded-lg dark:bg-green-950/30 dark:border-green-900">
-          <div className="text-sm text-green-700 font-medium dark:text-green-300">Éxito</div>
-          <div className="text-2xl font-bold text-green-700 dark:text-green-300">{stats.success}</div>
+          <div className="text-sm text-orange-700 font-medium dark:text-orange-300">Altas</div>
+          <div className="text-2xl font-bold text-orange-700 dark:text-orange-300">{stats.high}</div>
         </div>
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950/30 dark:border-blue-900">
-          <div className="text-sm text-blue-700 font-medium dark:text-blue-300">Info</div>
-          <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.info}</div>
+          <div className="text-sm text-blue-700 font-medium dark:text-blue-300">Normales</div>
+          <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.normal}</div>
+        </div>
+        <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg dark:bg-gray-950/30 dark:border-gray-900">
+          <div className="text-sm text-gray-700 font-medium dark:text-gray-300">Bajas</div>
+          <div className="text-2xl font-bold text-gray-700 dark:text-gray-300">{stats.low}</div>
+        </div>
+        <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg dark:bg-purple-950/30 dark:border-purple-900">
+          <div className="text-sm text-purple-700 font-medium dark:text-purple-300">No leídas</div>
+          <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">{stats.unread}</div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4">
+      <div className="flex gap-4 flex-wrap">
         <input
           type="text"
           placeholder="Buscar alertas..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-1 px-3 py-2 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          className="flex-1 min-w-64 px-3 py-2 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <select
-          value={selectedType}
-          onChange={(e) => setSelectedType(e.target.value)}
+          value={selectedPriority}
+          onChange={(e) => setSelectedPriority(e.target.value)}
           className="px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         >
-          <option value="">Todos los tipos</option>
-          <option value="error">Errores</option>
-          <option value="warning">Advertencias</option>
-          <option value="success">Éxito</option>
-          <option value="info">Información</option>
+          <option value="">Todas las prioridades</option>
+          <option value="critical">Crítica</option>
+          <option value="high">Alta</option>
+          <option value="normal">Normal</option>
+          <option value="low">Baja</option>
+        </select>
+        <select
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          className="px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+        >
+          <option value="">Todas las categorías</option>
+          <option value="document_approved">Aprobados</option>
+          <option value="document_rejected">Rechazados</option>
+          <option value="document_expiration">Vencimiento</option>
+          <option value="document_uploaded">Uploadados</option>
         </select>
         <Button
           variant="outline"
           onClick={() => {
             setSearchQuery('')
-            setSelectedType('')
+            setSelectedPriority('')
+            setSelectedCategory('')
           }}
         >
           Limpiar
@@ -263,38 +270,39 @@ export default function AlertasPage() {
             {filteredAlerts.map((alert) => (
               <div
                 key={alert.id}
-                className={`p-4 border rounded-lg flex items-start gap-4 transition-all ${getAlertColor(alert.type)}`}
+                className={`p-4 border rounded-lg flex items-start gap-4 transition-all ${getAlertColor(alert.priority, alert.is_resolved)}`}
               >
                 <div className="flex-shrink-0 mt-1">
-                  {getAlertIcon(alert.type)}
+                  {getAlertIcon(alert.priority)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground dark:text-white">{alert.title}</h3>
-                  <p className="text-sm text-foreground/85 dark:text-slate-200 mt-1">{alert.description}</p>
+                  <div className="flex items-center gap-3 mb-1">
+                    <h3 className="font-semibold text-foreground dark:text-white">{alert.title}</h3>
+                    <Badge className={getPriorityBadgeColor(alert.priority)}>
+                      {alert.priority.toUpperCase()}
+                    </Badge>
+                    {alert.is_resolved && (
+                      <Badge variant="outline" className="text-xs">Resuelto</Badge>
+                    )}
+                    {!alert.read && (
+                      <div className="w-2 h-2 rounded-full bg-primary"></div>
+                    )}
+                  </div>
+                  <p className="text-sm text-foreground/85 dark:text-slate-200">{alert.message}</p>
                   <div className="flex items-center gap-3 mt-3 flex-wrap">
-                    <span className="text-xs text-foreground/70 dark:text-slate-400">{formatTime(alert.timestamp)}</span>
-                    {alert.entityType && (
+                    <span className="text-xs text-foreground/70 dark:text-slate-400">{formatTime(alert.created_at)}</span>
+                    {alert.category && (
                       <Badge variant="outline" className="text-xs">
-                        {alert.entityType}
+                        {alert.category.replace('_', ' ')}
                       </Badge>
                     )}
-                    {alert.actionUrl && (
-                      <button
-                        onClick={(e) => handleCopyRut(alert.actionUrl!, e)}
+                    {alert.action_url && (
+                      <a
+                        href={alert.action_url}
                         className="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10 rounded transition-colors"
                       >
-                        {copiedRut === alert.actionUrl ? (
-                          <>
-                            <Check className="w-3 h-3" />
-                            Copiado
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3 h-3" />
-                            {alert.actionLabel}
-                          </>
-                        )}
-                      </button>
+                        Ver detalles →
+                      </a>
                     )}
                   </div>
                 </div>
