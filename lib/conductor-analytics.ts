@@ -34,41 +34,64 @@ export async function getConductorComplianceMetrics(): Promise<ConductorComplian
     process.env.SUPABASE_SERVICE_ROLE_KEY || ''
   )
 
-  // Get all documents grouped by conductor
-  const { data: documents, error } = await supabase
+  // STEP 1: Get all conductors first
+  const { data: allConductors, error: conductorsError } = await supabase
+    .from('conductors')
+    .select('id, first_name, last_name, rut')
+
+  if (conductorsError) {
+    console.error('[v0] Error fetching conductors:', conductorsError)
+    throw new Error('Failed to fetch conductors')
+  }
+
+  // STEP 2: Get all documents
+  const { data: documents, error: docsError } = await supabase
     .from('uploaded_documents')
     .select(`
       id,
       conductor_id,
-      conductors (
-        id,
-        first_name,
-        last_name,
-        rut
-      ),
       validation_status,
       extracted_expiration_date,
       extraction_confidence,
       created_at
     `)
 
-  if (error) {
-    console.error('[v0] Error fetching documents:', error)
+  if (docsError) {
+    console.error('[v0] Error fetching documents:', docsError)
     throw new Error('Failed to fetch compliance data')
   }
 
-  // Group by conductor and calculate metrics
+  // STEP 3: Initialize map with ALL conductors (even those without documents)
   const conductorMap = new Map<string, any>()
+  
+  allConductors?.forEach((conductor: any) => {
+    conductorMap.set(conductor.id, {
+      conductorId: conductor.id,
+      conductorName: `${conductor.first_name || ''} ${conductor.last_name || ''}`.trim(),
+      rut: conductor.rut || 'N/A',
+      totalDocuments: 0,
+      approvedDocuments: 0,
+      rejectedDocuments: 0,
+      pendingDocuments: 0,
+      expiredDocuments: 0,
+      vigentDocuments: 0,
+      totalConfidence: 0,
+      documentDates: [],
+      expiringDocuments: 0,
+    })
+  })
 
+  // STEP 4: Populate metrics from documents
   documents?.forEach((doc: any) => {
     if (!doc.conductor_id) return
 
     const conductorId = doc.conductor_id
     if (!conductorMap.has(conductorId)) {
+      // Create entry if conductor not in main list
       conductorMap.set(conductorId, {
         conductorId,
-        conductorName: `${doc.conductors?.first_name || ''} ${doc.conductors?.last_name || ''}`.trim(),
-        rut: doc.conductors?.rut || 'N/A',
+        conductorName: 'Unknown',
+        rut: 'N/A',
         totalDocuments: 0,
         approvedDocuments: 0,
         rejectedDocuments: 0,
@@ -120,17 +143,20 @@ export async function getConductorComplianceMetrics(): Promise<ConductorComplian
     }
   })
 
-  // Calculate final metrics for each conductor
+  // STEP 5: Calculate final metrics for each conductor
   const conductors: ConductorComplianceMetrics[] = Array.from(conductorMap.values()).map((c: any) => {
     // Compliance score: percentage of approved/vigent documents
+    // If NO documents: score is 0 (high risk)
     const validDocuments = c.approvedDocuments + c.vigentDocuments
     const complianceScore = c.totalDocuments > 0 ? Math.round((validDocuments / c.totalDocuments) * 100) : 0
 
-    // Risk level
-    let riskLevel: 'green' | 'yellow' | 'red' = 'green'
-    if (complianceScore < 50) {
-      riskLevel = 'red'
-    } else if (complianceScore < 80) {
+    // Risk level: conductores sin documentos = RED (high risk)
+    let riskLevel: 'green' | 'yellow' | 'red' = 'red' // Default to RED
+    if (c.totalDocuments === 0) {
+      riskLevel = 'red' // No documents = high risk
+    } else if (complianceScore >= 80) {
+      riskLevel = 'green'
+    } else if (complianceScore >= 50) {
       riskLevel = 'yellow'
     }
 
@@ -160,7 +186,7 @@ export async function getConductorComplianceMetrics(): Promise<ConductorComplian
     }
   })
 
-  // Calculate summary
+  // STEP 6: Calculate summary
   const totalConductors = conductors.length
   const averageComplianceScore = totalConductors > 0 
     ? Math.round(conductors.reduce((sum, c) => sum + c.complianceScore, 0) / totalConductors)
@@ -168,6 +194,8 @@ export async function getConductorComplianceMetrics(): Promise<ConductorComplian
   const highRiskCount = conductors.filter(c => c.riskLevel === 'red').length
   const mediumRiskCount = conductors.filter(c => c.riskLevel === 'yellow').length
   const lowRiskCount = conductors.filter(c => c.riskLevel === 'green').length
+
+  console.log('[v0] Analytics Summary:', { totalConductors, highRiskCount, mediumRiskCount, lowRiskCount })
 
   return {
     conductors: conductors.sort((a, b) => a.complianceScore - b.complianceScore),
