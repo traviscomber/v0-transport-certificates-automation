@@ -8,7 +8,7 @@ import {
   validateRUTMatch,
   calculateComplianceScore,
 } from '@/lib/validations'
-import { generateDocumentValidationAlert } from '@/lib/document-alerts-generator'
+import { generateDocumentStatusChangeAlert } from '@/lib/document-alerts-generator'
 
 export async function POST(request: NextRequest) {
   try {
@@ -160,14 +160,28 @@ export async function POST(request: NextRequest) {
         ? document.profiles[0]?.first_name || document.profiles[0]?.company_name || 'Usuario'
         : document.profiles?.first_name || document.profiles?.company_name || 'Usuario'
 
-      // Generate validation alert
-      await generateDocumentValidationAlert(
+      // Get conductor info for alerts
+      const { data: conductorData } = await supabase
+        .from('conductores')
+        .select('nombres, apellido_paterno, apellido_materno')
+        .eq('id', document.conductor_id)
+        .single()
+
+      const conductorName = conductorData 
+        ? [conductorData.nombres, conductorData.apellido_paterno, conductorData.apellido_materno]
+            .filter(Boolean)
+            .join(' ')
+            .trim()
+        : uploaderName
+
+      // Generate new-style status change alert with priorities
+      await generateDocumentStatusChangeAlert(
         documentId,
         document.document_types?.name || 'Documento',
-        uploaderName,
-        uploaderType,
-        uploaderId,
-        action === 'approve'
+        conductorName,
+        document.conductor_id || '',
+        action === 'approve' ? 'approved' : 'rejected',
+        rejectionReason || undefined
       )
 
       // Create notification for admin/manager who validated

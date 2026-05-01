@@ -10,6 +10,7 @@
  */
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { generateDocumentStatusChangeAlert } from '@/lib/document-alerts-generator'
 
 // Types
 export interface ReviewQueueItem {
@@ -352,10 +353,69 @@ export async function completeReview(
     if (decision.decision === 'approved' || decision.decision === 'needs_correction') {
       await updateDocumentAfterReview(decision)
     }
+
+    // Generar alertas de cambio de estado
+    if (decision.decision === 'approved' || decision.decision === 'rejected') {
+      await generateReviewAlerts(decision)
+    }
     
     return { success: true, decisionId: data }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : 'Unknown error' }
+  }
+}
+
+/**
+ * Genera alertas cuando se completa la revisión (aprobado/rechazado)
+ */
+async function generateReviewAlerts(decision: ReviewDecision): Promise<void> {
+  try {
+    const supabase = getSupabaseAdmin()
+    
+    // Obtener información del documento y conductor
+    const { data: queueItem } = await supabase
+      .from('review_queue')
+      .select(`
+        document_id,
+        uploaded_documents!inner(
+          conductor_id,
+          document_type_id,
+          document_types!inner(name)
+        )
+      `)
+      .eq('id', decision.queueId)
+      .single()
+    
+    if (!queueItem) return
+
+    const document = (queueItem as any).uploaded_documents
+    if (!document || !document.conductor_id) return
+
+    // Obtener nombre del conductor
+    const { data: conductorData } = await supabase
+      .from('conductores')
+      .select('nombres, apellido_paterno, apellido_materno')
+      .eq('id', document.conductor_id)
+      .single()
+
+    const conductorName = conductorData 
+      ? [conductorData.nombres, conductorData.apellido_paterno, conductorData.apellido_materno]
+          .filter(Boolean)
+          .join(' ')
+          .trim()
+      : 'Conductor'
+
+    // Generar alerta con el nuevo sistema
+    await generateDocumentStatusChangeAlert(
+      document.id || (queueItem as any).document_id,
+      document.document_types?.name || 'Documento',
+      conductorName,
+      document.conductor_id,
+      decision.decision === 'approved' ? 'approved' : 'rejected',
+      decision.rejectionReason || decision.notes || undefined
+    )
+  } catch (err) {
+    console.error('[HITL] Error generating review alerts:', err)
   }
 }
 
