@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { LayoutDashboard, Users, FileText, BarChart3, LogOut, Zap, AlertTriangle, Users2, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { NotificationCenter } from '@/components/notification-center'
 
 const navItems = [
   { href: '/dashboard/company', label: 'Dashboard', icon: LayoutDashboard },
@@ -76,6 +77,11 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Bar with Notification Center */}
+        <div className="border-b bg-card px-8 py-4 flex justify-end items-center">
+          <NotificationCenter />
+        </div>
+        
         <main className="flex-1 overflow-auto p-8">
           {children}
         </main>
