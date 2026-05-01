@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/company/alerts/check-expiring-documents",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}
