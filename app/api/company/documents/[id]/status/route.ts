@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { notifyExecutivas } from '@/lib/notifications-helper'
 
 // Emit event to orchestration system
 async function emitToOrchestrator(documentId: string, status: string, reason?: string) {
@@ -102,17 +103,30 @@ export async function PATCH(
       responseData: updateData
     })
 
+    // STEP 3: Notify ejecutivas about the status change (non-blocking)
+    const notificationPayload = {
+      type: 'status_change' as const,
+      conductorName: documentBefore?.conductor_rut || 'Unknown',
+      documentType: documentBefore?.document_type_id || 'Document',
+      oldStatus: documentBefore?.validation_status || 'unknown',
+      newStatus: dbStatus,
+      documentId,
+    }
+
+    notifyExecutivas(notificationPayload).then(result => {
+      console.log('[v0] Notification result:', result)
+    }).catch(err => {
+      console.error('[v0] Notification error (non-blocking):', err)
+    })
+
     // Small delay to ensure Supabase broadcast is queued
     await new Promise(resolve => setTimeout(resolve, 100))
     console.log('[v0] ⏳ Broadcast delay completed')
 
-    // STEP 3: Emit event to orchestration system (non-blocking)
+    // STEP 4: Emit event to orchestration system (non-blocking)
     emitToOrchestrator(documentId, dbStatus, reason).catch(err => {
       console.error('[v0] Orchestrator emit failed:', err)
     })
-
-    // STEP 4: Broadcast change via Supabase Realtime (automatically handled by Supabase)
-    // The database update triggers realtime events that clients listening to the table will receive
 
     return NextResponse.json({
       success: true,
