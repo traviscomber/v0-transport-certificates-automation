@@ -4,11 +4,6 @@ import { NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-)
-
 // The 6 real Labbe executives — used to match profiles by RUT
 const EJECUTIVAS_LABBE = [
   { rut: '10574005-0', nombre: 'Olga Carrasco' },
@@ -21,7 +16,10 @@ const EJECUTIVAS_LABBE = [
 
 export async function GET() {
   try {
-    // 1. Profiles — deduplicate by RUT (keep earliest created_at)
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+    )
     const { data: allProfiles, error: profilesError } = await supabase
       .from('profiles')
       .select('id, email, rut, role, created_at')
