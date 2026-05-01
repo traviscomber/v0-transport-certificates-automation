@@ -216,13 +216,12 @@ export async function POST(request: NextRequest) {
     if (validationStatus === 'rejected' && aiExtraction) {
       console.log('[v0] Document auto-rejected by AI, notifying ejecutivas...')
       await notifyExecutivas({
-        type: 'auto_rejection' as const,
+        type: 'status_change' as const,
         conductorName: profile.first_name || 'Conductor',
         documentType: docType.name,
         oldStatus: 'pending',
         newStatus: 'rejected',
         documentId: uploadedDoc.id,
-        reason: `Auto-rechazado por IA: ${aiExtraction.warnings?.join(', ') || 'Documento inválido'}`,
       }).catch(err => {
         console.error('[v0] Failed to notify ejecutivas:', err)
       })
