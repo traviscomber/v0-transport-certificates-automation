@@ -34,22 +34,46 @@ export default function AlertasPage() {
   const loadAlerts = async () => {
     setIsLoading(true)
     try {
-      console.log('[v0] Fetching alerts from /api/alerts/generate...')
-      const response = await fetch('/api/alerts/generate')
+      console.log('[v0] Fetching alerts from /api/company/notifications...')
+      const response = await fetch('/api/company/notifications')
       console.log('[v0] Response status:', response.status)
       const data = await response.json()
       console.log('[v0] Response data:', data)
       
-      if (data.alerts) {
-        console.log('[v0] Loaded', data.alerts.length, 'alerts')
-        // Convert timestamp strings to Date objects
-        const alertsWithDates = data.alerts.map((alert: any) => ({
-          ...alert,
-          timestamp: new Date(alert.timestamp),
+      if (data.notifications && data.notifications.length > 0) {
+        console.log('[v0] Loaded', data.notifications.length, 'notifications')
+        // Convert notifications to alerts format
+        const alertsFromNotifications = data.notifications.map((notif: any) => ({
+          id: notif.id,
+          type: notif.notification_type === 'status_change' ? 'info' : 'warning',
+          title: `Cambio de estado: ${notif.document_type}`,
+          description: `El documento de ${notif.conductor_name} cambió de ${notif.old_status} a ${notif.new_status}`,
+          timestamp: new Date(notif.created_at),
+          entityType: notif.document_type,
+          entityName: notif.conductor_name,
         }))
-        setAlerts(alertsWithDates)
+        
+        // Also fetch generated alerts from /api/alerts/generate for legacy alerts
+        try {
+          const legacyResponse = await fetch('/api/alerts/generate')
+          if (legacyResponse.ok) {
+            const legacyData = await legacyResponse.json()
+            if (legacyData.alerts) {
+              const legacyAlerts = legacyData.alerts.map((alert: any) => ({
+                ...alert,
+                timestamp: new Date(alert.timestamp),
+              }))
+              setAlerts([...alertsFromNotifications, ...legacyAlerts])
+              return
+            }
+          }
+        } catch (err) {
+          console.warn('[v0] Legacy alerts fetch failed, using notifications only')
+        }
+        
+        setAlerts(alertsFromNotifications)
       } else {
-        console.warn('[v0] No alerts property in response')
+        console.warn('[v0] No notifications found')
         setAlerts([])
       }
     } catch (error) {
