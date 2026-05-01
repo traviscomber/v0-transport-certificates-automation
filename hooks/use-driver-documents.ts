@@ -75,27 +75,27 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       }
 
       // Transformar respuesta de la API
-      // Keep status values in English to match DB and avoid translation issues
+      // Map validation_status values to Spanish estado for display (keep Spanish for UI consistency)
       const statusMap: Record<string, string> = {
         // English values (current DB storage)
-        'approved': 'approved',
-        'rejected': 'rejected',
-        'pending': 'pending',
-        'expired': 'expired',
-        'validated': 'approved', // legacy value
+        'approved': 'aprobado',
+        'rejected': 'rechazado',
+        'pending': 'pendiente',
+        'expired': 'vencido',
+        'validated': 'aprobado', // legacy value
         // Spanish values (legacy/old documents)
-        'aprobado': 'approved',
-        'rechazado': 'rejected',
-        'pendiente': 'pending',
-        'vencido': 'expired',
+        'aprobado': 'aprobado',
+        'rechazado': 'rechazado',
+        'pendiente': 'pendiente',
+        'vencido': 'vencido',
       }
 
       const transformedDocs = (result.documents || []).map((doc: any) => ({
         id: doc.id,
         driver_rut: doc.driver_rut || '',
-        tipo: doc.document_type || 'Document',
+        tipo: doc.document_type || 'Documento',
         nombre: doc.original_filename || doc.file_name || '',
-        estado: statusMap[doc.validation_status?.toLowerCase()] || 'pending',
+        estado: statusMap[doc.validation_status?.toLowerCase()] || 'pendiente',
         fecha_subida: doc.created_at || new Date().toISOString(),
         public_url: doc.file_url || doc.public_url,
         storage_path: doc.file_path || doc.storage_path,
