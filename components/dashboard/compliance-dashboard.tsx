@@ -1,315 +1,289 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { FileText, Shield, Truck, AlertTriangle, CheckCircle, Clock, Download, Filter } from "lucide-react"
-import { useState } from "react"
-import { exportComplianceToExcel, exportComplianceToPDF } from "@/lib/export-utils"
+import { FileText, Shield, Truck, User, AlertTriangle, CheckCircle, Clock, Download, RefreshCw } from "lucide-react"
+
+interface DocumentSummary {
+  total: number
+  approved: number
+  pending: number
+  rejected: number
+}
+
+interface ExecutiveMetric {
+  ejecutiva: string
+  documentos_procesados: number
+  documentos_validados: number
+  documentos_rechazados: number
+  documentos_pendientes: number
+  conductores_activos: number
+  tasa_validacion: string
+  performance_score: number
+}
+
+interface MetricsSummary {
+  total_documentos: number
+  total_validados: number
+  total_conductores: number
+  total_subcontratistas: number
+}
 
 export function ComplianceDashboard() {
+  const [metrics, setMetrics] = useState<ExecutiveMetric[]>([])
+  const [summary, setSummary] = useState<MetricsSummary | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<string>("all")
-  const [exportFormat, setExportFormat] = useState<"pdf" | "excel" | null>(null)
+  const [range, setRange] = useState<"day" | "week" | "month">("week")
 
-  // Matriz documental con estado de cumplimiento
-  const documentMatrix = [
-    {
-      id: "v-001",
-      name: "Camión Carga (JK-5234)",
-      type: "vehicle",
-      documents: [
-        { type: "Revisión Técnica", status: "vigente", expiresIn: 45, expiryDate: "2024-06-15" },
-        { type: "Permiso Circulación", status: "vigente", expiresIn: 120, expiryDate: "2024-09-20" },
-        { type: "SOAP", status: "vigente", expiresIn: 30, expiryDate: "2024-06-01" },
-        { type: "Seguro Obligatorio", status: "vencido", expiresIn: -5, expiryDate: "2024-04-20" },
-      ]
-    },
-    {
-      id: "c-001",
-      name: "Juan García López",
-      type: "conductor",
-      documents: [
-        { type: "Licencia de Conducir Profesional", status: "vigente", expiresIn: 200, expiryDate: "2025-02-15" },
-        { type: "Certificado Psicosocial", status: "vigente", expiresIn: 60, expiryDate: "2024-07-01" },
-        { type: "Curso de Conducción Defensiva", status: "por-vencer", expiresIn: 15, expiryDate: "2024-05-20" },
-      ]
-    },
-    {
-      id: "v-002",
-      name: "Furgón Logística (JL-2891)",
-      type: "vehicle",
-      documents: [
-        { type: "Revisión Técnica", status: "por-vencer", expiresIn: 10, expiryDate: "2024-05-15" },
-        { type: "Permiso Circulación", status: "vigente", expiresIn: 150, expiryDate: "2024-10-20" },
-        { type: "SOAP", status: "vigente", expiresIn: 90, expiryDate: "2024-08-01" },
-      ]
-    },
-    {
-      id: "ct-001",
-      name: "Electroservicios Chile SpA",
-      type: "contractor",
-      documents: [
-        { type: "Certificado de Afiliación", status: "vigente", expiresIn: 180, expiryDate: "2025-01-15" },
-        { type: "Documento de Identidad", status: "vigente", expiresIn: 300, expiryDate: "2025-06-20" },
-        { type: "Certificado de Antecedentes", status: "vencido", expiresIn: -30, expiryDate: "2024-03-20" },
-      ]
-    }
-  ]
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "vigente":
-        return "bg-green-500/20 text-green-700 border-green-500/30"
-      case "por-vencer":
-        return "bg-yellow-500/20 text-yellow-700 border-yellow-500/30"
-      case "vencido":
-        return "bg-red-500/20 text-red-700 border-red-500/30"
-      default:
-        return "bg-slate-500/20 text-slate-700 border-slate-500/30"
-    }
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "vigente":
-        return <CheckCircle className="w-4 h-4" />
-      case "por-vencer":
-        return <AlertTriangle className="w-4 h-4" />
-      case "vencido":
-        return <AlertTriangle className="w-4 h-4" />
-      default:
-        return <Clock className="w-4 h-4" />
-    }
-  }
-
-  // Estadísticas de cumplimiento
-  const stats = {
-    total: documentMatrix.reduce((acc, item) => acc + item.documents.length, 0),
-    vigentes: documentMatrix.reduce((acc, item) => 
-      acc + item.documents.filter(d => d.status === "vigente").length, 0),
-    porVencer: documentMatrix.reduce((acc, item) => 
-      acc + item.documents.filter(d => d.status === "por-vencer").length, 0),
-    vencidos: documentMatrix.reduce((acc, item) => 
-      acc + item.documents.filter(d => d.status === "vencido").length, 0),
-  }
-
-  // Exportar a PDF usando utility
-  const exportPDF = () => {
-    const documentsForExport = filteredMatrix.flatMap(item =>
-      item.documents.map(doc => {
-        const statusMap: { [key: string]: 'vigente' | 'por vencer' | 'vencido' } = {
-          'vigente': 'vigente',
-          'por-vencer': 'por vencer',
-          'vencido': 'vencido'
-        }
-        return {
-          vehiclePatent: item.name,
-          driverName: item.name,
-          documentType: doc.type,
-          expirationDate: doc.expiryDate,
-          status: (statusMap[doc.status] || 'vencido') as 'vigente' | 'por vencer' | 'vencido',
-          uploadDate: new Date().toLocaleDateString('es-ES'),
-          observations: doc.expiresIn > 0 ? `Vence en ${doc.expiresIn} días` : 'Documento vencido'
-        }
-      })
-    )
-    
+  const fetchMetrics = async () => {
+    setLoading(true)
+    setError(null)
     try {
-      exportComplianceToPDF(documentsForExport, 'Empresa de Transporte')
-    } catch (error) {
-      console.error('Error exporting to PDF:', error)
-    }
-  }
-
-  // Exportar a Excel usando utility
-  const exportExcel = () => {
-    const documentsForExport = filteredMatrix.flatMap(item =>
-      item.documents.map(doc => {
-        const statusMap: { [key: string]: 'vigente' | 'por vencer' | 'vencido' } = {
-          'vigente': 'vigente',
-          'por-vencer': 'por vencer',
-          'vencido': 'vencido'
-        }
-        return {
-          vehiclePatent: item.name,
-          driverName: item.name,
-          documentType: doc.type,
-          expirationDate: doc.expiryDate,
-          status: (statusMap[doc.status] || 'vencido') as 'vigente' | 'por vencer' | 'vencido',
-          uploadDate: new Date().toLocaleDateString('es-ES'),
-          observations: doc.expiresIn > 0 ? `Vence en ${doc.expiresIn} días` : 'Documento vencido'
-        }
+      const res = await fetch(`/api/company/metrics?range=${range}&_t=${Date.now()}`, {
+        cache: "no-store",
       })
-    )
-    
-    try {
-      exportComplianceToExcel(documentsForExport, 'Empresa de Transporte')
-    } catch (error) {
-      console.error('Error exporting to Excel:', error)
+      if (!res.ok) throw new Error("Error al cargar métricas")
+      const data = await res.json()
+      setMetrics(data.executives || [])
+      setSummary(data.summary || null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error desconocido")
+    } finally {
+      setLoading(false)
     }
   }
 
-  const filteredMatrix = documentMatrix.filter(item => {
+  useEffect(() => {
+    fetchMetrics()
+  }, [range])
+
+  const getScoreColor = (score: number) => {
+    if (score >= 75) return "text-green-400"
+    if (score >= 50) return "text-yellow-400"
+    return "text-red-400"
+  }
+
+  const getScoreBg = (score: number) => {
+    if (score >= 75) return "border-green-500/30 bg-green-500/5"
+    if (score >= 50) return "border-yellow-500/30 bg-yellow-500/5"
+    return "border-red-500/30 bg-red-500/5"
+  }
+
+  const getStatusIcon = (score: number) => {
+    if (score >= 75) return <CheckCircle className="w-4 h-4 text-green-400" />
+    if (score >= 50) return <Clock className="w-4 h-4 text-yellow-400" />
+    return <AlertTriangle className="w-4 h-4 text-red-400" />
+  }
+
+  const filteredMetrics = metrics.filter(m => {
     if (filterStatus === "all") return true
-    const hasStatus = item.documents.some(d => d.status === filterStatus)
-    return hasStatus
+    if (filterStatus === "ok") return m.performance_score >= 75
+    if (filterStatus === "warning") return m.performance_score >= 50 && m.performance_score < 75
+    if (filterStatus === "critical") return m.performance_score < 50
+    return true
   })
+
+  const criticalCount = metrics.filter(m => m.performance_score < 50).length
+  const warningCount = metrics.filter(m => m.performance_score >= 50 && m.performance_score < 75).length
+  const okCount = metrics.filter(m => m.performance_score >= 75).length
 
   return (
     <div className="space-y-6">
-      {/* Header con estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-600">Total Documentos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{stats.total}</div>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-white">Panel de Cumplimiento Documental</h2>
+          <p className="text-sm text-slate-400 mt-1">Compliance en tiempo real por ejecutiva y conductor</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Range selector */}
+          <div className="flex gap-1 bg-slate-800 rounded-lg p-1">
+            {(["day", "week", "month"] as const).map(r => (
+              <button
+                key={r}
+                onClick={() => setRange(r)}
+                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                  range === r
+                    ? "bg-orange-500 text-white"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                {r === "day" ? "Hoy" : r === "week" ? "Semana" : "Mes"}
+              </button>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchMetrics}
+            disabled={loading}
+            className="gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            Actualizar
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="bg-slate-900/80 border-slate-700">
+          <CardContent className="pt-4 pb-4">
+            <p className="text-xs text-slate-400 mb-1">Total Documentos</p>
+            <p className="text-2xl font-bold text-white">{summary?.total_documentos ?? "—"}</p>
           </CardContent>
         </Card>
-
-        <Card className="border-green-500/30 bg-green-500/5">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-green-600">Vigentes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-400">{stats.vigentes}</div>
+        <Card className="bg-slate-900/80 border-green-500/30">
+          <CardContent className="pt-4 pb-4">
+            <p className="text-xs text-green-400 mb-1">Validados</p>
+            <p className="text-2xl font-bold text-green-400">{summary?.total_validados ?? "—"}</p>
           </CardContent>
         </Card>
-
-        <Card className="border-yellow-500/30 bg-yellow-500/5">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-yellow-600">Por Vencer</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-400">{stats.porVencer}</div>
+        <Card className="bg-slate-900/80 border-slate-700">
+          <CardContent className="pt-4 pb-4">
+            <p className="text-xs text-slate-400 mb-1">Conductores</p>
+            <p className="text-2xl font-bold text-white">{summary?.total_conductores ?? "—"}</p>
           </CardContent>
         </Card>
-
-        <Card className="border-red-500/30 bg-red-500/5">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-red-600">Vencidos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-400">{stats.vencidos}</div>
+        <Card className="bg-slate-900/80 border-slate-700">
+          <CardContent className="pt-4 pb-4">
+            <p className="text-xs text-slate-400 mb-1">Subcontratistas</p>
+            <p className="text-2xl font-bold text-white">{summary?.total_subcontratistas ?? "—"}</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Matriz Documental */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+      {/* Compliance Matrix by Executive */}
+      <Card className="bg-slate-900/80 border-slate-700">
+        <CardHeader className="flex flex-row items-center justify-between pb-4">
           <div>
-            <CardTitle>Matriz Documental</CardTitle>
-            <CardDescription>Estado de cumplimiento de vehículos, conductores y contratistas</CardDescription>
+            <CardTitle className="text-white">Rendimiento por Ejecutiva</CardTitle>
+            <CardDescription>Tasa de validacion y documentos gestionados en el periodo</CardDescription>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={exportPDF}
-              className="gap-2"
-            >
-              <Download className="w-4 h-4" />
-              PDF
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={exportExcel}
-              className="gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Excel
-            </Button>
+          <div className="flex gap-2 flex-wrap justify-end">
+            {[
+              { key: "all", label: "Todos" },
+              { key: "ok", label: `OK (${okCount})`, color: "text-green-400" },
+              { key: "warning", label: `Atencion (${warningCount})`, color: "text-yellow-400" },
+              { key: "critical", label: `Critico (${criticalCount})`, color: "text-red-400" },
+            ].map(f => (
+              <Button
+                key={f.key}
+                variant={filterStatus === f.key ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilterStatus(f.key)}
+                className={`text-xs ${filterStatus === f.key ? "bg-orange-500 hover:bg-orange-600 border-orange-500" : ""}`}
+              >
+                {f.label}
+              </Button>
+            ))}
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-6">
-          {/* Filtros */}
-          <div className="flex gap-2 flex-wrap">
-            <Button
-              variant={filterStatus === "all" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilterStatus("all")}
-            >
-              Todos
-            </Button>
-            <Button
-              variant={filterStatus === "vigente" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilterStatus("vigente")}
-              className={filterStatus === "vigente" ? "bg-green-600 hover:bg-green-700" : ""}
-            >
-              Vigentes
-            </Button>
-            <Button
-              variant={filterStatus === "por-vencer" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilterStatus("por-vencer")}
-              className={filterStatus === "por-vencer" ? "bg-yellow-600 hover:bg-yellow-700" : ""}
-            >
-              Por Vencer
-            </Button>
-            <Button
-              variant={filterStatus === "vencido" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilterStatus("vencido")}
-              className={filterStatus === "vencido" ? "bg-red-600 hover:bg-red-700" : ""}
-            >
-              Vencidos
-            </Button>
-          </div>
-
-          {/* Tabla de Matriz */}
-          <div className="space-y-4">
-            {filteredMatrix.map(item => (
-              <div key={item.id} className="border border-slate-700 rounded-lg p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  {item.type === "vehicle" && <Truck className="w-5 h-5 text-blue-400" />}
-                  {item.type === "conductor" && <FileText className="w-5 h-5 text-purple-400" />}
-                  {item.type === "contractor" && <Shield className="w-5 h-5 text-orange-400" />}
-                  <span className="font-semibold text-white">{item.name}</span>
-                  <span className="text-xs text-slate-400 ml-auto">ID: {item.id}</span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {item.documents.map((doc, idx) => (
-                    <div key={idx} className={`p-3 rounded border ${getStatusColor(doc.status)} flex items-center justify-between`}>
-                      <div className="flex items-center gap-2 flex-1">
-                        {getStatusIcon(doc.status)}
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{doc.type}</p>
-                          <p className="text-xs opacity-75">Vence: {doc.expiryDate}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs font-semibold">
-                          {doc.expiresIn > 0 ? `${doc.expiresIn}d` : "Vencido"}
-                        </p>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="w-6 h-6 animate-spin text-orange-500" />
+              <span className="ml-3 text-slate-400">Cargando datos...</span>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <AlertTriangle className="w-8 h-8 text-red-400 mx-auto mb-3" />
+              <p className="text-red-400">{error}</p>
+              <Button variant="outline" size="sm" onClick={fetchMetrics} className="mt-4">
+                Reintentar
+              </Button>
+            </div>
+          ) : filteredMetrics.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="w-8 h-8 text-slate-500 mx-auto mb-3" />
+              <p className="text-slate-400">No hay datos para el periodo seleccionado</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredMetrics.map((exec, idx) => (
+                <div
+                  key={idx}
+                  className={`rounded-lg border p-4 ${getScoreBg(exec.performance_score)}`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      {getStatusIcon(exec.performance_score)}
+                      <div>
+                        <p className="font-semibold text-white">{exec.ejecutiva}</p>
+                        <p className="text-xs text-slate-400">{exec.conductores_activos} conductores activos</p>
                       </div>
                     </div>
-                  ))}
+                    <div className="text-right">
+                      <p className={`text-2xl font-bold ${getScoreColor(exec.performance_score)}`}>
+                        {exec.performance_score}
+                        <span className="text-sm font-normal text-slate-400">/100</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-3 text-center">
+                    <div>
+                      <p className="text-xs text-slate-400">Procesados</p>
+                      <p className="text-lg font-semibold text-white">{exec.documentos_procesados}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-green-400">Validados</p>
+                      <p className="text-lg font-semibold text-green-400">{exec.documentos_validados}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-yellow-400">Pendientes</p>
+                      <p className="text-lg font-semibold text-yellow-400">{exec.documentos_pendientes}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-red-400">Rechazados</p>
+                      <p className="text-lg font-semibold text-red-400">{exec.documentos_rechazados}</p>
+                    </div>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="mt-3">
+                    <div className="flex justify-between text-xs text-slate-400 mb-1">
+                      <span>Tasa de validacion</span>
+                      <span>{exec.tasa_validacion}</span>
+                    </div>
+                    <div className="w-full bg-slate-700 rounded-full h-1.5">
+                      <div
+                        className={`h-1.5 rounded-full transition-all ${
+                          exec.performance_score >= 75
+                            ? "bg-green-500"
+                            : exec.performance_score >= 50
+                            ? "bg-yellow-500"
+                            : "bg-red-500"
+                        }`}
+                        style={{ width: exec.tasa_validacion }}
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Alertas Críticas */}
-      {stats.vencidos > 0 && (
-        <Card className="border-red-500/30 bg-red-500/5">
-          <CardHeader>
-            <CardTitle className="text-red-400 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5" />
-              Acción Requerida: {stats.vencidos} Documento(s) Vencido(s)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-slate-300">
-              {stats.vencidos} documento(s) están vencidos y requieren renovación inmediata. Contacta a los responsables para actualizar la documentación y evitar sanciones.
-            </p>
+      {/* Critical alert banner */}
+      {criticalCount > 0 && !loading && (
+        <Card className="border-red-500/40 bg-red-500/5">
+          <CardContent className="py-4 flex items-center gap-4">
+            <AlertTriangle className="w-6 h-6 text-red-400 flex-shrink-0" />
+            <div>
+              <p className="font-semibold text-red-300">
+                {criticalCount} ejecutiva{criticalCount > 1 ? "s" : ""} con rendimiento critico
+              </p>
+              <p className="text-sm text-slate-400">
+                Tasa de validacion por debajo del 50%. Revisar documentos rechazados y pendientes.
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}

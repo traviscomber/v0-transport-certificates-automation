@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { ArrowRight, CheckCircle2, AlertCircle, BarChart3, Shield, Zap } from "lucide-react"
+import { ArrowRight, CheckCircle2, AlertCircle, Shield, Zap, Truck, HardHat, Wrench, Package, Building2, ClipboardCheck } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 
@@ -30,7 +30,8 @@ export default function LandingPage() {
       <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/30">
-            <span className="text-orange-400 text-sm font-medium">🚀 Compliance Documental con IA</span>
+            <Shield className="w-4 h-4 text-orange-400" />
+            <span className="text-orange-400 text-sm font-medium">Compliance Documental con IA para Chile</span>
           </div>
           
           <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight">
@@ -182,15 +183,15 @@ export default function LandingPage() {
           
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { icon: "🚚", title: "Empresa de Transporte de Carga", desc: "Control de vencimientos de flota completa, carpetas para mandantes" },
-              { icon: "👷", title: "Contratista Minero", desc: "Documentación de personal, seguridad laboral, cumplimiento regulatorio" },
-              { icon: "🔧", title: "Flota de Servicios Técnicos", desc: "Vehículos asignados a técnicos con documentación centralizada" },
-              { icon: "📦", title: "Operador Logístico", desc: "Gestión de conductores propios y subcontratados" },
-              { icon: "🏭", title: "Empresa Construcción", desc: "Control de equipos, vehículos y personal de obra" },
-              { icon: "✓", title: "Mandante Exigente", desc: "Auditoría de compliance de contratistas y proveedores" }
+              { icon: <Truck className="w-8 h-8 text-orange-400" />, title: "Empresa de Transporte de Carga", desc: "Control de vencimientos de flota completa, carpetas para mandantes" },
+              { icon: <HardHat className="w-8 h-8 text-orange-400" />, title: "Contratista Minero", desc: "Documentacion de personal, seguridad laboral, cumplimiento regulatorio" },
+              { icon: <Wrench className="w-8 h-8 text-orange-400" />, title: "Flota de Servicios Tecnicos", desc: "Vehiculos asignados a tecnicos con documentacion centralizada" },
+              { icon: <Package className="w-8 h-8 text-orange-400" />, title: "Operador Logistico", desc: "Gestion de conductores propios y subcontratados" },
+              { icon: <Building2 className="w-8 h-8 text-orange-400" />, title: "Empresa Construccion", desc: "Control de equipos, vehiculos y personal de obra" },
+              { icon: <ClipboardCheck className="w-8 h-8 text-orange-400" />, title: "Mandante Exigente", desc: "Auditoria de compliance de contratistas y proveedores" }
             ].map((useCase, i) => (
               <div key={i} className="p-6 bg-slate-800/30 border border-slate-700 rounded-lg">
-                <div className="text-4xl mb-3">{useCase.icon}</div>
+                <div className="mb-3">{useCase.icon}</div>
                 <h3 className="font-semibold text-white mb-2">{useCase.title}</h3>
                 <p className="text-slate-300 text-sm">{useCase.desc}</p>
               </div>
@@ -206,7 +207,7 @@ export default function LandingPage() {
           
           <div className="grid md:grid-cols-2 gap-8">
             <div>
-              <h3 className="font-semibold text-white mb-6 text-lg">❌ Con Excel/Gestión Manual</h3>
+              <h3 className="font-semibold text-white mb-6 text-lg flex items-center gap-2"><AlertCircle className="w-5 h-5 text-red-400" /> Con Excel / Gestion Manual</h3>
               <ul className="space-y-3">
                 {[
                   "Vencimientos por descuido",
@@ -225,7 +226,7 @@ export default function LandingPage() {
             </div>
             
             <div>
-              <h3 className="font-semibold text-white mb-6 text-lg">✓ Con DocuFleet</h3>
+              <h3 className="font-semibold text-white mb-6 text-lg flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-400" /> Con DocuFleet</h3>
               <ul className="space-y-3">
                 {[
                   "Alertas automáticas antes de vencer",
@@ -314,7 +315,7 @@ export default function LandingPage() {
               </Button>
             </Link>
             <Button size="lg" variant="outline">
-              📞 Agendar Demo
+              Agendar Demo
             </Button>
           </div>
         </div>
@@ -358,7 +359,7 @@ export default function LandingPage() {
           
           <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-slate-400 text-sm">
             <p>&copy; 2024 DocuFleet. Todos los derechos reservados.</p>
-            <p>Compliance documental con IA para Chile 🇨🇱</p>
+            <p>Compliance documental con IA para Chile</p>
           </div>
         </div>
       </footer>
