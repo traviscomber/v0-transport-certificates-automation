@@ -37,14 +37,13 @@ export async function getConductorComplianceMetrics(): Promise<ConductorComplian
   // STEP 1: Get all conductors first
   const { data: allConductors, error: conductorsError } = await supabase
     .from('conductores')
-    .select('id, first_name, last_name, rut')
+    .select('id, rut, nombres, apellido_paterno, apellido_materno, is_active')
+    .eq('is_active', true)
 
   if (conductorsError) {
     console.error('[v0] Error fetching conductors:', conductorsError)
     throw new Error('Failed to fetch conductors')
   }
-
-  console.log('[v0] Fetched', allConductors?.length || 0, 'conductors')
 
   // STEP 2: Get all documents
   const { data: documents, error: docsError } = await supabase
@@ -63,15 +62,17 @@ export async function getConductorComplianceMetrics(): Promise<ConductorComplian
     throw new Error('Failed to fetch compliance data')
   }
 
-  console.log('[v0] Fetched', documents?.length || 0, 'documents')
-
   // STEP 3: Initialize map with ALL conductors (even those without documents)
   const conductorMap = new Map<string, any>()
   
   allConductors?.forEach((conductor: any) => {
+    const fullName = [conductor.nombres, conductor.apellido_paterno, conductor.apellido_materno]
+      .filter(Boolean)
+      .join(' ')
+      .trim()
     conductorMap.set(conductor.id, {
       conductorId: conductor.id,
-      conductorName: `${conductor.first_name || ''} ${conductor.last_name || ''}`.trim(),
+      conductorName: fullName || 'Sin nombre',
       rut: conductor.rut || 'N/A',
       totalDocuments: 0,
       approvedDocuments: 0,
@@ -189,7 +190,6 @@ export async function getConductorComplianceMetrics(): Promise<ConductorComplian
       expiringDocuments: c.expiringDocuments,
     }
     
-    console.log('[v0] Conductor metric:', { name: c.conductorName, risk: riskLevel, score: complianceScore, docs: c.totalDocuments })
     return result
   })
 
@@ -201,8 +201,6 @@ export async function getConductorComplianceMetrics(): Promise<ConductorComplian
   const highRiskCount = conductors.filter(c => c.riskLevel === 'red').length
   const mediumRiskCount = conductors.filter(c => c.riskLevel === 'yellow').length
   const lowRiskCount = conductors.filter(c => c.riskLevel === 'green').length
-
-  console.log('[v0] Analytics Summary:', { totalConductors, highRiskCount, mediumRiskCount, lowRiskCount })
 
   return {
     conductors: conductors.sort((a, b) => a.complianceScore - b.complianceScore),
