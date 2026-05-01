@@ -138,19 +138,6 @@ export default function AlertasPage() {
     return d.toLocaleDateString('es-ES')
   }
 
-  const handleCopyRut = async (rut: string, e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
-    try {
-      await navigator.clipboard.writeText(rut)
-      setCopiedRut(rut)
-      setTimeout(() => setCopiedRut(null), 2000)
-    } catch (error) {
-      console.error('[v0] Error copying RUT:', error)
-    }
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}
