@@ -256,18 +256,15 @@ export default function LandingPage() {
             {[
               {
                 name: "Starter",
-                price: "Desde 3 UF",
                 features: ["Hasta 10 vehículos", "Hasta 5 conductores", "Alertas básicas", "1 usuario"]
               },
               {
                 name: "Professional",
-                price: "Desde 8 UF",
                 features: ["Hasta 50 vehículos", "Hasta 20 conductores", "Alertas avanzadas", "5 usuarios", "Reportes personalizados"],
                 highlighted: true
               },
               {
                 name: "Enterprise",
-                price: "A medida",
                 features: ["Flotas ilimitadas", "Usuarios ilimitados", "Integración API", "Soporte dedicado", "Customización completa"]
               }
             ].map((plan, i) => (
@@ -276,8 +273,7 @@ export default function LandingPage() {
                   ? "border-orange-500 bg-orange-500/10 ring-2 ring-orange-500 ring-offset-2 ring-offset-slate-950"
                   : "border-slate-700 bg-slate-800/30"
               }`}>
-                <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
-                <p className="text-3xl font-bold text-orange-400 mb-6">{plan.price}</p>
+                <h3 className="text-2xl font-bold text-white mb-6">{plan.name}</h3>
                 <ul className="space-y-3 mb-8">
                   {plan.features.map((feature, j) => (
                     <li key={j} className="flex gap-2 text-slate-300">
