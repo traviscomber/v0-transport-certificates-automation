@@ -60,7 +60,6 @@ export async function notifyExecutivas(payload: NotificationPayload) {
       message,
       is_read: false,
       created_at: new Date().toISOString(),
-      related_document_id: payload.documentId,
     }))
 
     // Insert notifications into DB

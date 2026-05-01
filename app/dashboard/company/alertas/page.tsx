@@ -9,18 +9,16 @@ import { AlertTriangle, AlertCircle, Info } from 'lucide-react'
 
 interface Alert {
   id: string
-  alert_type: string
+  type: string
   title: string
-  description: string
+  message: string
   priority: 'critical' | 'high' | 'medium' | 'low'
-  entity_type?: string
-  entity_id?: string
-  entity_name?: string
+  category?: string
   is_read: boolean
-  is_resolved: boolean
+  is_dismissed: boolean
   action_url?: string
+  metadata?: Record<string, any>
   created_at: string
-  updated_at?: string
   timestamp?: Date
 }
 
@@ -58,13 +56,13 @@ export default function AlertasPage() {
   }
 
   const filteredAlerts = alerts.filter((alert) => {
-    const matchesSearch = 
+    const matchesSearch =
       alert.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      alert.description?.toLowerCase().includes(searchQuery.toLowerCase())
-    
+      alert.message?.toLowerCase().includes(searchQuery.toLowerCase())
+
     const matchesPriority = !selectedPriority || alert.priority === selectedPriority
-    const matchesCategory = !selectedCategory || alert.alert_type === selectedCategory
-    
+    const matchesCategory = !selectedCategory || alert.type === selectedCategory
+
     return matchesSearch && matchesPriority && matchesCategory
   })
 
@@ -92,8 +90,8 @@ export default function AlertasPage() {
     }
   }
 
-  const getAlertColor = (priority: string, isResolved: boolean) => {
-    if (isResolved) return 'border-l-4 border-l-gray-400 bg-gray-900/25 opacity-60'
+  const getAlertColor = (priority: string, isDismissed: boolean) => {
+    if (isDismissed) return 'border-l-4 border-l-gray-400 bg-gray-900/25 opacity-60'
     switch (priority) {
       case 'critical':
         return 'border-l-4 border-l-red-500 bg-red-900/25'
@@ -224,9 +222,9 @@ export default function AlertasPage() {
         >
           <option value="">Todas las categorías</option>
           <option value="DOCUMENT_REJECTED">Documentos Rechazados</option>
-          <option value="DOCUMENT_EXPIRATION">Vencimientos</option>
-          <option value="DOCUMENT_UPLOADED">Documentos Uploadados</option>
           <option value="DOCUMENT_APPROVED">Documentos Aprobados</option>
+          <option value="DOCUMENT_EXPIRATION">Vencimientos</option>
+          <option value="DOCUMENT_UPLOADED">Documentos Subidos</option>
         </select>
         <Button
           variant="outline"
@@ -257,7 +255,7 @@ export default function AlertasPage() {
             {filteredAlerts.map((alert) => (
               <div
                 key={alert.id}
-                className={`p-4 border rounded-lg flex items-start gap-4 transition-all ${getAlertColor(alert.priority, alert.is_resolved)}`}
+                className={`p-4 border rounded-lg flex items-start gap-4 transition-all ${getAlertColor(alert.priority, alert.is_dismissed)}`}
               >
                 <div className="flex-shrink-0 mt-1">
                   {getAlertIcon(alert.priority)}
@@ -268,19 +266,19 @@ export default function AlertasPage() {
                     <Badge className={getPriorityBadgeColor(alert.priority)}>
                       {alert.priority.toUpperCase()}
                     </Badge>
-                    {alert.is_resolved && (
-                      <Badge variant="outline" className="text-xs">Resuelto</Badge>
+                    {alert.is_dismissed && (
+                      <Badge variant="outline" className="text-xs">Descartada</Badge>
                     )}
                     {!alert.is_read && (
                       <div className="w-2 h-2 rounded-full bg-primary"></div>
                     )}
                   </div>
-                  <p className="text-sm text-foreground/85 dark:text-slate-200">{alert.description}</p>
+                  <p className="text-sm text-foreground/85 dark:text-slate-200">{alert.message}</p>
                   <div className="flex items-center gap-3 mt-3 flex-wrap">
                     <span className="text-xs text-foreground/70 dark:text-slate-400">{formatTime(alert.created_at)}</span>
-                    {alert.entity_type && (
+                    {alert.category && (
                       <Badge variant="outline" className="text-xs">
-                        {alert.entity_type}
+                        {alert.category.replace('_', ' ')}
                       </Badge>
                     )}
                     {alert.action_url && (
