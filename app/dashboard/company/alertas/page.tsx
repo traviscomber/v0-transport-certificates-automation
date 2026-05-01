@@ -214,7 +214,7 @@ export default function AlertasPage() {
           <option value="">Todas las prioridades</option>
           <option value="critical">Crítica</option>
           <option value="high">Alta</option>
-          <option value="normal">Normal</option>
+          <option value="medium">Media</option>
           <option value="low">Baja</option>
         </select>
         <select
@@ -271,7 +271,7 @@ export default function AlertasPage() {
                     {alert.is_resolved && (
                       <Badge variant="outline" className="text-xs">Resuelto</Badge>
                     )}
-                    {!alert.read && (
+                    {!alert.is_read && (
                       <div className="w-2 h-2 rounded-full bg-primary"></div>
                     )}
                   </div>
