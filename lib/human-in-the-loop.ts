@@ -372,30 +372,44 @@ async function generateReviewAlerts(decision: ReviewDecision): Promise<void> {
   try {
     const supabase = getSupabaseAdmin()
     
-    // Obtener información del documento y conductor
-    const { data: queueItem } = await supabase
+    console.log('[HITL] 📢 Generating alerts for review decision:', decision.decision)
+    
+    // Obtener información de la cola de revisión
+    const { data: queueItem, error: queueError } = await supabase
       .from('review_queue')
-      .select(`
-        document_id,
-        uploaded_documents!inner(
-          conductor_id,
-          document_type_id,
-          document_types!inner(name)
-        )
-      `)
+      .select('document_id')
       .eq('id', decision.queueId)
       .single()
     
-    if (!queueItem) return
+    if (queueError || !queueItem) {
+      console.error('[HITL] Error fetching queue item:', queueError)
+      return
+    }
 
-    const document = (queueItem as any).uploaded_documents
-    if (!document || !document.conductor_id) return
+    const documentId = queueItem.document_id
+    
+    // Obtener documento uploadado
+    const { data: uploadedDoc, error: docError } = await supabase
+      .from('uploaded_documents')
+      .select(`
+        id,
+        conductor_id,
+        document_type_id,
+        document_types(name)
+      `)
+      .eq('id', documentId)
+      .single()
+    
+    if (docError || !uploadedDoc) {
+      console.error('[HITL] Error fetching uploaded document:', docError)
+      return
+    }
 
     // Obtener nombre del conductor
     const { data: conductorData } = await supabase
       .from('conductores')
       .select('nombres, apellido_paterno, apellido_materno')
-      .eq('id', document.conductor_id)
+      .eq('id', uploadedDoc.conductor_id)
       .single()
 
     const conductorName = conductorData 
@@ -405,17 +419,21 @@ async function generateReviewAlerts(decision: ReviewDecision): Promise<void> {
           .trim()
       : 'Conductor'
 
+    console.log('[HITL] Generating alert for conductor:', conductorName)
+
     // Generar alerta con el nuevo sistema
     await generateDocumentStatusChangeAlert(
-      document.id || (queueItem as any).document_id,
-      document.document_types?.name || 'Documento',
+      uploadedDoc.id,
+      (uploadedDoc as any).document_types?.name || 'Documento',
       conductorName,
-      document.conductor_id,
+      uploadedDoc.conductor_id,
       decision.decision === 'approved' ? 'approved' : 'rejected',
       decision.rejectionReason || decision.notes || undefined
     )
+    
+    console.log('[HITL] ✅ Alert generated successfully')
   } catch (err) {
-    console.error('[HITL] Error generating review alerts:', err)
+    console.error('[HITL] ❌ Error generating review alerts:', err)
   }
 }
 
