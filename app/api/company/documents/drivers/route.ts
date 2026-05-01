@@ -18,22 +18,60 @@ export async function GET(request: NextRequest) {
 
     const adminClient = await createAdminClient()
 
-    // First, resolve the RUT to get the real conductor UUID
+    // Normalize RUT — try exact, then without dash, then with dash
+    const rutClean = driverRut.replace(/-/g, '').trim()
+    const rutWithDash = rutClean.length > 1
+      ? `${rutClean.slice(0, -1)}-${rutClean.slice(-1)}`
+      : driverRut
+
+    console.log('[v0] RUT variants - original:', driverRut, 'clean:', rutClean, 'withDash:', rutWithDash)
+
+    // Try to find conductor with any RUT format
     const { data: conductorData, error: conductorError } = await adminClient
       .from('conductores')
-      .select('id')
-      .eq('rut', driverRut)
+      .select('id, rut')
+      .or(`rut.eq.${driverRut},rut.eq.${rutClean},rut.eq.${rutWithDash}`)
+      .limit(1)
       .single()
 
     if (conductorError || !conductorData?.id) {
-      console.log('[v0] Conductor not found for RUT:', driverRut)
+      // Last resort: try driver_id directly if provided
+      if (driverId && driverId !== 'undefined') {
+        console.log('[v0] Conductor not found by RUT, trying driver_id directly:', driverId)
+        const { data: byId } = await adminClient
+          .from('uploaded_documents')
+          .select('id, original_filename, document_type_id, file_url, validation_status, created_at, expiration_date')
+          .eq('conductor_id', driverId)
+          .order('created_at', { ascending: false })
+        
+        if (byId && byId.length > 0) {
+          console.log('[v0] Found', byId.length, 'documents by driver_id fallback')
+          const statusMap: Record<string, string> = {
+            'approved': 'aprobado', 'validated': 'aprobado', 'rejected': 'rechazado',
+            'pending': 'pendiente', 'expired': 'vencido',
+            'aprobado': 'aprobado', 'rechazado': 'rechazado', 'pendiente': 'pendiente', 'vencido': 'vencido',
+          }
+          const documents = byId.map((doc: any) => ({
+            id: doc.id, file_name: doc.original_filename, original_filename: doc.original_filename,
+            upload_date: doc.created_at, created_at: doc.created_at,
+            document_type: doc.document_type_id || 'Documento',
+            verification_status: statusMap[(doc.validation_status || 'pending').toLowerCase()] || 'pendiente',
+            validation_status: doc.validation_status,
+            expiration_date: doc.expiration_date || null, size: 0, storage_path: '', public_url: doc.file_url || '',
+          }))
+          return NextResponse.json({ success: true, conductor_id: driverId, documents }, {
+            headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0', 'Pragma': 'no-cache', 'Expires': '0' }
+          })
+        }
+      }
+      console.log('[v0] Conductor not found for RUT variants:', driverRut, rutClean, rutWithDash, 'error:', conductorError?.message)
       return NextResponse.json({ success: true, documents: [] }, {
         headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
       })
     }
 
     const conductorId = conductorData.id
-    console.log('[v0] Resolved conductor_id from RUT:', conductorId)
+    console.log('[v0] Resolved conductor_id:', conductorId, 'from RUT in DB:', conductorData.rut)
 
     const { data: dbDocuments, error: dbError } = await adminClient
       .from('uploaded_documents')

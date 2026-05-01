@@ -554,7 +554,7 @@ export function DriverCard({
           setSelectedDocument(null)
         }}
         onStatusChange={async (docId, newStatus) => {
-          // 1. Optimistic update — UI changes instantly, no waiting
+          // 1. Optimistic update — UI changes instantly
           updateDocumentStatus(docId, newStatus)
           
           // 2. Close modal immediately so user sees the change
@@ -562,7 +562,7 @@ export function DriverCard({
           setSelectedDocument(null)
 
           try {
-            // 3. Send PATCH to DB in background
+            // 3. Send PATCH to DB — fire and forget, optimistic state is already set
             const res = await fetch(`/api/company/documents/${docId}/status`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
@@ -573,13 +573,12 @@ export function DriverCard({
               const err = await res.json()
               throw new Error(err.error || 'Status update failed')
             }
-
-            // 4. Confirm with a background refetch to sync any DB-side changes
-            await refetch(true)
+            // Do NOT refetch here — it would overwrite the optimistic update
+            // if the conductor lookup fails. The optimistic state is correct.
           } catch (error) {
             console.error('[v0] Error updating status:', error)
-            // On error revert by refetching real DB state
-            await refetch(true)
+            // Only on error: revert optimistic update by rolling back manually
+            updateDocumentStatus(docId, newStatus === 'aprobado' ? 'pendiente' : newStatus === 'rechazado' ? 'pendiente' : 'pendiente')
             throw error
           }
         }}
