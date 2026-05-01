@@ -18,11 +18,12 @@ export async function GET() {
   try {
     const adminClient = await createAdminClient()
 
-    // Get all ejecutivas from profiles table with their email addresses
+    // Get profiles by RUT (not role, since roles may vary)
+    const ejecutivaRuts = EJECUTIVAS_LABBE.map(e => e.rut)
     const { data: profiles, error: profilesError } = await adminClient
       .from('profiles')
       .select('id, rut, email, full_name')
-      .eq('role', 'ejecutiva')
+      .in('rut', ejecutivaRuts)
 
     if (profilesError) {
       console.error('[v0] Error fetching ejecutivas from DB:', profilesError)

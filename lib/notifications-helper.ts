@@ -50,29 +50,73 @@ export async function notifyExecutivas(payload: NotificationPayload) {
       message = `El ${payload.documentType} del conductor ${payload.conductorName} ha vencido y requiere atención.`
     }
 
-    // Create in-app notifications for each ejecutiva
-    const adminClient = await createAdminClient()
+    const adminClient = createAdminClient()
 
-    const notifications = ejecutivas.map((exec: any) => ({
-      user_id: exec.id,
+    // Insert into alerts table (does not require user_id)
+    const { data: orgData } = await adminClient
+      .from('organizations')
+      .select('id')
+      .limit(1)
+      .single()
+
+    const organizationId = orgData?.id
+
+    const alertInsert: any = {
       type: payload.type,
       title,
       message,
+      priority: payload.type === 'status_change' ? 'high' : 'medium',
+      category: payload.type,
       is_read: false,
-      created_at: new Date().toISOString(),
-    }))
-
-    // Insert notifications into DB
-    const { error: insertError } = await adminClient
-      .from('notifications')
-      .insert(notifications)
-
-    if (insertError) {
-      console.error('[v0] Error inserting notifications:', insertError)
-      return { success: false, error: insertError.message }
+      is_dismissed: false,
+      action_url: `/dashboard/company/documentos`,
+      metadata: {
+        document_id: payload.documentId,
+        old_status: payload.oldStatus,
+        new_status: payload.newStatus,
+        conductor: payload.conductorName,
+      },
     }
 
-    console.log('[v0] Created', notifications.length, 'in-app notifications')
+    if (organizationId) alertInsert.organization_id = organizationId
+
+    const { error: alertError } = await adminClient
+      .from('alerts')
+      .insert(alertInsert)
+
+    if (alertError) {
+      console.error('[v0] Error inserting alert:', alertError)
+    } else {
+      console.log('[v0] Alert created successfully in alerts table')
+    }
+
+    // Create in-app notifications only for ejecutivas that have a valid profile id
+    const validExecutivas = ejecutivas.filter((exec: any) => exec.id != null)
+
+    if (validExecutivas.length > 0) {
+      const notifications = validExecutivas.map((exec: any) => ({
+        user_id: exec.id,
+        type: payload.type,
+        title,
+        message,
+        is_read: false,
+        created_at: new Date().toISOString(),
+      }))
+
+      const { error: insertError } = await adminClient
+        .from('notifications')
+        .insert(notifications)
+
+      if (insertError) {
+        console.error('[v0] Error inserting notifications:', insertError)
+      } else {
+        console.log('[v0] Created', notifications.length, 'in-app notifications')
+      }
+    } else {
+      console.log('[v0] No ejecutivas with valid profile id found, skipping notifications insert')
+    }
+
+    console.log('[v0] Notification flow complete for', ejecutivas.length, 'ejecutivas')
 
     // Send emails (mock for now, implement with Resend/SendGrid later)
     for (const exec of ejecutivas) {
