@@ -93,61 +93,46 @@ export function ComplianceDashboard() {
       acc + item.documents.filter(d => d.status === "vencido").length, 0),
   }
 
-  // Exportar a PDF
+  // Exportar a PDF usando utility
   const exportPDF = () => {
-    const doc = new jsPDF()
-    let yPosition = 10
-
-    doc.setFontSize(16)
-    doc.text("Reporte de Cumplimiento Documental", 10, yPosition)
-    yPosition += 10
-
-    doc.setFontSize(12)
-    doc.text(`Fecha: ${new Date().toLocaleDateString('es-CL')}`, 10, yPosition)
-    yPosition += 10
-
-    // Estadísticas
-    doc.setFontSize(10)
-    doc.text(`Total de Documentos: ${stats.total}`, 10, yPosition)
-    yPosition += 5
-    doc.text(`Vigentes: ${stats.vigentes} | Por Vencer: ${stats.porVencer} | Vencidos: ${stats.vencidos}`, 10, yPosition)
-    yPosition += 10
-
-    // Matriz
-    documentMatrix.forEach(item => {
-      doc.setFontSize(11)
-      doc.text(`${item.type === 'vehicle' ? '🚚' : item.type === 'conductor' ? '👤' : '🏢'} ${item.name}`, 10, yPosition)
-      yPosition += 5
-
-      item.documents.forEach(doc_item => {
-        doc.setFontSize(9)
-        const status_text = `${doc_item.type}: ${doc_item.status} (${doc_item.expiryDate})`
-        doc.text(status_text, 15, yPosition)
-        yPosition += 4
-      })
-      yPosition += 3
-    })
-
-    doc.save("cumplimiento_documental.pdf")
-  }
-
-  // Exportar a Excel
-  const exportExcel = () => {
-    const data = documentMatrix.flatMap(item =>
+    const documentsForExport = filteredMatrix.flatMap(item =>
       item.documents.map(doc => ({
-        "Tipo": item.type === 'vehicle' ? 'Vehículo' : item.type === 'conductor' ? 'Conductor' : 'Contratista',
-        "Nombre/Patente": item.name,
-        "Documento": doc.type,
-        "Estado": doc.status,
-        "Vence en": doc.expiresIn > 0 ? `${doc.expiresIn} días` : `Vencido hace ${Math.abs(doc.expiresIn)} días`,
-        "Fecha Vencimiento": doc.expiryDate
+        vehiclePatent: item.name,
+        driverName: item.name,
+        documentType: doc.type,
+        expirationDate: doc.expiryDate,
+        status: doc.status === 'vigente' ? 'vigente' : doc.status === 'por-vencer' ? 'por vencer' : 'vencido',
+        uploadDate: new Date().toLocaleDateString('es-ES'),
+        observations: doc.expiresIn > 0 ? `Vence en ${doc.expiresIn} días` : 'Documento vencido'
       }))
     )
+    
+    try {
+      exportComplianceToPDF(documentsForExport, 'Empresa de Transporte')
+    } catch (error) {
+      console.error('Error exporting to PDF:', error)
+    }
+  }
 
-    const ws = XLSX.utils.json_to_sheet(data)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, "Compliance")
-    XLSX.writeFile(wb, "cumplimiento_documental.xlsx")
+  // Exportar a Excel usando utility
+  const exportExcel = () => {
+    const documentsForExport = filteredMatrix.flatMap(item =>
+      item.documents.map(doc => ({
+        vehiclePatent: item.name,
+        driverName: item.name,
+        documentType: doc.type,
+        expirationDate: doc.expiryDate,
+        status: doc.status === 'vigente' ? 'vigente' : doc.status === 'por-vencer' ? 'por vencer' : 'vencido',
+        uploadDate: new Date().toLocaleDateString('es-ES'),
+        observations: doc.expiresIn > 0 ? `Vence en ${doc.expiresIn} días` : 'Documento vencido'
+      }))
+    )
+    
+    try {
+      exportComplianceToExcel(documentsForExport, 'Empresa de Transporte')
+    } catch (error) {
+      console.error('Error exporting to Excel:', error)
+    }
   }
 
   const filteredMatrix = documentMatrix.filter(item => {
