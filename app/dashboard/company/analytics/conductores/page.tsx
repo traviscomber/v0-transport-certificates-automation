@@ -110,16 +110,16 @@ export default function ConductorAnalyticsPage() {
         <span className="text-sm font-medium" style={{ color: '#434547' }}>Filtrar por riesgo:</span>
         <div className="flex gap-2">
           {[
-            { value: 'all' as const, label: 'Todos', color: 'bg-gray-100 hover:bg-gray-200' },
-            { value: 'green' as const, label: 'Bajo', color: 'bg-green-100 hover:bg-green-200 text-green-800' },
-            { value: 'yellow' as const, label: 'Medio', color: 'bg-yellow-100 hover:bg-yellow-200 text-yellow-800' },
-            { value: 'red' as const, label: 'Alto', color: 'bg-red-100 hover:bg-red-200 text-red-800' },
+            { value: 'all' as const, label: 'Todos', color: 'bg-gray-700 hover:bg-gray-800 text-white' },
+            { value: 'green' as const, label: 'Bajo', color: 'bg-green-600 hover:bg-green-700 text-white' },
+            { value: 'yellow' as const, label: 'Medio', color: 'bg-yellow-600 hover:bg-yellow-700 text-white' },
+            { value: 'red' as const, label: 'Alto', color: 'bg-red-600 hover:bg-red-700 text-white' },
           ].map(option => (
             <button
               key={option.value}
               onClick={() => setFilterRisk(option.value)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filterRisk === option.value ? option.color : 'bg-white border border-gray-200 hover:border-gray-300'
+                filterRisk === option.value ? option.color : 'bg-gray-600 text-white border border-gray-500 hover:bg-gray-700'
               }`}
             >
               {option.label}
