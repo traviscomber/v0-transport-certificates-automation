@@ -58,7 +58,7 @@ export async function notifyExecutivas(payload: NotificationPayload) {
       type: payload.type,
       title,
       message,
-      read: false,
+      is_read: false,
       created_at: new Date().toISOString(),
       related_document_id: payload.documentId,
     }))

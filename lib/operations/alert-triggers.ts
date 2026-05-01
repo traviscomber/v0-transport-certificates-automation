@@ -54,7 +54,8 @@ export async function logAlert(event: AlertEvent) {
       priority: priorityMap[event.type] || 'normal',
       action_url: event.actionUrl || null,
       metadata: metadata,
-      read: false
+      is_read: false,
+      organization_id: '00000000-0000-0000-0000-000000000000' // Default org
     }
 
     console.log('[v0] Saving alert to database:', alertData)

@@ -144,9 +144,19 @@ export async function generateDocumentStatusChangeAlert(
         .in('role', ['admin', 'manager', 'supervisor'])
 
       if (adminUsers && adminUsers.length > 0) {
+        // Get default organization (for now use a hardcoded one or get from config)
+        const { data: org } = await supabase
+          .from('organizations')
+          .select('id')
+          .limit(1)
+          .single()
+
+        const organizationId = org?.id || '00000000-0000-0000-0000-000000000000'
+
         const adminAlerts = adminUsers.map((admin: any) => ({
+          organization_id: organizationId,
           alert_type: 'DOCUMENT_REJECTED',
-          priority: priority,
+          priority: 'high',
           title: `Documento Rechazado - ${documentType}`,
           description: `${conductorName} tiene un documento rechazado. Razón: ${reason || 'Revisar'}`,
           entity_type: 'document',
@@ -275,9 +285,24 @@ export async function generateExpirationAlerts() {
 
     // Insert alerts
     if (alertsToCreate.length > 0) {
+      // Get default organization
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('id')
+        .limit(1)
+        .single()
+
+      const organizationId = org?.id || '00000000-0000-0000-0000-000000000000'
+
+      // Add organization_id to all alerts
+      const alertsWithOrg = alertsToCreate.map(alert => ({
+        ...alert,
+        organization_id: organizationId
+      }))
+
       const { error: insertError } = await supabase
         .from('alerts_log')
-        .insert(alertsToCreate)
+        .insert(alertsWithOrg)
 
       if (!insertError) {
         // Update last alert sent timestamp
