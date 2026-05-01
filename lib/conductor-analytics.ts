@@ -44,6 +44,8 @@ export async function getConductorComplianceMetrics(): Promise<ConductorComplian
     throw new Error('Failed to fetch conductors')
   }
 
+  console.log('[v0] Fetched', allConductors?.length || 0, 'conductors')
+
   // STEP 2: Get all documents
   const { data: documents, error: docsError } = await supabase
     .from('uploaded_documents')
@@ -60,6 +62,8 @@ export async function getConductorComplianceMetrics(): Promise<ConductorComplian
     console.error('[v0] Error fetching documents:', docsError)
     throw new Error('Failed to fetch compliance data')
   }
+
+  console.log('[v0] Fetched', documents?.length || 0, 'documents')
 
   // STEP 3: Initialize map with ALL conductors (even those without documents)
   const conductorMap = new Map<string, any>()
@@ -168,7 +172,7 @@ export async function getConductorComplianceMetrics(): Promise<ConductorComplian
       ? new Date(Math.max(...c.documentDates.map((d: string) => new Date(d).getTime()))).toISOString()
       : null
 
-    return {
+    const result = {
       conductorId: c.conductorId,
       conductorName: c.conductorName,
       rut: c.rut,
@@ -184,6 +188,9 @@ export async function getConductorComplianceMetrics(): Promise<ConductorComplian
       lastDocumentDate,
       expiringDocuments: c.expiringDocuments,
     }
+    
+    console.log('[v0] Conductor metric:', { name: c.conductorName, risk: riskLevel, score: complianceScore, docs: c.totalDocuments })
+    return result
   })
 
   // STEP 6: Calculate summary

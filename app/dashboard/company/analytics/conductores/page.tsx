@@ -125,10 +125,10 @@ export default function ConductorAnalyticsPage() {
               {option.label}
               {option.value !== 'all' && ` (${
                 option.value === 'green'
-                  ? report?.summary.lowRiskCount
+                  ? (report?.summary.lowRiskCount ?? 0)
                   : option.value === 'yellow'
-                    ? report?.summary.mediumRiskCount
-                    : report?.summary.highRiskCount
+                    ? (report?.summary.mediumRiskCount ?? 0)
+                    : (report?.summary.highRiskCount ?? 0)
               })`}
             </button>
           ))}
