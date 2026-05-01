@@ -105,9 +105,9 @@ export default function ConductorAnalyticsPage() {
       )}
 
       {/* Filter Section */}
-      <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-lg">
-        <Filter className="w-5 h-5 text-gray-600" />
-        <span className="text-sm font-medium text-gray-700">Filtrar por riesgo:</span>
+      <div className="flex items-center gap-4 p-4 rounded-lg" style={{ backgroundColor: '#929191' }}>
+        <Filter className="w-5 h-5" style={{ color: '#434547' }} />
+        <span className="text-sm font-medium" style={{ color: '#434547' }}>Filtrar por riesgo:</span>
         <div className="flex gap-2">
           {[
             { value: 'all' as const, label: 'Todos', color: 'bg-gray-100 hover:bg-gray-200' },
