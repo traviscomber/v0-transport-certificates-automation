@@ -96,15 +96,22 @@ export function ComplianceDashboard() {
   // Exportar a PDF usando utility
   const exportPDF = () => {
     const documentsForExport = filteredMatrix.flatMap(item =>
-      item.documents.map(doc => ({
-        vehiclePatent: item.name,
-        driverName: item.name,
-        documentType: doc.type,
-        expirationDate: doc.expiryDate,
-        status: doc.status === 'vigente' ? 'vigente' : doc.status === 'por-vencer' ? 'por vencer' : 'vencido',
-        uploadDate: new Date().toLocaleDateString('es-ES'),
-        observations: doc.expiresIn > 0 ? `Vence en ${doc.expiresIn} días` : 'Documento vencido'
-      }))
+      item.documents.map(doc => {
+        const statusMap: { [key: string]: 'vigente' | 'por vencer' | 'vencido' } = {
+          'vigente': 'vigente',
+          'por-vencer': 'por vencer',
+          'vencido': 'vencido'
+        }
+        return {
+          vehiclePatent: item.name,
+          driverName: item.name,
+          documentType: doc.type,
+          expirationDate: doc.expiryDate,
+          status: (statusMap[doc.status] || 'vencido') as 'vigente' | 'por vencer' | 'vencido',
+          uploadDate: new Date().toLocaleDateString('es-ES'),
+          observations: doc.expiresIn > 0 ? `Vence en ${doc.expiresIn} días` : 'Documento vencido'
+        }
+      })
     )
     
     try {
@@ -117,15 +124,22 @@ export function ComplianceDashboard() {
   // Exportar a Excel usando utility
   const exportExcel = () => {
     const documentsForExport = filteredMatrix.flatMap(item =>
-      item.documents.map(doc => ({
-        vehiclePatent: item.name,
-        driverName: item.name,
-        documentType: doc.type,
-        expirationDate: doc.expiryDate,
-        status: doc.status === 'vigente' ? 'vigente' : doc.status === 'por-vencer' ? 'por vencer' : 'vencido',
-        uploadDate: new Date().toLocaleDateString('es-ES'),
-        observations: doc.expiresIn > 0 ? `Vence en ${doc.expiresIn} días` : 'Documento vencido'
-      }))
+      item.documents.map(doc => {
+        const statusMap: { [key: string]: 'vigente' | 'por vencer' | 'vencido' } = {
+          'vigente': 'vigente',
+          'por-vencer': 'por vencer',
+          'vencido': 'vencido'
+        }
+        return {
+          vehiclePatent: item.name,
+          driverName: item.name,
+          documentType: doc.type,
+          expirationDate: doc.expiryDate,
+          status: (statusMap[doc.status] || 'vencido') as 'vigente' | 'por vencer' | 'vencido',
+          uploadDate: new Date().toLocaleDateString('es-ES'),
+          observations: doc.expiresIn > 0 ? `Vence en ${doc.expiresIn} días` : 'Documento vencido'
+        }
+      })
     )
     
     try {
