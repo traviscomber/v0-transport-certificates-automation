@@ -69,10 +69,9 @@ export function DocumentActionModal({
         onSetRejectionReason(rejectionReason)
       }
       
-      // Call the onStatusChange callback which handles the update and refetch
-      // The reason is stored in the parent component's state and will be used by updateDocumentStatus
+      // Call the onStatusChange callback with reason passed directly
       if (onStatusChange) {
-        await onStatusChange(document.id, newStatus)
+        await onStatusChange(document.id, newStatus, newStatus === 'rechazado' ? rejectionReason : undefined)
       }
       
       console.log('[v0] Document status changed to:', newStatus, 'with reason:', rejectionReason)
