@@ -137,6 +137,21 @@ export default function AlertasPage() {
     }
   }
 
+  const getPriorityLabel = (priority: string): string => {
+    switch (priority) {
+      case 'critical':
+        return 'CRÍTICAS'
+      case 'high':
+        return 'ALTAS'
+      case 'medium':
+        return 'MEDIAS'
+      case 'low':
+        return 'BAJAS'
+      default:
+        return priority.toUpperCase()
+    }
+  }
+
   const formatTime = (date: string | Date) => {
     const d = typeof date === 'string' ? new Date(date) : date
     const now = new Date()
@@ -280,7 +295,7 @@ export default function AlertasPage() {
                   <div className="flex items-center gap-3 mb-1">
                     <h3 className="font-semibold text-foreground dark:text-white">{alert.title}</h3>
                     <Badge className={getPriorityBadgeColor(alert.priority)}>
-                      {alert.priority.toUpperCase()}
+                      {getPriorityLabel(alert.priority)}
                     </Badge>
                     {alert.is_dismissed && (
                       <Badge variant="outline" className="text-xs">Descartada</Badge>
