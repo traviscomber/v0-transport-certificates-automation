@@ -14,17 +14,12 @@ export default async function ConductorLayout({
 }: {
   children: React.ReactNode
 }) {
-  try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-    if (!user) {
-      redirect("/auth/login")
-    }
-  } catch (error) {
-    console.error('[v0] Error checking auth in conductor layout:', error)
+  if (!user) {
     redirect("/auth/login")
   }
 
