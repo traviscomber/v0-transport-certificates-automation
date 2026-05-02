@@ -77,8 +77,9 @@ export async function notifyExecutivas(payload: NotificationPayload) {
       message = `El ${payload.documentType} del conductor ${resolvedConductorName} ha vencido y requiere atención.`
     }
 
-    // Organization ID for Labbe (constant - single company)
-    const organizationId = '1b051f99-949d-4ba9-97da-3915cc648701'
+    // Get organization ID from DB
+    const { data: orgData } = await adminClient.from('organizations').select('id').limit(1).single()
+    const organizationId = orgData?.id
 
     const alertInsert: any = {
       type: payload.type,

@@ -1,7 +1,9 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 
-// Organization ID for Transportes (Labbe company)
-const ORGANIZATION_ID = '1b051f99-949d-4ba9-97da-3915cc648701'
+async function getOrgId(supabase: ReturnType<typeof createAdminClient>): Promise<string | null> {
+  const { data } = await supabase.from('organizations').select('id').limit(1).single()
+  return data?.id ?? null
+}
 
 /**
  * Generate alerts when a document is uploaded by conductor or client
@@ -16,6 +18,7 @@ export async function generateDocumentUploadAlerts(
 ) {
   try {
     const supabase = createAdminClient()
+    const orgId = await getOrgId(supabase)
 
     const { data: adminUsers, error: adminError } = await supabase
       .from('profiles')
@@ -29,7 +32,7 @@ export async function generateDocumentUploadAlerts(
 
     const alerts = adminUsers.map((admin: any) => ({
       user_id: admin.id,
-      organization_id: ORGANIZATION_ID,
+      organization_id: orgId,
       title: `Nuevo Documento - ${uploaderType === 'conductor' ? 'Conductor' : 'Cliente'}`,
       message: `${uploaderName} ha subido ${documentType}. Acción requerida: revisar y validar.`,
       type: 'DOCUMENT_UPLOADED',
@@ -72,13 +75,9 @@ export async function generateDocumentStatusChangeAlert(
 ) {
   try {
     const supabase = createAdminClient()
+    const orgId = await getOrgId(supabase)
 
-    console.log('[v0] 📢 generateDocumentStatusChangeAlert called:', { 
-      uploadedDocumentId, 
-      documentType, 
-      conductorName, 
-      newStatus 
-    })
+    console.log('[v0] generateDocumentStatusChangeAlert:', { uploadedDocumentId, documentType, conductorName, newStatus })
 
     // Create alert for admins in the alerts table
     const { data: adminUsers } = await supabase
@@ -89,7 +88,7 @@ export async function generateDocumentStatusChangeAlert(
     if (adminUsers && adminUsers.length > 0) {
       const adminAlerts = adminUsers.map((admin: any) => ({
         user_id: admin.id,
-        organization_id: ORGANIZATION_ID,
+        organization_id: orgId,
         title: newStatus === 'approved'
           ? `Documento Aprobado - ${documentType}`
           : `Documento Rechazado - ${documentType}`,
@@ -164,10 +163,12 @@ export async function generateExpirationAlerts() {
     }))
 
     if (alertsToCreate.length > 0) {
+      const orgId = await getOrgId(supabase)
+
       // Add organization_id to all alerts
       const alertsWithOrg = alertsToCreate.map(alert => ({
         ...alert,
-        organization_id: ORGANIZATION_ID
+        organization_id: orgId
       }))
 
       const { data: adminUsers } = await supabase

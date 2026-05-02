@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { generateDocumentStatusChangeAlert } from '@/lib/document-alerts-generator'
 
 // Emit event to orchestration system
 async function emitToOrchestrator(documentId: string, status: string, reason?: string) {
@@ -96,11 +97,53 @@ export async function PATCH(
 
     console.log('[v0] ✅ UPDATE executed - documentId:', documentId, 'from:', documentBefore?.validation_status, 'to:', dbStatus, 'rows:', updateData?.length)
 
+    // STEP 3: Generate alert with real conductor name from conductores table
+    if (dbStatus === 'approved' || dbStatus === 'rejected') {
+      try {
+        // Resolve conductor name from conductores table
+        let conductorName = 'Conductor'
+        let documentTypeName = 'Documento'
+
+        if (documentBefore?.conductor_id) {
+          const { data: conductor } = await adminClient
+            .from('conductores')
+            .select('nombres, apellido_paterno, apellido_materno')
+            .eq('id', documentBefore.conductor_id)
+            .single()
+
+          if (conductor) {
+            conductorName = [conductor.nombres, conductor.apellido_paterno, conductor.apellido_materno]
+              .filter(Boolean).join(' ').trim()
+          }
+        }
+
+        if (documentBefore?.document_type_id) {
+          const { data: docType } = await adminClient
+            .from('document_types')
+            .select('name')
+            .eq('id', documentBefore.document_type_id)
+            .single()
+
+          if (docType?.name) documentTypeName = docType.name
+        }
+
+        await generateDocumentStatusChangeAlert(
+          documentId,
+          documentTypeName,
+          conductorName,
+          documentBefore?.conductor_id || '',
+          dbStatus as 'approved' | 'rejected',
+          reason || undefined
+        )
+      } catch (alertErr) {
+        console.error('[v0] Alert generation failed (non-blocking):', alertErr)
+      }
+    }
+
     // Small delay to ensure Supabase broadcast is queued
     await new Promise(resolve => setTimeout(resolve, 100))
-    console.log('[v0] ⏳ Broadcast delay completed')
 
-    // STEP 3: Emit event to orchestration system (non-blocking)
+    // STEP 4: Emit event to orchestration system (non-blocking)
     emitToOrchestrator(documentId, dbStatus, reason).catch(err => {
       console.error('[v0] Orchestrator emit failed:', err)
     })
@@ -125,7 +168,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const adminClient = await createAdminClient()
+    const adminClient = createAdminClient()
 
     const { data, error } = await adminClient
       .from('uploaded_documents')
