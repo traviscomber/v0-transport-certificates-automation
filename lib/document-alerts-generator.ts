@@ -69,7 +69,7 @@ export async function generateDocumentStatusChangeAlert(
     const supabase = createAdminClient()
     const orgId = await getOrgId(supabase)
 
-    console.log('[v0] generateDocumentStatusChangeAlert:', { uploadedDocumentId, documentType, conductorName, newStatus })
+    console.log('[v0] ⚠️ generateDocumentStatusChangeAlert called with reason:', { reason, uploadedDocumentId, documentType, conductorName, newStatus })
 
     // Fetch conductor details including transportista and assigned ejecutiva
     let transportistaName = 'Transportista Desconocido'
