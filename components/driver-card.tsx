@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Mail, Phone, MapPin, FileText, Download, ChevronDown, Plus, X, Upload, AlertCircle, Loader, Eye, RefreshCw } from 'lucide-react'
-import { useDriverDocuments } from '@/hooks/use-driver-documents'
+import { useDriverDocuments, type DriverDocument } from '@/hooks/use-driver-documents'
 import { DocumentActionModal } from './document-action-modal'
 
 interface Driver {
