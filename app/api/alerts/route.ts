@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 
 export const dynamic = 'force-dynamic'
@@ -7,8 +7,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const supabase = createAdminClient()
 
     const url = new URL(request.url)
     const type = url.searchParams.get('type')
@@ -39,7 +38,6 @@ export async function GET(request: Request) {
       total: count || 0,
       limit,
       offset,
-      hasMore: (offset + limit) < (count || 0)
     })
   } catch (error: any) {
     console.error('[ALERTS API] GET unexpected error:', error)
@@ -49,7 +47,7 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const body = await request.json()
     const { ids, is_read, is_dismissed } = body
 
