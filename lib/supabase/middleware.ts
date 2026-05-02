@@ -25,13 +25,16 @@ export async function updateSession(request: NextRequest) {
     const publicPaths = [
       "/",
       "/auth/login",
+      "/auth/login-conductor",  // Conductor login page — custom cookie auth, not Supabase session
       "/auth/register",
       "/setup-demo",
       "/login",
       "/dashboard/company",
       "/api/company/data",
+      "/api/auth",              // All conductor auth API routes
       "/_next",
       "/api",
+      "/conductor",             // Conductor portal — protected by custom middleware, not sb-session
     ]
 
     const isPublic = publicPaths.some((path) => pathname.startsWith(path)) || pathname.match(/\.(svg|png|jpg|jpeg|gif|webp)$/)
