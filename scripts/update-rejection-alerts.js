@@ -17,9 +17,8 @@ async function updateRejectionReasons() {
     // Get all rejection alerts that have "Sin especificar" in their message
     const { data: alerts, error: fetchError } = await client
       .from('alerts')
-      .select('id, title, description, metadata')
-      .like('description', '%Sin especificar%')
-      .eq('type', 'document_status_change')
+      .select('id, title, message, type')
+      .like('message', '%Sin especificar%')
     
     if (fetchError) {
       console.error('[v0] Error fetching alerts:', fetchError)
@@ -34,17 +33,18 @@ async function updateRejectionReasons() {
     }
     
     // Update each alert with a generic reason
+    const genericReason = 'Documento no cumple con los requisitos establecidos'
+    
     for (const alert of alerts) {
-      const newDescription = alert.description?.replace(
+      const newMessage = alert.message?.replace(
         'Razón: Sin especificar',
-        'Razón: No especificada en el rechazo'
-      ) || alert.description
+        `Razón: ${genericReason}`
+      ) || alert.message
       
       const { error: updateError } = await client
         .from('alerts')
         .update({
-          description: newDescription,
-          updated_at: new Date().toISOString()
+          message: newMessage
         })
         .eq('id', alert.id)
       
@@ -58,6 +58,8 @@ async function updateRejectionReasons() {
     console.log('[v0] All alerts updated successfully!')
   } catch (err) {
     console.error('[v0] Unexpected error:', err)
+  } finally {
+    process.exit(0)
   }
 }
 
