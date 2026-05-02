@@ -143,6 +143,13 @@ export function DashboardOverview() {
     }
   }
 
+  const getStatIconColor = (title: string): string => {
+    if (title.includes("Aprobados")) return "text-green-600"
+    if (title.includes("Pendientes")) return "text-yellow-400"
+    if (title.includes("Rechazados")) return "text-red-500"
+    return "text-primary"
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -156,7 +163,7 @@ export function DashboardOverview() {
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <stat.icon className={`h-4 w-4 ${stat.status === "warning" ? "text-yellow-600" : "text-primary"}`} />
+              <stat.icon className={`h-4 w-4 ${getStatIconColor(stat.title)}`} />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
