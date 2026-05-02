@@ -67,8 +67,8 @@ export default function ConductorDashboard() {
               <CardTitle className="text-sm font-medium text-slate-300">Cumplimiento</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-blue-400">{compliancePercentage}%</div>
-              <p className="text-xs text-slate-500 mt-1">{complianceStats.valid}/{complianceStats.total} válidos</p>
+              <div className="text-3xl font-bold text-orange-500">{compliancePercentage}%</div>
+              <p className="text-xs text-slate-400 mt-1">{complianceStats.valid}/{complianceStats.total} válidos</p>
             </CardContent>
           </Card>
 
