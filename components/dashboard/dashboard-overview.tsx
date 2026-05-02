@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { FileText, Shield, Truck, AlertTriangle, CheckCircle, Clock } from "lucide-react"
-import { SmartAlerts } from "./smart-alerts"
 
 interface Alert {
   id: string
@@ -172,8 +171,6 @@ export function DashboardOverview() {
           </Card>
         ))}
       </div>
-
-      <SmartAlerts />
 
       {/* Recent Alerts */}
       {alerts.length > 0 && (
