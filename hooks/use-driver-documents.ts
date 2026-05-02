@@ -11,6 +11,7 @@ export interface DriverDocument {
   public_url?: string
   storage_path?: string
   uploaded_by?: string
+  rejection_reason?: string
 }
 
 export function useDriverDocuments(driverId: string, enabled = false, driverRut = '') {
