@@ -86,6 +86,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         public_url: doc.file_url || doc.public_url,
         storage_path: doc.file_path || doc.storage_path,
         uploaded_by: doc.uploaded_by || '',
+        rejection_reason: doc.rejection_reason || undefined,
       }))
 
       console.log('[v0] API returned documents:', result.documents?.length, 'Transformed:', transformedDocs.length, 'conductor_id resolved:', result.conductor_id)
@@ -213,23 +214,15 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       }[newStatus?.toLowerCase()] || newStatus
 
       // Update local state immediately with correct status
-      setDocuments(prev => prev.map(doc =>
-        doc.id === documentId 
-          ? { 
-              ...doc, 
-              estado: normalizedStatus as DriverDocument['estado']
-            } 
-          : doc
-      ))
-
-      // Refresh from server after status change - multiple times to ensure consistency
-      console.log('[v0] Forcing document refresh after status change')
-      await new Promise(resolve => setTimeout(resolve, 300))
-      await fetchDocuments(true)
-      
-      // Second refresh to ensure UI is updated
-      await new Promise(resolve => setTimeout(resolve, 500))
-      await fetchDocuments(true)
+      setDocuments(prev => {
+        const updated = prev.map(doc =>
+          doc.id === documentId 
+            ? { ...doc, estado: normalizedStatus as DriverDocument['estado'] }
+            : doc
+        )
+        console.log('[v0] setDocuments called - updated doc estado:', updated.find(d => d.id === documentId)?.estado)
+        return updated
+      })
 
       return result
     } catch (err) {
