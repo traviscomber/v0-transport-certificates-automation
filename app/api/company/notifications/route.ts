@@ -4,53 +4,43 @@ import { NextRequest, NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
+// Single source of truth: read from alerts table
 export async function GET(request: NextRequest) {
   try {
     const adminClient = createAdminClient()
 
-    // Get all notifications ordered by newest first
-    const { data: notifications, error } = await adminClient
-      .from('notifications')
-      .select('*')
+    const { data: alerts, error } = await adminClient
+      .from('alerts')
+      .select('id, type, title, message, is_read, is_dismissed, action_url, metadata, created_at, priority, category')
+      .eq('is_dismissed', false)
       .order('created_at', { ascending: false })
       .limit(50)
 
     if (error) {
-      console.error('[v0] Error fetching notifications:', error)
+      console.error('[v0] Error fetching alerts as notifications:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log('[v0] Fetched', notifications?.length || 0, 'notifications')
+    // Map alerts fields to notification shape expected by NotificationCenter
+    const notifications = (alerts || []).map((a: any) => ({
+      id: a.id,
+      type: a.type || 'status_change',
+      title: a.title,
+      message: a.message,
+      read: a.is_read,           // NotificationCenter uses 'read' not 'is_read'
+      is_read: a.is_read,
+      created_at: a.created_at,
+      related_document_id: a.metadata?.document_id || null,
+      priority: a.priority,
+      category: a.category,
+      action_url: a.action_url,
+    }))
 
-    return NextResponse.json({ notifications: notifications || [] }, {
+    return NextResponse.json({ notifications }, {
       headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
     })
   } catch (error) {
     console.error('[v0] Error in notifications GET:', error)
-    return NextResponse.json({ error: 'Server error', details: error instanceof Error ? error.message : String(error) }, { status: 500 })
-  }
-}
-
-export async function DELETE(request: NextRequest) {
-  try {
-    const adminClient = createAdminClient()
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-
-    const { error } = await adminClient
-      .from('notifications')
-      .delete()
-      .eq('is_read', true)
-      .lt('created_at', sevenDaysAgo)
-
-    if (error) {
-      console.error('[v0] Error cleaning notifications:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    console.log('[v0] Cleaned up old notifications')
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('[v0] Error in notifications DELETE:', error)
-    return NextResponse.json({ error: 'Server error', details: error instanceof Error ? error.message : String(error) }, { status: 500 })
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
