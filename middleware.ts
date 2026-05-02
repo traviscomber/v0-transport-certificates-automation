@@ -13,28 +13,27 @@ export async function middleware(request: NextRequest) {
   // Protect conductor routes - require conductor_id cookie
   if (path.startsWith('/conductor')) {
     const conductorId = request.cookies.get('conductor_id')?.value
-    console.log('[v0] Middleware - conductor route:', path, 'conductorId:', conductorId ? 'found' : 'not found')
     
     if (!conductorId) {
-      console.log('[v0] Redirecting to conductor login - no conductor_id cookie')
+      console.log('[v0] Middleware: Redirecting to login - no conductor_id cookie for path:', path)
+      // Return a redirect response that allows the client's router.push to take precedence
       return NextResponse.redirect(new URL('/auth/login-conductor', request.url))
     }
     
-    // Conductor is authenticated, continue
+    console.log('[v0] Middleware: Conductor authorized for path:', path)
     return NextResponse.next()
   }
 
   // Protect dashboard routes - require authentication
   if (path.startsWith('/dashboard')) {
     const userEmail = request.cookies.get('user_email')?.value
-    console.log('[v0] Middleware check - path:', path, 'userEmail:', userEmail ? 'found' : 'not found')
     
     if (!userEmail) {
-      console.log('[v0] Redirecting to login - no user_email cookie')
+      console.log('[v0] Middleware: Redirecting to login - no user_email cookie for path:', path)
       return NextResponse.redirect(new URL('/login', request.url))
     }
     
-    // User is authenticated, continue
+    console.log('[v0] Middleware: User authorized for path:', path)
     return NextResponse.next()
   }
 
@@ -43,7 +42,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Skip static files
+  // Skip static files and assets
   if (path.includes('.')) {
     return NextResponse.next()
   }

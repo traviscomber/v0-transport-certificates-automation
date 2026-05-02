@@ -81,9 +81,10 @@ export default function ConductorLoginPage() {
       // Solo redirigimos al onboarding
       console.log('[v0] Conductor login successful:', data.rut)
       
-      // Esperar un bit para que las cookies se establezcan
-      await new Promise(resolve => setTimeout(resolve, 100))
+      // Usar router.push() y luego router.refresh() para asegurar que las cookies se propagueny el middleware las vea
       router.push('/conductor/onboarding')
+      // Forzar que el servidor valide las cookies nuevamente
+      router.refresh()
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido al iniciar sesión'
       console.error('[v0] Login error:', errorMessage)
