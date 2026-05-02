@@ -22,16 +22,16 @@ export default function ConductorDashboard() {
       try {
         const response = await fetch("/api/conductor/documents")
         if (response.ok) {
-          const data = await response.json()
-          setDocuments(data)
+          const documents = await response.json()
+          setDocuments(documents)
           
           // Calculate compliance stats
-          const valid = data.filter((d: any) => d.status === "validated").length
-          const expired = data.filter((d: any) => d.status === "expired").length
-          const pending = data.filter((d: any) => d.status === "pending").length
+          const valid = documents.filter((d: any) => d.status === "validated").length
+          const expired = documents.filter((d: any) => d.status === "expired").length
+          const pending = documents.filter((d: any) => d.status === "pending").length
           
           setComplianceStats({
-            total: data.length,
+            total: documents.length,
             valid,
             expired,
             pending,

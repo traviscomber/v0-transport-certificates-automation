@@ -21,13 +21,7 @@ export async function GET(request: NextRequest) {
     // In a real app, this would query a database for documents belonging to this conductor
     const mockDocuments: Record<string, unknown>[] = []
 
-    return NextResponse.json(
-      {
-        success: true,
-        documents: mockDocuments,
-      },
-      { status: 200 }
-    )
+    return NextResponse.json(mockDocuments, { status: 200 })
 
   } catch (error) {
     console.error('Fetch documents error:', error)
