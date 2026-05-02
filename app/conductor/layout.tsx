@@ -5,6 +5,7 @@ const navItems = [
   { href: "/conductor", label: "Dashboard", icon: Home },
   { href: "/conductor/documentos", label: "Mis Documentos", icon: FileText },
   { href: "/conductor/perfil", label: "Mi Perfil", icon: Settings },
+  { href: "/conductor/onboarding", label: "Guía de Inicio", icon: Clock },
 ]
 
 export default function ConductorLayout({

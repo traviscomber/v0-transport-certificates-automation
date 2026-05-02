@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, CheckCircle2, Upload, FileText } from "lucide-react"
+import { AlertCircle, CheckCircle2, Upload, FileText, BookOpen } from "lucide-react"
 import Link from "next/link"
 
 export default function ConductorDashboard() {
@@ -102,6 +102,27 @@ export default function ConductorDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Onboarding Reminder */}
+        <Card className="border-slate-700 bg-gradient-to-r from-cyan-950/30 to-cyan-900/20 shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-cyan-300 flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Revisar Guía de Inicio
+            </CardTitle>
+            <CardDescription className="text-slate-400">
+              Si tienes dudas, puedes revisar la guía de inicio en cualquier momento
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/conductor/onboarding" className="block">
+              <Button variant="outline" className="w-full border-cyan-700 text-cyan-300 hover:bg-cyan-950/50 hover:text-cyan-200">
+                <BookOpen className="w-4 h-4 mr-2" />
+                Ver Guía de Inicio
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
 
         {/* Upload Section */}
         <Card className="border-slate-700 bg-gradient-to-r from-slate-800/50 to-slate-800/30 shadow-lg">
