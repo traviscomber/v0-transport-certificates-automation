@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Upload, FileText, CheckCircle2, AlertCircle, Loader, Download, Eye, X, Clock } from 'lucide-react'
+import { Upload, FileText, CheckCircle2, AlertCircle, Loader, Download, Eye, X, Clock, HelpCircle } from 'lucide-react'
 import Link from 'next/link'
 
 interface UploadedDocument {
@@ -187,24 +187,24 @@ export default function ConductorDocumentosPage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header with Compliance */}
-      <div className="flex justify-between items-start border-b border-slate-700 pb-6">
-        <div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Mis Documentos</h1>
-          <p className="text-slate-400 mt-2">Sube y gestiona tus documentos requeridos para trabajar con Labbe</p>
-        </div>
-        <div className="text-right bg-slate-800/50 border border-slate-700 rounded-lg p-4 min-w-max">
-          <p className="text-sm text-slate-400 uppercase tracking-wide">Cumplimiento</p>
-          <p className="text-4xl font-bold bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent mt-1">{compliancePercentage}%</p>
-          <div className="w-32 bg-slate-700 rounded-full h-2 mt-3">
-            <div
-              className="bg-gradient-to-r from-orange-500 to-orange-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${compliancePercentage}%` }}
-            />
+      <div className="space-y-8">
+        {/* Header with Compliance */}
+        <div className="flex justify-between items-start border-b border-slate-700 pb-6">
+          <div>
+            <h1 className="text-5xl font-bold text-white">Mis Documentos</h1>
+            <p className="text-slate-300 mt-2">Sube y gestiona tus documentos requeridos para trabajar con Labbe</p>
+          </div>
+          <div className="text-right bg-slate-800 border border-slate-700 rounded-lg p-4 min-w-max">
+            <p className="text-xs text-slate-400 uppercase tracking-wide">Cumplimiento</p>
+            <p className="text-4xl font-bold text-orange-500 mt-1">{compliancePercentage}%</p>
+            <div className="w-32 bg-slate-700 rounded-full h-2 mt-3">
+              <div
+                className="bg-gradient-to-r from-orange-500 to-orange-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${compliancePercentage}%` }}
+              />
+            </div>
           </div>
         </div>
-      </div>
 
       {/* Alerts */}
       {error && (
@@ -286,17 +286,17 @@ export default function ConductorDocumentosPage() {
                     key={reqDoc.type}
                     className="flex items-center justify-between p-4 border border-slate-700 rounded-lg hover:bg-slate-800/50 bg-slate-800/20 transition-all"
                   >
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="flex-shrink-0">
-                        {uploadedDoc ? (
-                          getStatusIcon(uploadedDoc.validation_status)
-                        ) : (
-                          <div className="h-5 w-5 rounded-full border-2 border-slate-600" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-white">{reqDoc.label}</p>
-                        <p className="text-sm text-slate-400">{reqDoc.description}</p>
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="flex-shrink-0">
+                      {uploadedDoc ? (
+                        getStatusIcon(uploadedDoc.validation_status)
+                      ) : (
+                        <div className="h-5 w-5 rounded-full border-2 border-slate-600" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-white">{reqDoc.label}</p>
+                      <p className="text-sm text-slate-300">{reqDoc.description}</p>
                         {uploadedDoc?.rejection_reason && (
                           <p className="text-sm text-red-400 mt-1">
                             Razón del rechazo: {uploadedDoc.rejection_reason}
@@ -332,11 +332,14 @@ export default function ConductorDocumentosPage() {
       </Card>
 
       {/* Info Card */}
-      <Card className="bg-gradient-to-r from-orange-950/30 to-orange-900/20 border-orange-900/50">
+      <Card className="bg-gradient-to-r from-orange-950/40 to-orange-900/30 border-orange-900/50">
         <CardHeader>
-          <CardTitle className="text-orange-400">¿Necesitas ayuda?</CardTitle>
+          <CardTitle className="text-orange-300 flex items-center gap-2">
+            <HelpCircle className="h-5 w-5" />
+            ¿Necesitas ayuda?
+          </CardTitle>
         </CardHeader>
-        <CardContent className="text-orange-200/80 text-sm space-y-2">
+        <CardContent className="text-orange-100 text-sm space-y-2">
           <p>• Los documentos se validan en 24-48 horas</p>
           <p>• Recibirás notificaciones por email y WhatsApp</p>
           <p>• Puedes subir nuevas versiones si un documento es rechazado</p>
