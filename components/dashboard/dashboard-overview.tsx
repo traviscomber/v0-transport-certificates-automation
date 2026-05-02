@@ -117,7 +117,7 @@ export function DashboardOverview() {
     switch (type) {
       case "DOCUMENT_APPROVED":
         return (
-          <Badge variant="default" className="bg-green-600 text-white border border-green-600 hover:bg-green-700">
+          <Badge variant="default" className="bg-green-600 text-black border border-green-600 hover:bg-green-700">
             Aprobado
           </Badge>
         )
