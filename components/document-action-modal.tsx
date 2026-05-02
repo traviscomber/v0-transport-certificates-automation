@@ -52,6 +52,8 @@ export function DocumentActionModal({
       return
     }
 
+    console.log('[v0] ⚠️ handleStatusChange - About to send:', { newStatus, rejectionReason, reasonLength: rejectionReason.length })
+
     setIsChanging(true)
     try {
       // Pass rejection reason to parent component if available
@@ -310,11 +312,15 @@ export function DocumentActionModal({
                 <label className="block text-sm font-semibold text-red-300 mb-2">
                   Razón del Rechazo <span className="text-red-400">*</span>
                 </label>
-                <Input
+                <textarea
                   placeholder="Especifica por qué se rechaza este documento (ej: Imagen borrosa, datos incompletos, documento expirado)"
                   value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  className="bg-slate-800 border-red-500/50 text-white placeholder-slate-500"
+                  onChange={(e) => {
+                    console.log('[v0] Rejection reason changed to:', e.target.value)
+                    setRejectionReason(e.target.value)
+                  }}
+                  className="w-full px-3 py-2 bg-slate-800 border border-red-500/50 text-white placeholder-slate-500 rounded text-sm"
+                  rows={3}
                   autoFocus
                 />
                 {!rejectionReason.trim() && (
