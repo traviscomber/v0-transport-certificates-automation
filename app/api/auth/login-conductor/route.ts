@@ -38,13 +38,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set('conductor_id', conductor.id, COOKIE_OPTIONS)
     response.cookies.set('conductor_rut', conductor.rut, COOKIE_OPTIONS)
 
-    // Return a redirect response so the server handles navigation and cookies persist
-    // This works in all environments including iframes, where window.location.href
-    // might execute before the browser fully processes Set-Cookie headers
-    return NextResponse.redirect(new URL('/conductor/onboarding', request.url), {
-      status: 303,
-      headers: response.headers,
-    })
+    return response
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Error al iniciar sesión'
     console.error('[v0] Conductor login error:', errorMessage)

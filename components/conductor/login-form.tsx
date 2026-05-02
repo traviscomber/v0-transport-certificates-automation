@@ -26,10 +26,10 @@ export default function ConductorLoginForm() {
         throw new Error(data.error || `Error HTTP ${response.status}`)
       }
 
-      // Server-side redirect: API endpoint returns a 303 redirect to /conductor/onboarding
-      // with Set-Cookie headers already applied. Browser follows redirect automatically
-      // and the cookies persist in all environments including iframes.
-      // No need for window.location.href — the fetch already handles it.
+      // API returns JSON with cookies already set in response headers
+      // Now redirect to /conductor/onboarding — cookies persist because
+      // they were already sent with the API response
+      window.location.href = '/conductor/onboarding'
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al iniciar sesión'
       setError(message)
