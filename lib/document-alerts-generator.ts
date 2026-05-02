@@ -71,6 +71,32 @@ export async function generateDocumentStatusChangeAlert(
 
     console.log('[v0] generateDocumentStatusChangeAlert:', { uploadedDocumentId, documentType, conductorName, newStatus })
 
+    // Fetch conductor details including transportista
+    let transportistaName = 'Transportista Desconocido'
+    const { data: conductor } = await supabase
+      .from('conductores')
+      .select('id, transportista_id')
+      .eq('id', conductorId)
+      .single()
+
+    if (conductor?.transportista_id) {
+      const { data: transportista } = await supabase
+        .from('transportistas')
+        .select('nombre, razon_social')
+        .eq('id', conductor.transportista_id)
+        .single()
+      
+      if (transportista) {
+        transportistaName = transportista.nombre || transportista.razon_social || 'Transportista Desconocido'
+      }
+    }
+
+    // Fetch all ejecutivos with role 'ejecutiva' or 'admin' to show team context
+    const { data: ejecutivos } = await supabase
+      .from('profiles')
+      .select('id, email')
+      .in('role', ['ejecutiva', 'admin'])
+
     // Build message based on status
     let title = ''
     let message = ''
@@ -80,19 +106,19 @@ export async function generateDocumentStatusChangeAlert(
 
     if (newStatus === 'approved') {
       title = `Documento Aprobado - ${documentType}`
-      message = `El documento ${documentType} de ${conductorName} fue aprobado.`
+      message = `El documento ${documentType} de ${conductorName} (${transportistaName}) fue aprobado.`
       type = 'DOCUMENT_APPROVED'
       priority = 'medium'
       category = 'document_approved'
     } else if (newStatus === 'rejected') {
       title = `Documento Rechazado - ${documentType}`
-      message = `El documento ${documentType} de ${conductorName} fue rechazado. Razón: ${reason || 'Sin especificar'}`
+      message = `El documento ${documentType} de ${conductorName} (${transportistaName}) fue rechazado. Razón: ${reason || 'Sin especificar'}`
       type = 'DOCUMENT_REJECTED'
       priority = 'high'
       category = 'document_rejected'
     } else if (newStatus === 'pending') {
       title = `Documento en Revisión - ${documentType}`
-      message = `El documento ${documentType} de ${conductorName} ha sido retornado a revisión.`
+      message = `El documento ${documentType} de ${conductorName} (${transportistaName}) ha sido retornado a revisión.`
       type = 'DOCUMENT_PENDING'
       priority = 'medium'
       category = 'document_pending'
@@ -115,8 +141,10 @@ export async function generateDocumentStatusChangeAlert(
           conductor_id: conductorId,
           conductor_name: conductorName,
           document_type: documentType,
+          transportista_name: transportistaName,
           reason: reason || null,
           status: newStatus,
+          ejecutivos_team: ejecutivos?.map(e => e.email) || [],
         },
       })
 
