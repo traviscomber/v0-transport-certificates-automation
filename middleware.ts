@@ -5,8 +5,14 @@ import type { NextRequest } from "next/server"
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
-  // Skip middleware for auth/login routes and API login routes
-  if (path.startsWith('/api/auth/login') || path.startsWith('/auth/login') || path === '/api/logout') {
+  // Skip middleware for auth routes, API login routes, and conductor portal
+  // Conductor auth is handled by the RSC layout via cookies() from next/headers
+  if (
+    path.startsWith('/api/auth') ||
+    path.startsWith('/auth/login') ||
+    path.startsWith('/conductor') ||
+    path === '/api/logout'
+  ) {
     return NextResponse.next()
   }
 
