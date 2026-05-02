@@ -77,12 +77,12 @@ export default function ConductorLoginPage() {
         throw new Error(data.error || `Error HTTP ${response.status}`)
       }
 
-      // Guardar datos de sesión en cookies
-      document.cookie = `conductor_id=${data.conductor_id}; path=/; max-age=${30 * 24 * 60 * 60}`
-      document.cookie = `conductor_rut=${data.rut}; path=/; max-age=${30 * 24 * 60 * 60}`
-      document.cookie = `conductor_name=${encodeURIComponent(data.nombre_completo)}; path=/; max-age=${30 * 24 * 60 * 60}`
-
-      console.log('[v0] Conductor login successful')
+      // El servidor ya estableció las cookies httpOnly
+      // Solo redirigimos al onboarding
+      console.log('[v0] Conductor login successful:', data.rut)
+      
+      // Esperar un bit para que las cookies se establezcan
+      await new Promise(resolve => setTimeout(resolve, 100))
       router.push('/conductor/onboarding')
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido al iniciar sesión'
