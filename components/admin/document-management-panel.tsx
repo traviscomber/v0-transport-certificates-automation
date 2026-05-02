@@ -71,6 +71,12 @@ export function DocumentManagementPanel({
       alert('Debes seleccionar una ejecutiva para validar el documento')
       return
     }
+
+    // Require reason if rejecting the document
+    if (selectedStatus === 'rejected' && !changeReason.trim()) {
+      alert('Debes especificar la razón del rechazo')
+      return
+    }
     
     try {
       await changeStatus(document.id, selectedStatus, changeReason)
@@ -165,15 +171,38 @@ export function DocumentManagementPanel({
               ))}
             </select>
           </div>
-          <Input
-            placeholder="Motivo del cambio (opcional)"
-            value={changeReason}
-            onChange={(e) => setChangeReason(e.target.value)}
-            className="text-sm"
-          />
+          
+          {/* Conditional reason field for rejected status */}
+          {selectedStatus === 'rejected' && (
+            <div className="space-y-2 p-3 bg-red-50 border border-red-200 rounded-md">
+              <label className="text-sm font-medium text-red-900">
+                Razón del Rechazo <span className="text-red-600">*</span>
+              </label>
+              <Input
+                placeholder="Especifica por qué se rechaza este documento"
+                value={changeReason}
+                onChange={(e) => setChangeReason(e.target.value)}
+                className="text-sm border-red-200"
+              />
+              {!changeReason.trim() && (
+                <p className="text-xs text-red-600">Este campo es obligatorio para rechazar documentos</p>
+              )}
+            </div>
+          )}
+          
+          {/* Optional reason field for other statuses */}
+          {selectedStatus !== 'rejected' && (
+            <Input
+              placeholder="Motivo del cambio (opcional)"
+              value={changeReason}
+              onChange={(e) => setChangeReason(e.target.value)}
+              className="text-sm"
+            />
+          )}
+          
           <Button
             onClick={handleChangeStatus}
-            disabled={loading}
+            disabled={loading || (selectedStatus === 'rejected' && !changeReason.trim())}
             className="w-full"
           >
             {loading ? 'Procesando...' : 'Aplicar Cambio'}
