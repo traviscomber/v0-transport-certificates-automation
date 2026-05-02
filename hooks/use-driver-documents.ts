@@ -176,14 +176,19 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
   }
 
   // Actualizar estado de documento - SEND TO SERVER
-  const updateDocumentStatus = async (documentId: string, newStatus: string) => {
+  const updateDocumentStatus = async (documentId: string, newStatus: string, reason?: string) => {
     try {
-      console.log('[v0] updateDocumentStatus called:', { documentId, newStatus })
+      console.log('[v0] updateDocumentStatus called:', { documentId, newStatus, reason })
       
+      const body: any = { status: newStatus }
+      if (reason) {
+        body.reason = reason
+      }
+
       const response = await fetch(`/api/company/documents/${documentId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify(body)
       })
 
       if (!response.ok) {

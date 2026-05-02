@@ -20,8 +20,9 @@ interface DocumentActionModalProps {
   document: Document | null
   isOpen: boolean
   onClose: () => void
-  onStatusChange?: (documentId: string, newStatus: 'pendiente' | 'aprobado' | 'rechazado') => Promise<void>
+  onStatusChange?: (documentId: string, newStatus: 'pendiente' | 'aprobado' | 'rechazado', reason?: string) => Promise<void>
   onDelete?: (documentId: string) => Promise<void>
+  onSetRejectionReason?: (reason: string) => void
   isAdmin?: boolean
 }
 
@@ -31,6 +32,7 @@ export function DocumentActionModal({
   onClose,
   onStatusChange,
   onDelete,
+  onSetRejectionReason,
   isAdmin = false,
 }: DocumentActionModalProps) {
   const [selectedStatus, setSelectedStatus] = useState<'aprobado' | 'rechazado' | null>(null)
@@ -50,27 +52,22 @@ export function DocumentActionModal({
       return
     }
 
-    if (!onStatusChange) return
     setIsChanging(true)
     try {
-      // Pass rejection reason to status change handler
-      const response = await fetch(`/api/company/documents/${document.id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: newStatus,
-          reason: newStatus === 'rechazado' ? rejectionReason : undefined
-        })
-      })
-      
-      if (!response.ok) {
-        throw new Error('Error al cambiar el estado del documento')
+      // Pass rejection reason to parent component if available
+      if (onSetRejectionReason && newStatus === 'rechazado') {
+        onSetRejectionReason(rejectionReason)
       }
-
+      
+      // Call the onStatusChange callback which handles the update and refetch
+      if (onStatusChange) {
+        await onStatusChange(document.id, newStatus, newStatus === 'rechazado' ? rejectionReason : undefined)
+      }
+      
       console.log('[v0] Document status changed to:', newStatus, 'with reason:', rejectionReason)
       setRejectionReason('')
       setShowRejectionForm(false)
-      setTimeout(() => onClose(), 1000)
+      setTimeout(() => onClose(), 500)
     } catch (error) {
       console.error('[v0] Error changing status:', error)
       alert('Error al cambiar el estado del documento')

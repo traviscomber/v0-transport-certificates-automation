@@ -59,6 +59,7 @@ export function DriverCard({
   const [selectedDocument, setSelectedDocument] = useState<any>(null)
   const [showDocumentModal, setShowDocumentModal] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [rejectionReason, setRejectionReason] = useState<string>('')
 
   // Fetch ejecutivas and document types when upload modal opens
   useEffect(() => {
@@ -553,12 +554,17 @@ export function DriverCard({
         onClose={() => {
           setShowDocumentModal(false)
           setSelectedDocument(null)
+          setRejectionReason('')
         }}
+        onSetRejectionReason={(reason) => setRejectionReason(reason)}
         onStatusChange={async (docId, newStatus) => {
           try {
-            console.log('[v0] onStatusChange called:', { docId, newStatus })
-            // This now calls updateDocumentStatus which does the PATCH and refetch
-            await updateDocumentStatus(docId, newStatus)
+            console.log('[v0] onStatusChange called:', { docId, newStatus, rejectionReason })
+            // Pass rejection reason if available
+            await updateDocumentStatus(docId, newStatus, rejectionReason)
+            
+            // Clear rejection reason after successful update
+            setRejectionReason('')
             
             // Close modal after successful status change
             setShowDocumentModal(false)
