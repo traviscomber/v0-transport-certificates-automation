@@ -77,30 +77,11 @@ export async function generateDocumentStatusChangeAlert(
 
     console.log('[v0] generateDocumentStatusChangeAlert called:', { uploadedDocumentId, documentType, conductorName, newStatus })
 
-    // 1. Notification for the conductor
-    const conductorNotification = {
-      user_id: conductorId,
-      title: `Documento ${isApproved ? 'Aprobado' : 'Rechazado'}: ${documentType}`,
-      message: isApproved
-        ? `Tu ${documentType} ha sido revisado y aprobado.`
-        : `Tu ${documentType} fue rechazado. Razón: ${reason || 'Revisar con supervisores'}`,
-      type: `document_${isApproved ? 'approved' : 'rejected'}`,
-      is_read: false,
-    }
-
-    const { error: notifError } = await supabase
-      .from('notifications')
-      .insert(conductorNotification)
-
-    if (notifError) {
-      console.error('[v0] Error inserting conductor notification:', notifError)
-    }
-
-    // 2. Alert for admins in the alerts table
+    // Create alert for admins in the alerts table (the main notification system)
     const { data: adminUsers } = await supabase
       .from('profiles')
       .select('id')
-      .in('role', ['admin', 'manager', 'supervisor'])
+      .in('role', ['admin', 'manager', 'supervisor', 'ejecutiva'])
 
     if (adminUsers && adminUsers.length > 0) {
       const adminAlerts = adminUsers.map((admin: any) => ({
@@ -131,13 +112,13 @@ export async function generateDocumentStatusChangeAlert(
         .insert(adminAlerts)
 
       if (alertError) {
-        console.error('[v0] Error creating admin alerts:', alertError)
+        console.error('[v0] ❌ Error creating admin alerts:', alertError)
       } else {
-        console.log(`[v0] Created ${adminAlerts.length} admin alerts for status: ${newStatus}`)
+        console.log(`[v0] ✅ Created ${adminAlerts.length} admin alerts for status: ${newStatus}`)
       }
     }
   } catch (error) {
-    console.error('[v0] Error in generateDocumentStatusChangeAlert:', error)
+    console.error('[v0] ❌ Error in generateDocumentStatusChangeAlert:', error)
   }
 }
 

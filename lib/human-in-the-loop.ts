@@ -393,14 +393,17 @@ async function generateReviewAlerts(decision: ReviewDecision): Promise<void> {
     const documentId = queueItem.document_id
     console.log('[HITL] Document ID from queue:', documentId)
     
-    // Obtener documento uploadado
+    // Obtener documento uploadado CON la relación a document_types
     const { data: uploadedDoc, error: docError } = await supabase
       .from('uploaded_documents')
       .select(`
         id,
         conductor_id,
         document_type_id,
-        document_types(name)
+        document_types (
+          id,
+          name
+        )
       `)
       .eq('id', documentId)
       .single()
@@ -438,11 +441,11 @@ async function generateReviewAlerts(decision: ReviewDecision): Promise<void> {
       reason: decision.rejectionReason
     })
 
-    // Generar alerta con el nuevo sistema
+    // Generar alerta con el nuevo sistema - pasar el nombre ya resuelto
     await generateDocumentStatusChangeAlert(
       uploadedDoc.id,
       (uploadedDoc as any).document_types?.name || 'Documento',
-      conductorName,
+      conductorName,  // Already resolved above
       uploadedDoc.conductor_id,
       decision.decision === 'approved' ? 'approved' : 'rejected',
       decision.rejectionReason || decision.notes || undefined
