@@ -583,5 +583,7 @@ export function DriverCard({
           setShowDocumentModal(false)
           setSelectedDocument(null)
         }}
-        isAdmin={true}
       />
+    </>
+  )
+}
