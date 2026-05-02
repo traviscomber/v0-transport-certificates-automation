@@ -56,8 +56,8 @@ export default function ConductorDashboard() {
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
         <div className="space-y-3 border-b border-slate-700 pb-6">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Dashboard</h1>
-          <p className="text-slate-400 text-lg">Bienvenido de vuelta. Aquí está tu resumen de documentación y cumplimiento.</p>
+          <h1 className="text-5xl font-bold text-white">Dashboard</h1>
+          <p className="text-slate-300 text-lg">Bienvenido de vuelta. Aquí está tu resumen de documentación y cumplimiento.</p>
         </div>
 
         {/* Compliance Status */}
@@ -78,7 +78,7 @@ export default function ConductorDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-400">{complianceStats.valid}</div>
-              <p className="text-xs text-green-600 mt-1">Documentos vigentes</p>
+              <p className="text-xs text-green-300 mt-1">Documentos vigentes</p>
             </CardContent>
           </Card>
 
@@ -88,7 +88,7 @@ export default function ConductorDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-red-400">{complianceStats.expired}</div>
-              <p className="text-xs text-red-600 mt-1">Requiere renovación</p>
+              <p className="text-xs text-red-300 mt-1">Requiere renovación</p>
             </CardContent>
           </Card>
 
@@ -98,7 +98,7 @@ export default function ConductorDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-amber-400">{complianceStats.pending}</div>
-              <p className="text-xs text-amber-600 mt-1">En revisión</p>
+              <p className="text-xs text-amber-300 mt-1">En revisión</p>
             </CardContent>
           </Card>
         </div>
