@@ -222,9 +222,13 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
           : doc
       ))
 
-      // Refresh from server after status change
+      // Refresh from server after status change - multiple times to ensure consistency
       console.log('[v0] Forcing document refresh after status change')
       await new Promise(resolve => setTimeout(resolve, 300))
+      await fetchDocuments(true)
+      
+      // Second refresh to ensure UI is updated
+      await new Promise(resolve => setTimeout(resolve, 500))
       await fetchDocuments(true)
 
       return result
