@@ -97,10 +97,27 @@ export async function PATCH(
 
     console.log('[v0] ✅ UPDATE executed - documentId:', documentId, 'from:', documentBefore?.validation_status, 'to:', dbStatus, 'rows:', updateData?.length)
 
-    // STEP 3: Notify ejecutivas about the status change (non-blocking)
+    // STEP 3: Get conductor name for notification
+    let conductorName = 'Unknown'
+    if (documentBefore?.conductor_id) {
+      const { data: conductor } = await adminClient
+        .from('conductores')
+        .select('nombres, apellido_paterno, apellido_materno')
+        .eq('id', documentBefore.conductor_id)
+        .single()
+      
+      if (conductor) {
+        conductorName = [conductor.nombres, conductor.apellido_paterno, conductor.apellido_materno]
+          .filter(Boolean)
+          .join(' ')
+          .trim()
+      }
+    }
+
+    // STEP 4: Notify ejecutivas about the status change (non-blocking)
     const notificationPayload = {
       type: 'status_change' as const,
-      conductorName: documentBefore?.conductor_rut || 'Unknown',
+      conductorName,
       documentType: documentBefore?.document_type_id || 'Document',
       oldStatus: documentBefore?.validation_status || 'unknown',
       newStatus: dbStatus,
@@ -117,7 +134,7 @@ export async function PATCH(
     await new Promise(resolve => setTimeout(resolve, 100))
     console.log('[v0] ⏳ Broadcast delay completed')
 
-    // STEP 4: Emit event to orchestration system (non-blocking)
+    // STEP 5: Emit event to orchestration system (non-blocking)
     emitToOrchestrator(documentId, dbStatus, reason).catch(err => {
       console.error('[v0] Orchestrator emit failed:', err)
     })
