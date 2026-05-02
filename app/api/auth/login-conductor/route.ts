@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { loginConductor } from '@/lib/supabase/auth-conductor'
+
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  maxAge: 30 * 24 * 60 * 60, // 30 days
+  path: '/',
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,22 +23,10 @@ export async function POST(request: NextRequest) {
     // Authenticate conductor
     const conductor = await loginConductor(rut, password)
 
-    // Set cookies
-    const cookieStore = await cookies()
-    cookieStore.set('conductor_id', conductor.id, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-    })
-    cookieStore.set('conductor_rut', conductor.rut, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60,
-    })
-
-    return NextResponse.json({
+    // Build response first, then set cookies on the response object
+    // NOTE: In Next.js 15 Route Handlers, cookies() from next/headers is read-only.
+    // The only way to write cookies is via NextResponse.cookies.set().
+    const response = NextResponse.json({
       success: true,
       conductor_id: conductor.id,
       rut: conductor.rut,
@@ -39,10 +34,15 @@ export async function POST(request: NextRequest) {
       email: conductor.email,
       transportista_id: conductor.transportista_id,
     })
+
+    response.cookies.set('conductor_id', conductor.id, COOKIE_OPTIONS)
+    response.cookies.set('conductor_rut', conductor.rut, COOKIE_OPTIONS)
+
+    return response
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Error al iniciar sesión'
     console.error('[v0] Conductor login error:', errorMessage)
-    
+
     return NextResponse.json(
       { error: errorMessage },
       { status: 401 }

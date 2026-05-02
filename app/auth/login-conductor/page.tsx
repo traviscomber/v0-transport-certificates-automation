@@ -1,9 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from  '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
@@ -15,7 +14,6 @@ export default function ConductorLoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [rutError, setRutError] = useState('')
-  const router = useRouter()
 
   // Formatear RUT
   const formatRUT = (value: string) => {
@@ -77,13 +75,9 @@ export default function ConductorLoginPage() {
         throw new Error(data.error || `Error HTTP ${response.status}`)
       }
 
-      // El servidor ya estableció las cookies httpOnly
-      // Solo redirigimos al onboarding
-      console.log('[v0] Conductor login successful:', data.rut)
-      
-      // Use router.push() to navigate within Next.js
-      // This allows the Next.js app to use the httpOnly cookies set by the server
-      router.push('/conductor/onboarding')
+      // Full browser navigation so the browser sends the fresh httpOnly cookies
+      // on the very next request — this is what the middleware checks.
+      window.location.href = '/conductor/onboarding'
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido al iniciar sesión'
       console.error('[v0] Login error:', errorMessage)
