@@ -6,7 +6,21 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
   // Skip middleware for auth/login routes and API login routes
-  if (path.startsWith('/api/login') || path.startsWith('/login') || path === '/api/logout') {
+  if (path.startsWith('/api/auth/login') || path.startsWith('/auth/login') || path === '/api/logout') {
+    return NextResponse.next()
+  }
+
+  // Protect conductor routes - require conductor_id cookie
+  if (path.startsWith('/conductor')) {
+    const conductorId = request.cookies.get('conductor_id')?.value
+    console.log('[v0] Middleware - conductor route:', path, 'conductorId:', conductorId ? 'found' : 'not found')
+    
+    if (!conductorId) {
+      console.log('[v0] Redirecting to conductor login - no conductor_id cookie')
+      return NextResponse.redirect(new URL('/auth/login-conductor', request.url))
+    }
+    
+    // Conductor is authenticated, continue
     return NextResponse.next()
   }
 

@@ -1,7 +1,5 @@
 import { LogOut, LayoutDashboard, FileText, Clock, Settings, Home } from "lucide-react"
 import Link from "next/link"
-import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
 
 const navItems = [
   { href: "/conductor", label: "Dashboard", icon: Home },
@@ -14,13 +12,6 @@ export default async function ConductorLayout({
 }: {
   children: React.ReactNode
 }) {
-  const cookieStore = await cookies()
-  const conductorId = cookieStore.get('conductor_id')?.value
-
-  if (!conductorId) {
-    redirect("/auth/login-conductor")
-  }
-
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Sidebar */}
