@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Upload, FileText, CheckCircle2, AlertCircle, Loader, Download, Eye } from 'lucide-react'
+import { Upload, FileText, CheckCircle2, AlertCircle, Loader, Download, Eye, X, Clock } from 'lucide-react'
 import Link from 'next/link'
 
 interface UploadedDocument {
@@ -17,20 +17,59 @@ interface UploadedDocument {
   validation_status: 'pending' | 'approved' | 'rejected'
   extraction_confidence: number | null
   created_at: string
+  expiration_date?: string
   rejection_reason?: string
 }
+
+interface RequiredDocument {
+  type: string
+  label: string
+  description: string
+  uploaded?: UploadedDocument
+}
+
+const REQUIRED_DOCUMENTS: RequiredDocument[] = [
+  {
+    type: 'licencia_conducir',
+    label: 'Licencia de Conducir',
+    description: 'Vigente, categoría mínima B'
+  },
+  {
+    type: 'certificado_antecedentes',
+    label: 'Certificado de Antecedentes',
+    description: 'Emitido por Carabineros (no más de 6 meses)'
+  },
+  {
+    type: 'poliza_seguro',
+    label: 'Póliza de Seguro',
+    description: 'Seguro obligatorio del vehículo'
+  },
+  {
+    type: 'verificacion_tecnica',
+    label: 'Verificación Técnica',
+    description: 'VTV vigente del vehículo'
+  }
+]
 
 export default function ConductorDocumentosPage() {
   const [documents, setDocuments] = useState<UploadedDocument[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [compliancePercentage, setCompliancePercentage] = useState(0)
 
-  // Fetch documents on mount
   useEffect(() => {
     fetchDocuments()
   }, [])
+
+  useEffect(() => {
+    // Calculate compliance percentage
+    const approved = documents.filter(d => d.validation_status === 'approved').length
+    const percentage = Math.round((approved / REQUIRED_DOCUMENTS.length) * 100)
+    setCompliancePercentage(percentage)
+  }, [documents])
 
   const fetchDocuments = async () => {
     try {
@@ -48,8 +87,7 @@ export default function ConductorDocumentosPage() {
     }
   }
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+  const handleFileUpload = async (file: File) => {
     if (!file) return
 
     setIsUploading(true)
@@ -57,8 +95,7 @@ export default function ConductorDocumentosPage() {
     setSuccess('')
 
     try {
-      // Get auth token
-      const token = localStorage.getItem('supabase.auth.token')
+      const token = localStorage.getItem('conductor_token')
       if (!token) throw new Error('No authentication token found')
 
       const formData = new FormData()
@@ -78,10 +115,8 @@ export default function ConductorDocumentosPage() {
         throw new Error(data.message || 'Error al subir documento')
       }
 
-      setSuccess('Documento subido exitosamente')
+      setSuccess('Documento subido exitosamente. Se validará en 24-48 horas.')
       await fetchDocuments()
-      // Reset file input
-      event.target.value = ''
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al subir documento')
     } finally {
@@ -89,7 +124,43 @@ export default function ConductorDocumentosPage() {
     }
   }
 
-  const getStatusBadge = (status: string) => {
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = () => {
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const files = e.dataTransfer.files
+    if (files.length > 0) {
+      handleFileUpload(files[0])
+    }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      handleFileUpload(file)
+    }
+  }
+
+  const getStatusBadge = (status: string, expirationDate?: string) => {
+    if (expirationDate) {
+      const expDate = new Date(expirationDate)
+      const daysUntilExpiry = Math.ceil((expDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      
+      if (daysUntilExpiry < 0) {
+        return <Badge variant="destructive">Vencido</Badge>
+      } else if (daysUntilExpiry < 7) {
+        return <Badge className="bg-orange-100 text-orange-800">Vence en {daysUntilExpiry} días</Badge>
+      }
+    }
+
     switch (status) {
       case 'approved':
         return <Badge className="bg-green-100 text-green-800">Aprobado</Badge>
@@ -111,14 +182,30 @@ export default function ConductorDocumentosPage() {
     }
   }
 
+  const getDocumentByType = (type: string) => {
+    return documents.find(d => d.document_type === type)
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Mis Documentos</h1>
-        <p className="text-muted-foreground">
-          Sube y gestiona tus documentos requeridos para el onboarding
-        </p>
+      {/* Header with Compliance */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Mis Documentos</h1>
+          <p className="text-muted-foreground">
+            Sube y gestiona tus documentos requeridos para trabajar con Labbe
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-sm text-gray-600">Cumplimiento</p>
+          <p className="text-3xl font-bold text-blue-600">{compliancePercentage}%</p>
+          <div className="w-32 bg-gray-200 rounded-full h-2 mt-2">
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${compliancePercentage}%` }}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Alerts */}
@@ -141,107 +228,120 @@ export default function ConductorDocumentosPage() {
         <CardHeader>
           <CardTitle>Subir Documento</CardTitle>
           <CardDescription>
-            Sube tus documentos en formato PDF o imagen (JPG, PNG)
+            Arrastra y suelta o haz clic para seleccionar (PDF, JPG, PNG - Máximo 10MB)
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center w-full">
-            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted/80 transition-colors">
-              <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                <Upload className="h-8 w-8 mb-2 text-muted-foreground" />
-                <p className="mb-2 text-sm text-muted-foreground">
-                  <span className="font-semibold">Haz clic para subir</span> o arrastra archivos
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  PDF, JPG, PNG (máx. 10MB)
-                </p>
-              </div>
-              <input
-                type="file"
-                className="hidden"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={handleFileUpload}
-                disabled={isUploading}
-              />
-            </label>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Documents List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Documentos Subidos</CardTitle>
-          <CardDescription>
-            Estado de revisión de tus documentos
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader className="h-8 w-8 animate-spin text-muted-foreground" />
+          <label
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer transition-all ${
+              isDragging
+                ? 'bg-blue-50 border-blue-400'
+                : 'bg-muted/50 hover:bg-muted/80 border-gray-300'
+            }`}
+          >
+            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+              <Upload className={`h-10 w-10 mb-2 ${isDragging ? 'text-blue-600' : 'text-gray-400'}`} />
+              <p className="mb-2 text-sm font-semibold">
+                {isDragging ? 'Suelta los archivos aquí' : 'Arrastra archivos aquí o haz clic'}
+              </p>
+              <p className="text-xs text-gray-500">PDF, JPG, PNG</p>
             </div>
-          ) : documents.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
-              <p className="text-muted-foreground">No tienes documentos subidos aún</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {documents.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-4 flex-1">
-                    <FileText className="h-8 w-8 text-blue-600" />
-                    <div className="flex-1">
-                      <p className="font-semibold">{doc.file_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(doc.created_at).toLocaleDateString('es-CL')}
-                      </p>
-                      {doc.rejection_reason && (
-                        <p className="text-sm text-red-600 mt-1">
-                          Razón: {doc.rejection_reason}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(doc.validation_status)}
-                      {getStatusBadge(doc.validation_status)}
-                    </div>
-                    <div className="flex gap-2">
-                      <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </a>
-                      <a href={doc.file_url} download>
-                        <Button variant="outline" size="sm">
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <input
+              type="file"
+              className="hidden"
+              accept=".pdf,.jpg,.jpeg,.png"
+              onChange={handleInputChange}
+              disabled={isUploading}
+            />
+          </label>
+          {isUploading && (
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <Loader className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Subiendo documento...</span>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Info Box */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="pt-6">
-          <div className="flex gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-semibold text-blue-900">Información Importante</p>
-              <p className="text-sm text-blue-800 mt-1">
-                Tus documentos serán revisados por nuestro equipo de onboarding en un plazo de 24-48 horas. 
-                Recibirás una notificación cuando el proceso esté completo.
-              </p>
+      {/* Documents Required Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Documentos Requeridos</CardTitle>
+          <CardDescription>
+            Estado de cada documento requerido para tu aprobación
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader className="h-6 w-6 animate-spin text-gray-400" />
             </div>
-          </div>
+          ) : (
+            <div className="space-y-3">
+              {REQUIRED_DOCUMENTS.map((reqDoc) => {
+                const uploadedDoc = getDocumentByType(reqDoc.type)
+                return (
+                  <div
+                    key={reqDoc.type}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                  >
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="flex-shrink-0">
+                        {uploadedDoc ? (
+                          getStatusIcon(uploadedDoc.validation_status)
+                        ) : (
+                          <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium">{reqDoc.label}</p>
+                        <p className="text-sm text-gray-600">{reqDoc.description}</p>
+                        {uploadedDoc?.rejection_reason && (
+                          <p className="text-sm text-red-600 mt-1">
+                            Razón del rechazo: {uploadedDoc.rejection_reason}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {uploadedDoc ? (
+                        <>
+                          {getStatusBadge(uploadedDoc.validation_status, uploadedDoc.expiration_date)}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            asChild
+                          >
+                            <a href={uploadedDoc.file_url} target="_blank" rel="noopener noreferrer">
+                              <Download className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        </>
+                      ) : (
+                        <Badge variant="outline">No subido</Badge>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Info Card */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardHeader>
+          <CardTitle className="text-blue-900">¿Necesitas ayuda?</CardTitle>
+        </CardHeader>
+        <CardContent className="text-blue-800 text-sm space-y-2">
+          <p>• Los documentos se validan en 24-48 horas</p>
+          <p>• Recibirás notificaciones por email y WhatsApp</p>
+          <p>• Puedes subir nuevas versiones si un documento es rechazado</p>
+          <p>• Contacta con soporte@labbe.cl si tienes preguntas</p>
         </CardContent>
       </Card>
     </div>
