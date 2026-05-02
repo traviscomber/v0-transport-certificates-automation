@@ -579,7 +579,7 @@ export function DriverCard({
                 'expired': 'vencido'
               }[newStatus?.toLowerCase()] || newStatus
               
-              setSelectedDocument(prev => prev ? { ...prev, estado: normalizedStatus as any } : null)
+              setSelectedDocument((prev: DriverDocument | null) => prev ? { ...prev, estado: normalizedStatus as any } : null)
             }
             
             // Close modal after successful status change
