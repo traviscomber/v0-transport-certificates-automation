@@ -90,8 +90,24 @@ export default function AlertasPage() {
     }
   }
 
-  const getAlertColor = (priority: string, isDismissed: boolean) => {
+  const getAlertColor = (priority: string, isDismissed: boolean, alertType?: string) => {
     if (isDismissed) return 'border-l-4 border-l-gray-400 bg-gray-900/25 opacity-60'
+    
+    // Color by document status if available
+    if (alertType) {
+      switch (alertType) {
+        case 'DOCUMENT_REJECTED':
+          return 'border-l-4 border-l-orange-500 bg-orange-900/25'
+        case 'DOCUMENT_APPROVED':
+          return 'border-l-4 border-l-green-500 bg-green-900/25'
+        case 'DOCUMENT_PENDING':
+          return 'border-l-4 border-l-yellow-500 bg-yellow-900/25'
+        default:
+          break
+      }
+    }
+    
+    // Fallback to priority-based coloring
     switch (priority) {
       case 'critical':
         return 'border-l-4 border-l-red-500 bg-red-900/25'
@@ -255,7 +271,7 @@ export default function AlertasPage() {
             {filteredAlerts.map((alert) => (
               <div
                 key={alert.id}
-                className={`p-4 border rounded-lg flex items-start gap-4 transition-all ${getAlertColor(alert.priority, alert.is_dismissed)}`}
+                className={`p-4 border rounded-lg flex items-start gap-4 transition-all ${getAlertColor(alert.priority, alert.is_dismissed, alert.type)}`}
               >
                 <div className="flex-shrink-0 mt-1">
                   {getAlertIcon(alert.priority)}
