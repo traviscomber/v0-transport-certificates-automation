@@ -557,11 +557,11 @@ export function DriverCard({
           setRejectionReason('')
         }}
         onSetRejectionReason={(reason) => setRejectionReason(reason)}
-        onStatusChange={async (docId, newStatus) => {
+        onStatusChange={async (docId, newStatus, reason) => {
           try {
-            console.log('[v0] onStatusChange called:', { docId, newStatus, rejectionReason })
-            // Pass rejection reason if available
-            await updateDocumentStatus(docId, newStatus, rejectionReason)
+            console.log('[v0] onStatusChange called:', { docId, newStatus, reason })
+            // Use reason passed directly from modal (not from state which may be stale)
+            await updateDocumentStatus(docId, newStatus, reason)
             
             // Clear rejection reason after successful update
             setRejectionReason('')
