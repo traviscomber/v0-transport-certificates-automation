@@ -356,7 +356,11 @@ export async function completeReview(
 
     // Generar alertas de cambio de estado
     if (decision.decision === 'approved' || decision.decision === 'rejected') {
-      await generateReviewAlerts(decision)
+      try {
+        await generateReviewAlerts(decision)
+      } catch (alertError) {
+        console.error('[v0] Error generating review alerts:', alertError)
+      }
     }
     
     return { success: true, decisionId: data }

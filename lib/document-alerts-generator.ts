@@ -1,18 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 
-/**
- * Helper: Get first organization ID from database
- */
-async function getOrganizationId(): Promise<string> {
-  const supabase = createAdminClient()
-  const { data: org } = await supabase
-    .from('organizations')
-    .select('id')
-    .limit(1)
-    .single()
-  
-  return org?.id || ''
-}
+// Organization ID for Transportes (Labbe company)
+const ORGANIZATION_ID = '1b051f99-949d-4ba9-97da-3915cc648701'
 
 /**
  * Generate alerts when a document is uploaded by conductor or client
@@ -27,7 +16,6 @@ export async function generateDocumentUploadAlerts(
 ) {
   try {
     const supabase = createAdminClient()
-    const organizationId = await getOrganizationId()
 
     const { data: adminUsers, error: adminError } = await supabase
       .from('profiles')
@@ -41,7 +29,7 @@ export async function generateDocumentUploadAlerts(
 
     const alerts = adminUsers.map((admin: any) => ({
       user_id: admin.id,
-      organization_id: organizationId,
+      organization_id: ORGANIZATION_ID,
       title: `Nuevo Documento - ${uploaderType === 'conductor' ? 'Conductor' : 'Cliente'}`,
       message: `${uploaderName} ha subido ${documentType}. Acción requerida: revisar y validar.`,
       type: 'DOCUMENT_UPLOADED',
@@ -51,7 +39,6 @@ export async function generateDocumentUploadAlerts(
       action_url: `/dashboard/company/documentos`,
       metadata: {
         document_id: uploadedDocumentId,
-        uploader_id: uploaderId,
         uploader_type: uploaderType,
         uploader_name: uploaderName,
         document_type: documentType,
@@ -63,35 +50,37 @@ export async function generateDocumentUploadAlerts(
       .insert(alerts)
 
     if (insertError) {
-      console.error('[v0] Error creating upload alerts:', insertError)
+      console.error('[v0] Error inserting document upload alerts:', insertError)
     } else {
       console.log(`[v0] Created ${alerts.length} document upload alerts`)
     }
   } catch (error) {
-    console.error('[v0] Unexpected error in generateDocumentUploadAlerts:', error)
+    console.error('[v0] Error in generateDocumentUploadAlerts:', error)
   }
 }
 
 /**
  * Generate alerts when document status changes (approved/rejected)
- * Inserts into: alerts (admin alerts) + notifications (conductor notification)
  */
 export async function generateDocumentStatusChangeAlert(
   uploadedDocumentId: string,
   documentType: string,
   conductorName: string,
   conductorId: string,
-  newStatus: 'approved' | 'rejected' | 'aprobado' | 'rechazado',
+  newStatus: 'approved' | 'rejected',
   reason?: string
 ) {
   try {
     const supabase = createAdminClient()
-    const organizationId = await getOrganizationId()
-    const isApproved = newStatus === 'approved' || newStatus === 'aprobado'
 
-    console.log('[v0] generateDocumentStatusChangeAlert called:', { uploadedDocumentId, documentType, conductorName, newStatus })
+    console.log('[v0] 📢 generateDocumentStatusChangeAlert called:', { 
+      uploadedDocumentId, 
+      documentType, 
+      conductorName, 
+      newStatus 
+    })
 
-    // Create alert for admins in the alerts table (the main notification system)
+    // Create alert for admins in the alerts table
     const { data: adminUsers } = await supabase
       .from('profiles')
       .select('id')
@@ -100,16 +89,16 @@ export async function generateDocumentStatusChangeAlert(
     if (adminUsers && adminUsers.length > 0) {
       const adminAlerts = adminUsers.map((admin: any) => ({
         user_id: admin.id,
-        organization_id: organizationId,
-        title: isApproved
+        organization_id: ORGANIZATION_ID,
+        title: newStatus === 'approved'
           ? `Documento Aprobado - ${documentType}`
           : `Documento Rechazado - ${documentType}`,
-        message: isApproved
+        message: newStatus === 'approved'
           ? `El documento ${documentType} de ${conductorName} fue aprobado.`
           : `El documento ${documentType} de ${conductorName} fue rechazado. Razón: ${reason || 'Sin especificar'}`,
-        type: isApproved ? 'DOCUMENT_APPROVED' : 'DOCUMENT_REJECTED',
-        priority: isApproved ? 'medium' : 'high',
-        category: isApproved ? 'document_approved' : 'document_rejected',
+        type: newStatus === 'approved' ? 'DOCUMENT_APPROVED' : 'DOCUMENT_REJECTED',
+        priority: newStatus === 'approved' ? 'medium' : 'high',
+        category: newStatus === 'approved' ? 'document_approved' : 'document_rejected',
         is_read: false,
         action_url: `/dashboard/company/documentos`,
         metadata: {
@@ -118,6 +107,7 @@ export async function generateDocumentStatusChangeAlert(
           conductor_name: conductorName,
           document_type: documentType,
           reason: reason || null,
+          status: newStatus,
         },
       }))
 
@@ -137,117 +127,80 @@ export async function generateDocumentStatusChangeAlert(
 }
 
 /**
- * Generate expiration alerts for documents
- * Called by cron job daily
+ * Generate expiration alerts for documents close to expiration date
  */
 export async function generateExpirationAlerts() {
   try {
     const supabase = createAdminClient()
     const today = new Date()
+    const in7days = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-    const { data: documents, error: docsError } = await supabase
+    // Find documents expiring in the next 7 days
+    const { data: expiringDocs } = await supabase
       .from('uploaded_documents')
-      .select('id, conductor_id, document_type_id, extracted_expiration_date, last_expiration_alert_sent')
-      .not('extracted_expiration_date', 'is', null)
+      .select('id, conductor_id, document_type_id, expiration_date, document_types(name)')
+      .lt('expiration_date', in7days.toISOString())
+      .gt('expiration_date', today.toISOString())
+      .is('last_expiration_alert_sent', null)
 
-    if (docsError || !documents) {
-      console.error('[v0] Error fetching documents for expiration check:', docsError)
+    if (!expiringDocs || expiringDocs.length === 0) {
       return
     }
 
-    const { data: adminUsers } = await supabase
-      .from('profiles')
-      .select('id')
-      .in('role', ['admin', 'manager', 'supervisor'])
-
-    if (!adminUsers || adminUsers.length === 0) return
-
-    const alertsToCreate: any[] = []
-    const documentsToUpdate: string[] = []
-
-    for (const doc of documents) {
-      const expDate = new Date(doc.extracted_expiration_date)
-      const daysUntilExp = Math.floor((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-      const lastAlertSent = doc.last_expiration_alert_sent ? new Date(doc.last_expiration_alert_sent) : null
-
-      const { data: docType } = await supabase
-        .from('document_types')
-        .select('name')
-        .eq('id', doc.document_type_id)
-        .single()
-
-      let shouldAlert = false
-      let alertPriority = 'medium'
-      let alertTitle = ''
-      let alertMessage = ''
-
-      if (daysUntilExp < 0) {
-        shouldAlert = true
-        alertPriority = 'critical'
-        alertTitle = 'Documento Vencido'
-        alertMessage = `${docType?.name} está vencido desde hace ${Math.abs(daysUntilExp)} días`
-      } else if (daysUntilExp <= 1 && (!lastAlertSent || isMoreThanHoursAgo(lastAlertSent, 12))) {
-        shouldAlert = true
-        alertPriority = 'critical'
-        alertTitle = 'Documento Vence Hoy'
-        alertMessage = `${docType?.name} vence hoy. Acción inmediata requerida.`
-      } else if (daysUntilExp <= 7 && (!lastAlertSent || isMoreThanHoursAgo(lastAlertSent, 24))) {
-        shouldAlert = true
-        alertPriority = 'high'
-        alertTitle = 'Documento Próximo a Vencer'
-        alertMessage = `${docType?.name} vence en ${daysUntilExp} días`
-      } else if (daysUntilExp <= 30 && (!lastAlertSent || isMoreThanHoursAgo(lastAlertSent, 48))) {
-        shouldAlert = true
-        alertPriority = 'medium'
-        alertTitle = 'Recordatorio de Vencimiento'
-        alertMessage = `${docType?.name} vence en ${daysUntilExp} días. Considere renovar.`
-      }
-
-      if (shouldAlert) {
-        adminUsers.forEach((admin: any) => {
-          alertsToCreate.push({
-            user_id: admin.id,
-            organization_id: ORG_ID,
-            title: alertTitle,
-            message: alertMessage,
-            type: 'DOCUMENT_EXPIRATION',
-            priority: alertPriority,
-            category: 'document_expiration',
-            is_read: false,
-            action_url: `/dashboard/company/documentos`,
-            metadata: {
-              document_id: doc.id,
-              conductor_id: doc.conductor_id,
-              days_until_expiration: daysUntilExp,
-              expiration_date: doc.extracted_expiration_date,
-            },
-          })
-        })
-        documentsToUpdate.push(doc.id)
-      }
-    }
+    // Create alerts for each expiring document
+    const alertsToCreate = expiringDocs.map((doc: any) => ({
+      type: 'DOCUMENT_EXPIRATION',
+      title: `Documento por Vencer - ${doc.document_types?.name || 'Documento'}`,
+      message: `El documento vence el ${new Date(doc.expiration_date).toLocaleDateString('es-MX')}`,
+      priority: 'high',
+      category: 'document_expiration',
+      is_read: false,
+      action_url: `/dashboard/company/documentos`,
+      metadata: {
+        document_id: doc.id,
+        conductor_id: doc.conductor_id,
+        expiration_date: doc.expiration_date,
+      },
+    }))
 
     if (alertsToCreate.length > 0) {
-      const { error: insertError } = await supabase
-        .from('alerts')
-        .insert(alertsToCreate)
+      // Add organization_id to all alerts
+      const alertsWithOrg = alertsToCreate.map(alert => ({
+        ...alert,
+        organization_id: ORGANIZATION_ID
+      }))
 
-      if (!insertError) {
-        await supabase
-          .from('uploaded_documents')
-          .update({ last_expiration_alert_sent: new Date().toISOString() })
-          .in('id', documentsToUpdate)
+      const { data: adminUsers } = await supabase
+        .from('profiles')
+        .select('id')
+        .in('role', ['admin', 'manager', 'supervisor', 'ejecutiva'])
 
-        console.log(`[v0] Created ${alertsToCreate.length} expiration alerts`)
-      } else {
-        console.error('[v0] Error inserting expiration alerts:', insertError)
+      if (adminUsers && adminUsers.length > 0) {
+        const finalAlerts = adminUsers.flatMap((admin: any) =>
+          alertsWithOrg.map(alert => ({
+            ...alert,
+            user_id: admin.id,
+          }))
+        )
+
+        const { error: insertError } = await supabase
+          .from('alerts')
+          .insert(finalAlerts)
+
+        if (!insertError) {
+          // Update last alert sent timestamp
+          const { error: updateError } = await supabase
+            .from('uploaded_documents')
+            .update({ last_expiration_alert_sent: new Date().toISOString() })
+            .in('id', expiringDocs.map((d: any) => d.id))
+
+          console.log(`[v0] Created ${finalAlerts.length} expiration alerts`)
+        } else {
+          console.error('[v0] Error inserting expiration alerts:', insertError)
+        }
       }
     }
   } catch (error) {
     console.error('[v0] Error in generateExpirationAlerts:', error)
   }
-}
-
-function isMoreThanHoursAgo(date: Date, hours: number): boolean {
-  return (new Date().getTime() - date.getTime()) / (1000 * 60 * 60) > hours
 }
