@@ -1,16 +1,24 @@
 import { createClient } from '@supabase/supabase-js'
 import { allSubcontractorsData } from '@/lib/data/all-subcontractors'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-)
-
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
     console.log('[v0] Starting to load 221 real subcontractors into Supabase...')
+
+    // Check environment variables before creating client
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return Response.json(
+        { error: 'Supabase configuration missing' },
+        { status: 500 }
+      )
+    }
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    )
 
     // Get existing count
     const { count: existingCount } = await supabase
