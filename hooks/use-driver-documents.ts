@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export interface DriverDocument {
@@ -19,14 +19,12 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
+  // Prevents the automatic useEffect refetch from overwriting optimistic state updates
+  const skipNextAutoFetch = useRef(false)
 
   // Cargar documentos usando la API unificada
   const fetchDocuments = useCallback(async (skipCache = false) => {
-    console.log('[v0] fetchDocuments called - driverRut:', driverRut, 'driverId:', driverId, 'skipCache:', skipCache)
-    if (!driverRut) {
-      console.log('[v0] Early return - no driverRut')
-      return
-    }
+    if (!driverRut) return
     
     setLoading(true)
     setError(null)
@@ -89,7 +87,6 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         rejection_reason: doc.rejection_reason || undefined,
       }))
 
-      console.log('[v0] API returned documents:', result.documents?.length, 'Transformed:', transformedDocs.length, 'conductor_id resolved:', result.conductor_id)
       setDocuments(transformedDocs)
     } catch (err) {
       console.error('[v0] Error fetching documents:', err)
@@ -180,7 +177,6 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
   // Actualizar estado de documento - SEND TO SERVER
   const updateDocumentStatus = async (documentId: string, newStatus: string, rejectionReason?: string) => {
     try {
-      console.log('[v0] updateDocumentStatus called:', { documentId, newStatus, rejectionReason })
       
       const body: any = { status: newStatus }
       if (rejectionReason && (newStatus === 'rechazado' || newStatus === 'rejected')) {
@@ -199,8 +195,6 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       }
 
       const result = await response.json()
-      console.log('[v0] Status update successful:', result)
-
       // Normalize status to español for local state
       const normalizedStatus = {
         'aprobado': 'aprobado',
@@ -213,16 +207,15 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         'expired': 'vencido'
       }[newStatus?.toLowerCase()] || newStatus
 
+      // Block the next automatic useEffect refetch so it doesn't overwrite this optimistic update
+      skipNextAutoFetch.current = true
+
       // Update local state immediately with correct status
-      setDocuments(prev => {
-        const updated = prev.map(doc =>
-          doc.id === documentId 
-            ? { ...doc, estado: normalizedStatus as DriverDocument['estado'] }
-            : doc
-        )
-        console.log('[v0] setDocuments called - updated doc estado:', updated.find(d => d.id === documentId)?.estado)
-        return updated
-      })
+      setDocuments(prev => prev.map(doc =>
+        doc.id === documentId 
+          ? { ...doc, estado: normalizedStatus as DriverDocument['estado'] }
+          : doc
+      ))
 
       return result
     } catch (err) {
@@ -250,9 +243,13 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
     }
   }
 
-  // Fetch when card expands
+  // Fetch when card expands — skip if a status update just happened to avoid overwriting optimistic state
   useEffect(() => {
     if (driverRut && enabled) {
+      if (skipNextAutoFetch.current) {
+        skipNextAutoFetch.current = false
+        return
+      }
       fetchDocuments()
     }
   }, [driverRut, enabled, fetchDocuments])

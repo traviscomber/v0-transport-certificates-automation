@@ -558,8 +558,6 @@ export function DriverCard({
         onSetRejectionReason={(reason) => setRejectionReason(reason)}
         onStatusChange={async (docId, newStatus) => {
           try {
-            console.log('[v0] onStatusChange called:', { docId, newStatus, rejectionReason })
-            // Pass rejection reason if this is a rejection
             await updateDocumentStatus(docId, newStatus, newStatus === 'rechazado' ? rejectionReason : undefined)
             
             // Clear rejection reason after successful update
