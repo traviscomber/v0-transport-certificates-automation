@@ -117,14 +117,14 @@ export function DashboardOverview() {
     switch (type) {
       case "DOCUMENT_APPROVED":
         return (
-          <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">
+          <Badge variant="default" className="bg-green-100 text-green-800 border border-green-600 hover:bg-green-100">
             Aprobado
           </Badge>
         )
       case "DOCUMENT_PENDING":
-        return <Badge variant="secondary">Pendiente</Badge>
+        return <Badge variant="secondary" className="text-black">Pendiente</Badge>
       case "DOCUMENT_REJECTED":
-        return <Badge variant="destructive">Rechazado</Badge>
+        return <Badge variant="destructive" className="text-black">Rechazado</Badge>
       default:
         return <Badge variant="outline">Desconocido</Badge>
     }
