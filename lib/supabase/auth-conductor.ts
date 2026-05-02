@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 import bcrypt from 'bcryptjs'
 
 export interface ConductorLoginResponse {
@@ -62,7 +62,7 @@ export async function loginConductor(
   rut: string,
   password: string
 ): Promise<ConductorLoginResponse> {
-  const supabase = createClient()
+  const supabase = await createClient()
   if (!supabase) {
     throw new Error('Error de conexión a base de datos')
   }
