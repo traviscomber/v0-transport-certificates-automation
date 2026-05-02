@@ -1,10 +1,6 @@
 import OpenAI from 'openai'
 import { z } from 'zod'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
 // Define the extraction schema
 const DocumentExtractionSchema = z.object({
   documentType: z.string().describe('Type of document (e.g., "Licencia de Conducir", "Certificado de Antecedentes", "Póliza de Seguro", "Verificación Técnica")'),
@@ -29,6 +25,15 @@ export async function extractDocumentMetadata(
   mimeType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/jpeg'
 ): Promise<DocumentExtraction> {
   try {
+    // Initialize OpenAI client at runtime, not at module load time
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY environment variable is not set')
+    }
+
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+
     console.log('[v0] Starting document extraction with OpenAI Vision...')
 
     const response = await openai.chat.completions.create({
