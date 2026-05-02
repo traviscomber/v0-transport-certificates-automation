@@ -179,7 +179,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
   // Actualizar estado de documento - SEND TO SERVER
   const updateDocumentStatus = async (documentId: string, newStatus: string, reason?: string) => {
     try {
-      console.log('[v0] ⚠️ updateDocumentStatus called:', { documentId, newStatus, reason, reasonProvided: !!reason })
+      console.log('[v0] updateDocumentStatus called:', { documentId, newStatus, reason })
       
       const body: any = { status: newStatus }
       if (reason) {

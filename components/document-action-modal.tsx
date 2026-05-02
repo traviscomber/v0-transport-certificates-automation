@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Download, Eye, CheckCircle, XCircle, Clock, Loader, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,6 +43,14 @@ export function DocumentActionModal({
   const [showRejectionForm, setShowRejectionForm] = useState(false)
   const { deleteDocument } = useDocumentManagement()
 
+  // Reset rejection reason when modal opens/closes
+  useEffect(() => {
+    if (!isOpen) {
+      setRejectionReason('')
+      setShowRejectionForm(false)
+    }
+  }, [isOpen])
+
   if (!isOpen || !document) return null
 
   const handleStatusChange = async (newStatus: 'aprobado' | 'rechazado') => {
@@ -52,7 +60,7 @@ export function DocumentActionModal({
       return
     }
 
-    console.log('[v0] ⚠️ handleStatusChange - About to send:', { newStatus, rejectionReason, reasonLength: rejectionReason.length })
+    console.log('[v0] handleStatusChange - About to send:', { newStatus, rejectionReason, reasonLength: rejectionReason.length })
 
     setIsChanging(true)
     try {
@@ -316,7 +324,6 @@ export function DocumentActionModal({
                   placeholder="Especifica por qué se rechaza este documento (ej: Imagen borrosa, datos incompletos, documento expirado)"
                   value={rejectionReason}
                   onChange={(e) => {
-                    console.log('[v0] Rejection reason changed to:', e.target.value)
                     setRejectionReason(e.target.value)
                   }}
                   className="w-full px-3 py-2 bg-slate-800 border border-red-500/50 text-white placeholder-slate-500 rounded text-sm"
