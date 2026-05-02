@@ -20,7 +20,7 @@ async function getApplicants() {
       status,
       background_check_status,
       created_at,
-      transportistas(nombre_fantasia, razon_social)
+      company_id
     `)
     .order("created_at", { ascending: false })
 
@@ -39,7 +39,7 @@ async function getApplicants() {
     status: app.status,
     backgroundCheckStatus: app.background_check_status,
     createdAt: app.created_at,
-    companyName: app.transportistas?.nombre_fantasia || app.transportistas?.razon_social || "Sin asignar",
+    companyName: "Sin asignar",
   }))
 }
 

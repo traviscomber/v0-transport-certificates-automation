@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
         status,
         background_check_status,
         created_at,
-        transportistas(razon_social, nombre_fantasia)
+        company_id
       `)
       .order('created_at', { ascending: false })
 
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
       status: applicant.status,
       backgroundCheckStatus: applicant.background_check_status,
       createdAt: applicant.created_at,
-      companyName: applicant.transportistas?.nombre_fantasia || applicant.transportistas?.razon_social || 'Sin empresa',
+      companyName: 'Sin empresa',
     }))
 
     return NextResponse.json({ success: true, data: applicants }, { status: 200 })
