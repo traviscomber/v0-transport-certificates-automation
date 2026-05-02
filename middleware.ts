@@ -5,14 +5,21 @@ import type { NextRequest } from "next/server"
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
-  // Skip middleware for auth routes, API login routes, and conductor portal
-  // Conductor auth is handled by the RSC layout via cookies() from next/headers
+  // Skip auth and API auth routes entirely
   if (
     path.startsWith('/api/auth') ||
     path.startsWith('/auth/login') ||
-    path.startsWith('/conductor') ||
     path === '/api/logout'
   ) {
+    return NextResponse.next()
+  }
+
+  // Protect conductor routes — check httpOnly cookie set by the login endpoint
+  if (path.startsWith('/conductor')) {
+    const conductorId = request.cookies.get('conductor_id')?.value
+    if (!conductorId) {
+      return NextResponse.redirect(new URL('/auth/login-conductor', request.url))
+    }
     return NextResponse.next()
   }
 
