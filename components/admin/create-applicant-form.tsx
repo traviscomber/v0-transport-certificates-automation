@@ -28,7 +28,7 @@ export function CreateApplicantForm({ companies: initialCompanies }: CreateAppli
     phone: '',
     rut: '',
     licenseType: 'A2',
-    companyId: companies[0]?.id || '',
+    companyId: initialCompanies.length > 0 ? initialCompanies[0].id : '',
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -110,6 +110,15 @@ export function CreateApplicantForm({ companies: initialCompanies }: CreateAppli
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
                   Postulante registrado exitosamente. Redirigiendo...
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {companies.length === 0 && !success && (
+              <Alert className="bg-amber-50 border-amber-200">
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-amber-800">
+                  No hay empresas disponibles. Crea una nueva usando el botón "+ Nueva" en la sección "Empresa / Transportista".
                 </AlertDescription>
               </Alert>
             )}
@@ -251,8 +260,9 @@ export function CreateApplicantForm({ companies: initialCompanies }: CreateAppli
             <div className="flex gap-4 pt-4">
               <Button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || !formData.companyId}
                 className="gap-2"
+                title={!formData.companyId ? "Selecciona una empresa para continuar" : ""}
               >
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                 {isLoading ? 'Registrando...' : 'Registrar Postulante'}
