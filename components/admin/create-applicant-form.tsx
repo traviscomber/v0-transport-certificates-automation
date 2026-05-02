@@ -6,17 +6,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
+import { AlertCircle, CheckCircle, Loader2, Plus } from 'lucide-react'
+import { CreateCompanyModal } from './create-company-modal'
 
 interface CreateApplicantFormProps {
   companies: Array<{ id: string; razon_social: string }>
 }
 
-export function CreateApplicantForm({ companies }: CreateApplicantFormProps) {
+export function CreateApplicantForm({ companies: initialCompanies }: CreateApplicantFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [showCompanyModal, setShowCompanyModal] = useState(false)
+  const [companies, setCompanies] = useState(initialCompanies)
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -31,6 +34,12 @@ export function CreateApplicantForm({ companies }: CreateApplicantFormProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleCompanyCreated = (newCompany: { id: string; name: string }) => {
+    const company = { id: newCompany.id, razon_social: newCompany.name }
+    setCompanies((prev) => [...prev, company])
+    setFormData((prev) => ({ ...prev, companyId: company.id }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -208,19 +217,33 @@ export function CreateApplicantForm({ companies }: CreateApplicantFormProps) {
                 <label className="text-sm font-semibold text-muted-foreground mb-2 block">
                   Empresa / Transportista
                 </label>
-                <select
-                  name="companyId"
-                  value={formData.companyId}
-                  onChange={handleChange}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                  disabled={isLoading || companies.length === 0}
-                >
-                  {companies.map((company) => (
-                    <option key={company.id} value={company.id}>
-                      {company.razon_social}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex gap-2">
+                  <select
+                    name="companyId"
+                    value={formData.companyId}
+                    onChange={handleChange}
+                    className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
+                    disabled={isLoading}
+                  >
+                    <option value="">Seleccionar empresa...</option>
+                    {companies.map((company) => (
+                      <option key={company.id} value={company.id}>
+                        {company.razon_social}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowCompanyModal(true)}
+                    disabled={isLoading}
+                    className="gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">Nueva</span>
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -255,6 +278,12 @@ export function CreateApplicantForm({ companies }: CreateApplicantFormProps) {
           </p>
         </CardContent>
       </Card>
+
+      <CreateCompanyModal
+        isOpen={showCompanyModal}
+        onClose={() => setShowCompanyModal(false)}
+        onCompanyCreated={handleCompanyCreated}
+      />
     </div>
   )
 }

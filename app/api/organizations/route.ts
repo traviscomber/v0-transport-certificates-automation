@@ -37,24 +37,39 @@ export async function POST(request: Request) {
     const supabase = await createClient()
     const body = await request.json()
     
+    // Handle both naming conventions
+    const name = body.name
+    const tax_id = body.tax_id || body.rut
+    const service_type = body.service_type || body.type || 'TRANSPORTE'
+    
+    if (!name || !tax_id) {
+      return NextResponse.json(
+        { error: 'name and tax_id are required' },
+        { status: 400 }
+      )
+    }
+    
     const { data, error } = await supabase
       .from('organizations')
       .insert({
-        name: body.name,
-        rut: body.rut,
-        type: body.type,
-        address: body.address,
-        city: body.city,
-        region: body.region,
-        phone: body.phone,
-        email: body.email,
+        name,
+        tax_id,
+        service_type,
+        email: body.email || null,
+        is_active: true,
       })
-      .select()
+      .select('id, name')
       .single()
     
-    if (error) throw error
+    if (error) {
+      console.error('Error creating organization:', error)
+      return NextResponse.json(
+        { error: error.message || 'Failed to create organization' },
+        { status: 500 }
+      )
+    }
     
-    return NextResponse.json({ data, success: true }, { status: 201 })
+    return NextResponse.json({ id: data.id, name: data.name }, { status: 201 })
   } catch (error) {
     console.error('Error creating organization:', error)
     return NextResponse.json({ error: 'Failed to create organization' }, { status: 500 })
