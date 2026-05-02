@@ -61,7 +61,12 @@ export function DriverCard({
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [rejectionReason, setRejectionReason] = useState<string>('')
 
-  // Fetch ejecutivas and document types when upload modal opens
+  // Refetch documents when modal closes to ensure UI reflects any status changes
+  useEffect(() => {
+    if (!showDocumentModal && isExpanded) {
+      refetch(true)
+    }
+  }, [showDocumentModal, isExpanded, refetch])
   useEffect(() => {
     if (showUploadModal) {
       setLoadingEjecutivas(true)
