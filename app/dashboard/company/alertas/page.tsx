@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { HelpBox } from '@/components/ui/help-box'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Trash2 } from 'lucide-react'
 import { AlertTriangle, AlertCircle, Info } from 'lucide-react'
 
 interface Alert {
@@ -52,6 +52,21 @@ export default function AlertasPage() {
       setAlerts([])
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const deleteAlert = async (alertId: string) => {
+    try {
+      const response = await fetch(`/api/alerts/${alertId}`, {
+        method: 'DELETE',
+      })
+      
+      if (!response.ok) throw new Error('Failed to delete alert')
+      
+      // Remove alert from local state
+      setAlerts(alerts.filter(a => a.id !== alertId))
+    } catch (error) {
+      console.error('[v0] Error deleting alert:', error)
     }
   }
 
@@ -324,6 +339,14 @@ export default function AlertasPage() {
                         Ver detalles →
                       </a>
                     )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => deleteAlert(alert.id)}
+                      className="text-xs text-muted-foreground hover:text-destructive h-auto p-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               </div>
