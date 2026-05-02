@@ -77,14 +77,21 @@ export async function PATCH(
       .single()
 
     // STEP 2: Update uploaded_documents.validation_status — the table being used in the UI
-    console.log('[v0] Updating uploaded_documents - documentId:', documentId, 'dbStatus:', dbStatus)
+    console.log('[v0] Updating uploaded_documents - documentId:', documentId, 'dbStatus:', dbStatus, 'reason:', reason)
+    
+    const updatePayload: any = { 
+      validation_status: dbStatus,
+      updated_at: new Date().toISOString()
+    }
+    
+    // Store rejection reason if provided
+    if (reason && dbStatus === 'rejected') {
+      updatePayload.rejection_reason = reason
+    }
     
     const { error: updateError, data: updateData } = await adminClient
       .from('uploaded_documents')
-      .update({ 
-        validation_status: dbStatus,
-        updated_at: new Date().toISOString()
-      })
+      .update(updatePayload)
       .eq('id', documentId)
       .select()
     

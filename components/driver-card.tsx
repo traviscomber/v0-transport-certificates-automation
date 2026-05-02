@@ -566,9 +566,28 @@ export function DriverCard({
             // Clear rejection reason after successful update
             setRejectionReason('')
             
+            // Update selectedDocument with new status to reflect in modal
+            if (selectedDocument && selectedDocument.id === docId) {
+              // Normalize status to Spanish
+              const normalizedStatus = {
+                'aprobado': 'aprobado',
+                'approved': 'aprobado',
+                'rechazado': 'rechazado',
+                'rejected': 'rechazado',
+                'pendiente': 'pendiente',
+                'pending': 'pendiente',
+                'vencido': 'vencido',
+                'expired': 'vencido'
+              }[newStatus?.toLowerCase()] || newStatus
+              
+              setSelectedDocument(prev => prev ? { ...prev, estado: normalizedStatus as any } : null)
+            }
+            
             // Close modal after successful status change
-            setShowDocumentModal(false)
-            setSelectedDocument(null)
+            setTimeout(() => {
+              setShowDocumentModal(false)
+              setSelectedDocument(null)
+            }, 500)
             
             // Show success
             if (typeof window !== 'undefined') {

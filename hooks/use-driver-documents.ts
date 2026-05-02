@@ -199,12 +199,37 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       const result = await response.json()
       console.log('[v0] Status update successful:', result)
 
-      // Update local state
+      // Normalize status to español for local state
+      const normalizedStatus = {
+        'aprobado': 'aprobado',
+        'approved': 'aprobado',
+        'rechazado': 'rechazado',
+        'rejected': 'rechazado',
+        'pendiente': 'pendiente',
+        'pending': 'pendiente',
+        'vencido': 'vencido',
+        'expired': 'vencido'
+      }[newStatus?.toLowerCase()] || newStatus
+
+      // Update local state immediately with correct status
       setDocuments(prev => prev.map(doc =>
-        doc.id === documentId ? { ...doc, estado: newStatus as DriverDocument['estado'] } : doc
+        doc.id === documentId 
+          ? { 
+              ...doc, 
+              estado: normalizedStatus as DriverDocument['estado'],
+              rejection_reason: newStatus?.toLowerCase() === 'rechazado' || newStatus?.toLowerCase() === 'rejected' 
+                ? reason 
+                : undefined
+            } 
+          : doc
       ))
 
-      // Refresh from server after status change
+      // Refresh from server after status change - multiple times to ensure consistency
+      console.log('[v0] Forcing document refresh after status change')
+      await new Promise(resolve => setTimeout(resolve, 300))
+      await fetchDocuments(true)
+      
+      // Second refresh to ensure UI is updated
       await new Promise(resolve => setTimeout(resolve, 500))
       await fetchDocuments(true)
 
