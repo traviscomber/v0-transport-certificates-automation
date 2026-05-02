@@ -81,27 +81,27 @@ export async function notifyExecutivas(payload: NotificationPayload) {
     const { data: orgData } = await adminClient.from('organizations').select('id').limit(1).single()
     const organizationId = orgData?.id
 
-    const alertInsert: any = {
-      type: payload.type,
-      title,
-      message,
-      priority: payload.type === 'status_change' ? 'high' : 'medium',
-      category: payload.type,
-      is_read: false,
-      is_dismissed: false,
-      organization_id: organizationId,
-      action_url: `/dashboard/company/documentos`,
-      metadata: {
-        document_id: payload.documentId,
-        old_status: payload.oldStatus,
-        new_status: payload.newStatus,
-        conductor: resolvedConductorName,
-      },
-    }
-
+    // Insert alert WITHOUT user_id - alerts are organization-wide, shown to all admins/ejecutivas
+    // user_id is not needed since dashboard fetches all organization alerts
     const { error: alertError } = await adminClient
       .from('alerts')
-      .insert(alertInsert)
+      .insert({
+        type: payload.type,
+        title,
+        message,
+        priority: payload.type === 'status_change' ? 'high' : 'medium',
+        category: payload.type,
+        is_read: false,
+        is_dismissed: false,
+        organization_id: organizationId,
+        action_url: `/dashboard/company/documentos`,
+        metadata: {
+          document_id: payload.documentId,
+          old_status: payload.oldStatus,
+          new_status: payload.newStatus,
+          conductor: resolvedConductorName,
+        },
+      })
 
     if (alertError) {
       console.error('[v0] Error inserting alert:', alertError)

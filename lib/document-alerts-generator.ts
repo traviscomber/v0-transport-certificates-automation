@@ -7,7 +7,7 @@ async function getOrgId(supabase: ReturnType<typeof createAdminClient>): Promise
 
 /**
  * Generate alerts when a document is uploaded by conductor or client
- * Inserts into: alerts (user_id, organization_id, title, message, type, priority, category, is_read, action_url, metadata)
+ * Inserts into: alerts (organization_id, title, message, type, priority, category, is_read, action_url, metadata)
  */
 export async function generateDocumentUploadAlerts(
   uploadedDocumentId: string,
@@ -20,42 +20,30 @@ export async function generateDocumentUploadAlerts(
     const supabase = createAdminClient()
     const orgId = await getOrgId(supabase)
 
-    const { data: adminUsers, error: adminError } = await supabase
-      .from('profiles')
-      .select('id')
-      .in('role', ['admin', 'manager', 'supervisor', 'ejecutiva'])
-
-    if (adminError || !adminUsers || adminUsers.length === 0) {
-      console.error('[v0] No admin users found or error:', adminError)
-      return
-    }
-
-    const alerts = adminUsers.map((admin: any) => ({
-      user_id: admin.id,
-      organization_id: orgId,
-      title: `Nuevo Documento - ${uploaderType === 'conductor' ? 'Conductor' : 'Cliente'}`,
-      message: `${uploaderName} ha subido ${documentType}. Acción requerida: revisar y validar.`,
-      type: 'DOCUMENT_UPLOADED',
-      priority: 'high',
-      category: 'document_upload',
-      is_read: false,
-      action_url: `/dashboard/company/documentos`,
-      metadata: {
-        document_id: uploadedDocumentId,
-        uploader_type: uploaderType,
-        uploader_name: uploaderName,
-        document_type: documentType,
-      },
-    }))
-
+    // Insert alert WITHOUT user_id - organization-wide alert
     const { error: insertError } = await supabase
       .from('alerts')
-      .insert(alerts)
+      .insert({
+        organization_id: orgId,
+        title: `Nuevo Documento - ${uploaderType === 'conductor' ? 'Conductor' : 'Cliente'}`,
+        message: `${uploaderName} ha subido ${documentType}. Acción requerida: revisar y validar.`,
+        type: 'DOCUMENT_UPLOADED',
+        priority: 'high',
+        category: 'document_upload',
+        is_read: false,
+        action_url: `/dashboard/company/documentos`,
+        metadata: {
+          document_id: uploadedDocumentId,
+          uploader_type: uploaderType,
+          uploader_name: uploaderName,
+          document_type: documentType,
+        },
+      })
 
     if (insertError) {
-      console.error('[v0] Error inserting document upload alerts:', insertError)
+      console.error('[v0] Error inserting document upload alert:', insertError)
     } else {
-      console.log(`[v0] Created ${alerts.length} document upload alerts`)
+      console.log(`[v0] Created document upload alert`)
     }
   } catch (error) {
     console.error('[v0] Error in generateDocumentUploadAlerts:', error)
@@ -79,15 +67,10 @@ export async function generateDocumentStatusChangeAlert(
 
     console.log('[v0] generateDocumentStatusChangeAlert:', { uploadedDocumentId, documentType, conductorName, newStatus })
 
-    // Create alert for admins in the alerts table
-    const { data: adminUsers } = await supabase
-      .from('profiles')
-      .select('id')
-      .in('role', ['admin', 'manager', 'supervisor', 'ejecutiva'])
-
-    if (adminUsers && adminUsers.length > 0) {
-      const adminAlerts = adminUsers.map((admin: any) => ({
-        user_id: admin.id,
+    // Insert alert WITHOUT user_id - organization-wide alert shown to all admins
+    const { error: alertError } = await supabase
+      .from('alerts')
+      .insert({
         organization_id: orgId,
         title: newStatus === 'approved'
           ? `Documento Aprobado - ${documentType}`
@@ -108,17 +91,17 @@ export async function generateDocumentStatusChangeAlert(
           reason: reason || null,
           status: newStatus,
         },
-      }))
+      })
 
-      const { error: alertError } = await supabase
-        .from('alerts')
-        .insert(adminAlerts)
-
-      if (alertError) {
-        console.error('[v0] ❌ Error creating admin alerts:', alertError)
-      } else {
-        console.log(`[v0] ✅ Created ${adminAlerts.length} admin alerts for status: ${newStatus}`)
-      }
+    if (alertError) {
+      console.error('[v0] Error creating status change alert:', alertError)
+    } else {
+      console.log(`[v0] Created status change alert for status: ${newStatus}`)
+    }
+  } catch (error) {
+    console.error('[v0] Error in generateDocumentStatusChangeAlert:', error)
+  }
+}
     }
   } catch (error) {
     console.error('[v0] ❌ Error in generateDocumentStatusChangeAlert:', error)
@@ -146,8 +129,11 @@ export async function generateExpirationAlerts() {
       return
     }
 
-    // Create alerts for each expiring document
+    const orgId = await getOrgId(supabase)
+
+    // Create alerts for each expiring document - WITHOUT user_id
     const alertsToCreate = expiringDocs.map((doc: any) => ({
+      organization_id: orgId,
       type: 'DOCUMENT_EXPIRATION',
       title: `Documento por Vencer - ${doc.document_types?.name || 'Documento'}`,
       message: `El documento vence el ${new Date(doc.expiration_date).toLocaleDateString('es-MX')}`,
@@ -163,42 +149,20 @@ export async function generateExpirationAlerts() {
     }))
 
     if (alertsToCreate.length > 0) {
-      const orgId = await getOrgId(supabase)
+      const { error: insertError } = await supabase
+        .from('alerts')
+        .insert(alertsToCreate)
 
-      // Add organization_id to all alerts
-      const alertsWithOrg = alertsToCreate.map(alert => ({
-        ...alert,
-        organization_id: orgId
-      }))
+      if (!insertError) {
+        // Update last alert sent timestamp
+        const { error: updateError } = await supabase
+          .from('uploaded_documents')
+          .update({ last_expiration_alert_sent: new Date().toISOString() })
+          .in('id', expiringDocs.map((d: any) => d.id))
 
-      const { data: adminUsers } = await supabase
-        .from('profiles')
-        .select('id')
-        .in('role', ['admin', 'manager', 'supervisor', 'ejecutiva'])
-
-      if (adminUsers && adminUsers.length > 0) {
-        const finalAlerts = adminUsers.flatMap((admin: any) =>
-          alertsWithOrg.map(alert => ({
-            ...alert,
-            user_id: admin.id,
-          }))
-        )
-
-        const { error: insertError } = await supabase
-          .from('alerts')
-          .insert(finalAlerts)
-
-        if (!insertError) {
-          // Update last alert sent timestamp
-          const { error: updateError } = await supabase
-            .from('uploaded_documents')
-            .update({ last_expiration_alert_sent: new Date().toISOString() })
-            .in('id', expiringDocs.map((d: any) => d.id))
-
-          console.log(`[v0] Created ${finalAlerts.length} expiration alerts`)
-        } else {
-          console.error('[v0] Error inserting expiration alerts:', insertError)
-        }
+        console.log(`[v0] Created ${alertsToCreate.length} expiration alerts`)
+      } else {
+        console.error('[v0] Error inserting expiration alerts:', insertError)
       }
     }
   } catch (error) {
