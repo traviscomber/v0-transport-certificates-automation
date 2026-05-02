@@ -1,6 +1,18 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const ORG_ID = '1b051f99-949d-4ba9-97da-3915cc648701'
+/**
+ * Helper: Get first organization ID from database
+ */
+async function getOrganizationId(): Promise<string> {
+  const supabase = createAdminClient()
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('id')
+    .limit(1)
+    .single()
+  
+  return org?.id || ''
+}
 
 /**
  * Generate alerts when a document is uploaded by conductor or client
@@ -15,11 +27,12 @@ export async function generateDocumentUploadAlerts(
 ) {
   try {
     const supabase = createAdminClient()
+    const organizationId = await getOrganizationId()
 
     const { data: adminUsers, error: adminError } = await supabase
       .from('profiles')
       .select('id')
-      .in('role', ['admin', 'manager', 'supervisor'])
+      .in('role', ['admin', 'manager', 'supervisor', 'ejecutiva'])
 
     if (adminError || !adminUsers || adminUsers.length === 0) {
       console.error('[v0] No admin users found or error:', adminError)
@@ -28,7 +41,7 @@ export async function generateDocumentUploadAlerts(
 
     const alerts = adminUsers.map((admin: any) => ({
       user_id: admin.id,
-      organization_id: ORG_ID,
+      organization_id: organizationId,
       title: `Nuevo Documento - ${uploaderType === 'conductor' ? 'Conductor' : 'Cliente'}`,
       message: `${uploaderName} ha subido ${documentType}. Acción requerida: revisar y validar.`,
       type: 'DOCUMENT_UPLOADED',
@@ -73,6 +86,7 @@ export async function generateDocumentStatusChangeAlert(
 ) {
   try {
     const supabase = createAdminClient()
+    const organizationId = await getOrganizationId()
     const isApproved = newStatus === 'approved' || newStatus === 'aprobado'
 
     console.log('[v0] generateDocumentStatusChangeAlert called:', { uploadedDocumentId, documentType, conductorName, newStatus })
@@ -86,7 +100,7 @@ export async function generateDocumentStatusChangeAlert(
     if (adminUsers && adminUsers.length > 0) {
       const adminAlerts = adminUsers.map((admin: any) => ({
         user_id: admin.id,
-        organization_id: ORG_ID,
+        organization_id: organizationId,
         title: isApproved
           ? `Documento Aprobado - ${documentType}`
           : `Documento Rechazado - ${documentType}`,
