@@ -10,20 +10,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Protect conductor routes - require conductor_id cookie
-  if (path.startsWith('/conductor')) {
-    const conductorId = request.cookies.get('conductor_id')?.value
-    
-    if (!conductorId) {
-      console.log('[v0] Middleware: Redirecting to login - no conductor_id cookie for path:', path)
-      // Return a redirect response that allows the client's router.push to take precedence
-      return NextResponse.redirect(new URL('/auth/login-conductor', request.url))
-    }
-    
-    console.log('[v0] Middleware: Conductor authorized for path:', path)
-    return NextResponse.next()
-  }
-
   // Protect dashboard routes - require authentication
   if (path.startsWith('/dashboard')) {
     const userEmail = request.cookies.get('user_email')?.value
