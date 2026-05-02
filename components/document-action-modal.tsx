@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { X, Download, Eye, CheckCircle, XCircle, Clock, Loader, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useDocumentManagement } from '@/hooks/use-document-management'
 
 interface Document {
@@ -36,19 +37,43 @@ export function DocumentActionModal({
   const [isChanging, setIsChanging] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showPreview, setShowPreview] = useState(true)
+  const [rejectionReason, setRejectionReason] = useState('')
+  const [showRejectionForm, setShowRejectionForm] = useState(false)
   const { deleteDocument } = useDocumentManagement()
 
   if (!isOpen || !document) return null
 
   const handleStatusChange = async (newStatus: 'aprobado' | 'rechazado') => {
+    // Require rejection reason if rejecting
+    if (newStatus === 'rechazado' && !rejectionReason.trim()) {
+      alert('Debes especificar la razón del rechazo')
+      return
+    }
+
     if (!onStatusChange) return
     setIsChanging(true)
     try {
-      await onStatusChange(document.id, newStatus)
-      console.log('[v0] Document status changed to:', newStatus)
+      // Pass rejection reason to status change handler
+      const response = await fetch(`/api/company/documents/${document.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: newStatus,
+          reason: newStatus === 'rechazado' ? rejectionReason : undefined
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Error al cambiar el estado del documento')
+      }
+
+      console.log('[v0] Document status changed to:', newStatus, 'with reason:', rejectionReason)
+      setRejectionReason('')
+      setShowRejectionForm(false)
       setTimeout(() => onClose(), 1000)
     } catch (error) {
       console.error('[v0] Error changing status:', error)
+      alert('Error al cambiar el estado del documento')
     } finally {
       setIsChanging(false)
     }
@@ -226,7 +251,7 @@ export function DocumentActionModal({
                   Aprobar
                 </Button>
                 <Button
-                  onClick={() => handleStatusChange('rechazado')}
+                  onClick={() => setShowRejectionForm(true)}
                   disabled={isChanging}
                   className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
                 >
@@ -280,6 +305,47 @@ export function DocumentActionModal({
               </Button>
             )}
           </div>
+
+          {/* Rejection Form */}
+          {showRejectionForm && (
+            <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 space-y-3">
+              <div>
+                <label className="block text-sm font-semibold text-red-300 mb-2">
+                  Razón del Rechazo <span className="text-red-400">*</span>
+                </label>
+                <Input
+                  placeholder="Especifica por qué se rechaza este documento (ej: Imagen borrosa, datos incompletos, documento expirado)"
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  className="bg-slate-800 border-red-500/50 text-white placeholder-slate-500"
+                  autoFocus
+                />
+                {!rejectionReason.trim() && (
+                  <p className="text-xs text-red-400 mt-1">Este campo es obligatorio</p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => handleStatusChange('rechazado')}
+                  disabled={!rejectionReason.trim() || isChanging}
+                  className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 flex-1"
+                >
+                  {isChanging ? <Loader className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+                  Confirmar Rechazo
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowRejectionForm(false)
+                    setRejectionReason('')
+                  }}
+                  variant="outline"
+                  disabled={isChanging}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Status Change Info */}
           {isAdmin && (
