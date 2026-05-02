@@ -117,14 +117,14 @@ export function DashboardOverview() {
     switch (type) {
       case "DOCUMENT_APPROVED":
         return (
-          <Badge variant="default" className="bg-green-100 text-green-800 border border-green-600 hover:bg-green-100">
+          <Badge variant="default" className="bg-green-100 text-black border border-green-600 hover:bg-green-100">
             Aprobado
           </Badge>
         )
       case "DOCUMENT_PENDING":
-        return <Badge variant="secondary" className="text-black">Pendiente</Badge>
+        return <Badge variant="secondary" className="bg-gray-200 text-black hover:bg-gray-200">Pendiente</Badge>
       case "DOCUMENT_REJECTED":
-        return <Badge variant="destructive" className="text-black">Rechazado</Badge>
+        return <Badge variant="destructive" className="bg-red-500 text-black hover:bg-red-600">Rechazado</Badge>
       default:
         return <Badge variant="outline">Desconocido</Badge>
     }
@@ -135,9 +135,9 @@ export function DashboardOverview() {
       case "DOCUMENT_APPROVED":
         return <CheckCircle className="h-4 w-4 text-green-600" />
       case "DOCUMENT_PENDING":
-        return <Clock className="h-4 w-4 text-yellow-600" />
+        return <Clock className="h-4 w-4 text-gray-500" />
       case "DOCUMENT_REJECTED":
-        return <AlertTriangle className="h-4 w-4 text-red-600" />
+        return <AlertTriangle className="h-4 w-4 text-red-500" />
       default:
         return null
     }
