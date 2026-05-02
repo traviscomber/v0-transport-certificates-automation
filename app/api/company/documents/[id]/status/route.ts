@@ -67,7 +67,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid status: ' + rawStatus }, { status: 400 })
     }
 
-    const adminClient = await createAdminClient()
+    const adminClient = createAdminClient()
 
     // STEP 1: Get document details BEFORE update for logging
     const { data: documentBefore } = await adminClient
@@ -77,7 +77,7 @@ export async function PATCH(
       .single()
 
     // STEP 2: Update uploaded_documents.validation_status — the table being used in the UI
-    console.log('[v0] Updating uploaded_documents - documentId:', documentId, 'dbStatus:', dbStatus, 'type of dbStatus:', typeof dbStatus)
+    console.log('[v0] Updating uploaded_documents - documentId:', documentId, 'dbStatus:', dbStatus)
     
     const { error: updateError, data: updateData } = await adminClient
       .from('uploaded_documents')
@@ -88,20 +88,14 @@ export async function PATCH(
       .eq('id', documentId)
       .select()
     
-    console.log('[v0] Update result - error:', updateError, 'data length:', updateData?.length, 'data:', updateData)
+    console.log('[v0] Update result - error:', updateError, 'data length:', updateData?.length)
 
     if (updateError) {
-      console.error('[v0] ❌ Failed to update driver_documents.status:', updateError.message)
+      console.error('[v0] ❌ Failed to update validation_status:', updateError.message)
       return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
 
-    console.log('[v0] ✅ UPDATE executed successfully:', { 
-      documentId, 
-      from: documentBefore?.validation_status, 
-      to: dbStatus,
-      rowsUpdated: updateData?.length || 0,
-      responseData: updateData
-    })
+    console.log('[v0] ✅ UPDATE executed - documentId:', documentId, 'from:', documentBefore?.validation_status, 'to:', dbStatus, 'rows:', updateData?.length)
 
     // STEP 3: Notify ejecutivas about the status change (non-blocking)
     const notificationPayload = {
