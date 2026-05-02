@@ -9,16 +9,16 @@ import { cn } from "@/lib/utils"
 
 interface SmartAlert {
   id: string
-  type: "expiring_soon" | "expired" | "pending_review" | "rejected"
-  priority: "critical" | "high" | "medium" | "low"
+  type: "expiry" | "renewal" | "compliance" | "maintenance"
+  priority: "high" | "medium" | "low"
   title: string
-  message: string
-  daysUntilExpiry?: number
-  documentId: string
-  conductorName: string
+  description: string
+  daysUntil: number
   documentType: string
-  transportistaName: string
-  ejecutiva: string
+  vehicleId?: string
+  driverName?: string
+  actionRequired: string
+  createdAt: Date
 }
 
 export function SmartAlerts() {
@@ -29,14 +29,31 @@ export function SmartAlerts() {
   useEffect(() => {
     const fetchAlerts = async () => {
       try {
-        // Fetch smart alerts from new endpoint
-        const res = await fetch(`/api/company/smart-alerts?_t=${Date.now()}`, {
+        // Fetch real alerts from API
+        const res = await fetch(`/api/alerts?limit=20&_t=${Date.now()}`, {
           cache: "no-store",
         })
-        if (!res.ok) throw new Error("Error al cargar alertas inteligentes")
+        if (!res.ok) throw new Error("Error al cargar alertas")
         
         const data = await res.json()
-        setAlerts(data || [])
+        
+        // Transform API alerts to SmartAlert format
+        const transformedAlerts: SmartAlert[] = (data || []).map((alert: any) => ({
+          id: alert.id,
+          type: alert.type === 'DOCUMENT_REJECTED' ? 'expiry' : 
+                 alert.type === 'DOCUMENT_APPROVED' ? 'compliance' : 
+                 alert.type === 'DOCUMENT_PENDING' ? 'renewal' : 'maintenance',
+          priority: alert.priority as 'high' | 'medium' | 'low',
+          title: alert.title,
+          description: alert.message,
+          daysUntil: 0,
+          documentType: alert.metadata?.document_type || 'Documento',
+          driverName: alert.metadata?.conductor_name,
+          actionRequired: `Revisar documento: ${alert.metadata?.conductor_name || 'Conductor'}`,
+          createdAt: new Date(alert.created_at),
+        }))
+        
+        setAlerts(transformedAlerts)
       } catch (error) {
         console.error('[v0] Error loading smart alerts:', error)
       } finally {
@@ -48,6 +65,34 @@ export function SmartAlerts() {
   }, [])
 
   const filteredAlerts = alerts.filter((alert) => filter === "all" || alert.priority === filter)
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "high":
+        return "bg-red-100 text-red-800 border-red-200"
+      case "medium":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+      case "low":
+        return "bg-blue-100 text-blue-800 border-blue-200"
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200"
+    }
+  }
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case "expiry":
+        return <Clock className="h-4 w-4" />
+      case "renewal":
+        return <Calendar className="h-4 w-4" />
+      case "compliance":
+        return <AlertTriangle className="h-4 w-4" />
+      case "maintenance":
+        return <Truck className="h-4 w-4" />
+      default:
+        return <Bell className="h-4 w-4" />
+    }
+  }
 
   const markAsResolved = (alertId: string) => {
     setAlerts(alerts.filter((alert) => alert.id !== alertId))
@@ -66,15 +111,15 @@ export function SmartAlerts() {
         <div className="space-y-4">
           {/* Filter buttons */}
           <div className="flex gap-2 flex-wrap">
-            {(["all", "critical", "high", "medium", "low"] as const).map((priority) => (
+            {(["all", "high", "medium", "low"] as const).map((priority) => (
               <Button
                 key={priority}
                 variant={filter === priority ? "default" : "outline"}
                 size="sm"
-                onClick={() => setFilter(priority as any)}
+                onClick={() => setFilter(priority)}
                 className="capitalize"
               >
-                {priority === "all" ? "Todas" : priority === "critical" ? "Crítica" : priority === "high" ? "Alta" : priority === "medium" ? "Media" : "Baja"}
+                {priority === "all" ? "Todas" : priority === "high" ? "Alta" : priority === "medium" ? "Media" : "Baja"}
                 {priority !== "all" && (
                   <Badge variant="secondary" className="ml-2">
                     {alerts.filter((a) => a.priority === priority).length}
@@ -97,13 +142,11 @@ export function SmartAlerts() {
                   key={alert.id}
                   className={cn(
                     "p-4 rounded-lg border-l-4 bg-card",
-                    alert.priority === "critical"
-                      ? "border-l-red-600"
-                      : alert.priority === "high"
-                        ? "border-l-orange-500"
-                        : alert.priority === "medium"
-                          ? "border-l-yellow-500"
-                          : "border-l-blue-500",
+                    alert.priority === "high"
+                      ? "border-l-red-500"
+                      : alert.priority === "medium"
+                        ? "border-l-yellow-500"
+                        : "border-l-blue-500",
                   )}
                 >
                   <div className="flex items-start justify-between">
@@ -112,21 +155,25 @@ export function SmartAlerts() {
                         {getTypeIcon(alert.type)}
                         <h4 className="font-semibold">{alert.title}</h4>
                         <Badge className={getPriorityColor(alert.priority)}>
-                          {alert.priority === "critical" ? "CRÍTICA" : alert.priority === "high" ? "ALTA" : alert.priority === "medium" ? "MEDIA" : "BAJA"}
+                          {alert.priority === "high" ? "Alta" : alert.priority === "medium" ? "Media" : "Baja"}
                         </Badge>
                       </div>
 
-                      <p className="text-sm text-muted-foreground">{alert.message}</p>
+                      <p className="text-sm text-muted-foreground">{alert.description}</p>
 
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {alert.conductorName}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Truck className="h-3 w-3" />
-                          {alert.transportistaName}
-                        </span>
+                        {alert.vehicleId && (
+                          <span className="flex items-center gap-1">
+                            <Truck className="h-3 w-3" />
+                            {alert.vehicleId}
+                          </span>
+                        )}
+                        {alert.driverName && (
+                          <span className="flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            {alert.driverName}
+                          </span>
+                        )}
                         <span className="flex items-center gap-1">
                           <FileText className="h-3 w-3" />
                           {alert.documentType}
@@ -134,32 +181,30 @@ export function SmartAlerts() {
                       </div>
 
                       <div className="bg-muted p-2 rounded text-sm">
-                        <strong>Ejecutiva:</strong> {alert.ejecutiva}
+                        <strong>Acción requerida:</strong> {alert.actionRequired}
                       </div>
                     </div>
 
                     <div className="flex flex-col items-end gap-2 ml-4">
-                      {alert.daysUntilExpiry !== undefined && (
-                        <div className="text-right">
-                          <div
-                            className={cn(
-                              "text-lg font-bold",
-                              alert.daysUntilExpiry <= 7
-                                ? "text-red-600"
-                                : alert.daysUntilExpiry <= 30
-                                  ? "text-yellow-600"
-                                  : "text-blue-600",
-                            )}
-                          >
-                            {alert.daysUntilExpiry}
-                          </div>
-                          <div className="text-xs text-muted-foreground">días</div>
+                      <div className="text-right">
+                        <div
+                          className={cn(
+                            "text-lg font-bold",
+                            alert.daysUntil <= 7
+                              ? "text-red-600"
+                              : alert.daysUntil <= 30
+                                ? "text-yellow-600"
+                                : "text-blue-600",
+                          )}
+                        >
+                          {alert.daysUntil}
                         </div>
-                      )}
+                        <div className="text-xs text-muted-foreground">días</div>
+                      </div>
 
                       <Button size="sm" variant="outline" onClick={() => markAsResolved(alert.id)}>
                         <CheckCircle className="h-3 w-3 mr-1" />
-                        Revisar
+                        Resolver
                       </Button>
                     </div>
                   </div>
