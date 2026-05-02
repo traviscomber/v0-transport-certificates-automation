@@ -13,7 +13,7 @@ const navItems = [
   { href: '/dashboard/company/subcontratistas', label: 'Subcontratistas', icon: Zap },
   { href: '/dashboard/company/conductores', label: 'Conductores', icon: Users },
   { href: '/dashboard/company/documentos', label: 'Documentos', icon: FileText },
-  { href: '/admin/postulantes', label: 'Postulantes', icon: UserPlus },
+  { href: '/dashboard/company/postulantes', label: 'Postulantes', icon: UserPlus },
   { href: '/dashboard/company/analytics/conductores', label: 'Analytics', icon: TrendingUp },
   { href: '/dashboard/company/alertas', label: 'Alertas', icon: AlertTriangle },
   { href: '/dashboard/company/reportes', label: 'Reportes', icon: BarChart3 },
