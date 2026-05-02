@@ -27,7 +27,12 @@ export default function ConductorLoginPage() {
       }
 
       console.log('[v0] Conductor login successful:', data.rut)
-      window.location.href = '/conductor/onboarding'
+      
+      // Wait a moment for the browser to process Set-Cookie headers before redirecting
+      // This ensures httpOnly cookies are available when middleware checks for conductor_id
+      setTimeout(() => {
+        window.location.href = '/conductor/onboarding'
+      }, 300)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed'
       setError(message)
