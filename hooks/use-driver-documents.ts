@@ -191,7 +191,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
 
       const result = await response.json()
       // Normalize status to español for local state
-      const normalizedStatus = {
+      const statusMap = {
         'aprobado': 'aprobado',
         'approved': 'aprobado',
         'rechazado': 'rechazado',
@@ -200,7 +200,8 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         'pending': 'pendiente',
         'vencido': 'vencido',
         'expired': 'vencido'
-      }[newStatus?.toLowerCase()] || newStatus
+      }
+      const mappedStatus = statusMap[newStatus?.toLowerCase()] || newStatus
 
       // Block the next automatic useEffect refetch so it doesn't overwrite this optimistic update
       skipNextAutoFetch.current = true
@@ -208,7 +209,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       // Update local state immediately with correct status
       setDocuments(prev => prev.map(doc =>
         doc.id === documentId 
-          ? { ...doc, estado: normalizedStatus as DriverDocument['estado'] }
+          ? { ...doc, estado: mappedStatus as DriverDocument['estado'] }
           : doc
       ))
 
