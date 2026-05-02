@@ -38,15 +38,12 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         'Expires': '0'
       }
       
-      console.log('[v0] Fetching documents for driver_rut:', driverRut, 'skipCache:', skipCache, 'timestamp:', timestamp)
       const urlParams = new URLSearchParams({
         driver_rut: driverRut,
         driver_id: driverId,
         _t: timestamp.toString() // Force unique URL
       })
-      const fetchUrl = `/api/company/documents/drivers?${urlParams.toString()}`
-      console.log('[v0] Fetch URL:', fetchUrl)
-      const response = await fetch(fetchUrl, {
+      const response = await fetch(`/api/company/documents/drivers?${urlParams.toString()}`, {
         method: 'GET',
         headers,
         cache: 'no-store'
@@ -62,13 +59,12 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       try {
         result = JSON.parse(text)
       } catch {
-        console.error('[v0] Invalid JSON from documents API:', text.substring(0, 100))
+        console.error('[v0] Invalid JSON from documents API')
         setDocuments([])
         return
       }
 
       if (!response.ok) {
-        console.log('[v0] API error response:', response.status, text)
         throw new Error(result.error || 'Failed to fetch documents')
       }
 
@@ -133,7 +129,6 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       let uploadResult
       try {
         const responseText = await response.text()
-        console.log('[v0] Response text length:', responseText.length, 'first 200 chars:', responseText.substring(0, 200))
         
         if (!responseText) {
           throw new Error('Empty response from server')
@@ -142,8 +137,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         uploadResult = JSON.parse(responseText)
       } catch (parseErr) {
         console.error('[v0] Failed to parse response JSON:', parseErr)
-        console.error('[v0] Response status was:', response.status)
-        throw new Error(`Server error: Invalid response format - ${parseErr instanceof Error ? parseErr.message : 'Unknown error'}`)
+        throw new Error(`Server error: Invalid response format`)
       }
       
       if (!response.ok) {
@@ -151,21 +145,16 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         throw new Error(uploadResult?.error || `Upload failed with status ${response.status}`)
       }
 
-      console.log('[v0] Document uploaded:', uploadResult.document)
+      console.log('[v0] Document uploaded')
 
-      // Refresh documents IMMEDIATELY and forcefully multiple times
-      console.log('[v0] Forcing immediate document refresh after upload')
+      // Refresh documents after upload
       await fetchDocuments(true)
       
-      // Second refresh after a short delay
       await new Promise(resolve => setTimeout(resolve, 300))
       await fetchDocuments(true)
       
-      // Third refresh after another delay for safety
       await new Promise(resolve => setTimeout(resolve, 700))
       await fetchDocuments(true)
-      
-      console.log('[v0] Documents refreshed after upload')
       
       return uploadResult.document
     } catch (err) {
