@@ -1,99 +1,136 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { FileText, Shield, Truck, AlertTriangle, CheckCircle, Clock } from "lucide-react"
 import { SmartAlerts } from "./smart-alerts"
 
+interface Alert {
+  id: string
+  type: string
+  title: string
+  priority: string
+}
+
 export function DashboardOverview() {
-  const stats = [
+  const [stats, setStats] = useState([
     {
-      title: "Certificados F-30",
-      value: "24",
-      description: "Documentos activos",
+      title: "Total de Documentos",
+      value: "0",
+      description: "En el sistema",
       icon: FileText,
       status: "active",
     },
     {
-      title: "Certificados F-30-1",
-      value: "18",
-      description: "Documentos activos",
-      icon: Shield,
+      title: "Documentos Aprobados",
+      value: "0",
+      description: "Validados",
+      icon: CheckCircle,
       status: "active",
     },
     {
-      title: "Documentos de Máquinas",
-      value: "42",
-      description: "Permisos y licencias",
-      icon: Truck,
+      title: "Documentos Pendientes",
+      value: "0",
+      description: "En revisión",
+      icon: Clock,
       status: "active",
     },
     {
       title: "Documentos Vencidos",
-      value: "3",
+      value: "0",
       description: "Requieren renovación",
       icon: AlertTriangle,
       status: "warning",
     },
-  ]
+  ])
 
-  const recentDocuments = [
-    {
-      id: 1,
-      type: "F-30",
-      transporter: "Transportes González Ltda.",
-      status: "approved",
-      date: "2024-01-15",
-      expiryDate: "2024-07-15",
-    },
-    {
-      id: 2,
-      type: "F-30-1",
-      transporter: "Logística del Sur S.A.",
-      status: "pending",
-      date: "2024-01-14",
-      expiryDate: "2024-06-14",
-    },
-    {
-      id: 3,
-      type: "Permiso Circulación",
-      transporter: "Transportes Rápidos Chile",
-      status: "expired",
-      date: "2023-12-01",
-      expiryDate: "2024-01-01",
-    },
-    {
-      id: 4,
-      type: "Licencia Conducir",
-      transporter: "Distribuidora Norte",
-      status: "approved",
-      date: "2024-01-10",
-      expiryDate: "2025-01-10",
-    },
-  ]
+  const [alerts, setAlerts] = useState<Alert[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "approved":
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch alerts count and recent alerts
+        const alertsRes = await fetch(`/api/alerts?limit=5&_t=${Date.now()}`, {
+          cache: "no-store",
+        })
+        if (alertsRes.ok) {
+          const alertsData = await alertsRes.json()
+          setAlerts(alertsData || [])
+
+          // Calculate stats from alerts
+          const allAlerts = alertsData || []
+          const approved = allAlerts.filter((a: Alert) => a.type === 'DOCUMENT_APPROVED').length
+          const pending = allAlerts.filter((a: Alert) => a.type === 'DOCUMENT_PENDING').length
+          const rejected = allAlerts.filter((a: Alert) => a.type === 'DOCUMENT_REJECTED').length
+          const total = allAlerts.length
+
+          setStats([
+            {
+              title: "Total de Documentos",
+              value: total.toString(),
+              description: "En el sistema",
+              icon: FileText,
+              status: "active",
+            },
+            {
+              title: "Documentos Aprobados",
+              value: approved.toString(),
+              description: "Validados",
+              icon: CheckCircle,
+              status: "active",
+            },
+            {
+              title: "Documentos Pendientes",
+              value: pending.toString(),
+              description: "En revisión",
+              icon: Clock,
+              status: "active",
+            },
+            {
+              title: "Documentos Rechazados",
+              value: rejected.toString(),
+              description: "No validados",
+              icon: AlertTriangle,
+              status: "warning",
+            },
+          ])
+        }
+      } catch (error) {
+        console.error('[v0] Error loading dashboard data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  const getStatusBadge = (type: string) => {
+    switch (type) {
+      case "DOCUMENT_APPROVED":
         return (
           <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">
             Aprobado
           </Badge>
         )
-      case "pending":
+      case "DOCUMENT_PENDING":
         return <Badge variant="secondary">Pendiente</Badge>
-      case "expired":
-        return <Badge variant="destructive">Vencido</Badge>
+      case "DOCUMENT_REJECTED":
+        return <Badge variant="destructive">Rechazado</Badge>
       default:
         return <Badge variant="outline">Desconocido</Badge>
     }
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "approved":
+  const getStatusIcon = (type: string) => {
+    switch (type) {
+      case "DOCUMENT_APPROVED":
         return <CheckCircle className="h-4 w-4 text-green-600" />
-      case "pending":
+      case "DOCUMENT_PENDING":
         return <Clock className="h-4 w-4 text-yellow-600" />
-      case "expired":
+      case "DOCUMENT_REJECTED":
         return <AlertTriangle className="h-4 w-4 text-red-600" />
       default:
         return null
@@ -125,20 +162,34 @@ export function DashboardOverview() {
 
       <SmartAlerts />
 
-      {/* Recent Documents */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Documentos Recientes</CardTitle>
-          <CardDescription>Últimos documentos procesados en el sistema</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {recentDocuments.map((doc) => (
-              <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center space-x-4">
-                  {getStatusIcon(doc.status)}
-                  <div>
-                    <p className="font-medium">{doc.type}</p>
+      {/* Recent Alerts */}
+      {alerts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Alertas Recientes</CardTitle>
+            <CardDescription>Últimas alertas del sistema</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {alerts.slice(0, 5).map((alert) => (
+                <div key={alert.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-4">
+                    {getStatusIcon(alert.type)}
+                    <div>
+                      <p className="font-medium">{alert.title}</p>
+                      <p className="text-sm text-muted-foreground">{alert.type}</p>
+                    </div>
+                  </div>
+                  <div>{getStatusBadge(alert.type)}</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
                     <p className="text-sm text-muted-foreground">{doc.transporter}</p>
                   </div>
                 </div>
