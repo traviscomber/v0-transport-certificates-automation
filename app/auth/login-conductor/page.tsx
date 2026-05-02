@@ -1,8 +1,9 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useState } from 'react'
 
-export default function ConductorLoginPage() {
+function ConductorLoginForm() {
   const [rut, setRut] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -26,17 +27,11 @@ export default function ConductorLoginPage() {
         throw new Error(data.error || `Error HTTP ${response.status}`)
       }
 
-      console.log('[v0] Conductor login successful:', data.rut)
-      
-      // Wait a moment for the browser to process Set-Cookie headers before redirecting
-      // This ensures httpOnly cookies are available when middleware checks for conductor_id
-      setTimeout(() => {
-        window.location.href = '/conductor/onboarding'
-      }, 300)
+      // Full browser navigation so cookies from Set-Cookie are sent on the next request
+      window.location.href = '/conductor/onboarding'
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed'
       setError(message)
-      console.error('[v0] Login error:', message)
     } finally {
       setIsLoading(false)
     }
@@ -64,7 +59,8 @@ export default function ConductorLoginPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* suppressHydrationWarning prevents password-manager attribute injection from crashing React */}
+          <form onSubmit={handleSubmit} suppressHydrationWarning style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {error && (
               <div style={{ background: 'rgba(127, 29, 29, 0.2)', border: '1px solid rgba(220, 38, 38, 0.5)', borderRadius: '8px', padding: '12px', fontSize: '14px', color: '#fca5a5' }}>
                 {error}
@@ -76,6 +72,7 @@ export default function ConductorLoginPage() {
                 RUT
               </label>
               <input
+                suppressHydrationWarning
                 type="text"
                 placeholder="12.345.678-9"
                 value={rut}
@@ -100,6 +97,7 @@ export default function ConductorLoginPage() {
                 Contraseña
               </label>
               <input
+                suppressHydrationWarning
                 type="password"
                 placeholder="Ingresa tu contraseña"
                 value={password}
@@ -140,7 +138,7 @@ export default function ConductorLoginPage() {
           </form>
 
           <div style={{ marginTop: '24px', padding: '16px', background: 'rgba(15, 23, 42, 0.8)', borderRadius: '6px', border: '1px solid #334155', fontSize: '13px', color: '#94a3b8', lineHeight: '1.6' }}>
-            <p style={{ margin: '0 0 8px 0', fontWeight: '500', color: '#e2e8f0' }}>
+            <p style={{ margin: '0 0 4px 0', fontWeight: '500', color: '#e2e8f0' }}>
               ¿Nuevo conductor?
             </p>
             <p style={{ margin: '0' }}>
@@ -158,3 +156,7 @@ export default function ConductorLoginPage() {
     </div>
   )
 }
+
+// Render only on the client — prevents SSR/hydration mismatches caused by
+// browser extensions (e.g. password managers) injecting extra attributes
+export default dynamic(() => Promise.resolve(ConductorLoginForm), { ssr: false })
