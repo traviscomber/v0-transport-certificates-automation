@@ -86,103 +86,103 @@ export default function ConductorPerfilPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-8 max-w-3xl">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Mi Perfil</h1>
-        <p className="text-muted-foreground">
+      <div className="border-b border-slate-700 pb-6">
+        <h1 className="text-5xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Mi Perfil</h1>
+        <p className="text-slate-400 mt-2">
           Gestiona tu información personal y preferencias de notificación
         </p>
       </div>
 
       {/* Alerts */}
       {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
+        <Alert className="bg-red-950/30 border-red-900/50">
+          <AlertCircle className="h-4 w-4 text-red-400" />
+          <AlertDescription className="text-red-300">{error}</AlertDescription>
         </Alert>
       )}
 
       {success && (
-        <Alert className="bg-green-50 border-green-200">
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">{success}</AlertDescription>
+        <Alert className="bg-green-950/30 border-green-900/50">
+          <CheckCircle2 className="h-4 w-4 text-green-400" />
+          <AlertDescription className="text-green-300">{success}</AlertDescription>
         </Alert>
       )}
 
       {/* Personal Information */}
-      <Card>
+      <Card className="border-slate-700 bg-slate-800/30 shadow-lg">
         <CardHeader>
-          <CardTitle>Información Personal</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-white">Información Personal</CardTitle>
+          <CardDescription className="text-slate-400">
             Tus datos registrados en el sistema
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Nombre Completo
             </label>
             <Input
               value={formData.name}
               disabled
-              className="bg-gray-50"
+              className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-500 disabled:opacity-75"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               RUT
             </label>
             <Input
               value={formData.rut}
               disabled
-              className="bg-gray-50"
+              className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-500 disabled:opacity-75"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Email
             </label>
             <Input
               value={formData.email}
               disabled
-              className="bg-gray-50"
+              className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-500 disabled:opacity-75"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Teléfono
             </label>
             <Input
               value={formData.phone}
               disabled
-              className="bg-gray-50"
+              className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-500 disabled:opacity-75"
             />
           </div>
 
-          <p className="text-sm text-gray-500">
-            Para cambiar estos datos, contacta con soporte@labbe.cl
+          <p className="text-sm text-slate-400 bg-slate-800/50 border border-slate-700 rounded-lg p-3">
+            Para cambiar estos datos, contacta con <span className="text-orange-400 font-semibold">soporte@labbe.cl</span>
           </p>
         </CardContent>
       </Card>
 
       {/* WhatsApp Notifications */}
-      <Card>
+      <Card className="border-slate-700 bg-gradient-to-r from-slate-800/40 to-slate-800/20 shadow-lg">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-green-500" />
+          <CardTitle className="text-white flex items-center gap-2">
+            <MessageCircle className="h-5 w-5 text-green-400" />
             Notificaciones por WhatsApp
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-slate-400">
             Recibe alertas sobre tus documentos y vencimientos en tiempo real
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Número de WhatsApp
             </label>
             <Input
@@ -191,45 +191,51 @@ export default function ConductorPerfilPage() {
               placeholder="+56912345678"
               value={formData.whatsapp_phone}
               onChange={handleInputChange}
-              className="text-base"
+              className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-500 text-base"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-slate-400 mt-2">
               Formato: +56 seguido de tu número (9 dígitos sin el 2)
             </p>
           </div>
 
-          <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-start gap-3 p-4 bg-green-950/30 border border-green-900/50 rounded-lg">
             <input
               type="checkbox"
               name="whatsapp_enabled"
               checked={formData.whatsapp_enabled}
               onChange={handleInputChange}
-              className="rounded"
+              className="rounded mt-1 bg-slate-700 border-slate-600"
             />
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-green-300">
               Activar notificaciones por WhatsApp
             </label>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <p className="text-sm text-blue-800">
-              <strong>Tipos de notificaciones:</strong>
+          <div className="bg-gradient-to-r from-orange-950/30 to-orange-900/20 border border-orange-900/50 rounded-lg p-4">
+            <p className="text-sm font-semibold text-orange-300">
+              Tipos de notificaciones:
             </p>
-            <ul className="text-sm text-blue-700 mt-2 space-y-1 ml-4">
-              <li>✓ Documento aprobado o rechazado</li>
-              <li>✓ Alerta de vencimiento (7 días antes)</li>
-              <li>✓ Mensajes de soporte</li>
+            <ul className="text-sm text-orange-200/80 mt-3 space-y-2 ml-4">
+              <li className="flex items-center gap-2">
+                <span className="text-orange-400">✓</span> Documento aprobado o rechazado
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-orange-400">✓</span> Alerta de vencimiento (7 días antes)
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-orange-400">✓</span> Mensajes de soporte
+              </li>
             </ul>
           </div>
         </CardContent>
       </Card>
 
       {/* Save Button */}
-      <div className="flex gap-4">
+      <div className="flex gap-4 pt-4">
         <Button
           onClick={handleSave}
           disabled={isSaving}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
+          className="bg-orange-600 hover:bg-orange-700 text-white font-semibold shadow-md transition-all"
         >
           {isSaving ? (
             <>
