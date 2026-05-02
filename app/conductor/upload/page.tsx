@@ -86,35 +86,35 @@ export default function DriverUploadPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-dark p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-slate-900 p-4 sm:p-6 lg:p-8">
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-foreground">Subir Documentos</h1>
-          <p className="text-muted-foreground">Carga tus documentos para cumplimiento legal</p>
+        <div className="space-y-2 border-b border-slate-700 pb-6">
+          <h1 className="text-5xl font-bold text-white">Subir Documentos</h1>
+          <p className="text-slate-300">Carga tus documentos para cumplimiento legal</p>
         </div>
 
         {/* Upload Card */}
         <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900">
           <CardHeader>
-            <CardTitle className="text-foreground">Nuevo Documento</CardTitle>
-            <CardDescription className="text-muted-foreground">
+            <CardTitle className="text-white">Nuevo Documento</CardTitle>
+            <CardDescription className="text-slate-300">
               Selecciona el tipo de documento y carga el archivo
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Document Type Selection */}
             <div className="space-y-2">
-              <Label htmlFor="docType" className="text-foreground">Tipo de Documento *</Label>
+              <Label htmlFor="docType" className="text-white">Tipo de Documento *</Label>
               <select
                 id="docType"
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
-                className="w-full rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-orange-500 focus:ring-orange-500"
+                className="w-full rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-white placeholder:text-slate-400 focus:border-orange-500 focus:ring-orange-500"
               >
-                <option value="">Selecciona un tipo de documento</option>
+                <option value="" className="bg-slate-800 text-white">Selecciona un tipo de documento</option>
                 {ALLOWED_DOCUMENT_TYPES.map((type) => (
-                  <option key={type.id} value={type.id}>
+                  <option key={type.id} value={type.id} className="bg-slate-800 text-white">
                     {type.label}
                   </option>
                 ))}
@@ -123,7 +123,7 @@ export default function DriverUploadPage() {
 
             {/* File Upload */}
             <div className="space-y-2">
-              <Label htmlFor="file" className="text-foreground">Archivo *</Label>
+              <Label htmlFor="file" className="text-white">Archivo *</Label>
               <div className="relative">
                 <input
                   ref={fileInputRef}
@@ -139,14 +139,14 @@ export default function DriverUploadPage() {
                   disabled={uploading}
                   className="w-full border-2 border-dashed border-slate-600 rounded-lg p-6 hover:border-orange-500 transition-colors flex flex-col items-center justify-center gap-2 bg-slate-800/50"
                 >
-                  <Upload className="w-8 h-8 text-muted-foreground" />
+                  <Upload className="w-8 h-8 text-slate-400" />
                   <div>
-                    <p className="font-medium text-foreground">Selecciona archivo</p>
-                    <p className="text-sm text-muted-foreground">o arrastra aquí</p>
+                    <p className="font-medium text-white">Selecciona archivo</p>
+                    <p className="text-sm text-slate-300">o arrastra aquí</p>
                   </div>
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-slate-400">
                 PDF, JPG o PNG • Máximo 10MB
               </p>
             </div>
@@ -156,8 +156,8 @@ export default function DriverUploadPage() {
               <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-800/50 border border-slate-700">
                 <FileText className="w-5 h-5 text-orange-500" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm font-medium text-white truncate">{file.name}</p>
+                  <p className="text-xs text-slate-400">
                     {(file.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                 </div>
@@ -204,33 +204,13 @@ export default function DriverUploadPage() {
         {/* Info Section */}
         <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900">
           <CardHeader>
-            <CardTitle className="text-foreground">Información Importante</CardTitle>
+            <CardTitle className="text-white">Información Importante</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex gap-3">
-              <div className="w-2 h-2 rounded-full bg-orange-500 mt-2 flex-shrink-0" />
-              <p className="text-sm text-muted-foreground">
-                Los documentos se procesan automáticamente mediante OCR (Reconocimiento Óptico de Caracteres)
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <div className="w-2 h-2 rounded-full bg-orange-500 mt-2 flex-shrink-0" />
-              <p className="text-sm text-muted-foreground">
-                La validación manual ocurre en 2-4 horas. Recibirás notificación por email
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <div className="w-2 h-2 rounded-full bg-orange-500 mt-2 flex-shrink-0" />
-              <p className="text-sm text-muted-foreground">
-                Asegúrate que el documento sea legible y contenga toda la información requerida
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <div className="w-2 h-2 rounded-full bg-orange-500 mt-2 flex-shrink-0" />
-              <p className="text-sm text-muted-foreground">
-                Los documentos se almacenan de forma segura según regulaciones chilenas
-              </p>
-            </div>
+          <CardContent className="space-y-3 text-slate-300">
+            <p>• Los documentos se validarán automáticamente con IA en 2-4 horas</p>
+            <p>• Recibirás notificaciones por correo y WhatsApp cuando se apruebe/rechace</p>
+            <p>• Asegúrate de que los documentos sean legibles y en formato correcto</p>
+            <p>• Para problemas, contacta: soporte@labbe.cl</p>
           </CardContent>
         </Card>
       </div>

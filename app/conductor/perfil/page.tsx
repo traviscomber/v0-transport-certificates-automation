@@ -89,8 +89,8 @@ export default function ConductorPerfilPage() {
     <div className="space-y-8 max-w-3xl">
       {/* Header */}
       <div className="border-b border-slate-700 pb-6">
-        <h1 className="text-5xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Mi Perfil</h1>
-        <p className="text-slate-400 mt-2">
+        <h1 className="text-5xl font-bold text-white">Mi Perfil</h1>
+        <p className="text-slate-300 mt-2">
           Gestiona tu información personal y preferencias de notificación
         </p>
       </div>
