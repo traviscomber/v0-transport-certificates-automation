@@ -135,7 +135,7 @@ export function DashboardOverview() {
       case "DOCUMENT_APPROVED":
         return <CheckCircle className="h-4 w-4 text-green-600" />
       case "DOCUMENT_PENDING":
-        return <Clock className="h-4 w-4 text-yellow-500" />
+        return <Clock className="h-4 w-4 text-yellow-400" />
       case "DOCUMENT_REJECTED":
         return <AlertTriangle className="h-4 w-4 text-red-500" />
       default:
