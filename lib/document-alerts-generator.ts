@@ -1,5 +1,9 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 
+// Alert generation system - organization-wide alerts without user_id
+// This prevents foreign key constraint violations from orphaned profile records
+// Alerts are fetched via API and shown to all admins/ejecutivas in dashboard
+
 async function getOrgId(supabase: ReturnType<typeof createAdminClient>): Promise<string | null> {
   const { data } = await supabase.from('organizations').select('id').limit(1).single()
   return data?.id ?? null
