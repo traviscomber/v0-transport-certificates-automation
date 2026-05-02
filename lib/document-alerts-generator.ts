@@ -71,8 +71,10 @@ export async function generateDocumentStatusChangeAlert(
 
     console.log('[v0] generateDocumentStatusChangeAlert:', { uploadedDocumentId, documentType, conductorName, newStatus })
 
-    // Fetch conductor details including transportista
+    // Fetch conductor details including transportista and assigned ejecutiva
     let transportistaName = 'Transportista Desconocido'
+    let ejecutivaAsignada = 'Sin asignar'
+    
     const { data: conductor } = await supabase
       .from('conductores')
       .select('id, transportista_id')
@@ -82,12 +84,14 @@ export async function generateDocumentStatusChangeAlert(
     if (conductor?.transportista_id) {
       const { data: transportista } = await supabase
         .from('transportistas')
-        .select('nombre, razon_social')
+        .select('nombre, razon_social, ejecutivo_nombre, ejecutivo_asignado')
         .eq('id', conductor.transportista_id)
         .single()
       
       if (transportista) {
         transportistaName = transportista.nombre || transportista.razon_social || 'Transportista Desconocido'
+        // Use ejecutivo_nombre if available, otherwise use ejecutivo_asignado
+        ejecutivaAsignada = transportista.ejecutivo_nombre || transportista.ejecutivo_asignado || 'Sin asignar'
       }
     }
 
@@ -106,19 +110,19 @@ export async function generateDocumentStatusChangeAlert(
 
     if (newStatus === 'approved') {
       title = `Documento Aprobado - ${documentType}`
-      message = `El documento ${documentType} de ${conductorName} (${transportistaName}) fue aprobado.`
+      message = `El documento ${documentType} de ${conductorName} (${transportistaName} - Ejecutiva: ${ejecutivaAsignada}) fue aprobado.`
       type = 'DOCUMENT_APPROVED'
       priority = 'medium'
       category = 'document_approved'
     } else if (newStatus === 'rejected') {
       title = `Documento Rechazado - ${documentType}`
-      message = `El documento ${documentType} de ${conductorName} (${transportistaName}) fue rechazado. Razón: ${reason || 'Sin especificar'}`
+      message = `El documento ${documentType} de ${conductorName} (${transportistaName} - Ejecutiva: ${ejecutivaAsignada}) fue rechazado. Razón: ${reason || 'Sin especificar'}`
       type = 'DOCUMENT_REJECTED'
       priority = 'high'
       category = 'document_rejected'
     } else if (newStatus === 'pending') {
       title = `Documento en Revisión - ${documentType}`
-      message = `El documento ${documentType} de ${conductorName} (${transportistaName}) ha sido retornado a revisión.`
+      message = `El documento ${documentType} de ${conductorName} (${transportistaName} - Ejecutiva: ${ejecutivaAsignada}) ha sido retornado a revisión.`
       type = 'DOCUMENT_PENDING'
       priority = 'medium'
       category = 'document_pending'
@@ -142,6 +146,7 @@ export async function generateDocumentStatusChangeAlert(
           conductor_name: conductorName,
           document_type: documentType,
           transportista_name: transportistaName,
+          ejecutiva_asignada: ejecutivaAsignada,
           reason: reason || null,
           status: newStatus,
           ejecutivos_team: ejecutivos?.map(e => e.email) || [],
