@@ -81,10 +81,8 @@ export default function ConductorLoginPage() {
       // Solo redirigimos al onboarding
       console.log('[v0] Conductor login successful:', data.rut)
       
-      // Usar router.push() y luego router.refresh() para asegurar que las cookies se propagueny el middleware las vea
-      router.push('/conductor/onboarding')
-      // Forzar que el servidor valide las cookies nuevamente
-      router.refresh()
+      // Use window.location for a clean browser redirect that properly sends cookies
+      window.location.href = '/conductor/onboarding'
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido al iniciar sesión'
       console.error('[v0] Login error:', errorMessage)
