@@ -191,7 +191,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
 
       const result = await response.json()
       // Normalize status to español for local state
-      const statusMap = {
+      const statusMap: Record<string, string> = {
         'aprobado': 'aprobado',
         'approved': 'aprobado',
         'rechazado': 'rechazado',
@@ -201,7 +201,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         'vencido': 'vencido',
         'expired': 'vencido'
       }
-      const mappedStatus = statusMap[newStatus?.toLowerCase()] || newStatus
+      const mappedStatus = statusMap[newStatus?.toLowerCase() || ''] || newStatus
 
       // Block the next automatic useEffect refetch so it doesn't overwrite this optimistic update
       skipNextAutoFetch.current = true
