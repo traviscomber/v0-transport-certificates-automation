@@ -98,46 +98,45 @@ export async function PATCH(
     console.log('[v0] ✅ UPDATE executed - documentId:', documentId, 'from:', documentBefore?.validation_status, 'to:', dbStatus, 'rows:', updateData?.length)
 
     // STEP 3: Generate alert with real conductor name from conductores table
-    if (dbStatus === 'approved' || dbStatus === 'rejected') {
-      try {
-        // Resolve conductor name from conductores table
-        let conductorName = 'Conductor'
-        let documentTypeName = 'Documento'
+    // Generate alerts for all status changes: pending, approved, rejected
+    try {
+      // Resolve conductor name from conductores table
+      let conductorName = 'Conductor'
+      let documentTypeName = 'Documento'
 
-        if (documentBefore?.conductor_id) {
-          const { data: conductor } = await adminClient
-            .from('conductores')
-            .select('nombres, apellido_paterno, apellido_materno')
-            .eq('id', documentBefore.conductor_id)
-            .single()
+      if (documentBefore?.conductor_id) {
+        const { data: conductor } = await adminClient
+          .from('conductores')
+          .select('nombres, apellido_paterno, apellido_materno')
+          .eq('id', documentBefore.conductor_id)
+          .single()
 
-          if (conductor) {
-            conductorName = [conductor.nombres, conductor.apellido_paterno, conductor.apellido_materno]
-              .filter(Boolean).join(' ').trim()
-          }
+        if (conductor) {
+          conductorName = [conductor.nombres, conductor.apellido_paterno, conductor.apellido_materno]
+            .filter(Boolean).join(' ').trim()
         }
-
-        if (documentBefore?.document_type_id) {
-          const { data: docType } = await adminClient
-            .from('document_types')
-            .select('name')
-            .eq('id', documentBefore.document_type_id)
-            .single()
-
-          if (docType?.name) documentTypeName = docType.name
-        }
-
-        await generateDocumentStatusChangeAlert(
-          documentId,
-          documentTypeName,
-          conductorName,
-          documentBefore?.conductor_id || '',
-          dbStatus as 'approved' | 'rejected',
-          reason || undefined
-        )
-      } catch (alertErr) {
-        console.error('[v0] Alert generation failed (non-blocking):', alertErr)
       }
+
+      if (documentBefore?.document_type_id) {
+        const { data: docType } = await adminClient
+          .from('document_types')
+          .select('name')
+          .eq('id', documentBefore.document_type_id)
+          .single()
+
+        if (docType?.name) documentTypeName = docType.name
+      }
+
+      await generateDocumentStatusChangeAlert(
+        documentId,
+        documentTypeName,
+        conductorName,
+        documentBefore?.conductor_id || '',
+        dbStatus as 'approved' | 'rejected' | 'pending',
+        reason || undefined
+      )
+    } catch (alertErr) {
+      console.error('[v0] Alert generation failed (non-blocking):', alertErr)
     }
 
     // Small delay to ensure Supabase broadcast is queued

@@ -283,7 +283,11 @@ export default function AlertasPage() {
                     )}
                     {alert.action_url && (
                       <a
-                        href={alert.action_url}
+                        href={
+                          alert.metadata?.conductor_id
+                            ? `/dashboard/company/conductores?id=${alert.metadata.conductor_id}`
+                            : alert.action_url
+                        }
                         className="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10 rounded transition-colors"
                       >
                         Ver detalles →

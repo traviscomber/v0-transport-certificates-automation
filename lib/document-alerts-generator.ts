@@ -51,14 +51,14 @@ export async function generateDocumentUploadAlerts(
 }
 
 /**
- * Generate alerts when document status changes (approved/rejected)
+ * Generate alerts when document status changes (approved/rejected/pending)
  */
 export async function generateDocumentStatusChangeAlert(
   uploadedDocumentId: string,
   documentType: string,
   conductorName: string,
   conductorId: string,
-  newStatus: 'approved' | 'rejected',
+  newStatus: 'approved' | 'rejected' | 'pending',
   reason?: string
 ) {
   try {
@@ -67,20 +67,43 @@ export async function generateDocumentStatusChangeAlert(
 
     console.log('[v0] generateDocumentStatusChangeAlert:', { uploadedDocumentId, documentType, conductorName, newStatus })
 
+    // Build message based on status
+    let title = ''
+    let message = ''
+    let type = 'DOCUMENT_STATUS_CHANGE'
+    let priority = 'medium'
+    let category = 'document_status_change'
+
+    if (newStatus === 'approved') {
+      title = `Documento Aprobado - ${documentType}`
+      message = `El documento ${documentType} de ${conductorName} fue aprobado.`
+      type = 'DOCUMENT_APPROVED'
+      priority = 'medium'
+      category = 'document_approved'
+    } else if (newStatus === 'rejected') {
+      title = `Documento Rechazado - ${documentType}`
+      message = `El documento ${documentType} de ${conductorName} fue rechazado. Razón: ${reason || 'Sin especificar'}`
+      type = 'DOCUMENT_REJECTED'
+      priority = 'high'
+      category = 'document_rejected'
+    } else if (newStatus === 'pending') {
+      title = `Documento en Revisión - ${documentType}`
+      message = `El documento ${documentType} de ${conductorName} ha sido retornado a revisión.`
+      type = 'DOCUMENT_PENDING'
+      priority = 'medium'
+      category = 'document_pending'
+    }
+
     // Insert alert WITHOUT user_id - organization-wide alert shown to all admins
     const { error: alertError } = await supabase
       .from('alerts')
       .insert({
         organization_id: orgId,
-        title: newStatus === 'approved'
-          ? `Documento Aprobado - ${documentType}`
-          : `Documento Rechazado - ${documentType}`,
-        message: newStatus === 'approved'
-          ? `El documento ${documentType} de ${conductorName} fue aprobado.`
-          : `El documento ${documentType} de ${conductorName} fue rechazado. Razón: ${reason || 'Sin especificar'}`,
-        type: newStatus === 'approved' ? 'DOCUMENT_APPROVED' : 'DOCUMENT_REJECTED',
-        priority: newStatus === 'approved' ? 'medium' : 'high',
-        category: newStatus === 'approved' ? 'document_approved' : 'document_rejected',
+        title,
+        message,
+        type,
+        priority,
+        category,
         is_read: false,
         action_url: `/dashboard/company/documentos`,
         metadata: {
@@ -100,11 +123,6 @@ export async function generateDocumentStatusChangeAlert(
     }
   } catch (error) {
     console.error('[v0] Error in generateDocumentStatusChangeAlert:', error)
-  }
-}
-    }
-  } catch (error) {
-    console.error('[v0] ❌ Error in generateDocumentStatusChangeAlert:', error)
   }
 }
 
