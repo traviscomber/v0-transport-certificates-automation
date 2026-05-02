@@ -21,17 +21,15 @@ export default function ConductorLoginForm() {
         body: JSON.stringify({ rut: rut.trim(), password }),
       })
 
-      const data = await response.json()
-
       if (!response.ok) {
+        const data = await response.json()
         throw new Error(data.error || `Error HTTP ${response.status}`)
       }
 
-      // Full browser navigation — ensures Set-Cookie headers are committed
-      // before the next request hits the middleware
-      setTimeout(() => {
-        window.location.href = '/conductor/onboarding'
-      }, 100)
+      // Server-side redirect: API endpoint returns a 303 redirect to /conductor/onboarding
+      // with Set-Cookie headers already applied. Browser follows redirect automatically
+      // and the cookies persist in all environments including iframes.
+      // No need for window.location.href — the fetch already handles it.
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al iniciar sesión'
       setError(message)
