@@ -557,11 +557,11 @@ export function DriverCard({
           setRejectionReason('')
         }}
         onSetRejectionReason={(reason) => setRejectionReason(reason)}
-        onStatusChange={async (docId, newStatus, reason) => {
+        onStatusChange={async (docId, newStatus) => {
           try {
-            console.log('[v0] onStatusChange called:', { docId, newStatus, reason })
-            // Use reason passed directly from modal (not from state which may be stale)
-            await updateDocumentStatus(docId, newStatus, reason)
+            console.log('[v0] onStatusChange called:', { docId, newStatus, rejectionReason })
+            // Pass rejection reason if this is a rejection
+            await updateDocumentStatus(docId, newStatus, newStatus === 'rechazado' ? rejectionReason : undefined)
             
             // Clear rejection reason after successful update
             setRejectionReason('')
@@ -583,14 +583,11 @@ export function DriverCard({
               setSelectedDocument(prev => prev ? { ...prev, estado: normalizedStatus as any } : null)
             }
             
-            // Force document refresh to update the list in real-time
-            await refetch(true)
-            
             // Close modal after successful status change
             setTimeout(() => {
               setShowDocumentModal(false)
               setSelectedDocument(null)
-            }, 300)
+            }, 500)
             
             // Show success
             if (typeof window !== 'undefined') {

@@ -177,13 +177,13 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
   }
 
   // Actualizar estado de documento - SEND TO SERVER
-  const updateDocumentStatus = async (documentId: string, newStatus: string, reason?: string) => {
+  const updateDocumentStatus = async (documentId: string, newStatus: string, rejectionReason?: string) => {
     try {
-      console.log('[v0] updateDocumentStatus called:', { documentId, newStatus, reason })
+      console.log('[v0] updateDocumentStatus called:', { documentId, newStatus, rejectionReason })
       
       const body: any = { status: newStatus }
-      if (reason) {
-        body.reason = reason
+      if (rejectionReason && (newStatus === 'rechazado' || newStatus === 'rejected')) {
+        body.reason = rejectionReason
       }
 
       const response = await fetch(`/api/company/documents/${documentId}/status`, {
@@ -217,21 +217,14 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         doc.id === documentId 
           ? { 
               ...doc, 
-              estado: normalizedStatus as DriverDocument['estado'],
-              rejection_reason: newStatus?.toLowerCase() === 'rechazado' || newStatus?.toLowerCase() === 'rejected' 
-                ? reason 
-                : undefined
+              estado: normalizedStatus as DriverDocument['estado']
             } 
           : doc
       ))
 
-      // Refresh from server after status change - multiple times to ensure consistency
+      // Refresh from server after status change
       console.log('[v0] Forcing document refresh after status change')
       await new Promise(resolve => setTimeout(resolve, 300))
-      await fetchDocuments(true)
-      
-      // Second refresh to ensure UI is updated
-      await new Promise(resolve => setTimeout(resolve, 500))
       await fetchDocuments(true)
 
       return result
