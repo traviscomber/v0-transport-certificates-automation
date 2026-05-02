@@ -6,7 +6,6 @@ export interface ConductorLoginResponse {
   rut: string
   nombre_completo: string
   email: string
-  whatsapp_phone?: string
   transportista_id: string
 }
 
@@ -67,26 +66,26 @@ export async function loginConductor(
     throw new Error('Error de conexión a base de datos')
   }
   
-  const normalizedInput = normalizeRUT(rut)
-  const formattedRUT = formatRUT(normalizedInput)
+  // Normalizar RUT: remover puntos para buscar en BD
+  const normalizedRUT = normalizeRUT(rut)
 
-  console.log('[v0] Conductor login attempt - RUT:', rut, 'Formatted:', formattedRUT)
+  console.log('[v0] Conductor login attempt - Input RUT:', rut, 'Normalized:', normalizedRUT)
 
   try {
-    // Buscar autenticación en tabla conductor_auth
+    // Buscar autenticación en tabla conductor_auth usando RUT normalizado (sin puntos)
     const { data: authData, error: authError } = await (supabase as any)
       .from('conductor_auth')
       .select('id, conductor_id, password_hash, is_active')
-      .eq('rut', formattedRUT)
+      .eq('rut', normalizedRUT)
       .single()
 
     if (authError || !authData) {
-      console.error('[v0] Conductor auth not found for RUT:', formattedRUT)
+      console.error('[v0] Conductor auth not found for RUT:', normalizedRUT)
       throw new Error('RUT o contraseña incorrectos')
     }
 
     if (!authData.is_active) {
-      console.warn('[v0] Conductor auth is inactive:', formattedRUT)
+      console.warn('[v0] Conductor auth is inactive:', normalizedRUT)
       throw new Error('Tu cuenta está inactiva. Contacta a Transportes Labbe.')
     }
 
@@ -94,14 +93,14 @@ export async function loginConductor(
     const passwordMatch = await bcrypt.compare(password, authData.password_hash || '')
     
     if (!passwordMatch) {
-      console.error('[v0] Invalid password for conductor:', formattedRUT)
+      console.error('[v0] Invalid password for conductor:', normalizedRUT)
       throw new Error('RUT o contraseña incorrectos')
     }
 
     // Obtener datos del conductor desde tabla conductores
     const { data: conductor, error: conductorError } = await (supabase as any)
       .from('conductores')
-      .select('id, rut, nombre_completo, email, whatsapp_phone, transportista_id, is_active')
+      .select('id, rut, nombres, apellido_paterno, email, transportista_id, is_active')
       .eq('id', authData.conductor_id)
       .single()
 
@@ -111,18 +110,17 @@ export async function loginConductor(
     }
 
     if (!conductor.is_active) {
-      console.warn('[v0] Conductor account is inactive:', formattedRUT)
+      console.warn('[v0] Conductor account is inactive:', normalizedRUT)
       throw new Error('Tu cuenta está inactiva. Contacta a Transportes Labbe.')
     }
 
-    console.log('[v0] Conductor login successful:', formattedRUT)
+    console.log('[v0] Conductor login successful:', normalizedRUT)
 
     return {
       id: conductor.id,
       rut: conductor.rut,
-      nombre_completo: conductor.nombre_completo,
+      nombre_completo: `${conductor.nombres} ${conductor.apellido_paterno}`,
       email: conductor.email || '',
-      whatsapp_phone: conductor.whatsapp_phone,
       transportista_id: conductor.transportista_id,
     }
   } catch (err) {
