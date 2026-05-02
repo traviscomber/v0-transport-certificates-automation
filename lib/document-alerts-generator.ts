@@ -71,6 +71,12 @@ export async function generateDocumentStatusChangeAlert(
 
     console.log('[v0] generateDocumentStatusChangeAlert:', { uploadedDocumentId, documentType, conductorName, newStatus })
 
+    // Generate unique correlation code for this alert (format: ALERT-YYYYMMDD-XXXXXX)
+    const now = new Date()
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '')
+    const randomCode = Math.random().toString(36).substring(2, 8).toUpperCase()
+    const correlationCode = `ALERT-${dateStr}-${randomCode}`
+
     // Fetch conductor details including transportista and assigned ejecutiva
     let transportistaName = 'Transportista Desconocido'
     let ejecutivaAsignada = 'Sin asignar'
@@ -101,7 +107,7 @@ export async function generateDocumentStatusChangeAlert(
       .select('id, email')
       .in('role', ['ejecutiva', 'admin'])
 
-    // Build message based on status
+    // Build message based on status with formatting for bold names
     let title = ''
     let message = ''
     let type = 'DOCUMENT_STATUS_CHANGE'
@@ -110,19 +116,19 @@ export async function generateDocumentStatusChangeAlert(
 
     if (newStatus === 'approved') {
       title = `Documento Aprobado - ${documentType}`
-      message = `El documento ${documentType} de ${conductorName} (${transportistaName} - Ejecutiva: ${ejecutivaAsignada}) fue aprobado.`
+      message = `El documento ${documentType} de **${conductorName}** (${transportistaName} - Ejecutiva: **${ejecutivaAsignada}**) fue aprobado. [${correlationCode}]`
       type = 'DOCUMENT_APPROVED'
       priority = 'medium'
       category = 'document_approved'
     } else if (newStatus === 'rejected') {
       title = `Documento Rechazado - ${documentType}`
-      message = `El documento ${documentType} de ${conductorName} (${transportistaName} - Ejecutiva: ${ejecutivaAsignada}) fue rechazado. Razón: ${reason || 'Sin especificar'}`
+      message = `El documento ${documentType} de **${conductorName}** (${transportistaName} - Ejecutiva: **${ejecutivaAsignada}**) fue rechazado. Razón: ${reason || 'Sin especificar'}. [${correlationCode}]`
       type = 'DOCUMENT_REJECTED'
       priority = 'high'
       category = 'document_rejected'
     } else if (newStatus === 'pending') {
       title = `Documento en Revisión - ${documentType}`
-      message = `El documento ${documentType} de ${conductorName} (${transportistaName} - Ejecutiva: ${ejecutivaAsignada}) ha sido retornado a revisión.`
+      message = `El documento ${documentType} de **${conductorName}** (${transportistaName} - Ejecutiva: **${ejecutivaAsignada}**) ha sido retornado a revisión. [${correlationCode}]`
       type = 'DOCUMENT_PENDING'
       priority = 'medium'
       category = 'document_pending'
@@ -149,6 +155,7 @@ export async function generateDocumentStatusChangeAlert(
           ejecutiva_asignada: ejecutivaAsignada,
           reason: reason || null,
           status: newStatus,
+          correlation_code: correlationCode,
           ejecutivos_team: ejecutivos?.map(e => e.email) || [],
         },
       })
@@ -156,7 +163,7 @@ export async function generateDocumentStatusChangeAlert(
     if (alertError) {
       console.error('[v0] Error creating status change alert:', alertError)
     } else {
-      console.log(`[v0] Created status change alert for status: ${newStatus}`)
+      console.log(`[v0] Created status change alert for status: ${newStatus}, code: ${correlationCode}`)
     }
   } catch (error) {
     console.error('[v0] Error in generateDocumentStatusChangeAlert:', error)
