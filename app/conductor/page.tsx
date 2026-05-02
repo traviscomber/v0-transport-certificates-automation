@@ -53,11 +53,11 @@ export default function ConductorDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-900 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold text-white">Mi Documentación</h1>
-          <p className="text-slate-400">Sube y gestiona tus documentos de certificación</p>
+        <div className="space-y-3 border-b border-slate-700 pb-6">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Dashboard</h1>
+          <p className="text-slate-400 text-lg">Bienvenido de vuelta. Aquí está tu resumen de documentación y cumplimiento.</p>
         </div>
 
         {/* Compliance Status */}
@@ -104,14 +104,14 @@ export default function ConductorDashboard() {
         </div>
 
         {/* Upload Section */}
-        <Card className="border-slate-700 bg-slate-800/50">
+        <Card className="border-slate-700 bg-gradient-to-r from-slate-800/50 to-slate-800/30 shadow-lg">
           <CardHeader>
-            <CardTitle className="text-foreground">Subir Nuevo Documento</CardTitle>
-            <CardDescription>Carga fotos o PDFs de tus certificaciones y documentos</CardDescription>
+            <CardTitle className="text-white text-lg font-semibold">Subir Nuevo Documento</CardTitle>
+            <CardDescription className="text-slate-400">Carga fotos o PDFs de tus certificaciones y documentos</CardDescription>
           </CardHeader>
           <CardContent>
             <Link href="/conductor/upload" className="block">
-              <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+              <Button size="lg" className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold shadow-md transition-all">
                 <Upload className="w-5 h-5 mr-2" />
                 Subir Documento
               </Button>
