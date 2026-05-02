@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
         console.log('[v0] Conductor not found by RUT, trying driver_id directly:', driverId)
         const { data: byId } = await adminClient
           .from('uploaded_documents')
-          .select('id, original_filename, document_type_id, file_url, validation_status, rejection_reason, created_at, expiration_date')
+          .select('id, original_filename, document_type_id, file_url, validation_status, created_at, expiration_date')
           .eq('conductor_id', driverId)
           .order('created_at', { ascending: false })
         
@@ -57,7 +57,6 @@ export async function GET(request: NextRequest) {
             document_type: doc.document_type_id || 'Documento',
             verification_status: statusMap[(doc.validation_status || 'pending').toLowerCase()] || 'pendiente',
             validation_status: doc.validation_status,
-            rejection_reason: doc.rejection_reason || null,
             expiration_date: doc.expiration_date || null, size: 0, storage_path: '', public_url: doc.file_url || '',
           }))
           return NextResponse.json({ success: true, conductor_id: driverId, documents }, {
@@ -76,7 +75,7 @@ export async function GET(request: NextRequest) {
 
     const { data: dbDocuments, error: dbError } = await adminClient
       .from('uploaded_documents')
-      .select('id, original_filename, document_type_id, file_url, validation_status, rejection_reason, created_at, expiration_date')
+      .select('id, original_filename, document_type_id, file_url, validation_status, created_at, expiration_date')
       .eq('conductor_id', conductorId)
       .order('created_at', { ascending: false })
 
@@ -117,7 +116,6 @@ export async function GET(request: NextRequest) {
         verification_status: estadoEspanol,
         // keep raw value for debugging
         validation_status: doc.validation_status,
-        rejection_reason: doc.rejection_reason || null,
         expiration_date: doc.expiration_date || null,
         size: 0,
         storage_path: '',
