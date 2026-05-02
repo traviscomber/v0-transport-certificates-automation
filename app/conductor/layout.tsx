@@ -1,6 +1,6 @@
 import { LogOut, LayoutDashboard, FileText, Clock, Settings, Home } from "lucide-react"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
 const navItems = [
@@ -14,13 +14,11 @@ export default async function ConductorLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const cookieStore = await cookies()
+  const conductorId = cookieStore.get('conductor_id')?.value
 
-  if (!user) {
-    redirect("/auth/login")
+  if (!conductorId) {
+    redirect("/auth/login-conductor")
   }
 
   return (

@@ -73,29 +73,46 @@ export async function loginConductor(
   console.log('[v0] Conductor login attempt - RUT:', rut, 'Formatted:', formattedRUT)
 
   try {
-    // Buscar el conductor por RUT
-    const { data: conductor, error } = await (supabase as any)
-      .from('conductores')
-      .select('id, rut, nombre_completo, email, whatsapp_phone, transportista_id, password_hash, is_active')
+    // Buscar autenticación en tabla conductor_auth
+    const { data: authData, error: authError } = await (supabase as any)
+      .from('conductor_auth')
+      .select('id, conductor_id, password_hash, is_active')
       .eq('rut', formattedRUT)
       .single()
 
-    if (error || !conductor) {
-      console.error('[v0] Conductor not found for RUT:', formattedRUT)
+    if (authError || !authData) {
+      console.error('[v0] Conductor auth not found for RUT:', formattedRUT)
       throw new Error('RUT o contraseña incorrectos')
     }
 
-    if (!conductor.is_active) {
-      console.warn('[v0] Conductor is inactive:', formattedRUT)
+    if (!authData.is_active) {
+      console.warn('[v0] Conductor auth is inactive:', formattedRUT)
       throw new Error('Tu cuenta está inactiva. Contacta a Transportes Labbe.')
     }
 
     // Validar contraseña
-    const passwordMatch = await bcrypt.compare(password, conductor.password_hash || '')
+    const passwordMatch = await bcrypt.compare(password, authData.password_hash || '')
     
     if (!passwordMatch) {
       console.error('[v0] Invalid password for conductor:', formattedRUT)
       throw new Error('RUT o contraseña incorrectos')
+    }
+
+    // Obtener datos del conductor desde tabla conductores
+    const { data: conductor, error: conductorError } = await (supabase as any)
+      .from('conductores')
+      .select('id, rut, nombre_completo, email, whatsapp_phone, transportista_id, is_active')
+      .eq('id', authData.conductor_id)
+      .single()
+
+    if (conductorError || !conductor) {
+      console.error('[v0] Conductor record not found:', authData.conductor_id)
+      throw new Error('Datos del conductor no encontrados')
+    }
+
+    if (!conductor.is_active) {
+      console.warn('[v0] Conductor account is inactive:', formattedRUT)
+      throw new Error('Tu cuenta está inactiva. Contacta a Transportes Labbe.')
     }
 
     console.log('[v0] Conductor login successful:', formattedRUT)
