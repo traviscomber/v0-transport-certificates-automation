@@ -190,21 +190,3 @@ export function DashboardOverview() {
     </div>
   )
 }
-                    <p className="text-sm text-muted-foreground">{doc.transporter}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="text-right">
-                    <p className="text-sm">Vence: {doc.expiryDate}</p>
-                    <p className="text-xs text-muted-foreground">Subido: {doc.date}</p>
-                  </div>
-                  {getStatusBadge(doc.status)}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
