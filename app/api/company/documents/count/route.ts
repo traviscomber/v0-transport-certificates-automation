@@ -28,6 +28,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from('uploaded_documents')
       .select('validation_status', { count: 'exact' })
+      .eq('organization_id', profile.organization_id)
 
     if (error) {
       console.error('[v0] Error fetching document counts:', error)
