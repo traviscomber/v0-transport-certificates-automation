@@ -166,10 +166,16 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
   // Actualizar estado de documento - SEND TO SERVER
   const updateDocumentStatus = async (documentId: string, newStatus: string, rejectionReason?: string) => {
     try {
+      console.log('[v0] updateDocumentStatus - Received:', { documentId, newStatus, rejectionReason, reasonProvided: !!rejectionReason })
       
       const body: any = { status: newStatus }
-      if (rejectionReason && (newStatus === 'rechazado' || newStatus === 'rejected')) {
+      const normalizedStatus = newStatus?.toLowerCase().trim()
+      
+      if (rejectionReason && (normalizedStatus === 'rechazado' || normalizedStatus === 'rejected')) {
         body.reason = rejectionReason
+        console.log('[v0] Adding reason to body:', body.reason)
+      } else {
+        console.log('[v0] NOT adding reason. normalizedStatus:', normalizedStatus, 'hasReason:', !!rejectionReason)
       }
 
       const response = await fetch(`/api/company/documents/${documentId}/status`, {
