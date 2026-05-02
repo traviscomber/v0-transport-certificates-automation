@@ -554,30 +554,29 @@ export function DriverCard({
           setSelectedDocument(null)
         }}
         onStatusChange={async (docId, newStatus) => {
-          // 1. Optimistic update — UI changes instantly
-          updateDocumentStatus(docId, newStatus)
-          
-          // 2. Close modal immediately so user sees the change
-          setShowDocumentModal(false)
-          setSelectedDocument(null)
-
           try {
-            // 3. Send PATCH to DB — fire and forget, optimistic state is already set
-            const res = await fetch(`/api/company/documents/${docId}/status`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status: newStatus, reason: 'Cambio realizado desde dashboard' }),
-            })
-
-            if (!res.ok) {
-              const err = await res.json()
-              throw new Error(err.error || 'Status update failed')
+            console.log('[v0] onStatusChange called:', { docId, newStatus })
+            // This now calls updateDocumentStatus which does the PATCH and refetch
+            await updateDocumentStatus(docId, newStatus)
+            
+            // Close modal after successful status change
+            setShowDocumentModal(false)
+            setSelectedDocument(null)
+            
+            // Show success
+            if (typeof window !== 'undefined') {
+              const successMsg = document.createElement('div')
+              successMsg.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100] animate-in'
+              successMsg.textContent = `✅ Documento actualizado a ${newStatus}`
+              document.body.appendChild(successMsg)
+              setTimeout(() => successMsg.remove(), 3000)
             }
-            // Do NOT refetch here — it would overwrite the optimistic update
-            // if the conductor lookup fails. The optimistic state is correct.
           } catch (error) {
-            console.error('[v0] Error updating status:', error)
-            // Only on error: revert optimistic update by rolling back manually
+            console.error('[v0] Error updating document status:', error)
+            const errorMsg = error instanceof Error ? error.message : 'Error desconocido'
+            alert(`Error al actualizar estado: ${errorMsg}`)
+          }
+        }}
             updateDocumentStatus(docId, newStatus === 'aprobado' ? 'pendiente' : newStatus === 'rechazado' ? 'pendiente' : 'pendiente')
             throw error
           }

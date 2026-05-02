@@ -175,11 +175,39 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
     }
   }
 
-  // Actualizar estado de documento
-  const updateDocumentStatus = (documentId: string, newStatus: string) => {
-    setDocuments(prev => prev.map(doc =>
-      doc.id === documentId ? { ...doc, estado: newStatus as DriverDocument['estado'] } : doc
-    ))
+  // Actualizar estado de documento - SEND TO SERVER
+  const updateDocumentStatus = async (documentId: string, newStatus: string) => {
+    try {
+      console.log('[v0] updateDocumentStatus called:', { documentId, newStatus })
+      
+      const response = await fetch(`/api/company/documents/${documentId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      })
+
+      if (!response.ok) {
+        const result = await response.json()
+        throw new Error(result.error || `Failed to update status (${response.status})`)
+      }
+
+      const result = await response.json()
+      console.log('[v0] Status update successful:', result)
+
+      // Update local state
+      setDocuments(prev => prev.map(doc =>
+        doc.id === documentId ? { ...doc, estado: newStatus as DriverDocument['estado'] } : doc
+      ))
+
+      // Refresh from server after status change
+      await new Promise(resolve => setTimeout(resolve, 500))
+      await fetchDocuments(true)
+
+      return result
+    } catch (err) {
+      console.error('[v0] Error updating document status:', err)
+      throw err
+    }
   }
 
   // Eliminar documento
