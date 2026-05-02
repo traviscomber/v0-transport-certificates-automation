@@ -56,52 +56,56 @@ export function DashboardOverview() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch alerts - now getting more alerts to show in dashboard
+        // Fetch real document counts
+        const countsRes = await fetch(`/api/company/documents/count?_t=${Date.now()}`, {
+          cache: "no-store",
+        })
+        
+        // Fetch alerts for display in dashboard
         const alertsRes = await fetch(`/api/alerts?limit=50&_t=${Date.now()}`, {
           cache: "no-store",
         })
-        if (alertsRes.ok) {
-          const alertsData = await alertsRes.json()
-          // Handle both array and object with alerts property
-          const alertsList = Array.isArray(alertsData) ? alertsData : (alertsData.alerts || [])
-          setAlerts(alertsList)
 
-          // Calculate stats from alerts
-          const approved = alertsList.filter((a: Alert) => a.type === 'DOCUMENT_APPROVED').length
-          const pending = alertsList.filter((a: Alert) => a.type === 'DOCUMENT_PENDING').length
-          const rejected = alertsList.filter((a: Alert) => a.type === 'DOCUMENT_REJECTED').length
-          const total = alertsList.length
-
+        // Get document counts if available
+        if (countsRes.ok) {
+          const counts = await countsRes.json()
           setStats([
             {
               title: "Total de Documentos",
-              value: total.toString(),
+              value: counts.total.toString(),
               description: "En el sistema",
               icon: FileText,
               status: "active",
             },
             {
               title: "Documentos Aprobados",
-              value: approved.toString(),
+              value: counts.approved.toString(),
               description: "Validados",
               icon: CheckCircle,
               status: "active",
             },
             {
               title: "Documentos Pendientes",
-              value: pending.toString(),
+              value: counts.pending.toString(),
               description: "En revisión",
               icon: Clock,
               status: "active",
             },
             {
               title: "Documentos Rechazados",
-              value: rejected.toString(),
+              value: counts.rejected.toString(),
               description: "No validados",
               icon: AlertTriangle,
               status: "warning",
             },
           ])
+        }
+
+        // Get alerts for display
+        if (alertsRes.ok) {
+          const alertsData = await alertsRes.json()
+          const alertsList = Array.isArray(alertsData) ? alertsData : (alertsData.alerts || [])
+          setAlerts(alertsList)
         }
       } catch (error) {
         console.error('[v0] Error loading dashboard data:', error)
