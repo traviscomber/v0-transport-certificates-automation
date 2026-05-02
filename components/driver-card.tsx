@@ -585,6 +585,3 @@ export function DriverCard({
         }}
         isAdmin={true}
       />
-    </>
-  )
-}
