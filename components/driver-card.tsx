@@ -577,10 +577,6 @@ export function DriverCard({
             alert(`Error al actualizar estado: ${errorMsg}`)
           }
         }}
-            updateDocumentStatus(docId, newStatus === 'aprobado' ? 'pendiente' : newStatus === 'rechazado' ? 'pendiente' : 'pendiente')
-            throw error
-          }
-        }}
         onDelete={async (docId) => {
           await refetch(true)
           setShowDocumentModal(false)
