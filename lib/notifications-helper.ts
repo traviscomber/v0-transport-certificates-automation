@@ -35,31 +35,50 @@ export async function notifyExecutivas(payload: NotificationPayload) {
       return { success: false, error: 'No ejecutivas found' }
     }
 
-    // Build notification message
     let title = ''
     let message = ''
 
-    if (payload.type === 'status_change') {
-      title = `Cambio de Estado: ${payload.documentType}`
-      message = `El documento ${payload.documentType} del conductor ${payload.conductorName} cambió de ${payload.oldStatus} a ${payload.newStatus}.`
-    } else if (payload.type === 'document_uploaded') {
-      title = `Nuevo Documento: ${payload.documentType}`
-      message = `Se subió un nuevo ${payload.documentType} para el conductor ${payload.conductorName}.`
-    } else if (payload.type === 'document_expired') {
-      title = `Documento Vencido: ${payload.documentType}`
-      message = `El ${payload.documentType} del conductor ${payload.conductorName} ha vencido y requiere atención.`
-    }
-
     const adminClient = createAdminClient()
 
-    // Insert into alerts table (does not require user_id)
-    const { data: orgData } = await adminClient
-      .from('organizations')
-      .select('id')
-      .limit(1)
-      .single()
+    // Resolve real conductor name from conductores table using the document
+    let resolvedConductorName = payload.conductorName
+    if (!resolvedConductorName || resolvedConductorName === 'Unknown') {
+      const { data: doc } = await adminClient
+        .from('uploaded_documents')
+        .select('conductor_id')
+        .eq('id', payload.documentId)
+        .single()
 
-    const organizationId = orgData?.id
+      if (doc?.conductor_id) {
+        const { data: conductor } = await adminClient
+          .from('conductores')
+          .select('nombres, apellido_paterno, apellido_materno')
+          .eq('id', doc.conductor_id)
+          .single()
+
+        if (conductor) {
+          resolvedConductorName = [conductor.nombres, conductor.apellido_paterno, conductor.apellido_materno]
+            .filter(Boolean)
+            .join(' ')
+            .trim()
+        }
+      }
+    }
+
+    // Rebuild message with resolved name
+    if (payload.type === 'status_change') {
+      title = `Cambio de Estado: ${payload.documentType}`
+      message = `El documento ${payload.documentType} del conductor ${resolvedConductorName} cambió de ${payload.oldStatus} a ${payload.newStatus}.`
+    } else if (payload.type === 'document_uploaded') {
+      title = `Nuevo Documento: ${payload.documentType}`
+      message = `Se subió un nuevo ${payload.documentType} para el conductor ${resolvedConductorName}.`
+    } else if (payload.type === 'document_expired') {
+      title = `Documento Vencido: ${payload.documentType}`
+      message = `El ${payload.documentType} del conductor ${resolvedConductorName} ha vencido y requiere atención.`
+    }
+
+    // Organization ID for Labbe (constant - single company)
+    const organizationId = '1b051f99-949d-4ba9-97da-3915cc648701'
 
     const alertInsert: any = {
       type: payload.type,
@@ -69,16 +88,15 @@ export async function notifyExecutivas(payload: NotificationPayload) {
       category: payload.type,
       is_read: false,
       is_dismissed: false,
+      organization_id: organizationId,
       action_url: `/dashboard/company/documentos`,
       metadata: {
         document_id: payload.documentId,
         old_status: payload.oldStatus,
         new_status: payload.newStatus,
-        conductor: payload.conductorName,
+        conductor: resolvedConductorName,
       },
     }
-
-    if (organizationId) alertInsert.organization_id = organizationId
 
     const { error: alertError } = await adminClient
       .from('alerts')
