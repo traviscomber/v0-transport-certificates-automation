@@ -81,8 +81,9 @@ export default function ConductorLoginPage() {
       // Solo redirigimos al onboarding
       console.log('[v0] Conductor login successful:', data.rut)
       
-      // Use window.location for a clean browser redirect that properly sends cookies
-      window.location.href = '/conductor/onboarding'
+      // Use router.push() to navigate within Next.js
+      // This allows the Next.js app to use the httpOnly cookies set by the server
+      router.push('/conductor/onboarding')
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido al iniciar sesión'
       console.error('[v0] Login error:', errorMessage)
