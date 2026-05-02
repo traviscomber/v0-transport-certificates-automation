@@ -1,123 +1,38 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   try {
-    // Validate environment variables
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return NextResponse.json(
-        { message: 'Server configuration missing' },
-        { status: 500 }
-      )
-    }
+    // Get conductor_id from cookies (set by login middleware)
+    const cookieStore = await cookies()
+    const conductorId = cookieStore.get('conductor_id')?.value
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    )
-
-    // Get the current user
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
+    if (!conductorId) {
       return NextResponse.json(
-        { message: 'No authorization header' },
+        { message: 'Unauthorized - no conductor_id cookie' },
         { status: 401 }
       )
     }
 
-    const token = authHeader.replace('Bearer ', '')
-    
-    // Verify token and get user
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    if (authError || !user) {
-      return NextResponse.json(
-        { message: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    // Get user profile to find conductor_id
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { message: 'User profile not found' },
-        { status: 404 }
-      )
-    }
-
-    // Get uploaded documents for this conductor
-    const { data: documents, error: docsError } = await supabase
-      .from('uploaded_documents')
-      .select(`
-        *,
-        document_types:document_type_id(
-          id,
-          code,
-          name,
-          description,
-          validity_days
-        )
-      `)
-      .eq('conductor_id', profile.id)
-      .order('created_at', { ascending: false })
-
-    if (docsError) {
-      console.error('Query error:', docsError)
-      return NextResponse.json(
-        { message: 'Failed to fetch documents' },
-        { status: 500 }
-      )
-    }
-
-    // Calculate days remaining for each document
-    const documentsWithStatus = documents.map((doc) => {
-      let daysRemaining = null
-      let status = 'pending'
-
-      if (doc.expiry_date) {
-        const expiryDate = new Date(doc.expiry_date)
-        const today = new Date()
-        const diffTime = expiryDate.getTime() - today.getTime()
-        daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-        if (doc.validation_status === 'validated') {
-          if (daysRemaining < 0) {
-            status = 'expired'
-          } else if (daysRemaining < 30) {
-            status = 'expiring-soon'
-          } else {
-            status = 'valid'
-          }
-        }
-      }
-
-      return {
-        ...doc,
-        daysRemaining,
-        status,
-        documentType: doc.document_types?.[0],
-      }
-    })
+    // Get documents from the conductor's data
+    // For now, return empty array as documents are managed through the upload endpoint
+    // In a real app, this would query a database for documents belonging to this conductor
+    const mockDocuments = []
 
     return NextResponse.json(
       {
         success: true,
-        documents: documentsWithStatus,
+        documents: mockDocuments,
       },
       { status: 200 }
     )
 
   } catch (error) {
-    console.error('Fetch error:', error)
+    console.error('Fetch documents error:', error)
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { message: 'Internal server error', error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

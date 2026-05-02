@@ -74,14 +74,26 @@ export default function ConductorDocumentosPage() {
   const fetchDocuments = async () => {
     try {
       setIsLoading(true)
+      setError('')
       const response = await fetch('/api/conductor/documents')
-      if (!response.ok) throw new Error('Failed to fetch documents')
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          setError('Sesión expirada. Por favor, inicia sesión nuevamente.')
+          return
+        }
+        throw new Error(`HTTP ${response.status}`)
+      }
       
       const data = await response.json()
-      setDocuments(data.documents || [])
+      if (data.success && Array.isArray(data.documents)) {
+        setDocuments(data.documents)
+      } else {
+        setDocuments([])
+      }
     } catch (err) {
       console.error('Error fetching documents:', err)
-      setError('Error al cargar documentos')
+      setError('No se pudieron cargar los documentos. Intenta nuevamente.')
     } finally {
       setIsLoading(false)
     }
