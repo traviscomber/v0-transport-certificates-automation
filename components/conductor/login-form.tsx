@@ -1,4 +1,5 @@
 'use client'
+// Pure client component — never SSRed, so no hydration mismatch possible
 
 import { useState } from 'react'
 

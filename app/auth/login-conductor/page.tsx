@@ -1,5 +1,5 @@
-// Server component — delegates entirely to a client-only dynamic import
-// This prevents SSR hydration mismatches from browser extension attribute injection
+// Server component — delegates entirely to a client-only dynamic import.
+// No SSR output = no hydration diff = no NEXT_REDIRECT crash from password managers.
 import dynamic from 'next/dynamic'
 
 const ConductorLoginForm = dynamic(
