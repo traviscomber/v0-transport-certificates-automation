@@ -10,7 +10,12 @@ interface Alert {
   id: string
   type: string
   title: string
+  message: string
   priority: string
+  is_read: boolean
+  is_dismissed: boolean
+  created_at: string
+  metadata?: Record<string, any>
 }
 
 export function DashboardOverview() {
@@ -51,20 +56,21 @@ export function DashboardOverview() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch alerts count and recent alerts
-        const alertsRes = await fetch(`/api/alerts?limit=5&_t=${Date.now()}`, {
+        // Fetch alerts - now getting more alerts to show in dashboard
+        const alertsRes = await fetch(`/api/alerts?limit=50&_t=${Date.now()}`, {
           cache: "no-store",
         })
         if (alertsRes.ok) {
           const alertsData = await alertsRes.json()
-          setAlerts(alertsData || [])
+          // Handle both array and object with alerts property
+          const alertsList = Array.isArray(alertsData) ? alertsData : (alertsData.alerts || [])
+          setAlerts(alertsList)
 
           // Calculate stats from alerts
-          const allAlerts = alertsData || []
-          const approved = allAlerts.filter((a: Alert) => a.type === 'DOCUMENT_APPROVED').length
-          const pending = allAlerts.filter((a: Alert) => a.type === 'DOCUMENT_PENDING').length
-          const rejected = allAlerts.filter((a: Alert) => a.type === 'DOCUMENT_REJECTED').length
-          const total = allAlerts.length
+          const approved = alertsList.filter((a: Alert) => a.type === 'DOCUMENT_APPROVED').length
+          const pending = alertsList.filter((a: Alert) => a.type === 'DOCUMENT_PENDING').length
+          const rejected = alertsList.filter((a: Alert) => a.type === 'DOCUMENT_REJECTED').length
+          const total = alertsList.length
 
           setStats([
             {
@@ -167,20 +173,29 @@ export function DashboardOverview() {
         <Card>
           <CardHeader>
             <CardTitle>Alertas Recientes</CardTitle>
-            <CardDescription>Últimas alertas del sistema</CardDescription>
+            <CardDescription>Últimas alertas del sistema - {alerts.length} total</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {alerts.slice(0, 5).map((alert) => (
-                <div key={alert.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center space-x-4">
-                    {getStatusIcon(alert.type)}
-                    <div>
-                      <p className="font-medium">{alert.title}</p>
-                      <p className="text-sm text-muted-foreground">{alert.type}</p>
+            <div className="space-y-3">
+              {alerts.slice(0, 10).map((alert) => (
+                <div key={alert.id} className="flex items-start justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-start space-x-3 flex-1">
+                    <div className="mt-0.5">{getStatusIcon(alert.type)}</div>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{alert.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{alert.message}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(alert.created_at).toLocaleDateString('es-ES', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
                     </div>
                   </div>
-                  <div>{getStatusBadge(alert.type)}</div>
+                  <div className="ml-4">{getStatusBadge(alert.type)}</div>
                 </div>
               ))}
             </div>
