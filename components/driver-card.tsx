@@ -596,6 +596,9 @@ export function DriverCard({
               successMsg.textContent = `✅ Documento actualizado a ${newStatus}`
               document.body.appendChild(successMsg)
               setTimeout(() => successMsg.remove(), 3000)
+              
+              // Dispatch event for listeners to refetch
+              window.dispatchEvent(new Event('documentStatusChanged'))
             }
           } catch (error) {
             console.error('[v0] Error updating document status:', error)
