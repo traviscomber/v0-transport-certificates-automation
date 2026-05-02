@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     // Get documents from the conductor's data
     // For now, return empty array as documents are managed through the upload endpoint
     // In a real app, this would query a database for documents belonging to this conductor
-    const mockDocuments = []
+    const mockDocuments: Record<string, unknown>[] = []
 
     return NextResponse.json(
       {
