@@ -3,15 +3,6 @@ import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = 'force-dynamic';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error("Missing Supabase credentials");
-}
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
 interface DocumentType {
   code: string;
   name: string;
@@ -33,6 +24,19 @@ interface UploadedDocument {
 
 export async function GET(request: NextRequest) {
   try {
+    // Initialize Supabase client at runtime
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json(
+        { error: "Missing Supabase credentials" },
+        { status: 500 }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
     const { searchParams } = new URL(request.url);
     const transporterId = searchParams.get("transporterId");
     const format = searchParams.get("format") || "json"; // json o csv
