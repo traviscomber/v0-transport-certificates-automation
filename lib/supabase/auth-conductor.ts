@@ -1,0 +1,123 @@
+import { createClient } from '@/lib/supabase/client'
+import bcrypt from 'bcryptjs'
+
+export interface ConductorLoginResponse {
+  id: string
+  rut: string
+  nombre_completo: string
+  email: string
+  whatsapp_phone?: string
+  transportista_id: string
+}
+
+/**
+ * Normaliza un RUT para comparación (elimina puntos y espacios, mantiene el guión)
+ */
+function normalizeRUT(rut: string): string {
+  return rut.replace(/\./g, '').replace(/\s/g, '').trim()
+}
+
+/**
+ * Formatea un RUT normalizado a formato con puntos (ej: 783767805 -> 78.376.780-5)
+ */
+function formatRUT(rut: string): string {
+  const cleaned = normalizeRUT(rut)
+  if (cleaned.length < 8) return cleaned
+  const parts = cleaned.slice(0, -1)
+  const dv = cleaned.slice(-1)
+  return parts.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv
+}
+
+/**
+ * Valida un RUT usando algoritmo de dígito verificador
+ */
+export function validateRUTChecksum(rut: string): boolean {
+  const cleaned = normalizeRUT(rut)
+  if (cleaned.length < 8) return false
+  
+  const numbers = cleaned.slice(0, -1)
+  const dv = cleaned.slice(-1).toUpperCase()
+  
+  let sum = 0
+  let multiplier = 2
+  
+  for (let i = numbers.length - 1; i >= 0; i--) {
+    sum += parseInt(numbers[i]) * multiplier
+    multiplier = multiplier === 7 ? 2 : multiplier + 1
+  }
+  
+  const remainder = sum % 11
+  const calculatedDv = remainder === 0 ? '0' : remainder === 1 ? 'K' : String(11 - remainder)
+  
+  return dv === calculatedDv
+}
+
+/**
+ * Autentica un conductor usando RUT y contraseña
+ * @param rut - RUT del conductor (puede estar con o sin puntos)
+ * @param password - Contraseña
+ * @returns Datos del conductor si es válido
+ */
+export async function loginConductor(
+  rut: string,
+  password: string
+): Promise<ConductorLoginResponse> {
+  const supabase = createClient()
+  if (!supabase) {
+    throw new Error('Error de conexión a base de datos')
+  }
+  
+  const normalizedInput = normalizeRUT(rut)
+  const formattedRUT = formatRUT(normalizedInput)
+
+  console.log('[v0] Conductor login attempt - RUT:', rut, 'Formatted:', formattedRUT)
+
+  try {
+    // Buscar el conductor por RUT
+    const { data: conductor, error } = await (supabase as any)
+      .from('conductores')
+      .select('id, rut, nombre_completo, email, whatsapp_phone, transportista_id, password_hash, is_active')
+      .eq('rut', formattedRUT)
+      .single()
+
+    if (error || !conductor) {
+      console.error('[v0] Conductor not found for RUT:', formattedRUT)
+      throw new Error('RUT o contraseña incorrectos')
+    }
+
+    if (!conductor.is_active) {
+      console.warn('[v0] Conductor is inactive:', formattedRUT)
+      throw new Error('Tu cuenta está inactiva. Contacta a Transportes Labbe.')
+    }
+
+    // Validar contraseña
+    const passwordMatch = await bcrypt.compare(password, conductor.password_hash || '')
+    
+    if (!passwordMatch) {
+      console.error('[v0] Invalid password for conductor:', formattedRUT)
+      throw new Error('RUT o contraseña incorrectos')
+    }
+
+    console.log('[v0] Conductor login successful:', formattedRUT)
+
+    return {
+      id: conductor.id,
+      rut: conductor.rut,
+      nombre_completo: conductor.nombre_completo,
+      email: conductor.email || '',
+      whatsapp_phone: conductor.whatsapp_phone,
+      transportista_id: conductor.transportista_id,
+    }
+  } catch (err) {
+    console.error('[v0] Conductor login error:', err)
+    throw err
+  }
+}
+
+/**
+ * Hash una contraseña para almacenamiento
+ */
+export async function hashPassword(password: string): Promise<string> {
+  const salt = await bcrypt.genSalt(10)
+  return bcrypt.hash(password, salt)
+}
