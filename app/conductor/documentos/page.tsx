@@ -155,19 +155,19 @@ export default function ConductorDocumentosPage() {
       const daysUntilExpiry = Math.ceil((expDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
       
       if (daysUntilExpiry < 0) {
-        return <Badge variant="destructive">Vencido</Badge>
+        return <Badge className="bg-red-900/30 text-red-300 border border-red-900/50">Vencido</Badge>
       } else if (daysUntilExpiry < 7) {
-        return <Badge className="bg-orange-100 text-orange-800">Vence en {daysUntilExpiry} días</Badge>
+        return <Badge className="bg-orange-900/30 text-orange-300 border border-orange-900/50">Vence en {daysUntilExpiry} días</Badge>
       }
     }
 
     switch (status) {
       case 'approved':
-        return <Badge className="bg-green-100 text-green-800">Aprobado</Badge>
+        return <Badge className="bg-green-900/30 text-green-300 border border-green-900/50">Aprobado</Badge>
       case 'rejected':
-        return <Badge variant="destructive">Rechazado</Badge>
+        return <Badge className="bg-red-900/30 text-red-300 border border-red-900/50">Rechazado</Badge>
       default:
-        return <Badge variant="secondary">En Revisión</Badge>
+        return <Badge className="bg-slate-700/50 text-slate-300 border border-slate-600">En Revisión</Badge>
     }
   }
 
@@ -187,21 +187,19 @@ export default function ConductorDocumentosPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header with Compliance */}
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start border-b border-slate-700 pb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Mis Documentos</h1>
-          <p className="text-muted-foreground">
-            Sube y gestiona tus documentos requeridos para trabajar con Labbe
-          </p>
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Mis Documentos</h1>
+          <p className="text-slate-400 mt-2">Sube y gestiona tus documentos requeridos para trabajar con Labbe</p>
         </div>
-        <div className="text-right">
-          <p className="text-sm text-gray-600">Cumplimiento</p>
-          <p className="text-3xl font-bold text-blue-600">{compliancePercentage}%</p>
-          <div className="w-32 bg-gray-200 rounded-full h-2 mt-2">
+        <div className="text-right bg-slate-800/50 border border-slate-700 rounded-lg p-4 min-w-max">
+          <p className="text-sm text-slate-400 uppercase tracking-wide">Cumplimiento</p>
+          <p className="text-4xl font-bold bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent mt-1">{compliancePercentage}%</p>
+          <div className="w-32 bg-slate-700 rounded-full h-2 mt-3">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-orange-500 to-orange-600 h-2 rounded-full transition-all duration-300"
               style={{ width: `${compliancePercentage}%` }}
             />
           </div>
@@ -210,24 +208,24 @@ export default function ConductorDocumentosPage() {
 
       {/* Alerts */}
       {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
+        <Alert className="bg-red-950/30 border-red-900/50">
+          <AlertCircle className="h-4 w-4 text-red-400" />
+          <AlertDescription className="text-red-300">{error}</AlertDescription>
         </Alert>
       )}
 
       {success && (
-        <Alert className="bg-green-50 border-green-200">
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">{success}</AlertDescription>
+        <Alert className="bg-green-950/30 border-green-900/50">
+          <CheckCircle2 className="h-4 w-4 text-green-400" />
+          <AlertDescription className="text-green-300">{success}</AlertDescription>
         </Alert>
       )}
 
       {/* Upload Section */}
-      <Card>
+      <Card className="border-slate-700 bg-gradient-to-r from-slate-800/50 to-slate-800/30 shadow-lg">
         <CardHeader>
-          <CardTitle>Subir Documento</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-white">Subir Documento</CardTitle>
+          <CardDescription className="text-slate-400">
             Arrastra y suelta o haz clic para seleccionar (PDF, JPG, PNG - Máximo 10MB)
           </CardDescription>
         </CardHeader>
@@ -238,16 +236,16 @@ export default function ConductorDocumentosPage() {
             onDrop={handleDrop}
             className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer transition-all ${
               isDragging
-                ? 'bg-blue-50 border-blue-400'
-                : 'bg-muted/50 hover:bg-muted/80 border-gray-300'
+                ? 'bg-orange-500/10 border-orange-500/50'
+                : 'bg-slate-800/30 hover:bg-slate-800/50 border-slate-600'
             }`}
           >
             <div className="flex flex-col items-center justify-center pt-5 pb-6">
-              <Upload className={`h-10 w-10 mb-2 ${isDragging ? 'text-blue-600' : 'text-gray-400'}`} />
-              <p className="mb-2 text-sm font-semibold">
+              <Upload className={`h-10 w-10 mb-2 ${isDragging ? 'text-orange-400' : 'text-slate-500'}`} />
+              <p className="mb-2 text-sm font-semibold text-slate-300">
                 {isDragging ? 'Suelta los archivos aquí' : 'Arrastra archivos aquí o haz clic'}
               </p>
-              <p className="text-xs text-gray-500">PDF, JPG, PNG</p>
+              <p className="text-xs text-slate-500">PDF, JPG, PNG</p>
             </div>
             <input
               type="file"
@@ -259,25 +257,25 @@ export default function ConductorDocumentosPage() {
           </label>
           {isUploading && (
             <div className="mt-4 flex items-center justify-center gap-2">
-              <Loader className="h-4 w-4 animate-spin" />
-              <span className="text-sm">Subiendo documento...</span>
+              <Loader className="h-4 w-4 animate-spin text-orange-500" />
+              <span className="text-sm text-slate-300">Subiendo documento...</span>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Documents Required Table */}
-      <Card>
+      {/* Documents Required */}
+      <Card className="border-slate-700 bg-slate-800/30 shadow-lg">
         <CardHeader>
-          <CardTitle>Documentos Requeridos</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-white">Documentos Requeridos</CardTitle>
+          <CardDescription className="text-slate-400">
             Estado de cada documento requerido para tu aprobación
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="flex justify-center py-8">
-              <Loader className="h-6 w-6 animate-spin text-gray-400" />
+              <Loader className="h-6 w-6 animate-spin text-orange-500" />
             </div>
           ) : (
             <div className="space-y-3">
@@ -286,21 +284,21 @@ export default function ConductorDocumentosPage() {
                 return (
                   <div
                     key={reqDoc.type}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                    className="flex items-center justify-between p-4 border border-slate-700 rounded-lg hover:bg-slate-800/50 bg-slate-800/20 transition-all"
                   >
                     <div className="flex items-center gap-4 flex-1">
                       <div className="flex-shrink-0">
                         {uploadedDoc ? (
                           getStatusIcon(uploadedDoc.validation_status)
                         ) : (
-                          <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
+                          <div className="h-5 w-5 rounded-full border-2 border-slate-600" />
                         )}
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium">{reqDoc.label}</p>
-                        <p className="text-sm text-gray-600">{reqDoc.description}</p>
+                        <p className="font-medium text-white">{reqDoc.label}</p>
+                        <p className="text-sm text-slate-400">{reqDoc.description}</p>
                         {uploadedDoc?.rejection_reason && (
-                          <p className="text-sm text-red-600 mt-1">
+                          <p className="text-sm text-red-400 mt-1">
                             Razón del rechazo: {uploadedDoc.rejection_reason}
                           </p>
                         )}
@@ -313,6 +311,7 @@ export default function ConductorDocumentosPage() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="text-slate-400 hover:text-white"
                             asChild
                           >
                             <a href={uploadedDoc.file_url} target="_blank" rel="noopener noreferrer">
@@ -321,7 +320,7 @@ export default function ConductorDocumentosPage() {
                           </Button>
                         </>
                       ) : (
-                        <Badge variant="outline">No subido</Badge>
+                        <Badge variant="outline" className="border-slate-600 text-slate-400">No subido</Badge>
                       )}
                     </div>
                   </div>
@@ -333,11 +332,11 @@ export default function ConductorDocumentosPage() {
       </Card>
 
       {/* Info Card */}
-      <Card className="bg-blue-50 border-blue-200">
+      <Card className="bg-gradient-to-r from-orange-950/30 to-orange-900/20 border-orange-900/50">
         <CardHeader>
-          <CardTitle className="text-blue-900">¿Necesitas ayuda?</CardTitle>
+          <CardTitle className="text-orange-400">¿Necesitas ayuda?</CardTitle>
         </CardHeader>
-        <CardContent className="text-blue-800 text-sm space-y-2">
+        <CardContent className="text-orange-200/80 text-sm space-y-2">
           <p>• Los documentos se validan en 24-48 horas</p>
           <p>• Recibirás notificaciones por email y WhatsApp</p>
           <p>• Puedes subir nuevas versiones si un documento es rechazado</p>
