@@ -19,7 +19,8 @@ async function getApplicants() {
       license_type,
       status,
       background_check_status,
-      created_at
+      created_at,
+      transportistas(nombre_fantasia, razon_social)
     `)
     .order("created_at", { ascending: false })
 
@@ -38,7 +39,7 @@ async function getApplicants() {
     status: app.status,
     backgroundCheckStatus: app.background_check_status,
     createdAt: app.created_at,
-    companyName: "Sin asignar",
+    companyName: app.transportistas?.nombre_fantasia || app.transportistas?.razon_social || "Sin asignar",
   }))
 }
 
