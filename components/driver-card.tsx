@@ -583,11 +583,14 @@ export function DriverCard({
               setSelectedDocument(prev => prev ? { ...prev, estado: normalizedStatus as any } : null)
             }
             
+            // Force document refresh to update the list in real-time
+            await refetch(true)
+            
             // Close modal after successful status change
             setTimeout(() => {
               setShowDocumentModal(false)
               setSelectedDocument(null)
-            }, 500)
+            }, 300)
             
             // Show success
             if (typeof window !== 'undefined') {
@@ -596,9 +599,6 @@ export function DriverCard({
               successMsg.textContent = `✅ Documento actualizado a ${newStatus}`
               document.body.appendChild(successMsg)
               setTimeout(() => successMsg.remove(), 3000)
-              
-              // Dispatch event for listeners to refetch
-              window.dispatchEvent(new Event('documentStatusChanged'))
             }
           } catch (error) {
             console.error('[v0] Error updating document status:', error)
