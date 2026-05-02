@@ -101,7 +101,7 @@ export default function AlertasPage() {
         case 'DOCUMENT_APPROVED':
           return 'border-l-4 border-l-green-500 bg-green-900/25'
         case 'DOCUMENT_PENDING':
-          return 'border-l-4 border-l-yellow-500 bg-yellow-900/25'
+          return 'border-l-4 border-l-amber-400 bg-amber-900/40'
         default:
           break
       }
