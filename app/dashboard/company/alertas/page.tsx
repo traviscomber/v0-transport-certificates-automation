@@ -140,13 +140,13 @@ export default function AlertasPage() {
   const getPriorityLabel = (priority: string): string => {
     switch (priority) {
       case 'critical':
-        return 'CRÍTICAS'
+        return 'CRÍTICA'
       case 'high':
-        return 'ALTAS'
+        return 'ALTA'
       case 'medium':
-        return 'MEDIAS'
+        return 'MEDIA'
       case 'low':
-        return 'BAJAS'
+        return 'BAJA'
       default:
         return priority.toUpperCase()
     }
