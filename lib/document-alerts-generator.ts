@@ -84,14 +84,14 @@ export async function generateDocumentStatusChangeAlert(
     if (conductor?.transportista_id) {
       const { data: transportista } = await supabase
         .from('transportistas')
-        .select('nombre, razon_social, ejecutivo_nombre, ejecutivo_asignado')
+        .select('razon_social, nombre_fantasia, ejecutivo_nombre')
         .eq('id', conductor.transportista_id)
         .single()
       
       if (transportista) {
-        transportistaName = transportista.nombre || transportista.razon_social || 'Transportista Desconocido'
-        // Use ejecutivo_nombre if available, otherwise use ejecutivo_asignado
-        ejecutivaAsignada = transportista.ejecutivo_nombre || transportista.ejecutivo_asignado || 'Sin asignar'
+        transportistaName = transportista.nombre_fantasia || transportista.razon_social || 'Transportista Desconocido'
+        // Use ejecutivo_nombre from transportista
+        ejecutivaAsignada = transportista.ejecutivo_nombre || 'Sin asignar'
       }
     }
 
