@@ -20,9 +20,14 @@ export default function ConductorDashboard() {
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
+        console.log('[v0] Fetching documents from /api/conductor/documents')
         const response = await fetch("/api/conductor/documents")
+        console.log('[v0] Response status:', response.status)
+        
         if (response.ok) {
           const documents = await response.json()
+          console.log('[v0] Documents received:', documents)
+          console.log('[v0] Documents count:', documents.length)
           setDocuments(documents)
           
           // Calculate compliance stats
@@ -30,15 +35,19 @@ export default function ConductorDashboard() {
           const expired = documents.filter((d: any) => d.status === "expired").length
           const pending = documents.filter((d: any) => d.status === "pending").length
           
+          console.log('[v0] Compliance stats:', { total: documents.length, valid, expired, pending })
+          
           setComplianceStats({
             total: documents.length,
             valid,
             expired,
             pending,
           })
+        } else {
+          console.error('[v0] Response not OK:', response.status)
         }
       } catch (error) {
-        console.error("Error fetching documents:", error)
+        console.error("[v0] Error fetching documents:", error)
       } finally {
         setIsLoading(false)
       }

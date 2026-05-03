@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
@@ -17,15 +18,40 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get documents from the conductor's data
-    // For now, return empty array as documents are managed through the upload endpoint
-    // In a real app, this would query a database for documents belonging to this conductor
-    const mockDocuments: Record<string, unknown>[] = []
+    // Create Supabase client
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-    return NextResponse.json(mockDocuments, { status: 200 })
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json(
+        { message: 'Server configuration missing' },
+        { status: 500 }
+      )
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Query uploaded_documents table for documents belonging to this conductor
+    const { data: documents, error } = await supabase
+      .from('uploaded_documents')
+      .select('*')
+      .eq('conductor_id', conductorId)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('[v0] Error fetching documents:', error)
+      return NextResponse.json(
+        { message: 'Error fetching documents', error: error.message },
+        { status: 500 }
+      )
+    }
+
+    console.log(`[v0] Found ${documents?.length || 0} documents for conductor ${conductorId}`)
+
+    return NextResponse.json(documents || [], { status: 200 })
 
   } catch (error) {
-    console.error('Fetch documents error:', error)
+    console.error('[v0] Fetch documents error:', error)
     return NextResponse.json(
       { message: 'Internal server error', error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
