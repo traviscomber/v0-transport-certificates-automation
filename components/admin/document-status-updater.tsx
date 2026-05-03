@@ -9,7 +9,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { CheckCircle, XCircle, Clock } from 'lucide-react'
-import { useToast } from '@/components/ui/use-toast'
 
 interface DocumentStatusUpdaterProps {
   documentId: string
@@ -24,7 +23,6 @@ export function DocumentStatusUpdater({
 }: DocumentStatusUpdaterProps) {
   const [isUpdating, setIsUpdating] = useState(false)
   const [localStatus, setLocalStatus] = useState(currentStatus)
-  const { toast } = useToast()
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -84,19 +82,8 @@ export function DocumentStatusUpdater({
       // Update local state to reflect the change
       setLocalStatus(status)
       onStatusChange(status)
-      
-      // Show success toast
-      toast({
-        title: 'Estado actualizado',
-        description: `Documento marcado como ${getStatusLabel(status).toLowerCase()}`,
-        variant: 'default',
-      })
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'No se pudo actualizar el estado del documento',
-        variant: 'destructive',
-      })
+      // Silent error handling - state remains unchanged
     } finally {
       setIsUpdating(false)
     }
