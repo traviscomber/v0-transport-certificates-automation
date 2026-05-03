@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Upload, FileText, CheckCircle2, AlertCircle, Loader, Download, Eye, X, Clock, HelpCircle } from 'lucide-react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 
 interface UploadedDocument {
   id: string
@@ -108,22 +107,13 @@ export default function ConductorDocumentosPage() {
     setSuccess('')
 
     try {
-      const supabase = createClient()
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
-      if (sessionError || !session?.access_token) {
-        throw new Error('No authentication token found. Please log in again.')
-      }
-
       const formData = new FormData()
       formData.append('file', file)
       formData.append('documentType', 'conductor_document')
 
+      // Fetch uses Supabase cookies automatically (set during login)
       const response = await fetch('/api/conductor/upload-document', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
         body: formData,
       })
 
