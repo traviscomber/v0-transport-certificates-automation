@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { FileText, Search, ExternalLink, CheckCircle, XCircle, Clock } from "lucide-react"
 import Link from "next/link"
 import DocumentosFilterClient from "@/components/admin/documentos-filter-client"
+import { DocumentosUpload } from "@/components/admin/documentos-upload"
 
 async function getDocumentos(conductorId?: string) {
   const supabase = await createClient()
@@ -114,6 +115,9 @@ export default async function DocumentosPage({ searchParams }: { searchParams: R
 
       {/* Filter by Ejecutiva */}
       <DocumentosFilterClient ejecutivas={ejecutivas} selectedId={conductorId} />
+
+      {/* Upload Section */}
+      <DocumentosUpload conductores={ejecutivas} />
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4">
