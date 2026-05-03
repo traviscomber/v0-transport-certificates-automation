@@ -164,7 +164,6 @@ export async function POST(request: NextRequest) {
       conductor_id: conductor.id,
       original_filename: file.name,
       file_url: publicUrl,
-      file_path: filePath,
       file_size: file.size,
       mime_type: file.type,
       validation_status: validationStatus,
