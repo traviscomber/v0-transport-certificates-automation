@@ -550,7 +550,7 @@ export function DriverCard({
 
       {/* Document Action Modal */}
       <DocumentActionModal
-        document={currentSelectedDocument}
+        document={currentSelectedDocument ?? null}
         isOpen={showDocumentModal}
         isAdmin={true}
         onClose={() => {
