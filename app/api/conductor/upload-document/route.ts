@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get conductor info from conductores table using conductorId
+    console.log('[v0] Step 1b: Looking up conductor with ID from cookie:', conductorId)
     const { data: conductor, error: conductorError } = await supabase
       .from('conductores')
       .select('*')
@@ -73,11 +74,14 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (conductorError || !conductor) {
+      console.error('[v0] Conductor lookup failed for ID:', conductorId, 'error:', conductorError?.message)
       return NextResponse.json(
         { message: 'Conductor profile not found' },
         { status: 404 }
       )
     }
+
+    console.log('[v0] Found conductor:', { id: conductor.id, rut: conductor.rut, nombre_completo: conductor.nombre_completo })
 
     // Get document type info
     const { data: docType, error: docTypeError } = await supabase
@@ -182,7 +186,8 @@ export async function POST(request: NextRequest) {
       file_url: publicUrl,
     }
 
-    console.log('[v0] Attempting insert with minimal payload:', insertPayload)
+    console.log('[v0] Insert payload - conductor.id:', conductor.id, 'conductor.rut:', conductor.rut, 'conductor.nombre_completo:', conductor.nombre_completo)
+    console.log('[v0] Full insert payload:', insertPayload)
 
     const { data: uploadedDoc, error: dbError } = await supabase
       .from('uploaded_documents')
