@@ -33,7 +33,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
   { label: 'Torre de Control', href: '/dashboard/torre-control', icon: <BarChart3 className="h-5 w-5" /> },
-  { label: 'Documentos', href: '/dashboard/documentos', icon: <FileText className="h-5 w-5" /> },
+  { label: 'Documentos', href: '/admin/documentos', icon: <FileText className="h-5 w-5" /> },
   { label: 'Certificados', href: '/certificates', icon: <FileText className="h-5 w-5" /> },
   { label: 'Organizaciones', href: '/organizations', icon: <Building2 className="h-5 w-5" />, roles: ['admin', 'mandante'] },
   { label: 'Subir Documentos', href: '/upload', icon: <Upload className="h-5 w-5" /> },
