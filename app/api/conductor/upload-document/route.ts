@@ -165,35 +165,11 @@ export async function POST(request: NextRequest) {
       original_filename: file.name,
       file_url: publicUrl,
       validation_status: validationStatus,
-      // Note: mime_type, file_size, uploaded_by removed - columns don't exist in live database
     }
 
-    // Add AI-extracted fields if extraction was successful
-    if (aiExtraction) {
-      insertPayload.confidence_score = aiExtraction.confidence
-      insertPayload.ocr_structured_data = {
-        documentType: aiExtraction.documentType,
-        documentNumber: aiExtraction.documentNumber,
-        extractedText: aiExtraction.extractedText,
-        expirationDate: aiExtraction.expirationDate,
-        issuanceDate: aiExtraction.issuanceDate,
-        warnings: aiExtraction.warnings || []
-      }
-      // Store expiry date if available
-      if (aiExtraction.expirationDate) {
-        insertPayload.expiry_date = aiExtraction.expirationDate
-      }
-      if (aiExtraction.issuanceDate) {
-        insertPayload.issue_date = aiExtraction.issuanceDate
-      }
-    } else {
-      insertPayload.confidence_score = 0
-      if (extractionError) {
-        insertPayload.ocr_structured_data = {
-          error: extractionError
-        }
-      }
-    }
+    // Note: Not storing AI extraction data directly in this table
+    // as columns like ocr_structured_data, confidence_score, etc. don't exist
+    // The AI extraction happens but will need a separate alerts/metadata table
 
     const { data: uploadedDoc, error: dbError } = await supabase
       .from('uploaded_documents')
