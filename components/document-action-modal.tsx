@@ -14,6 +14,7 @@ interface Document {
   estado: 'pendiente' | 'aprobado' | 'rechazado'
   storage_path?: string
   public_url?: string
+  rejection_reason?: string
 }
 
 interface DocumentActionModalProps {
