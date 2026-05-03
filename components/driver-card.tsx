@@ -353,7 +353,7 @@ export function DriverCard({
                             className="p-1 hover:bg-slate-700/60 rounded transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
-                              setSelectedDocument(doc)
+                              setSelectedDocument(doc.id)
                               setShowDocumentModal(true)
                             }}
                           >
