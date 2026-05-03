@@ -46,7 +46,6 @@ export async function GET(
 
     return NextResponse.json({ success: true, document }, { status: 200 })
   } catch (error) {
-    console.error('[v0] GET document error:', error)
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -115,7 +114,6 @@ export async function PUT(
       .single()
 
     if (updateError) {
-      console.error('[v0] Update error:', updateError)
       return NextResponse.json(
         { message: 'Failed to update document' },
         { status: 500 }
@@ -124,7 +122,6 @@ export async function PUT(
 
     return NextResponse.json({ success: true, document: updatedDoc }, { status: 200 })
   } catch (error) {
-    console.error('[v0] PUT document error:', error)
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -179,7 +176,7 @@ export async function DELETE(
       await supabase.storage
         .from('documents')
         .remove([document.file_path])
-        .catch(err => console.error('[v0] Storage deletion error:', err))
+        .catch(err => void err)
     }
 
     // Delete document record from database
@@ -189,7 +186,6 @@ export async function DELETE(
       .eq('id', params.id)
 
     if (deleteError) {
-      console.error('[v0] Delete error:', deleteError)
       return NextResponse.json(
         { message: 'Failed to delete document' },
         { status: 500 }
@@ -198,7 +194,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, message: 'Document deleted' }, { status: 200 })
   } catch (error) {
-    console.error('[v0] DELETE document error:', error)
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
