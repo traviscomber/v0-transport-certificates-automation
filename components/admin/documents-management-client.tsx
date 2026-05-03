@@ -87,10 +87,27 @@ export function DocumentsManagementClient({
   const handleStatusChange = async (docId: string, newStatus: string, reason?: string) => {
     setIsLoadingDocs(true)
     try {
-      const body: any = { status: newStatus }
-      if (reason && newStatus === 'rechazado') {
+      console.log('[v0] handleStatusChange called with:', { docId, newStatus, reason })
+      
+      // Map Spanish status to English for API
+      const statusMap: Record<string, string> = {
+        'aprobado': 'approved',
+        'rechazado': 'rejected',
+        'pendiente': 'pending',
+        'approved': 'approved',
+        'rejected': 'rejected',
+        'pending': 'pending'
+      }
+      
+      const dbStatus = statusMap[newStatus.toLowerCase()] || newStatus
+      console.log('[v0] Mapped status:', { original: newStatus, mapped: dbStatus })
+      
+      const body: any = { status: dbStatus }
+      if (reason && newStatus.toLowerCase() === 'rechazado') {
         body.reason = reason
       }
+
+      console.log('[v0] Sending PATCH request to /api/company/documents/' + docId + '/status:', body)
 
       const response = await fetch(`/api/company/documents/${docId}/status`, {
         method: 'PATCH',
@@ -98,16 +115,26 @@ export function DocumentsManagementClient({
         body: JSON.stringify(body)
       })
 
+      const responseData = await response.json()
+      console.log('[v0] PATCH response status:', response.status)
+      console.log('[v0] PATCH response data:', responseData)
+
       if (!response.ok) {
-        throw new Error('Error updating status')
+        throw new Error(responseData.error || 'Error updating status')
       }
 
-      // Update local state
+      // Update local state with Spanish status for UI
+      const uiStatus = newStatus.toLowerCase() === 'approved' ? 'aprobado' : 
+                       newStatus.toLowerCase() === 'rejected' ? 'rechazado' : 
+                       'pendiente'
+      
+      console.log('[v0] Updating local state:', { docId, uiStatus })
+      
       setDocuments(prev => prev.map(doc =>
         doc.id === docId
           ? {
               ...doc,
-              estado: newStatus as 'pendiente' | 'aprobado' | 'rechazado',
+              estado: uiStatus as 'pendiente' | 'aprobado' | 'rechazado',
               rejection_reason: reason
             }
           : doc
@@ -118,10 +145,12 @@ export function DocumentsManagementClient({
       if (typeof window !== 'undefined') {
         const msg = document.createElement('div')
         msg.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100]'
-        msg.textContent = `✓ Documento actualizado a ${newStatus}`
+        msg.textContent = `✓ Documento actualizado a ${uiStatus}`
         document.body.appendChild(msg)
         setTimeout(() => msg.remove(), 3000)
       }
+      
+      console.log('[v0] ✅ Status update successful')
     } catch (error) {
       console.error('[v0] Error updating status:', error)
       alert(`Error: ${error instanceof Error ? error.message : 'Desconocido'}`)
