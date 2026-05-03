@@ -76,6 +76,9 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // Found conductor by RUT, now query documents
+    console.log('[v0] Found conductor by RUT, querying documents for conductor_id:', conductorData.id)
+    
     const conductorId = conductorData.id
     console.log('[v0] Resolved conductor_id:', conductorId, 'from RUT in DB:', conductorData.rut)
 
