@@ -582,6 +582,10 @@ export function DriverCard({
               setSelectedDocument((prev: DriverDocument | null) => prev ? { ...prev, estado: normalizedStatus as any } : null)
             }
             
+            // CRITICAL: Force refetch fresh data from API to ensure all documents show updated status
+            console.log('[v0] Status changed, calling refetch(true) to get fresh data...')
+            await refetch(true)
+            
             // Close modal after successful status change
             setTimeout(() => {
               setShowDocumentModal(false)
