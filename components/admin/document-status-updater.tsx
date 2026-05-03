@@ -69,6 +69,8 @@ export function DocumentStatusUpdater({
 
     try {
       setIsUpdating(true)
+      
+      // Step 1: Update status in API
       const response = await fetch(`/api/documents/${documentId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -79,9 +81,24 @@ export function DocumentStatusUpdater({
         throw new Error('Failed to update document status')
       }
 
-      // Update local state to reflect the change
-      setLocalStatus(status)
-      onStatusChange(status)
+      // Step 2: Verify the update by refetching the document
+      const verifyResponse = await fetch(`/api/documents/${documentId}`)
+      if (verifyResponse.ok) {
+        const verifiedData = await verifyResponse.json()
+        // Confirm the status was actually updated in the database
+        if (verifiedData.validation_status === status) {
+          setLocalStatus(status)
+          onStatusChange(status)
+        } else {
+          // If verification failed, force a page reload to get fresh data
+          setTimeout(() => {
+            window.location.reload()
+          }, 1000)
+        }
+      } else {
+        setLocalStatus(status)
+        onStatusChange(status)
+      }
     } catch (error) {
       // Silent error handling - state remains unchanged
     } finally {

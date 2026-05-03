@@ -1,51 +1,37 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from "@/lib/supabase/server"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const driverId = params.id
+    const documentId = params.id
 
-    if (!driverId) {
-      return NextResponse.json({ error: 'Driver ID is required' }, { status: 400 })
+    if (!documentId) {
+      return NextResponse.json({ error: 'Document ID is required' }, { status: 400 })
     }
 
-    // Crear cliente de Supabase con ANON_KEY
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    
-    if (!supabaseUrl || !anonKey) {
-      console.error('[v0] Missing Supabase configuration')
-      return NextResponse.json(
-        { error: 'Server not properly configured' },
-        { status: 500 }
-      )
-    }
+    const supabase = await createClient()
 
-    const supabase = createClient(supabaseUrl, anonKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    })
-
-    // Obtener certificados del conductor desde tabla certificates
+    // Try to fetch from uploaded_documents table first
     const { data, error } = await supabase
-      .from('certificates')
-      .select('id, file_name as nombre, document_number as tipo, status as estado, created_at as fecha_subida')
-      .eq('driver_id', driverId)
-      .order('created_at', { ascending: false })
+      .from('uploaded_documents')
+      .select('*')
+      .eq('id', documentId)
+      .single()
 
-    if (error) {
-      console.error('[v0] Error fetching certificates:', error)
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116 means no rows found, which is expected if it's not an uploaded document
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    console.log('[v0] Certificates fetched for driver', driverId, ':', data?.length || 0)
-    return NextResponse.json({ data }, { status: 200 })
+    if (data) {
+      return NextResponse.json(data, { status: 200 })
+    }
+
+    // If not found in uploaded_documents, return 404
+    return NextResponse.json({ error: 'Document not found' }, { status: 404 })
   } catch (error) {
-    console.error('[v0] Error in fetch handler:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch documents' },
+      { error: error instanceof Error ? error.message : 'Failed to fetch document' },
       { status: 500 }
     )
   }
