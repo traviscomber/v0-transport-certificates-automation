@@ -27,18 +27,23 @@ export default function ConductorLoginForm() {
       console.log('[v0] Response OK:', response.ok)
 
       if (!response.ok) {
-        const data = await response.json()
-        console.log('[v0] Error response:', data)
-        throw new Error(data.error || `Error HTTP ${response.status}`)
+        const errorData = await response.json()
+        console.log('[v0] Error response:', errorData)
+        throw new Error(errorData.error || `Error HTTP ${response.status}`)
       }
 
       // Extract conductor data from response and store in localStorage
       const data = await response.json()
-      console.log('[v0] Login response received:', JSON.stringify(data, null, 2))
-      console.log('[v0] conductor_id:', data.conductor_id)
-      console.log('[v0] rut:', data.rut)
-      console.log('[v0] nombre_completo:', data.nombre_completo)
-      console.log('[v0] email:', data.email)
+      console.log('[v0] Login response received:', data)
+      console.log('[v0] Response keys:', Object.keys(data))
+      console.log('[v0] typeof data:', typeof data)
+      
+      // Log each field individually
+      console.log('[v0] data.conductor_id:', data.conductor_id, 'type:', typeof data.conductor_id)
+      console.log('[v0] data.rut:', data.rut, 'type:', typeof data.rut)
+      console.log('[v0] data.nombre_completo:', data.nombre_completo, 'type:', typeof data.nombre_completo)
+      console.log('[v0] data.email:', data.email, 'type:', typeof data.email)
+      console.log('[v0] data.transportista_id:', data.transportista_id, 'type:', typeof data.transportista_id)
       
       const conductorData = {
         conductor_id: data.conductor_id,
@@ -48,7 +53,7 @@ export default function ConductorLoginForm() {
         transportista_id: data.transportista_id
       }
       
-      console.log('[v0] Storing conductor data:', JSON.stringify(conductorData, null, 2))
+      console.log('[v0] Storing conductor data:', conductorData)
       localStorage.setItem('conductor_data', JSON.stringify(conductorData))
       
       // Verify it was stored
