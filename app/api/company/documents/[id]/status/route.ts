@@ -133,6 +133,7 @@ export async function PATCH(
 
     // STEP 3: Generate alert with real conductor name from conductores table
     // Generate alerts for all status changes: pending, approved, rejected
+    let alertError = null
     try {
       // Resolve conductor name from conductores table
       let conductorName = 'Conductor'
@@ -161,6 +162,8 @@ export async function PATCH(
         if (docType?.name) documentTypeName = docType.name
       }
 
+      console.log('[v0] About to call generateDocumentStatusChangeAlert:', { documentId, dbStatus, reason })
+      
       await generateDocumentStatusChangeAlert(
         documentId,
         documentTypeName,
@@ -169,8 +172,12 @@ export async function PATCH(
         dbStatus as 'approved' | 'rejected' | 'pending',
         reason || undefined
       )
-    } catch (alertErr) {
-      console.error('[v0] Alert generation failed (non-blocking):', alertErr)
+      
+      console.log('[v0] ✅ generateDocumentStatusChangeAlert completed successfully')
+    } catch (err) {
+      alertError = err
+      console.error('[v0] ❌ Alert generation failed (non-blocking):', alertError)
+      // Continue - don't fail the request due to alert generation error
     }
 
     // STEP 4: Emit event to orchestration system (non-blocking)
@@ -187,7 +194,7 @@ export async function PATCH(
       realtime_enabled: true,
     }
     
-    console.log('[v0] PATCH response:', responsePayload)
+    console.log('[v0] ✅ PATCH /status SUCCESS - Final Response:', responsePayload)
     return NextResponse.json(responsePayload)
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error)
