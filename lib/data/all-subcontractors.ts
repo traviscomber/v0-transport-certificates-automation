@@ -26,8 +26,10 @@ export const allSubcontractorsData: any[] = [];
 // Load data on module import if in browser environment
 if (typeof window !== 'undefined') {
   loadSubcontractorsData().then(data => {
-    allSubcontractorsData.length = 0;
-    allSubcontractorsData.push(...data);
+    if (data && data.length > 0) {
+      allSubcontractorsData.length = 0;
+      allSubcontractorsData.push(...data);
+    }
   });
 }
 

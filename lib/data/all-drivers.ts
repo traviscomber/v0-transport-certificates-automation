@@ -26,8 +26,10 @@ export const allDriversData: any[] = [];
 // Load data on module import if in browser environment
 if (typeof window !== 'undefined') {
   loadDriversData().then(data => {
-    allDriversData.length = 0;
-    allDriversData.push(...data);
+    if (data && data.length > 0) {
+      allDriversData.length = 0;
+      allDriversData.push(...data);
+    }
   });
 }
 
