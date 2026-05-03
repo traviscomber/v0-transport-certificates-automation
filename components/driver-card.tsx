@@ -317,6 +317,8 @@ export function DriverCard({
                             doc.estado === 'rechazado' ? 'opacity-60' : ''
                           }`}
                           onClick={() => {
+                            // Refetch documents to get any newly uploaded files
+                            refetch(true)
                             setSelectedDocument(doc.id)
                             setShowDocumentModal(true)
                           }}
@@ -354,6 +356,8 @@ export function DriverCard({
                             className={`text-xs cursor-pointer hover:opacity-90 transition-opacity ${getDocumentStatusColor(doc.estado)}`}
                             onClick={(e) => {
                               e.stopPropagation()
+                              // Refetch documents to get any newly uploaded files
+                              refetch(true)
                               setSelectedDocument(doc.id)
                               setShowDocumentModal(true)
                             }}
@@ -364,6 +368,8 @@ export function DriverCard({
                             className="p-1 hover:bg-slate-700/60 rounded transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
+                              // Refetch documents to get any newly uploaded files
+                              refetch(true)
                               setSelectedDocument(doc.id)
                               setShowDocumentModal(true)
                             }}
