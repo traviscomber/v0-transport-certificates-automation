@@ -188,11 +188,20 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (dbError) {
-      console.error('Database error:', dbError)
+      console.error('[v0] Database error inserting uploaded_documents:', {
+        code: dbError.code,
+        message: dbError.message,
+        details: dbError.details,
+        payload: insertPayload
+      })
       // Try to clean up storage
       await supabase.storage.from('documents').remove([filePath])
       return NextResponse.json(
-        { message: 'Failed to save document record' },
+        { 
+          message: 'Failed to save document record',
+          error: dbError.message,
+          details: dbError.details
+        },
         { status: 500 }
       )
     }

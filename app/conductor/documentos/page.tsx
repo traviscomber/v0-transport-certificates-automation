@@ -120,13 +120,18 @@ export default function ConductorDocumentosPage() {
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.message || 'Error al subir documento')
+        console.error('[v0] Upload error response:', data)
+        throw new Error(data.message || data.error || 'Error al subir documento')
       }
 
+      const result = await response.json()
+      console.log('[v0] Upload successful:', result)
       setSuccess('Documento subido exitosamente. Se validará en 24-48 horas.')
       await fetchDocuments()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al subir documento')
+      const errorMsg = err instanceof Error ? err.message : 'Error al subir documento'
+      console.error('[v0] Upload error:', errorMsg)
+      setError(errorMsg)
     } finally {
       setIsUploading(false)
     }
