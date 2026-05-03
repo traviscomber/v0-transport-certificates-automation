@@ -50,60 +50,6 @@ export async function GET(request: NextRequest) {
 
     console.log('[v0] Found', documents?.length || 0, 'documents for conductor_id:', driverId)
 
-    // CRITICAL: Sync document statuses with latest alerts
-    // For each document, check if there's a recent alert with a different status
-    // If so, use the alert status as the source of truth
-    const documentsWithAlertSync = await Promise.all((documents || []).map(async (doc: any) => {
-      try {
-        // Get the most recent alert for this document
-        const { data: alerts, error: alertsError } = await adminClient
-          .from('alerts')
-          .select('metadata, created_at, type')
-          .eq('metadata->>document_id', doc.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-        
-        if (alertsError) {
-          console.warn('[v0] ALERT SYNC: Error querying alerts for doc', doc.id, ':', alertsError)
-          return doc
-        }
-
-        const latestAlert = alerts?.[0]
-        if (latestAlert?.metadata?.status) {
-          const alertStatus = latestAlert.metadata.status // 'approved', 'pending', 'rejected'
-          const dbStatus = (doc.validation_status || 'pending').toLowerCase()
-          
-          if (alertStatus !== dbStatus) {
-            console.log('[v0] ALERT SYNC: Document', doc.id, 'has mismatched status', {
-              dbStatus,
-              alertStatus,
-              alertCreatedAt: latestAlert.created_at,
-              alertType: latestAlert.type,
-            })
-            
-            // Update document to match the alert status
-            const { error: updateError } = await adminClient
-              .from('uploaded_documents')
-              .update({ validation_status: alertStatus })
-              .eq('id', doc.id)
-            
-            if (!updateError) {
-              // Update the doc object to reflect the change
-              doc.validation_status = alertStatus
-              console.log('[v0] ALERT SYNC: Updated document', doc.id, 'status to', alertStatus)
-            } else {
-              console.error('[v0] ALERT SYNC: Failed to update document', doc.id, ':', updateError)
-            }
-          }
-        }
-      } catch (alertErr) {
-        console.error('[v0] ALERT SYNC: Error checking alerts for doc', doc.id, ':', alertErr)
-        // Continue with document as-is if alert check fails
-      }
-      
-      return doc
-    }))
-
     const statusMap: Record<string, string> = {
       'approved': 'aprobado',
       'validated': 'aprobado',
@@ -116,7 +62,7 @@ export async function GET(request: NextRequest) {
       'vencido': 'vencido',
     }
 
-    const formattedDocs = (documentsWithAlertSync || []).map((doc: any) => {
+    const formattedDocs = (documents || []).map((doc: any) => {
       const rawStatus = (doc.validation_status || 'pending').toLowerCase()
       const estadoEspanol = statusMap[rawStatus] || 'pendiente'
 

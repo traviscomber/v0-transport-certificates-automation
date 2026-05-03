@@ -595,7 +595,7 @@ export function DriverCard({
               // Force a complete refresh of documents to sync with DB
               refetch(true)
               console.log('[v0] driver-card: Called refetch(true)')
-            }, 500)
+            }, delayMs)
             
             // Show success
             if (typeof window !== 'undefined') {
