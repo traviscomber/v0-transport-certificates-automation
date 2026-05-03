@@ -26,6 +26,18 @@ export default function ConductorLoginForm() {
         throw new Error(data.error || `Error HTTP ${response.status}`)
       }
 
+      // Extract conductor data from response and store in localStorage
+      const data = await response.json()
+      console.log('[v0] Login successful, storing conductor data:', data)
+      
+      localStorage.setItem('conductor_data', JSON.stringify({
+        conductor_id: data.conductor_id,
+        rut: data.rut,
+        nombre_completo: data.nombre_completo,
+        email: data.email,
+        transportista_id: data.transportista_id
+      }))
+
       // API returns JSON with cookies already set in response headers
       // Now redirect to /conductor/onboarding — cookies persist because
       // they were already sent with the API response

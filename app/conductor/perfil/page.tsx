@@ -30,30 +30,23 @@ export default function ConductorPerfilPage() {
 
   const loadConductorData = () => {
     try {
-      // Get conductor data from cookies set during login
-      const conductorNombre = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('conductor_nombre='))
-        ?.split('=')[1]
+      // Get conductor data from localStorage (set by login form after successful login)
+      const conductorData = localStorage.getItem('conductor_data')
       
-      const conductorRut = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('conductor_rut='))
-        ?.split('=')[1]
-      
-      const userEmail = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('user_email='))
-        ?.split('=')[1]
-
-      setFormData(prev => ({
-        ...prev,
-        name: conductorNombre ? decodeURIComponent(conductorNombre) : '',
-        rut: conductorRut ? decodeURIComponent(conductorRut) : '',
-        email: userEmail ? decodeURIComponent(userEmail) : ''
-      }))
+      if (conductorData) {
+        const parsed = JSON.parse(conductorData)
+        console.log('[v0] Loaded conductor data from localStorage:', parsed)
+        setFormData(prev => ({
+          ...prev,
+          name: parsed.nombre_completo || '',
+          rut: parsed.rut || '',
+          email: parsed.email || ''
+        }))
+      } else {
+        console.log('[v0] No conductor data found in localStorage')
+      }
     } catch (err) {
-      console.error('[v0] Error loading conductor data from cookies:', err)
+      console.error('[v0] Error loading conductor data:', err)
     }
   }
 
