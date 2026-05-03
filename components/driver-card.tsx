@@ -565,30 +565,16 @@ export function DriverCard({
             // Clear rejection reason after successful update
             setRejectionReason('')
             
-            // Update selectedDocument with new status to reflect in modal
-            if (selectedDocument && selectedDocument.id === docId) {
-              // Normalize status to Spanish
-              const normalizedStatus = {
-                'aprobado': 'aprobado',
-                'approved': 'aprobado',
-                'rechazado': 'rechazado',
-                'rejected': 'rechazado',
-                'pendiente': 'pendiente',
-                'pending': 'pendiente',
-                'vencido': 'vencido',
-                'expired': 'vencido'
-              }[newStatus?.toLowerCase()] || newStatus
-              
-              setSelectedDocument((prev: DriverDocument | null) => prev ? { ...prev, estado: normalizedStatus as any } : null)
-            }
-            
-            // DO NOT call refetch() - the hook already updated local state in updateDocumentStatus
-            // Calling refetch would overwrite the optimistic update with stale API data
+            // DO NOT update selectedDocument locally - instead close modal and force refetch
+            // This ensures the next time the card opens, it gets fresh data from the DB
+            // The hook's updateDocumentStatus already updated the documents array optimistically
             
             // Close modal after successful status change
             setTimeout(() => {
               setShowDocumentModal(false)
               setSelectedDocument(null)
+              // Force a complete refresh of documents to sync with DB
+              refetch(true)
             }, 500)
             
             // Show success
