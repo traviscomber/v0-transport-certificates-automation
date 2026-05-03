@@ -124,7 +124,9 @@ export function DocumentActionModal({
         throw new Error('Error al eliminar el documento')
       }
 
-      await onDelete(localDocument.id)
+      if (onDelete) {
+        await onDelete(localDocument.id)
+      }
       onClose()
     } catch (error) {
       console.error('[v0] Error deleting document:', error)
