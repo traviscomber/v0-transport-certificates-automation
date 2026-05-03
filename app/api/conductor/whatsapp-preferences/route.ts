@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,31 +16,23 @@ export async function POST(request: NextRequest) {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+    // Get conductor_id from cookies (set by login)
+    const cookieStore = await cookies()
+    const conductorId = cookieStore.get('conductor_id')?.value
+
+    if (!conductorId) {
+      return NextResponse.json(
+        { error: 'Unauthorized - conductor not authenticated' },
+        { status: 401 }
+      )
+    }
+
     const { whatsapp_phone } = await request.json()
 
     if (!whatsapp_phone) {
       return NextResponse.json(
         { error: 'WhatsApp phone number required' },
         { status: 400 }
-      )
-    }
-
-    // Get auth header to identify conductor
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
       )
     }
 
@@ -59,7 +52,7 @@ export async function POST(request: NextRequest) {
         whatsapp_phone,
         whatsapp_notifications_enabled: true
       })
-      .eq('user_id', user.id)
+      .eq('id', conductorId)
 
     if (updateError) {
       console.error('[v0] Error updating WhatsApp phone:', updateError)
@@ -100,21 +93,13 @@ export async function GET(request: NextRequest) {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Get auth header to identify conductor
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
+    // Get conductor_id from cookies (set by login)
+    const cookieStore = await cookies()
+    const conductorId = cookieStore.get('conductor_id')?.value
 
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-
-    if (authError || !user) {
+    if (!conductorId) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized - conductor not authenticated' },
         { status: 401 }
       )
     }
@@ -123,7 +108,7 @@ export async function GET(request: NextRequest) {
     const { data: conductor, error: fetchError } = await supabase
       .from('conductores')
       .select('whatsapp_phone, whatsapp_notifications_enabled')
-      .eq('user_id', user.id)
+      .eq('id', conductorId)
       .single()
 
     if (fetchError) {
