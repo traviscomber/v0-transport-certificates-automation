@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
 import { Upload, FileText, AlertCircle, CheckCircle2, Loader } from "lucide-react"
 import { useState, useRef } from "react"
+import { createClient } from "@/lib/supabase/client"
 
 const ALLOWED_DOCUMENT_TYPES = [
   { id: 'CEDULA_IDENTIDAD', label: 'Cédula de Identidad' },
@@ -61,20 +62,17 @@ export default function DriverUploadPage() {
     formData.append('documentType', selectedType)
 
     try {
-      // Get token from Supabase session cookie or localStorage
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('sb-'))
-        ?.split('=')[1] || localStorage.getItem('supabase.auth.token')?.split('"')[1]
+      const supabase = createClient()
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
-      if (!token) {
+      if (sessionError || !session?.access_token) {
         throw new Error('No authentication token found. Please log in again.')
       }
 
       const response = await fetch('/api/conductor/upload-document', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: formData,
       })
