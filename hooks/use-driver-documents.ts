@@ -90,7 +90,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         }
       })
 
-      console.log('[v0] Transformed documents:', transformedDocs.map(d => ({ id: d.id, estado: d.estado })))
+      console.log('[v0] Transformed documents:', transformedDocs.map((d: DriverDocument) => ({ id: d.id, estado: d.estado })))
       setDocuments(transformedDocs)
     } catch (err) {
       console.error('[v0] Error fetching documents:', err)
