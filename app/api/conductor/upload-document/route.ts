@@ -164,10 +164,8 @@ export async function POST(request: NextRequest) {
       conductor_id: conductor.id,
       original_filename: file.name,
       file_url: publicUrl,
-      mime_type: file.type,
       validation_status: validationStatus,
-      // uploaded_by is NULL for conductor uploads (conductors don't have auth.users records)
-      // file_size removed - column doesn't exist in live database
+      // Note: mime_type, file_size, uploaded_by removed - columns don't exist in live database
     }
 
     // Add AI-extracted fields if extraction was successful
