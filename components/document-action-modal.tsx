@@ -134,17 +134,6 @@ export function DocumentActionModal({
       setIsDeleting(false)
     }
   }
-      if (onDelete) {
-        await onDelete(document.id)
-      }
-      onClose()
-    } catch (error) {
-      console.error('[v0] Error deleting document:', error)
-      alert('Error al eliminar el documento')
-    } finally {
-      setIsDeleting(false)
-    }
-  }
 
   const getStatusColor = (estado: string) => {
     switch (estado) {
