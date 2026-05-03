@@ -128,15 +128,15 @@ export function DriversList({ drivers }: DriversListProps) {
   const getDocumentStatusColor = (estado: string) => {
     switch (estado) {
       case 'aprobado':
-        return 'bg-green-500/30 text-green-200'
+        return 'bg-green-600 text-white'
       case 'rechazado':
-        return 'bg-red-500/30 text-red-200'
+        return 'bg-red-600 text-white'
       case 'pendiente':
-        return 'bg-yellow-500/30 text-yellow-200'
+        return 'bg-yellow-600 text-white'
       case 'vencido':
-        return 'bg-red-500/40 text-red-300'
+        return 'bg-orange-600 text-white'
       default:
-        return 'bg-slate-500/30 text-slate-200'
+        return 'bg-slate-600 text-white'
     }
   }
 
