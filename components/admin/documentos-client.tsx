@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 
 interface Document {
   id: string
-  original_filename: string
+  original_filename: string | null
   conductor_id: string
   validation_status: 'approved' | 'rejected' | 'pending'
   file_url?: string
@@ -164,7 +164,7 @@ export function DocumentosClient({ documents, selectedEjecutiva }: DocumentosCli
 
       {/* Documents Table */}
       {filteredDocuments.length === 0 ? (
-        <Card>
+        <Card suppressHydrationWarning>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <FileText className="h-16 w-16 text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-semibold mb-2">No hay documentos</h3>
@@ -178,7 +178,7 @@ export function DocumentosClient({ documents, selectedEjecutiva }: DocumentosCli
           </CardContent>
         </Card>
       ) : (
-        <Card>
+        <Card suppressHydrationWarning>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
