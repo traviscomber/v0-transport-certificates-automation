@@ -153,18 +153,36 @@ export async function POST(request: NextRequest) {
       // Continue with document upload — AI failure doesn't block the flow
     }
 
-    // STEP 2: Create uploaded_documents record
-    console.log('[v0] Step 2: Creating uploaded_documents record')
-    console.log('[v0] Conductor ID:', conductor.id)
-    console.log('[v0] Document Type ID:', docType.id)
+    // STEP 2: Test database connection and schema
+    console.log('[v0] Step 2: Testing database connection and table schema')
     
-    // Test with MINIMAL payload first - just the absolute essentials
+    // First, just try a simple SELECT to verify table exists and we can read it
+    const { data: testQuery, error: testError } = await supabase
+      .from('uploaded_documents')
+      .select('*')
+      .limit(1)
+    
+    if (testError) {
+      console.error('[v0] Failed to query uploaded_documents table:', testError)
+      return NextResponse.json(
+        { 
+          message: 'Cannot access uploaded_documents table',
+          error: testError.message,
+          details: testError.details,
+        },
+        { status: 500 }
+      )
+    }
+    
+    console.log('[v0] Table query successful, sample record:', testQuery?.[0])
+    
+    // Now try inserting with just conductor_id and file_url
     const insertPayload: any = {
       conductor_id: conductor.id,
       file_url: publicUrl,
     }
 
-    console.log('[v0] Attempting insert with payload:', insertPayload)
+    console.log('[v0] Attempting insert with minimal payload:', insertPayload)
 
     const { data: uploadedDoc, error: dbError } = await supabase
       .from('uploaded_documents')
