@@ -157,27 +157,38 @@ export async function POST(request: NextRequest) {
     const insertPayload: any = {
       document_type_id: docType.id,
       conductor_id: conductor.id,
-      uploaded_by: conductorId,
       original_filename: file.name,
       file_url: publicUrl,
       file_path: filePath,
       file_size: file.size,
       mime_type: file.type,
       validation_status: validationStatus,
-      created_at: new Date().toISOString(),
+      // uploaded_by is NULL for conductor uploads (conductors don't have auth.users records)
     }
 
     // Add AI-extracted fields if extraction was successful
     if (aiExtraction) {
-      insertPayload.extracted_document_type = normalizeDocumentType(aiExtraction.documentType)
-      insertPayload.extracted_expiration_date = aiExtraction.expirationDate
-      insertPayload.extraction_confidence = aiExtraction.confidence
-      insertPayload.extraction_warnings = aiExtraction.warnings || []
-      insertPayload.ai_processing_status = 'completed'
+      insertPayload.confidence_score = aiExtraction.confidence
+      insertPayload.ocr_structured_data = {
+        documentType: aiExtraction.documentType,
+        documentNumber: aiExtraction.documentNumber,
+        holderName: aiExtraction.holderName,
+        expirationDate: aiExtraction.expirationDate,
+        warnings: aiExtraction.warnings || []
+      }
+      // Store expiry date if available
+      if (aiExtraction.expirationDate) {
+        insertPayload.expiry_date = aiExtraction.expirationDate.split('T')[0] // Convert ISO to DATE format
+      }
+      if (aiExtraction.issueDate) {
+        insertPayload.issue_date = aiExtraction.issueDate.split('T')[0]
+      }
     } else {
-      insertPayload.ai_processing_status = 'failed'
+      insertPayload.confidence_score = 0
       if (extractionError) {
-        insertPayload.extraction_warnings = [extractionError]
+        insertPayload.ocr_structured_data = {
+          error: extractionError
+        }
       }
     }
 
