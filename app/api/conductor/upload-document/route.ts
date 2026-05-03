@@ -172,16 +172,17 @@ export async function POST(request: NextRequest) {
       insertPayload.ocr_structured_data = {
         documentType: aiExtraction.documentType,
         documentNumber: aiExtraction.documentNumber,
-        holderName: aiExtraction.holderName,
+        extractedText: aiExtraction.extractedText,
         expirationDate: aiExtraction.expirationDate,
+        issuanceDate: aiExtraction.issuanceDate,
         warnings: aiExtraction.warnings || []
       }
       // Store expiry date if available
       if (aiExtraction.expirationDate) {
-        insertPayload.expiry_date = aiExtraction.expirationDate.split('T')[0] // Convert ISO to DATE format
+        insertPayload.expiry_date = aiExtraction.expirationDate
       }
-      if (aiExtraction.issueDate) {
-        insertPayload.issue_date = aiExtraction.issueDate.split('T')[0]
+      if (aiExtraction.issuanceDate) {
+        insertPayload.issue_date = aiExtraction.issuanceDate
       }
     } else {
       insertPayload.confidence_score = 0
@@ -223,7 +224,7 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: conductorId,
         title: 'Documento Subido',
-        message: `Tu ${docType.name} ha sido procesado${validationStatus === 'approved' ? ' y aprobado.' : validationStatus === 'rejected' ? ' pero fue rechazado.' : ' y está en revisión.'}`,
+        message: `Tu ${docType.name} ha sido procesado${validationStatus === 'approved' ? ' y aprobado.' : validationStatus === 'rejected' ? ' pero fue rechazado.' : ' y est�� en revisión.'}`,
         type: validationStatus === 'rejected' ? 'warning' : 'info',
         metadata: {
           document_id: uploadedDoc.id,
