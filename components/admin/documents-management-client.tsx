@@ -38,16 +38,38 @@ export function DocumentsManagementClient({
 
   useEffect(() => {
     // Transform initial documents to our format
-    const transformed = initialDocuments.map((doc: any) => ({
-      id: doc.id,
-      tipo: doc.document_types?.name || doc.document_type_id || 'Documento',
-      nombre: doc.original_filename || 'Documento sin nombre',
-      fecha_subida: doc.created_at,
-      estado: (doc.validation_status || 'pendiente').toLowerCase(),
-      storage_path: doc.storage_path,
-      public_url: doc.file_url,
-      rejection_reason: doc.rejection_reason
-    }))
+    const transformed = initialDocuments.map((doc: any) => {
+      // Use verification_status (from endpoint) or validation_status (from DB)
+      const status = doc.verification_status || doc.validation_status || 'pendiente'
+      const statusMap: Record<string, string> = {
+        'approved': 'aprobado',
+        'validated': 'aprobado',
+        'rejected': 'rechazado',
+        'pending': 'pendiente',
+        'aprobado': 'aprobado',
+        'rechazado': 'rechazado',
+        'pendiente': 'pendiente',
+      }
+      const mappedStatus = statusMap[status.toLowerCase()] || status.toLowerCase()
+      
+      console.log('[v0] Transforming document:', {
+        id: doc.id,
+        fileName: doc.original_filename,
+        rawStatus: status,
+        mappedStatus
+      })
+      
+      return {
+        id: doc.id,
+        tipo: doc.document_types?.name || doc.document_type_code || 'Documento',
+        nombre: doc.original_filename || 'Documento sin nombre',
+        fecha_subida: doc.created_at,
+        estado: mappedStatus,
+        storage_path: doc.storage_path,
+        public_url: doc.file_url,
+        rejection_reason: doc.rejection_reason
+      }
+    })
     setDocuments(transformed)
   }, [initialDocuments])
 
