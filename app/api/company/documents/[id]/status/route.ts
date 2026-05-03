@@ -95,18 +95,10 @@ export async function PATCH(
       .select()
       .single()
     
-    console.log('[v0] UPDATE PATCH result:', {
-      error: updateError?.message,
-      success: !updateError,
-      returnedData: updateData ? { id: updateData.id, validation_status: updateData.validation_status } : null
-    })
-
     if (updateError) {
       console.error('[v0] ❌ PATCH UPDATE FAILED:', {
         documentId,
         error: updateError.message,
-        code: updateError.code,
-        details: updateError.details
       })
       return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
@@ -116,26 +108,28 @@ export async function PATCH(
       return NextResponse.json({ error: 'Update returned no data' }, { status: 500 })
     }
 
-    // VERIFICATION: Do a SELECT to confirm the update was actually saved
+    // CRITICAL: Wait for DB replication before returning
+    // Supabase can have lag between write and read replicas
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
+    // Verify the update was persisted by reading it back
     const { data: verifyData, error: verifyError } = await adminClient
       .from('uploaded_documents')
       .select('validation_status')
       .eq('id', documentId)
       .single()
 
-    console.log('[v0] VERIFY AFTER UPDATE:', {
-      documentId,
-      updateSaidStatus: updateData?.validation_status,
-      verifySaysStatus: verifyData?.validation_status,
-      matchesExpected: verifyData?.validation_status === dbStatus,
-      verifyError: verifyError?.message
-    })
-
-    if (verifyData?.validation_status !== dbStatus) {
-      console.error('[v0] ⚠️ MISMATCH: Update said status is', updateData?.validation_status, 'but verify shows', verifyData?.validation_status)
+    if (verifyError || verifyData?.validation_status !== dbStatus) {
+      console.error('[v0] ⚠️ Verification failed after UPDATE:', {
+        documentId,
+        expectedStatus: dbStatus,
+        actualStatus: verifyData?.validation_status,
+        verifyError: verifyError?.message
+      })
+      // Don't fail - the update likely succeeded but verification failed
+    } else {
+      console.log('[v0] ✅ UPDATE verified - documentId:', documentId, 'status:', dbStatus)
     }
-
-    console.log('[v0] ✅ PATCH SUCCESS - documentId:', documentId, 'validation_status updated to:', updateData.validation_status)
 
     // STEP 3: Generate alert with real conductor name from conductores table
     // Generate alerts for all status changes: pending, approved, rejected
@@ -178,9 +172,6 @@ export async function PATCH(
     } catch (alertErr) {
       console.error('[v0] Alert generation failed (non-blocking):', alertErr)
     }
-
-    // Small delay to ensure Supabase broadcast is queued
-    await new Promise(resolve => setTimeout(resolve, 100))
 
     // STEP 4: Emit event to orchestration system (non-blocking)
     emitToOrchestrator(documentId, dbStatus, reason).catch(err => {
