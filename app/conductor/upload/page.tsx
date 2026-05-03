@@ -61,8 +61,21 @@ export default function DriverUploadPage() {
     formData.append('documentType', selectedType)
 
     try {
+      // Get token from Supabase session cookie or localStorage
+      const token = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('sb-'))
+        ?.split('=')[1] || localStorage.getItem('supabase.auth.token')?.split('"')[1]
+
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.')
+      }
+
       const response = await fetch('/api/conductor/upload-document', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         body: formData,
       })
 

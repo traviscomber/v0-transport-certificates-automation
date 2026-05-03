@@ -107,8 +107,15 @@ export default function ConductorDocumentosPage() {
     setSuccess('')
 
     try {
-      const token = localStorage.getItem('conductor_token')
-      if (!token) throw new Error('No authentication token found')
+      // Get token from Supabase session cookie or localStorage
+      const token = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('sb-'))
+        ?.split('=')[1] || localStorage.getItem('supabase.auth.token')?.split('"')[1]
+
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.')
+      }
 
       const formData = new FormData()
       formData.append('file', file)
