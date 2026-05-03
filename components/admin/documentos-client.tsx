@@ -18,7 +18,12 @@ interface Document {
     nombres: string
     apellido_paterno: string
     rut: string
-  }
+  } | {
+    id: string
+    nombres: string
+    apellido_paterno: string
+    rut: string
+  }[] | null
 }
 
 interface DocumentosClientProps {
@@ -34,13 +39,22 @@ export function DocumentosClient({ documents, selectedEjecutiva }: DocumentosCli
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'rejected' | 'pending'>('all')
 
+  // Helper to get conductor data from either object or array
+  const getConductor = (conductores: any) => {
+    if (Array.isArray(conductores) && conductores.length > 0) {
+      return conductores[0]
+    }
+    return conductores || {}
+  }
+
   // Filter documents based on search and status
   const filteredDocuments = useMemo(() => {
     return documents.filter(doc => {
+      const conductor = getConductor(doc.conductores)
       const matchesSearch = 
         doc.original_filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        `${doc.conductores.nombres} ${doc.conductores.apellido_paterno}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doc.conductores.rut.includes(searchQuery)
+        `${conductor.nombres || ''} ${conductor.apellido_paterno || ''}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (conductor.rut || '').includes(searchQuery)
 
       const matchesStatus = statusFilter === 'all' || doc.validation_status === statusFilter
 
@@ -188,11 +202,17 @@ export function DocumentosClient({ documents, selectedEjecutiva }: DocumentosCli
                       </td>
                       <td className="p-4 text-sm">
                         {doc.conductores 
-                          ? `${doc.conductores.nombres} ${doc.conductores.apellido_paterno}`
+                          ? (() => {
+                              const conductor = getConductor(doc.conductores)
+                              return `${conductor.nombres || '-'} ${conductor.apellido_paterno || '-'}`
+                            })()
                           : '-'}
                       </td>
                       <td className="p-4 text-sm text-muted-foreground">
-                        {doc.conductores?.rut || '-'}
+                        {(() => {
+                          const conductor = getConductor(doc.conductores)
+                          return conductor.rut || '-'
+                        })()}
                       </td>
                       <td className="p-4">
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(doc.validation_status)}`}>
