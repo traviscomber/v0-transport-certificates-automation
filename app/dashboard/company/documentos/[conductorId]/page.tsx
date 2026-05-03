@@ -26,6 +26,8 @@ async function getConductor(conductorId: string) {
 async function getConductorDocuments(conductorId: string) {
   const supabase = await createClient()
   
+  console.log('[v0] Fetching documents for conductor_id:', conductorId)
+  
   const { data, error } = await supabase
     .from("uploaded_documents")
     .select(`
@@ -48,11 +50,19 @@ async function getConductorDocuments(conductorId: string) {
     .order("created_at", { ascending: false })
 
   if (error) {
-    console.error("Error fetching documents:", error)
+    console.error("[v0] Error fetching documents:", error)
     return []
   }
 
-  return data || []
+  console.log('[v0] Found', data?.length || 0, 'documents for conductor:', conductorId)
+  
+  // Transform validation_status to verification_status for frontend
+  const transformed = (data || []).map(doc => ({
+    ...doc,
+    verification_status: doc.validation_status
+  }))
+  
+  return transformed
 }
 
 export default async function ConductorDocumentsPage({ 
@@ -60,8 +70,13 @@ export default async function ConductorDocumentsPage({
 }: { 
   params: { conductorId: string } 
 }) {
+  console.log('[v0] ConductorDocumentsPage - params.conductorId:', params.conductorId)
+  
   const conductor = await getConductor(params.conductorId)
+  console.log('[v0] Fetched conductor:', conductor?.nombres, conductor?.rut)
+  
   const documents = await getConductorDocuments(params.conductorId)
+  console.log('[v0] Fetched', documents.length, 'documents')
 
   if (!conductor) {
     return (
