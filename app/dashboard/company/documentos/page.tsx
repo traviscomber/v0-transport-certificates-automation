@@ -86,10 +86,33 @@ async function getEjecutivas() {
   }))
 }
 
+async function getConductores(ejecutiva?: string) {
+  const supabase = await createClient()
+  
+  let query = supabase
+    .from("conductores")
+    .select("id, nombres, apellido_paterno, rut")
+    .order("apellido_paterno", { ascending: true })
+
+  if (ejecutiva) {
+    query = query.eq("ejecutiva", ejecutiva)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error("Error fetching conductores:", error)
+    return []
+  }
+
+  return data || []
+}
+
 export default async function DocumentosPage({ searchParams }: { searchParams: Record<string, string> }) {
   const selectedEjecutiva = searchParams.ejecutiva
   const documentos = await getDocumentos(selectedEjecutiva)
   const ejecutivas = await getEjecutivas()
+  const conductores = await getConductores(selectedEjecutiva)
 
   return (
     <div className="space-y-6" suppressHydrationWarning>
@@ -107,7 +130,7 @@ export default async function DocumentosPage({ searchParams }: { searchParams: R
       <EjecutivasFilterClient ejecutivas={ejecutivas} selectedEjecutiva={selectedEjecutiva} />
 
       {/* Upload Section */}
-      <DocumentosUpload />
+      <DocumentosUpload conductores={conductores} />
 
       {/* Documents List - Client Component */}
       <DocumentosClient documents={documentos} />
