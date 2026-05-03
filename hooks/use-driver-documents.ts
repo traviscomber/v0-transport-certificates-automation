@@ -237,7 +237,14 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
     }
   }
 
-  // Only fetch when card first expands for this driverId, not on every re-render
+  // When card closes, reset so re-opening always fetches fresh data from DB
+  useEffect(() => {
+    if (!enabled) {
+      loadedForDriverRef.current = null
+    }
+  }, [enabled])
+
+  // Fetch when card opens — always get fresh data on every open
   useEffect(() => {
     if (driverRut && enabled && loadedForDriverRef.current !== driverId) {
       fetchDocuments(true)
