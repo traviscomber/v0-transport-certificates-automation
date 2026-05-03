@@ -51,9 +51,12 @@ export function DocumentosClient({ documents, selectedEjecutiva }: DocumentosCli
   const filteredDocuments = useMemo(() => {
     return documents.filter(doc => {
       const conductor = getConductor(doc.conductores)
+      const filename = doc.original_filename || ''
+      const conductorName = `${conductor.nombres || ''} ${conductor.apellido_paterno || ''}`
+      
       const matchesSearch = 
-        doc.original_filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        `${conductor.nombres || ''} ${conductor.apellido_paterno || ''}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        conductorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (conductor.rut || '').includes(searchQuery)
 
       const matchesStatus = statusFilter === 'all' || doc.validation_status === statusFilter
