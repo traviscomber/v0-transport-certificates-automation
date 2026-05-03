@@ -42,24 +42,49 @@ const DOCUMENT_TYPES = [
 
 const REQUIRED_DOCUMENTS: RequiredDocument[] = [
   {
-    type: 'licencia_conducir',
+    type: 'LIC_CONDUCIR',
     label: 'Licencia de Conducir',
     description: 'Vigente, categoría mínima B'
   },
   {
-    type: 'certificado_antecedentes',
+    type: 'CERT_ANTECEDENTES',
     label: 'Certificado de Antecedentes',
     description: 'Emitido por Carabineros (no más de 6 meses)'
   },
   {
-    type: 'poliza_seguro',
-    label: 'Póliza de Seguro',
-    description: 'Seguro obligatorio del vehículo'
+    type: 'HOJA_VIDA',
+    label: 'Hoja de Vida',
+    description: 'Hoja de vida del conductor'
   },
   {
-    type: 'verificacion_tecnica',
-    label: 'Verificación Técnica',
+    type: 'CEDULA_IDENTIDAD',
+    label: 'Cédula de Identidad',
+    description: 'Vigente y legible'
+  },
+  {
+    type: 'INHABILIDADES_MENORES',
+    label: 'Inhabilidades Menores',
+    description: 'Registro de inhabilidades para trabajar con menores'
+  },
+  {
+    type: 'CONTRATO_TRABAJO',
+    label: 'Contrato de Trabajo',
+    description: 'Contrato vigente'
+  },
+  {
+    type: 'CERT_AFP',
+    label: 'Certificado AFP',
+    description: 'Cotizaciones previsionales al día'
+  },
+  {
+    type: 'REVISION_TECNICA',
+    label: 'Revisión Técnica',
     description: 'VTV vigente del vehículo'
+  },
+  {
+    type: 'SOAP',
+    label: 'Seguro Obligatorio (SOAP)',
+    description: 'Seguro obligatorio del vehículo vigente'
   }
 ]
 
@@ -78,9 +103,14 @@ export default function ConductorDocumentosPage() {
   }, [])
 
   useEffect(() => {
-    // Calculate compliance percentage
-    const approved = documents.filter(d => d.validation_status === 'approved').length
-    const percentage = Math.round((approved / REQUIRED_DOCUMENTS.length) * 100)
+    // Calculate compliance percentage based on required docs that are approved
+    const approvedCount = REQUIRED_DOCUMENTS.filter(reqDoc => {
+      const uploaded = documents.find(d => 
+        d.document_type_id === reqDoc.type || d.document_type === reqDoc.type
+      )
+      return uploaded && (uploaded.validation_status === 'approved' || uploaded.validation_status === 'validated')
+    }).length
+    const percentage = Math.round((approvedCount / REQUIRED_DOCUMENTS.length) * 100)
     setCompliancePercentage(percentage)
   }, [documents])
 
@@ -209,7 +239,12 @@ export default function ConductorDocumentosPage() {
   }
 
   const getDocumentByType = (type: string) => {
-    return documents.find(d => d.document_type === type)
+    // Match on document_type_id (e.g. 'LIC_CONDUCIR') or document_type name
+    return documents.find(d => 
+      d.document_type_id === type || 
+      d.document_type === type ||
+      (d.document_type_id && d.document_type_id.toUpperCase() === type.toUpperCase())
+    )
   }
 
   return (

@@ -25,15 +25,21 @@ export default function ConductorDashboard() {
         console.log('[v0] Response status:', response.status)
         
         if (response.ok) {
-          const documents = await response.json()
+          const json = await response.json()
+          // API returns { success: true, documents: [...] }
+          const documents = json.documents || json
           console.log('[v0] Documents received:', documents)
           console.log('[v0] Documents count:', documents.length)
           setDocuments(documents)
           
-          // Calculate compliance stats
-          const valid = documents.filter((d: any) => d.status === "validated").length
-          const expired = documents.filter((d: any) => d.status === "expired").length
-          const pending = documents.filter((d: any) => d.status === "pending").length
+          // Calculate compliance stats - validation_status values: pending, approved, rejected, expired
+          const valid = documents.filter((d: any) => 
+            d.validation_status === "approved" || d.validation_status === "validated"
+          ).length
+          const expired = documents.filter((d: any) => d.validation_status === "expired").length
+          const pending = documents.filter((d: any) => 
+            d.validation_status === "pending" || !d.validation_status
+          ).length
           
           console.log('[v0] Compliance stats:', { total: documents.length, valid, expired, pending })
           
@@ -193,25 +199,25 @@ export default function ConductorDashboard() {
                       
                       {/* Status badge */}
                       <div className="pt-2">
-                        {doc.status === "validated" && (
+                        {(doc.validation_status === "approved" || doc.validation_status === "validated") && (
                           <Badge className="bg-green-500/30 text-green-200 border-green-500/50">
                             <CheckCircle2 className="w-3 h-3 mr-1" />
                             Aprobado
                           </Badge>
                         )}
-                        {doc.status === "pending" && (
+                        {(doc.validation_status === "pending" || !doc.validation_status) && (
                           <Badge className="bg-amber-500/30 text-amber-200 border-amber-500/50">
                             <AlertCircle className="w-3 h-3 mr-1" />
                             Pendiente
                           </Badge>
                         )}
-                        {doc.status === "rejected" && (
+                        {doc.validation_status === "rejected" && (
                           <Badge className="bg-red-500/30 text-red-200 border-red-500/50">
                             <AlertCircle className="w-3 h-3 mr-1" />
                             Rechazado
                           </Badge>
                         )}
-                        {doc.status === "expired" && (
+                        {doc.validation_status === "expired" && (
                           <Badge className="bg-red-500/30 text-red-200 border-red-500/50">
                             <AlertCircle className="w-3 h-3 mr-1" />
                             Vencido

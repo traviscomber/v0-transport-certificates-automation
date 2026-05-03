@@ -48,7 +48,14 @@ export async function GET(request: NextRequest) {
 
     console.log(`[v0] Found ${documents?.length || 0} documents for conductor ${conductorId}`)
 
-    return NextResponse.json(documents || [], { status: 200 })
+    // Return with success wrapper and normalized fields
+    const normalizedDocs = (documents || []).map((doc: any) => ({
+      ...doc,
+      // Ensure document_type_id is available for matching
+      document_type_id: doc.document_type_id || doc.document_type,
+    }))
+
+    return NextResponse.json({ success: true, documents: normalizedDocs }, { status: 200 })
 
   } catch (error) {
     console.error('[v0] Fetch documents error:', error)
