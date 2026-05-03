@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   Select,
   SelectContent,
@@ -10,6 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { CheckCircle, XCircle, Clock } from 'lucide-react'
+import { useToast } from '@/components/ui/use-toast'
 
 interface DocumentStatusUpdaterProps {
   documentId: string
@@ -23,7 +23,8 @@ export function DocumentStatusUpdater({
   onStatusChange,
 }: DocumentStatusUpdaterProps) {
   const [isUpdating, setIsUpdating] = useState(false)
-  const router = useRouter()
+  const [localStatus, setLocalStatus] = useState(currentStatus)
+  const { toast } = useToast()
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -66,7 +67,7 @@ export function DocumentStatusUpdater({
 
   const handleStatusUpdate = async (newStatus: string) => {
     const status = newStatus as 'approved' | 'rejected' | 'pending'
-    if (status === currentStatus) return
+    if (status === localStatus) return
 
     try {
       setIsUpdating(true)
@@ -80,21 +81,29 @@ export function DocumentStatusUpdater({
         throw new Error('Failed to update document status')
       }
 
-      const result = await response.json()
-      
+      // Update local state to reflect the change
+      setLocalStatus(status)
       onStatusChange(status)
       
-      // Refresh the router to fetch updated data from server
-      router.refresh()
+      // Show success toast
+      toast({
+        title: 'Estado actualizado',
+        description: `Documento marcado como ${getStatusLabel(status).toLowerCase()}`,
+        variant: 'default',
+      })
     } catch (error) {
-      console.error('Error updating status:', error)
+      toast({
+        title: 'Error',
+        description: 'No se pudo actualizar el estado del documento',
+        variant: 'destructive',
+      })
     } finally {
       setIsUpdating(false)
     }
   }
 
   return (
-    <Select value={currentStatus} onValueChange={handleStatusUpdate} disabled={isUpdating}>
+    <Select value={localStatus} onValueChange={handleStatusUpdate} disabled={isUpdating}>
       <SelectTrigger className="w-[130px]">
         <SelectValue />
       </SelectTrigger>
