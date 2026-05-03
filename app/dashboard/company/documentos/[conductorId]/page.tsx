@@ -48,6 +48,7 @@ async function getConductorDocuments(conductorId: string) {
     `)
     .eq("conductor_id", conductorId)
     .order("created_at", { ascending: false })
+    .limit(1000)  // Explicitly limit to 1000 documents per conductor
 
   if (error) {
     console.error("[v0] Error fetching documents:", error)

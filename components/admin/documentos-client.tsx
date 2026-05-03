@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { FileText, ExternalLink, CheckCircle, XCircle, Clock, Search, Filter } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -40,6 +40,12 @@ export function DocumentosClient({ documents: initialDocuments, selectedEjecutiv
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'rejected' | 'pending'>('all')
   const [documents, setDocuments] = useState(initialDocuments)
+
+  // Update documents when initialDocuments changes (e.g., after page refresh from upload)
+  useEffect(() => {
+    console.log('[v0] DocumentosClient: initialDocuments changed, updating state with', initialDocuments.length, 'documents')
+    setDocuments(initialDocuments)
+  }, [initialDocuments])
 
   // Helper to get conductor data from either object or array
   const getConductor = (conductores: any) => {
