@@ -5,10 +5,11 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { FileText, ExternalLink, CheckCircle, XCircle, Clock } from "lucide-react"
 import DocumentosFilterClient from "@/components/admin/documentos-filter-client"
+import EjecutivasFilterClient from "@/components/admin/ejecutivas-filter-client"
 import { DocumentosUpload } from "@/components/admin/documentos-upload"
 import { DocumentosClient } from "@/components/admin/documentos-client"
 
-async function getDocumentos(conductorId?: string) {
+async function getDocumentos(ejecutiva?: string) {
   const supabase = await createClient()
   
   let query = supabase
@@ -26,13 +27,25 @@ async function getDocumentos(conductorId?: string) {
         nombres,
         apellido_paterno,
         rut
+      ),
+      subcontratistas:conductores(
+        rut_proveedor
       )
     `)
     .order("created_at", { ascending: false })
     .limit(500)
 
-  if (conductorId) {
-    query = query.eq("conductor_id", conductorId)
+  if (ejecutiva) {
+    // Get conductor IDs for this ejecutiva first
+    const { data: conductores } = await supabase
+      .from("conductores")
+      .select("id")
+      .eq("ejecutiva", ejecutiva)
+    
+    if (conductores && conductores.length > 0) {
+      const conductorIds = conductores.map(c => c.id)
+      query = query.in("conductor_id", conductorIds)
+    }
   }
 
   const { data, error } = await query
@@ -45,28 +58,38 @@ async function getDocumentos(conductorId?: string) {
   return data || []
 }
 
-async function getExecutivas() {
+async function getEjecutivas() {
   const supabase = await createClient()
   
   const { data, error } = await supabase
     .from("conductores")
-    .select("id, nombres, apellido_paterno, rut")
-    .order("apellido_paterno", { ascending: true })
+    .select("ejecutiva")
+    .not("ejecutiva", "is", null)
+    .neq("ejecutiva", "")
 
   if (error) {
     console.error("Error fetching ejecutivas:", error)
     return []
   }
 
-  return data || []
+  // Get unique ejecutivas with conductor count
+  const ejecutivasMap = new Map<string, number>()
+  data?.forEach(record => {
+    if (record.ejecutiva) {
+      ejecutivasMap.set(record.ejecutiva, (ejecutivasMap.get(record.ejecutiva) || 0) + 1)
+    }
+  })
+
+  return Array.from(ejecutivasMap.entries()).map(([name, count]) => ({
+    name,
+    count
+  }))
 }
 
 export default async function DocumentosPage({ searchParams }: { searchParams: Record<string, string> }) {
-  const conductorId = searchParams.conductor_id
-  const documentos = await getDocumentos(conductorId)
-  const ejecutivas = await getExecutivas()
-
-  const selectedEjecutiva = ejecutivas.find(e => e.id === conductorId)
+  const selectedEjecutiva = searchParams.ejecutiva
+  const documentos = await getDocumentos(selectedEjecutiva)
+  const ejecutivas = await getEjecutivas()
 
   return (
     <div className="space-y-6" suppressHydrationWarning>
@@ -74,20 +97,20 @@ export default async function DocumentosPage({ searchParams }: { searchParams: R
         <h1 className="text-3xl font-bold tracking-tight">Documentos</h1>
         <p className="text-muted-foreground">
           {selectedEjecutiva 
-            ? `Documentos de ${selectedEjecutiva.nombres} ${selectedEjecutiva.apellido_paterno}`
+            ? `Documentos de ${selectedEjecutiva}`
             : 'Todos los documentos subidos y procesados'
           }
         </p>
       </div>
 
       {/* Filter by Ejecutiva */}
-      <DocumentosFilterClient ejecutivas={ejecutivas} selectedId={conductorId} />
+      <EjecutivasFilterClient ejecutivas={ejecutivas} selectedEjecutiva={selectedEjecutiva} />
 
       {/* Upload Section */}
-      <DocumentosUpload conductores={ejecutivas} />
+      <DocumentosUpload />
 
       {/* Documents List - Client Component */}
-      <DocumentosClient documents={documentos} selectedEjecutiva={selectedEjecutiva} />
+      <DocumentosClient documents={documentos} />
     </div>
   )
 }
