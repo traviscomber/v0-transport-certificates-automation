@@ -11,6 +11,9 @@ import Link from 'next/link'
 interface UploadedDocument {
   id: string
   document_type: string
+  document_type_id?: string
+  document_type_code?: string
+  document_type_name?: string
   extracted_document_type: string | null
   file_name: string
   file_url: string
