@@ -558,9 +558,12 @@ export function DriverCard({
         onSetRejectionReason={(reason) => setRejectionReason(reason)}
         onStatusChange={async (docId, newStatus, reason) => {
           try {
+            console.log('[v0] STATUS CHANGE STARTING - docId:', docId, 'newStatus:', newStatus)
+            
             // Use reason passed directly from modal, or fallback to stored rejectionReason
             const finalReason = reason || (newStatus === 'rechazado' ? rejectionReason : undefined)
-            await updateDocumentStatus(docId, newStatus, finalReason)
+            const updateResult = await updateDocumentStatus(docId, newStatus, finalReason)
+            console.log('[v0] updateDocumentStatus returned:', updateResult)
             
             // Clear rejection reason after successful update
             setRejectionReason('')
@@ -583,8 +586,9 @@ export function DriverCard({
             }
             
             // CRITICAL: Force refetch fresh data from API to ensure all documents show updated status
-            console.log('[v0] Status changed, calling refetch(true) to get fresh data...')
+            console.log('[v0] Calling refetch(true) to get fresh data...')
             await refetch(true)
+            console.log('[v0] Refetch complete, documents after refetch:', documents.map(d => ({ id: d.id, estado: d.estado })))
             
             // Close modal after successful status change
             setTimeout(() => {
