@@ -184,10 +184,23 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
 
       if (!response.ok) {
         const result = await response.json()
+        console.error('[v0] API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: result.error || result,
+          documentId,
+          newStatus
+        })
         throw new Error(result.error || `Failed to update status (${response.status})`)
       }
 
       const result = await response.json()
+      console.log('[v0] API Success:', {
+        status: response.status,
+        result,
+        documentId,
+        newStatus
+      })
       // Normalize status to español for local state
       const statusMap: Record<string, string> = {
         'aprobado': 'aprobado',
