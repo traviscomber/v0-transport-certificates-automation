@@ -153,23 +153,18 @@ export async function POST(request: NextRequest) {
       // Continue with document upload — AI failure doesn't block the flow
     }
 
-    // STEP 2: Create uploaded_documents record with AI metadata
+    // STEP 2: Create uploaded_documents record
     console.log('[v0] Step 2: Creating uploaded_documents record')
     console.log('[v0] Conductor ID:', conductor.id)
     console.log('[v0] Document Type ID:', docType.id)
-    console.log('[v0] File URL:', publicUrl)
     
+    // Test with MINIMAL payload first - just the absolute essentials
     const insertPayload: any = {
-      document_type_id: docType.id,
       conductor_id: conductor.id,
-      original_filename: file.name,
       file_url: publicUrl,
-      validation_status: validationStatus,
     }
 
-    // Note: Not storing AI extraction data directly in this table
-    // as columns like ocr_structured_data, confidence_score, etc. don't exist
-    // The AI extraction happens but will need a separate alerts/metadata table
+    console.log('[v0] Attempting insert with payload:', insertPayload)
 
     const { data: uploadedDoc, error: dbError } = await supabase
       .from('uploaded_documents')
