@@ -63,6 +63,17 @@ export function DriverCard({
 
   // Always get the fresh document from the documents array when modal opens
   const currentSelectedDocument = selectedDocument ? documents.find(d => d.id === selectedDocument) : null
+  
+  // Debug logging
+  React.useEffect(() => {
+    if (selectedDocument && !currentSelectedDocument) {
+      console.warn('[v0] WARNING: selectedDocument ID not found in documents array!', {
+        selectedDocument,
+        documentsCount: documents.length,
+        documentIds: documents.map(d => d.id)
+      })
+    }
+  }, [selectedDocument, currentSelectedDocument, documents])
 
   useEffect(() => {
     if (showUploadModal) {

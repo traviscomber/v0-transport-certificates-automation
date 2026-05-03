@@ -93,7 +93,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       const pending = optimisticUpdatesRef.current
       const mergedDocs = transformedDocs.map((doc: DriverDocument) => {
         if (pending[doc.id]) {
-          console.log('[v0] Applying optimistic update for doc', doc.id, 'new estado:', pending[doc.id])
+          console.log('[v0] Applying optimistic update for doc', doc.id, 'stored pending estado:', pending[doc.id], 'doc.estado from API:', doc.estado)
           return { ...doc, estado: pending[doc.id] as DriverDocument['estado'] }
         }
         return doc
