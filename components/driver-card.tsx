@@ -586,8 +586,10 @@ export function DriverCard({
             // The hook's updateDocumentStatus already updated the documents array optimistically
             
             // Close modal after successful status change
+            // Wait longer for "pendiente" status due to replication delays
+            const delayMs = newStatus === 'pendiente' ? 1500 : 500
             setTimeout(() => {
-              console.log('[v0] driver-card: About to close modal and call refetch(true)')
+              console.log('[v0] driver-card: About to close modal and call refetch(true) after', delayMs, 'ms')
               setShowDocumentModal(false)
               setSelectedDocument(null)
               // Force a complete refresh of documents to sync with DB

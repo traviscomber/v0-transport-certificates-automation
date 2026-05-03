@@ -92,8 +92,14 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       // Apply any pending optimistic updates so fetch doesn't overwrite them
       const pending = optimisticUpdatesRef.current
       const mergedDocs = transformedDocs.map((doc: DriverDocument) => {
+        // CRITICAL: Always prefer optimistic updates over API response
+        // This prevents stale data from reverting our changes
         if (pending[doc.id]) {
-          console.log('[v0] Applying optimistic update for doc', doc.id, 'stored pending estado:', pending[doc.id], 'doc.estado from API:', doc.estado)
+          console.log('[v0] fetchDocuments: Using optimistic update for', doc.id, {
+            storedPending: pending[doc.id],
+            apiResponse: doc.estado,
+            usingSaved: pending[doc.id]
+          })
           return { ...doc, estado: pending[doc.id] as DriverDocument['estado'] }
         }
         return doc
@@ -219,11 +225,13 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       const result = await response.json()
 
       // 3. Confirm the server accepted it — keep optimistic update
-      // Clear from pending AFTER a short delay to protect against any in-flight fetches
+      // For "pendiente" status, extend the protection window to handle slower replication
+      // This prevents premature reverting when network is slow
+      const timeoutMs = mappedStatus === 'pendiente' ? 10000 : 3000
       setTimeout(() => {
         delete optimisticUpdatesRef.current[documentId]
-        console.log('[v0] Cleared optimisticUpdateRef[', documentId, '] after PATCH success')
-      }, 3000)
+        console.log('[v0] Cleared optimisticUpdateRef[', documentId, '] after', timeoutMs, 'ms')
+      }, timeoutMs)
 
       return result
     } catch (err) {
