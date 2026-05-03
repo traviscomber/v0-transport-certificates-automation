@@ -578,43 +578,28 @@ export function DriverCard({
         onSetRejectionReason={(reason) => setRejectionReason(reason)}
         onStatusChange={async (docId, newStatus, reason) => {
           try {
-            console.log('[v0] driver-card onStatusChange: docId:', docId, 'newStatus:', newStatus)
-            // Use reason passed directly from modal, or fallback to stored rejectionReason
-            const finalReason = reason || (newStatus === 'rechazado' ? rejectionReason : undefined)
-            await updateDocumentStatus(docId, newStatus, finalReason)
-            console.log('[v0] driver-card: updateDocumentStatus completed')
-            
-            // Clear rejection reason after successful update
+            // Update document status
+            await updateDocumentStatus(docId, newStatus, reason || (newStatus === 'rechazado' ? rejectionReason : undefined))
             setRejectionReason('')
             
-            // DO NOT update selectedDocument locally - instead close modal and force refetch
-            // This ensures the next time the card opens, it gets fresh data from the DB
-            // The hook's updateDocumentStatus already updated the documents array optimistically
+            // Close modal immediately - no delays needed
+            setShowDocumentModal(false)
+            setSelectedDocument(null)
             
-            // Close modal after successful status change
-            // Wait longer for "pendiente" status due to replication delays
-            const delayMs = newStatus === 'pendiente' ? 1500 : 500
-            setTimeout(() => {
-              console.log('[v0] driver-card: About to close modal and call refetch(true) after', delayMs, 'ms')
-              setShowDocumentModal(false)
-              setSelectedDocument(null)
-              // Force a complete refresh of documents to sync with DB
-              refetch(true)
-              console.log('[v0] driver-card: Called refetch(true)')
-            }, delayMs)
+            // Refetch to sync latest state
+            refetch(true)
             
-            // Show success
+            // Show success message
             if (typeof window !== 'undefined') {
-              const successMsg = document.createElement('div')
-              successMsg.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100] animate-in'
-              successMsg.textContent = `✅ Documento actualizado a ${newStatus}`
-              document.body.appendChild(successMsg)
-              setTimeout(() => successMsg.remove(), 3000)
+              const msg = document.createElement('div')
+              msg.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100]'
+              msg.textContent = `✅ Documento actualizado a ${newStatus}`
+              document.body.appendChild(msg)
+              setTimeout(() => msg.remove(), 3000)
             }
           } catch (error) {
-            console.error('[v0] Error updating document status:', error)
-            const errorMsg = error instanceof Error ? error.message : 'Error desconocido'
-            alert(`Error al actualizar estado: ${errorMsg}`)
+            console.error('[v0] Error updating status:', error)
+            alert(`Error: ${error instanceof Error ? error.message : 'Desconocido'}`)
           }
         }}
         onDelete={async (docId) => {

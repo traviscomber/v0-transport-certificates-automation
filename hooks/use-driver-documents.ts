@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export interface DriverDocument {
@@ -20,93 +20,44 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
-  // Track whether we have loaded data for this driverId
-  const loadedForDriverRef = useRef<string | null>(null)
-
-  // Map of documentId → optimistic status that should NOT be overwritten by fetches
-  const optimisticUpdatesRef = useRef<Record<string, string>>({})
-
-  const fetchDocuments = useCallback(async (skipCache = false) => {
+  const fetchDocuments = useCallback(async () => {
     if (!driverRut) return
 
     setLoading(true)
     setError(null)
     try {
       const timestamp = Date.now()
-      const headers: HeadersInit = {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
       const urlParams = new URLSearchParams({
         driver_rut: driverRut,
         driver_id: driverId,
-        _t: timestamp.toString()
+        _t: timestamp.toString() // Force no-cache
       })
+      
       const response = await fetch(`/api/company/documents/drivers?${urlParams.toString()}`, {
         method: 'GET',
-        headers,
-        cache: 'no-store'
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
       })
-
-      const text = await response.text()
-      if (!text || text.trim() === '') {
-        setDocuments([])
-        return
-      }
-
-      let result: any
-      try {
-        result = JSON.parse(text)
-      } catch {
-        setDocuments([])
-        return
-      }
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch documents')
+        throw new Error('Failed to fetch documents')
       }
 
-      const transformedDocs = (result.documents || []).map((doc: any) => {
-        const estado = (doc.verification_status || 'pendiente') as DriverDocument['estado']
-        console.log('[v0] Hook transforming doc:', {
-          id: doc.id,
-          apiVerificationStatus: doc.verification_status,
-          apiValidationStatus: doc.validation_status,
-          transformedEstado: estado,
-        })
-        return {
-          id: doc.id,
-          driver_rut: doc.driver_rut || '',
-          tipo: doc.document_type || 'Documento',
-          nombre: doc.original_filename || doc.file_name || '',
-          estado,
-          fecha_subida: doc.created_at || new Date().toISOString(),
-          public_url: doc.file_url || doc.public_url,
-          storage_path: doc.file_path || doc.storage_path,
-          uploaded_by: doc.uploaded_by || '',
-          rejection_reason: doc.rejection_reason || undefined,
-        }
-      })
+      const result = await response.json()
+      const docs = (result.documents || []).map((doc: any) => ({
+        id: doc.id,
+        driver_rut: doc.driver_rut || '',
+        tipo: doc.document_type || 'Documento',
+        nombre: doc.original_filename || doc.file_name || '',
+        estado: doc.verification_status || 'pendiente',
+        fecha_subida: doc.created_at || new Date().toISOString(),
+        public_url: doc.file_url || doc.public_url,
+        storage_path: doc.file_path || doc.storage_path,
+        uploaded_by: doc.uploaded_by || '',
+        rejection_reason: doc.rejection_reason || undefined,
+      }))
 
-      // Apply any pending optimistic updates so fetch doesn't overwrite them
-      const pending = optimisticUpdatesRef.current
-      const mergedDocs = transformedDocs.map((doc: DriverDocument) => {
-        // CRITICAL: Always prefer optimistic updates over API response
-        // This prevents stale data from reverting our changes
-        if (pending[doc.id]) {
-          console.log('[v0] fetchDocuments: Using optimistic update for', doc.id, {
-            storedPending: pending[doc.id],
-            apiResponse: doc.estado,
-            usingSaved: pending[doc.id]
-          })
-          return { ...doc, estado: pending[doc.id] as DriverDocument['estado'] }
-        }
-        return doc
-      })
-
-      loadedForDriverRef.current = driverId
-      setDocuments(mergedDocs)
+      setDocuments(docs)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
       setDocuments([])
@@ -135,6 +86,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       formData.append('driver_rut', driverRut)
       formData.append('document_type_id', tipo || 'general')
       formData.append('uploaded_by', uploaderName || '')
+      
       const metadata: any = {}
       if (expirationDate) metadata.expiry_date = expirationDate
       formData.append('metadata', JSON.stringify(metadata))
@@ -144,62 +96,35 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         body: formData,
       })
 
-      let uploadResult
-      try {
-        const responseText = await response.text()
-        if (!responseText) throw new Error('Empty response from server')
-        uploadResult = JSON.parse(responseText)
-      } catch (parseErr) {
-        throw new Error('Server error: Invalid response format')
-      }
-
+      const result = await response.json()
       if (!response.ok) {
-        throw new Error(uploadResult?.error || `Upload failed with status ${response.status}`)
+        throw new Error(result?.error || 'Upload failed')
       }
 
-      // Invalidate loaded cache so next open refetches
-      loadedForDriverRef.current = null
-
-      await fetchDocuments(true)
-      await new Promise(resolve => setTimeout(resolve, 300))
-      await fetchDocuments(true)
-      await new Promise(resolve => setTimeout(resolve, 700))
-      await fetchDocuments(true)
-
-      return uploadResult.document
+      // After upload succeeds, refetch to get the new document
+      await fetchDocuments()
+      return result.document
     } catch (err) {
       throw err
     }
   }
 
   const updateDocumentStatus = async (documentId: string, newStatus: string, rejectionReason?: string) => {
-    const statusMap: Record<string, string> = {
-      'aprobado': 'aprobado',
-      'approved': 'aprobado',
-      'rechazado': 'rechazado',
-      'rejected': 'rechazado',
-      'pendiente': 'pendiente',
-      'pending': 'pendiente',
-      'vencido': 'vencido',
-      'expired': 'vencido'
-    }
-    const mappedStatus = statusMap[newStatus?.toLowerCase() || ''] || newStatus
-
-    // 1. Apply optimistic update to local state IMMEDIATELY
-    setDocuments(prev => prev.map(doc =>
-      doc.id === documentId
-        ? { ...doc, estado: mappedStatus as DriverDocument['estado'] }
-        : doc
-    ))
-
-    // 2. Register in pending optimistic map so fetches don't overwrite it
-    optimisticUpdatesRef.current[documentId] = mappedStatus
-    console.log('[v0] updateDocumentStatus: Set optimisticUpdateRef[', documentId, '] =', mappedStatus)
-
     try {
-      const body: any = { status: newStatus }
-      const normalizedStatus = newStatus?.toLowerCase().trim()
-      if (rejectionReason && (normalizedStatus === 'rechazado' || normalizedStatus === 'rejected')) {
+      // Status mapping
+      const statusMap: Record<string, string> = {
+        'aprobado': 'approved',
+        'approved': 'approved',
+        'rechazado': 'rejected',
+        'rejected': 'rejected',
+        'pendiente': 'pending',
+        'pending': 'pending',
+      }
+      
+      const englishStatus = statusMap[newStatus?.toLowerCase() || ''] || newStatus.toLowerCase()
+
+      const body: any = { status: englishStatus }
+      if (rejectionReason && (englishStatus === 'rejected')) {
         body.reason = rejectionReason
       }
 
@@ -211,51 +136,25 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
 
       if (!response.ok) {
         const result = await response.json()
-        // Remove optimistic update on failure — revert
-        delete optimisticUpdatesRef.current[documentId]
-        // Revert local state
-        setDocuments(prev => prev.map(doc =>
-          doc.id === documentId
-            ? { ...doc, estado: (statusMap[result.previous_status] || 'pendiente') as DriverDocument['estado'] }
-            : doc
-        ))
-        throw new Error(result.error || `Failed to update status (${response.status})`)
+        throw new Error(result.error || 'Failed to update status')
       }
 
       const result = await response.json()
 
-      // CRITICAL: Update local state IMMEDIATELY with the response from PATCH
-      // This prevents any race conditions where optimistic updates get cleared
-      if (result.updated_document) {
-        const rawStatus = (result.updated_document.validation_status || 'pending').toLowerCase()
-        const statusMap: Record<string, DriverDocument['estado']> = {
-          'pending': 'pendiente',
-          'approved': 'aprobado',
-          'rejected': 'rechazado',
-        }
-        const estadoEspanol = statusMap[rawStatus] || 'pendiente'
-        
-        console.log('[v0] Updating documents array with PATCH response:', {
-          documentId,
-          newEstado: estadoEspanol,
-          responseStatus: result.updated_document.validation_status
-        })
-        
-        setDocuments(prev => prev.map(doc =>
-          doc.id === documentId
-            ? { ...doc, estado: estadoEspanol as DriverDocument['estado'] }
-            : doc
-        ))
+      // Update local state with the response from API
+      const statusToEstado: Record<string, DriverDocument['estado']> = {
+        'pending': 'pendiente',
+        'approved': 'aprobado',
+        'rejected': 'rechazado',
       }
-
-      // 3. Confirm the server accepted it — keep optimistic update
-      // For "pendiente" status, extend the protection window to handle slower replication
-      // This prevents premature reverting when network is slow
-      const timeoutMs = mappedStatus === 'pendiente' ? 10000 : 3000
-      setTimeout(() => {
-        delete optimisticUpdatesRef.current[documentId]
-        console.log('[v0] Cleared optimisticUpdateRef[', documentId, '] after', timeoutMs, 'ms')
-      }, timeoutMs)
+      const responseStatus = result.status || englishStatus
+      const estadoEspanol = statusToEstado[responseStatus.toLowerCase()] as DriverDocument['estado']
+      
+      setDocuments(prev => prev.map(doc =>
+        doc.id === documentId
+          ? { ...doc, estado: estadoEspanol }
+          : doc
+      ))
 
       return result
     } catch (err) {
@@ -274,26 +173,19 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         throw new Error(result.error || 'Failed to delete document')
       }
 
-      loadedForDriverRef.current = null
-      await fetchDocuments(true)
+      // Remove from local state
+      setDocuments(prev => prev.filter(doc => doc.id !== documentId))
     } catch (err) {
       throw err
     }
   }
 
-  // When card closes, reset so re-opening always fetches fresh data from DB
+  // Fetch documents when card opens or when enabled changes
   useEffect(() => {
-    if (!enabled) {
-      loadedForDriverRef.current = null
+    if (enabled && driverRut) {
+      fetchDocuments()
     }
-  }, [enabled])
-
-  // Fetch when card opens — always get fresh data on every open
-  useEffect(() => {
-    if (driverRut && enabled && loadedForDriverRef.current !== driverId) {
-      fetchDocuments(true)
-    }
-  }, [driverRut, enabled, driverId, fetchDocuments])
+  }, [enabled, driverRut, fetchDocuments])
 
   return {
     documents,
