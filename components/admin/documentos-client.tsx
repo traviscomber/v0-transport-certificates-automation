@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { FileText, ExternalLink, CheckCircle, XCircle, Clock, Search, Filter } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -49,14 +49,15 @@ export function DocumentosClient({ documents: initialDocuments, selectedEjecutiv
     return conductores || {}
   }
 
-  // Handle status change for a document
-  const handleStatusChange = (docId: string, newStatus: 'approved' | 'rejected' | 'pending') => {
+  // Handle status change for a document - update local state immediately, API will persist
+  const handleStatusChange = useCallback((docId: string, newStatus: 'approved' | 'rejected' | 'pending') => {
+    // Update locally for immediate UI feedback
     setDocuments(docs =>
       docs.map(doc =>
         doc.id === docId ? { ...doc, validation_status: newStatus } : doc
       )
     )
-  }
+  }, [])
 
   // Filter documents based on search and status
   const filteredDocuments = useMemo(() => {

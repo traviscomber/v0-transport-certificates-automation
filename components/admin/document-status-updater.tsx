@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Select,
   SelectContent,
@@ -22,6 +23,7 @@ export function DocumentStatusUpdater({
   onStatusChange,
 }: DocumentStatusUpdaterProps) {
   const [isUpdating, setIsUpdating] = useState(false)
+  const router = useRouter()
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -78,7 +80,12 @@ export function DocumentStatusUpdater({
         throw new Error('Failed to update document status')
       }
 
+      const result = await response.json()
+      
       onStatusChange(status)
+      
+      // Refresh the router to fetch updated data from server
+      router.refresh()
     } catch (error) {
       console.error('Error updating status:', error)
     } finally {
