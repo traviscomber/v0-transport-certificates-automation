@@ -41,7 +41,13 @@ export function DocumentActionModal({
   const [showPreview, setShowPreview] = useState(true)
   const [rejectionReason, setRejectionReason] = useState('')
   const [showRejectionForm, setShowRejectionForm] = useState(false)
+  const [localDocument, setLocalDocument] = useState<Document | null>(document)
   const { deleteDocument } = useDocumentManagement()
+
+  // Update local document when prop changes
+  useEffect(() => {
+    setLocalDocument(document)
+  }, [document])
 
   // Reset rejection reason when modal opens/closes
   useEffect(() => {
@@ -51,7 +57,7 @@ export function DocumentActionModal({
     }
   }, [isOpen])
 
-  if (!isOpen || !document) return null
+  if (!isOpen || !localDocument) return null
 
   const handleStatusChange = async (newStatus: 'aprobado' | 'rechazado' | 'pendiente') => {
     // Require rejection reason if rejecting
@@ -72,6 +78,14 @@ export function DocumentActionModal({
       // Call the onStatusChange callback with reason passed directly
       if (onStatusChange) {
         await onStatusChange(document.id, newStatus, newStatus === 'rechazado' ? rejectionReason : undefined)
+      }
+      
+      // Update local document state immediately to reflect the change in the modal
+      if (localDocument) {
+        setLocalDocument({
+          ...localDocument,
+          estado: newStatus
+        })
       }
       
       console.log('[v0] Document status changed to:', newStatus, 'with reason:', rejectionReason)
@@ -162,24 +176,24 @@ export function DocumentActionModal({
         <div className="p-6 space-y-6">
           {/* Document Header */}
           <div>
-            <h2 className="text-2xl font-bold text-white mb-2">{document.tipo}</h2>
-            <p className="text-slate-400 text-sm mb-4">{document.nombre}</p>
+            <h2 className="text-2xl font-bold text-white mb-2">{localDocument.tipo}</h2>
+            <p className="text-slate-400 text-sm mb-4">{localDocument.nombre}</p>
             <div className="flex items-center gap-4 flex-wrap">
               <div className="text-sm">
                 <p className="text-slate-500">Fecha de carga</p>
-                <p className="text-white">{new Date(document.fecha_subida).toLocaleDateString('es-ES')}</p>
+                <p className="text-white">{new Date(localDocument.fecha_subida).toLocaleDateString('es-ES')}</p>
               </div>
               <div className="text-sm">
                 <p className="text-slate-500">Estado actual</p>
-                <div className={`font-semibold ${getStatusColor(document.estado)}`}>
-                  {getStatusLabel(document.estado)}
+                <div className={`font-semibold ${getStatusColor(localDocument.estado)}`}>
+                  {getStatusLabel(localDocument.estado)}
                 </div>
               </div>
             </div>
           </div>
 
           {/* Preview Section */}
-          {showPreview && document.public_url && (
+          {showPreview && localDocument.public_url && (
             <div className="border border-slate-700 rounded-lg overflow-hidden bg-slate-800/50">
               <div className="bg-slate-800 p-3 border-b border-slate-700 flex justify-between items-center">
                 <p className="text-sm font-semibold text-slate-300">Vista Previa</p>
@@ -194,41 +208,41 @@ export function DocumentActionModal({
                 {/* Debug Info */}
                 {process.env.NODE_ENV === 'development' && (
                   <div className="text-xs text-slate-500 mb-2 absolute top-2 right-2 bg-slate-800 p-2 rounded max-w-xs">
-                    URL: {document.public_url?.substring(0, 50)}...
+                    URL: {localDocument.public_url?.substring(0, 50)}...
                   </div>
                 )}
                 
                 {/* Image Preview */}
-                {document.public_url ? (
+                {localDocument.public_url ? (
                   <div className="flex flex-col items-center justify-center w-full">
                     <img
-                      src={document.public_url}
-                      alt={document.nombre}
+                      src={localDocument.public_url}
+                      alt={localDocument.nombre}
                       className="max-w-full max-h-96 object-contain rounded"
                       crossOrigin="anonymous"
                       onError={(e) => {
-                        console.error('[v0] Image failed to load:', document.public_url)
+                        console.error('[v0] Image failed to load:', localDocument.public_url)
                         e.currentTarget.style.display = 'none'
                         const errorMsg = e.currentTarget.nextElementSibling as HTMLElement
                         if (errorMsg) errorMsg.style.display = 'block'
                       }}
                       onLoad={() => {
-                        console.log('[v0] Image loaded successfully:', document.public_url)
+                        console.log('[v0] Image loaded successfully:', localDocument.public_url)
                       }}
                     />
                     <div className="hidden text-center py-8 w-full">
                       <Eye className="h-12 w-12 text-slate-600 mx-auto mb-2" />
                       <p className="text-slate-400">No se pudo cargar la vista previa</p>
-                      <p className="text-slate-500 text-sm mt-1">{document.nombre}</p>
-                      <p className="text-slate-600 text-xs mt-2 break-all">{document.public_url}</p>
+                      <p className="text-slate-500 text-sm mt-1">{localDocument.nombre}</p>
+                      <p className="text-slate-600 text-xs mt-2 break-all">{localDocument.public_url}</p>
                     </div>
                   </div>
                 ) : (
                   <div className="text-center py-8 w-full">
                     <Eye className="h-12 w-12 text-slate-600 mx-auto mb-2" />
                     <p className="text-slate-400">URL no disponible</p>
-                    <p className="text-slate-500 text-sm mt-1">{document.nombre}</p>
-                    <p className="text-slate-600 text-xs mt-2">Storage Path: {document.storage_path}</p>
+                    <p className="text-slate-500 text-sm mt-1">{localDocument.nombre}</p>
+                    <p className="text-slate-600 text-xs mt-2">Storage Path: {localDocument.storage_path}</p>
                   </div>
                 )}
               </div>
@@ -241,13 +255,13 @@ export function DocumentActionModal({
               onClick={handleDownload}
               variant="outline"
               className="flex items-center gap-2"
-              disabled={!document.public_url && !document.storage_path}
+              disabled={!localDocument.public_url && !localDocument.storage_path}
             >
               <Download className="h-4 w-4" />
               Descargar
             </Button>
 
-            {isAdmin && document.estado === 'pendiente' && (
+            {isAdmin && localDocument.estado === 'pendiente' && (
               <>
                 <Button
                   onClick={() => handleStatusChange('aprobado')}
@@ -268,7 +282,7 @@ export function DocumentActionModal({
               </>
             )}
 
-            {isAdmin && document.estado !== 'pendiente' && (
+            {isAdmin && localDocument.estado !== 'pendiente' && (
               <>
                 <Button
                   onClick={() => handleStatusChange('pendiente')}
@@ -290,7 +304,7 @@ export function DocumentActionModal({
               </>
             )}
 
-            {isAdmin && document.estado === 'pendiente' && (
+            {isAdmin && localDocument.estado === 'pendiente' && (
               <Button
                 onClick={handleDelete}
                 disabled={isDeleting}
