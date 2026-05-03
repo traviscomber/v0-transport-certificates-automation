@@ -35,7 +35,7 @@ export function DocumentActionModal({
   onSetRejectionReason,
   isAdmin = false,
 }: DocumentActionModalProps) {
-  const [selectedStatus, setSelectedStatus] = useState<'aprobado' | 'rechazado' | null>(null)
+  const [selectedStatus, setSelectedStatus] = useState<'aprobado' | 'rechazado' | 'pendiente' | null>(null)
   const [isChanging, setIsChanging] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showPreview, setShowPreview] = useState(true)
@@ -53,7 +53,7 @@ export function DocumentActionModal({
 
   if (!isOpen || !document) return null
 
-  const handleStatusChange = async (newStatus: 'aprobado' | 'rechazado') => {
+  const handleStatusChange = async (newStatus: 'aprobado' | 'rechazado' | 'pendiente') => {
     // Require rejection reason if rejecting
     if (newStatus === 'rechazado' && !rejectionReason.trim()) {
       alert('Debes especificar la razón del rechazo')
@@ -271,20 +271,7 @@ export function DocumentActionModal({
             {isAdmin && document.estado !== 'pendiente' && (
               <>
                 <Button
-                  onClick={async () => {
-                    setIsChanging(true)
-                    try {
-                      if (onStatusChange) {
-                        await onStatusChange(document.id, 'pendiente')
-                        setTimeout(() => onClose(), 500)
-                      }
-                    } catch (err) {
-                      console.error('[v0] Error reverting to pending:', err)
-                      alert('Error al volver a estado pendiente')
-                    } finally {
-                      setIsChanging(false)
-                    }
-                  }}
+                  onClick={() => handleStatusChange('pendiente')}
                   disabled={isChanging}
                   variant="outline"
                   className="flex items-center gap-2"

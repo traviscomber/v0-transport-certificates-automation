@@ -210,9 +210,10 @@ export async function GET(
       .single()
 
     if (error || !data) {
-      return NextResponse.json({ document_id: params.id, status: 'pendiente' })
+      return NextResponse.json({ document_id: params.id, status: 'pending' })
     }
 
+    // Return the status in English to match PATCH response format
     return NextResponse.json({ document_id: params.id, status: data.validation_status })
   } catch (error) {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
