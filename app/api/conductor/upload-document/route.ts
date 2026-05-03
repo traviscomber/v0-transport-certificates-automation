@@ -5,6 +5,7 @@ import { generateDocumentUploadAlerts } from '@/lib/document-alerts-generator'
 import { extractDocumentMetadata } from '@/lib/ai-document-processor'
 import { normalizeDocumentType, determineValidationStatus } from '@/lib/document-classification'
 import { notifyExecutivas } from '@/lib/notifications-helper'
+import { cookies } from 'next/headers'
 
 // Set max duration for the route (30 seconds - Vercel free plan limit)
 export const maxDuration = 30
@@ -24,22 +25,13 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     )
 
-    // Get the current user
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json(
-        { message: 'No authorization header' },
-        { status: 401 }
-      )
-    }
-
-    const token = authHeader.replace('Bearer ', '')
+    // Get conductor_id from cookies (set by login)
+    const cookieStore = await cookies()
+    const conductorId = cookieStore.get('conductor_id')?.value
     
-    // Verify token and get user
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    if (authError || !user) {
+    if (!conductorId) {
       return NextResponse.json(
-        { message: 'Unauthorized' },
+        { message: 'No authorization - conductor not authenticated' },
         { status: 401 }
       )
     }
@@ -73,16 +65,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get conductor info from user profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
+    // Get conductor info from conductores table using conductorId
+    const { data: conductor, error: conductorError } = await supabase
+      .from('conductores')
       .select('*')
-      .eq('id', user.id)
+      .eq('id', conductorId)
       .single()
 
-    if (profileError || !profile) {
+    if (conductorError || !conductor) {
       return NextResponse.json(
-        { message: 'User profile not found' },
+        { message: 'Conductor profile not found' },
         { status: 404 }
       )
     }
@@ -104,7 +96,7 @@ export async function POST(request: NextRequest) {
     // Generate file path
     const fileExtension = file.name.split('.').pop()
     const fileName = `${uuidv4()}.${fileExtension}`
-    const filePath = `conductor-documents/${user.id}/${fileName}`
+    const filePath = `conductor-documents/${conductorId}/${fileName}`
 
     // Upload file to storage
     const fileBuffer = await file.arrayBuffer()
@@ -164,8 +156,8 @@ export async function POST(request: NextRequest) {
     // STEP 2: Create uploaded_documents record with AI metadata
     const insertPayload: any = {
       document_type_id: docType.id,
-      conductor_id: profile.id,
-      uploaded_by: user.id,
+      conductor_id: conductor.id,
+      uploaded_by: conductorId,
       original_filename: file.name,
       file_url: publicUrl,
       file_path: filePath,
@@ -209,7 +201,7 @@ export async function POST(request: NextRequest) {
     await supabase
       .from('notifications')
       .insert({
-        user_id: user.id,
+        user_id: conductorId,
         title: 'Documento Subido',
         message: `Tu ${docType.name} ha sido procesado${validationStatus === 'approved' ? ' y aprobado.' : validationStatus === 'rejected' ? ' pero fue rechazado.' : ' y está en revisión.'}`,
         type: validationStatus === 'rejected' ? 'warning' : 'info',
@@ -226,7 +218,7 @@ export async function POST(request: NextRequest) {
       console.log('[v0] Document auto-rejected by AI, notifying ejecutivas...')
       await notifyExecutivas({
         type: 'status_change' as const,
-        conductorName: profile.first_name || 'Conductor',
+        conductorName: conductor.nombre_completo || 'Conductor',
         documentType: docType.name,
         oldStatus: 'pending',
         newStatus: 'rejected',
@@ -240,9 +232,9 @@ export async function POST(request: NextRequest) {
     await generateDocumentUploadAlerts(
       uploadedDoc.id,
       docType.name,
-      profile.first_name || 'Conductor',
+      conductor.nombre_completo || 'Conductor',
       'conductor',
-      user.id
+      conductorId
     )
 
     return NextResponse.json(
