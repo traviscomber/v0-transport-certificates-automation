@@ -239,9 +239,16 @@ export async function POST(request: NextRequest) {
     // STEP 3: Notify ejecutivas if document was auto-rejected by AI
     if (validationStatus === 'rejected' && aiExtraction) {
       console.log('[v0] Document auto-rejected by AI, notifying ejecutivas...')
+      // Build full conductor name from parts
+      const fullConductorName = [
+        conductor.nombres,
+        conductor.apellido_paterno,
+        conductor.apellido_materno
+      ].filter(Boolean).join(' ') || 'Conductor'
+      
       await notifyExecutivas({
         type: 'status_change' as const,
-        conductorName: conductor.nombre_completo || 'Conductor',
+        conductorName: fullConductorName,
         documentType: docType.name,
         oldStatus: 'pending',
         newStatus: 'rejected',
@@ -252,10 +259,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate alerts for admins about the new document
-    const conductorName = conductor.nombre_completo || conductor.name || 'Conductor'
+    // Combine conductor name from separate fields: nombres, apellido_paterno, apellido_materno
+    const conductorName = [
+      conductor.nombres,
+      conductor.apellido_paterno,
+      conductor.apellido_materno
+    ].filter(Boolean).join(' ') || 'Conductor'
+    
     console.log('[v0] About to create alert with conductor name:', { 
-      nombre_completo: conductor.nombre_completo, 
-      name: conductor.name,
+      nombres: conductor.nombres,
+      apellido_paterno: conductor.apellido_paterno,
+      apellido_materno: conductor.apellido_materno,
       final: conductorName 
     })
     await generateDocumentUploadAlerts(
