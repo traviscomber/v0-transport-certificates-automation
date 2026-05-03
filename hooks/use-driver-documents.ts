@@ -68,29 +68,19 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
 
       // The API route already maps validation_status → Spanish verification_status
       // Read verification_status directly — no double-mapping needed
-      const transformedDocs = (result.documents || []).map((doc: any) => {
-        console.log('[v0] Transforming doc:', {
-          id: doc.id,
-          verification_status: doc.verification_status,
-          validation_status: doc.validation_status,
-          document_type: doc.document_type,
-          original_filename: doc.original_filename
-        })
-        return {
-          id: doc.id,
-          driver_rut: doc.driver_rut || '',
-          tipo: doc.document_type || 'Documento',
-          nombre: doc.original_filename || doc.file_name || '',
-          estado: (doc.verification_status || 'pendiente') as DriverDocument['estado'],
-          fecha_subida: doc.created_at || new Date().toISOString(),
-          public_url: doc.file_url || doc.public_url,
-          storage_path: doc.file_path || doc.storage_path,
-          uploaded_by: doc.uploaded_by || '',
-          rejection_reason: doc.rejection_reason || undefined,
-        }
-      })
+      const transformedDocs = (result.documents || []).map((doc: any) => ({
+        id: doc.id,
+        driver_rut: doc.driver_rut || '',
+        tipo: doc.document_type || 'Documento',
+        nombre: doc.original_filename || doc.file_name || '',
+        estado: (doc.verification_status || 'pendiente') as DriverDocument['estado'],
+        fecha_subida: doc.created_at || new Date().toISOString(),
+        public_url: doc.file_url || doc.public_url,
+        storage_path: doc.file_path || doc.storage_path,
+        uploaded_by: doc.uploaded_by || '',
+        rejection_reason: doc.rejection_reason || undefined,
+      }))
 
-      console.log('[v0] Transformed documents:', transformedDocs.map((d: DriverDocument) => ({ id: d.id, estado: d.estado })))
       setDocuments(transformedDocs)
     } catch (err) {
       console.error('[v0] Error fetching documents:', err)

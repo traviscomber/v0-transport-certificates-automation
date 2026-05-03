@@ -49,18 +49,6 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('[v0] Found', documents?.length || 0, 'documents for conductor_id:', driverId)
-    
-    // Log all validation_status values received from DB
-    documents?.forEach((doc: any) => {
-      console.log('[v0] DB Document:', {
-        id: doc.id,
-        filename: doc.original_filename,
-        validation_status_from_db: doc.validation_status,
-        is_null: doc.validation_status === null,
-        is_undefined: doc.validation_status === undefined,
-        type: typeof doc.validation_status
-      })
-    })
 
     const statusMap: Record<string, string> = {
       'approved': 'aprobado',
@@ -77,13 +65,6 @@ export async function GET(request: NextRequest) {
     const formattedDocs = (documents || []).map((doc: any) => {
       const rawStatus = (doc.validation_status || 'pending').toLowerCase()
       const estadoEspanol = statusMap[rawStatus] || 'pendiente'
-
-      console.log('[v0] Doc status mapping:', {
-        id: doc.id,
-        raw_validation_status: doc.validation_status,
-        rawStatus,
-        estadoEspanol
-      })
 
       return {
         id: doc.id,
