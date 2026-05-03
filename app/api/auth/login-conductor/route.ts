@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set('conductor_id', conductor.id, COOKIE_OPTIONS)
     response.cookies.set('conductor_rut', conductor.rut, COOKIE_OPTIONS)
+    response.cookies.set('conductor_nombre', conductor.nombre_completo, COOKIE_OPTIONS)
     response.cookies.set('user_email', conductor.email, COOKIE_OPTIONS)
 
     return response

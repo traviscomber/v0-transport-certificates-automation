@@ -1,36 +1,18 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies()
     
-    // Use Supabase server client to get authenticated user
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
+    // Check if conductor_id cookie exists (set by login)
+    const conductorId = cookieStore.get('conductor_id')?.value
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-
-    if (userError || !user) {
+    if (!conductorId) {
       return NextResponse.json(
-        { message: 'Unauthorized - not authenticated' },
+        { message: 'Unauthorized - conductor not authenticated' },
         { status: 401 }
       )
     }
