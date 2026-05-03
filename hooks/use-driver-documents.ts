@@ -19,8 +19,6 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
-  // Prevents the automatic useEffect refetch from overwriting optimistic state updates
-  const skipNextAutoFetch = useRef(false)
 
   // Cargar documentos usando la API unificada
   const fetchDocuments = useCallback(async (skipCache = false) => {
@@ -203,10 +201,10 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       }
       const mappedStatus = statusMap[newStatus?.toLowerCase() || ''] || newStatus
 
-      // Block the next automatic useEffect refetch so it doesn't overwrite this optimistic update
-      skipNextAutoFetch.current = true
-
-      // Update local state immediately with correct status
+      // Don't block automatic refetch - the useEffect will fetch fresh data when card re-expands
+      // This ensures consistent state across multiple card instances
+      
+      // Update local state immediately with correct status for instant feedback
       setDocuments(prev => prev.map(doc =>
         doc.id === documentId 
           ? { ...doc, estado: mappedStatus as DriverDocument['estado'] }
@@ -239,14 +237,13 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
     }
   }
 
-  // Fetch when card expands — skip if a status update just happened to avoid overwriting optimistic state
+  // Fetch when card expands — ALWAYS refetch fresh data, don't use skipNextAutoFetch
   useEffect(() => {
     if (driverRut && enabled) {
-      if (skipNextAutoFetch.current) {
-        skipNextAutoFetch.current = false
-        return
-      }
-      fetchDocuments()
+      // When card is enabled (expands), always fetch fresh data
+      // This ensures we get the latest validation_status values even if changed elsewhere
+      console.log('[v0] DriverCard enabled, fetching fresh documents')
+      fetchDocuments(true) // true = skipCache, force fresh data
     }
   }, [driverRut, enabled, fetchDocuments])
 
