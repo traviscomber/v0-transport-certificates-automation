@@ -110,7 +110,6 @@ export function DocumentActionModal({
       alert('No hay URL disponible para descargar')
     }
   }
-  }
 
   const handleDelete = async () => {
     if (!confirm('¿Estás seguro de que deseas eliminar este documento?')) return
