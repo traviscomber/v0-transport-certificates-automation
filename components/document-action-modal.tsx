@@ -271,16 +271,18 @@ export function DocumentActionModal({
             {isAdmin && document.estado !== 'pendiente' && (
               <>
                 <Button
-                  onClick={() => {
+                  onClick={async () => {
                     setIsChanging(true)
-                    if (onStatusChange) {
-                      onStatusChange(document.id, 'pendiente').then(() => {
-                        setIsChanging(false)
-                        setTimeout(() => onClose(), 1000)
-                      }).catch(err => {
-                        console.error('[v0] Error reverting to pending:', err)
-                        setIsChanging(false)
-                      })
+                    try {
+                      if (onStatusChange) {
+                        await onStatusChange(document.id, 'pendiente')
+                        setTimeout(() => onClose(), 500)
+                      }
+                    } catch (err) {
+                      console.error('[v0] Error reverting to pending:', err)
+                      alert('Error al volver a estado pendiente')
+                    } finally {
+                      setIsChanging(false)
                     }
                   }}
                   disabled={isChanging}
