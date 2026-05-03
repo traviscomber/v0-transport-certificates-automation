@@ -28,6 +28,18 @@ interface RequiredDocument {
   uploaded?: UploadedDocument
 }
 
+const DOCUMENT_TYPES = [
+  { id: 'LIC_CONDUCIR', label: 'Licencia de Conducir', code: 'LIC_CONDUCIR' },
+  { id: 'HOJA_VIDA', label: 'Hoja de Vida', code: 'HOJA_VIDA' },
+  { id: 'CERT_ANTECEDENTES', label: 'Certificado de Antecedentes', code: 'CERT_ANTECEDENTES' },
+  { id: 'CEDULA_IDENTIDAD', label: 'Cédula de Identidad', code: 'CEDULA_IDENTIDAD' },
+  { id: 'INHABILIDADES_MENORES', label: 'Inhabilidades Menores', code: 'INHABILIDADES_MENORES' },
+  { id: 'CONTRATO_TRABAJO', label: 'Contrato de Trabajo', code: 'CONTRATO_TRABAJO' },
+  { id: 'CERT_AFP', label: 'Certificado AFP', code: 'CERT_AFP' },
+  { id: 'REVISION_TECNICA', label: 'Revisión Técnica', code: 'REVISION_TECNICA' },
+  { id: 'SOAP', label: 'Seguro Obligatorio (SOAP)', code: 'SOAP' },
+]
+
 const REQUIRED_DOCUMENTS: RequiredDocument[] = [
   {
     type: 'licencia_conducir',
@@ -59,6 +71,7 @@ export default function ConductorDocumentosPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [compliancePercentage, setCompliancePercentage] = useState(0)
+  const [selectedDocumentType, setSelectedDocumentType] = useState('LIC_CONDUCIR')
 
   useEffect(() => {
     fetchDocuments()
@@ -109,8 +122,8 @@ export default function ConductorDocumentosPage() {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      // Use LIC_CONDUCIR as default type for conductor documents
-      formData.append('documentType', 'LIC_CONDUCIR')
+      // Use selected document type
+      formData.append('documentType', selectedDocumentType)
 
       // Fetch uses Supabase cookies automatically (set during login)
       const response = await fetch('/api/conductor/upload-document', {
@@ -239,10 +252,29 @@ export default function ConductorDocumentosPage() {
         <CardHeader>
           <CardTitle className="text-white">Subir Documento</CardTitle>
           <CardDescription className="text-slate-400">
-            Arrastra y suelta o haz clic para seleccionar (PDF, JPG, PNG - Máximo 10MB)
+            Selecciona el tipo de documento y arrastra o haz clic para seleccionar (PDF, JPG, PNG - Máximo 10MB)
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Document Type Selector */}
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Tipo de Documento
+            </label>
+            <select
+              value={selectedDocumentType}
+              onChange={(e) => setSelectedDocumentType(e.target.value)}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 transition-colors"
+            >
+              {DOCUMENT_TYPES.map((doc) => (
+                <option key={doc.id} value={doc.code}>
+                  {doc.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Upload Area */}
           <label
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
