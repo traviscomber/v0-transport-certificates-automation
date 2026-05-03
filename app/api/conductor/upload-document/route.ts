@@ -180,10 +180,17 @@ export async function POST(request: NextRequest) {
     
     console.log('[v0] Table query successful, sample record:', testQuery?.[0])
     
-    // Now try inserting with just conductor_id and file_url
+    // Build complete insert payload with all required fields
     const insertPayload: any = {
       conductor_id: conductor.id,
+      document_type_id: docType.id,
+      original_filename: file.name,
       file_url: publicUrl,
+      file_path: filePath,
+      file_size: file.size,
+      mime_type: file.type,
+      validation_status: validationStatus,
+      created_at: new Date().toISOString(),
     }
 
     console.log('[v0] Insert payload - conductor.id:', conductor.id, 'conductor.rut:', conductor.rut, 'conductor.nombre_completo:', conductor.nombre_completo)
