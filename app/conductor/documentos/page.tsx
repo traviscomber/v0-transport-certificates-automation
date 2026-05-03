@@ -17,7 +17,7 @@ interface UploadedDocument {
   extracted_document_type: string | null
   file_name: string
   file_url: string
-  validation_status: 'pending' | 'approved' | 'rejected'
+  validation_status: 'pending' | 'approved' | 'validated' | 'rejected' | 'expired'
   extraction_confidence: number | null
   created_at: string
   expiration_date?: string
