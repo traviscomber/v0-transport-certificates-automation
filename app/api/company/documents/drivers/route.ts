@@ -9,17 +9,47 @@ export async function GET(request: NextRequest) {
     const driverId = searchParams.get('driver_id')
     const driverRut = searchParams.get('driver_rut')
 
-    // driver_id IS the conductor_id - use it directly
-    if (!driverId || driverId === 'undefined') {
-      console.log('[v0] Missing driver_id parameter')
-      return NextResponse.json({ error: 'driver_id required' }, { status: 400 })
+    if ((!driverId || driverId === 'undefined') && (!driverRut || driverRut === 'undefined')) {
+      console.log('[v0] Missing both driver_id and driver_rut parameters')
+      return NextResponse.json({ error: 'driver_id or driver_rut required' }, { status: 400 })
     }
 
-    console.log('[v0] Fetching documents for conductor_id:', driverId)
+    console.log('[v0] Fetching documents for driver_id:', driverId, 'rut:', driverRut)
 
     const adminClient = await createAdminClient()
 
-    // Query uploaded_documents with JOIN to document_types
+    // STEP 1: Resolve conductor UUID
+    // First, try driver_id as if it were already a UUID
+    let conductorUUID: string | null = null
+
+    // Check if driverId looks like a UUID (contains hyphens in UUID format)
+    const isUUID = driverId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(driverId)
+    
+    if (isUUID) {
+      conductorUUID = driverId
+      console.log('[v0] Using driver_id as UUID:', conductorUUID)
+    } else if (driverRut) {
+      // Resolve UUID from RUT
+      const { data: conductorRow } = await adminClient
+        .from('conductores')
+        .select('id')
+        .eq('rut', driverRut)
+        .single()
+      
+      if (conductorRow?.id) {
+        conductorUUID = conductorRow.id
+        console.log('[v0] Resolved RUT', driverRut, 'to conductor UUID:', conductorUUID)
+      }
+    }
+
+    if (!conductorUUID) {
+      console.log('[v0] Could not resolve conductor UUID from driver_id:', driverId, 'rut:', driverRut)
+      return NextResponse.json({ success: true, documents: [] }, {
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+      })
+    }
+
+    // STEP 2: Query uploaded_documents using the resolved UUID
     const { data: documents, error: dbError } = await adminClient
       .from('uploaded_documents')
       .select(`
@@ -38,7 +68,7 @@ export async function GET(request: NextRequest) {
           name
         )
       `)
-      .eq('conductor_id', driverId)
+      .eq('conductor_id', conductorUUID)
       .order('created_at', { ascending: false })
 
     if (dbError) {
@@ -48,7 +78,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    console.log('[v0] Found', documents?.length || 0, 'documents for conductor_id:', driverId)
+    console.log('[v0] Found', documents?.length || 0, 'documents for conductor_id:', conductorUUID)
 
     const statusMap: Record<string, string> = {
       'approved': 'aprobado',
