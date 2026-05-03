@@ -37,6 +37,8 @@ export function DocumentsManagementClient({
   const [isLoadingDocs, setIsLoadingDocs] = useState(false)
 
   useEffect(() => {
+    console.log('[v0] DocumentsManagementClient received initialDocuments:', initialDocuments?.length || 0)
+    
     // Transform initial documents to our format
     const transformed = initialDocuments.map((doc: any) => {
       // Use verification_status (from endpoint) or validation_status (from DB)
@@ -52,24 +54,33 @@ export function DocumentsManagementClient({
       }
       const mappedStatus = statusMap[status.toLowerCase()] || status.toLowerCase()
       
+      // Use document_type from endpoint or document_types.name from DB join
+      const docType = doc.document_type || doc.document_types?.name || doc.document_type_code || 'Documento'
+      // Use public_url from endpoint or file_url from page
+      const url = doc.public_url || doc.file_url
+      
       console.log('[v0] Transforming document:', {
         id: doc.id,
-        fileName: doc.original_filename,
+        fileName: doc.original_filename || doc.file_name,
+        docType,
         rawStatus: status,
-        mappedStatus
+        mappedStatus,
+        hasPublicUrl: !!url
       })
       
       return {
         id: doc.id,
-        tipo: doc.document_types?.name || doc.document_type_code || 'Documento',
-        nombre: doc.original_filename || 'Documento sin nombre',
-        fecha_subida: doc.created_at,
+        tipo: docType,
+        nombre: doc.original_filename || doc.file_name || 'Documento sin nombre',
+        fecha_subida: doc.created_at || doc.upload_date,
         estado: mappedStatus,
         storage_path: doc.storage_path,
-        public_url: doc.file_url,
+        public_url: url,
         rejection_reason: doc.rejection_reason
       }
     })
+    
+    console.log('[v0] Transformed documents count:', transformed.length)
     setDocuments(transformed)
   }, [initialDocuments])
 
