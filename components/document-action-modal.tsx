@@ -282,37 +282,21 @@ export function DocumentActionModal({
               </>
             )}
 
-            {isAdmin && localDocument.estado !== 'pendiente' && (
-              <>
-                <Button
-                  onClick={() => handleStatusChange('pendiente')}
-                  disabled={isChanging}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  {isChanging ? <Loader className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4" />}
-                  Volver a Pendiente
-                </Button>
-                <Button
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                  className="bg-red-600/80 hover:bg-red-700 text-white flex items-center gap-2"
-                >
-                  {isDeleting ? <Loader className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                  Eliminar
-                </Button>
-              </>
+            {isAdmin && localDocument.estado === 'aprobado' && (
+              <div className="bg-green-500/10 border border-green-500/50 rounded-lg p-3 text-sm text-green-300">
+                <p className="font-semibold">Documento Aprobado</p>
+                <p className="text-xs mt-1">Este documento ha sido aprobado y no puede cambiar su estado.</p>
+              </div>
             )}
 
-            {isAdmin && localDocument.estado === 'pendiente' && (
-              <Button
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="bg-red-600/80 hover:bg-red-700 text-white flex items-center gap-2"
-              >
-                {isDeleting ? <Loader className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                Eliminar
-              </Button>
+            {isAdmin && localDocument.estado === 'rechazado' && (
+              <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 text-sm text-red-300">
+                <p className="font-semibold">Documento Rechazado</p>
+                {localDocument.rejection_reason && (
+                  <p className="text-xs mt-2"><strong>Razón:</strong> {localDocument.rejection_reason}</p>
+                )}
+                <p className="text-xs mt-2">Este documento ha sido rechazado y no puede cambiar su estado.</p>
+              </div>
             )}
           </div>
 
