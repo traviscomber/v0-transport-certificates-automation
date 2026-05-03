@@ -5,21 +5,28 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { FileText, Search, ExternalLink, CheckCircle, XCircle, Clock } from "lucide-react"
 import Link from "next/link"
+import DocumentosFilterClient from "@/components/admin/documentos-filter-client"
 
-async function getDocumentos() {
+async function getDocumentos(conductorId?: string) {
   const supabase = await createClient()
   
-  const { data, error } = await supabase
+  let query = supabase
     .from("uploaded_documents")
     .select(`
       *,
       document_types(name, category, code),
       transportistas(razon_social),
-      conductores(nombres, apellido_paterno),
+      conductores(id, nombres, apellido_paterno, rut),
       vehiculos(patente)
     `)
     .order("created_at", { ascending: false })
-    .limit(100)
+    .limit(200)
+
+  if (conductorId) {
+    query = query.eq("conductor_id", conductorId)
+  }
+
+  const { data, error } = await query
 
   if (error) {
     console.error("Error fetching documentos:", error)
@@ -29,14 +36,42 @@ async function getDocumentos() {
   return data || []
 }
 
-async function getStats() {
+async function getExecutivas() {
   const supabase = await createClient()
   
+  const { data, error } = await supabase
+    .from("conductores")
+    .select("id, nombres, apellido_paterno, rut")
+    .order("apellido_paterno", { ascending: true })
+
+  if (error) {
+    console.error("Error fetching ejecutivas:", error)
+    return []
+  }
+
+  return data || []
+}
+
+async function getStats(conductorId?: string) {
+  const supabase = await createClient()
+  
+  let totalQuery = supabase.from("uploaded_documents").select("id", { count: "exact", head: true })
+  let pendingQuery = supabase.from("uploaded_documents").select("id", { count: "exact", head: true }).eq("validation_status", "pending")
+  let validatedQuery = supabase.from("uploaded_documents").select("id", { count: "exact", head: true }).eq("validation_status", "approved")
+  let rejectedQuery = supabase.from("uploaded_documents").select("id", { count: "exact", head: true }).eq("validation_status", "rejected")
+
+  if (conductorId) {
+    totalQuery = totalQuery.eq("conductor_id", conductorId)
+    pendingQuery = pendingQuery.eq("conductor_id", conductorId)
+    validatedQuery = validatedQuery.eq("conductor_id", conductorId)
+    rejectedQuery = rejectedQuery.eq("conductor_id", conductorId)
+  }
+
   const [total, pending, validated, rejected] = await Promise.all([
-    supabase.from("uploaded_documents").select("id", { count: "exact", head: true }),
-    supabase.from("uploaded_documents").select("id", { count: "exact", head: true }).eq("validation_status", "pending"),
-    supabase.from("uploaded_documents").select("id", { count: "exact", head: true }).eq("validation_status", "validated"),
-    supabase.from("uploaded_documents").select("id", { count: "exact", head: true }).eq("validation_status", "rejected"),
+    totalQuery,
+    pendingQuery,
+    validatedQuery,
+    rejectedQuery,
   ])
 
   return {
@@ -47,9 +82,13 @@ async function getStats() {
   }
 }
 
-export default async function DocumentosPage() {
-  const documentos = await getDocumentos()
-  const stats = await getStats()
+export default async function DocumentosPage({ searchParams }: { searchParams: Record<string, string> }) {
+  const conductorId = searchParams.conductor_id
+  const documentos = await getDocumentos(conductorId)
+  const stats = await getStats(conductorId)
+  const ejecutivas = await getExecutivas()
+
+  const selectedEjecutiva = ejecutivas.find(e => e.id === conductorId)
 
   return (
     <div className="space-y-6">
@@ -57,16 +96,16 @@ export default async function DocumentosPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Documentos</h1>
           <p className="text-muted-foreground">
-            Documentos subidos y procesados por OCR
+            {selectedEjecutiva 
+              ? `Documentos de ${selectedEjecutiva.nombres} ${selectedEjecutiva.apellido_paterno}`
+              : 'Todos los documentos subidos y procesados'
+            }
           </p>
         </div>
-        <Link href="/walmart-ocr">
-          <Button>
-            <FileText className="mr-2 h-4 w-4" />
-            Subir Documento
-          </Button>
-        </Link>
       </div>
+
+      {/* Filter by Ejecutiva */}
+      <DocumentosFilterClient ejecutivas={ejecutivas} selectedId={conductorId} />
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -85,7 +124,7 @@ export default async function DocumentosPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold text-green-600">{stats.validated}</div>
-            <p className="text-sm text-muted-foreground">Validados</p>
+            <p className="text-sm text-muted-foreground">Aprobados</p>
           </CardContent>
         </Card>
         <Card>
@@ -96,44 +135,15 @@ export default async function DocumentosPage() {
         </Card>
       </div>
 
-      {/* Search */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Buscar documentos..."
-                className="w-full rounded-md border bg-background pl-10 pr-4 py-2 text-sm"
-              />
-            </div>
-            <select className="rounded-md border bg-background px-3 py-2 text-sm">
-              <option value="">Todos los estados</option>
-              <option value="pending">Pendientes</option>
-              <option value="validated">Validados</option>
-              <option value="rejected">Rechazados</option>
-            </select>
-            <Button variant="outline">Filtros</Button>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Documents List */}
       {documentos.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <FileText className="h-16 w-16 text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-semibold mb-2">No hay documentos</h3>
-            <p className="text-muted-foreground text-center mb-4">
-              Sube tu primer documento para procesarlo con OCR
+            <p className="text-muted-foreground text-center">
+              {selectedEjecutiva ? `No hay documentos para ${selectedEjecutiva.nombres}` : 'No hay documentos cargados'}
             </p>
-            <Link href="/walmart-ocr">
-              <Button>
-                <FileText className="mr-2 h-4 w-4" />
-                Subir Documento
-              </Button>
-            </Link>
           </CardContent>
         </Card>
       ) : (
@@ -143,9 +153,8 @@ export default async function DocumentosPage() {
               <thead className="border-b bg-muted/50">
                 <tr>
                   <th className="text-left p-4 font-medium">Documento</th>
+                  <th className="text-left p-4 font-medium">Ejecutiva</th>
                   <th className="text-left p-4 font-medium">Tipo</th>
-                  <th className="text-left p-4 font-medium">Entidad</th>
-                  <th className="text-left p-4 font-medium">Confianza</th>
                   <th className="text-left p-4 font-medium">Estado</th>
                   <th className="text-left p-4 font-medium">Fecha</th>
                   <th className="text-right p-4 font-medium">Acciones</th>
@@ -157,53 +166,33 @@ export default async function DocumentosPage() {
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <FileText className="h-5 w-5 text-muted-foreground" />
-                        <span className="font-medium truncate max-w-[200px]">
+                        <span className="font-medium truncate max-w-[250px]">
                           {doc.original_filename || "Sin nombre"}
                         </span>
                       </div>
                     </td>
+                    <td className="p-4 text-sm">
+                      {doc.conductores ? 
+                        `${doc.conductores.nombres} ${doc.conductores.apellido_paterno}` :
+                        '-'}
+                    </td>
                     <td className="p-4">
                       <div>
-                        <p className="font-medium">{doc.document_types?.name}</p>
-                        <p className="text-xs text-muted-foreground capitalize">
-                          {doc.document_types?.category}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="p-4 text-sm">
-                      {doc.transportistas?.razon_social || 
-                       doc.conductores?.nombres && `${doc.conductores.nombres} ${doc.conductores.apellido_paterno}` ||
-                       doc.vehiculos?.patente ||
-                       "-"}
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-16 h-2 rounded-full bg-muted overflow-hidden">
-                          <div 
-                            className={`h-full ${
-                              doc.confidence_score >= 0.8 ? "bg-green-500" :
-                              doc.confidence_score >= 0.6 ? "bg-yellow-500" : "bg-red-500"
-                            }`}
-                            style={{ width: `${(doc.confidence_score || 0) * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          {Math.round((doc.confidence_score || 0) * 100)}%
-                        </span>
+                        <p className="font-medium text-sm">{doc.document_types?.name}</p>
                       </div>
                     </td>
                     <td className="p-4">
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
-                        doc.validation_status === "validated" 
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        doc.validation_status === "approved" 
                           ? "bg-green-100 text-green-700"
                           : doc.validation_status === "rejected"
                           ? "bg-red-100 text-red-700"
                           : "bg-yellow-100 text-yellow-700"
                       }`}>
-                        {doc.validation_status === "validated" && <CheckCircle className="h-3 w-3" />}
+                        {doc.validation_status === "approved" && <CheckCircle className="h-3 w-3" />}
                         {doc.validation_status === "rejected" && <XCircle className="h-3 w-3" />}
                         {doc.validation_status === "pending" && <Clock className="h-3 w-3" />}
-                        {doc.validation_status === "validated" ? "Validado" :
+                        {doc.validation_status === "approved" ? "Aprobado" :
                          doc.validation_status === "rejected" ? "Rechazado" : "Pendiente"}
                       </span>
                     </td>
