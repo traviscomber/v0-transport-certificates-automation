@@ -93,6 +93,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       const pending = optimisticUpdatesRef.current
       const mergedDocs = transformedDocs.map((doc: DriverDocument) => {
         if (pending[doc.id]) {
+          console.log('[v0] Applying optimistic update for doc', doc.id, 'new estado:', pending[doc.id])
           return { ...doc, estado: pending[doc.id] as DriverDocument['estado'] }
         }
         return doc
@@ -187,6 +188,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
 
     // 2. Register in pending optimistic map so fetches don't overwrite it
     optimisticUpdatesRef.current[documentId] = mappedStatus
+    console.log('[v0] updateDocumentStatus: Set optimisticUpdateRef[', documentId, '] =', mappedStatus)
 
     try {
       const body: any = { status: newStatus }
@@ -220,6 +222,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       // Clear from pending AFTER a short delay to protect against any in-flight fetches
       setTimeout(() => {
         delete optimisticUpdatesRef.current[documentId]
+        console.log('[v0] Cleared optimisticUpdateRef[', documentId, '] after PATCH success')
       }, 3000)
 
       return result
