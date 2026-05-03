@@ -173,6 +173,7 @@ export async function GET(request: NextRequest) {
           
           return {
             ...conductor,
+            conductor_id: conductor.id,  // Ensure UUID is available as conductor_id for documents page
             nombre: fullName,
             ejecutivo_nombre: subcontractor?.ejecutiva || subcontractor?.ejecutivo_nombre || 'Sin asignar',
             nombre_subcontratista: subcontractor?.razon_social || subcontractor?.nombre_fantasia || conductor.rut_proveedor || 'N/A',

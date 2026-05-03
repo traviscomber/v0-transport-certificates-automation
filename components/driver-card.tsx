@@ -8,6 +8,7 @@ import { DocumentActionModal } from './document-action-modal'
 
 interface Driver {
   id: string
+  conductor_id?: string  // UUID from conductores table
   rut: string
   nombre: string
   proveedor?: string
@@ -268,7 +269,7 @@ export function DriverCard({
                       <RefreshCw className={`h-3 w-3 text-slate-500 hover:text-slate-300 ${isRefreshing ? 'animate-spin' : ''}`} />
                     </button>
                     <Link
-                      href={`/dashboard/company/documentos/${driver.id}`}
+                      href={`/dashboard/company/documentos/${driver.conductor_id || driver.id}`}
                       onClick={(e) => e.stopPropagation()}
                       className="ml-2 p-1 rounded hover:bg-slate-700/60 transition-colors inline-flex items-center gap-1"
                       title="Ver todos los documentos"
