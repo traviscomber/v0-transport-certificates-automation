@@ -367,7 +367,7 @@ export function DocumentActionModal({
             </div>
           )}
 
-          {!isAdmin && document.estado === 'pendiente' && (
+          {!isAdmin && localDocument.estado === 'pendiente' && (
             <div className="bg-yellow-500/10 border border-yellow-500/50 rounded-lg p-3 text-sm text-yellow-300">
               <p className="font-semibold mb-1">En Revisión</p>
               <p>Este documento está siendo revisado por el equipo administrativo. Te notificaremos cuando sea aprobado o si requiere cambios.</p>
