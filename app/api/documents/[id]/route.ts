@@ -1,55 +1,38 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const supabase = createServerClient()
-    const { id } = params
-    const body = await request.json()
+    const documentId = params.id
 
-    console.log("[v0] Updating document:", id, body)
+    if (!documentId) {
+      return NextResponse.json({ error: 'Document ID is required' }, { status: 400 })
+    }
 
+    const supabase = await createClient()
+
+    // Try to fetch from uploaded_documents table first
     const { data, error } = await supabase
-      .from("transporters")
-      .update({
-        name: body.name,
-        rut: body.rut,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id)
-      .select()
+      .from('uploaded_documents')
+      .select('*')
+      .eq('id', documentId)
+      .single()
 
-    if (error) {
-      console.error("[v0] Supabase update error:", error)
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116 means no rows found, which is expected if it's not an uploaded document
+      return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    console.log("[v0] Document updated successfully:", data)
-    return NextResponse.json({ success: true, data })
-  } catch (error) {
-    console.error("[v0] Update document error:", error)
-    return NextResponse.json({ success: false, error: "Failed to update document" }, { status: 500 })
-  }
-}
-
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
-  try {
-    const supabase = createServerClient()
-    const { id } = params
-
-    console.log("[v0] Deleting document:", id)
-
-    const { error } = await supabase.from("transporters").delete().eq("id", id)
-
-    if (error) {
-      console.error("[v0] Supabase delete error:", error)
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    if (data) {
+      return NextResponse.json(data, { status: 200 })
     }
 
-    console.log("[v0] Document deleted successfully")
-    return NextResponse.json({ success: true })
+    // If not found in uploaded_documents, return 404
+    return NextResponse.json({ error: 'Document not found' }, { status: 404 })
   } catch (error) {
-    console.error("[v0] Delete document error:", error)
-    return NextResponse.json({ success: false, error: "Failed to delete document" }, { status: 500 })
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to fetch document' },
+      { status: 500 }
+    )
   }
 }

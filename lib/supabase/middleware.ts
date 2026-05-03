@@ -1,57 +1,90 @@
-import { createServerClient } from "@supabase/ssr"
+import { createClient } from "@supabase/supabase-js"
 import { NextResponse, type NextRequest } from "next/server"
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  // With Fluid compute, don't put this client in a global environment
-  // variable. Always create a new one on each request.
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
-        },
-      },
-    },
-  )
-
-  // Do not run code between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
-  // IMPORTANT: If you remove getUser() and you use server-side rendering
-  // with the Supabase client, your users may be randomly logged out.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  // Protect routes that require authentication
-  if (
-    request.nextUrl.pathname !== "/" &&
-    !user &&
-    !request.nextUrl.pathname.startsWith("/auth") &&
-    !request.nextUrl.pathname.startsWith("/setup-demo") &&
-    !request.nextUrl.pathname.startsWith("/_next") &&
-    !request.nextUrl.pathname.startsWith("/api")
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
-    const url = request.nextUrl.clone()
-    url.pathname = "/auth/login"
-    return NextResponse.redirect(url)
+  // If environment variables are not set, pass through
+  if (!url || !key) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[v0] Supabase env vars not set in middleware")
+    }
+    return NextResponse.next({ request })
   }
 
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
-  return supabaseResponse
+  try {
+    // Create a client just for this request
+    const supabase = createClient(url, key)
+
+    // Get the session from cookies
+    const sessionCookie = request.cookies.get("sb-session")?.value
+    const pathname = request.nextUrl.pathname
+
+    // Define public and protected paths
+    const publicPaths = [
+      "/",
+      "/auth/login",
+      "/auth/login-conductor",  // Conductor login page — custom cookie auth, not Supabase session
+      "/auth/register",
+      "/setup-demo",
+      "/login",
+      "/dashboard/company",
+      "/api/company/data",
+      "/api/auth",              // All conductor auth API routes
+      "/_next",
+      "/api",
+      "/conductor",             // Conductor portal — protected by custom middleware, not sb-session
+    ]
+
+    const isPublic = publicPaths.some((path) => pathname.startsWith(path)) || pathname.match(/\.(svg|png|jpg|jpeg|gif|webp)$/)
+
+    if (!sessionCookie) {
+      // No session, check if this is a protected route
+      if (!isPublic) {
+        const redirectUrl = request.nextUrl.clone()
+        redirectUrl.pathname = "/auth/login"
+        return NextResponse.redirect(redirectUrl)
+      }
+      return NextResponse.next({ request })
+    }
+
+    // Session exists, now check role-based access
+    // Parse the session to get user role if available
+    const response = NextResponse.next({ request })
+    
+    // Role-based route protection
+    const roleBasedRoutes: Record<string, string[]> = {
+      '/admin': ['admin'],
+      '/admin/': ['admin'],
+      '/mandante': ['mandante', 'admin'],
+      '/mandante/': ['mandante', 'admin'],
+      '/transportista': ['transportista', 'admin'],
+      '/transportista/': ['transportista', 'admin'],
+      '/conductor': ['conductor', 'admin'],
+      '/conductor/': ['conductor', 'admin'],
+      '/walmart-ocr': ['admin', 'mandante', 'transportista', 'conductor'],
+      '/walmart-ocr/': ['admin', 'mandante', 'transportista', 'conductor'],
+    }
+
+    // Check if route requires role-based access
+    for (const [routePath, allowedRoles] of Object.entries(roleBasedRoutes)) {
+      if (pathname.startsWith(routePath)) {
+        // In production, you would validate the user's role from their session/JWT
+        // For now, we allow the request through and client-side will handle access control
+        // via the RoleGuard component
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[v0] Route protection: ${pathname} requires roles: ${allowedRoles.join(', ')}`)
+        }
+        break
+      }
+    }
+
+    return response
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[v0] Middleware error:", error)
+    }
+    return NextResponse.next({ request })
+  }
 }

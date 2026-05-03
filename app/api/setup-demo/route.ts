@@ -1,122 +1,95 @@
-import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
 
-const DEMO_USER_IDS = {
-  "conductor@demo.cl": "11111111-1111-1111-1111-111111111111",
-  "despachador@demo.cl": "22222222-2222-2222-2222-222222222222",
-  "admin@demo.cl": "33333333-3333-3333-3333-333333333333",
-}
+const DEMO_ACCOUNTS = [
+  {
+    email: "conductor@demo.cl",
+    password: "demo123",
+    full_name: "Juan Carlos Pérez",
+    role: "driver",
+    company_name: "Transportes Demo Ltda.",
+  },
+  {
+    email: "despachador@demo.cl",
+    password: "demo123",
+    full_name: "María Elena González",
+    role: "dispatcher",
+    company_name: "Central de Despacho Demo",
+  },
+  {
+    email: "admin@demo.cl",
+    password: "demo123",
+    full_name: "Roberto Silva",
+    role: "admin",
+    company_name: "DocuFleet",
+  },
+]
 
 export async function POST() {
-  try {
-    const adminClient = createAdminClient()
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-    const demoAccounts = [
+  if (!url || !serviceKey) {
+    return NextResponse.json(
       {
-        email: "conductor@demo.cl",
-        password: "demo123",
-        userId: DEMO_USER_IDS["conductor@demo.cl"],
-        profile: {
-          full_name: "Juan Carlos Pérez",
-          role: "driver",
-          rut: "12.345.678-9",
-          phone: "+56 9 8765 4321",
-          company_name: "Transportes Demo Ltda.",
-          address: "Av. Los Transportistas 123",
-          city: "Santiago",
-          region: "Metropolitana",
-        },
+        success: false,
+        error: `Missing env vars — URL: ${!!url}, SERVICE_KEY: ${!!serviceKey}`,
       },
-      {
-        email: "despachador@demo.cl",
-        password: "demo123",
-        userId: DEMO_USER_IDS["despachador@demo.cl"],
-        profile: {
-          full_name: "María Elena González",
-          role: "dispatcher",
-          rut: "98.765.432-1",
-          phone: "+56 9 1234 5678",
-          company_name: "Central de Despacho Demo",
-          address: "Av. Logística 456",
-          city: "Valparaíso",
-          region: "Valparaíso",
+      { status: 500 }
+    )
+  }
+
+  const admin = createClient(url, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+
+  const results = []
+
+  for (const account of DEMO_ACCOUNTS) {
+    try {
+      // Try to create the user via Admin API
+      const { data, error } = await admin.auth.admin.createUser({
+        email: account.email,
+        password: account.password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: account.full_name,
+          role: account.role,
+          company_name: account.company_name,
         },
-      },
-      {
-        email: "admin@demo.cl",
-        password: "demo123",
-        userId: DEMO_USER_IDS["admin@demo.cl"],
-        profile: {
-          full_name: "Roberto Silva Administrador",
-          role: "admin",
-          rut: "11.222.333-4",
-          phone: "+56 9 9999 0000",
-          company_name: "Sistema Central Demo",
-          address: "Av. Administración 789",
-          city: "Santiago",
-          region: "Metropolitana",
-        },
-      },
-    ]
+      })
 
-    const results = []
-
-    for (const account of demoAccounts) {
-      const { data: existingUsers } = await adminClient.auth.admin.listUsers()
-      const existingUser = existingUsers.users?.find((user) => user.email === account.email)
-
-      let userId: string = account.userId
-
-      if (existingUser) {
-        console.log(`User ${account.email} already exists, using existing user`)
-        userId = existingUser.id
-      } else {
-        const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
-          email: account.email,
-          password: account.password,
-          email_confirm: true, // Skip email confirmation for demo accounts
-          user_id: account.userId, // Use deterministic UUID
-        })
-
-        if (authError) {
-          console.error(`Error creating auth user for ${account.email}:`, authError)
-          results.push({ email: account.email, success: false, error: authError.message })
-          continue
-        }
-
-        if (!authData.user) {
-          results.push({ email: account.email, success: false, error: "No user data returned" })
-          continue
-        }
-
-        userId = authData.user.id
-      }
-
-      const { error: profileError } = await adminClient.from("profiles").upsert(
-        {
-          id: userId,
-          email: account.email,
-          ...account.profile,
-          is_active: true,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "id",
-        },
-      )
-
-      if (profileError) {
-        console.error(`Error upserting profile for ${account.email}:`, profileError)
-        results.push({ email: account.email, success: false, error: profileError.message })
+      if (error && error.message !== "A user with this email address has already been registered") {
+        results.push({ email: account.email, success: false, error: error.message })
         continue
       }
 
-      results.push({ email: account.email, success: true, userId, existed: !!existingUser })
-    }
+      const userId = data?.user?.id
 
-    return NextResponse.json({ success: true, results })
-  } catch (error: any) {
-    console.error("Error setting up demo accounts:", error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+      // Upsert profile if we got a userId (new user)
+      if (userId) {
+        await admin.from("profiles").upsert(
+          {
+            id: userId,
+            email: account.email,
+            full_name: account.full_name,
+            role: account.role,
+            company_name: account.company_name,
+          },
+          { onConflict: "id" }
+        )
+      }
+
+      results.push({
+        email: account.email,
+        success: true,
+        existed: !!error, // error = already existed
+      })
+    } catch (err: any) {
+      results.push({ email: account.email, success: false, error: err.message })
+    }
   }
+
+  const allOk = results.every((r) => r.success)
+  return NextResponse.json({ success: allOk, results })
 }

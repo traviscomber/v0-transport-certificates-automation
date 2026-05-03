@@ -1,103 +1,152 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { FileText, Shield, Truck, AlertTriangle, CheckCircle, Clock } from "lucide-react"
-import { SmartAlerts } from "./smart-alerts"
+
+interface Alert {
+  id: string
+  type: string
+  title: string
+  message: string
+  priority: string
+  is_read: boolean
+  is_dismissed: boolean
+  created_at: string
+  metadata?: Record<string, any>
+}
 
 export function DashboardOverview() {
-  const stats = [
+  const [stats, setStats] = useState([
     {
-      title: "Certificados F-30",
-      value: "24",
-      description: "Documentos activos",
+      title: "Total de Documentos",
+      value: "0",
+      description: "En el sistema",
       icon: FileText,
       status: "active",
     },
     {
-      title: "Certificados F-30-1",
-      value: "18",
-      description: "Documentos activos",
-      icon: Shield,
+      title: "Documentos Aprobados",
+      value: "0",
+      description: "Validados",
+      icon: CheckCircle,
       status: "active",
     },
     {
-      title: "Documentos de Máquinas",
-      value: "42",
-      description: "Permisos y licencias",
-      icon: Truck,
+      title: "Documentos Pendientes",
+      value: "0",
+      description: "En revisión",
+      icon: Clock,
       status: "active",
     },
     {
       title: "Documentos Vencidos",
-      value: "3",
+      value: "0",
       description: "Requieren renovación",
       icon: AlertTriangle,
       status: "warning",
     },
-  ]
+  ])
 
-  const recentDocuments = [
-    {
-      id: 1,
-      type: "F-30",
-      transporter: "Transportes González Ltda.",
-      status: "approved",
-      date: "2024-01-15",
-      expiryDate: "2024-07-15",
-    },
-    {
-      id: 2,
-      type: "F-30-1",
-      transporter: "Logística del Sur S.A.",
-      status: "pending",
-      date: "2024-01-14",
-      expiryDate: "2024-06-14",
-    },
-    {
-      id: 3,
-      type: "Permiso Circulación",
-      transporter: "Transportes Rápidos Chile",
-      status: "expired",
-      date: "2023-12-01",
-      expiryDate: "2024-01-01",
-    },
-    {
-      id: 4,
-      type: "Licencia Conducir",
-      transporter: "Distribuidora Norte",
-      status: "approved",
-      date: "2024-01-10",
-      expiryDate: "2025-01-10",
-    },
-  ]
+  const [alerts, setAlerts] = useState<Alert[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "approved":
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch alerts - now getting more alerts to show in dashboard
+        const alertsRes = await fetch(`/api/alerts?limit=50&_t=${Date.now()}`, {
+          cache: "no-store",
+        })
+        if (alertsRes.ok) {
+          const alertsData = await alertsRes.json()
+          // Handle both array and object with alerts property
+          const alertsList = Array.isArray(alertsData) ? alertsData : (alertsData.alerts || [])
+          setAlerts(alertsList)
+
+          // Calculate stats from alerts
+          const approved = alertsList.filter((a: Alert) => a.type === 'DOCUMENT_APPROVED').length
+          const pending = alertsList.filter((a: Alert) => a.type === 'DOCUMENT_PENDING').length
+          const rejected = alertsList.filter((a: Alert) => a.type === 'DOCUMENT_REJECTED').length
+          const total = alertsList.length
+
+          setStats([
+            {
+              title: "Total de Documentos",
+              value: total.toString(),
+              description: "En el sistema",
+              icon: FileText,
+              status: "active",
+            },
+            {
+              title: "Documentos Aprobados",
+              value: approved.toString(),
+              description: "Validados",
+              icon: CheckCircle,
+              status: "active",
+            },
+            {
+              title: "Documentos Pendientes",
+              value: pending.toString(),
+              description: "En revisión",
+              icon: Clock,
+              status: "active",
+            },
+            {
+              title: "Documentos Rechazados",
+              value: rejected.toString(),
+              description: "No validados",
+              icon: AlertTriangle,
+              status: "warning",
+            },
+          ])
+        }
+      } catch (error) {
+        console.error('[v0] Error loading dashboard data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  const getStatusBadge = (type: string) => {
+    switch (type) {
+      case "DOCUMENT_APPROVED":
         return (
-          <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">
+          <Badge variant="default" className="bg-green-600 text-black border border-green-600 hover:bg-green-700">
             Aprobado
           </Badge>
         )
-      case "pending":
-        return <Badge variant="secondary">Pendiente</Badge>
-      case "expired":
-        return <Badge variant="destructive">Vencido</Badge>
+      case "DOCUMENT_PENDING":
+        return <Badge variant="secondary" className="bg-yellow-200 text-black hover:bg-yellow-200">Pendiente</Badge>
+      case "DOCUMENT_REJECTED":
+        return <Badge variant="destructive" className="bg-red-500 text-black hover:bg-red-600">Rechazado</Badge>
       default:
         return <Badge variant="outline">Desconocido</Badge>
     }
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "approved":
+  const getStatusIcon = (type: string) => {
+    switch (type) {
+      case "DOCUMENT_APPROVED":
         return <CheckCircle className="h-4 w-4 text-green-600" />
-      case "pending":
-        return <Clock className="h-4 w-4 text-yellow-600" />
-      case "expired":
-        return <AlertTriangle className="h-4 w-4 text-red-600" />
+      case "DOCUMENT_PENDING":
+        return <Clock className="h-4 w-4 text-yellow-400" />
+      case "DOCUMENT_REJECTED":
+        return <AlertTriangle className="h-4 w-4 text-red-500" />
       default:
         return null
     }
+  }
+
+  const getStatIconColor = (title: string): string => {
+    if (title.includes("Aprobados")) return "text-green-600"
+    if (title.includes("Pendientes")) return "text-yellow-400"
+    if (title.includes("Rechazados")) return "text-red-500"
+    return "text-primary"
   }
 
   return (
@@ -113,7 +162,7 @@ export function DashboardOverview() {
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <stat.icon className={`h-4 w-4 ${stat.status === "warning" ? "text-yellow-600" : "text-primary"}`} />
+              <stat.icon className={`h-4 w-4 ${getStatIconColor(stat.title)}`} />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
@@ -123,37 +172,40 @@ export function DashboardOverview() {
         ))}
       </div>
 
-      <SmartAlerts />
-
-      {/* Recent Documents */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Documentos Recientes</CardTitle>
-          <CardDescription>Últimos documentos procesados en el sistema</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {recentDocuments.map((doc) => (
-              <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center space-x-4">
-                  {getStatusIcon(doc.status)}
-                  <div>
-                    <p className="font-medium">{doc.type}</p>
-                    <p className="text-sm text-muted-foreground">{doc.transporter}</p>
+      {/* Recent Alerts */}
+      {alerts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Alertas Recientes</CardTitle>
+            <CardDescription>Últimas alertas del sistema - {alerts.length} total</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {alerts.slice(0, 10).map((alert) => (
+                <div key={alert.id} className="flex items-start justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-start space-x-3 flex-1">
+                    <div className="mt-0.5">{getStatusIcon(alert.type)}</div>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{alert.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{alert.message}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(alert.created_at).toLocaleDateString('es-ES', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
                   </div>
+                  <div className="ml-4">{getStatusBadge(alert.type)}</div>
                 </div>
-                <div className="flex items-center space-x-4">
-                  <div className="text-right">
-                    <p className="text-sm">Vence: {doc.expiryDate}</p>
-                    <p className="text-xs text-muted-foreground">Subido: {doc.date}</p>
-                  </div>
-                  {getStatusBadge(doc.status)}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

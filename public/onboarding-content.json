@@ -1,0 +1,249 @@
+{
+  "onboarding_steps": [
+    {
+      "id": 1,
+      "title": "Bienvenido a DocuFleet",
+      "description": "Sistema de gestión de transporte y cumplimiento normativo para ejecutivos LABBE",
+      "icon": "Briefcase",
+      "content": "DocuFleet es tu plataforma centralizada para gestionar conductores, subcontratistas, documentos y cumplimiento regulatorio en tiempo real."
+    },
+    {
+      "id": 2,
+      "title": "Torre de Control",
+      "description": "Panel ejecutivo con KPIs operacionales en tiempo real",
+      "icon": "BarChart3",
+      "content": "Centro de monitoreo inteligente. Visualiza estado de toda tu flota: conductores operacionales, en riesgo o bloqueados. Alertas críticas y score de cumplimiento normativo."
+    },
+    {
+      "id": 3,
+      "title": "Gestión de Conductores",
+      "description": "Panel para administrar conductores y monitorear licencias",
+      "icon": "Users",
+      "content": "Gestiona todos tus conductores. Visualiza RUT, estado de cumplimiento, clase de licencia, antecedentes y proveedor. Identifica conductores listos para operar o en riesgo."
+    },
+    {
+      "id": 4,
+      "title": "Gestión de Subcontratistas",
+      "description": "Panel para administrar proveedores de transporte",
+      "icon": "Building2",
+      "content": "Gestiona todos tus subcontratistas y proveedores. Visualiza ejecutivas, regiones, certificaciones (Ariztia, LTS, Rendic, Interpolar) y estado de cumplimiento normativo."
+    },
+    {
+      "id": 5,
+      "title": "Gestión de Documentos",
+      "description": "Panel para visualizar documentos requeridos mensualmente",
+      "icon": "FileText",
+      "content": "Visualiza todos los documentos que requiere tu operación. Filtra por certificación (Ariztia, LTS, Rendic, Interpolar), identifica documentos extra que piden tus clientes."
+    },
+    {
+      "id": 6,
+      "title": "Centro de Alertas",
+      "description": "Sistema inteligente de notificaciones en tiempo real",
+      "icon": "Bell",
+      "content": "Recibe alertas automáticas sobre documentos vencidos, conductores bloqueados, subcontratistas en riesgo y cambios normativos. Filtra por prioridad, tipo y estado."
+    },
+    {
+      "id": 7,
+      "title": "Gestión de Equipo",
+      "description": "Panel para contactar al equipo LABBE Transportes",
+      "icon": "Users",
+      "content": "Visualiza y contacta a ejecutivas, gerentes y coordinadores del equipo LABBE. Búsqueda por nombre, RUT, cargo o teléfono. Contacto directo para resolver operaciones."
+    }
+  ],
+  "section_explanations": {
+    "control-tower": {
+      "title": "Torre de Control - Tu Centro de Monitoreo",
+      "description": "Panel ejecutivo con todas las métricas que necesitas",
+      "items": [
+        {
+          "label": "Estado General",
+          "explanation": "Número total de conductores activos, documentos vigentes y alertas pendientes"
+        },
+        {
+          "label": "Documentos por Vencer",
+          "explanation": "Listado de documentos que vencerán en los próximos 30 días"
+        },
+        {
+          "label": "Alertas Críticas",
+          "explanation": "Eventos urgentes que requieren atención inmediata"
+        },
+        {
+          "label": "Score de Cumplimiento",
+          "explanation": "Porcentaje de regularización normativa de tu operación"
+        }
+      ]
+    },
+    "conductores": {
+      "title": "Gestión de Conductores - Administra tu Fuerza de Trabajo",
+      "description": "Panel para visualizar y gestionar todos los conductores de tu flota",
+      "items": [
+        {
+          "label": "¿Qué es un Conductor?",
+          "explanation": "Persona responsable de operar vehículos en tu flota. Tiene licencia de conducir, antecedentes penales y documentos que deben estar vigentes para trabajar."
+        },
+        {
+          "label": "Búsqueda Inteligente",
+          "explanation": "Busca por RUT (ej: 18.012.757-7), nombre completo, proveedor (subcontratista) o patente del vehículo (ej: XW7026). Búsqueda instantánea."
+        },
+        {
+          "label": "Filtro por Estado",
+          "explanation": "Todos: Ver toda tu flota. Activos: Solo conductores listos para operar. Inactivos: Conductores con problemas que deben resolverse."
+        },
+        {
+          "label": "Filtro por Proveedor",
+          "explanation": "Filtra conductores por empresa o subcontratista. Útil para análisis por proveedor y verificar cumplimiento de cada uno."
+        },
+        {
+          "label": "Estado - Activo",
+          "explanation": "Conductor listo para operar. Todos sus documentos están vigentes y cumple con la normativa regulatoria."
+        },
+        {
+          "label": "Estado - Inactivo",
+          "explanation": "Conductor no puede operar. Tiene documentos vencidos, antecedentes o incumplimiento normativo que debe resolverse."
+        }
+      ]
+    },
+    "subcontratistas": {
+      "title": "Subcontratistas - Proveedores Confiables",
+      "description": "Administra tu red de transportistas y proveedores",
+      "items": [
+        {
+          "label": "Empresa",
+          "explanation": "Datos de la empresa, RUT, contacto principal"
+        },
+        {
+          "label": "Documentación",
+          "explanation": "Licencia de operación, Seguro, Certificaciones"
+        },
+        {
+          "label": "Conductores Asociados",
+          "explanation": "Conductores que trabajan para este subcontratista"
+        },
+        {
+          "label": "Evaluación",
+          "explanation": "Calificación de cumplimiento y confiabilidad"
+        }
+      ]
+    },
+    "documentos": {
+      "title": "Gestión de Documentos - Administra tu Documentación",
+      "description": "Panel para visualizar y gestionar todos los documentos requeridos",
+      "items": [
+        {
+          "label": "¿Qué es un Documento?",
+          "explanation": "Certificado, registro, autorización o comprobante que debe estar vigente para que tu operación sea legal y cumplida. Cada documento tiene periodicidad (mensual, anual, etc)."
+        },
+        {
+          "label": "Búsqueda Inteligente",
+          "explanation": "Busca por nombre del documento (ej: Licencia) o descripción. La búsqueda es instantánea y case-insensible."
+        },
+        {
+          "label": "Filtro por Certificaciones",
+          "explanation": "Ariztia: Asociación de Transporte. LTS: Licencia Técnica. Rendic: Declaración de Rentas. Interpolar: Verificación Internacional. Filtra documentos relacionados."
+        },
+        {
+          "label": "Documentos Extra",
+          "explanation": "Documentos adicionales que solicitan algunos clientes específicos. Más allá de los requerimientos legales estándar."
+        },
+        {
+          "label": "Periodicidad",
+          "explanation": "Con qué frecuencia debe renovarse o verificarse el documento. Mensual = cada mes. Anual = cada año. Vigencia = mientras sea válido."
+        },
+        {
+          "label": "Estadísticas Rápidas",
+          "explanation": "Total de documentos, certificaciones disponibles, documentos extra, resultados de búsqueda en tiempo real."
+        }
+      ]
+    },
+    "gestion-subcontratistas": {
+      "title": "Gestión de Subcontratistas - Administra Proveedores",
+      "description": "Panel para visualizar y gestionar todos tus proveedores de transporte",
+      "items": [
+        {
+          "label": "¿Qué es un Subcontratista?",
+          "explanation": "Empresa o persona que proporciona servicios de transporte para tu operación. Tiene documentos, certificaciones y estado de cumplimiento regulatorio."
+        },
+        {
+          "label": "Búsqueda Inteligente",
+          "explanation": "Busca por nombre, RUT, región, ejecutiva, teléfono o email. Sistema rápido y flexible."
+        },
+        {
+          "label": "Filtros Avanzados",
+          "explanation": "Filtra por: Ejecutivas (responsables del contacto), Regiones (geografía), Certificaciones (Ariztia, LTS, Rendic, Interpolar), Estado (activo/inactivo)"
+        },
+        {
+          "label": "Certificaciones",
+          "explanation": "Ariztia: Asociación de Transporte. LTS: Licencia Técnica. Rendic: Declaración de Rentas. Interpolar: Verificación Internacional."
+        },
+        {
+          "label": "Estadísticas Rápidas",
+          "explanation": "Total de subcontratistas, activos, regiones cubiertas, resultados de búsqueda en tiempo real."
+        },
+        {
+          "label": "Información de Contacto",
+          "explanation": "Accede a ejecutivas, representantes, teléfonos y emails de cada subcontratista directamente."
+        }
+      ]
+    },
+    "alertas": {
+      "title": "Centro de Alertas - Tu Sistema de Warnings",
+      "description": "Notificaciones inteligentes en tiempo real sobre eventos críticos",
+      "items": [
+        {
+          "label": "¿Qué es una Alerta?",
+          "explanation": "Notificación automática sobre eventos importantes: documentos vencidos, conductores bloqueados, subcontratistas en riesgo, cambios normativos."
+        },
+        {
+          "label": "Prioridad Crítica",
+          "explanation": "Documentos ya vencidos, conductores bloqueados, incumplimiento normativo. Requieren acción inmediata."
+        },
+        {
+          "label": "Prioridad Alta",
+          "explanation": "Documentos por vencer en menos de 15 días, cambios normativos próximos."
+        },
+        {
+          "label": "Prioridad Normal",
+          "explanation": "Eventos informativos, documentos por vencer en 30 días, cambios administrativos."
+        },
+        {
+          "label": "Filtros de Alertas",
+          "explanation": "Filtra por tipo (documento, conductor, subcontratista), prioridad (crítica, alta, normal), solo no leídas, por fecha."
+        },
+        {
+          "label": "Marcar como Leída",
+          "explanation": "Marca alertas como leídas para mantener control de qué ya revisaste y qué aún necesita atención."
+        }
+      ]
+    },
+    "equipo": {
+      "title": "Gestión de Equipo - Contacta tu Equipo LABBE",
+      "description": "Panel para visualizar y contactar miembros del equipo",
+      "items": [
+        {
+          "label": "¿Quién es el Equipo?",
+          "explanation": "Profesionales de LABBE Transportes que gestionan tu operación: Ejecutivas (contacto principal), Gerentes (supervisión), Coordinadores (gestión operativa)."
+        },
+        {
+          "label": "Búsqueda Inteligente",
+          "explanation": "Busca por nombre completo, RUT, cargo (Ejecutiva, Gerente, Coordinador) o teléfono. Búsqueda instantánea."
+        },
+        {
+          "label": "Ejecutivas",
+          "explanation": "Tu contacto principal en LABBE. Responsables de tu cuenta, negociación y resolución de problemas estratégicos."
+        },
+        {
+          "label": "Gerentes",
+          "explanation": "Supervisan operaciones, garantizan cumplimiento normativo, coordinan con conductores y subcontratistas."
+        },
+        {
+          "label": "Coordinadores",
+          "explanation": "Gestión diaria, resolución de problemas operativos, seguimiento de documentos y alertas."
+        },
+        {
+          "label": "Contacto Directo",
+          "explanation": "Llama, envía email o contacta directamente a cualquier miembro del equipo desde esta sección."
+        }
+      ]
+    }
+  }
+}

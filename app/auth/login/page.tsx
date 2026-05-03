@@ -1,245 +1,229 @@
-"use client"
+'use client'
 
-import type React from "react"
-
-import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
-import { Truck, User, Users, Shield, Play } from "lucide-react"
-
-const demoAccounts = [
-  {
-    role: "driver",
-    email: "conductor@demo.cl",
-    password: "demo123",
-    name: "Conductor",
-    description: "Acceso como conductor para subir certificados",
-    icon: User,
-    color: "bg-blue-500 hover:bg-blue-600",
-  },
-  {
-    role: "dispatcher",
-    email: "despachador@demo.cl",
-    password: "demo123",
-    name: "Despachador",
-    description: "Acceso como despachador para gestionar conductores",
-    icon: Users,
-    color: "bg-green-500 hover:bg-green-600",
-  },
-  {
-    role: "admin",
-    email: "admin@demo.cl",
-    password: "demo123",
-    name: "Administrador",
-    description: "Acceso completo al sistema",
-    icon: Shield,
-    color: "bg-purple-500 hover:bg-purple-600",
-  },
-]
+import { useState, useRef } from 'react'
+import { useAuth } from '@/lib/auth-context'
+import { useToast } from '@/lib/toast-context'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import Link from 'next/link'
+import { DEMO_ACCOUNTS } from '@/lib/demo-login'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [demoLoading, setDemoLoading] = useState<string | null>(null)
+  const [emailError, setEmailError] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const { login } = useAuth()
+  const { addToast } = useToast()
   const router = useRouter()
+  const formRef = useRef<HTMLFormElement>(null)
 
-  const handleLogin = async (e: React.FormEvent) => {
+  // Validación de email en tiempo real
+  const validateEmail = (value: string) => {
+    if (!value) {
+      setEmailError('El correo es requerido')
+      return false
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(value)) {
+      setEmailError('Correo inválido')
+      return false
+    }
+    setEmailError('')
+    return true
+  }
+
+  // Validación de contraseña en tiempo real
+  const validatePassword = (value: string) => {
+    if (!value) {
+      setPasswordError('La contraseña es requerida')
+      return false
+    }
+    if (value.length < 6) {
+      setPasswordError('Mínimo 6 caracteres')
+      return false
+    }
+    setPasswordError('')
+    return true
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
+    
+    const emailValid = validateEmail(email)
+    const passwordValid = validatePassword(password)
+    
+    if (!emailValid || !passwordValid) return
+
     setIsLoading(true)
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      if (error) throw error
-
-      // Get user profile to determine redirect
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", (await supabase.auth.getUser()).data.user?.id)
-        .single()
-
-      // Redirect based on role
-      if (profile?.role === "admin") {
-        router.push("/admin")
-      } else if (profile?.role === "dispatcher") {
-        router.push("/dispatcher")
-      } else {
-        router.push("/driver")
-      }
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
-    } finally {
+      await login(email, password)
+      addToast('Sesión iniciada correctamente', 'success', 2000)
+      router.push('/dashboard')
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error al iniciar sesión'
+      setError(errorMessage)
+      addToast(errorMessage, 'error', 5000)
       setIsLoading(false)
     }
   }
 
-  const handleDemoLogin = async (demoAccount: (typeof demoAccounts)[0]) => {
-    const supabase = createClient()
-    setDemoLoading(demoAccount.role)
+  const handleDemoLogin = (account: typeof DEMO_ACCOUNTS[0]) => {
+    // Fill fields and submit immediately
+    setEmail(account.email)
+    setPassword(account.password)
     setError(null)
-
-    try {
-      console.log("[v0] Attempting demo login for:", demoAccount.email)
-
-      const { error } = await supabase.auth.signInWithPassword({
-        email: demoAccount.email,
-        password: demoAccount.password,
-      })
-
-      if (error) {
-        console.log("[v0] Demo login error:", error)
-        throw error
-      }
-
-      console.log("[v0] Demo login successful, redirecting...")
-
-      // Redirect based on role
-      if (demoAccount.role === "admin") {
-        router.push("/admin")
-      } else if (demoAccount.role === "dispatcher") {
-        router.push("/dispatcher")
-      } else {
-        router.push("/driver")
-      }
-    } catch (error: unknown) {
-      console.log("[v0] Demo login failed:", error)
-      setError(error instanceof Error ? error.message : "Error en login demo")
-    } finally {
-      setDemoLoading(null)
-    }
+    setEmailError('')
+    setPasswordError('')
+    
+    // Submit form after state update
+    setTimeout(() => {
+      formRef.current?.dispatchEvent(
+        new Event('submit', { cancelable: true, bubbles: true })
+      )
+    }, 0)
   }
 
+  const isFormValid = email && password && !emailError && !passwordError
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
+    <div className="min-h-screen bg-gradient-dark flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="flex flex-col items-center mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Truck className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">TransporteCL</span>
-          </div>
-          <p className="text-muted-foreground text-center">Sistema de Gestión de Certificados F-30</p>
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-foreground mb-2">Iniciar Sesión</h1>
+          <p className="text-muted-foreground">Ingresa tu correo y contraseña para acceder</p>
         </div>
 
-        <Card className="mb-6">
+        {/* Main Card */}
+        <Card className="border-border bg-card/50 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-xl text-center flex items-center justify-center gap-2">
-              <Play className="h-5 w-5" />
-              Cuentas de Demostración
-            </CardTitle>
-            <CardDescription className="text-center">
-              Haz clic para probar el sistema con diferentes roles
-            </CardDescription>
+            <CardTitle className="text-foreground">Acceso a la Plataforma</CardTitle>
+            <CardDescription>Ingresa tus credenciales</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="mb-4 p-3 bg-muted/50 rounded-lg border-2 border-dashed border-muted-foreground/20">
-              <div className="text-center space-y-2">
-                <p className="text-sm text-muted-foreground">¿Primera vez usando el demo?</p>
-                <Link href="/setup-demo">
-                  <Button variant="outline" size="sm" className="w-full bg-transparent">
-                    <Play className="h-4 w-4 mr-2" />
-                    Configurar Cuentas Demo
-                  </Button>
-                </Link>
+          <CardContent className="space-y-5">
+            {/* Error Alert */}
+            {error && (
+              <div className="p-3 bg-destructive/10 border border-destructive/50 rounded-lg text-destructive text-sm font-medium">
+                {error}
+              </div>
+            )}
+
+            {/* Login Form */}
+            <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+              {/* Email Field */}
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-foreground">
+                  Correo Electrónico
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="usuario@ejemplo.com"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value)
+                      validateEmail(e.target.value)
+                    }}
+                    onBlur={() => validateEmail(email)}
+                    className={`bg-input border-border text-foreground placeholder:text-muted-foreground ${
+                      emailError ? 'border-destructive' : ''
+                    }`}
+                  />
+                  {emailError && (
+                    <p className="mt-1 text-xs text-destructive font-medium">{emailError}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Password Field */}
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-foreground">
+                  Contraseña
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Tu contraseña"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      validatePassword(e.target.value)
+                    }}
+                    onBlur={() => validatePassword(password)}
+                    className={`bg-input border-border text-foreground placeholder:text-muted-foreground ${
+                      passwordError ? 'border-destructive' : ''
+                    }`}
+                  />
+                  {passwordError && (
+                    <p className="mt-1 text-xs text-destructive font-medium">{passwordError}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                disabled={isLoading || !isFormValid}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-10 mt-6"
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    Iniciando sesión...
+                  </span>
+                ) : (
+                  'Iniciar Sesión'
+                )}
+              </Button>
+            </form>
+
+            {/* Divider */}
+            <div className="relative py-2">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border"></div>
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="px-2 bg-card text-muted-foreground">O prueba con una cuenta demo</span>
               </div>
             </div>
 
-            {demoAccounts.map((account) => {
-              const Icon = account.icon
-              const isLoading = demoLoading === account.role
-
-              return (
+            {/* Demo Buttons */}
+            <div className="space-y-2">
+              {DEMO_ACCOUNTS.map((account) => (
                 <Button
                   key={account.role}
-                  variant="outline"
-                  className={`w-full h-auto p-4 justify-start ${account.color} text-white border-0 hover:text-white`}
                   onClick={() => handleDemoLogin(account)}
-                  disabled={!!demoLoading}
+                  disabled={isLoading}
+                  variant="outline"
+                  className="w-full border-border hover:bg-primary/10 text-foreground font-medium"
                 >
-                  <div className="flex items-center gap-3 w-full">
-                    <Icon className="h-5 w-5 flex-shrink-0" />
-                    <div className="text-left flex-1">
-                      <div className="font-semibold">{account.name}</div>
-                      <div className="text-sm opacity-90">{account.description}</div>
-                    </div>
-                    {isLoading && (
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                    )}
-                  </div>
+                  <span className="text-primary mr-2">●</span>
+                  {`Demo: ${account.name}`}
                 </Button>
-              )
-            })}
-          </CardContent>
-        </Card>
+              ))}
+            </div>
 
-        <div className="relative mb-6">
-          <Separator />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="bg-background px-2 text-sm text-muted-foreground">o</span>
-          </div>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl text-center">Iniciar Sesión</CardTitle>
-            <CardDescription className="text-center">Ingresa tus credenciales para acceder al sistema</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Correo Electrónico</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="conductor@empresa.cl"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Contraseña</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              {error && (
-                <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
-                  {error}
-                  {error.includes("Invalid") && (
-                    <div className="mt-2">
-                      <Link href="/setup-demo" className="text-primary hover:underline text-xs">
-                        ¿Necesitas configurar las cuentas demo? Haz clic aquí
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              )}
-              <Button type="submit" className="w-full" disabled={isLoading || !!demoLoading}>
-                {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
-              </Button>
-            </form>
-            <div className="mt-6 text-center text-sm">
-              ¿No tienes cuenta?{" "}
-              <Link href="/auth/register" className="text-primary hover:underline">
-                Registrarse
-              </Link>
+            {/* Footer Link */}
+            <div className="text-center text-sm pt-2">
+              <p className="text-muted-foreground">
+                ¿No tienes cuenta?{' '}
+                <Link
+                  href="/auth/register"
+                  className="text-primary hover:text-primary/80 font-semibold transition-colors"
+                >
+                  Regístrate aquí
+                </Link>
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -247,3 +231,4 @@ export default function LoginPage() {
     </div>
   )
 }
+

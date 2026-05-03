@@ -1,6 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { generateText } from "ai"
-import { openai } from "@ai-sdk/openai"
 
 function validateChileanRUT(rut: string): boolean {
   if (!rut) return false
@@ -40,16 +38,16 @@ function validateChileanDate(dateStr: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("[v0] Starting document analysis...")
+    if (process.env.NODE_ENV === 'development') console.log("[v0] Starting document analysis...")
 
     const formData = await request.formData()
     const file = formData.get("file") as File
     const documentType = formData.get("documentType") as string
 
-    console.log("[v0] File received:", file?.name, "Type:", documentType)
+    if (process.env.NODE_ENV === 'development') console.log("[v0] File received:", file?.name, "Type:", documentType)
 
     if (!file) {
-      console.log("[v0] No file provided")
+      if (process.env.NODE_ENV === 'development') console.log("[v0] No file provided")
       return NextResponse.json({ error: "No file provided" }, { status: 400 })
     }
 
@@ -69,7 +67,7 @@ export async function POST(request: NextRequest) {
     const base64 = Buffer.from(bytes).toString("base64")
     const mimeType = file.type
 
-    console.log("[v0] File converted to base64, size:", bytes.byteLength, "bytes")
+    if (process.env.NODE_ENV === 'development') console.log("[v0] File converted to base64, size:", bytes.byteLength, "bytes")
 
     const getPromptForDocumentType = (type: string) => {
       const baseInstructions = `
@@ -84,6 +82,38 @@ Si no puedes leer claramente algún campo, indica "No legible" en lugar de inven
 `
 
       switch (type) {
+        case "cedula-identidad":
+          return `${baseInstructions}
+
+Analiza esta CÉDULA DE IDENTIDAD CHILENA y extrae los datos. 
+
+IMPORTANTE: Responde ÚNICAMENTE con un JSON válido, sin backticks, sin explicaciones adicionales.
+
+CAMPOS A EXTRAER:
+- rut: RUT del titular en formato XX.XXX.XXX-X
+- nombreCompleto: Nombre completo (nombre y apellidos)
+- nombre: Solo el nombre de pila
+- apellidos: Apellidos completos
+- fechaNacimiento: Fecha en formato DD/MM/YYYY
+- sexo: Masculino, Femenino u Otro
+- fechaEmision: Fecha en formato DD/MM/YYYY
+- fechaVencimiento: Fecha en formato DD/MM/YYYY
+- numeroCedula: Número de serie si aparece
+
+Si no puedes leer un campo claramente, OMÍTELO del JSON en lugar de poner "No legible".
+
+Responde solo con JSON válido:
+{
+  "rut": "valor",
+  "nombreCompleto": "valor",
+  "nombre": "valor",
+  "apellidos": "valor",
+  "fechaNacimiento": "valor",
+  "sexo": "valor",
+  "fechaEmision": "valor",
+  "fechaVencimiento": "valor"
+}`
+
         case "f30":
           return `${baseInstructions}
           
@@ -307,66 +337,154 @@ Responde ÚNICAMENTE en formato JSON válido con las claves más apropiadas para
       }
     }
 
-    console.log("[v0] Sending request to OpenAI...")
+    console.log("[v0] Calling OpenAI Vision API directly with gpt-4o...")
 
-    const { text } = await generateText({
-      model: openai("gpt-4o"),
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: getPromptForDocumentType(documentType),
-            },
-            {
-              type: "image",
-              image: `data:${mimeType};base64,${base64}`,
-            },
-          ],
-        },
-      ],
+    const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: getPromptForDocumentType(documentType)
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:${mimeType};base64,${base64}`,
+                  detail: "high"
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 1024
+      })
     })
 
-    console.log("[v0] OpenAI response received:", text.substring(0, 200) + "...")
+    if (!openaiResponse.ok) {
+      const errorData = await openaiResponse.json()
+      console.error("[v0] OpenAI API Error:", errorData)
+      throw new Error(errorData.error?.message || "OpenAI API failed")
+    }
 
-    // Parse the JSON response
-    let extractedData
+    const responseData = await openaiResponse.json()
+    const text = responseData.choices[0]?.message?.content || ""
+
+    if (process.env.NODE_ENV === 'development') console.log("[v0] OpenAI response received:", text.substring(0, 200) + "...")
+
+    // Parse the JSON response with robust error handling
+    let extractedData: Record<string, any>
     try {
-      extractedData = JSON.parse(text)
+      // Clean up the response text - sometimes OpenAI returns escaped JSON or extra formatting
+      let cleanedText = text.trim()
+      
+      console.log("[v0] Raw response:", cleanedText.substring(0, 100))
+      
+      // Remove markdown code blocks if present (multiple patterns)
+      // Handle: ```json { ... }```, ```{ ... }```, or just ``json
+      cleanedText = cleanedText.replace(/```(json)?\s*/g, "").replace(/\s*```/g, "")
+      
+      // Remove any leading/trailing quotes that might wrap the entire JSON
+      cleanedText = cleanedText.replace(/^["']/, "").replace(/["']$/, "")
+      
+      // Try to find JSON object in the text
+      const jsonMatch = cleanedText.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        cleanedText = jsonMatch[0]
+      }
+      
+      console.log("[v0] Cleaned response:", cleanedText.substring(0, 100))
+      
+      // Parse the cleaned JSON
+      extractedData = JSON.parse(cleanedText)
 
       if (extractedData) {
+        // Count how many critical fields are present and valid
+        const criticalFields = ["rut", "nombreCompleto", "nombre", "apellidos", "fechaNacimiento"]
+        const presentFields = criticalFields.filter(field => extractedData[field] && String(extractedData[field]).trim())
+        
         // Validate RUTs if present
-        const rutFields = ["rutTransportista", "rutPropietario", "rutConductor", "rutContratante"]
+        const rutFields = ["rutTransportista", "rutPropietario", "rutConductor", "rutContratante", "rut"]
+        let validRUTs = 0
+        let invalidRUTs = 0
         rutFields.forEach((field) => {
-          if (extractedData[field] && !validateChileanRUT(extractedData[field])) {
-            extractedData[`${field}_warning`] = "Formato de RUT inválido"
+          if (extractedData[field]) {
+            if (validateChileanRUT(extractedData[field])) {
+              validRUTs++
+            } else {
+              invalidRUTs++
+              extractedData[`${field}_warning`] = "Formato de RUT inválido"
+            }
           }
         })
 
         // Validate dates if present
         const dateFields = ["fechaEmision", "fechaVencimiento", "fechaRevision", "fechaInicio", "fechaNacimiento"]
+        let validDates = 0
+        let invalidDates = 0
         dateFields.forEach((field) => {
-          if (extractedData[field] && !validateChileanDate(extractedData[field])) {
-            extractedData[`${field}_warning`] = "Formato de fecha inválido"
+          if (extractedData[field]) {
+            if (validateChileanDate(extractedData[field])) {
+              validDates++
+            } else {
+              invalidDates++
+              extractedData[`${field}_warning`] = "Formato de fecha inválido"
+            }
           }
         })
 
-        // Add confidence score based on validation
-        const warnings = Object.keys(extractedData).filter((key) => key.endsWith("_warning"))
-        extractedData.confidence = warnings.length === 0 ? "high" : warnings.length <= 2 ? "medium" : "low"
+        // Calculate confidence based on data completeness and validity
+        const fieldCoverage = presentFields.length / criticalFields.length
+        const hasInvalidData = invalidRUTs > 0 || invalidDates > 0
+        
+        if (fieldCoverage >= 0.8 && !hasInvalidData && validDates >= 2) {
+          extractedData.confidence = "high"
+        } else if (fieldCoverage >= 0.5 && invalidRUTs === 0) {
+          extractedData.confidence = "medium"
+        } else {
+          extractedData.confidence = "low"
+        }
+        
+        console.log("[v0] Confidence calculation:", { fieldCoverage, hasInvalidData, validDates, confidence: extractedData.confidence })
       }
     } catch (parseError) {
-      console.log("[v0] JSON parsing failed, using raw text")
-      // If JSON parsing fails, return the raw text
+      if (process.env.NODE_ENV === 'development') console.log("[v0] JSON parsing failed, attempting text extraction")
+      
+      // If JSON parsing fails, try to extract key-value pairs manually
       extractedData = {
         rawAnalysis: text,
         confidence: "low",
-        parseError: "No se pudo parsear la respuesta como JSON válido",
+        parseError: "Respuesta parseada con baja confianza - verificar manualmente",
       }
+      
+      // Try to extract common fields manually from text
+      const commonPatterns: Record<string, RegExp> = {
+        rut: /["\s]rut[":]?\s*[":]*([0-9]{1,2}\.[0-9]{3}\.[0-9]{3}-[0-9kK])/i,
+        nombreCompleto: /["\s]nombreCompleto[":]?\s*[":]*([^",}]+)/i,
+        nombre: /["\s]nombre[":]?\s*[":]*([^",}]+)/i,
+        apellidos: /["\s]apellidos[":]?\s*[":]*([^",}]+)/i,
+        fechaNacimiento: /["\s]fechaNacimiento[":]?\s*[":]*([0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4})/i,
+        fechaVencimiento: /["\s]fechaVencimiento[":]?\s*[":]*([0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4})/i,
+        fechaEmision: /["\s]fechaEmision[":]?\s*[":]*([0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4})/i,
+      }
+      
+      Object.entries(commonPatterns).forEach(([field, pattern]) => {
+        const match = text.match(pattern)
+        if (match && match[1]) {
+          extractedData[field] = match[1].trim()
+        }
+      })
     }
 
-    console.log("[v0] Analysis completed successfully")
+    if (process.env.NODE_ENV === 'development') console.log("[v0] Analysis completed successfully")
 
     return NextResponse.json({
       success: true,

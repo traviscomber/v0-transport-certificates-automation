@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -21,9 +21,11 @@ import {
   Plus,
   Shield,
   BarChart3,
+  Upload,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { UserManagementModal } from "./user-management-modal"
 import { SystemStatsCard } from "./system-stats-card"
 import { AuditLogTable } from "./audit-log-table"
@@ -100,15 +102,15 @@ interface SystemStats {
 }
 
 interface AdminDashboardProps {
-  profile: Profile
-  users: Profile[]
-  certificates: Certificate[]
-  auditLog: AuditLogEntry[]
-  notifications: Notification[]
-  stats: SystemStats
+  profile?: Profile
+  users?: Profile[]
+  certificates?: Certificate[]
+  auditLog?: AuditLogEntry[]
+  notifications?: Notification[]
+  stats?: SystemStats
 }
 
-export function AdminDashboard({ profile, users, certificates, auditLog, notifications, stats }: AdminDashboardProps) {
+export default function AdminDashboard({ profile, users = [], certificates = [], auditLog = [], notifications = [], stats }: AdminDashboardProps = {}) {
   const [searchTerm, setSearchTerm] = useState("")
   const [roleFilter, setRoleFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -116,6 +118,30 @@ export function AdminDashboard({ profile, users, certificates, auditLog, notific
   const [showCreateUser, setShowCreateUser] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  // Set default profile if not provided
+  const defaultProfile: Profile = profile || {
+    id: "admin-1",
+    email: "admin@transporteslabbe.cl",
+    full_name: "Administrador",
+    role: "admin",
+    company_name: "Transportes Labbe",
+    rut: "76.123.456-7",
+    phone: "+56 2 1234 5678",
+    address: "Avenida Principal 123",
+    city: "Santiago",
+    region: "Región Metropolitana",
+    is_active: true,
+    created_at: new Date().toISOString(),
+  }
+
+  // Set default stats if not provided
+  const defaultStats: SystemStats = stats || {
+    totalUsers: users.length,
+    totalCertificates: certificates.length,
+    pendingCertificates: certificates.filter(c => c.status === "pending").length,
+    expiredCertificates: certificates.filter(c => c.status === "expired").length,
+  }
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -216,19 +242,19 @@ export function AdminDashboard({ profile, users, certificates, auditLog, notific
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <SystemStatsCard
             title="Total Usuarios"
-            value={stats.totalUsers}
+            value={defaultStats.totalUsers}
             icon={<Users className="h-4 w-4" />}
             description={`${drivers.length} conductores, ${dispatchers.length} despachadores`}
           />
           <SystemStatsCard
             title="Certificados"
-            value={stats.totalCertificates}
+            value={defaultStats.totalCertificates}
             icon={<FileText className="h-4 w-4" />}
             description={`${approvedCerts.length} aprobados`}
           />
           <SystemStatsCard
             title="Pendientes"
-            value={stats.pendingCertificates}
+            value={defaultStats.pendingCertificates}
             icon={<Clock className="h-4 w-4 text-yellow-500" />}
             description="Requieren validación"
             variant="warning"
@@ -244,6 +270,10 @@ export function AdminDashboard({ profile, users, certificates, auditLog, notific
         <Tabs defaultValue="users" className="space-y-6">
           <TabsList>
             <TabsTrigger value="users">Gestión de Usuarios</TabsTrigger>
+            <TabsTrigger value="upload">
+              <Upload className="h-4 w-4 mr-2" />
+              Carga de Documentos
+            </TabsTrigger>
             <TabsTrigger value="certificates">Certificados</TabsTrigger>
             <TabsTrigger value="processing">
               Procesamiento IA
@@ -264,6 +294,35 @@ export function AdminDashboard({ profile, users, certificates, auditLog, notific
             <TabsTrigger value="audit">Auditoría</TabsTrigger>
             <TabsTrigger value="analytics">Analíticas</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="upload" className="space-y-6">
+            {/* Upload Page Redirect */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Carga de Documentos</CardTitle>
+                <CardDescription>Sube y analiza documentos chilenos con OCR</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-muted-foreground">
+                  Accede a la herramienta dedicada de carga de documentos para analizar certificados F-30, licencias de conducir y otros documentos con análisis automático basado en IA.
+                </p>
+                <div className="flex gap-4">
+                  <Link href="/admin/upload">
+                    <Button className="gap-2">
+                      <Upload className="h-4 w-4" />
+                      Ir a Carga de Documentos
+                    </Button>
+                  </Link>
+                  <Link href="/test-extraction">
+                    <Button variant="outline" className="gap-2">
+                      <Eye className="h-4 w-4" />
+                      Ver Pruebas
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
             {/* User Management */}

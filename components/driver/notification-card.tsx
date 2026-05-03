@@ -57,7 +57,7 @@ export function NotificationCard({ notification }: NotificationCardProps) {
   const markAsRead = async () => {
     setIsLoading(true)
     try {
-      await supabase.from("notifications").update({ is_read: true }).eq("id", notification.id)
+      await (supabase as any).from("notifications").update({ is_read: true }).eq("id", notification.id)
     } catch (error) {
       console.error("Error marking notification as read:", error)
     } finally {

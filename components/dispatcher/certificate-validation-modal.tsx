@@ -87,7 +87,7 @@ export function CertificateValidationModal({ certificate, onClose, onSuccess }: 
       } = await supabase.auth.getUser()
       if (!user) throw new Error("Usuario no autenticado")
 
-      const { error: updateError } = await supabase
+      const { error: updateError } = await (supabase as any)
         .from("certificates")
         .update({
           status: newStatus,
@@ -105,7 +105,7 @@ export function CertificateValidationModal({ certificate, onClose, onSuccess }: 
           ? `Tu certificado ${getCertificateTypeLabel(certificate.certificate_type)} ha sido aprobado.`
           : `Tu certificado ${getCertificateTypeLabel(certificate.certificate_type)} ha sido rechazado. Motivo: ${validationNotes}`
 
-      await supabase.from("notifications").insert({
+      await (supabase as any).from("notifications").insert({
         user_id: certificate.driver_id,
         title: newStatus === "approved" ? "Certificado Aprobado" : "Certificado Rechazado",
         message: notificationMessage,

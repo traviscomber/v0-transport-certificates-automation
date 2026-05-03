@@ -24,48 +24,44 @@ interface SmartAlert {
 export function SmartAlerts() {
   const [alerts, setAlerts] = useState<SmartAlert[]>([])
   const [filter, setFilter] = useState<"all" | "high" | "medium" | "low">("all")
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Mock smart alerts - in real implementation, this would come from AI analysis
-    const mockAlerts: SmartAlert[] = [
-      {
-        id: "1",
-        type: "expiry",
-        priority: "high",
-        title: "Certificado de Transporte Venciendo",
-        description: "El certificado CT-2024-001234 vence en 3 días",
-        daysUntil: 3,
-        documentType: "Certificado de Transporte",
-        vehicleId: "ABC-123",
-        actionRequired: "Renovar certificado antes del vencimiento",
-        createdAt: new Date(),
-      },
-      {
-        id: "2",
-        type: "compliance",
-        priority: "medium",
-        title: "Revisión Técnica Pendiente",
-        description: "Vehículo XYZ-789 requiere revisión técnica",
-        daysUntil: 15,
-        documentType: "Revisión Técnica",
-        vehicleId: "XYZ-789",
-        actionRequired: "Programar cita para revisión técnica",
-        createdAt: new Date(),
-      },
-      {
-        id: "3",
-        type: "renewal",
-        priority: "low",
-        title: "Licencia de Conducir por Renovar",
-        description: "La licencia de Juan Pérez vence en 30 días",
-        daysUntil: 30,
-        documentType: "Licencia de Conducir",
-        driverName: "Juan Pérez",
-        actionRequired: "Contactar al conductor para renovación",
-        createdAt: new Date(),
-      },
-    ]
-    setAlerts(mockAlerts)
+    const fetchAlerts = async () => {
+      try {
+        // Fetch real alerts from API
+        const res = await fetch(`/api/alerts?limit=20&_t=${Date.now()}`, {
+          cache: "no-store",
+        })
+        if (!res.ok) throw new Error("Error al cargar alertas")
+        
+        const data = await res.json()
+        
+        // Transform API alerts to SmartAlert format
+        const transformedAlerts: SmartAlert[] = (data || []).map((alert: any) => ({
+          id: alert.id,
+          type: alert.type === 'DOCUMENT_REJECTED' ? 'expiry' : 
+                 alert.type === 'DOCUMENT_APPROVED' ? 'compliance' : 
+                 alert.type === 'DOCUMENT_PENDING' ? 'renewal' : 'maintenance',
+          priority: alert.priority as 'high' | 'medium' | 'low',
+          title: alert.title,
+          description: alert.message,
+          daysUntil: 0,
+          documentType: alert.metadata?.document_type || 'Documento',
+          driverName: alert.metadata?.conductor_name,
+          actionRequired: `Revisar documento: ${alert.metadata?.conductor_name || 'Conductor'}`,
+          createdAt: new Date(alert.created_at),
+        }))
+        
+        setAlerts(transformedAlerts)
+      } catch (error) {
+        console.error('[v0] Error loading smart alerts:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAlerts()
   }, [])
 
   const filteredAlerts = alerts.filter((alert) => filter === "all" || alert.priority === filter)

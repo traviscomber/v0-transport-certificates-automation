@@ -1,64 +1,73 @@
-"use client"
+'use client'
 
-import type React from "react"
+import { useState, type FormEvent } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth-context'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Truck } from 'lucide-react'
 
-import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
-import { Truck } from "lucide-react"
+type Role = 'driver' | 'dispatcher' | 'admin'
+
+interface FormData {
+  fullName: string
+  email: string
+  role: Role
+  companyName: string
+  password: string
+  confirmPassword: string
+}
 
 export default function RegisterPage() {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    confirmPassword: "",
-    fullName: "",
-    role: "driver",
-    companyName: "",
-    rut: "",
-    phone: "",
-  })
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const { register } = useAuth()
   const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [formData, setFormData] = useState<FormData>({
+    fullName: '',
+    email: '',
+    role: 'driver',
+    companyName: '',
+    password: '',
+    confirmPassword: '',
+  })
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Las contraseñas no coinciden")
+      setError('Las contraseñas no coinciden')
+      setIsLoading(false)
+      return
+    }
+
+    if (formData.password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres')
       setIsLoading(false)
       return
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      await register({
         email: formData.email,
         password: formData.password,
-        options: {
-          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/verify`,
-          data: {
-            full_name: formData.fullName,
-            role: formData.role,
-            company_name: formData.companyName,
-            rut: formData.rut,
-            phone: formData.phone,
-          },
-        },
+        full_name: formData.fullName,
+        role: formData.role,
+        company_name: formData.companyName || undefined,
       })
-      if (error) throw error
-      router.push("/auth/verify")
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
+      setSuccess(true)
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 2000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al procesar tu registro')
     } finally {
       setIsLoading(false)
     }
@@ -106,49 +115,27 @@ export default function RegisterPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="role">Tipo de Usuario</Label>
-                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value as 'driver' | 'dispatcher' | 'admin' })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="driver">Conductor</SelectItem>
                     <SelectItem value="dispatcher">Despachador</SelectItem>
+                    <SelectItem value="admin">Administrador</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="companyName">Empresa</Label>
+                <Label htmlFor="companyName">Empresa / Organización (Opcional)</Label>
                 <Input
                   id="companyName"
                   type="text"
-                  required
                   value={formData.companyName}
                   onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                  placeholder="Nombre de tu empresa o flota"
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="rut">RUT</Label>
-                  <Input
-                    id="rut"
-                    type="text"
-                    placeholder="12.345.678-9"
-                    value={formData.rut}
-                    onChange={(e) => setFormData({ ...formData, rut: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Teléfono</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+56 9 1234 5678"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  />
-                </div>
               </div>
 
               <div className="space-y-2">
@@ -175,16 +162,31 @@ export default function RegisterPage() {
 
               {error && <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
 
+              {success && (
+                <div className="text-sm text-green-400 bg-green-400/10 border border-green-400/20 p-3 rounded-md text-center">
+                  Cuenta creada exitosamente. Redirigiendo al panel...
+                </div>
+              )}
+
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creando cuenta..." : "Crear Cuenta"}
+                {isLoading ? 'Creando cuenta...' : 'Crear Cuenta'}
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-sm">
-              ¿Ya tienes cuenta?{" "}
-              <Link href="/auth/login" className="text-primary hover:underline">
-                Iniciar Sesión
-              </Link>
+            <div className="mt-6 space-y-3">
+              <div className="text-center text-sm">
+                ¿Ya tienes cuenta?{' '}
+                <Link href="/auth/login" className="text-primary hover:underline">
+                  Iniciar Sesión
+                </Link>
+              </div>
+
+              <div className="text-center text-xs text-muted-foreground pt-3 border-t border-slate-700">
+                <p className="mb-2">¿Quieres conocer el sistema primero antes de registrarte?</p>
+                <Link href="/test" className="text-cyan-400 hover:text-cyan-300 font-semibold">
+                  → Ir a la Prueba Interactiva Gratuita
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>

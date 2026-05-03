@@ -9,13 +9,9 @@ import { Camera, Upload, FileText, Zap, CheckCircle, AlertCircle } from "lucide-
 import { cn } from "@/lib/utils"
 
 interface ExtractedData {
-  documentType: string
-  expiryDate: string
-  issueDate: string
-  certificateNumber: string
-  vehicleId?: string
-  driverName?: string
-  confidence: number
+  [key: string]: any
+  documentType?: string
+  confidence?: number | string
 }
 
 export function DocumentScanner() {
@@ -28,36 +24,57 @@ export function DocumentScanner() {
     setIsScanning(true)
     setScanProgress(0)
 
-    // Simulate AI processing with progress updates
-    const progressInterval = setInterval(() => {
-      setScanProgress((prev) => {
-        if (prev >= 90) {
-          clearInterval(progressInterval)
-          return 90
-        }
-        return prev + 10
-      })
-    }, 200)
+    let progressInterval: NodeJS.Timeout | null = null
 
-    // Simulate AI OCR processing
-    setTimeout(() => {
-      clearInterval(progressInterval)
+    try {
+      // Simulate progress while file is being processed
+      progressInterval = setInterval(() => {
+        setScanProgress((prev) => {
+          if (prev >= 90) {
+            if (progressInterval) clearInterval(progressInterval)
+            return 90
+          }
+          return prev + 10
+        })
+      }, 300)
+
+      // Auto-detect document type based on common characteristics
+      // For identity documents, we default to "cedula-identidad" for better results
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("documentType", "cedula-identidad") // Default to Chilean ID for best results
+
+      const response = await fetch("/api/analyze-document", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (progressInterval) clearInterval(progressInterval)
       setScanProgress(100)
 
-      // Mock extracted data - in real implementation, this would come from AI service
-      const mockData: ExtractedData = {
-        documentType: "Certificado de Transporte",
-        expiryDate: "2024-12-31",
-        issueDate: "2024-01-15",
-        certificateNumber: "CT-2024-001234",
-        vehicleId: "ABC-123",
-        driverName: "Juan Pérez",
-        confidence: 0.95,
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to analyze document")
       }
 
-      setExtractedData(mockData)
+      const result = await response.json()
+      console.log("[v0] API Response:", result.extractedData)
+
+      // Use all extracted data directly
+      const apiData = result.extractedData
+      const extracted: ExtractedData = {
+        ...apiData, // Include ALL fields from API response
+      }
+
+      setExtractedData(extracted)
       setIsScanning(false)
-    }, 2000)
+    } catch (error) {
+      if (progressInterval) clearInterval(progressInterval)
+      setIsScanning(false)
+      setScanProgress(0)
+      console.error("[v0] Error analyzing document:", error)
+      alert(error instanceof Error ? error.message : "Error al analizar el documento. Intenta de nuevo.")
+    }
   }
 
   const handleCameraCapture = () => {
@@ -157,64 +174,130 @@ export function DocumentScanner() {
                   Datos Extraídos
                 </h3>
                 <Badge
-                  variant={extractedData.confidence > 0.9 ? "default" : "secondary"}
+                  variant={
+                    typeof extractedData.confidence === "string"
+                      ? extractedData.confidence === "high"
+                        ? "default"
+                        : "secondary"
+                      : (extractedData.confidence ?? 0) > 0.9
+                        ? "default"
+                        : "secondary"
+                  }
                   className={cn(
-                    extractedData.confidence > 0.9 ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800",
+                    typeof extractedData.confidence === "string"
+                      ? extractedData.confidence === "high"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-yellow-100 text-yellow-800"
+                      : (extractedData.confidence ?? 0) > 0.9
+                        ? "bg-green-100 text-green-800"
+                        : "bg-yellow-100 text-yellow-800",
                   )}
                 >
-                  {Math.round(extractedData.confidence * 100)}% confianza
+                  {typeof extractedData.confidence === "string"
+                    ? extractedData.confidence.charAt(0).toUpperCase() + extractedData.confidence.slice(1)
+                    : `${Math.round((extractedData.confidence ?? 0) * 100)}%`}{" "}
+                  confianza
                 </Badge>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Tipo de Documento</label>
-                  <div className="p-3 bg-muted rounded-md">{extractedData.documentType}</div>
-                </div>
+                {Object.entries(extractedData).map(([key, value]) => {
+                  // Skip internal fields
+                  if (key === "confidence" || key === "parseError" || key.endsWith("_warning")) return null
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Número de Certificado</label>
-                  <div className="p-3 bg-muted rounded-md">{extractedData.certificateNumber}</div>
-                </div>
+                  // Format the label with proper Spanish labels for Chilean documents
+                  const labelMap: Record<string, string> = {
+                    rut: "RUT",
+                    nombreCompleto: "Nombre Completo",
+                    nombre: "Nombre",
+                    apellidos: "Apellidos",
+                    fechaNacimiento: "Fecha de Nacimiento",
+                    sexo: "Sexo",
+                    fechaEmision: "Fecha de Emisión",
+                    fechaVencimiento: "Fecha de Vencimiento",
+                    numeroCedula: "Número de Cédula",
+                    lugarNacimiento: "Lugar de Nacimiento",
+                    comunaResidencia: "Comuna de Residencia",
+                    estadoCivil: "Estado Civil",
+                    profesion: "Profesión",
+                    altura: "Altura",
+                    senaParticular: "Seña Particular",
+                    numeroPasaporte: "Número de Pasaporte",
+                    nacionalidad: "Nacionalidad",
+                    numeroF30: "Número F-30",
+                    rutTransportista: "RUT Transportista",
+                    nombreTransportista: "Nombre Transportista",
+                    patenteVehiculo: "Patente Vehículo",
+                    tipoVehiculo: "Tipo de Vehículo",
+                    estado: "Estado",
+                    observaciones: "Observaciones",
+                    numeroResolucion: "Número de Resolución",
+                    region: "Región",
+                    numeroF30_1: "Número F-30-1",
+                    capacidadCarga: "Capacidad de Carga",
+                    tipoCarga: "Tipo de Carga",
+                    patente: "Patente",
+                    rutPropietario: "RUT Propietario",
+                    nombrePropietario: "Nombre Propietario",
+                    marca: "Marca",
+                    modelo: "Modelo",
+                    ano: "Año",
+                    color: "Color",
+                    numeroMotor: "Número de Motor",
+                    numeroChasis: "Número de Chasis",
+                    uso: "Uso del Vehículo",
+                    numeroLicencia: "Número de Licencia",
+                    claseLicencia: "Clase de Licencia",
+                    rutConductor: "RUT Conductor",
+                    nombreConductor: "Nombre Conductor",
+                    restricciones: "Restricciones",
+                    municipalidad: "Municipalidad",
+                    donante: "Donante de Órganos",
+                    companiaSeguro: "Compañía de Seguros",
+                    numeroPoliza: "Número de Póliza",
+                    rutContratante: "RUT Contratante",
+                    nombreContratante: "Nombre Contratante",
+                    fechaInicio: "Fecha de Inicio",
+                    prima: "Prima",
+                    agente: "Agente o Corredor",
+                    sucursal: "Sucursal",
+                    plantaRevisora: "Planta Revisora",
+                    fechaRevision: "Fecha de Revisión",
+                    kilometraje: "Kilometraje",
+                  }
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Fecha de Emisión</label>
-                  <div className="p-3 bg-muted rounded-md">{extractedData.issueDate}</div>
-                </div>
+                  const label = labelMap[key] || key
+                    .replace(/([A-Z])/g, " $1")
+                    .replace(/^./, (str) => str.toUpperCase())
+                    .trim()
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    Fecha de Vencimiento
-                    {new Date(extractedData.expiryDate) < new Date() && (
-                      <AlertCircle className="h-4 w-4 text-red-500" />
-                    )}
-                  </label>
-                  <div
-                    className={cn(
-                      "p-3 rounded-md",
-                      new Date(extractedData.expiryDate) < new Date()
-                        ? "bg-red-50 text-red-800 border border-red-200"
-                        : "bg-muted",
-                    )}
-                  >
-                    {extractedData.expiryDate}
-                  </div>
-                </div>
+                  // Handle different value types
+                  let displayValue = value
+                  if (value === null || value === undefined) displayValue = "N/A"
+                  if (typeof value === "object") displayValue = JSON.stringify(value)
 
-                {extractedData.vehicleId && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">ID del Vehículo</label>
-                    <div className="p-3 bg-muted rounded-md">{extractedData.vehicleId}</div>
-                  </div>
-                )}
-
-                {extractedData.driverName && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Nombre del Conductor</label>
-                    <div className="p-3 bg-muted rounded-md">{extractedData.driverName}</div>
-                  </div>
-                )}
+                  return (
+                    <div key={key} className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">{label}</label>
+                      <div className="p-3 bg-muted rounded-md text-sm break-words font-mono">{String(displayValue)}</div>
+                    </div>
+                  )
+                })}
               </div>
+
+              {extractedData.parseError && (
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-sm text-yellow-800 flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    {extractedData.parseError}
+                  </p>
+                  {extractedData.rawAnalysis && (
+                    <p className="text-xs text-yellow-700 mt-2 p-2 bg-white rounded border border-yellow-100">
+                      {extractedData.rawAnalysis}
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="flex gap-3 pt-4">
                 <Button onClick={saveExtractedData} className="flex-1">

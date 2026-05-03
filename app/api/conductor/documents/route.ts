@@ -1,0 +1,76 @@
+export const dynamic = 'force-dynamic'
+
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
+
+export async function GET(request: NextRequest) {
+  try {
+    const cookieStore = await cookies()
+    
+    // Check if conductor_id cookie exists (set by login)
+    const conductorId = cookieStore.get('conductor_id')?.value
+
+    if (!conductorId) {
+      return NextResponse.json(
+        { message: 'Unauthorized - conductor not authenticated' },
+        { status: 401 }
+      )
+    }
+
+    // Create Supabase client
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json(
+        { message: 'Server configuration missing' },
+        { status: 500 }
+      )
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Query uploaded_documents with JOIN to document_types to get the code
+    const { data: documents, error } = await supabase
+      .from('uploaded_documents')
+      .select(`
+        *,
+        document_types (
+          id,
+          code,
+          name
+        )
+      `)
+      .eq('conductor_id', conductorId)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('[v0] Error fetching documents:', error)
+      return NextResponse.json(
+        { message: 'Error fetching documents', error: error.message },
+        { status: 500 }
+      )
+    }
+
+    console.log(`[v0] Found ${documents?.length || 0} documents for conductor ${conductorId}`)
+
+    // Normalize: expose document_type_id as the CODE (e.g. 'LIC_CONDUCIR') for frontend matching
+    const normalizedDocs = (documents || []).map((doc: any) => ({
+      ...doc,
+      document_type_code: doc.document_types?.code || null,
+      document_type_name: doc.document_types?.name || null,
+      // Override document_type_id with the code so REQUIRED_DOCUMENTS matching works
+      document_type_id: doc.document_types?.code || doc.document_type_id,
+    }))
+
+    return NextResponse.json({ success: true, documents: normalizedDocs }, { status: 200 })
+
+  } catch (error) {
+    console.error('[v0] Fetch documents error:', error)
+    return NextResponse.json(
+      { message: 'Internal server error', error: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    )
+  }
+}

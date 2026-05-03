@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Eye, EyeOff, Lock } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/lib/toast-context"
 
 export function ChangePasswordForm() {
   const [currentPassword, setCurrentPassword] = useState("")
@@ -19,7 +19,7 @@ export function ChangePasswordForm() {
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
+  const { addToast } = useToast()
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,28 +27,23 @@ export function ChangePasswordForm() {
 
     // Validate passwords match
     if (newPassword !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Las nuevas contraseñas no coinciden",
-        variant: "destructive",
-      })
+      addToast("Las nuevas contraseñas no coinciden", "error")
       setIsLoading(false)
       return
     }
 
     // Validate password strength
     if (newPassword.length < 6) {
-      toast({
-        title: "Error",
-        description: "La nueva contraseña debe tener al menos 6 caracteres",
-        variant: "destructive",
-      })
+      addToast("La nueva contraseña debe tener al menos 6 caracteres", "error")
       setIsLoading(false)
       return
     }
 
     try {
       const supabase = createClient()
+      if (!supabase) {
+        throw new Error('Error de conexión a base de datos')
+      }
 
       // First verify current password by attempting to sign in
       const { data: user } = await supabase.auth.getUser()
@@ -63,11 +58,7 @@ export function ChangePasswordForm() {
       })
 
       if (signInError) {
-        toast({
-          title: "Error",
-          description: "La contraseña actual es incorrecta",
-          variant: "destructive",
-        })
+        addToast("La contraseña actual es incorrecta", "error")
         setIsLoading(false)
         return
       }
@@ -81,10 +72,7 @@ export function ChangePasswordForm() {
         throw updateError
       }
 
-      toast({
-        title: "Éxito",
-        description: "Contraseña actualizada correctamente",
-      })
+      addToast("Contraseña actualizada correctamente", "success")
 
       // Clear form
       setCurrentPassword("")
@@ -92,11 +80,10 @@ export function ChangePasswordForm() {
       setConfirmPassword("")
     } catch (error) {
       console.error("Error changing password:", error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Error al cambiar la contraseña",
-        variant: "destructive",
-      })
+      addToast(
+        error instanceof Error ? error.message : "Error al cambiar la contraseña",
+        "error"
+      )
     } finally {
       setIsLoading(false)
     }

@@ -10,14 +10,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Eye, EyeOff, Mail, Lock, User, Building } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/lib/toast-context"
 
 export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
-  const { toast } = useToast()
+  const { addToast } = useToast()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,26 +30,24 @@ export function LoginForm() {
 
     try {
       const supabase = createClient()
+      if (!supabase) {
+        throw new Error('Error de conexión a base de datos')
+      }
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
-        options: {
-          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/dashboard`,
-        },
       })
 
       if (error) {
         throw error
       }
 
-      toast({
-        title: "Éxito",
-        description: "Sesión iniciada correctamente",
-      })
+      addToast("Sesión iniciada correctamente", "success")
 
-      router.push("/dashboard")
+      // Don't redirect here - let the router handle it or use the session cookie
+      // The middleware and app will handle the redirection based on user role
     } catch (error: any) {
-      console.error("Login error:", error)
+      if (process.env.NODE_ENV === 'development') console.error("[v0] Login error:", error)
       setError(error.message || "Error al iniciar sesión")
     } finally {
       setIsLoading(false)
@@ -73,7 +71,6 @@ export function LoginForm() {
         email,
         password,
         options: {
-          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/dashboard`,
           data: {
             full_name: name,
             company: company,
@@ -85,12 +82,10 @@ export function LoginForm() {
         throw error
       }
 
-      toast({
-        title: "Registro exitoso",
-        description: "Revisa tu email para confirmar tu cuenta",
-      })
+      addToast("Registro exitoso. Revisa tu email para confirmar tu cuenta", "success")
+      // After registration, stay on the page or let user login manually
     } catch (error: any) {
-      console.error("Registration error:", error)
+      if (process.env.NODE_ENV === 'development') console.error("[v0] Registration error:", error)
       setError(error.message || "Error al registrarse")
     } finally {
       setIsLoading(false)
