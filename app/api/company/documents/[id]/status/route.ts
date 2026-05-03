@@ -190,6 +190,7 @@ export async function PATCH(
       document_id: documentId,
       status: dbStatus,
       previous_status: documentBefore?.validation_status,
+      updated_document: updateData, // Return the complete updated document
       message: 'Document status updated and broadcast to clients',
       realtime_enabled: true,
     }

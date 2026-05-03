@@ -224,6 +224,30 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
 
       const result = await response.json()
 
+      // CRITICAL: Update local state IMMEDIATELY with the response from PATCH
+      // This prevents any race conditions where optimistic updates get cleared
+      if (result.updated_document) {
+        const rawStatus = (result.updated_document.validation_status || 'pending').toLowerCase()
+        const statusMap: Record<string, DriverDocument['estado']> = {
+          'pending': 'pendiente',
+          'approved': 'aprobado',
+          'rejected': 'rechazado',
+        }
+        const estadoEspanol = statusMap[rawStatus] || 'pendiente'
+        
+        console.log('[v0] Updating documents array with PATCH response:', {
+          documentId,
+          newEstado: estadoEspanol,
+          responseStatus: result.updated_document.validation_status
+        })
+        
+        setDocuments(prev => prev.map(doc =>
+          doc.id === documentId
+            ? { ...doc, estado: estadoEspanol as DriverDocument['estado'] }
+            : doc
+        ))
+      }
+
       // 3. Confirm the server accepted it — keep optimistic update
       // For "pendiente" status, extend the protection window to handle slower replication
       // This prevents premature reverting when network is slow
