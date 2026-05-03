@@ -56,14 +56,19 @@ export async function GET(request: NextRequest) {
     const documentsWithAlertSync = await Promise.all((documents || []).map(async (doc: any) => {
       try {
         // Get the most recent alert for this document
-        const { data: latestAlert } = await adminClient
+        const { data: alerts, error: alertsError } = await adminClient
           .from('alerts')
           .select('metadata, created_at, type')
           .eq('metadata->>document_id', doc.id)
           .order('created_at', { ascending: false })
           .limit(1)
-          .single()
+        
+        if (alertsError) {
+          console.warn('[v0] ALERT SYNC: Error querying alerts for doc', doc.id, ':', alertsError)
+          return doc
+        }
 
+        const latestAlert = alerts?.[0]
         if (latestAlert?.metadata?.status) {
           const alertStatus = latestAlert.metadata.status // 'approved', 'pending', 'rejected'
           const dbStatus = (doc.validation_status || 'pending').toLowerCase()
