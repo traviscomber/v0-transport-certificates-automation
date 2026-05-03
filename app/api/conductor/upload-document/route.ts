@@ -154,6 +154,11 @@ export async function POST(request: NextRequest) {
     }
 
     // STEP 2: Create uploaded_documents record with AI metadata
+    console.log('[v0] Step 2: Creating uploaded_documents record')
+    console.log('[v0] Conductor ID:', conductor.id)
+    console.log('[v0] Document Type ID:', docType.id)
+    console.log('[v0] File URL:', publicUrl)
+    
     const insertPayload: any = {
       document_type_id: docType.id,
       conductor_id: conductor.id,
@@ -199,11 +204,16 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
 
+    console.log('[v0] Insert payload:', JSON.stringify(insertPayload, null, 2))
+    console.log('[v0] Database insert response - Data:', uploadedDoc)
+    console.log('[v0] Database insert response - Error:', dbError)
+
     if (dbError) {
       console.error('[v0] Database error inserting uploaded_documents:', {
         code: dbError.code,
         message: dbError.message,
         details: dbError.details,
+        hint: (dbError as any).hint,
         payload: insertPayload
       })
       // Try to clean up storage
@@ -212,7 +222,8 @@ export async function POST(request: NextRequest) {
         { 
           message: 'Failed to save document record',
           error: dbError.message,
-          details: dbError.details
+          details: dbError.details,
+          hint: (dbError as any).hint
         },
         { status: 500 }
       )
