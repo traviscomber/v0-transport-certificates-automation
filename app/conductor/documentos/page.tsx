@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Upload, FileText, CheckCircle2, AlertCircle, Loader, Download, Eye, X, Clock, HelpCircle } from 'lucide-react'
+import { Upload, FileText, CheckCircle2, AlertCircle, Loader, Download, Eye, X, Clock, HelpCircle, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 
 interface UploadedDocument {
@@ -198,6 +198,33 @@ export default function ConductorDocumentosPage() {
     const files = e.dataTransfer.files
     if (files.length > 0) {
       handleFileUpload(files[0])
+    }
+  }
+
+  const handleDeleteDocument = async (documentId: string, fileName: string) => {
+    if (!confirm(`¿Seguro que quieres eliminar "${fileName}"? Esta acción no se puede deshacer.`)) {
+      return
+    }
+
+    try {
+      setIsUploading(true)
+      const response = await fetch(`/api/conductor/documents/${documentId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.message || 'Error al eliminar documento')
+      }
+
+      setSuccess('Documento eliminado exitosamente.')
+      await fetchDocuments()
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Error al eliminar documento'
+      console.error('[v0] Delete error:', errorMsg)
+      setError(errorMsg)
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -400,6 +427,15 @@ export default function ConductorDocumentosPage() {
                             <a href={uploadedDoc.file_url} target="_blank" rel="noopener noreferrer">
                               <Download className="h-4 w-4" />
                             </a>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-slate-400 hover:text-red-400"
+                            onClick={() => handleDeleteDocument(uploadedDoc.id, uploadedDoc.file_name || uploadedDoc.original_filename || 'Documento')}
+                            disabled={isUploading}
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </>
                       ) : (
