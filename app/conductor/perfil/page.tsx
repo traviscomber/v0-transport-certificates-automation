@@ -31,17 +31,26 @@ export default function ConductorPerfilPage() {
   const loadConductorData = () => {
     try {
       // Get conductor data from localStorage (set by login form after successful login)
-      const conductorData = localStorage.getItem('conductor_data')
+      const conductorDataStr = localStorage.getItem('conductor_data')
+      console.log('[v0] Retrieved from localStorage (raw):', conductorDataStr)
       
-      if (conductorData) {
-        const parsed = JSON.parse(conductorData)
+      if (conductorDataStr) {
+        const parsed = JSON.parse(conductorDataStr)
         console.log('[v0] Loaded conductor data from localStorage:', parsed)
-        setFormData(prev => ({
-          ...prev,
-          name: parsed.nombre_completo || '',
-          rut: parsed.rut || '',
-          email: parsed.email || ''
-        }))
+        console.log('[v0] nombre_completo:', parsed.nombre_completo)
+        console.log('[v0] rut:', parsed.rut)
+        console.log('[v0] email:', parsed.email)
+        
+        setFormData(prev => {
+          const updated = {
+            ...prev,
+            name: parsed.nombre_completo || '',
+            rut: parsed.rut || '',
+            email: parsed.email || ''
+          }
+          console.log('[v0] Updated formData:', updated)
+          return updated
+        })
       } else {
         console.log('[v0] No conductor data found in localStorage')
       }

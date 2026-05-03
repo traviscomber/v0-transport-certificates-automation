@@ -15,35 +15,54 @@ export default function ConductorLoginForm() {
     setIsLoading(true)
 
     try {
+      console.log('[v0] Logging in with RUT:', rut.trim())
+      
       const response = await fetch('/api/auth/login-conductor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rut: rut.trim(), password }),
       })
 
+      console.log('[v0] Response status:', response.status)
+      console.log('[v0] Response OK:', response.ok)
+
       if (!response.ok) {
         const data = await response.json()
+        console.log('[v0] Error response:', data)
         throw new Error(data.error || `Error HTTP ${response.status}`)
       }
 
       // Extract conductor data from response and store in localStorage
       const data = await response.json()
-      console.log('[v0] Login successful, storing conductor data:', data)
+      console.log('[v0] Login response received:', JSON.stringify(data, null, 2))
+      console.log('[v0] conductor_id:', data.conductor_id)
+      console.log('[v0] rut:', data.rut)
+      console.log('[v0] nombre_completo:', data.nombre_completo)
+      console.log('[v0] email:', data.email)
       
-      localStorage.setItem('conductor_data', JSON.stringify({
+      const conductorData = {
         conductor_id: data.conductor_id,
         rut: data.rut,
         nombre_completo: data.nombre_completo,
         email: data.email,
         transportista_id: data.transportista_id
-      }))
+      }
+      
+      console.log('[v0] Storing conductor data:', JSON.stringify(conductorData, null, 2))
+      localStorage.setItem('conductor_data', JSON.stringify(conductorData))
+      
+      // Verify it was stored
+      const stored = localStorage.getItem('conductor_data')
+      console.log('[v0] Verified localStorage contents:', stored)
 
       // API returns JSON with cookies already set in response headers
       // Now redirect to /conductor/onboarding — cookies persist because
       // they were already sent with the API response
+      console.log('[v0] Redirecting to /conductor/onboarding')
       window.location.href = '/conductor/onboarding'
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al iniciar sesión'
+      console.error('[v0] Login error:', message)
       setError(message)
       setIsLoading(false)
     }
