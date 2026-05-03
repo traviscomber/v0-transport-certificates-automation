@@ -67,7 +67,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid status: ' + rawStatus }, { status: 400 })
     }
 
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     // STEP 1: Get document details BEFORE update for logging
     const { data: documentBefore } = await adminClient
@@ -174,7 +174,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const adminClient = createAdminClient()
+    const adminClient = await createAdminClient()
 
     const { data, error } = await adminClient
       .from('uploaded_documents')
