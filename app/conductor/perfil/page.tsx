@@ -14,18 +14,48 @@ export default function ConductorPerfilPage() {
   const [success, setSuccess] = useState('')
 
   const [formData, setFormData] = useState({
-    name: 'Olga Lydia Carrasco',
-    rut: '12345678-9',
-    email: 'ocarrasco@labbe.cl',
+    name: '',
+    rut: '',
+    email: '',
     phone: '+56977764753',
     whatsapp_phone: '',
     whatsapp_enabled: false
   })
 
   useEffect(() => {
-    // Load current preferences
+    // Load conductor data from cookies and preferences
+    loadConductorData()
     loadPreferences()
   }, [])
+
+  const loadConductorData = () => {
+    try {
+      // Get conductor data from cookies set during login
+      const conductorNombre = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('conductor_nombre='))
+        ?.split('=')[1]
+      
+      const conductorRut = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('conductor_rut='))
+        ?.split('=')[1]
+      
+      const userEmail = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('user_email='))
+        ?.split('=')[1]
+
+      setFormData(prev => ({
+        ...prev,
+        name: conductorNombre ? decodeURIComponent(conductorNombre) : '',
+        rut: conductorRut ? decodeURIComponent(conductorRut) : '',
+        email: userEmail ? decodeURIComponent(userEmail) : ''
+      }))
+    } catch (err) {
+      console.error('[v0] Error loading conductor data from cookies:', err)
+    }
+  }
 
   const loadPreferences = async () => {
     try {
