@@ -24,12 +24,14 @@ export async function generateDocumentUploadAlerts(
     const supabase = createAdminClient()
     const orgId = await getOrgId(supabase)
 
+    console.log('[v0] generateDocumentUploadAlerts received:', { uploadedDocumentId, documentType, uploaderName, uploaderType, uploaderId })
+
     // Insert alert WITHOUT user_id - organization-wide alert
     const { error: insertError } = await supabase
       .from('alerts')
       .insert({
         organization_id: orgId,
-        title: `Nuevo Documento - ${uploaderType === 'conductor' ? 'Conductor' : 'Cliente'}`,
+        title: `Nuevo Documento - ${uploaderName}`,
         message: `${uploaderName} ha subido ${documentType}. Acción requerida: revisar y validar.`,
         type: 'DOCUMENT_UPLOADED',
         priority: 'high',
