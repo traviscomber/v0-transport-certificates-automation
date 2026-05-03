@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { FileText, ExternalLink, CheckCircle, XCircle, Clock, Search, Filter } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { DocumentStatusUpdater } from './document-status-updater'
 
 interface Document {
   id: string
@@ -35,9 +36,10 @@ interface DocumentosClientProps {
   }
 }
 
-export function DocumentosClient({ documents, selectedEjecutiva }: DocumentosClientProps) {
+export function DocumentosClient({ documents: initialDocuments, selectedEjecutiva }: DocumentosClientProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'rejected' | 'pending'>('all')
+  const [documents, setDocuments] = useState(initialDocuments)
 
   // Helper to get conductor data from either object or array
   const getConductor = (conductores: any) => {
@@ -45,6 +47,15 @@ export function DocumentosClient({ documents, selectedEjecutiva }: DocumentosCli
       return conductores[0]
     }
     return conductores || {}
+  }
+
+  // Handle status change for a document
+  const handleStatusChange = (docId: string, newStatus: 'approved' | 'rejected' | 'pending') => {
+    setDocuments(docs =>
+      docs.map(doc =>
+        doc.id === docId ? { ...doc, validation_status: newStatus } : doc
+      )
+    )
   }
 
   // Filter documents based on search and status
@@ -218,10 +229,11 @@ export function DocumentosClient({ documents, selectedEjecutiva }: DocumentosCli
                         })()}
                       </td>
                       <td className="p-4">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(doc.validation_status)}`}>
-                          {getStatusIcon(doc.validation_status)}
-                          {getStatusLabel(doc.validation_status)}
-                        </span>
+                        <DocumentStatusUpdater
+                          documentId={doc.id}
+                          currentStatus={doc.validation_status}
+                          onStatusChange={(newStatus) => handleStatusChange(doc.id, newStatus)}
+                        />
                       </td>
                       <td className="p-4 text-sm text-muted-foreground">
                         {new Date(doc.created_at).toLocaleDateString('es-CL')}
