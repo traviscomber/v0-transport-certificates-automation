@@ -26,7 +26,7 @@ interface UploadingFile {
   conductorId?: string
 }
 
-export function DocumentosUpload({ conductores }: { conductores: Conductor[] }) {
+export function DocumentosUpload({ conductores, onUploadSuccess }: { conductores: Conductor[], onUploadSuccess?: () => void }) {
   const [files, setFiles] = useState<UploadingFile[]>([])
   const [selectedConductor, setSelectedConductor] = useState<string>("")
   const [isUploading, setIsUploading] = useState(false)
@@ -117,6 +117,11 @@ export function DocumentosUpload({ conductores }: { conductores: Conductor[] }) 
                 : f
             )
           )
+          
+          // Call success callback
+          if (onUploadSuccess) {
+            onUploadSuccess()
+          }
         } catch (error) {
           setFiles((prev) =>
             prev.map((f) =>

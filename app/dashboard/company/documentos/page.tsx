@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { FileText, ExternalLink, CheckCircle, XCircle, Clock } from "lucide-react"
 import DocumentosFilterClient from "@/components/admin/documentos-filter-client"
 import EjecutivasFilterClient from "@/components/admin/ejecutivas-filter-client"
-import { DocumentosUpload } from "@/components/admin/documentos-upload"
+import { DocumentosUploadWrapper } from "@/components/admin/documentos-upload-wrapper"
 import { DocumentosClient } from "@/components/admin/documentos-client"
 
 async function getDocumentos(ejecutiva?: string) {
@@ -130,7 +130,7 @@ export default async function DocumentosPage({ searchParams }: { searchParams: R
       <EjecutivasFilterClient ejecutivas={ejecutivas} selectedEjecutiva={selectedEjecutiva} />
 
       {/* Upload Section */}
-      <DocumentosUpload conductores={conductores} />
+      <DocumentosUploadWrapper conductores={conductores} />
 
       {/* Documents List - Client Component */}
       <DocumentosClient documents={documentos} />
