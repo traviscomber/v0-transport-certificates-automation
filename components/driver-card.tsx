@@ -56,10 +56,13 @@ export function DriverCard({
   const [loadingEjecutivas, setLoadingEjecutivas] = useState(false)
   const [documentTypes, setDocumentTypes] = useState<Array<{ id: string; code: string; name: string; category: string }>>([])
   const [loadingDocTypes, setLoadingDocTypes] = useState(false)
-  const [selectedDocument, setSelectedDocument] = useState<any>(null)
+  const [selectedDocument, setSelectedDocument] = useState<string | null>(null) // Store only the ID
   const [showDocumentModal, setShowDocumentModal] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [rejectionReason, setRejectionReason] = useState<string>('')
+
+  // Always get the fresh document from the documents array when modal opens
+  const currentSelectedDocument = selectedDocument ? documents.find(d => d.id === selectedDocument) : null
 
   useEffect(() => {
     if (showUploadModal) {
@@ -303,7 +306,7 @@ export function DriverCard({
                             doc.estado === 'rechazado' ? 'opacity-60' : ''
                           }`}
                           onClick={() => {
-                            setSelectedDocument(doc)
+                            setSelectedDocument(doc.id)
                             setShowDocumentModal(true)
                           }}
                         >
@@ -340,7 +343,7 @@ export function DriverCard({
                             className={`text-xs cursor-pointer hover:opacity-90 transition-opacity ${getDocumentStatusColor(doc.estado)}`}
                             onClick={(e) => {
                               e.stopPropagation()
-                              setSelectedDocument(doc)
+                              setSelectedDocument(doc.id)
                               setShowDocumentModal(true)
                             }}
                           >
@@ -547,7 +550,7 @@ export function DriverCard({
 
       {/* Document Action Modal */}
       <DocumentActionModal
-        document={selectedDocument}
+        document={currentSelectedDocument}
         isOpen={showDocumentModal}
         isAdmin={true}
         onClose={() => {
