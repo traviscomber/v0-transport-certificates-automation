@@ -13,14 +13,22 @@ async function getDocumentos(conductorId?: string) {
   let query = supabase
     .from("uploaded_documents")
     .select(`
-      *,
-      document_types(name, category, code),
-      transportistas(razon_social),
-      conductores(id, nombres, apellido_paterno, rut),
-      vehiculos(patente)
+      id,
+      original_filename,
+      conductor_id,
+      document_type_id,
+      validation_status,
+      file_url,
+      created_at,
+      conductores!inner (
+        id,
+        nombres,
+        apellido_paterno,
+        rut
+      )
     `)
     .order("created_at", { ascending: false })
-    .limit(200)
+    .limit(500)
 
   if (conductorId) {
     query = query.eq("conductor_id", conductorId)
@@ -153,8 +161,7 @@ export default async function DocumentosPage({ searchParams }: { searchParams: R
               <thead className="border-b bg-muted/50">
                 <tr>
                   <th className="text-left p-4 font-medium">Documento</th>
-                  <th className="text-left p-4 font-medium">Ejecutiva</th>
-                  <th className="text-left p-4 font-medium">Tipo</th>
+                  <th className="text-left p-4 font-medium">Conductor</th>
                   <th className="text-left p-4 font-medium">Estado</th>
                   <th className="text-left p-4 font-medium">Fecha</th>
                   <th className="text-right p-4 font-medium">Acciones</th>
@@ -175,11 +182,6 @@ export default async function DocumentosPage({ searchParams }: { searchParams: R
                       {doc.conductores ? 
                         `${doc.conductores.nombres} ${doc.conductores.apellido_paterno}` :
                         '-'}
-                    </td>
-                    <td className="p-4">
-                      <div>
-                        <p className="font-medium text-sm">{doc.document_types?.name}</p>
-                      </div>
                     </td>
                     <td className="p-4">
                       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
