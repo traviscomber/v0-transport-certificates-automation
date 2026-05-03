@@ -432,7 +432,7 @@ export default function ConductorDocumentosPage() {
                             variant="ghost"
                             size="sm"
                             className="text-slate-400 hover:text-red-400"
-                            onClick={() => handleDeleteDocument(uploadedDoc.id, uploadedDoc.file_name || uploadedDoc.original_filename || 'Documento')}
+                            onClick={() => handleDeleteDocument(uploadedDoc.id, uploadedDoc.file_name || 'Documento')}
                             disabled={isUploading}
                           >
                             <Trash2 className="h-4 w-4" />
