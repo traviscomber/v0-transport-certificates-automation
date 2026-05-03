@@ -94,15 +94,30 @@ export async function PATCH(
       .update(updatePayload)
       .eq('id', documentId)
       .select()
+      .single()
     
-    console.log('[v0] Update result - error:', updateError, 'data length:', updateData?.length)
+    console.log('[v0] UPDATE PATCH result:', {
+      error: updateError?.message,
+      success: !updateError,
+      returnedData: updateData ? { id: updateData.id, validation_status: updateData.validation_status } : null
+    })
 
     if (updateError) {
-      console.error('[v0] ❌ Failed to update validation_status:', updateError.message)
+      console.error('[v0] ❌ PATCH UPDATE FAILED:', {
+        documentId,
+        error: updateError.message,
+        code: updateError.code,
+        details: updateError.details
+      })
       return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
 
-    console.log('[v0] ✅ UPDATE executed - documentId:', documentId, 'from:', documentBefore?.validation_status, 'to:', dbStatus, 'rows:', updateData?.length)
+    if (!updateData) {
+      console.error('[v0] ❌ UPDATE returned null data for documentId:', documentId)
+      return NextResponse.json({ error: 'Update returned no data' }, { status: 500 })
+    }
+
+    console.log('[v0] ✅ PATCH SUCCESS - documentId:', documentId, 'validation_status updated to:', updateData.validation_status)
 
     // STEP 3: Generate alert with real conductor name from conductores table
     // Generate alerts for all status changes: pending, approved, rejected
@@ -154,14 +169,17 @@ export async function PATCH(
       console.error('[v0] Orchestrator emit failed:', err)
     })
 
-    return NextResponse.json({
+    const responsePayload = {
       success: true,
       document_id: documentId,
       status: dbStatus,
       previous_status: documentBefore?.validation_status,
       message: 'Document status updated and broadcast to clients',
       realtime_enabled: true,
-    })
+    }
+    
+    console.log('[v0] PATCH response:', responsePayload)
+    return NextResponse.json(responsePayload)
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error)
     console.error('[v0] ❌ PATCH /status error:', msg)
