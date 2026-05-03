@@ -26,13 +26,50 @@ export async function GET(request: NextRequest) {
 
     console.log('[v0] RUT variants - original:', driverRut, 'clean:', rutClean, 'withDash:', rutWithDash)
 
-    // Try to find conductor with any RUT format
-    const { data: conductorData, error: conductorError } = await adminClient
+    // Try to find conductor with any RUT format - try each variant individually
+    let conductorData = null
+    let conductorError = null
+
+    // Try exact match first
+    let result = await adminClient
       .from('conductores')
       .select('id, rut')
-      .or(`rut.eq.${driverRut},rut.eq.${rutClean},rut.eq.${rutWithDash}`)
+      .eq('rut', driverRut)
       .limit(1)
       .single()
+    
+    if (result.data) {
+      conductorData = result.data
+      console.log('[v0] Found conductor by exact RUT match:', driverRut)
+    } else {
+      // Try clean RUT (no dashes)
+      result = await adminClient
+        .from('conductores')
+        .select('id, rut')
+        .eq('rut', rutClean)
+        .limit(1)
+        .single()
+      
+      if (result.data) {
+        conductorData = result.data
+        console.log('[v0] Found conductor by clean RUT:', rutClean)
+      } else {
+        // Try with dash format
+        result = await adminClient
+          .from('conductores')
+          .select('id, rut')
+          .eq('rut', rutWithDash)
+          .limit(1)
+          .single()
+        
+        if (result.data) {
+          conductorData = result.data
+          console.log('[v0] Found conductor by RUT with dash:', rutWithDash)
+        } else {
+          conductorError = result.error
+        }
+      }
+    }
 
     console.log('[v0] Conductor lookup result:', { found: !!conductorData, error: conductorError?.message, conductorId: conductorData?.id })
 
