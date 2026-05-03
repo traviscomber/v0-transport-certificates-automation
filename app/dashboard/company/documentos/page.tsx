@@ -69,17 +69,15 @@ export default async function DocumentosPage({ searchParams }: { searchParams: R
   const selectedEjecutiva = ejecutivas.find(e => e.id === conductorId)
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Documentos</h1>
-          <p className="text-muted-foreground">
-            {selectedEjecutiva 
-              ? `Documentos de ${selectedEjecutiva.nombres} ${selectedEjecutiva.apellido_paterno}`
-              : 'Todos los documentos subidos y procesados'
-            }
-          </p>
-        </div>
+    <div className="space-y-6" suppressHydrationWarning>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Documentos</h1>
+        <p className="text-muted-foreground">
+          {selectedEjecutiva 
+            ? `Documentos de ${selectedEjecutiva.nombres} ${selectedEjecutiva.apellido_paterno}`
+            : 'Todos los documentos subidos y procesados'
+          }
+        </p>
       </div>
 
       {/* Filter by Ejecutiva */}
