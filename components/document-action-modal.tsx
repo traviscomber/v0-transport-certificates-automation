@@ -77,7 +77,7 @@ export function DocumentActionModal({
       
       // Call the onStatusChange callback with reason passed directly
       if (onStatusChange) {
-        await onStatusChange(document.id, newStatus, newStatus === 'rechazado' ? rejectionReason : undefined)
+        await onStatusChange(localDocument.id, newStatus, newStatus === 'rechazado' ? rejectionReason : undefined)
       }
       
       // Update local document state immediately to reflect the change in the modal
@@ -101,29 +101,39 @@ export function DocumentActionModal({
   }
 
   const handleDownload = () => {
-    if (document.public_url) {
-      window.open(document.public_url, '_blank')
-    } else if (document.storage_path) {
+    if (localDocument.public_url) {
+      window.open(localDocument.public_url, '_blank')
+    } else if (localDocument.storage_path) {
       // Fallback if public_url not available
-      const link = `/api/documents/download?path=${encodeURIComponent(document.storage_path)}`
-      window.open(link, '_blank')
+      alert('El documento no tiene URL pública disponible. Storage path: ' + localDocument.storage_path)
+    } else {
+      alert('No hay URL disponible para descargar')
     }
+  }
   }
 
   const handleDelete = async () => {
-    if (!isAdmin) return
-    if (!confirm('¿Estás seguro de que quieres eliminar este documento?')) return
-    
+    if (!confirm('¿Estás seguro de que deseas eliminar este documento?')) return
+
     setIsDeleting(true)
     try {
-      // Call delete endpoint directly by document ID — no storage_path needed
-      const response = await fetch(`/api/company/documents/${document.id}/delete`, {
+      const response = await fetch(`/api/company/documents/${localDocument.id}/delete`, {
         method: 'DELETE',
       })
+
       if (!response.ok) {
-        const result = await response.json()
-        throw new Error(result.error || 'Failed to delete document')
+        throw new Error('Error al eliminar el documento')
       }
+
+      await onDelete(localDocument.id)
+      onClose()
+    } catch (error) {
+      console.error('[v0] Error deleting document:', error)
+      alert('Error al eliminar el documento')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
       if (onDelete) {
         await onDelete(document.id)
       }
