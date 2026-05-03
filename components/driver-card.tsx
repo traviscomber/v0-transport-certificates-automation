@@ -65,7 +65,7 @@ export function DriverCard({
   const currentSelectedDocument = selectedDocument ? documents.find(d => d.id === selectedDocument) : null
   
   // Debug logging
-  React.useEffect(() => {
+  useEffect(() => {
     if (selectedDocument && !currentSelectedDocument) {
       console.warn('[v0] WARNING: selectedDocument ID not found in documents array!', {
         selectedDocument,
