@@ -80,8 +80,7 @@ export async function PATCH(
     console.log('[v0] Updating uploaded_documents - documentId:', documentId, 'dbStatus:', dbStatus, 'reason:', reason)
     
     const updatePayload: any = { 
-      validation_status: dbStatus,
-      updated_at: new Date().toISOString()
+      validation_status: dbStatus
     }
     
     // Store rejection reason if provided
@@ -115,6 +114,25 @@ export async function PATCH(
     if (!updateData) {
       console.error('[v0] ❌ UPDATE returned null data for documentId:', documentId)
       return NextResponse.json({ error: 'Update returned no data' }, { status: 500 })
+    }
+
+    // VERIFICATION: Do a SELECT to confirm the update was actually saved
+    const { data: verifyData, error: verifyError } = await adminClient
+      .from('uploaded_documents')
+      .select('validation_status')
+      .eq('id', documentId)
+      .single()
+
+    console.log('[v0] VERIFY AFTER UPDATE:', {
+      documentId,
+      updateSaidStatus: updateData?.validation_status,
+      verifySaysStatus: verifyData?.validation_status,
+      matchesExpected: verifyData?.validation_status === dbStatus,
+      verifyError: verifyError?.message
+    })
+
+    if (verifyData?.validation_status !== dbStatus) {
+      console.error('[v0] ⚠️ MISMATCH: Update said status is', updateData?.validation_status, 'but verify shows', verifyData?.validation_status)
     }
 
     console.log('[v0] ✅ PATCH SUCCESS - documentId:', documentId, 'validation_status updated to:', updateData.validation_status)
