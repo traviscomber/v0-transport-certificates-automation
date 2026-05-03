@@ -136,7 +136,7 @@ export function DriverCard({
       setUploadingEjecutiva('')
       
       // Force refetch from DB to update count
-      refetch(true)
+      refetch()
       
       // Show success message
       if (typeof window !== 'undefined') {
@@ -251,9 +251,8 @@ export function DriverCard({
                         console.log('[v0] Refresh button clicked')
                         setIsRefreshing(true)
                         try {
-                          console.log('[v0] Calling refetch(true)...')
-                          const result = await refetch(true)
-                          console.log('[v0] Refetch returned:', result)
+                          console.log('[v0] Calling refetch()...')
+                          await refetch()
                           console.log('[v0] Documents refreshed successfully')
                         } catch (error) {
                           console.error('[v0] Error refreshing documents:', error)
@@ -318,7 +317,7 @@ export function DriverCard({
                           }`}
                           onClick={() => {
                             // Refetch documents to get any newly uploaded files
-                            refetch(true)
+                            refetch()
                             setSelectedDocument(doc.id)
                             setShowDocumentModal(true)
                           }}
@@ -357,7 +356,7 @@ export function DriverCard({
                             onClick={(e) => {
                               e.stopPropagation()
                               // Refetch documents to get any newly uploaded files
-                              refetch(true)
+                              refetch()
                               setSelectedDocument(doc.id)
                               setShowDocumentModal(true)
                             }}
@@ -369,7 +368,7 @@ export function DriverCard({
                             onClick={(e) => {
                               e.stopPropagation()
                               // Refetch documents to get any newly uploaded files
-                              refetch(true)
+                              refetch()
                               setSelectedDocument(doc.id)
                               setShowDocumentModal(true)
                             }}
@@ -587,7 +586,7 @@ export function DriverCard({
             setSelectedDocument(null)
             
             // Refetch to sync latest state
-            refetch(true)
+            refetch()
             
             // Show success message
             if (typeof window !== 'undefined') {
@@ -603,7 +602,7 @@ export function DriverCard({
           }
         }}
         onDelete={async (docId) => {
-          await refetch(true)
+          await refetch()
           setShowDocumentModal(false)
           setSelectedDocument(null)
         }}
