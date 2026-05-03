@@ -31,10 +31,17 @@ export async function GET(request: NextRequest) {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Query uploaded_documents table for documents belonging to this conductor
+    // Query uploaded_documents with JOIN to document_types to get the code
     const { data: documents, error } = await supabase
       .from('uploaded_documents')
-      .select('*')
+      .select(`
+        *,
+        document_types (
+          id,
+          code,
+          name
+        )
+      `)
       .eq('conductor_id', conductorId)
       .order('created_at', { ascending: false })
 
@@ -48,11 +55,13 @@ export async function GET(request: NextRequest) {
 
     console.log(`[v0] Found ${documents?.length || 0} documents for conductor ${conductorId}`)
 
-    // Return with success wrapper and normalized fields
+    // Normalize: expose document_type_id as the CODE (e.g. 'LIC_CONDUCIR') for frontend matching
     const normalizedDocs = (documents || []).map((doc: any) => ({
       ...doc,
-      // Ensure document_type_id is available for matching
-      document_type_id: doc.document_type_id || doc.document_type,
+      document_type_code: doc.document_types?.code || null,
+      document_type_name: doc.document_types?.name || null,
+      // Override document_type_id with the code so REQUIRED_DOCUMENTS matching works
+      document_type_id: doc.document_types?.code || doc.document_type_id,
     }))
 
     return NextResponse.json({ success: true, documents: normalizedDocs }, { status: 200 })
