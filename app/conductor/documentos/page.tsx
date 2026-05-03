@@ -109,7 +109,8 @@ export default function ConductorDocumentosPage() {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('documentType', 'conductor_document')
+      // Use LIC_CONDUCIR as default type for conductor documents
+      formData.append('documentType', 'LIC_CONDUCIR')
 
       // Fetch uses Supabase cookies automatically (set during login)
       const response = await fetch('/api/conductor/upload-document', {

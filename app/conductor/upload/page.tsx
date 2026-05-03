@@ -9,15 +9,15 @@ import { Upload, FileText, AlertCircle, CheckCircle2, Loader } from "lucide-reac
 import { useState, useRef } from "react"
 
 const ALLOWED_DOCUMENT_TYPES = [
-  { id: 'CEDULA_IDENTIDAD', label: 'Cédula de Identidad' },
-  { id: 'LICENCIA_CONDUCIR', label: 'Licencia de Conducir Profesional' },
-  { id: 'HOJA_VIDA_CONDUCTOR', label: 'Hoja de Vida' },
-  { id: 'CERTIFICADO_ANTECEDENTES', label: 'Certificado de Antecedentes' },
-  { id: 'INHABILIDADES_MENORES', label: 'Inhabilidades Menores' },
-  { id: 'CONTRATO_TRABAJO', label: 'Contrato de Trabajo' },
-  { id: 'CERTIFICADO_AFP', label: 'Certificado AFP' },
-  { id: 'CERTIFICADO_SALUD', label: 'Certificado de Salud' },
-  { id: 'EXAMEN_PREOCUPACIONAL', label: 'Examen Preocupacional' },
+  { id: 'CEDULA_IDENTIDAD', label: 'Cédula de Identidad', code: 'CEDULA_IDENTIDAD' },
+  { id: 'LIC_CONDUCIR', label: 'Licencia de Conducir Profesional', code: 'LIC_CONDUCIR' },
+  { id: 'HOJA_VIDA', label: 'Hoja de Vida', code: 'HOJA_VIDA' },
+  { id: 'CERT_ANTECEDENTES', label: 'Certificado de Antecedentes', code: 'CERT_ANTECEDENTES' },
+  { id: 'INHABILIDADES_MENORES', label: 'Inhabilidades Menores', code: 'INHABILIDADES_MENORES' },
+  { id: 'CONTRATO_TRABAJO', label: 'Contrato de Trabajo', code: 'CONTRATO_TRABAJO' },
+  { id: 'CERT_AFP', label: 'Certificado AFP', code: 'CERT_AFP' },
+  { id: 'REVISION_TECNICA', label: 'Revisión Técnica', code: 'REVISION_TECNICA' },
+  { id: 'SOAP', label: 'Seguro Obligatorio (SOAP)', code: 'SOAP' },
 ]
 
 export default function DriverUploadPage() {
@@ -56,9 +56,10 @@ export default function DriverUploadPage() {
     }
 
     setUploading(true)
+    const selectedDoc = ALLOWED_DOCUMENT_TYPES.find(t => t.id === selectedType)
     const formData = new FormData()
     formData.append('file', file)
-    formData.append('documentType', selectedType)
+    formData.append('documentType', selectedDoc?.code || selectedType)
 
     try {
       const response = await fetch('/api/conductor/upload-document', {
