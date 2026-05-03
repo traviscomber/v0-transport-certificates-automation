@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Mail, Phone, MapPin, FileText, Download, ChevronDown, Plus, X, Upload, AlertCircle, Loader, Eye, RefreshCw } from 'lucide-react'
+import { Mail, Phone, MapPin, FileText, Download, ChevronDown, Plus, X, Upload, AlertCircle, Loader, Eye, RefreshCw, ArrowRight } from 'lucide-react'
 import { useDriverDocuments, type DriverDocument } from '@/hooks/use-driver-documents'
 import { DocumentActionModal } from './document-action-modal'
 
@@ -266,6 +267,14 @@ export function DriverCard({
                     >
                       <RefreshCw className={`h-3 w-3 text-slate-500 hover:text-slate-300 ${isRefreshing ? 'animate-spin' : ''}`} />
                     </button>
+                    <Link
+                      href={`/dashboard/company/documentos/${driver.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="ml-2 p-1 rounded hover:bg-slate-700/60 transition-colors inline-flex items-center gap-1"
+                      title="Ver todos los documentos"
+                    >
+                      <ArrowRight className="h-3 w-3 text-slate-500 hover:text-slate-300" />
+                    </Link>
                   </div>
                   <ChevronDown 
                     className={`h-4 w-4 text-slate-500 transition-transform ${
