@@ -67,18 +67,27 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         throw new Error(result.error || 'Failed to fetch documents')
       }
 
-      const transformedDocs = (result.documents || []).map((doc: any) => ({
-        id: doc.id,
-        driver_rut: doc.driver_rut || '',
-        tipo: doc.document_type || 'Documento',
-        nombre: doc.original_filename || doc.file_name || '',
-        estado: (doc.verification_status || 'pendiente') as DriverDocument['estado'],
-        fecha_subida: doc.created_at || new Date().toISOString(),
-        public_url: doc.file_url || doc.public_url,
-        storage_path: doc.file_path || doc.storage_path,
-        uploaded_by: doc.uploaded_by || '',
-        rejection_reason: doc.rejection_reason || undefined,
-      }))
+      const transformedDocs = (result.documents || []).map((doc: any) => {
+        const estado = (doc.verification_status || 'pendiente') as DriverDocument['estado']
+        console.log('[v0] Hook transforming doc:', {
+          id: doc.id,
+          apiVerificationStatus: doc.verification_status,
+          apiValidationStatus: doc.validation_status,
+          transformedEstado: estado,
+        })
+        return {
+          id: doc.id,
+          driver_rut: doc.driver_rut || '',
+          tipo: doc.document_type || 'Documento',
+          nombre: doc.original_filename || doc.file_name || '',
+          estado,
+          fecha_subida: doc.created_at || new Date().toISOString(),
+          public_url: doc.file_url || doc.public_url,
+          storage_path: doc.file_path || doc.storage_path,
+          uploaded_by: doc.uploaded_by || '',
+          rejection_reason: doc.rejection_reason || undefined,
+        }
+      })
 
       // Apply any pending optimistic updates so fetch doesn't overwrite them
       const pending = optimisticUpdatesRef.current

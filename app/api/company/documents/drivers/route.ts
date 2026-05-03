@@ -66,6 +66,14 @@ export async function GET(request: NextRequest) {
       const rawStatus = (doc.validation_status || 'pending').toLowerCase()
       const estadoEspanol = statusMap[rawStatus] || 'pendiente'
 
+      console.log('[v0] Formatting doc:', {
+        id: doc.id,
+        rawValidationStatus: doc.validation_status,
+        rawStatusLower: rawStatus,
+        estadoEspanol,
+        willSendAsVerificationStatus: estadoEspanol,
+      })
+
       return {
         id: doc.id,
         driver_rut: driverRut || '',
