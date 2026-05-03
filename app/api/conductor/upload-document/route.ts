@@ -252,10 +252,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate alerts for admins about the new document
+    const conductorName = conductor.nombre_completo || conductor.name || 'Conductor'
+    console.log('[v0] About to create alert with conductor name:', { 
+      nombre_completo: conductor.nombre_completo, 
+      name: conductor.name,
+      final: conductorName 
+    })
     await generateDocumentUploadAlerts(
       uploadedDoc.id,
       docType.name,
-      conductor.nombre_completo || 'Conductor',
+      conductorName,
       'conductor',
       conductorId
     )
