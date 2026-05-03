@@ -34,15 +34,19 @@ export async function GET(request: NextRequest) {
       .limit(1)
       .single()
 
+    console.log('[v0] Conductor lookup result:', { found: !!conductorData, error: conductorError?.message, conductorId: conductorData?.id })
+
     if (conductorError || !conductorData?.id) {
       // Last resort: try driver_id directly if provided
       if (driverId && driverId !== 'undefined') {
         console.log('[v0] Conductor not found by RUT, trying driver_id directly:', driverId)
-        const { data: byId } = await adminClient
+        const { data: byId, error: byIdError } = await adminClient
           .from('uploaded_documents')
           .select('id, original_filename, document_type_id, file_url, validation_status, rejection_reason, created_at, expiration_date')
           .eq('conductor_id', driverId)
           .order('created_at', { ascending: false })
+        
+        console.log('[v0] Query by driver_id result:', { count: byId?.length || 0, error: byIdError?.message })
         
         if (byId && byId.length > 0) {
           console.log('[v0] Found', byId.length, 'documents by driver_id fallback')
@@ -66,6 +70,7 @@ export async function GET(request: NextRequest) {
         }
       }
       console.log('[v0] Conductor not found for RUT variants:', driverRut, rutClean, rutWithDash, 'error:', conductorError?.message)
+      console.log('[v0] Falling back: returning empty documents list')
       return NextResponse.json({ success: true, documents: [] }, {
         headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
       })
