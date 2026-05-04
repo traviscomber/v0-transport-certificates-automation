@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { getCompanyFromAuth } from '@/lib/auth'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { createClient } from '@/lib/supabase/server'
+import { verifyAuth } from '@/lib/auth-middleware'
 
 export async function GET(request: NextRequest) {
   try {
-    const company = await getCompanyFromAuth()
-    if (!company) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { user, error: authError } = await verifyAuth(request)
+    
+    if (authError || !user) {
+      return NextResponse.json({ error: authError || 'Unauthorized' }, { status: 401 })
     }
+
+    const supabase = await createClient()
 
     const { searchParams } = new URL(request.url)
     const severity = searchParams.get('severity')
@@ -23,7 +21,6 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('anomalies_with_document_details')
       .select('*', { count: 'exact' })
-      .eq('company_id', company.id)
       .order('severity', { ascending: false })
       .order('detected_at', { ascending: false })
 
