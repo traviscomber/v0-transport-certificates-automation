@@ -77,3 +77,21 @@ FROM public.anomaly_tracking at
 JOIN public.documents d ON at.document_id = d.id
 JOIN public.companies c ON d.company_id = c.id
 LEFT JOIN public.drivers dr ON d.driver_id = dr.id;
+
+-- Create email_queue table for async email processing
+CREATE TABLE IF NOT EXISTS public.email_queue (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recipient TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  html_body TEXT NOT NULL,
+  reply_to TEXT DEFAULT 'noreply@transporteslabe.cl',
+  status TEXT DEFAULT 'pending', -- 'pending', 'sent', 'failed'
+  error_message TEXT,
+  sent_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+-- Create index for querying pending emails
+CREATE INDEX IF NOT EXISTS idx_email_queue_status ON public.email_queue(status);
+CREATE INDEX IF NOT EXISTS idx_email_queue_created_at ON public.email_queue(created_at DESC);
