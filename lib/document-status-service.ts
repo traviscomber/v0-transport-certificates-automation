@@ -47,7 +47,7 @@ export interface DocumentStatusAuditLog {
  */
 function isValidStatusTransition(from: string, to: DocumentStatus): boolean {
   // All transitions are allowed
-  const validStatuses: DocumentStatus[] = ['approved', 'rejected', 'pending', 'expired']
+  const validStatuses: DocumentStatus[] = ['approved', 'rejected', 'pending']
   return validStatuses.includes(to)
 }
 
@@ -57,20 +57,11 @@ function isValidStatusTransition(from: string, to: DocumentStatus): boolean {
 function normalizeStatus(input: string): DocumentStatus | null {
   const mapping: Record<string, DocumentStatus> = {
     'aprobado': 'approved',
-    'approved': 'approved',
-    'app': 'approved',
-    
     'rechazado': 'rejected',
-    'rejected': 'rejected',
-    'rej': 'rejected',
-    
     'pendiente': 'pending',
+    'approved': 'approved',
+    'rejected': 'rejected',
     'pending': 'pending',
-    'pend': 'pending',
-    
-    'vencido': 'expired',
-    'expired': 'expired',
-    'exp': 'expired',
   }
   
   const normalized = mapping[input?.toLowerCase()?.trim()]
