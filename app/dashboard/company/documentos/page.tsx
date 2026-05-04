@@ -12,6 +12,34 @@ import { DocumentosClient } from "@/components/admin/documentos-client"
 async function getDocumentos(ejecutiva?: string) {
   const supabase = await createClient()
   
+  console.log('[v0] getDocumentos called with ejecutiva:', ejecutiva)
+  
+  // If ejecutiva is selected, get conductores for that ejecutiva first
+  let conductorIds: string[] | null = null
+  
+  if (ejecutiva) {
+    // Get subcontratistas for this ejecutiva
+    const { data: subcontratistas, error: subError } = await supabase
+      .from("subcontratistas")
+      .select("rut_proveedor")
+      .eq("ejecutiva", ejecutiva)
+    
+    console.log('[v0] Found subcontratistas for', ejecutiva, ':', subcontratistas?.length)
+    
+    if (subcontratistas && subcontratistas.length > 0) {
+      const rutProveedores = subcontratistas.map(s => s.rut_proveedor)
+      // Get conductores with those rut_proveedor values
+      const { data: conductoresForEjecutiva } = await supabase
+        .from("conductores")
+        .select("id")
+        .in("rut_proveedor", rutProveedores)
+      
+      conductorIds = conductoresForEjecutiva?.map(c => c.id) || []
+      console.log('[v0] Found conductores for', ejecutiva, ':', conductorIds.length)
+    }
+  }
+
+  // Build query for documents
   let query = supabase
     .from("uploaded_documents")
     .select(`
@@ -31,45 +59,29 @@ async function getDocumentos(ejecutiva?: string) {
       )
     `)
     .order("created_at", { ascending: false })
-    .limit(500)
+    .limit(2000)  // Increased from 500 to 2000 to show all documents
 
-  if (ejecutiva) {
-    // Get conductor IDs that belong to this ejecutiva through subcontratistas
-    const { data: subcontratistas } = await supabase
-      .from("subcontratistas")
-      .select("rut_proveedor")
-      .eq("ejecutiva", ejecutiva)
-    
-    if (subcontratistas && subcontratistas.length > 0) {
-      const rutProveedores = subcontratistas.map(s => s.rut_proveedor)
-      // Get conductores with those rut_proveedor values
-      const { data: conductoresForEjecutiva } = await supabase
-        .from("conductores")
-        .select("id")
-        .in("rut_proveedor", rutProveedores)
-      
-      if (conductoresForEjecutiva && conductoresForEjecutiva.length > 0) {
-        const conductorIds = conductoresForEjecutiva.map(c => c.id)
-        query = query.in("conductor_id", conductorIds)
-      }
-    }
+  // Filter by conductor IDs if ejecutiva is selected
+  if (conductorIds && conductorIds.length > 0) {
+    query = query.in("conductor_id", conductorIds)
   }
 
   const { data, error } = await query
 
   if (error) {
-    console.error("Error fetching documentos:", error)
+    console.error("[v0] Error fetching documentos:", error)
     return []
   }
 
+  console.log('[v0] Returned', data?.length || 0, 'documents')
   return data || []
 }
 
 async function getEjecutivas() {
   const supabase = await createClient()
   
-  // Get unique ejecutivas from subcontratistas table
-  const { data, error } = await supabase
+  // Get unique ejecutivas from subcontratistas table with conductor counts
+  const { data: subcontratistas, error } = await supabase
     .from("subcontratistas")
     .select("ejecutiva, rut_proveedor")
     .not("ejecutiva", "is", null)
@@ -80,26 +92,37 @@ async function getEjecutivas() {
     return []
   }
 
-  // Count conductores per ejecutiva
-  const supabase2 = await createClient()
-  const ejecutivasMap = new Map<string, number>()
+  console.log('[v0] Found', subcontratistas?.length || 0, 'subcontratistas')
+
+  // Map ejecutivas to conductor counts
+  const ejecutivasMap = new Map<string, Set<string>>()
   
-  for (const subcon of data || []) {
+  for (const subcon of subcontratistas || []) {
     if (subcon.ejecutiva) {
-      const { data: conductorCount } = await supabase2
-        .from("conductores")
-        .select("id", { count: "exact", head: true })
-        .eq("rut_proveedor", subcon.rut_proveedor)
-      
-      const currentCount = ejecutivasMap.get(subcon.ejecutiva) || 0
-      ejecutivasMap.set(subcon.ejecutiva, currentCount + (conductorCount?.length || 0))
+      if (!ejecutivasMap.has(subcon.ejecutiva)) {
+        ejecutivasMap.set(subcon.ejecutiva, new Set())
+      }
+      ejecutivasMap.get(subcon.ejecutiva)!.add(subcon.rut_proveedor)
     }
   }
 
-  return Array.from(ejecutivasMap.entries()).map(([name, count]) => ({
-    name,
-    count
-  }))
+  // Get conductor count for each rut_proveedor
+  const supabase2 = await createClient()
+  const result = []
+  
+  for (const [name, rutSet] of ejecutivasMap.entries()) {
+    const rutArray = Array.from(rutSet)
+    const { data: conductorsData } = await supabase2
+      .from("conductores")
+      .select("id", { count: "exact" })
+      .in("rut_proveedor", rutArray)
+    
+    const count = conductorsData?.length || 0
+    result.push({ name, count })
+    console.log('[v0] Ejecutiva:', name, 'count:', count)
+  }
+
+  return result.sort((a, b) => b.count - a.count)
 }
 
 async function getConductores(ejecutiva?: string) {
