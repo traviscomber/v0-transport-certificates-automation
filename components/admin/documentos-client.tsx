@@ -15,6 +15,13 @@ interface Document {
   file_url?: string
   created_at: string
   ejecutiva?: string
+  vision_status?: 'pending' | 'processing' | 'completed' | 'error'
+  document_type?: string
+  extracted_data?: any
+  validation_result?: any
+  anomalies_detected?: string[]
+  ocr_text?: string
+  vision_error?: string
   conductores: {
     id: string
     nombres: string
@@ -200,6 +207,8 @@ export function DocumentosClient({ documents: initialDocuments }: DocumentosClie
                     <th className="text-left p-4 font-medium">Conductor</th>
                     <th className="text-left p-4 font-medium">RUT</th>
                     <th className="text-left p-4 font-medium">Ejecutiva</th>
+                    <th className="text-left p-4 font-medium">Tipo</th>
+                    <th className="text-left p-4 font-medium">Visión</th>
                     <th className="text-left p-4 font-medium">Estado</th>
                     <th className="text-left p-4 font-medium">Fecha</th>
                     <th className="text-right p-4 font-medium">Acción</th>
@@ -232,6 +241,42 @@ export function DocumentosClient({ documents: initialDocuments }: DocumentosClie
                       </td>
                       <td className="p-4 text-sm font-medium">
                         {doc.ejecutiva || '-'}
+                      </td>
+                      <td className="p-4 text-sm">
+                        <span className="inline-block px-2 py-1 rounded bg-blue-100 text-blue-800 text-xs font-medium">
+                          {doc.document_type || 'Desconocido'}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          {doc.vision_status === 'completed' && (
+                            <span className="inline-flex items-center gap-1 text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                              <CheckCircle className="h-3 w-3" />
+                              Listo
+                            </span>
+                          )}
+                          {doc.vision_status === 'pending' && (
+                            <span className="inline-flex items-center gap-1 text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded">
+                              <Clock className="h-3 w-3" />
+                              Pendiente
+                            </span>
+                          )}
+                          {doc.vision_status === 'processing' && (
+                            <span className="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                              <Clock className="h-3 w-3" />
+                              Procesando
+                            </span>
+                          )}
+                          {doc.vision_status === 'error' && (
+                            <span className="inline-flex items-center gap-1 text-xs text-red-600 bg-red-100 px-2 py-1 rounded">
+                              <XCircle className="h-3 w-3" />
+                              Error
+                            </span>
+                          )}
+                          {!doc.vision_status && (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
+                        </div>
                       </td>
                       <td className="p-4">
                         <DocumentStatusUpdater
