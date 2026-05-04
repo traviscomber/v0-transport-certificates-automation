@@ -6,6 +6,7 @@ import { FileText, ExternalLink, CheckCircle, XCircle, Clock, Search, Filter, Ey
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { DocumentStatusUpdater } from './document-status-updater'
+import { VisionResultsDialog } from './vision-results-dialog'
 
 interface Document {
   id: string
@@ -296,10 +297,18 @@ export function DocumentosClient({ documents: initialDocuments }: DocumentosClie
                       <td className="p-4">
                         <div className="flex items-center gap-2">
                           {doc.vision_status === 'completed' && (
-                            <span className="inline-flex items-center gap-1 text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
-                              <CheckCircle className="h-3 w-3" />
-                              Listo
-                            </span>
+                            <>
+                              <span className="inline-flex items-center gap-1 text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                                <CheckCircle className="h-3 w-3" />
+                                Listo
+                              </span>
+                              <VisionResultsDialog
+                                documentType={doc.document_type}
+                                extractedData={doc.extracted_data}
+                                anomaliesDetected={doc.anomalies_detected}
+                                ocrText={doc.ocr_text}
+                              />
+                            </>
                           )}
                           {doc.vision_status === 'pending' && (
                             <span className="inline-flex items-center gap-1 text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded">
@@ -314,13 +323,16 @@ export function DocumentosClient({ documents: initialDocuments }: DocumentosClie
                             </span>
                           )}
                           {doc.vision_status === 'error' && (
-                            <span 
-                              className="inline-flex items-center gap-1 text-xs text-red-600 bg-red-100 px-2 py-1 rounded cursor-help"
-                              title={doc.vision_error || 'Error desconocido'}
-                            >
-                              <XCircle className="h-3 w-3" />
-                              Error
-                            </span>
+                            <>
+                              <span 
+                                className="inline-flex items-center gap-1 text-xs text-red-600 bg-red-100 px-2 py-1 rounded cursor-help"
+                                title={doc.vision_error || 'Error desconocido'}
+                              >
+                                <XCircle className="h-3 w-3" />
+                                Error
+                              </span>
+                              <VisionResultsDialog visionError={doc.vision_error} />
+                            </>
                           )}
                           {!doc.vision_status && (
                             <span className="text-xs text-muted-foreground">-</span>
