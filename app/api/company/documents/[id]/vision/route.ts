@@ -55,19 +55,18 @@ export async function POST(
     else if (fileExtension === "webp") mediaType = "image/webp"
 
     // Call GPT-4 Vision with best configuration
-    const visionResponse = await openai.messages.create({
+    const visionResponse = await openai.chat.completions.create({
       model: "gpt-4-vision-preview",
       max_tokens: 4096,
+      temperature: 0.2,
       messages: [
         {
           role: "user",
           content: [
             {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: mediaType,
-                data: base64,
+              type: "image_url",
+              image_url: {
+                url: `data:${mediaType};base64,${base64}`,
               },
             },
             {
@@ -98,13 +97,13 @@ Sé preciso y detallado. Si algo no está claro, indícalo en quality_issues.`,
     })
 
     // Parse response
-    const content = visionResponse.content[0]
-    if (content.type !== "text") {
-      throw new Error("Unexpected response type from vision API")
+    const content = visionResponse.choices[0]?.message?.content
+    if (!content || typeof content !== "string") {
+      throw new Error("Unexpected response from vision API")
     }
 
     // Extract JSON from response
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/)
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
       throw new Error("Could not extract JSON from vision response")
     }
