@@ -1,35 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card"
-
-const AlertTriangleIcon = () => (
-  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-    <path d="M12 9v4" />
-    <path d="m12 17 .01 0" />
-  </svg>
-)
-
-const FileXIcon = () => (
-  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
-    <path d="M14 2v4a2 2 0 0 0 2 2h4" />
-    <path d="m9.5 12.5 5-5" />
-    <path d="m14.5 12.5-5-5" />
-  </svg>
-)
-
-const ClockIcon = () => (
-  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10" />
-    <polyline points="12,6 12,12 16,14" />
-  </svg>
-)
-
-const DollarSignIcon = () => (
-  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="12" x2="12" y1="2" y2="22" />
-    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-  </svg>
-)
+import {
+  AlertTriangle,
+  FileX,
+  Clock,
+  DollarSign,
+} from "lucide-react"
 
 export function ProblemTab() {
   return (
@@ -49,72 +24,137 @@ export function ProblemTab() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <Card className="bg-destructive/5 border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardContent className="p-8">
-            <FileXIcon />
+            <FileX className="w-12 h-12 mb-4" />
             <h3 className="text-2xl font-bold mb-4">Certificados F-30 Manuales</h3>
             <p className="text-muted-foreground mb-4">
-              Cada vehículo requiere certificación ambiental manual. Proceso lento, propenso a errores y que consume
-              horas de trabajo administrativo.
+              Trámite burocrático lento y propenso a errores. Renovaciones olvidadas que resultan en multas.
             </p>
-            <div className="text-sm text-destructive font-medium">⚠️ Multas desde $500.000 por certificado vencido</div>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li>• 6 meses promedio en procesamiento</li>
+              <li>• Documentación incompleta rechazada constantemente</li>
+              <li>• Sin trazabilidad de solicitudes</li>
+              <li>• Múltiples visitas a oficinas gubernamentales</li>
+            </ul>
           </CardContent>
         </Card>
 
         <Card className="bg-destructive/5 border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardContent className="p-8">
-            <AlertTriangleIcon />
+            <AlertTriangle className="w-12 h-12 mb-4" />
             <h3 className="text-2xl font-bold mb-4">Normativas Cambiantes</h3>
             <p className="text-muted-foreground mb-4">
-              Regulaciones ambientales y de transporte cambian constantemente. Mantenerse actualizado es un desafío
-              costoso y complejo.
+              Las regulaciones cambian constantemente sin aviso. Imposible mantenerse actualizado manualmente.
             </p>
-            <div className="text-sm text-destructive font-medium">⚠️ Nuevas regulaciones cada 3-6 meses</div>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li>• DS N°158, DS N°75, resoluciones nuevas cada mes</li>
+              <li>• Cambios sin comunicación previa</li>
+              <li>• Multas por incumplimiento de nuevas normas</li>
+              <li>• Necesidad de monitoreo constante de 5+ fuentes</li>
+            </ul>
           </CardContent>
         </Card>
 
         <Card className="bg-destructive/5 border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardContent className="p-8">
-            <ClockIcon />
+            <Clock className="w-12 h-12 mb-4" />
             <h3 className="text-2xl font-bold mb-4">Tiempo Perdido</h3>
             <p className="text-muted-foreground mb-4">
-              Administradores dedican 60% de su tiempo a documentación. Tiempo que debería invertirse en operaciones y
-              crecimiento.
+              El equipo administrativo dedica 40+ horas semanales a gestión documental en vez de estrategia.
             </p>
-            <div className="text-sm text-destructive font-medium">⚠️ 24 horas semanales en papeleo por empresa</div>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li>• Gestión manual de cientos de documentos</li>
+              <li>• Vencimientos olvidados = suspensiones de operaciones</li>
+              <li>• Coordinación compleja entre departamentos</li>
+              <li>• Auditorías constantes para verificar cumplimiento</li>
+            </ul>
           </CardContent>
         </Card>
 
         <Card className="bg-destructive/5 border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardContent className="p-8">
-            <DollarSignIcon />
+            <DollarSign className="w-12 h-12 mb-4" />
             <h3 className="text-2xl font-bold mb-4">Costos Ocultos</h3>
             <p className="text-muted-foreground mb-4">
-              Multas, retrasos operacionales, personal dedicado a documentación y oportunidades perdidas suman millones
-              anuales.
+              Multas, penalizaciones y oportunidades perdidas por incumplimiento normativo.
             </p>
-            <div className="text-sm text-destructive font-medium">⚠️ Promedio $15M anuales en costos evitables</div>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li>• Multas: $2M - $10M+ por incumplimiento de F-30</li>
+              <li>• Suspensión de operaciones (sin ingresos)</li>
+              <li>• Costo de recursos para trámites: $500k - $1M anual</li>
+              <li>• Riesgos legales y antecedentes penales</li>
+            </ul>
           </CardContent>
         </Card>
       </div>
 
-      {/* Impact Statistics */}
-      <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-8">
-        <h3 className="text-3xl font-bold text-center mb-8">El Costo Real del Problema</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+      {/* The Current Reality */}
+      <div className="bg-destructive/5 border border-destructive/20 rounded-3xl p-8 md:p-12 text-center">
+        <h3 className="text-3xl md:text-4xl font-bold mb-6">La Realidad Actual</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
           <div>
-            <div className="text-4xl font-bold text-destructive mb-2">85%</div>
-            <div className="text-sm text-muted-foreground">Empresas con multas anuales</div>
+            <div className="text-5xl font-bold text-destructive mb-2">47%</div>
+            <p className="text-muted-foreground">
+              De empresas de transporte han recibido multas por incumplimiento documental en los últimos 3 años
+            </p>
           </div>
           <div>
-            <div className="text-4xl font-bold text-destructive mb-2">$8M</div>
-            <div className="text-sm text-muted-foreground">Promedio multas por empresa</div>
+            <div className="text-5xl font-bold text-destructive mb-2">$50M+</div>
+            <p className="text-muted-foreground">
+              En multas acumuladas por empresas chilenas por problemas de F-30 (2023)
+            </p>
           </div>
           <div>
-            <div className="text-4xl font-bold text-destructive mb-2">240</div>
-            <div className="text-sm text-muted-foreground">Horas mensuales en documentos</div>
+            <div className="text-5xl font-bold text-destructive mb-2">85%</div>
+            <p className="text-muted-foreground">
+              De las suspensiones operacionales son prevenibles con automatización
+            </p>
           </div>
-          <div>
-            <div className="text-4xl font-bold text-destructive mb-2">45%</div>
-            <div className="text-sm text-muted-foreground">Tiempo perdido vs. operaciones</div>
+        </div>
+      </div>
+
+      {/* Impact on Business */}
+      <div className="space-y-6">
+        <h3 className="text-2xl md:text-3xl font-bold text-center">Impacto en tu Negocio</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-background border border-border rounded-xl p-6">
+            <h4 className="font-bold mb-3 flex items-center gap-2">
+              <span className="text-xl">💼</span> Operacional
+            </h4>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li>• Parálisis operacional por certificados vencidos</li>
+              <li>• Pérdida de clientes por suspensiones</li>
+              <li>• Complejidad en gestión de flota</li>
+            </ul>
+          </div>
+          <div className="bg-background border border-border rounded-xl p-6">
+            <h4 className="font-bold mb-3 flex items-center gap-2">
+              <span className="text-xl">📊</span> Financiero
+            </h4>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li>• Multas que pueden alcanzar millones</li>
+              <li>• Inmovilización de vehículos</li>
+              <li>• Costos de cumplimiento manual insostenibles</li>
+            </ul>
+          </div>
+          <div className="bg-background border border-border rounded-xl p-6">
+            <h4 className="font-bold mb-3 flex items-center gap-2">
+              <span className="text-xl">⚖️</span> Legal
+            </h4>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li>• Riesgos penales para gerentes</li>
+              <li>• Antecedentes que afectan licencias</li>
+              <li>• Conflictos con autoridades</li>
+            </ul>
+          </div>
+          <div className="bg-background border border-border rounded-xl p-6">
+            <h4 className="font-bold mb-3 flex items-center gap-2">
+              <span className="text-xl">👥</span> Recurso Humano
+            </h4>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li>• Equipo dedicado solo a papeleo</li>
+              <li>• Alta rotación por trabajo tedioso</li>
+              <li>• Falta de talento estratégico</li>
+            </ul>
           </div>
         </div>
       </div>

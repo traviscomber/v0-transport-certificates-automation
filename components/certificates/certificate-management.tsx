@@ -56,6 +56,9 @@ interface UploadedDocument {
   confidence: "high" | "medium" | "low"
   status: "pending" | "approved" | "rejected"
   formData?: any
+  expiry_date?: string
+  document_type_id?: string
+  validation_status?: "pending" | "approved" | "rejected"
 }
 
 interface CertificateManagementProps {
