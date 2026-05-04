@@ -5,10 +5,6 @@ import OpenAI from "openai"
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
 export async function POST(request: NextRequest) {
   try {
     const { documentId } = await request.json()
@@ -16,6 +12,14 @@ export async function POST(request: NextRequest) {
     if (!documentId) {
       return NextResponse.json({ error: "documentId is required" }, { status: 400 })
     }
+
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json({ error: "OPENAI_API_KEY not configured" }, { status: 500 })
+    }
+
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
 
     const supabase = await createClient()
 
