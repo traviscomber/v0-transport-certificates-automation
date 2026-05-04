@@ -76,6 +76,28 @@ export async function POST(request: NextRequest) {
     const publicUrl = urlData?.publicUrl || `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/documents/${filePath}`
     console.log('[v0] Public URL generated:', publicUrl)
 
+    // Get conductor's ejecutiva (through subcontratistas)
+    const { data: conductor } = await adminClient
+      .from('conductores')
+      .select('rut_proveedor')
+      .eq('id', conductorId)
+      .single()
+
+    let ejecutiva: string | null = null
+    
+    if (conductor?.rut_proveedor) {
+      const { data: subcontratista } = await adminClient
+        .from('subcontratistas')
+        .select('ejecutiva')
+        .eq('rut_proveedor', conductor.rut_proveedor)
+        .single()
+      
+      if (subcontratista?.ejecutiva) {
+        ejecutiva = subcontratista.ejecutiva
+        console.log('[v0] Found ejecutiva for conductor:', ejecutiva)
+      }
+    }
+
     // Insert into uploaded_documents table
     const docData: any = {
       conductor_id: conductorId,
@@ -88,6 +110,11 @@ export async function POST(request: NextRequest) {
     // Add document_type_id if provided
     if (documentTypeId && documentTypeId !== 'unknown') {
       docData.document_type_id = documentTypeId
+    }
+    
+    // Add ejecutiva if found
+    if (ejecutiva) {
+      docData.ejecutiva = ejecutiva
     }
     
     console.log('[v0] Inserting document to database:', docData)
