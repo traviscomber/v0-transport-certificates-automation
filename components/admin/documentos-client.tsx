@@ -314,7 +314,10 @@ export function DocumentosClient({ documents: initialDocuments }: DocumentosClie
                             </span>
                           )}
                           {doc.vision_status === 'error' && (
-                            <span className="inline-flex items-center gap-1 text-xs text-red-600 bg-red-100 px-2 py-1 rounded">
+                            <span 
+                              className="inline-flex items-center gap-1 text-xs text-red-600 bg-red-100 px-2 py-1 rounded cursor-help"
+                              title={doc.vision_error || 'Error desconocido'}
+                            >
                               <XCircle className="h-3 w-3" />
                               Error
                             </span>
@@ -342,13 +345,34 @@ export function DocumentosClient({ documents: initialDocuments }: DocumentosClie
                               size="sm"
                               onClick={() => handleScanVision(doc.id)}
                               className="text-xs"
+                              title={doc.vision_status === 'error' ? 'Reintentar escaneo' : 'Escanear documento'}
                             >
                               <Eye className="h-3 w-3 mr-1" />
-                              Escanear
+                              {doc.vision_status === 'error' ? 'Reintentar' : 'Escanear'}
+                            </Button>
+                          )}
+                          {doc.vision_status === 'completed' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleScanVision(doc.id)}
+                              className="text-xs"
+                              title="Re-escanear documento"
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              Re-escanear
                             </Button>
                           )}
                           {doc.vision_status === 'processing' && (
                             <span className="text-xs text-blue-600">Escaneando...</span>
+                          )}
+                          {doc.vision_status === 'error' && doc.vision_error && (
+                            <span 
+                              className="text-xs text-red-600 max-w-[200px] truncate"
+                              title={doc.vision_error}
+                            >
+                              Error: {doc.vision_error}
+                            </span>
                           )}
                           {doc.file_url && (
                             <a 
