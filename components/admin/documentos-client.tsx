@@ -6,6 +6,7 @@ import { FileText, ExternalLink, CheckCircle, XCircle, Clock, Search, Filter, Ey
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { DocumentStatusUpdater } from './document-status-updater'
+import { VisionDetail } from './vision-detail'
 
 interface Document {
   id: string
@@ -364,6 +365,21 @@ export function DocumentosClient({ documents: initialDocuments }: DocumentosClie
                         </div>
                       </td>
                     </tr>
+                    {doc.vision_status === 'completed' && (
+                      <tr className="bg-muted/30">
+                        <td colSpan={9} className="p-4">
+                          <VisionDetail
+                            documentId={doc.id}
+                            documentType={doc.document_type}
+                            extractedData={doc.extracted_data}
+                            anomaliesDetected={doc.anomalies_detected}
+                            ocrText={doc.ocr_text}
+                            visionError={doc.vision_error}
+                            onRescan={handleScanVision}
+                          />
+                        </td>
+                      </tr>
+                    )}
                   ))}
                 </tbody>
               </table>
