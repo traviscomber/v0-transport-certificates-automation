@@ -7,6 +7,11 @@ export type ValidationError = {
   message: string
 }
 
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
+}
+
 export function validateChangeStatusRequest(body: any): { valid: boolean; errors: ValidationError[] } {
   const errors: ValidationError[] = []
 
@@ -78,9 +83,4 @@ export function validateEmailAlertRequest(body: any): { valid: boolean; errors: 
     valid: errors.length === 0,
     errors,
   }
-}
-
-function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email)
 }
