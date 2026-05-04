@@ -17,7 +17,7 @@ const navItems = [
   { href: '/dashboard/company/documentos', label: 'Documentos', icon: FileText },
   { href: '/admin/postulantes', label: 'Postulantes', icon: UserPlus },
   { href: '/dashboard/company/analytics/conductores', label: 'Analytics', icon: TrendingUp },
-  { href: '/dashboard/company/alertas', label: 'Alertas', icon: AlertTriangle },
+  { href: '/dashboard/company/anomalias', label: 'Alertas', icon: AlertTriangle },
   { href: '/dashboard/company/reportes', label: 'Reportes', icon: BarChart3 },
   { href: '/admin/metrics', label: 'Métricas de Usuarios', icon: Lock },
 ]
