@@ -30,14 +30,9 @@ interface Document {
 
 interface DocumentosClientProps {
   documents: Document[]
-  selectedEjecutiva?: {
-    id: string
-    nombres: string
-    apellido_paterno: string
-  }
 }
 
-export function DocumentosClient({ documents: initialDocuments, selectedEjecutiva }: DocumentosClientProps) {
+export function DocumentosClient({ documents: initialDocuments }: DocumentosClientProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'rejected' | 'pending'>('all')
   const [documents, setDocuments] = useState(initialDocuments)
