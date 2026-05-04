@@ -52,18 +52,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Create in-app notification
-    await supabase
-      .from('notifications')
-      .insert({
-        user_id: user.id,
-        type: 'anomaly_alert',
-        title: `Anomalía: ${getAnomalyTypeLabel(anomaly_type)}`,
-        message: description || 'Se detectó una anomalía en un documento',
-        data: { anomaly_id, severity },
-        read: false,
-      })
-      .then()
-      .catch((err) => console.error('[v0] Notification insert error:', err))
+    try {
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: user.id,
+          type: 'anomaly_alert',
+          title: `Anomalía: ${getAnomalyTypeLabel(anomaly_type)}`,
+          message: description || 'Se detectó una anomalía en un documento',
+          data: { anomaly_id, severity },
+          read: false,
+        })
+    } catch (notificationError) {
+      console.error('[v0] Notification insert error:', notificationError)
+      // Continue even if notification fails
+    }
 
     return NextResponse.json({
       success: true,
