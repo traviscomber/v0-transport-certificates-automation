@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { changeDocumentStatus } from '@/lib/document-status-service'
 import { verifyAuth } from '@/lib/auth-middleware'
+import { validateChangeStatusRequest } from '@/lib/validation/schemas'
 
 export async function PATCH(
   request: NextRequest,
@@ -13,18 +14,23 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { status: rawStatus, reason } = await request.json()
+    const body = await request.json()
     const documentId = params.id
 
-    if (!rawStatus) {
-      return NextResponse.json({ error: 'Missing status parameter' }, { status: 400 })
+    // Validate request body
+    const validation = validateChangeStatusRequest(body)
+    if (!validation.valid) {
+      return NextResponse.json({ 
+        error: 'Invalid request', 
+        details: validation.errors 
+      }, { status: 400 })
     }
 
     // Use centralized status change service
     const result = await changeDocumentStatus({
       documentId,
-      newStatus: rawStatus as any, // Service will validate
-      reason,
+      newStatus: body.status,
+      reason: body.reason,
       userId: user.id
     })
 
