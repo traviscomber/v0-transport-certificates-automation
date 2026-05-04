@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       const { data: subcontratista } = await adminClient
         .from('subcontratistas')
         .select('ejecutiva')
-        .eq('rut_proveedor', conductor.rut_proveedor)
+        .eq('rut', conductor.rut_proveedor)
         .single()
       
       if (subcontratista?.ejecutiva) {
