@@ -5,10 +5,11 @@ import { AnomalyWithDetails } from '@/lib/anomalies/types'
 import { AnomalyTable } from '@/components/admin/anomaly-table'
 import { AnomalyDetailDialog } from '@/components/admin/anomaly-detail-dialog'
 import { AnomalyFilters, AnomalyFilterState } from '@/components/admin/anomaly-filters'
+import { AnomalyErrorBoundary } from '@/components/admin/anomaly-error-boundary'
 import { Button } from '@/components/ui/button'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 
-export default function AnomaliesPage() {
+function AnomaliesContent() {
   const [anomalies, setAnomalies] = useState<AnomalyWithDetails[]>([])
   const [selectedAnomaly, setSelectedAnomaly] = useState<AnomalyWithDetails | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -212,5 +213,13 @@ export default function AnomaliesPage() {
         />
       )}
     </div>
+  )
+}
+
+export default function AnomaliesPage() {
+  return (
+    <AnomalyErrorBoundary>
+      <AnomaliesContent />
+    </AnomalyErrorBoundary>
   )
 }
