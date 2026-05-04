@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { FileText, ExternalLink, CheckCircle, XCircle, Clock, Search, Filter } from 'lucide-react'
+import { FileText, ExternalLink, CheckCircle, XCircle, Clock, Search, Filter, Eye } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { DocumentStatusUpdater } from './document-status-updater'
@@ -66,6 +66,53 @@ export function DocumentosClient({ documents: initialDocuments }: DocumentosClie
         doc.id === docId ? { ...doc, validation_status: newStatus } : doc
       )
     )
+  }, [])
+
+  // Handle vision scan for a document
+  const handleScanVision = useCallback(async (docId: string) => {
+    // Update local state to show processing
+    setDocuments(docs =>
+      docs.map(doc =>
+        doc.id === docId ? { ...doc, vision_status: 'processing' } : doc
+      )
+    )
+
+    try {
+      const response = await fetch('/api/vision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId: docId })
+      })
+
+      const result = await response.json()
+
+      if (response.ok && result.success) {
+        // Update local state with vision results
+        setDocuments(docs =>
+          docs.map(doc =>
+            doc.id === docId ? {
+              ...doc,
+              vision_status: 'completed',
+              document_type: result.result.document_type,
+              extracted_data: result.result,
+              anomalies_detected: result.result.anomalies || []
+            } : doc
+          )
+        )
+      } else {
+        setDocuments(docs =>
+          docs.map(doc =>
+            doc.id === docId ? { ...doc, vision_status: 'error', vision_error: result.error } : doc
+          )
+        )
+      }
+    } catch (error: any) {
+      setDocuments(docs =>
+        docs.map(doc =>
+          doc.id === docId ? { ...doc, vision_status: 'error', vision_error: error.message } : doc
+        )
+      )
+    }
   }, [])
 
   // Filter documents based on search and status
@@ -289,18 +336,32 @@ export function DocumentosClient({ documents: initialDocuments }: DocumentosClie
                         {new Date(doc.created_at).toLocaleDateString('es-CL')}
                       </td>
                       <td className="p-4 text-right">
-                        {doc.file_url ? (
-                          <a 
-                            href={doc.file_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-                          >
-                            Ver <ExternalLink className="h-3 w-3" />
-                          </a>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">-</span>
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          {doc.vision_status !== 'completed' && doc.vision_status !== 'processing' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleScanVision(doc.id)}
+                              className="text-xs"
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              Escanear
+                            </Button>
+                          )}
+                          {doc.vision_status === 'processing' && (
+                            <span className="text-xs text-blue-600">Escaneando...</span>
+                          )}
+                          {doc.file_url && (
+                            <a 
+                              href={doc.file_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                            >
+                              Ver <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
