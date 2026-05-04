@@ -150,22 +150,29 @@ export function DashboardOverview() {
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Panel de Control</h1>
-        <p className="text-muted-foreground mt-2">Gestión inteligente de certificados y documentos de transporte</p>
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="space-y-3">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">
+            Control Operacional
+          </h1>
+        </div>
+        <p className="text-sm md:text-base text-muted-foreground">
+          Documentos, conductores, subcontratistas y alertas en tiempo real.
+        </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Stats Grid - Responsive */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <stat.icon className={`h-4 w-4 ${getStatIconColor(stat.title)}`} />
+          <Card key={stat.title} className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-700 hover:border-orange-500/50 transition-all">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+              <stat.icon className={`h-5 w-5 ${getStatIconColor(stat.title)}`} />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
+            <CardContent className="space-y-2">
+              <div className="text-3xl font-bold text-foreground">{stat.value}</div>
               <p className="text-xs text-muted-foreground">{stat.description}</p>
             </CardContent>
           </Card>
@@ -174,32 +181,34 @@ export function DashboardOverview() {
 
       {/* Recent Alerts */}
       {alerts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Alertas Recientes</CardTitle>
-            <CardDescription>Últimas alertas del sistema - {alerts.length} total</CardDescription>
+        <Card className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-700">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xl">Alertas Recientes</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Últimas alertas del sistema - {alerts.length} total
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {alerts.slice(0, 10).map((alert) => (
-                <div key={alert.id} className="flex items-start justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-start space-x-3 flex-1">
-                    <div className="mt-0.5">{getStatusIcon(alert.type)}</div>
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{alert.title}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{alert.message}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(alert.created_at).toLocaleDateString('es-ES', { 
-                          year: 'numeric', 
-                          month: 'short', 
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
+                <div key={alert.id} className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 p-4 border border-slate-700 rounded-lg hover:bg-slate-800/50 hover:border-orange-500/30 transition-all">
+                  <div className="flex items-start space-x-3 flex-1 min-w-0">
+                    <div className="mt-0.5 flex-shrink-0">{getStatusIcon(alert.type)}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm text-foreground">{alert.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{alert.message}</p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {new Date(alert.created_at).toLocaleDateString("es-ES", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
                         })}
                       </p>
                     </div>
                   </div>
-                  <div className="ml-4">{getStatusBadge(alert.type)}</div>
+                  <div className="flex-shrink-0">{getStatusBadge(alert.type)}</div>
                 </div>
               ))}
             </div>
