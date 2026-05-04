@@ -104,7 +104,8 @@ export async function POST(request: NextRequest) {
       original_filename: originalFilename || file.name,
       file_url: publicUrl,
       storage_path: filePath,
-      validation_status: 'pending'
+      validation_status: 'pending',
+      vision_status: 'pending'
     }
     
     // Add document_type_id if provided
