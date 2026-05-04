@@ -23,7 +23,11 @@ export function DocumentStatusUpdater({
   onStatusChange,
 }: DocumentStatusUpdaterProps) {
   const [localStatus, setLocalStatus] = useState(currentStatus)
-  const { state, actions } = useDocumentStatusChange()
+  const { state, actions } = useDocumentStatusChange(documentId, (result) => {
+    if (result.success) {
+      onStatusChange(result.newStatus as any)
+    }
+  })
 
   const getStatusColor = (status: string) => {
     switch (status) {
