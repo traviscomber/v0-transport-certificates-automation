@@ -14,6 +14,7 @@ interface Document {
   validation_status: 'approved' | 'rejected' | 'pending'
   file_url?: string
   created_at: string
+  ejecutiva?: string
   conductores: {
     id: string
     nombres: string
