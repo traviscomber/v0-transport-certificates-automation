@@ -60,7 +60,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
                 )}
               >
                 <Icon className="h-4 w-4 flex-shrink-0" />
-                <span className="text-white">{item.label}</span>
+                <span className="hidden sm:inline text-white">{item.label}</span>
               </button>
             </Link>
           )
@@ -75,7 +75,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
           onClick={handleLogout}
         >
           <LogOut className="mr-2 h-4 w-4 flex-shrink-0" />
-          <span>Cerrar Sesión</span>
+          <span className="hidden sm:inline">Cerrar Sesión</span>
         </Button>
       </div>
     </>
