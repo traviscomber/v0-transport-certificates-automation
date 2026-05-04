@@ -24,6 +24,8 @@ import {
   Zap,
   TrendingUp,
   Camera,
+  Bell,
+  X,
 } from "lucide-react"
 
 const navigationGroups = [
@@ -221,8 +223,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const NavigationContent = () => (
     <div className="flex h-full flex-col">
-      <div className="flex h-16 items-center px-6 border-b">
-        <h1 className="text-xl font-bold text-primary">Cleaner.cl</h1>
+      <div className="flex h-16 items-center px-6 border-b bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900">
+        <h1 className="text-lg font-bold text-white">Transportes Labbé</h1>
       </div>
       <nav className="flex-1 space-y-2 px-3 py-4 overflow-y-auto">
         {navigationGroups.map((group) => (
@@ -242,6 +244,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     key={item.name}
                     href={item.href}
                     className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                    onClick={() => setSidebarOpen(false)}
                   >
                     <item.icon className="mr-3 h-4 w-4" />
                     {item.name}
@@ -252,8 +255,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         ))}
       </nav>
-      <div className="border-t p-4">
-        <Button variant="ghost" className="w-full justify-start" onClick={handleLogout}>
+      <div className="border-t p-4 space-y-2">
+        <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide px-2">Usuario</div>
+        {isMounted && (
+          <div className="px-3 py-2 bg-accent/50 rounded-md mb-3">
+            <p className="text-sm font-medium text-foreground truncate">{getUserDisplayName()}</p>
+            {userProfile?.email && (
+              <p className="text-xs text-muted-foreground truncate">{userProfile.email}</p>
+            )}
+            {userProfile?.role && (
+              <p className="text-xs text-muted-foreground capitalize">{userProfile.role}</p>
+            )}
+          </div>
+        )}
+        <Button variant="ghost" className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50" onClick={handleLogout}>
           <LogOut className="mr-3 h-5 w-5" />
           Cerrar Sesión
         </Button>
@@ -264,55 +279,68 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        {/* Mobile sidebar */}
-        <SheetContent side="left" className="w-64 p-0">
+        {/* Mobile sidebar drawer */}
+        <SheetContent side="left" className="w-64 p-0 sm:w-80">
           <NavigationContent />
         </SheetContent>
 
-        {/* Main content */}
-        <div className="lg:pl-64">
-          <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-background px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" className="lg:hidden">
-                <Menu className="h-6 w-6" />
-              </Button>
-            </SheetTrigger>
+        {/* Main layout */}
+        <div className="flex flex-col md:flex-row min-h-screen">
+          {/* Desktop sidebar - fixed on desktop, hidden on mobile/tablet */}
+          <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
+            <div className="flex flex-col flex-grow bg-card border-r border-border">
+              <NavigationContent />
+            </div>
+          </div>
 
-            <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-              <div className="flex flex-1"></div>
-              <div className="flex items-center gap-x-4 lg:gap-x-6">
-                {/* Only show user info when mounted to avoid hydration mismatch */}
-                {isMounted ? (
-                  <div className="flex flex-col items-end text-sm">
-                    <span className="font-medium text-foreground">
-                      Bienvenido, {loading ? "Cargando..." : getUserDisplayName()}
+          {/* Main content area */}
+          <div className="flex flex-col flex-1 lg:pl-64">
+            {/* Header */}
+            <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-2 md:gap-x-4 border-b border-border bg-background px-3 md:px-6 shadow-sm">
+              {/* Mobile menu button */}
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="lg:hidden">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+
+              {/* Brand info */}
+              <div className="flex flex-col flex-1 min-w-0">
+                <h1 className="text-lg md:text-xl font-bold text-foreground truncate">Transportes Labbé</h1>
+                <p className="text-xs md:text-sm text-muted-foreground truncate">Portal de Empresa</p>
+              </div>
+
+              {/* Right section - alerts and user */}
+              <div className="flex items-center gap-2 md:gap-4">
+                {/* Alerts bell */}
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="h-5 w-5" />
+                  <span className="absolute top-1 right-1 h-2 w-2 bg-orange-500 rounded-full"></span>
+                </Button>
+
+                {/* User info - hidden on mobile */}
+                {isMounted && (
+                  <div className="hidden md:flex flex-col items-end text-sm min-w-0">
+                    <span className="font-medium text-foreground truncate">
+                      {loading ? "Cargando..." : getUserDisplayName()}
                     </span>
-                    {userProfile?.email && (
-                      <span className="text-xs text-muted-foreground">{userProfile.email}</span>
-                    )}
                     {userProfile?.role && (
                       <span className="text-xs text-muted-foreground capitalize">{userProfile.role}</span>
                     )}
                   </div>
-                ) : (
-                  <span className="text-sm font-medium text-foreground">Bienvenido</span>
                 )}
               </div>
-            </div>
-          </div>
+            </header>
 
-          <main className="py-8">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">{children}</div>
-          </main>
+            {/* Main content */}
+            <main className="flex-1 overflow-y-auto py-6 md:py-8">
+              <div className="mx-auto w-full max-w-7xl px-3 md:px-6 lg:px-8">
+                {children}
+              </div>
+            </main>
+          </div>
         </div>
       </Sheet>
-
-      {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-grow bg-card border-r border-border">
-          <NavigationContent />
-        </div>
-      </div>
     </div>
   )
 }

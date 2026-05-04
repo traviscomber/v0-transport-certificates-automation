@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { FileText, ExternalLink, CheckCircle, XCircle, Clock, Search, Filter } from 'lucide-react'
+import { FileText, ExternalLink, CheckCircle, XCircle, Clock, Search, Filter, Eye } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { DocumentStatusUpdater } from './document-status-updater'
+import { VisionResultsDialog } from './vision-results-dialog'
 
 interface Document {
   id: string
@@ -14,6 +15,14 @@ interface Document {
   validation_status: 'approved' | 'rejected' | 'pending'
   file_url?: string
   created_at: string
+  ejecutiva?: string
+  vision_status?: 'pending' | 'processing' | 'completed' | 'error'
+  document_type?: string
+  extracted_data?: any
+  validation_result?: any
+  anomalies_detected?: string[]
+  ocr_text?: string
+  vision_error?: string
   conductores: {
     id: string
     nombres: string
@@ -29,17 +38,17 @@ interface Document {
 
 interface DocumentosClientProps {
   documents: Document[]
-  selectedEjecutiva?: {
-    id: string
-    nombres: string
-    apellido_paterno: string
-  }
 }
 
-export function DocumentosClient({ documents: initialDocuments, selectedEjecutiva }: DocumentosClientProps) {
+export function DocumentosClient({ documents: initialDocuments }: DocumentosClientProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'rejected' | 'pending'>('all')
   const [documents, setDocuments] = useState(initialDocuments)
+
+  // Update documents when initialDocuments changes (e.g., after page refresh from upload)
+  useEffect(() => {
+    setDocuments(initialDocuments)
+  }, [initialDocuments])
 
   // Helper to get conductor data from either object or array
   const getConductor = (conductores: any) => {
@@ -57,6 +66,53 @@ export function DocumentosClient({ documents: initialDocuments, selectedEjecutiv
         doc.id === docId ? { ...doc, validation_status: newStatus } : doc
       )
     )
+  }, [])
+
+  // Handle vision scan for a document
+  const handleScanVision = useCallback(async (docId: string) => {
+    // Update local state to show processing
+    setDocuments(docs =>
+      docs.map(doc =>
+        doc.id === docId ? { ...doc, vision_status: 'processing' } : doc
+      )
+    )
+
+    try {
+      const response = await fetch('/api/vision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId: docId })
+      })
+
+      const result = await response.json()
+
+      if (response.ok && result.success) {
+        // Update local state with vision results
+        setDocuments(docs =>
+          docs.map(doc =>
+            doc.id === docId ? {
+              ...doc,
+              vision_status: 'completed',
+              document_type: result.result.document_type,
+              extracted_data: result.result,
+              anomalies_detected: result.result.anomalies || []
+            } : doc
+          )
+        )
+      } else {
+        setDocuments(docs =>
+          docs.map(doc =>
+            doc.id === docId ? { ...doc, vision_status: 'error', vision_error: result.error } : doc
+          )
+        )
+      }
+    } catch (error: any) {
+      setDocuments(docs =>
+        docs.map(doc =>
+          doc.id === docId ? { ...doc, vision_status: 'error', vision_error: error.message } : doc
+        )
+      )
+    }
   }, [])
 
   // Filter documents based on search and status
@@ -183,8 +239,6 @@ export function DocumentosClient({ documents: initialDocuments, selectedEjecutiv
             <p className="text-muted-foreground text-center">
               {searchQuery || statusFilter !== 'all' 
                 ? 'No se encontraron documentos que coincidan con tu búsqueda'
-                : selectedEjecutiva 
-                ? `No hay documentos para ${selectedEjecutiva.nombres}`
                 : 'No hay documentos cargados'}
             </p>
           </CardContent>
@@ -199,6 +253,9 @@ export function DocumentosClient({ documents: initialDocuments, selectedEjecutiv
                     <th className="text-left p-4 font-medium">Documento</th>
                     <th className="text-left p-4 font-medium">Conductor</th>
                     <th className="text-left p-4 font-medium">RUT</th>
+                    <th className="text-left p-4 font-medium">Ejecutiva</th>
+                    <th className="text-left p-4 font-medium">Tipo</th>
+                    <th className="text-left p-4 font-medium">Visión</th>
                     <th className="text-left p-4 font-medium">Estado</th>
                     <th className="text-left p-4 font-medium">Fecha</th>
                     <th className="text-right p-4 font-medium">Acción</th>
@@ -229,6 +286,59 @@ export function DocumentosClient({ documents: initialDocuments, selectedEjecutiv
                           return conductor.rut || '-'
                         })()}
                       </td>
+                      <td className="p-4 text-sm font-medium">
+                        {doc.ejecutiva || '-'}
+                      </td>
+                      <td className="p-4 text-sm">
+                        <span className="inline-block px-2 py-1 rounded bg-blue-100 text-blue-800 text-xs font-medium">
+                          {doc.document_type || 'Desconocido'}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          {doc.vision_status === 'completed' && (
+                            <>
+                              <span className="inline-flex items-center gap-1 text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                                <CheckCircle className="h-3 w-3" />
+                                Listo
+                              </span>
+                              <VisionResultsDialog
+                                documentType={doc.document_type}
+                                extractedData={doc.extracted_data}
+                                anomaliesDetected={doc.anomalies_detected}
+                                ocrText={doc.ocr_text}
+                              />
+                            </>
+                          )}
+                          {doc.vision_status === 'pending' && (
+                            <span className="inline-flex items-center gap-1 text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded">
+                              <Clock className="h-3 w-3" />
+                              Pendiente
+                            </span>
+                          )}
+                          {doc.vision_status === 'processing' && (
+                            <span className="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                              <Clock className="h-3 w-3" />
+                              Procesando
+                            </span>
+                          )}
+                          {doc.vision_status === 'error' && (
+                            <>
+                              <span 
+                                className="inline-flex items-center gap-1 text-xs text-red-600 bg-red-100 px-2 py-1 rounded cursor-help"
+                                title={doc.vision_error || 'Error desconocido'}
+                              >
+                                <XCircle className="h-3 w-3" />
+                                Error
+                              </span>
+                              <VisionResultsDialog visionError={doc.vision_error} />
+                            </>
+                          )}
+                          {!doc.vision_status && (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
+                        </div>
+                      </td>
                       <td className="p-4">
                         <DocumentStatusUpdater
                           documentId={doc.id}
@@ -240,18 +350,53 @@ export function DocumentosClient({ documents: initialDocuments, selectedEjecutiv
                         {new Date(doc.created_at).toLocaleDateString('es-CL')}
                       </td>
                       <td className="p-4 text-right">
-                        {doc.file_url ? (
-                          <a 
-                            href={doc.file_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-                          >
-                            Ver <ExternalLink className="h-3 w-3" />
-                          </a>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">-</span>
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          {doc.vision_status !== 'completed' && doc.vision_status !== 'processing' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleScanVision(doc.id)}
+                              className="text-xs"
+                              title={doc.vision_status === 'error' ? 'Reintentar escaneo' : 'Escanear documento'}
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              {doc.vision_status === 'error' ? 'Reintentar' : 'Escanear'}
+                            </Button>
+                          )}
+                          {doc.vision_status === 'completed' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleScanVision(doc.id)}
+                              className="text-xs"
+                              title="Re-escanear documento"
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              Re-escanear
+                            </Button>
+                          )}
+                          {doc.vision_status === 'processing' && (
+                            <span className="text-xs text-blue-600">Escaneando...</span>
+                          )}
+                          {doc.vision_status === 'error' && doc.vision_error && (
+                            <span 
+                              className="text-xs text-red-600 max-w-[200px] truncate"
+                              title={doc.vision_error}
+                            >
+                              Error: {doc.vision_error}
+                            </span>
+                          )}
+                          {doc.file_url && (
+                            <a 
+                              href={doc.file_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                            >
+                              Ver <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

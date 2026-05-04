@@ -6,8 +6,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Upload, X, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
 
 interface Conductor {
   id: string
@@ -26,24 +24,25 @@ interface UploadingFile {
   conductorId?: string
 }
 
-export function DocumentosUpload({ conductores }: { conductores: Conductor[] }) {
+export function DocumentosUpload({ conductores, onUploadSuccess }: { conductores: Conductor[], onUploadSuccess?: () => void }) {
   const [files, setFiles] = useState<UploadingFile[]>([])
-  const [selectedConductor, setSelectedConductor] = useState<string>("")
+  const [selectedConductor, setSelectedConductor] = useState<string>(conductores[0]?.id || "")
   const [isUploading, setIsUploading] = useState(false)
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
-      if (!selectedConductor) {
-        alert("Por favor selecciona una ejecutiva primero")
+      if (!selectedConductor && !conductores[0]) {
+        alert("No hay conductores disponibles")
         return
       }
 
+      const conductorToUse = selectedConductor || conductores[0]?.id
       const newFiles: UploadingFile[] = acceptedFiles.map((file) => ({
         file,
         id: Math.random().toString(36).substr(2, 9),
         progress: 0,
         status: "analyzing" as const,
-        conductorId: selectedConductor,
+        conductorId: conductorToUse,
       }))
 
       setFiles((prev) => [...prev, ...newFiles])
@@ -54,7 +53,7 @@ export function DocumentosUpload({ conductores }: { conductores: Conductor[] }) 
           // Step 1: Detect document type
           const formData = new FormData()
           formData.append("file", uploadFile.file)
-          formData.append("conductor_id", selectedConductor)
+          formData.append("conductor_id", conductorToUse)
 
           const detectResponse = await fetch("/api/detect-document-type", {
             method: "POST",
@@ -117,6 +116,11 @@ export function DocumentosUpload({ conductores }: { conductores: Conductor[] }) 
                 : f
             )
           )
+          
+          // Call success callback
+          if (onUploadSuccess) {
+            onUploadSuccess()
+          }
         } catch (error) {
           setFiles((prev) =>
             prev.map((f) =>
@@ -148,35 +152,10 @@ export function DocumentosUpload({ conductores }: { conductores: Conductor[] }) 
 
   return (
     <div className="space-y-6">
-      {/* Conductor Selector */}
-      <Card>
-        <CardContent className="pt-6">
-          <Label htmlFor="conductor">Selecciona Ejecutiva</Label>
-          <Select value={selectedConductor} onValueChange={setSelectedConductor}>
-            <SelectTrigger id="conductor" className="mt-2">
-              <SelectValue placeholder="Elige una ejecutiva..." />
-            </SelectTrigger>
-            <SelectContent>
-              {conductores.map((conductor) => (
-                <SelectItem key={conductor.id} value={conductor.id}>
-                  {conductor.nombres} {conductor.apellido_paterno}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
-
       {/* Drag & Drop Zone */}
       <div
         {...getRootProps()}
-        className={`relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-          isDragActive
-            ? "border-primary bg-primary/5"
-            : selectedConductor
-              ? "border-muted-foreground hover:border-primary"
-              : "border-muted opacity-50 cursor-not-allowed"
-        }`}
+        className={`relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors border-muted-foreground hover:border-primary`}
       >
         <input {...getInputProps()} />
         <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -186,11 +165,6 @@ export function DocumentosUpload({ conductores }: { conductores: Conductor[] }) 
         <p className="text-sm text-muted-foreground mt-1">
           Soporta PDF, imágenes y documentos office
         </p>
-        {!selectedConductor && (
-          <p className="text-sm text-amber-600 mt-2">
-            Selecciona una ejecutiva para subir documentos
-          </p>
-        )}
       </div>
 
       {/* Uploaded Files List */}

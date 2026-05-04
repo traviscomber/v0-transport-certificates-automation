@@ -90,7 +90,7 @@ export default async function DocumentosPage({ searchParams }: { searchParams: R
       <DocumentosUpload conductores={ejecutivas} />
 
       {/* Documents List - Client Component */}
-      <DocumentosClient documents={documentos} selectedEjecutiva={selectedEjecutiva} />
+      <DocumentosClient documents={documentos} />
     </div>
   )
 }
