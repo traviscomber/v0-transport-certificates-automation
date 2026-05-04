@@ -38,7 +38,6 @@ async function getConductorDocuments(conductorId: string) {
       validation_status,
       rejection_reason,
       file_url,
-      storage_path,
       created_at,
       document_types (
         id,
