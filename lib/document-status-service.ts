@@ -52,6 +52,16 @@ function isValidStatusTransition(from: string, to: DocumentStatus): boolean {
 }
 
 /**
+ * Validates a status value and normalizes it
+ * Returns the valid status or null if invalid
+ */
+export function validateStatus(status: any): DocumentStatus | null {
+  const normalized = normalizeStatus(status)
+  if (!normalized) return null
+  return normalized
+}
+
+/**
  * Normalizes status input to standard format
  */
 function normalizeStatus(input: string): DocumentStatus | null {
