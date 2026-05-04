@@ -20,16 +20,13 @@ export default function EjecutivasFilterClient({ ejecutivas, selectedEjecutiva }
   const searchParams = useSearchParams()
 
   const handleSelect = (ejecutiva: string) => {
-    console.log('[v0] Filter clicked:', ejecutiva)
     const params = new URLSearchParams(searchParams)
     params.set('ejecutiva', ejecutiva)
     const newUrl = `/dashboard/company/documentos?${params.toString()}`
-    console.log('[v0] Pushing to:', newUrl)
     router.push(newUrl)
   }
 
   const handleClear = () => {
-    console.log('[v0] Clear filter clicked')
     router.push('/dashboard/company/documentos')
   }
 

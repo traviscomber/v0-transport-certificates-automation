@@ -102,14 +102,12 @@ async function getConductores(ejecutiva?: string) {
 
 export default async function DocumentosPage({ searchParams }: { searchParams: Record<string, string | string[]> }) {
   const selectedEjecutiva = typeof searchParams.ejecutiva === 'string' ? searchParams.ejecutiva : undefined
-  console.log('[v0] Page searchParams:', searchParams)
-  console.log('[v0] Page selectedEjecutiva:', selectedEjecutiva)
   const documentos = await getDocumentos(selectedEjecutiva)
   const ejecutivas = await getEjecutivas()
   const conductores = await getConductores(selectedEjecutiva)
 
   return (
-    <div className="space-y-6" suppressHydrationWarning>
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Documentos</h1>
         <p className="text-muted-foreground">
