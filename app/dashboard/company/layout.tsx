@@ -38,12 +38,12 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
 
   const SidebarContent = () => (
     <>
-      <div className="p-4 md:p-6 border-b bg-white shadow-sm">
-        <h2 className="text-lg md:text-xl font-bold text-slate-900">Transportes Labbé</h2>
-        <p className="text-xs md:text-sm text-slate-600 mt-1">Portal de Empresa</p>
+      <div className="p-4 md:p-6 border-b bg-slate-900/80 shadow-sm">
+        <h2 className="text-lg md:text-xl font-bold text-white">Transportes Labbé</h2>
+        <p className="text-xs md:text-sm text-slate-300 mt-1">Portal de Empresa</p>
       </div>
 
-      <nav className="p-3 md:p-4 space-y-1 flex-1 overflow-y-auto">
+      <nav className="p-3 md:p-4 space-y-1 flex-1 overflow-y-auto bg-slate-900/60">
         {navItems.map(item => {
           const Icon = item.icon
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
@@ -56,7 +56,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
                   'w-full flex items-center gap-3 px-3 md:px-4 py-2 rounded-lg text-sm font-medium transition-colors',
                   isActive
                     ? 'bg-orange-500 text-white'
-                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                    : 'text-white hover:bg-slate-800/50 hover:text-white'
                 )}
               >
                 <Icon className="h-4 w-4 flex-shrink-0" />
@@ -67,11 +67,11 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
         })}
       </nav>
 
-      <div className="p-3 md:p-4 border-t">
+      <div className="p-3 md:p-4 border-t border-slate-700 bg-slate-900/60">
         <Button 
           variant="outline" 
           size="sm" 
-          className="w-full justify-start"
+          className="w-full justify-start text-white border-slate-600 hover:bg-slate-800 hover:text-white"
           onClick={handleLogout}
         >
           <LogOut className="mr-2 h-4 w-4 flex-shrink-0" />
