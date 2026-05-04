@@ -1,6 +1,14 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
+import {
+  validateChileanRUT,
+  validateChileanLicensePlate,
+  validateExpirationDate,
+  validateLicenseClass,
+  detectCommonAnomalies,
+  calculateConfidenceScore,
+} from "@/lib/validators/chilean-documents"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
@@ -118,6 +126,62 @@ Responde SIEMPRE en JSON válido.`
 
     const visionData = JSON.parse(jsonMatch[0])
 
+    // Apply Chilean document validators
+    let additionalAnomalies: string[] = [...(visionData.anomalies || [])]
+    let documentQuality: "high" | "medium" | "low" = "high"
+
+    // Validate RUT if present
+    if (visionData.person_rut) {
+      const rutValidation = validateChileanRUT(visionData.person_rut)
+      if (!rutValidation.valid) {
+        additionalAnomalies.push(`❌ ${rutValidation.error}`)
+        documentQuality = "medium"
+      }
+    }
+
+    // Validate license plate if present
+    if (visionData.key_data?.patente || visionData.key_data?.license_plate) {
+      const plate = visionData.key_data.patente || visionData.key_data.license_plate
+      const plateValidation = validateChileanLicensePlate(plate)
+      if (!plateValidation.valid) {
+        additionalAnomalies.push(`❌ ${plateValidation.error}`)
+      }
+    }
+
+    // Validate expiration date if present
+    if (visionData.dates?.expiry_date) {
+      const dateValidation = validateExpirationDate(visionData.dates.expiry_date)
+      if (!dateValidation.valid) {
+        additionalAnomalies.push(`⚠️ ${dateValidation.error}`)
+        documentQuality = "low"
+      } else if (
+        dateValidation.daysUntilExpiration !== undefined &&
+        dateValidation.daysUntilExpiration < 30
+      ) {
+        additionalAnomalies.push(`⚠️ Próximo a vencer en ${dateValidation.daysUntilExpiration} días`)
+      }
+    }
+
+    // Validate license classes if present
+    if (visionData.key_data?.license_classes) {
+      const classes = Array.isArray(visionData.key_data.license_classes)
+        ? visionData.key_data.license_classes
+        : [visionData.key_data.license_classes]
+
+      for (const cls of classes) {
+        const classValidation = validateLicenseClass(cls)
+        if (!classValidation.valid) {
+          additionalAnomalies.push(`❌ ${classValidation.error}`)
+        }
+      }
+    }
+
+    // Calculate confidence score based on anomalies and quality
+    const { score: confidenceScore, level: confidenceLevel } = calculateConfidenceScore(
+      additionalAnomalies,
+      documentQuality
+    )
+
     // Update document with vision results
     const { error: updateError } = await supabase
       .from("uploaded_documents")
@@ -131,10 +195,18 @@ Responde SIEMPRE en JSON válido.`
           is_expired: visionData.is_expired,
           days_until_expiry: visionData.days_until_expiry,
           key_data: visionData.key_data,
-          confidence: visionData.confidence
+          confidence: visionData.confidence,
+          confidence_score: confidenceScore,
+          confidence_level: confidenceLevel,
+          document_quality: documentQuality,
         },
-        validation_result: visionData.validation,
-        anomalies_detected: visionData.anomalies || [],
+        validation_result: {
+          ...visionData.validation,
+          additional_validators_applied: true,
+          confidence_score: confidenceScore,
+          confidence_level: confidenceLevel,
+        },
+        anomalies_detected: additionalAnomalies,
         ocr_text: visionData.ocr_text,
         vision_processed_at: new Date().toISOString(),
         vision_error: null
