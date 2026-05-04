@@ -23,7 +23,7 @@ export function DocumentStatusUpdater({
   onStatusChange,
 }: DocumentStatusUpdaterProps) {
   const [localStatus, setLocalStatus] = useState(currentStatus)
-  const { changeStatus, isLoading, error } = useDocumentStatusChange()
+  const { state, actions } = useDocumentStatusChange()
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -69,7 +69,7 @@ export function DocumentStatusUpdater({
     if (status === localStatus) return
 
     try {
-      const result = await changeStatus(documentId, status)
+      const result = await actions.changeStatus(status)
       
       if (result.success) {
         setLocalStatus(status)
@@ -83,7 +83,7 @@ export function DocumentStatusUpdater({
   }
 
   return (
-    <Select value={localStatus} onValueChange={handleStatusUpdate} disabled={isLoading}>
+    <Select value={localStatus} onValueChange={handleStatusUpdate} disabled={state.loading}>
       <SelectTrigger className="w-[130px]">
         <SelectValue />
       </SelectTrigger>
