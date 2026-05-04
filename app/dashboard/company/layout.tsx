@@ -97,18 +97,18 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="border-b bg-card px-3 md:px-6 py-3 md:py-4 flex items-center justify-between gap-4 sticky top-0 z-30">
+          <div className="border-b border-slate-200 bg-white px-3 md:px-6 py-3 md:py-4 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-sm">
             {/* Mobile menu button */}
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
+              <Button variant="ghost" size="icon" className="md:hidden text-slate-700 hover:bg-slate-100">
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
 
             {/* Brand info - Mobile */}
             <div className="flex-1 md:hidden min-w-0">
-              <h1 className="text-sm font-bold text-foreground truncate">Transportes Labbé</h1>
-              <p className="text-xs text-muted-foreground truncate">Portal de Empresa</p>
+              <h1 className="text-sm font-bold text-slate-900 truncate">Transportes Labbé</h1>
+              <p className="text-xs text-slate-600 truncate">Portal de Empresa</p>
             </div>
 
             {/* Right side - Notifications and close button */}
