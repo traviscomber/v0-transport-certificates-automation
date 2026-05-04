@@ -187,10 +187,13 @@ export async function changeDocumentStatus(
       }
 
       // Try to insert audit log, but don't fail if it doesn't exist yet
-      await adminClient
-        .from('document_status_audit_log')
-        .insert(auditLog)
-        .catch(err => console.warn('[v0] Audit log insert failed (table may not exist):', err.message))
+      try {
+        await adminClient
+          .from('document_status_audit_log')
+          .insert(auditLog)
+      } catch (insertError) {
+        console.warn('[v0] Audit log insert failed (table may not exist):', insertError)
+      }
     } catch (auditError) {
       console.warn('[v0] Audit logging failed:', auditError)
     }
