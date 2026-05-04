@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useDocumentStatusChange } from '@/hooks/use-document-status-change'
 import {
   Select,
@@ -23,11 +23,12 @@ export function DocumentStatusUpdater({
   onStatusChange,
 }: DocumentStatusUpdaterProps) {
   const [localStatus, setLocalStatus] = useState(currentStatus)
-  const { state, actions } = useDocumentStatusChange(documentId, (result) => {
-    if (result.success) {
-      onStatusChange(result.newStatus as any)
-    }
-  })
+  const [mounted, setMounted] = useState(false)
+  const { state, actions } = useDocumentStatusChange(documentId)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -84,6 +85,10 @@ export function DocumentStatusUpdater({
     } catch (err) {
       console.error('[v0] Error changing status:', err)
     }
+  }
+
+  if (!mounted) {
+    return null
   }
 
   return (
