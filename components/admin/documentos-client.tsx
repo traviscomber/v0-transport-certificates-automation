@@ -47,7 +47,6 @@ export function DocumentosClient({ documents: initialDocuments }: DocumentosClie
 
   // Update documents when initialDocuments changes (e.g., after page refresh from upload)
   useEffect(() => {
-    console.log('[v0] DocumentosClient: initialDocuments changed, updating state with', initialDocuments.length, 'documents')
     setDocuments(initialDocuments)
   }, [initialDocuments])
 
