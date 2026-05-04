@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useDocumentStatusChange } from '@/hooks/use-document-status-change'
 import {
   Select,
   SelectContent,
@@ -21,8 +22,8 @@ export function DocumentStatusUpdater({
   currentStatus,
   onStatusChange,
 }: DocumentStatusUpdaterProps) {
-  const [isUpdating, setIsUpdating] = useState(false)
   const [localStatus, setLocalStatus] = useState(currentStatus)
+  const { changeStatus, isLoading, error } = useDocumentStatusChange()
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -68,46 +69,21 @@ export function DocumentStatusUpdater({
     if (status === localStatus) return
 
     try {
-      setIsUpdating(true)
+      const result = await changeStatus(documentId, status)
       
-      // Step 1: Update status in API
-      const response = await fetch(`/api/documents/${documentId}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ validation_status: status }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to update document status')
-      }
-
-      // Step 2: Verify the update by refetching the document
-      const verifyResponse = await fetch(`/api/documents/${documentId}`)
-      if (verifyResponse.ok) {
-        const verifiedData = await verifyResponse.json()
-        // Confirm the status was actually updated in the database
-        if (verifiedData.validation_status === status) {
-          setLocalStatus(status)
-          onStatusChange(status)
-        } else {
-          // If verification failed, force a page reload to get fresh data
-          setTimeout(() => {
-            window.location.reload()
-          }, 1000)
-        }
-      } else {
+      if (result.success) {
         setLocalStatus(status)
         onStatusChange(status)
+      } else {
+        console.error('[v0] Status change failed:', result.message)
       }
-    } catch (error) {
-      // Silent error handling - state remains unchanged
-    } finally {
-      setIsUpdating(false)
+    } catch (err) {
+      console.error('[v0] Error changing status:', err)
     }
   }
 
   return (
-    <Select value={localStatus} onValueChange={handleStatusUpdate} disabled={isUpdating}>
+    <Select value={localStatus} onValueChange={handleStatusUpdate} disabled={isLoading}>
       <SelectTrigger className="w-[130px]">
         <SelectValue />
       </SelectTrigger>
