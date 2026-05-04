@@ -13,7 +13,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateDocumentStatusChangeAlert } from '@/lib/document-alerts-generator'
 
-export type DocumentStatus = 'approved' | 'rejected' | 'pending' | 'expired'
+export type DocumentStatus = 'approved' | 'rejected' | 'pending'
 
 export interface DocumentStatusChangeRequest {
   documentId: string
