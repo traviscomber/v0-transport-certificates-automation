@@ -185,8 +185,6 @@ export function DocumentosClient({ documents: initialDocuments }: DocumentosClie
             <p className="text-muted-foreground text-center">
               {searchQuery || statusFilter !== 'all' 
                 ? 'No se encontraron documentos que coincidan con tu búsqueda'
-                : selectedEjecutiva 
-                ? `No hay documentos para ${selectedEjecutiva.nombres}`
                 : 'No hay documentos cargados'}
             </p>
           </CardContent>
