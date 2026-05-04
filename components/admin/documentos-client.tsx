@@ -205,6 +205,7 @@ export function DocumentosClient({ documents: initialDocuments, selectedEjecutiv
                     <th className="text-left p-4 font-medium">Documento</th>
                     <th className="text-left p-4 font-medium">Conductor</th>
                     <th className="text-left p-4 font-medium">RUT</th>
+                    <th className="text-left p-4 font-medium">Ejecutiva</th>
                     <th className="text-left p-4 font-medium">Estado</th>
                     <th className="text-left p-4 font-medium">Fecha</th>
                     <th className="text-right p-4 font-medium">Acción</th>
@@ -234,6 +235,9 @@ export function DocumentosClient({ documents: initialDocuments, selectedEjecutiv
                           const conductor = getConductor(doc.conductores)
                           return conductor.rut || '-'
                         })()}
+                      </td>
+                      <td className="p-4 text-sm font-medium">
+                        {doc.ejecutiva || '-'}
                       </td>
                       <td className="p-4">
                         <DocumentStatusUpdater
