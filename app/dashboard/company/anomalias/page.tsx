@@ -13,17 +13,26 @@ export default function AnomaliesPage() {
   const [selectedAnomaly, setSelectedAnomaly] = useState<AnomalyWithDetails | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [filters, setFilters] = useState<AnomalyFilterState>({})
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [limit] = useState(25)
+  const [mounted, setMounted] = useState(false)
+
+  // Initialize only on client
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
+    if (!mounted) return
     fetchAnomalies()
-  }, [filters, page])
+  }, [filters, page, mounted])
 
   const fetchAnomalies = async () => {
     setLoading(true)
+    setError(null)
     try {
       const params = new URLSearchParams()
       if (filters.severity) params.append('severity', filters.severity)
@@ -37,8 +46,9 @@ export default function AnomaliesPage() {
       const data = await response.json()
       setAnomalies(data.anomalies || [])
       setTotal(data.total || 0)
-    } catch (error) {
-      console.error('[v0] Error fetching anomalies:', error)
+    } catch (err) {
+      console.error('[v0] Error fetching anomalies:', err)
+      setError(err instanceof Error ? err.message : 'Error al cargar anomalías')
     } finally {
       setLoading(false)
     }
@@ -82,6 +92,8 @@ export default function AnomaliesPage() {
         })
       }
 
+      setDialogOpen(false)
+      setSelectedAnomaly(null)
       // Refresh the list
       fetchAnomalies()
     } catch (error) {
@@ -92,6 +104,10 @@ export default function AnomaliesPage() {
   const handleFilterChange = (newFilters: AnomalyFilterState) => {
     setFilters(newFilters)
     setPage(1)
+  }
+
+  if (!mounted) {
+    return null
   }
 
   const totalPages = Math.ceil(total / limit)
@@ -125,6 +141,12 @@ export default function AnomaliesPage() {
           Actualizar
         </Button>
       </div>
+
+      {error && (
+        <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -180,13 +202,15 @@ export default function AnomaliesPage() {
       )}
 
       {/* Detail Dialog */}
-      <AnomalyDetailDialog
-        anomaly={selectedAnomaly}
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onActionTaken={handleActionTaken}
-        loading={loading}
-      />
+      {selectedAnomaly && (
+        <AnomalyDetailDialog
+          anomaly={selectedAnomaly}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          onActionTaken={handleActionTaken}
+          loading={loading}
+        />
+      )}
     </div>
   )
 }
