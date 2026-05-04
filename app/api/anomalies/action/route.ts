@@ -12,25 +12,14 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
     const body = await request.json()
-    const { document_id, action, notes } = body
+    const { anomaly_id, action, notes } = body
 
-    if (!document_id || !action) {
+    if (!anomaly_id || !action) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    if (!['approve', 'reject', 'investigate'].includes(action)) {
+    if (!['approved', 'rejected', 'investigated'].includes(action)) {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
-    }
-
-    // Get the anomaly record
-    const { data: anomaly, error: fetchError } = await supabase
-      .from('anomaly_tracking')
-      .select('*')
-      .eq('document_id', document_id)
-      .single()
-
-    if (fetchError || !anomaly) {
-      return NextResponse.json({ error: 'Anomaly not found' }, { status: 404 })
     }
 
     // Update the anomaly with action
@@ -42,13 +31,14 @@ export async function POST(request: NextRequest) {
         action_taken_at: new Date().toISOString(),
         action_notes: notes || null,
       })
-      .eq('id', anomaly.id)
+      .eq('id', anomaly_id)
 
     if (updateError) {
+      console.error('[v0] Anomaly update error:', updateError)
       return NextResponse.json({ error: 'Failed to update anomaly' }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, anomaly_id: anomaly.id })
+    return NextResponse.json({ success: true, anomaly_id })
   } catch (error) {
     console.error('Anomaly action error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
