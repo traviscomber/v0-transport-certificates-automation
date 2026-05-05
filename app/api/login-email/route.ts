@@ -57,7 +57,48 @@ export async function POST(request: NextRequest) {
 
     const profile = profiles[0]
 
-    console.log('[v0] Login successful for:', email, 'Name:', profile.full_name, 'Role:', profile.role, 'Org:', profile.organization_id)
+    // If organization_id is missing, query it from conductores table
+    let organizationId = profile.organization_id
+    
+    if (!organizationId) {
+      console.log('[v0] organization_id not in profile, querying from conductores...')
+      
+      // Get the first conductor for this company to find their transportista_id
+      const conductoresResponse = await fetch(
+        `${supabaseUrl}/rest/v1/conductores?select=transportista_id&limit=1`,
+        {
+          headers: {
+            apikey: supabaseServiceKey,
+            Authorization: `Bearer ${supabaseServiceKey}`,
+          },
+        }
+      )
+
+      const conductores = await conductoresResponse.json()
+      
+      if (conductores && conductores.length > 0) {
+        organizationId = conductores[0].transportista_id
+        console.log('[v0] Found organizationId from conductor:', organizationId)
+      } else {
+        // Fallback: use first transportista
+        const transportistasResponse = await fetch(
+          `${supabaseUrl}/rest/v1/transportistas?select=id&limit=1`,
+          {
+            headers: {
+              apikey: supabaseServiceKey,
+              Authorization: `Bearer ${supabaseServiceKey}`,
+            },
+          }
+        )
+        const transportistas = await transportistasResponse.json()
+        if (transportistas && transportistas.length > 0) {
+          organizationId = transportistas[0].id
+          console.log('[v0] Found organizationId from transportista:', organizationId)
+        }
+      }
+    }
+
+    console.log('[v0] Login successful for:', email, 'Name:', profile.full_name, 'Role:', profile.role, 'Org:', organizationId)
 
     // Return success JSON response
     const response = NextResponse.json({
@@ -66,7 +107,7 @@ export async function POST(request: NextRequest) {
         email: email.toLowerCase(),
         full_name: profile.full_name,
         role: profile.role,
-        organization_id: profile.organization_id,
+        organization_id: organizationId,
       },
     })
 
@@ -103,7 +144,7 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set({
       name: 'user_organization_id',
-      value: profile.organization_id || '',
+      value: organizationId || '',
       httpOnly: false,
       secure: false,
       sameSite: 'lax',
@@ -111,7 +152,7 @@ export async function POST(request: NextRequest) {
       path: '/',
     })
 
-    console.log('[v0] Cookies set with path=/, user org:', profile.organization_id)
+    console.log('[v0] Cookies set with path=/, user org:', organizationId)
     return response
   } catch (error: any) {
     console.error('[v0] Login error:', error)
