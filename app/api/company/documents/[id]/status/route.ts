@@ -10,23 +10,26 @@ export async function PATCH(
 ) {
   try {
     // Verify authentication
+    console.log('[v0] STATUS ENDPOINT - Start PATCH request for document:', params.id)
     const { user, error: authError } = await verifyAuth(request)
+    
+    console.log('[v0] STATUS ENDPOINT - Auth result:', { 
+      authError, 
+      userId: user?.id,
+      email: user?.email,
+      role: user?.role,
+      org_id: user?.organization_id 
+    })
+
     if (authError || !user) {
       console.log('[v0] STATUS ENDPOINT - Auth failed:', authError)
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized', details: authError }, { status: 401 })
     }
-
-    console.log('[v0] STATUS ENDPOINT - Auth successful:', { 
-      userId: user.id, 
-      email: user.email, 
-      role: user.role, 
-      org_id: user.organization_id
-    })
 
     const body = await request.json()
     const documentId = params.id
 
-    console.log('[v0] STATUS ENDPOINT - Request:', { documentId, newStatus: body.status })
+    console.log('[v0] STATUS ENDPOINT - Request body:', { documentId, newStatus: body.status, hasReason: !!body.reason })
 
     // Validate request body
     const validation = validateChangeStatusRequest(body)
@@ -47,12 +50,18 @@ export async function PATCH(
       user.organization_id
     )
 
-    console.log('[v0] STATUS ENDPOINT - Authorization result:', authResult)
+    console.log('[v0] STATUS ENDPOINT - Authorization result:', { 
+      allowed: authResult.allowed, 
+      reason: authResult.reason 
+    })
 
     if (!authResult.allowed) {
       console.log('[v0] STATUS ENDPOINT - AUTHORIZATION DENIED:', authResult.reason)
       return NextResponse.json(
-        { error: authResult.reason || 'No tienes permisos para cambiar este documento' },
+        { 
+          error: authResult.reason || 'No tienes permisos para cambiar este documento',
+          code: 'AUTHORIZATION_DENIED'
+        },
         { status: 403 }
       )
     }
@@ -82,8 +91,8 @@ export async function PATCH(
     })
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error)
-    console.error('[v0] PATCH /status error:', msg)
-    return NextResponse.json({ error: msg }, { status: 500 })
+    console.error('[v0] PATCH /status error:', msg, 'Stack:', error instanceof Error ? error.stack : '')
+    return NextResponse.json({ error: msg, code: 'INTERNAL_ERROR' }, { status: 500 })
   }
 }
 
