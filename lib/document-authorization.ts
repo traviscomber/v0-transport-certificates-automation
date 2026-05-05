@@ -20,6 +20,7 @@ export async function canChangeDocumentStatus(
 ): Promise<CanChangeDocumentStatusResult> {
   // Only admin role can change document status
   if (userRole !== 'admin') {
+    console.log('[v0] AUTH DENY - Role check failed:', { userId, userRole, documentId })
     return {
       allowed: false,
       reason: `Solo administradores pueden cambiar el estado de documentos. Tu rol es: ${userRole}`,
@@ -27,6 +28,8 @@ export async function canChangeDocumentStatus(
   }
 
   try {
+    console.log('[v0] AUTH CHECK START:', { userId, documentId, userRole, userCompanyId })
+    
     const adminClient = await createAdminClient()
 
     // Get the document and its conductor
@@ -35,6 +38,8 @@ export async function canChangeDocumentStatus(
       .select('conductor_id')
       .eq('id', documentId)
       .single()
+
+    console.log('[v0] AUTH - Document lookup:', { documentId, found: !!document, error: docError?.message })
 
     if (docError || !document) {
       return {
@@ -50,6 +55,8 @@ export async function canChangeDocumentStatus(
       .eq('id', document.conductor_id)
       .single()
 
+    console.log('[v0] AUTH - Conductor lookup:', { conductor_id: document.conductor_id, found: !!conductor, empresa_id: conductor?.empresa_id, error: conductorError?.message })
+
     if (conductorError || !conductor) {
       return {
         allowed: false,
@@ -64,6 +71,8 @@ export async function canChangeDocumentStatus(
       .eq('id', userId)
       .single()
 
+    console.log('[v0] AUTH - User profile lookup:', { userId, found: !!userProfile, user_org_id: userProfile?.organization_id, error: profileError?.message })
+
     if (profileError || !userProfile) {
       return {
         allowed: false,
@@ -72,7 +81,15 @@ export async function canChangeDocumentStatus(
     }
 
     // Check if user's company matches conductor's company
-    if (userProfile.organization_id !== conductor.empresa_id) {
+    const companyMatch = userProfile.organization_id === conductor.empresa_id
+    console.log('[v0] AUTH - Company match check:', { 
+      user_org: userProfile.organization_id, 
+      conductor_empresa: conductor.empresa_id, 
+      match: companyMatch
+    })
+
+    if (!companyMatch) {
+      console.log('[v0] AUTH DENY - Company mismatch:', { user_org_id: userProfile.organization_id, conductor_empresa_id: conductor.empresa_id })
       return {
         allowed: false,
         reason: 'No tienes permiso para cambiar documentos de otra empresa',
@@ -80,6 +97,7 @@ export async function canChangeDocumentStatus(
     }
 
     // All checks passed
+    console.log('[v0] AUTH ALLOW - All checks passed:', { userId, documentId, userRole })
     return {
       allowed: true,
     }

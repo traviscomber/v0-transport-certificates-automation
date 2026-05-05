@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     const profile = profiles[0]
 
-    console.log('[v0] Login successful for:', email, 'Name:', profile.full_name)
+    console.log('[v0] Login successful for:', email, 'Name:', profile.full_name, 'Role:', profile.role, 'Org:', profile.organization_id)
 
     // Return success JSON response
     const response = NextResponse.json({
@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
         email: email.toLowerCase(),
         full_name: profile.full_name,
         role: profile.role,
+        organization_id: profile.organization_id,
       },
     })
 
@@ -100,7 +101,17 @@ export async function POST(request: NextRequest) {
       path: '/',
     })
 
-    console.log('[v0] Cookies set with path=/, returning success')
+    response.cookies.set({
+      name: 'user_organization_id',
+      value: profile.organization_id || '',
+      httpOnly: false,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    })
+
+    console.log('[v0] Cookies set with path=/, user org:', profile.organization_id)
     return response
   } catch (error: any) {
     console.error('[v0] Login error:', error)
