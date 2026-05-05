@@ -35,9 +35,8 @@ export default function DocumentManagementPage() {
     try {
       // Aquí iríamos a buscar documentos del RUT
       // Por ahora simulamos que cargamos
-      console.log('[v0] Searching documents for RUT:', rut)
     } catch (error) {
-      console.error('Error searching:', error)
+      // Error handling
     } finally {
       setLoading(false)
     }
