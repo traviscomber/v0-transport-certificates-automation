@@ -1,13 +1,31 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 
-export type UserRole = 'admin' | 'dispatcher' | 'driver' | 'mandante' | 'transportista'
+export type UserRole = 'super_admin' | 'admin' | 'dispatcher' | 'driver' | 'mandante' | 'transportista'
 
 interface AuthUser {
   id: string
   email: string
   role: UserRole
   organization_id?: string
+}
+
+/**
+ * Super-admin domains - users from these domains have full CRUD access
+ * to ALL data across all transportistas/companies.
+ * Labbe is the mandante (principal company) that manages all subcontractors.
+ */
+const SUPER_ADMIN_DOMAINS = ['labbe.cl', 'transporteslabbe.cl']
+
+/**
+ * Check if a user has super-admin privileges based on email domain or role.
+ * Super-admins can manage ALL data across all companies.
+ */
+export function isSuperAdmin(email?: string | null, role?: UserRole | string | null): boolean {
+  if (role === 'super_admin') return true
+  if (!email) return false
+  const domain = email.toLowerCase().split('@')[1]
+  return SUPER_ADMIN_DOMAINS.includes(domain)
 }
 
 // Middleware para verificar autenticación
@@ -57,10 +75,16 @@ export async function verifyAuth(request: NextRequest): Promise<{ user: AuthUser
         return { user: null, error: 'User profile not found' }
       }
 
+      // Auto-promote Labbe users to super_admin (mandante role)
+      // Labbe manages all transportistas and conductores, so they get full CRUD on everything
+      const effectiveRole: UserRole = isSuperAdmin(userEmail, userRole)
+        ? 'super_admin'
+        : ((userRole || profile.role) as UserRole)
+
       const authUser: AuthUser = {
         id: profile.id,
         email: userEmail,
-        role: (userRole || profile.role) as UserRole,
+        role: effectiveRole,
         organization_id: userOrgId || profile.organization_id,
       }
 
@@ -68,6 +92,7 @@ export async function verifyAuth(request: NextRequest): Promise<{ user: AuthUser
         id: authUser.id,
         email: authUser.email,
         role: authUser.role,
+        is_super_admin: isSuperAdmin(authUser.email, authUser.role),
         org_id: authUser.organization_id
       })
 

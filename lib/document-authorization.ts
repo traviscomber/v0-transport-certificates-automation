@@ -1,5 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
-import type { UserRole as AuthUserRole } from '@/lib/auth-middleware'
+import { isSuperAdmin, type UserRole as AuthUserRole } from '@/lib/auth-middleware'
 
 export type CanChangeDocumentStatusResult = {
   allowed: boolean
@@ -9,18 +9,27 @@ export type CanChangeDocumentStatusResult = {
 /**
  * Check if a user can change document status
  * Rules:
- * 1. Administrators (admin) from the SAME company can change status
- * 2. The document's conductor must belong to the same company/transportista
+ * 1. Super-admins (Labbe/mandante users) can change status on ANY document
+ * 2. Administrators (admin) from the SAME company can change status
+ * 3. The document's conductor must belong to the same company/transportista
  */
 export async function canChangeDocumentStatus(
   userId: string,
   documentId: string,
   userRole: AuthUserRole,
-  userCompanyId?: string
+  userCompanyId?: string,
+  userEmail?: string
 ): Promise<CanChangeDocumentStatusResult> {
-  console.log('[v0] canChangeDocumentStatus called:', { userId, documentId, userRole, userCompanyId })
+  console.log('[v0] canChangeDocumentStatus called:', { userId, documentId, userRole, userCompanyId, userEmail })
   
-  // Only admin role can change document status
+  // SUPER-ADMIN BYPASS: Labbe (mandante) users can manage ALL documents
+  // regardless of which transportista the conductor belongs to
+  if (isSuperAdmin(userEmail, userRole)) {
+    console.log('[v0] AUTH ALLOW - Super-admin (Labbe/mandante) bypass:', { userId, userEmail, userRole })
+    return { allowed: true }
+  }
+
+  // Only admin role can change document status (besides super-admin)
   if (userRole !== 'admin') {
     console.log('[v0] AUTH DENY - Role check failed:', { userId, userRole, documentId })
     return {

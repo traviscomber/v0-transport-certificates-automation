@@ -47,7 +47,8 @@ export async function PATCH(
       user.id,
       documentId,
       user.role,
-      user.organization_id
+      user.organization_id,
+      user.email
     )
 
     console.log('[v0] STATUS ENDPOINT - Authorization result:', { 
