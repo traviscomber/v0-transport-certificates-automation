@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 
-const withSentryConfig = require('@sentry/nextjs').withSentryConfig;
+// Only enable Sentry when properly configured with auth token (production builds).
+// In dev or when Sentry env vars are missing, the wrapper injects webpack
+// instrumentation that produces missing chunk errors (e.g. "Cannot find module './2862.js'").
+const sentryEnabled = !!process.env.SENTRY_AUTH_TOKEN && !!process.env.SENTRY_ORG && !!process.env.SENTRY_PROJECT;
+const withSentryConfig = sentryEnabled
+  ? require('@sentry/nextjs').withSentryConfig
+  : (config) => config;
 
 const nextConfig = {
   // Build optimization
