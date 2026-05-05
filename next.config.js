@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 
+const withSentryConfig = require('@sentry/nextjs').withSentryConfig;
+
 const nextConfig = {
   // Build optimization
   reactStrictMode: true,
@@ -100,4 +102,35 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withSentryConfig(nextConfig, {
+  // Silent mode to suppress warnings
+  silent: true,
+
+  // Org slug for Sentry
+  org: process.env.SENTRY_ORG,
+
+  // Project name
+  project: process.env.SENTRY_PROJECT,
+
+  // Auth token for Sentry CLI
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+
+  // Automatically tree-shake Sentry logger statements
+  autoInstrumentServerFunctions: true,
+
+  // Hide source maps from browser
+  hideSourceMaps: true,
+
+  // Ignore errors
+  ignoreErrors: [
+    // Browser extensions
+    'top.GLOBALS',
+    // See: http://blog.errorception.com/2012/03/tale-of-unfindable-js-error.html
+    'originalCreateNotification',
+    'canvas.contentDocument',
+    'MyApp_RemoveAllHighlights',
+  ],
+
+  // Don't capture 404 errors
+  skipGetStaticPropsInstrumentation: true,
+});
