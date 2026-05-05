@@ -155,6 +155,9 @@ importers:
       jspdf:
         specifier: ^4.2.1
         version: 4.2.1
+      k6:
+        specifier: ^0.0.0
+        version: 0.0.0
       lucide-react:
         specifier: ^0.454.0
         version: 0.454.0(react@18.3.1)
@@ -3623,6 +3626,9 @@ packages:
 
   jspdf@4.2.1:
     resolution: {integrity: sha512-YyAXyvnmjTbR4bHQRLzex3CuINCDlQnBqoSYyjJwTP2x9jDLuKDzy7aKUl0hgx3uhcl7xzg32agn5vlie6HIlQ==}
+
+  k6@0.0.0:
+    resolution: {integrity: sha512-GAQSWayS2+LjbH5bkRi+pMPYyP1JSp7o+4j58ANZ762N/RH/SdlAT3CHHztnn8s/xgg8kYNM24Gd2IPo9b5W+g==}
 
   leven@3.1.0:
     resolution: {integrity: sha512-qsda+H8jTaUaN/x5vzW2rzc+8Rw4TAQ/4KjB46IwK5VH+IlVeeeje/EoZRpiXvIqjFgK84QffqPztGI3VBLG1A==}
@@ -8329,6 +8335,8 @@ snapshots:
       core-js: 3.49.0
       dompurify: 3.4.2
       html2canvas: 1.4.1
+
+  k6@0.0.0: {}
 
   leven@3.1.0: {}
 
