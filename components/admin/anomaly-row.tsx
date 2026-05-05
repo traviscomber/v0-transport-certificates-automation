@@ -1,0 +1,102 @@
+'use client'
+
+import React, { memo } from 'react'
+import { AnomalyWithDetails, AnomalySeverity } from '@/lib/anomalies/types'
+import { getSeverityBadgeColor, getAnomalyTypeLabel } from '@/lib/anomalies/utils'
+import { Button } from '@/components/ui/button'
+import { AlertTriangle, CheckCircle, XCircle, Eye } from 'lucide-react'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { areAnomaliesEqual } from '@/lib/anomalies/performance'
+
+interface AnomalyRowProps {
+  anomaly: AnomalyWithDetails
+  onViewDetails: (anomaly: AnomalyWithDetails) => void
+}
+
+/**
+ * Memoized anomaly table row component
+ * Only re-renders if the anomaly object or action callback changes
+ * Significant performance improvement for large tables
+ */
+const AnomalyRow = memo(
+  ({ anomaly, onViewDetails }: AnomalyRowProps) => (
+    <tr className="border-b hover:bg-muted/50 transition-colors">
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-orange-500 flex-shrink-0" />
+          <span className="truncate">{getAnomalyTypeLabel(anomaly.anomaly_type)}</span>
+        </div>
+      </td>
+      <td className="px-4 py-3">
+        <span
+          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold text-white ${getSeverityBadgeColor(anomaly.severity as AnomalySeverity)}`}
+        >
+          {anomaly.severity.charAt(0).toUpperCase() + anomaly.severity.slice(1)}
+        </span>
+      </td>
+      <td className="px-4 py-3">
+        <div className="flex flex-col">
+          <span className="font-medium truncate">{anomaly.document_type}</span>
+          <span className="text-xs text-muted-foreground truncate">{anomaly.status}</span>
+        </div>
+      </td>
+      <td className="px-4 py-3">
+        <div className="flex flex-col">
+          <span className="font-medium truncate">{anomaly.driver_name || 'N/A'}</span>
+          <span className="text-xs text-muted-foreground truncate">{anomaly.driver_rut || ''}</span>
+        </div>
+      </td>
+      <td className="px-4 py-3 text-sm whitespace-nowrap">
+        {format(new Date(anomaly.detected_at), 'dd MMM yyyy HH:mm', { locale: es })}
+      </td>
+      <td className="px-4 py-3">
+        {anomaly.action_taken ? (
+          <div className="flex items-center gap-2">
+            {anomaly.action_taken === 'approved' && (
+              <>
+                <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                <span className="text-xs text-green-700">Aprobado</span>
+              </>
+            )}
+            {anomaly.action_taken === 'rejected' && (
+              <>
+                <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                <span className="text-xs text-red-700">Rechazado</span>
+              </>
+            )}
+            {anomaly.action_taken === 'investigated' && (
+              <>
+                <AlertTriangle className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                <span className="text-xs text-blue-700">Investigado</span>
+              </>
+            )}
+          </div>
+        ) : (
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+            Pendiente
+          </span>
+        )}
+      </td>
+      <td className="px-4 py-3 text-right">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onViewDetails(anomaly)}
+          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+        >
+          <Eye className="h-4 w-4 mr-1" />
+          Ver
+        </Button>
+      </td>
+    </tr>
+  ),
+  (prev, next) => {
+    // Custom comparison: re-render only if anomaly data changes
+    return areAnomaliesEqual(prev.anomaly, next.anomaly) && prev.onViewDetails === next.onViewDetails
+  }
+)
+
+AnomalyRow.displayName = 'AnomalyRow'
+
+export { AnomalyRow }
