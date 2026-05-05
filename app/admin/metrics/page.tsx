@@ -65,8 +65,6 @@ export default function MetricsPage() {
       const metricsResponse = await fetch(`/api/company/metrics?range=${timeRange}`)
       const metricsData = await metricsResponse.json()
 
-      console.log('[v0] Metrics data:', metricsData)
-
       // Fetch from /api/dashboard/data for counts
       const dashboardResponse = await fetch('/api/dashboard/data', {
         cache: 'no-store',
@@ -79,8 +77,6 @@ export default function MetricsPage() {
       // Use metrics data directly - API already has all executives with proper formatting
       const executivesMetrics: ExecutiveMetrics[] = metricsData.executives || []
 
-      console.log('[v0] Executives metrics:', executivesMetrics)
-
       // Update summary with real counts
       setSummary({
         total_documentos: metricsData.summary?.total_documentos || 0,
@@ -91,7 +87,7 @@ export default function MetricsPage() {
 
       setMetrics(executivesMetrics)
     } catch (error) {
-      console.error('[v0] Error fetching metrics:', error)
+      // Error handling for metrics fetch
     } finally {
       setLoading(false)
     }

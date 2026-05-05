@@ -2,10 +2,29 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { verifyAuth } from '@/lib/auth-middleware'
+import { validateEmailAlertRequest } from '@/lib/validation/schemas'
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify user is authenticated before processing email alerts
+    const { user, error: authError } = await verifyAuth(request)
+    
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
+
+    // Validate request body
+    const validation = validateEmailAlertRequest(body)
+    if (!validation.valid) {
+      return NextResponse.json({ 
+        error: 'Invalid request', 
+        details: validation.errors 
+      }, { status: 400 })
+    }
+
     const {
       anomaly_id,
       recipient_email,
@@ -16,10 +35,6 @@ export async function POST(request: NextRequest) {
       driver_name,
       company_name,
     } = body
-
-    if (!anomaly_id || !recipient_email) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-    }
 
     const supabase = await createClient()
 

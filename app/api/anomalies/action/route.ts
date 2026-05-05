@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { verifyAuth } from '@/lib/auth-middleware'
+import { validateAnomalyActionRequest } from '@/lib/validation/schemas'
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,15 +13,17 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
     const body = await request.json()
+
+    // Validate request body
+    const validation = validateAnomalyActionRequest(body)
+    if (!validation.valid) {
+      return NextResponse.json({ 
+        error: 'Invalid request', 
+        details: validation.errors 
+      }, { status: 400 })
+    }
+
     const { anomaly_id, action, notes } = body
-
-    if (!anomaly_id || !action) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-    }
-
-    if (!['approved', 'rejected', 'investigated'].includes(action)) {
-      return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
-    }
 
     // Update the anomaly with action
     const { error: updateError } = await supabase
