@@ -13,40 +13,90 @@ interface AuthUser {
 // Middleware para verificar autenticación
 export async function verifyAuth(request: NextRequest): Promise<{ user: AuthUser | null; error?: string }> {
   try {
+    console.log('[v0] verifyAuth: Attempting to verify authentication')
+    
     const supabase = await createClient()
     
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    // Try Supabase Auth first
+    const { data: { user: supabaseUser }, error: authError } = await supabase.auth.getUser()
+    
+    if (supabaseUser) {
+      console.log('[v0] verifyAuth: Using Supabase Auth user:', supabaseUser.id)
+      
+      // Get user role from profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role, organization_id')
+        .eq('id', supabaseUser.id)
+        .maybeSingle()
+
+      if (profileError) {
+        return { user: null, error: 'Failed to fetch user profile' }
+      }
+
+      if (!profile) {
+        return { user: null, error: 'User profile not yet initialized' }
+      }
+
+      return {
+        user: {
+          id: supabaseUser.id,
+          email: supabaseUser.email || '',
+          role: profile.role as UserRole,
+          organization_id: profile.organization_id,
+        }
+      }
+    }
+    
+    // Fallback to simple cookie-based authentication
+    console.log('[v0] verifyAuth: Supabase Auth failed, trying simple login cookies')
+    
+    const userEmail = request.cookies.get('user_email')?.value
+    const userName = request.cookies.get('user_name')?.value
+    const userRole = request.cookies.get('user_role')?.value
+    const userOrgId = request.cookies.get('user_organization_id')?.value
+    
+    console.log('[v0] verifyAuth: Cookie values:', { 
+      email: userEmail, 
+      name: userName, 
+      role: userRole, 
+      org_id: userOrgId 
+    })
+
+    if (!userEmail || !userRole) {
+      console.log('[v0] verifyAuth: Missing required cookies (email or role)')
       return { user: null, error: 'Unauthorized' }
     }
 
-    // Get user role from profiles table
+    // For simple login, we need to get user ID from profiles table by email
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('role, organization_id')
-      .eq('id', user.id)
+      .select('id, role, organization_id')
+      .eq('email', userEmail)
       .maybeSingle()
 
     if (profileError) {
+      console.log('[v0] verifyAuth: Profile lookup error:', profileError.message)
       return { user: null, error: 'Failed to fetch user profile' }
     }
 
-    // If profile doesn't exist yet, it will be null (which is expected for newly registered users)
-    // The profile should be created by a database trigger during auth.signUp()
     if (!profile) {
-      return { user: null, error: 'User profile not yet initialized' }
+      console.log('[v0] verifyAuth: No profile found for email:', userEmail)
+      return { user: null, error: 'User profile not found' }
     }
+
+    console.log('[v0] verifyAuth: Simple login successful for:', userEmail, 'with org_id:', profile.organization_id)
 
     return {
       user: {
-        id: user.id,
-        email: user.email || '',
-        role: profile.role as UserRole,
-        organization_id: profile.organization_id,
+        id: profile.id,
+        email: userEmail,
+        role: (userRole || profile.role) as UserRole,
+        organization_id: userOrgId || profile.organization_id,
       }
     }
   } catch (error) {
-    console.error('Auth verification error:', error)
+    console.error('[v0] verifyAuth EXCEPTION:', error)
     return { user: null, error: 'Authentication failed' }
   }
 }
