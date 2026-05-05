@@ -4,7 +4,6 @@
  */
 
 import * as Sentry from '@sentry/nextjs';
-import type { BrowserTracing } from '@sentry/tracing';
 
 export function initializeSentryClient() {
   if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
@@ -15,16 +14,7 @@ export function initializeSentryClient() {
   Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
     environment: process.env.NODE_ENV || 'development',
-    integrations: [
-      new Sentry.Replay({
-        maskAllText: true,
-        blockAllMedia: true,
-      }),
-      Sentry.browserTracingIntegration() as unknown as BrowserTracing,
-    ],
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    replaysSessionSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    replaysOnErrorSampleRate: 1.0,
     enabled: process.env.NODE_ENV === 'production',
     beforeSend(event, hint) {
       // Filter non-critical errors
