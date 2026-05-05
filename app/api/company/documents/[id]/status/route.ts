@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { changeDocumentStatus } from '@/lib/document-status-service'
 import { verifyAuth } from '@/lib/auth-middleware'
 import { validateChangeStatusRequest } from '@/lib/validation/schemas'
+import { canChangeDocumentStatus } from '@/lib/document-authorization'
 
 export async function PATCH(
   request: NextRequest,
@@ -24,6 +25,21 @@ export async function PATCH(
         error: 'Invalid request', 
         details: validation.errors 
       }, { status: 400 })
+    }
+
+    // Check authorization - verify user can change this document's status
+    const authResult = await canChangeDocumentStatus(
+      user.id,
+      documentId,
+      user.role,
+      user.organization_id
+    )
+
+    if (!authResult.allowed) {
+      return NextResponse.json(
+        { error: authResult.reason || 'No tienes permisos para cambiar este documento' },
+        { status: 403 }
+      )
     }
 
     // Use centralized status change service
