@@ -24,16 +24,31 @@ export function DriverDocumentsManager({
     try {
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('driver_id', identifier)
+      // Send as driver_rut (RUT/identifier), not driver_id
+      formData.append('driver_rut', identifier)
       formData.append('document_type_id', documentType.id)
-      formData.append('metadata', JSON.stringify(metadata))
+
+      console.log('[v0] Upload request:', { 
+        driver_rut: identifier, 
+        document_type_id: documentType.id, 
+        file_name: file.name,
+        file_size: file.size 
+      })
 
       const response = await fetch('/api/company/documents/upload-with-metadata', {
         method: 'POST',
         body: formData,
+        // DO NOT set Content-Type header — browser will set it automatically with boundary
       })
 
-      if (!response.ok) throw new Error('Upload failed')
+      if (!response.ok) {
+        const error = await response.json()
+        console.error('[v0] Upload error response:', error)
+        throw new Error(error.error || 'Upload failed')
+      }
+
+      const result = await response.json()
+      console.log('[v0] Upload success:', result)
 
       onUploadSuccess()
       setShowUploadModal(false)
