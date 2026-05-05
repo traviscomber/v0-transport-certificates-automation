@@ -38,6 +38,7 @@ export function DriverDocumentsManager({
       const response = await fetch('/api/company/documents/upload-with-metadata', {
         method: 'POST',
         body: formData,
+        credentials: 'include', // ✅ CRITICAL: Send cookies with request
         // DO NOT set Content-Type header — browser will set it automatically with boundary
       })
 

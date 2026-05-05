@@ -112,6 +112,7 @@ export function DocumentsManagementClient({
       const response = await fetch(`/api/company/documents/${docId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // ✅ CRITICAL: Send cookies with request
         body: JSON.stringify(body)
       })
 
@@ -164,7 +165,8 @@ export function DocumentsManagementClient({
 
     try {
       const response = await fetch(`/api/company/documents/${docId}/delete`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include', // ✅ CRITICAL: Send cookies with request
       })
 
       if (!response.ok) {
