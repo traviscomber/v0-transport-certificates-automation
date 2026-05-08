@@ -4,7 +4,10 @@ import { createClient } from '@supabase/supabase-js'
  * GET /api/compliance/requirements
  * Fetch all document requirements
  */
-export async function GET(request: Request) {
+export async function GET(
+  request: Request,
+  { searchParams }: { searchParams: Record<string, string | string[] | undefined> }
+) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -18,9 +21,8 @@ export async function GET(request: Request) {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey)
 
-    const { searchParams } = new URL(request.url)
-    const category = searchParams.get('category')
-    const applicableTo = searchParams.get('applicable_to') // 'conductor', 'transportista', 'vehicle'
+    const category = searchParams.category as string | undefined
+    const applicableTo = searchParams.applicable_to as string | undefined
 
     let query = supabase
       .from('document_requirements')
