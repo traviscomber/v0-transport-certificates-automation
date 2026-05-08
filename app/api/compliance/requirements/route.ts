@@ -6,10 +6,17 @@ import { createClient } from '@supabase/supabase-js'
  */
 export async function GET(request: Request) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      return Response.json(
+        { error: 'Server configuration missing: SUPABASE_URL or SERVICE_ROLE_KEY' },
+        { status: 500 }
+      )
+    }
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey)
 
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
