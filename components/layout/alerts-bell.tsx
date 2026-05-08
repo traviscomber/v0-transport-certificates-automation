@@ -131,7 +131,7 @@ export function AlertsBell() {
   }
 
   return (
-    <div className="relative">
+    <>
       <Button 
         variant="ghost" 
         size="icon" 
@@ -145,7 +145,7 @@ export function AlertsBell() {
       </Button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-96 bg-background border border-border rounded-lg shadow-lg z-50">
+        <div className="fixed top-14 right-4 w-96 bg-background border border-border rounded-lg shadow-lg z-50">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border">
             <div>
@@ -239,6 +239,6 @@ export function AlertsBell() {
           onClick={() => setIsOpen(false)}
         />
       )}
-    </div>
+    </>
   )
 }
