@@ -277,8 +277,115 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Generate alerts for admins about the new document
-    // Combine conductor name from separate fields: nombres, apellido_paterno, apellido_materno
+    // STEP 4: Initialize compliance tracking for conductor (first time)
+    try {
+      console.log('[v0] Initializing compliance tracking for conductor:', conductorId)
+      const { data: existingCompliance } = await supabase
+        .from('conductor_document_compliance')
+        .select('id')
+        .eq('conductor_id', conductorId)
+        .limit(1)
+
+      if (!existingCompliance || existingCompliance.length === 0) {
+        // First document upload - initialize compliance records
+        const { data: allRequirements } = await supabase
+          .from('document_requirements')
+          .select('id')
+          .eq('applicable_to_conductor', true)
+          .eq('is_active', true)
+
+        if (allRequirements && allRequirements.length > 0) {
+          const complianceRecords = allRequirements.map(req => ({
+            conductor_id: conductorId,
+            document_requirement_id: req.id,
+            status: 'pending',
+          }))
+
+          await supabase
+            .from('conductor_document_compliance')
+            .insert(complianceRecords)
+          
+          console.log('[v0] Initialized compliance tracking for', allRequirements.length, 'document requirements')
+        }
+      }
+    } catch (complianceError) {
+      console.warn('[v0] Failed to initialize compliance (non-blocking):', complianceError)
+    }
+
+    // STEP 5: Update compliance status for this document type
+    try {
+      console.log('[v0] Updating compliance status for document type:', documentType)
+      
+      // Find the matching document requirement
+      const { data: requirement } = await supabase
+        .from('document_requirements')
+        .select('id')
+        .eq('code', documentType)
+        .single()
+
+      if (requirement) {
+        // Update or create compliance record
+        const { error: updateError } = await supabase
+          .from('conductor_document_compliance')
+          .upsert({
+            conductor_id: conductorId,
+            document_requirement_id: requirement.id,
+            status: validationStatus || 'pending',
+            latest_document_id: uploadedDoc.id,
+            submission_date: new Date().toISOString(),
+            last_checked_at: new Date().toISOString(),
+          }, {
+            onConflict: 'conductor_id,document_requirement_id',
+          })
+
+        if (updateError) {
+          console.error('[v0] Failed to update compliance status:', updateError)
+        } else {
+          console.log('[v0] Updated compliance status')
+        }
+      }
+    } catch (complianceError) {
+      console.warn('[v0] Failed to update compliance status (non-blocking):', complianceError)
+    }
+
+    // STEP 6: Generate compliance alerts
+    try {
+      console.log('[v0] Creating compliance alert for document upload')
+      
+      const { data: requirement } = await supabase
+        .from('document_requirements')
+        .select('id')
+        .eq('code', documentType)
+        .single()
+
+      if (requirement) {
+        // Create alert in compliance_alerts table
+        const alertMessage = validationStatus === 'approved' 
+          ? `Documento aprobado automáticamente`
+          : validationStatus === 'rejected'
+          ? `Documento rechazado por validación automática`
+          : `Documento enviado para revisión`
+
+        await supabase
+          .from('compliance_alerts')
+          .insert({
+            entity_type: 'conductor',
+            entity_id: conductorId,
+            alert_type: 'document_submitted',
+            severity: validationStatus === 'rejected' ? 'high' : 'medium',
+            title: `Documento Subido: ${docType.name}`,
+            message: alertMessage,
+            document_requirement_id: requirement.id,
+            status: 'active',
+          })
+
+        console.log('[v0] Created compliance alert')
+      }
+    } catch (alertError) {
+      console.error('[v0] Failed to create compliance alert (non-blocking):', alertError)
+    }
+
+    // Also generate alerts for admins about the new document (legacy system)
     const conductorName = [
       conductor.nombres,
       conductor.apellido_paterno,
