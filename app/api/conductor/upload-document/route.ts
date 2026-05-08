@@ -135,26 +135,33 @@ export async function POST(request: NextRequest) {
       const buffer = Buffer.from(fileBuffer)
       const base64 = buffer.toString('base64')
       
-      // Call AI document processor
-      aiExtraction = await extractDocumentMetadata(base64, file.type as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp')
-      console.log('[v0] AI extraction successful:', { confidence: aiExtraction.confidence })
-      
-      // Determine validation status based on AI extraction
-      if (aiExtraction.confidence >= 0.7) {
-        const daysUntilExp = aiExtraction.expirationDate 
-          ? Math.floor((new Date(aiExtraction.expirationDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-          : null
+      // Call AI document processor with error handling
+      try {
+        aiExtraction = await extractDocumentMetadata(base64, file.type as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp')
+        console.log('[v0] AI extraction successful:', { confidence: aiExtraction.confidence })
         
-        validationStatus = determineValidationStatus(
-          aiExtraction.confidence,
-          daysUntilExp,
-          !!aiExtraction.documentNumber
-        ) as string
+        // Determine validation status based on AI extraction
+        if (aiExtraction.confidence >= 0.7) {
+          const daysUntilExp = aiExtraction.expirationDate 
+            ? Math.floor((new Date(aiExtraction.expirationDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+            : null
+          
+          validationStatus = determineValidationStatus(
+            aiExtraction.confidence,
+            daysUntilExp,
+            !!aiExtraction.documentNumber
+          ) as string
+        }
+      } catch (aiError) {
+        extractionError = aiError instanceof Error ? aiError.message : 'AI extraction failed'
+        console.warn('[v0] AI extraction failed (non-blocking):', extractionError, aiError)
+        // Continue with document upload — AI failure doesn't block the flow
+        validationStatus = 'pending'
       }
     } catch (error) {
-      extractionError = error instanceof Error ? error.message : 'AI extraction failed'
-      console.warn('[v0] AI extraction failed (non-blocking):', extractionError)
-      // Continue with document upload — AI failure doesn't block the flow
+      console.error('[v0] Unexpected error in AI processing:', error)
+      // Continue regardless
+      validationStatus = 'pending'
     }
 
     // STEP 2: Test database connection and schema
@@ -228,20 +235,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Create notification for conductor
-    await supabase
-      .from('notifications')
-      .insert({
-        user_id: conductorId,
-        title: 'Documento Subido',
-        message: `Tu ${docType.name} ha sido procesado${validationStatus === 'approved' ? ' y aprobado.' : validationStatus === 'rejected' ? ' pero fue rechazado.' : ' y est�� en revisión.'}`,
-        type: validationStatus === 'rejected' ? 'warning' : 'info',
-        metadata: {
-          document_id: uploadedDoc.id,
-          document_type: documentType,
-          validation_status: validationStatus,
-          ai_confidence: aiExtraction?.confidence || 0,
-        },
-      })
+    try {
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: conductorId,
+          title: 'Documento Subido',
+          message: `Tu ${docType.name} ha sido procesado${validationStatus === 'approved' ? ' y aprobado.' : validationStatus === 'rejected' ? ' pero fue rechazado.' : ' y está en revisión.'}`,
+          type: validationStatus === 'rejected' ? 'warning' : 'info',
+          metadata: {
+            document_id: uploadedDoc.id,
+            document_type: documentType,
+            validation_status: validationStatus,
+            ai_confidence: aiExtraction?.confidence || 0,
+          },
+        })
+    } catch (notifError) {
+      console.warn('[v0] Failed to create notification (non-blocking):', notifError)
+      // Continue regardless of notification failure
+    }
 
     // STEP 3: Notify ejecutivas if document was auto-rejected by AI
     if (validationStatus === 'rejected' && aiExtraction) {
@@ -273,19 +285,24 @@ export async function POST(request: NextRequest) {
       conductor.apellido_materno
     ].filter(Boolean).join(' ') || 'Conductor'
     
-    console.log('[v0] About to create alert with conductor name:', { 
-      nombres: conductor.nombres,
-      apellido_paterno: conductor.apellido_paterno,
-      apellido_materno: conductor.apellido_materno,
-      final: conductorName 
-    })
-    await generateDocumentUploadAlerts(
-      uploadedDoc.id,
-      docType.name,
-      conductorName,
-      'conductor',
-      conductorId
-    )
+    try {
+      console.log('[v0] About to create alert with conductor name:', { 
+        nombres: conductor.nombres,
+        apellido_paterno: conductor.apellido_paterno,
+        apellido_materno: conductor.apellido_materno,
+        final: conductorName 
+      })
+      await generateDocumentUploadAlerts(
+        uploadedDoc.id,
+        docType.name,
+        conductorName,
+        'conductor',
+        conductorId
+      )
+    } catch (alertError) {
+      console.error('[v0] Failed to generate alerts (non-blocking):', alertError)
+      // Continue regardless of alert generation failure
+    }
 
     return NextResponse.json(
       {
