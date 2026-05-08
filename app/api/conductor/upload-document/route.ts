@@ -312,24 +312,46 @@ export async function POST(request: NextRequest) {
       console.warn('[v0] Failed to initialize compliance (non-blocking):', complianceError)
     }
 
-    // STEP 5: Update compliance status for this document type
-    try {
-      console.log('[v0] Updating compliance status for document type:', documentType)
-      
-      // Find the matching document requirement
-      const { data: requirement } = await supabase
+    // STEP 5: Try to find matching document requirement
+    // Map old document codes to new requirement codes
+    const docTypeCodeMapping: { [key: string]: string } = {
+      'LICENCIA-CONDUCIR': 'CONDUCTOR_LICENSE',
+      'LIC_CONDUCIR': 'CONDUCTOR_LICENSE',
+      'CERTIFICADO-ANTECEDENTES': 'CONDUCTOR_BACKGROUND_CERTIFICATE',
+      'CONTRATO_TRABAJO': 'CONDUCTOR_WORK_CONTRACT',
+      'CEDULA-IDENTIDAD': 'CONDUCTOR_ID',
+      'HOJA_VIDA': 'CONDUCTOR_RESUME',
+      'HOJA-VIDA-CONDUCTOR': 'CONDUCTOR_RESUME',
+      'REVISION-TECNICA': 'VEHICLE_INSPECTION',
+      'DOCUMENTOS-CARGA': 'CONDUCTOR_WORK_CONTRACT', // fallback
+      'CERTIFICADO-SALUD': 'CONDUCTOR_HEALTH_MONTHLY',
+    }
+
+    const matchingRequirementCode = docTypeCodeMapping[documentType] || null
+    console.log('[v0] Document type mapping:', { oldCode: documentType, newCode: matchingRequirementCode })
+
+    let matchingRequirement = null
+    if (matchingRequirementCode) {
+      const { data: req } = await supabase
         .from('document_requirements')
         .select('id')
-        .eq('code', documentType)
+        .eq('code', matchingRequirementCode)
         .single()
+      
+      matchingRequirement = req
+    }
 
-      if (requirement) {
+    // STEP 6: Update compliance status for this document
+    try {
+      console.log('[v0] Updating compliance status for matched requirement:', matchingRequirement?.id)
+      
+      if (matchingRequirement) {
         // Update or create compliance record
         const { error: updateError } = await supabase
           .from('conductor_document_compliance')
           .upsert({
             conductor_id: conductorId,
-            document_requirement_id: requirement.id,
+            document_requirement_id: matchingRequirement.id,
             status: validationStatus || 'pending',
             latest_document_id: uploadedDoc.id,
             submission_date: new Date().toISOString(),
@@ -341,24 +363,20 @@ export async function POST(request: NextRequest) {
         if (updateError) {
           console.error('[v0] Failed to update compliance status:', updateError)
         } else {
-          console.log('[v0] Updated compliance status')
+          console.log('[v0] Updated compliance status for requirement')
         }
+      } else {
+        console.warn('[v0] No matching document requirement found for document type:', documentType)
       }
     } catch (complianceError) {
       console.warn('[v0] Failed to update compliance status (non-blocking):', complianceError)
     }
 
-    // STEP 6: Generate compliance alerts
+    // STEP 7: Generate compliance alerts
     try {
       console.log('[v0] Creating compliance alert for document upload')
       
-      const { data: requirement } = await supabase
-        .from('document_requirements')
-        .select('id')
-        .eq('code', documentType)
-        .single()
-
-      if (requirement) {
+      if (matchingRequirement) {
         // Create alert in compliance_alerts table
         const alertMessage = validationStatus === 'approved' 
           ? `Documento aprobado automáticamente`
@@ -372,14 +390,16 @@ export async function POST(request: NextRequest) {
             entity_type: 'conductor',
             entity_id: conductorId,
             alert_type: 'document_submitted',
-            severity: validationStatus === 'rejected' ? 'high' : 'medium',
+            severity: validationStatus === 'rejected' ? 'high' : validationStatus === 'approved' ? 'low' : 'medium',
             title: `Documento Subido: ${docType.name}`,
             message: alertMessage,
-            document_requirement_id: requirement.id,
+            document_requirement_id: matchingRequirement.id,
             status: 'active',
           })
 
         console.log('[v0] Created compliance alert')
+      } else {
+        console.warn('[v0] Could not create compliance alert - no matching requirement')
       }
     } catch (alertError) {
       console.error('[v0] Failed to create compliance alert (non-blocking):', alertError)
