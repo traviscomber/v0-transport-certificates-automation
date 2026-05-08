@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     console.log('[v0] Login attempt for:', email)
 
-    // Get user profile from profiles table
+    // Try to get user from profiles table first (admins, executives)
     const profileResponse = await fetch(
       `${supabaseUrl}/rest/v1/profiles?email=eq.${encodeURIComponent(email)}`,
       {
@@ -46,22 +46,58 @@ export async function POST(request: NextRequest) {
     )
 
     const profiles = await profileResponse.json()
+    let user: any = null
+    let role = 'user'
+    let fullName = ''
+    let organizationId = ''
 
-    if (!profiles || profiles.length === 0) {
-      console.error('[v0] Profile not found for:', email)
+    if (profiles && profiles.length > 0) {
+      // Found in profiles table (admin, executive, etc)
+      user = profiles[0]
+      fullName = user.full_name
+      role = user.role || 'admin'
+      organizationId = user.organization_id
+
+      console.log('[v0] Found in profiles table:', { email, role, fullName })
+    } else {
+      // Not in profiles, try conductores table (drivers)
+      console.log('[v0] Not in profiles, checking conductores table...')
+      
+      const conductoresResponse = await fetch(
+        `${supabaseUrl}/rest/v1/conductores?email=eq.${encodeURIComponent(email)}&select=*`,
+        {
+          headers: {
+            apikey: supabaseServiceKey,
+            Authorization: `Bearer ${supabaseServiceKey}`,
+          },
+        }
+      )
+
+      const conductores = await conductoresResponse.json()
+
+      if (conductores && conductores.length > 0) {
+        // Found in conductores table (driver)
+        const conductor = conductores[0]
+        user = conductor
+        fullName = `${conductor.nombres} ${conductor.apellido_paterno} ${conductor.apellido_materno || ''}`.trim()
+        role = 'driver'
+        organizationId = conductor.transportista_id
+
+        console.log('[v0] Found in conductores table (driver):', { email, fullName, organizationId })
+      }
+    }
+
+    if (!user) {
+      console.error('[v0] User not found in profiles or conductores:', email)
       return NextResponse.json(
         { error: 'Usuario no encontrado. Verifica tu email.' },
         { status: 401 }
       )
     }
 
-    const profile = profiles[0]
-
-    // If organization_id is missing, query it from conductores table
-    let organizationId = profile.organization_id
-    
+    // If organization_id is still missing, query it from conductores or transportistas table
     if (!organizationId) {
-      console.log('[v0] organization_id not in profile, querying from conductores...')
+      console.log('[v0] organization_id not found, querying from database...')
       
       // Get the first conductor for this company to find their transportista_id
       const conductoresResponse = await fetch(
@@ -98,15 +134,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log('[v0] Login successful for:', email, 'Name:', profile.full_name, 'Role:', profile.role, 'Org:', organizationId)
+    console.log('[v0] Login successful for:', email, 'Name:', fullName, 'Role:', role, 'Org:', organizationId)
 
     // Return success JSON response
     const response = NextResponse.json({
       success: true,
       user: {
         email: email.toLowerCase(),
-        full_name: profile.full_name,
-        role: profile.role,
+        full_name: fullName,
+        role: role,
         organization_id: organizationId,
       },
     })
@@ -124,7 +160,7 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set({
       name: 'user_name',
-      value: profile.full_name || email,
+      value: fullName || email,
       httpOnly: false,
       secure: false,
       sameSite: 'lax',
@@ -134,7 +170,7 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set({
       name: 'user_role',
-      value: profile.role || 'user',
+      value: role,
       httpOnly: false,
       secure: false,
       sameSite: 'lax',
@@ -152,7 +188,7 @@ export async function POST(request: NextRequest) {
       path: '/',
     })
 
-    console.log('[v0] Cookies set with path=/, user org:', organizationId)
+    console.log('[v0] Cookies set with path=/, user org:', organizationId, 'role:', role)
     return response
   } catch (error: any) {
     console.error('[v0] Login error:', error)
