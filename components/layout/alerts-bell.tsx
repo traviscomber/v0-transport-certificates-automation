@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Bell, AlertCircle, CheckCircle, AlertTriangle, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
@@ -21,10 +21,22 @@ export function AlertsBell() {
   const [loading, setLoading] = useState(true)
   const [isMounted, setIsMounted] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 })
+  const buttonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     setIsMounted(true)
   }, [])
+
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      setDropdownPosition({
+        top: rect.bottom + 8, // 8px below button
+        right: window.innerWidth - rect.right // Distance from right edge
+      })
+    }
+  }, [isOpen])
 
   useEffect(() => {
     if (!isMounted) return
@@ -133,6 +145,7 @@ export function AlertsBell() {
   return (
     <>
       <Button 
+        ref={buttonRef}
         variant="ghost" 
         size="icon" 
         className="relative"
@@ -145,7 +158,13 @@ export function AlertsBell() {
       </Button>
 
       {isOpen && (
-        <div className="fixed top-14 right-4 w-96 bg-background border border-border rounded-lg shadow-lg z-50">
+        <div 
+          className="fixed w-96 bg-background border border-border rounded-lg shadow-lg z-50"
+          style={{
+            top: `${dropdownPosition.top}px`,
+            right: `${dropdownPosition.right}px`
+          }}
+        >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border">
             <div>
