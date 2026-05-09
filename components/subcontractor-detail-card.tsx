@@ -1,6 +1,6 @@
 'use client'
 
-import { X, FileText, Award, AlertCircle, CheckCircle, Loader } from 'lucide-react'
+import { X, FileText, Award, AlertCircle, CheckCircle, Loader, Download, Eye } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -325,13 +325,39 @@ export function SubcontractorDetailCard({
                             no_subido: 'No subido',
                           }
                           
+                          // Find uploaded document for this requirement
+                          const uploadedDoc = documents.find((d) => d.nombre.includes(req.code))
+                          
                           return (
                             <div
                               key={req.id}
                               className={`p-2 rounded border text-xs flex items-center justify-between ${statusColor}`}
                             >
                               <span className="font-mono">{req.code}</span>
-                              <span className="text-right">{statusLabel[req.status]}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-right">{statusLabel[req.status]}</span>
+                                {uploadedDoc && uploadedDoc.archivo_url && (
+                                  <div className="flex gap-1">
+                                    <a
+                                      href={`/api/documents/download?path=${encodeURIComponent(uploadedDoc.archivo_url)}`}
+                                      download
+                                      className="hover:opacity-75 transition-opacity"
+                                      title="Descargar"
+                                    >
+                                      <Download className="w-3 h-3" />
+                                    </a>
+                                    <a
+                                      href={`/api/documents/preview?path=${encodeURIComponent(uploadedDoc.archivo_url)}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="hover:opacity-75 transition-opacity"
+                                      title="Ver"
+                                    >
+                                      <Eye className="w-3 h-3" />
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           )
                         })}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { X, Upload, File, Trash2, CheckCircle, AlertCircle, Clock } from 'lucide-react'
+import { X, Upload, File, Trash2, CheckCircle, AlertCircle, Clock, Download, Eye } from 'lucide-react'
 
 interface Document {
   id: string
@@ -10,6 +10,7 @@ interface Document {
   estado: 'pendiente' | 'aprobado' | 'rechazado' | 'vencido'
   fecha_subida: string
   fecha_vencimiento?: string
+  archivo_url?: string
 }
 
 interface Requirement {
@@ -196,12 +197,35 @@ export function DocumentManagementModal({
                         {getStatusLabel(doc.estado)}
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleDeleteDocument(doc.id)}
-                      className="ml-2 p-1 hover:bg-slate-900/50 rounded transition-colors flex-shrink-0"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex gap-1 ml-2">
+                      {doc.archivo_url && (
+                        <>
+                          <a
+                            href={`/api/documents/download?path=${encodeURIComponent(doc.archivo_url)}`}
+                            download
+                            className="p-1 hover:bg-slate-900/50 rounded transition-colors flex-shrink-0"
+                            title="Descargar documento"
+                          >
+                            <Download className="w-4 h-4" />
+                          </a>
+                          <a
+                            href={`/api/documents/preview?path=${encodeURIComponent(doc.archivo_url)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1 hover:bg-slate-900/50 rounded transition-colors flex-shrink-0"
+                            title="Ver documento"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </a>
+                        </>
+                      )}
+                      <button
+                        onClick={() => handleDeleteDocument(doc.id)}
+                        className="p-1 hover:bg-slate-900/50 rounded transition-colors flex-shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
