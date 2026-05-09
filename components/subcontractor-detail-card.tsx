@@ -1,6 +1,7 @@
 'use client'
 
-import { X, FileText, Award, AlertCircle, CheckCircle } from 'lucide-react'
+import { X, FileText, Award, AlertCircle, CheckCircle, Loader } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -13,6 +14,38 @@ export function SubcontractorDetailCard({
   subcontractor,
   onClose,
 }: SubcontractorDetailCardProps) {
+  const [documents, setDocuments] = useState<any[]>([])
+  const [requirements, setRequirements] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [summary, setSummary] = useState({
+    totalDocumentsUploaded: 0,
+    totalRequirements: 0,
+    approvedDocuments: 0,
+    pendingDocuments: 0,
+    expiredDocuments: 0,
+  })
+
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        const response = await fetch(`/api/subcontractors/${subcontractor.id}/documents`)
+        if (response.ok) {
+          const data = await response.json()
+          setDocuments(data.documents || [])
+          setRequirements(data.requirements || [])
+          setSummary(data.summary || summary)
+        }
+      } catch (error) {
+        console.error('[v0] Error fetching documents:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (subcontractor.id) {
+      fetchDocuments()
+    }
+  }, [subcontractor.id])
   return (
     <>
       {/* Overlay */}
@@ -158,12 +191,80 @@ export function SubcontractorDetailCard({
                 <FileText className="w-4 h-4" />
                 Carpeta de Documentos
               </h3>
-              <p className="text-xs text-slate-400">
-                Esta sección mostrará los documentos requeridos y cargados.
-              </p>
-              <button className="w-full px-4 py-2 rounded bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-colors text-sm">
-                Ver Documentos Completos
-              </button>
+              
+              {loading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader className="w-4 h-4 animate-spin text-slate-400 mr-2" />
+                  <span className="text-sm text-slate-400">Cargando documentos...</span>
+                </div>
+              ) : (
+                <>
+                  {/* Statistics Grid */}
+                  <div className="grid grid-cols-5 gap-2">
+                    <div className="p-2 rounded bg-slate-800 text-center">
+                      <p className="text-lg font-bold text-white">{summary.totalRequirements}</p>
+                      <p className="text-xs text-slate-400">Requeridos</p>
+                    </div>
+                    <div className="p-2 rounded bg-blue-900/20 border border-blue-800 text-center">
+                      <p className="text-lg font-bold text-blue-300">{summary.totalDocumentsUploaded}</p>
+                      <p className="text-xs text-blue-400">Subidos</p>
+                    </div>
+                    <div className="p-2 rounded bg-green-900/20 border border-green-800 text-center">
+                      <p className="text-lg font-bold text-green-300">{summary.approvedDocuments}</p>
+                      <p className="text-xs text-green-400">Aprobados</p>
+                    </div>
+                    <div className="p-2 rounded bg-yellow-900/20 border border-yellow-800 text-center">
+                      <p className="text-lg font-bold text-yellow-300">{summary.pendingDocuments}</p>
+                      <p className="text-xs text-yellow-400">Pendientes</p>
+                    </div>
+                    <div className="p-2 rounded bg-red-900/20 border border-red-800 text-center">
+                      <p className="text-lg font-bold text-red-300">{summary.expiredDocuments}</p>
+                      <p className="text-xs text-red-400">Vencidos</p>
+                    </div>
+                  </div>
+
+                  {/* Requirements List */}
+                  {requirements.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <p className="text-xs font-semibold text-slate-400">Documentos Requeridos</p>
+                      <div className="max-h-48 overflow-y-auto space-y-1">
+                        {requirements.map((req) => {
+                          const statusColors: Record<string, string> = {
+                            aprobado: 'bg-green-900/20 border-green-800 text-green-400',
+                            pendiente: 'bg-yellow-900/20 border-yellow-800 text-yellow-400',
+                            rechazado: 'bg-red-900/20 border-red-800 text-red-400',
+                            vencido: 'bg-orange-900/20 border-orange-800 text-orange-400',
+                            no_subido: 'bg-slate-800 text-slate-400',
+                          }
+                          const statusColor = statusColors[req.status] || statusColors.no_subido
+                          const statusLabel: Record<string, string> = {
+                            aprobado: 'Aprobado',
+                            pendiente: 'Pendiente',
+                            rechazado: 'Rechazado',
+                            vencido: 'Vencido',
+                            no_subido: 'No subido',
+                          }
+                          
+                          return (
+                            <div
+                              key={req.id}
+                              className={`p-2 rounded border text-xs flex items-center justify-between ${statusColor}`}
+                            >
+                              <span className="font-mono">{req.code}</span>
+                              <span className="text-right">{statusLabel[req.status]}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Upload Documents Button */}
+                  <button className="w-full px-4 py-2 rounded bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-colors text-sm">
+                    Gestionar Documentos
+                  </button>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
