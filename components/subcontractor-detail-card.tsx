@@ -164,15 +164,53 @@ export function SubcontractorDetailCard({
               </div>
             </div>
 
-            {/* Certifications Note - Now in Document Management */}
+            {/* Certifications - Simple Buttons */}
             <div className="border-t border-slate-700 pt-4 space-y-3">
               <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                 <Award className="w-4 h-4" />
                 Certificaciones
               </h3>
-              <div className="p-3 bg-blue-900/20 border border-blue-800 rounded text-xs text-blue-300">
-                <p className="font-semibold mb-1">Certificaciones gestionadas como documentos</p>
-                <p className="text-blue-400/80">Las 4 certificaciones (Ariztia, LTS, Rendic, Interpolar) se encuentran en la sección &quot;Carpeta de Documentos&quot; donde puedes subirlas, descargarlas y hacer seguimiento de su estado.</p>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { name: 'ARIZTIA', key: 'has_ariztia' },
+                  { name: 'LTS', key: 'has_lts' },
+                  { name: 'RENDIC', key: 'has_rendic' },
+                  { name: 'INTERPOLAR', key: 'has_interpolar' },
+                ].map((cert) => {
+                  const hasCert = subcontractor[cert.key]
+                  const certDoc = documents.find((d) => d.nombre.includes(cert.name))
+                  
+                  return (
+                    <button
+                      key={cert.key}
+                      onClick={() => {
+                        if (certDoc && certDoc.archivo_url) {
+                          window.open(`/api/documents/preview?path=${encodeURIComponent(certDoc.archivo_url)}`, '_blank')
+                        }
+                      }}
+                      disabled={!hasCert}
+                      className={`p-3 rounded border-2 transition-all ${
+                        hasCert
+                          ? certDoc 
+                            ? 'bg-green-900/30 border-green-600 hover:bg-green-900/50 cursor-pointer'
+                            : 'bg-yellow-900/30 border-yellow-600 hover:bg-yellow-900/50 cursor-pointer'
+                          : 'bg-slate-800/30 border-slate-700 cursor-not-allowed opacity-50'
+                      }`}
+                      title={
+                        !hasCert 
+                          ? 'Esta empresa no tiene esta certificación'
+                          : certDoc
+                          ? 'Click para ver documento'
+                          : 'Certificación registrada pero sin documento'
+                      }
+                    >
+                      <div className="text-xs font-bold mb-1">{cert.name}</div>
+                      <div className="text-xs">
+                        {!hasCert ? '✗' : certDoc ? '✓' : '⚠'}
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
