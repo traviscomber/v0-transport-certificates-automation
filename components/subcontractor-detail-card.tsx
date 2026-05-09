@@ -157,31 +157,98 @@ export function SubcontractorDetailCard({
                 <Award className="w-4 h-4" />
                 Certificaciones
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <div className="p-3 rounded bg-blue-900/20 border border-blue-800 text-center">
-                  <p className="text-xs text-blue-400 font-semibold mb-1">ARIZTIA</p>
-                  <p className="text-2xl text-blue-300">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {/* Ariztia */}
+                <div className={`p-4 rounded border-2 ${
+                  subcontractor.ariztia
+                    ? 'bg-blue-900/30 border-blue-600'
+                    : 'bg-slate-800/30 border-slate-700'
+                } text-center transition-colors hover:bg-blue-900/40`}>
+                  <p className={`text-sm font-bold mb-2 ${
+                    subcontractor.ariztia ? 'text-blue-300' : 'text-slate-500'
+                  }`}>
+                    ARIZTIA
+                  </p>
+                  <div className={`text-3xl font-bold mb-1 ${
+                    subcontractor.ariztia ? 'text-blue-400' : 'text-slate-600'
+                  }`}>
                     {subcontractor.ariztia ? '✓' : '—'}
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    {subcontractor.ariztia ? 'Certificado' : 'No certificado'}
                   </p>
                 </div>
-                <div className="p-3 rounded bg-green-900/20 border border-green-800 text-center">
-                  <p className="text-xs text-green-400 font-semibold mb-1">LTS</p>
-                  <p className="text-2xl text-green-300">
+
+                {/* LTS */}
+                <div className={`p-4 rounded border-2 ${
+                  subcontractor.lts
+                    ? 'bg-green-900/30 border-green-600'
+                    : 'bg-slate-800/30 border-slate-700'
+                } text-center transition-colors hover:bg-green-900/40`}>
+                  <p className={`text-sm font-bold mb-2 ${
+                    subcontractor.lts ? 'text-green-300' : 'text-slate-500'
+                  }`}>
+                    LTS
+                  </p>
+                  <div className={`text-3xl font-bold mb-1 ${
+                    subcontractor.lts ? 'text-green-400' : 'text-slate-600'
+                  }`}>
                     {subcontractor.lts ? '✓' : '—'}
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    {subcontractor.lts ? 'Certificado' : 'No certificado'}
                   </p>
                 </div>
-                <div className="p-3 rounded bg-purple-900/20 border border-purple-800 text-center">
-                  <p className="text-xs text-purple-400 font-semibold mb-1">RENDIC</p>
-                  <p className="text-2xl text-purple-300">
+
+                {/* Rendic */}
+                <div className={`p-4 rounded border-2 ${
+                  subcontractor.rendic
+                    ? 'bg-purple-900/30 border-purple-600'
+                    : 'bg-slate-800/30 border-slate-700'
+                } text-center transition-colors hover:bg-purple-900/40`}>
+                  <p className={`text-sm font-bold mb-2 ${
+                    subcontractor.rendic ? 'text-purple-300' : 'text-slate-500'
+                  }`}>
+                    RENDIC
+                  </p>
+                  <div className={`text-3xl font-bold mb-1 ${
+                    subcontractor.rendic ? 'text-purple-400' : 'text-slate-600'
+                  }`}>
                     {subcontractor.rendic ? '✓' : '—'}
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    {subcontractor.rendic ? 'Certificado' : 'No certificado'}
                   </p>
                 </div>
-                <div className="p-3 rounded bg-orange-900/20 border border-orange-800 text-center">
-                  <p className="text-xs text-orange-400 font-semibold mb-1">INTERPOLAR</p>
-                  <p className="text-2xl text-orange-300">
+
+                {/* Interpolar */}
+                <div className={`p-4 rounded border-2 ${
+                  subcontractor.interpolar
+                    ? 'bg-orange-900/30 border-orange-600'
+                    : 'bg-slate-800/30 border-slate-700'
+                } text-center transition-colors hover:bg-orange-900/40`}>
+                  <p className={`text-sm font-bold mb-2 ${
+                    subcontractor.interpolar ? 'text-orange-300' : 'text-slate-500'
+                  }`}>
+                    INTERPOLAR
+                  </p>
+                  <div className={`text-3xl font-bold mb-1 ${
+                    subcontractor.interpolar ? 'text-orange-400' : 'text-slate-600'
+                  }`}>
                     {subcontractor.interpolar ? '✓' : '—'}
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    {subcontractor.interpolar ? 'Certificado' : 'No certificado'}
                   </p>
                 </div>
+              </div>
+
+              {/* Certification Summary */}
+              <div className="text-xs text-slate-400 p-3 bg-slate-900/50 rounded border border-slate-800">
+                <p className="font-semibold mb-1">Total Certificaciones:</p>
+                <p className="text-amber-400 font-bold">
+                  {[subcontractor.ariztia, subcontractor.lts, subcontractor.rendic, subcontractor.interpolar].filter(Boolean).length} de 4
+                </p>
               </div>
             </div>
 
