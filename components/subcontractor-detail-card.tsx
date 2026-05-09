@@ -4,6 +4,7 @@ import { X, FileText, Award, AlertCircle, CheckCircle, Loader } from 'lucide-rea
 import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DocumentManagementModal } from './document-management-modal'
 
 interface SubcontractorDetailCardProps {
   subcontractor: any
@@ -17,6 +18,7 @@ export function SubcontractorDetailCard({
   const [documents, setDocuments] = useState<any[]>([])
   const [requirements, setRequirements] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [showDocumentManagement, setShowDocumentManagement] = useState(false)
   const [summary, setSummary] = useState({
     totalDocumentsUploaded: 0,
     totalRequirements: 0,
@@ -46,6 +48,17 @@ export function SubcontractorDetailCard({
       fetchDocuments()
     }
   }, [subcontractor.id])
+
+  const handleDocumentsUpdated = async () => {
+    // Refetch documents after upload/delete
+    const response = await fetch(`/api/subcontractors/${subcontractor.id}/documents`)
+    if (response.ok) {
+      const data = await response.json()
+      setDocuments(data.documents || [])
+      setRequirements(data.requirements || [])
+      setSummary(data.summary || summary)
+    }
+  }
   return (
     <>
       {/* Overlay */}
@@ -327,7 +340,10 @@ export function SubcontractorDetailCard({
                   )}
 
                   {/* Upload Documents Button */}
-                  <button className="w-full px-4 py-2 rounded bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-colors text-sm">
+                  <button 
+                    onClick={() => setShowDocumentManagement(true)}
+                    className="w-full px-4 py-2 rounded bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 transition-colors text-sm border border-orange-500/30 font-semibold"
+                  >
                     Gestionar Documentos
                   </button>
                 </>
@@ -336,6 +352,18 @@ export function SubcontractorDetailCard({
           </CardContent>
         </Card>
       </div>
+
+      {/* Document Management Modal */}
+      {showDocumentManagement && (
+        <DocumentManagementModal
+          subcontractorId={subcontractor.id}
+          subcontractorName={subcontractor.nombre}
+          requirements={requirements}
+          uploadedDocuments={documents}
+          onClose={() => setShowDocumentManagement(false)}
+          onDocumentsUpdated={handleDocumentsUpdated}
+        />
+      )}
     </>
   )
 }
