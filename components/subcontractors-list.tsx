@@ -80,6 +80,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
   const [showActiveOnly, setShowActiveOnly] = useState(false)
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [expandedSubcontractor, setExpandedSubcontractor] = useState<string | null>(null)
+  const [expandedDocuments, setExpandedDocuments] = useState<Set<string>>(new Set())
 
   // Fetch data from API if not provided as prop
   useEffect(() => {
@@ -386,20 +387,18 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
                     </div>
                   </div>
 
-                  {/* Driver count badge */}
+                  {/* Driver count badge and Ver button */}
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-slate-400" />
                     <span className="text-sm text-slate-300">
-                      <span className="font-semibold text-amber-400">{driverCount}</span> conductores asociados
+                      <span className="font-semibold text-amber-400">{driverCount}</span> conductores
                     </span>
-                    {driverCount > 0 && (
-                      <button
-                        onClick={() => setExpandedSubcontractor(isExpanded ? null : sub.id)}
-                        className="ml-auto text-xs px-2 py-1 rounded bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
-                      >
-                        {isExpanded ? 'Ocultar' : 'Ver'}
-                      </button>
-                    )}
+                    <button
+                      onClick={() => setExpandedSubcontractor(isExpanded ? null : sub.id)}
+                      className="ml-auto text-xs px-3 py-1 rounded bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 transition-colors border border-orange-500/30"
+                    >
+                      {isExpanded ? 'Ocultar' : 'Ver'}
+                    </button>
                   </div>
 
                   {/* Contact Info */}
@@ -449,6 +448,58 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
                     {sub.rendic && <Badge className="bg-purple-500/20 text-purple-300">Rendic</Badge>}
                     {sub.interpolar && <Badge className="bg-orange-500/20 text-orange-300">Interpolar</Badge>}
                   </div>
+
+                  {/* Expandable Detail Sections */}
+                  {isExpanded && (
+                    <div className="mt-6 pt-4 border-t border-slate-700 space-y-4">
+                      {/* Documents Folder Section */}
+                      <div className="space-y-3">
+                        <p className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                          <span className="inline-block w-2 h-2 bg-orange-500 rounded-full"></span>
+                          Carpeta de Documentos
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-3 bg-slate-900/50 rounded border border-slate-700">
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-white">0</p>
+                            <p className="text-xs text-slate-400">Documentos Requeridos</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-amber-400">0</p>
+                            <p className="text-xs text-slate-400">Subidos</p>
+                          </div>
+                        </div>
+                        <button className="w-full px-3 py-2 text-xs rounded bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-colors">
+                          Ver Documentos Completos
+                        </button>
+                      </div>
+
+                      {/* Certifications Details Section */}
+                      <div className="space-y-3">
+                        <p className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                          <span className="inline-block w-2 h-2 bg-purple-500 rounded-full"></span>
+                          Certificaciones
+                        </p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          <div className="p-2 rounded bg-blue-900/20 border border-blue-800 text-center">
+                            <p className="text-xs text-blue-400 font-semibold">Ariztia</p>
+                            <p className="text-lg font-bold text-blue-300">{sub.ariztia ? '✓' : '-'}</p>
+                          </div>
+                          <div className="p-2 rounded bg-green-900/20 border border-green-800 text-center">
+                            <p className="text-xs text-green-400 font-semibold">LTS</p>
+                            <p className="text-lg font-bold text-green-300">{sub.lts ? '✓' : '-'}</p>
+                          </div>
+                          <div className="p-2 rounded bg-purple-900/20 border border-purple-800 text-center">
+                            <p className="text-xs text-purple-400 font-semibold">Rendic</p>
+                            <p className="text-lg font-bold text-purple-300">{sub.rendic ? '✓' : '-'}</p>
+                          </div>
+                          <div className="p-2 rounded bg-orange-900/20 border border-orange-800 text-center">
+                            <p className="text-xs text-orange-400 font-semibold">Interpolar</p>
+                            <p className="text-lg font-bold text-orange-300">{sub.interpolar ? '✓' : '-'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Expandable Drivers Section */}
                   {isExpanded && driverCount > 0 && (
