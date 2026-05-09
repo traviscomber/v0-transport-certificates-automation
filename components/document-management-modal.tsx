@@ -149,12 +149,14 @@ export function DocumentManagementModal({
               >
                 <option value="">Elegir documento a cargar...</option>
                 {/* Group requirements by category */}
-                {['Subcontratación', 'Empresa'].map((category) => {
+                {['Subcontratación', 'Empresa', 'certificaciones'].map((category) => {
                   const categoryReqs = requirements.filter((r) => r.category === category)
                   if (categoryReqs.length === 0) return null
                   
+                  const categoryLabel = category === 'certificaciones' ? 'Certificaciones' : category
+                  
                   return (
-                    <optgroup key={category} label={category}>
+                    <optgroup key={category} label={categoryLabel}>
                       {categoryReqs.map((req) => (
                         <option key={req.id} value={req.id} className="bg-slate-800">
                           {req.code} - {req.nombre}
@@ -249,9 +251,11 @@ export function DocumentManagementModal({
           <div className="space-y-3 pt-4 border-t border-slate-700">
             <h3 className="text-sm font-semibold text-white">Estado de Requisitos</h3>
             
-            {['Subcontratación', 'Empresa'].map((category) => {
+            {['Subcontratación', 'Empresa', 'certificaciones'].map((category) => {
               const categoryReqs = requirements.filter((r) => r.category === category)
               if (categoryReqs.length === 0) return null
+              
+              const categoryLabel = category === 'certificaciones' ? 'Certificaciones' : category
               
               const categoryComplete = categoryReqs.every((r) =>
                 documents.some((d) => d.nombre.includes(r.code))
@@ -260,7 +264,7 @@ export function DocumentManagementModal({
               return (
                 <div key={category} className="space-y-2">
                   <div className="flex items-center justify-between px-2">
-                    <p className="text-xs font-semibold text-slate-300">{category}</p>
+                    <p className="text-xs font-semibold text-slate-300">{categoryLabel}</p>
                     <div className="text-xs px-2 py-1 rounded bg-slate-800">
                       {categoryReqs.filter((r) => documents.some((d) => d.nombre.includes(r.code))).length}/{categoryReqs.length}
                     </div>

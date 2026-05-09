@@ -37,12 +37,12 @@ export async function GET(
     }
 
     // Fetch document requirements for subcontractors
-    // Include both "Empresa" (if company) and "Subcontratación" categories
+    // Include "Empresa", "Subcontratación", and "certificaciones" categories
     const { data: requirements, error: reqError } = await supabase
       .from('document_requirements')
       .select('*')
       .eq('is_active', true)
-      .in('category', ['Subcontratación', 'Empresa'])
+      .in('category', ['Subcontratación', 'Empresa', 'certificaciones'])
       .order('category', { ascending: true })
       .order('code', { ascending: true })
 
