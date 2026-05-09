@@ -17,7 +17,10 @@ interface Requirement {
   id: string
   code: string
   nombre: string
+  category: string
   status: string
+  descripcion?: string
+  dias_vigencia?: number
 }
 
 interface DocumentManagementModalProps {
@@ -145,11 +148,21 @@ export function DocumentManagementModal({
                 className="w-full px-3 py-2 rounded bg-slate-700 text-white text-sm border border-slate-600 focus:outline-none focus:border-orange-500"
               >
                 <option value="">Elegir documento a cargar...</option>
-                {requirements.map((req) => (
-                  <option key={req.id} value={req.id}>
-                    {req.code} - {req.nombre}
-                  </option>
-                ))}
+                {/* Group requirements by category */}
+                {['Subcontratación', 'Empresa'].map((category) => {
+                  const categoryReqs = requirements.filter((r) => r.category === category)
+                  if (categoryReqs.length === 0) return null
+                  
+                  return (
+                    <optgroup key={category} label={category}>
+                      {categoryReqs.map((req) => (
+                        <option key={req.id} value={req.id} className="bg-slate-800">
+                          {req.code} - {req.nombre}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )
+                })}
               </select>
             </div>
             <button
@@ -232,24 +245,46 @@ export function DocumentManagementModal({
             )}
           </div>
 
-          {/* Requirements Status */}
+          {/* Requirements Status by Category */}
           <div className="space-y-3 pt-4 border-t border-slate-700">
             <h3 className="text-sm font-semibold text-white">Estado de Requisitos</h3>
-            <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
-              {requirements.map((req) => {
-                const hasDoc = documents.some((d) => d.nombre.includes(req.code))
-                return (
-                  <div key={req.id} className="flex items-center gap-2 text-xs">
-                    {hasDoc ? (
-                      <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
-                    ) : (
-                      <Clock className="w-4 h-4 text-yellow-400 flex-shrink-0" />
-                    )}
-                    <span className="text-slate-400 truncate">{req.code}</span>
+            
+            {['Subcontratación', 'Empresa'].map((category) => {
+              const categoryReqs = requirements.filter((r) => r.category === category)
+              if (categoryReqs.length === 0) return null
+              
+              const categoryComplete = categoryReqs.every((r) =>
+                documents.some((d) => d.nombre.includes(r.code))
+              )
+              
+              return (
+                <div key={category} className="space-y-2">
+                  <div className="flex items-center justify-between px-2">
+                    <p className="text-xs font-semibold text-slate-300">{category}</p>
+                    <div className="text-xs px-2 py-1 rounded bg-slate-800">
+                      {categoryReqs.filter((r) => documents.some((d) => d.nombre.includes(r.code))).length}/{categoryReqs.length}
+                    </div>
                   </div>
-                )
-              })}
-            </div>
+                  <div className="grid grid-cols-2 gap-2 pl-2">
+                    {categoryReqs.map((req) => {
+                      const hasDoc = documents.some((d) => d.nombre.includes(req.code))
+                      return (
+                        <div key={req.id} className="flex items-center gap-2 text-xs">
+                          {hasDoc ? (
+                            <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+                          )}
+                          <span className={hasDoc ? 'text-slate-300' : 'text-slate-400'} title={req.nombre}>
+                            {req.code}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>

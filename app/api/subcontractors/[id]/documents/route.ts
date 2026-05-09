@@ -36,12 +36,14 @@ export async function GET(
       )
     }
 
-    // Fetch document requirements for transportistas
+    // Fetch document requirements for subcontractors
+    // Include both "Empresa" (if company) and "Subcontratación" categories
     const { data: requirements, error: reqError } = await supabase
       .from('document_requirements')
       .select('*')
       .eq('is_active', true)
-      .eq('applicable_to_transportista', true)
+      .in('category', ['Subcontratación', 'Empresa'])
+      .order('category', { ascending: true })
       .order('code', { ascending: true })
 
     if (reqError) {
@@ -80,11 +82,16 @@ export async function GET(
       const uploadedDoc = documents?.find(
         (d) =>
           d.tipo === req.code &&
-          (d.estado === 'aprobado' || d.estado === 'vencido')
+          (d.estado === 'aprobado' || d.estado === 'pendiente' || d.estado === 'vencido')
       )
 
       return {
-        ...req,
+        id: req.id,
+        code: req.code,
+        nombre: req.nombre,
+        descripcion: req.descripcion,
+        category: req.category,
+        dias_vigencia: req.dias_vigencia,
         status: uploadedDoc
           ? uploadedDoc.estado
           : 'no_subido',
