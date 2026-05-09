@@ -13,6 +13,8 @@ export async function GET(request: Request) {
     const type = url.searchParams.get('type')
     const priority = url.searchParams.get('priority')
     const is_read = url.searchParams.get('is_read')
+    const ejecutiva = url.searchParams.get('ejecutiva')
+    const status = url.searchParams.get('status')
     const limit = parseInt(url.searchParams.get('limit') || '100')
     const offset = parseInt(url.searchParams.get('offset') || '0')
 
@@ -20,8 +22,12 @@ export async function GET(request: Request) {
       .from('alerts')
       .select('*', { count: 'exact' })
 
+    // Filter by ejecutiva if provided (only show alerts assigned to this ejecutiva)
+    if (ejecutiva) query = query.eq('ejecutiva_nombre', ejecutiva)
+    
     if (type) query = query.eq('type', type)
     if (priority) query = query.eq('priority', priority)
+    if (status) query = query.eq('status', status)
     if (is_read !== null && is_read !== '') query = query.eq('is_read', is_read === 'true')
 
     const { data: alerts, error, count } = await query
@@ -38,6 +44,7 @@ export async function GET(request: Request) {
       total: count || 0,
       limit,
       offset,
+      ejecutiva: ejecutiva || null,
     })
   } catch (error: any) {
     console.error('[ALERTS API] GET unexpected error:', error)

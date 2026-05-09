@@ -1,26 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Alert } from '@/lib/alerts/types'
 import { HelpBox } from '@/components/ui/help-box'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { AlertActionCard } from '@/components/alert-action-card'
 import { RefreshCw, Trash2 } from 'lucide-react'
 import { AlertTriangle, AlertCircle, Info } from 'lucide-react'
-
-interface Alert {
-  id: string
-  type: string
-  title: string
-  message: string
-  priority: 'critical' | 'high' | 'medium' | 'low'
-  category?: string
-  is_read: boolean
-  is_dismissed: boolean
-  action_url?: string
-  metadata?: Record<string, any>
-  created_at: string
-  timestamp?: Date
-}
 
 export default function AlertasPage() {
   const [alerts, setAlerts] = useState<Alert[]>([])
@@ -28,30 +15,68 @@ export default function AlertasPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPriority, setSelectedPriority] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
+  const [selectedStatus, setSelectedStatus] = useState('')
+  const [ejecutiva, setEjecutiva] = useState<string | null>(null)
 
   // Load alerts on mount
   useEffect(() => {
     loadAlerts()
-  }, [])
+  }, [ejecutiva, selectedStatus])
 
   const loadAlerts = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/alerts?limit=100&sort=created_at.desc')
+      // For now, hardcode "Olga" as example - in production, get from user session
+      const ejecutivaNombre = ejecutiva || 'Olga'
+      
+      const params = new URLSearchParams({
+        limit: '100',
+        sort: 'created_at.desc',
+        ...(ejecutivaNombre && { ejecutiva: ejecutivaNombre }),
+        ...(selectedStatus && { status: selectedStatus }),
+      })
+      
+      const response = await fetch(`/api/alerts?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch alerts')
       
       const data = await response.json()
       if (data.alerts) {
         setAlerts(data.alerts.map((alert: any) => ({
           ...alert,
+          status: alert.status || 'pendiente',
           timestamp: new Date(alert.created_at),
         })))
       }
+      console.log('[v0] Loaded alerts for ejecutiva:', ejecutivaNombre, 'Count:', data.alerts?.length)
     } catch (error) {
       console.error('[v0] Error loading alerts:', error)
       setAlerts([])
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleAlertAction = async (alertId: string, action: 'approve' | 'reject' | 'request_info', notes?: string) => {
+    try {
+      const response = await fetch(`/api/alerts/${alertId}/action`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-ejecutiva-name': ejecutiva || 'Olga',
+        },
+        body: JSON.stringify({ action, notes }),
+      })
+
+      if (!response.ok) throw new Error('Failed to process alert action')
+
+      const result = await response.json()
+      console.log('[v0] Alert action completed:', result)
+      
+      // Reload alerts after action
+      await loadAlerts()
+    } catch (error) {
+      console.error('[v0] Error performing alert action:', error)
+      throw error
     }
   }
 
@@ -88,6 +113,7 @@ export default function AlertasPage() {
     medium: alerts.filter(a => a.priority === 'medium').length,
     low: alerts.filter(a => a.priority === 'low').length,
     unread: alerts.filter(a => !a.is_read).length,
+    pending: alerts.filter(a => a.status === 'pendiente').length,
   }
 
   const getAlertIcon = (priority: string) => {
@@ -102,68 +128,6 @@ export default function AlertasPage() {
         return <Info className="w-5 h-5 text-gray-500" />
       default:
         return <Info className="w-5 h-5 text-gray-500" />
-    }
-  }
-
-  const getAlertColor = (priority: string, isDismissed: boolean, alertType?: string) => {
-    if (isDismissed) return 'border-l-4 border-l-gray-400 bg-gray-900/25 opacity-60'
-    
-    // Color by document status if available
-    if (alertType) {
-      switch (alertType) {
-        case 'DOCUMENT_REJECTED':
-          return 'border-l-4 border-l-orange-500 bg-orange-900/25'
-        case 'DOCUMENT_APPROVED':
-          return 'border-l-4 border-l-green-500 bg-green-900/25'
-        case 'DOCUMENT_PENDING':
-          return 'border-l-4 border-l-yellow-400 bg-yellow-900/60'
-        default:
-          break
-      }
-    }
-    
-    // Fallback to priority-based coloring
-    switch (priority) {
-      case 'critical':
-        return 'border-l-4 border-l-red-500 bg-red-900/25'
-      case 'high':
-        return 'border-l-4 border-l-orange-500 bg-orange-900/25'
-      case 'medium':
-        return 'border-l-4 border-l-blue-500 bg-blue-900/25'
-      case 'low':
-        return 'border-l-4 border-l-slate-500 bg-slate-900/25'
-      default:
-        return 'border-l-4 border-l-slate-500 bg-slate-900/25'
-    }
-  }
-
-  const getPriorityBadgeColor = (priority: string) => {
-    switch (priority) {
-      case 'critical':
-        return 'bg-red-600 text-white'
-      case 'high':
-        return 'bg-orange-600 text-white'
-      case 'medium':
-        return 'bg-blue-600 text-white'
-      case 'low':
-        return 'bg-gray-600 text-white'
-      default:
-        return 'bg-gray-600 text-white'
-    }
-  }
-
-  const getPriorityLabel = (priority: string): string => {
-    switch (priority) {
-      case 'critical':
-        return 'CRÍTICA'
-      case 'high':
-        return 'ALTA'
-      case 'medium':
-        return 'MEDIA'
-      case 'low':
-        return 'BAJA'
-      default:
-        return priority.toUpperCase()
     }
   }
 
@@ -188,7 +152,9 @@ export default function AlertasPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Alertas y Notificaciones</h1>
-          <p className="text-foreground/80">Mantente informado de eventos importantes en tu operación</p>
+          <p className="text-foreground/80">
+            Alertas para <span className="font-semibold text-orange-400">{ejecutiva || 'Olga'}</span>
+          </p>
         </div>
         <Button
           onClick={loadAlerts}
@@ -204,12 +170,13 @@ export default function AlertasPage() {
       {/* Help Box */}
       <HelpBox
         variant="info"
-        title="Centro de Alertas"
-        description="Monitorea eventos importantes en tu operación: documentos próximos a vencer, cambios de estado, y actividad del sistema."
+        title="Centro de Alertas Personalizadas"
+        description="Ves solo tus alertas. Usa los botones de acción para aprobar, rechazar o solicitar información sobre documentos."
         tips={[
-          "Haz clic en 'Actualizar' para generar nuevas alertas",
-          "Usa los filtros para encontrar alertas específicas",
-          "Las alertas se generan en tiempo real desde los datos de tu operación",
+          "Haz clic en 'Actualizar' para cargar nuevas alertas",
+          "Usa 'Aprobar', 'Rechazar' o 'Solicitar Info' directamente en cada alerta",
+          "Las alertas resueltas se mostrarán en verde",
+          "Filtra por estado, prioridad o categoría según sea necesario",
         ]}
       />
 
@@ -231,9 +198,9 @@ export default function AlertasPage() {
           <div className="text-sm text-blue-700 font-medium dark:text-blue-300">Medias</div>
           <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.medium}</div>
         </div>
-        <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg dark:bg-gray-950/30 dark:border-gray-900">
-          <div className="text-sm text-gray-700 font-medium dark:text-gray-300">Bajas</div>
-          <div className="text-2xl font-bold text-gray-700 dark:text-gray-300">{stats.low}</div>
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-950/30 dark:border-yellow-900">
+          <div className="text-sm text-yellow-700 font-medium dark:text-yellow-300">Pendientes</div>
+          <div className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">{stats.pending}</div>
         </div>
         <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg dark:bg-purple-950/30 dark:border-purple-900">
           <div className="text-sm text-purple-700 font-medium dark:text-purple-300">No leídas</div>
@@ -251,6 +218,16 @@ export default function AlertasPage() {
           className="flex-1 min-w-64 px-3 py-2 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <select
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+          className="px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+        >
+          <option value="">Todos los estados</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="actioned">Procesada</option>
+          <option value="resuelto">Resuelto</option>
+        </select>
+        <select
           value={selectedPriority}
           onChange={(e) => setSelectedPriority(e.target.value)}
           className="px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
@@ -261,34 +238,24 @@ export default function AlertasPage() {
           <option value="medium">Media</option>
           <option value="low">Baja</option>
         </select>
-        <select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-        >
-          <option value="">Todas las categorías</option>
-          <option value="DOCUMENT_REJECTED">Documentos Rechazados</option>
-          <option value="DOCUMENT_APPROVED">Documentos Aprobados</option>
-          <option value="DOCUMENT_EXPIRATION">Vencimientos</option>
-          <option value="DOCUMENT_UPLOADED">Documentos Subidos</option>
-        </select>
         <Button
           variant="outline"
           onClick={() => {
             setSearchQuery('')
             setSelectedPriority('')
             setSelectedCategory('')
+            setSelectedStatus('')
           }}
         >
           Limpiar
         </Button>
       </div>
 
-      {/* Alerts List */}
+      {/* Alerts List with Action Cards */}
       <div>
         {isLoading ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">Cargando alertas...</p>
+            <p className="text-muted-foreground">Cargando alertas para {ejecutiva || 'Olga'}...</p>
           </div>
         ) : filteredAlerts.length === 0 ? (
           <div className="text-center py-12">
@@ -299,57 +266,11 @@ export default function AlertasPage() {
         ) : (
           <div className="space-y-3">
             {filteredAlerts.map((alert) => (
-              <div
+              <AlertActionCard
                 key={alert.id}
-                className={`p-4 border rounded-lg flex items-start gap-4 transition-all ${getAlertColor(alert.priority, alert.is_dismissed, alert.type)}`}
-              >
-                <div className="flex-shrink-0 mt-1">
-                  {getAlertIcon(alert.priority)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="font-semibold text-foreground dark:text-white">{alert.title}</h3>
-                    <Badge className={getPriorityBadgeColor(alert.priority)}>
-                      {getPriorityLabel(alert.priority)}
-                    </Badge>
-                    {alert.is_dismissed && (
-                      <Badge variant="outline" className="text-xs">Descartada</Badge>
-                    )}
-                    {!alert.is_read && (
-                      <div className="w-2 h-2 rounded-full bg-primary"></div>
-                    )}
-                  </div>
-                  <p className="text-sm text-foreground/85 dark:text-slate-200">{alert.message}</p>
-                  <div className="flex items-center gap-3 mt-3 flex-wrap">
-                    <span className="text-xs text-foreground/70 dark:text-slate-400">{formatTime(alert.created_at)}</span>
-                    {alert.category && (
-                      <Badge variant="outline" className="text-xs">
-                        {alert.category.replace('_', ' ')}
-                      </Badge>
-                    )}
-                    {alert.action_url && (
-                      <a
-                        href={
-                          alert.metadata?.conductor_id
-                            ? `/dashboard/company/conductores?id=${alert.metadata.conductor_id}`
-                            : alert.action_url
-                        }
-                        className="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10 rounded transition-colors"
-                      >
-                        Ver detalles →
-                      </a>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => deleteAlert(alert.id)}
-                      className="text-xs text-muted-foreground hover:text-destructive h-auto p-0"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
+                alert={alert}
+                onAction={handleAlertAction}
+              />
             ))}
           </div>
         )}
@@ -357,3 +278,4 @@ export default function AlertasPage() {
     </div>
   )
 }
+
