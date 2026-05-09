@@ -6,6 +6,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 
+interface Document {
+  id: string
+  nombre: string
+  tipo: string
+  estado: 'pendiente' | 'aprobado' | 'rechazado' | 'vencido'
+  fecha_subida: string
+  fecha_vencimiento?: string
+  subcontratista_id: string
+}
+
+interface DocumentRequirement {
+  id: string
+  code: string
+  nombre: string
+  descripcion?: string
+  is_active: boolean
+  applicable_to_transportista?: boolean
+}
+
 interface Subcontractor {
   id: string
   nombre?: string
@@ -26,6 +45,14 @@ interface Subcontractor {
   is_active: boolean
   conductores_count?: number
   region?: string
+  documentos?: Document[]
+  documentos_requeridos?: DocumentRequirement[]
+  certificaciones_count?: {
+    ariztia: number
+    lts: number
+    rendic: number
+    interpolar: number
+  }
 }
 
 interface Driver {
