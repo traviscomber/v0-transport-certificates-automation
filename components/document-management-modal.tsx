@@ -121,7 +121,7 @@ export function DocumentManagementModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-900 rounded-lg border border-slate-800 max-w-2xl w-full max-h-96 overflow-y-auto shadow-xl">
+      <div className="bg-slate-900 rounded-lg border border-slate-800 max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
         {/* Header */}
         <div className="sticky top-0 flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900">
           <div>
@@ -137,17 +137,16 @@ export function DocumentManagementModal({
         </div>
 
         <div className="p-4 space-y-4">
-          {/* Upload Section */}
-          <div className="space-y-3 p-4 bg-slate-800/50 rounded border border-slate-700">
-            <h3 className="text-sm font-semibold text-white">Subir Documento</h3>
-            <div className="space-y-2">
-              <label className="block text-xs text-slate-400">Seleccionar Requisito</label>
+          {/* Upload Section - Compact */}
+          <div className="space-y-2 p-3 bg-slate-800/50 rounded border border-slate-700">
+            <h3 className="text-sm font-semibold text-white mb-2">Subir Documento</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <select
                 value={selectedRequirement || ''}
                 onChange={(e) => setSelectedRequirement(e.target.value || null)}
-                className="w-full px-3 py-2 rounded bg-slate-700 text-white text-sm border border-slate-600 focus:outline-none focus:border-orange-500"
+                className="px-3 py-2 rounded bg-slate-700 text-white text-sm border border-slate-600 focus:outline-none focus:border-orange-500 md:col-span-1"
               >
-                <option value="">Elegir documento a cargar...</option>
+                <option value="">Elegir documento...</option>
                 {/* Group requirements by category */}
                 {['Subcontratación', 'Empresa', 'certificaciones'].map((category) => {
                   const categoryReqs = requirements.filter((r) => r.category === category)
@@ -166,15 +165,15 @@ export function DocumentManagementModal({
                   )
                 })}
               </select>
+              <button
+                onClick={() => selectedRequirement && fileInputRef.current?.click()}
+                disabled={!selectedRequirement || uploading}
+                className="px-4 py-2 rounded bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center gap-2 border border-orange-500/30"
+              >
+                <Upload className="w-4 h-4" />
+                {uploading ? 'Cargando...' : 'Seleccionar'}
+              </button>
             </div>
-            <button
-              onClick={() => selectedRequirement && fileInputRef.current?.click()}
-              disabled={!selectedRequirement || uploading}
-              className="w-full px-4 py-2 rounded bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center gap-2 border border-orange-500/30"
-            >
-              <Upload className="w-4 h-4" />
-              {uploading ? 'Cargando...' : 'Seleccionar Archivo'}
-            </button>
             <input
               ref={fileInputRef}
               type="file"
@@ -184,62 +183,78 @@ export function DocumentManagementModal({
             />
           </div>
 
-          {/* Uploaded Documents List */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-white">Documentos Cargados</h3>
+          {/* Uploaded Documents List - Full History */}
+          <div className="space-y-3 border-t border-slate-700 pt-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-white">Historial de Documentos</h3>
+              <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded">
+                {documents.length} documento{documents.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            
             {documents.length === 0 ? (
-              <p className="text-xs text-slate-400 py-4 text-center">
-                No hay documentos cargados aún
-              </p>
+              <div className="p-4 text-center bg-slate-900/30 border border-slate-700 rounded">
+                <p className="text-xs text-slate-400">No hay documentos cargados aún</p>
+              </div>
             ) : (
-              <div className="space-y-2">
-                {documents.map((doc) => (
+              <div className="max-h-64 overflow-y-auto space-y-2 pr-2">
+                {documents.map((doc, index) => (
                   <div
                     key={doc.id}
-                    className={`p-3 rounded border flex items-center justify-between ${getStatusColor(
+                    className={`p-3 rounded border flex items-center justify-between transition-all hover:bg-slate-800/50 ${getStatusColor(
                       doc.estado
                     )}`}
                   >
-                    <div className="flex items-center gap-3 flex-1">
-                      <File className="w-4 h-4 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate">{doc.nombre}</p>
-                        <p className="text-xs opacity-75">
-                          {new Date(doc.fecha_subida).toLocaleDateString('es-CL')}
-                        </p>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="flex-shrink-0">
+                        <File className="w-4 h-4" />
                       </div>
-                      <div className="text-xs font-semibold px-2 py-1 rounded bg-slate-900/50 flex-shrink-0">
-                        {getStatusLabel(doc.estado)}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold truncate">{doc.nombre}</p>
+                          <span className="text-xs text-slate-400 flex-shrink-0">({index + 1})</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-slate-400">
+                          <p>{new Date(doc.fecha_subida).toLocaleDateString('es-CL')} a las {new Date(doc.fecha_subida).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex gap-1 ml-2">
-                      {doc.archivo_url && (
-                        <>
-                          <a
-                            href={`/api/documents/download?path=${encodeURIComponent(doc.archivo_url)}`}
-                            download
-                            className="p-1 hover:bg-slate-900/50 rounded transition-colors flex-shrink-0"
-                            title="Descargar documento"
-                          >
-                            <Download className="w-4 h-4" />
-                          </a>
-                          <a
-                            href={`/api/documents/preview?path=${encodeURIComponent(doc.archivo_url)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-1 hover:bg-slate-900/50 rounded transition-colors flex-shrink-0"
-                            title="Ver documento"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </a>
-                        </>
-                      )}
-                      <button
-                        onClick={() => handleDeleteDocument(doc.id)}
-                        className="p-1 hover:bg-slate-900/50 rounded transition-colors flex-shrink-0"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    
+                    <div className="flex items-center gap-3 ml-2 flex-shrink-0">
+                      <div className="text-xs font-semibold px-2 py-1 rounded bg-slate-900/50">
+                        {getStatusLabel(doc.estado)}
+                      </div>
+                      
+                      <div className="flex gap-1">
+                        {doc.archivo_url && (
+                          <>
+                            <a
+                              href={`/api/documents/download?path=${encodeURIComponent(doc.archivo_url)}`}
+                              download
+                              className="p-1.5 hover:bg-slate-700 rounded transition-colors flex-shrink-0"
+                              title="Descargar"
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
+                            <a
+                              href={`/api/documents/preview?path=${encodeURIComponent(doc.archivo_url)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 hover:bg-slate-700 rounded transition-colors flex-shrink-0"
+                              title="Ver"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </a>
+                          </>
+                        )}
+                        <button
+                          onClick={() => handleDeleteDocument(doc.id)}
+                          className="p-1.5 hover:bg-red-900/50 rounded transition-colors flex-shrink-0 text-red-400 hover:text-red-300"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -247,48 +262,37 @@ export function DocumentManagementModal({
             )}
           </div>
 
-          {/* Requirements Status by Category */}
-          <div className="space-y-3 pt-4 border-t border-slate-700">
-            <h3 className="text-sm font-semibold text-white">Estado de Requisitos</h3>
+          {/* Requirements Status by Category - Collapsed Section */}
+          <div className="space-y-2 p-3 bg-slate-800/30 rounded border border-slate-700/50">
+            <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wide">Resumen de Requisitos</h3>
             
-            {['Subcontratación', 'Empresa', 'certificaciones'].map((category) => {
-              const categoryReqs = requirements.filter((r) => r.category === category)
-              if (categoryReqs.length === 0) return null
-              
-              const categoryLabel = category === 'certificaciones' ? 'Certificaciones' : category
-              
-              const categoryComplete = categoryReqs.every((r) =>
-                documents.some((d) => d.nombre.includes(r.code))
-              )
-              
-              return (
-                <div key={category} className="space-y-2">
-                  <div className="flex items-center justify-between px-2">
-                    <p className="text-xs font-semibold text-slate-300">{categoryLabel}</p>
-                    <div className="text-xs px-2 py-1 rounded bg-slate-800">
-                      {categoryReqs.filter((r) => documents.some((d) => d.nombre.includes(r.code))).length}/{categoryReqs.length}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {['Subcontratación', 'Empresa', 'certificaciones'].map((category) => {
+                const categoryReqs = requirements.filter((r) => r.category === category)
+                if (categoryReqs.length === 0) return null
+                
+                const categoryLabel = category === 'certificaciones' ? 'Certificaciones' : category
+                const completed = categoryReqs.filter((r) => documents.some((d) => d.nombre.includes(r.code))).length
+                const total = categoryReqs.length
+                const percentage = Math.round((completed / total) * 100)
+                
+                return (
+                  <div key={category} className="flex items-center justify-between px-2 py-1 bg-slate-900/30 rounded border border-slate-700/50">
+                    <span className="text-xs font-medium text-slate-300">{categoryLabel}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs font-bold text-orange-400">{completed}/{total}</div>
+                      <div className={`text-xs px-1.5 py-0.5 rounded ${
+                        percentage === 100 ? 'bg-green-500/20 text-green-400' : 
+                        percentage > 50 ? 'bg-yellow-500/20 text-yellow-400' :
+                        'bg-red-500/20 text-red-400'
+                      }`}>
+                        {percentage}%
+                      </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 pl-2">
-                    {categoryReqs.map((req) => {
-                      const hasDoc = documents.some((d) => d.nombre.includes(req.code))
-                      return (
-                        <div key={req.id} className="flex items-center gap-2 text-xs">
-                          {hasDoc ? (
-                            <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
-                          ) : (
-                            <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0" />
-                          )}
-                          <span className={hasDoc ? 'text-slate-300' : 'text-slate-400'} title={req.nombre}>
-                            {req.code}
-                          </span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
         </div>
       </div>
