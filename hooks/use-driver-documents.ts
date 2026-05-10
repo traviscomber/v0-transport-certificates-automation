@@ -111,6 +111,8 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
 
   const updateDocumentStatus = async (documentId: string, newStatus: string, rejectionReason?: string) => {
     try {
+      console.log('[v0] useDriverDocuments: updateDocumentStatus called', { documentId, newStatus, rejectionReason })
+      
       // Status mapping
       const statusMap: Record<string, string> = {
         'aprobado': 'approved',
@@ -128,18 +130,24 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         body.reason = rejectionReason
       }
 
+      console.log('[v0] useDriverDocuments: Sending to API', { body })
+
       const response = await fetch(`/api/company/documents/${documentId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       })
 
+      console.log('[v0] useDriverDocuments: API response status', response.status)
+
       if (!response.ok) {
         const result = await response.json()
+        console.error('[v0] useDriverDocuments: API error', result)
         throw new Error(result.error || 'Failed to update status')
       }
 
       const result = await response.json()
+      console.log('[v0] useDriverDocuments: API success', result)
 
       // Update local state with the response from API
       const statusToEstado: Record<string, DriverDocument['estado']> = {
@@ -158,6 +166,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
 
       return result
     } catch (err) {
+      console.error('[v0] useDriverDocuments: Error', err)
       throw err
     }
   }

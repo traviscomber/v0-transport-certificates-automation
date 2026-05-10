@@ -57,18 +57,23 @@ export function PendingDocumentsList({ conductorDocs: initialConductorDocs, subD
   const handleStatusChange = async (docId: string, newStatus: 'aprobado' | 'rechazado', type: 'conductor' | 'subcontractor', reason?: string) => {
     setLoading(docId)
     try {
+      console.log('[v0] Pending docs: Changing status', { docId, status: newStatus, reason, type })
+      
       const response = await fetch(`/api/company/documents/${docId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          status: newStatus,
-          rejection_reason: reason 
+          status: newStatus,  // Send Spanish - API will normalize to English
+          reason: reason      // Use 'reason', not 'rejection_reason'
         })
       })
 
+      console.log('[v0] Pending docs: Response status:', response.status)
+
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Error al cambiar estado')
+        console.error('[v0] Pending docs: Server error:', error)
+        throw new Error(error.error || error.details?.[0]?.message || 'Error al cambiar estado')
       }
 
       // Remove from list on success
@@ -86,6 +91,7 @@ export function PendingDocumentsList({ conductorDocs: initialConductorDocs, subD
       setTimeout(() => msg.remove(), 3000)
 
     } catch (error) {
+      console.error('[v0] Pending docs: Error:', error)
       alert(`Error: ${error instanceof Error ? error.message : 'Desconocido'}`)
     } finally {
       setLoading(null)
