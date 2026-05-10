@@ -262,37 +262,69 @@ export function DocumentManagementModal({
             )}
           </div>
 
-          {/* Requirements Status by Category - Collapsed Section */}
-          <div className="space-y-2 p-3 bg-slate-800/30 rounded border border-slate-700/50">
-            <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wide">Resumen de Requisitos</h3>
+          {/* Requirements Status - Detailed View */}
+          <div className="space-y-3 p-3 bg-slate-800/30 rounded border border-slate-700/50">
+            <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wide mb-3">Resumen de Requisitos</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {['Subcontratación', 'Empresa', 'certificaciones'].map((category) => {
-                const categoryReqs = requirements.filter((r) => r.category === category)
-                if (categoryReqs.length === 0) return null
-                
-                const categoryLabel = category === 'certificaciones' ? 'Certificaciones' : category
-                const completed = categoryReqs.filter((r) => documents.some((d) => d.nombre.includes(r.code))).length
-                const total = categoryReqs.length
-                const percentage = Math.round((completed / total) * 100)
-                
-                return (
-                  <div key={category} className="flex items-center justify-between px-2 py-1 bg-slate-900/30 rounded border border-slate-700/50">
-                    <span className="text-xs font-medium text-slate-300">{categoryLabel}</span>
-                    <div className="flex items-center gap-2">
-                      <div className="text-xs font-bold text-orange-400">{completed}/{total}</div>
-                      <div className={`text-xs px-1.5 py-0.5 rounded ${
-                        percentage === 100 ? 'bg-green-500/20 text-green-400' : 
-                        percentage > 50 ? 'bg-yellow-500/20 text-yellow-400' :
-                        'bg-red-500/20 text-red-400'
-                      }`}>
-                        {percentage}%
+            {requirements.length === 0 ? (
+              <div className="text-xs text-slate-400 p-2">Cargando requisitos...</div>
+            ) : (
+              <div className="space-y-2">
+                {['Subcontratación', 'Empresa', 'certificaciones'].map((category) => {
+                  const categoryReqs = requirements.filter((r) => r.category === category)
+                  if (categoryReqs.length === 0) return null
+                  
+                  const categoryLabel = category === 'certificaciones' ? 'Certificaciones' : category
+                  const completed = categoryReqs.filter((r) => r.status === 'aprobado' || r.status === 'pendiente').length
+                  const total = categoryReqs.length
+                  const percentage = Math.round((completed / total) * 100)
+                  
+                  return (
+                    <div key={category} className="space-y-1">
+                      <div className="flex items-center justify-between px-2 py-1.5 bg-slate-900/30 rounded border border-slate-700/50">
+                        <span className="text-xs font-medium text-slate-300">{categoryLabel}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="text-xs font-bold text-orange-400">{completed}/{total}</div>
+                          <div className={`text-xs px-1.5 py-0.5 rounded ${
+                            percentage === 100 ? 'bg-green-500/20 text-green-400' : 
+                            percentage > 50 ? 'bg-yellow-500/20 text-yellow-400' :
+                            'bg-red-500/20 text-red-400'
+                          }`}>
+                            {percentage}%
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Show missing documents for this category */}
+                      <div className="text-xs text-slate-400 ml-1 space-y-0.5 max-h-24 overflow-y-auto">
+                        {categoryReqs.map((req) => (
+                          <div key={req.id} className="flex items-center gap-2">
+                            {req.status === 'aprobado' && (
+                              <>
+                                <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
+                                <span className="text-green-400">{req.code}: {req.nombre}</span>
+                              </>
+                            )}
+                            {req.status === 'pendiente' && (
+                              <>
+                                <Clock className="w-3 h-3 text-yellow-500 flex-shrink-0" />
+                                <span className="text-yellow-400">{req.code}: {req.nombre}</span>
+                              </>
+                            )}
+                            {req.status === 'no_subido' && (
+                              <>
+                                <AlertCircle className="w-3 h-3 text-red-500 flex-shrink-0" />
+                                <span className="text-red-400">{req.code}: {req.nombre} (NO SUBIDO)</span>
+                              </>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>
