@@ -49,7 +49,7 @@ export function PendingDocumentsList({ conductorDocs: initialConductorDocs, subD
   const [loading, setLoading] = useState<string | null>(null)
   const [previewDoc, setPreviewDoc] = useState<PendingDocument | null>(null)
   const [showRejectModal, setShowRejectModal] = useState(false)
-  const { onSync } = useDocumentSync()
+  const { onSync, broadcastSync } = useDocumentSync()
   const [rejectDocId, setRejectDocId] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
   const [docType, setDocType] = useState<'conductor' | 'subcontractor'>('conductor')
@@ -84,6 +84,18 @@ export function PendingDocumentsList({ conductorDocs: initialConductorDocs, subD
       } else {
         setSubDocs(prev => prev.filter(d => d.id !== docId))
       }
+
+      // BROADCAST SYNC EVENT - Update all views in real-time
+      console.log('[v0] Pending docs: Broadcasting status change event')
+      broadcastSync({
+        type: 'document_status_changed',
+        documentId: docId,
+        timestamp: Date.now(),
+        data: { 
+          oldStatus: 'pending',
+          newStatus: newStatus === 'aprobado' ? 'approved' : 'rejected'
+        }
+      })
 
       // Show success toast
       const msg = document.createElement('div')
