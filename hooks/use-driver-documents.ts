@@ -82,48 +82,21 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         uploaderName = user?.user_metadata?.full_name || user?.email || 'Unknown'
       }
 
-      // Read file as Base64 to send as JSON
-      const reader = new FileReader()
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const result = reader.result as string
-          console.log('[v0] FileReader result type:', typeof result, 'length:', result?.length)
-          const parts = result.split(',')
-          console.log('[v0] Split result - parts count:', parts.length)
-          const base64 = parts[1]
-          if (!base64) {
-            reject(new Error('Failed to extract Base64 from FileReader result'))
-            return
-          }
-          console.log('[v0] Base64 extracted, length:', base64.length)
-          resolve(base64)
-        }
-        reader.onerror = (error) => {
-          console.error('[v0] FileReader error:', error)
-          reject(error)
-        }
-      })
-      reader.readAsDataURL(file)
-      
-      const fileBase64 = await base64Promise
-      
-      console.log('[v0] uploadDocument: File converted to Base64, size:', fileBase64.length)
+      // Use native FormData for file upload
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('driver_rut', driverRut)
+      formData.append('document_type_id', tipo || 'general')
+      formData.append('metadata', JSON.stringify({
+        expiry_date: expirationDate,
+      }))
+
+      console.log('[v0] uploadDocument: Sending FormData with file:', file.name, 'size:', file.size)
       
       const response = await fetch('/api/company/documents/upload-with-metadata', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          file: fileBase64,
-          fileName: file.name,
-          fileType: file.type,
-          driver_id: driverId,
-          driver_rut: driverRut,
-          document_type_id: tipo || 'general',
-          uploaded_by: uploaderName || '',
-          metadata: {
-            expiry_date: expirationDate,
-          }
-        })
+        body: formData,
+        credentials: 'include',
       })
 
       console.log('[v0] uploadDocument: Response status:', response.status)
