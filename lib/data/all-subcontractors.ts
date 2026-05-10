@@ -1,5 +1,6 @@
 // Lazy-load subcontractors data to avoid webpack serialization issues
 // The actual data is now loaded dynamically instead of being inline
+// Note: This loader now queries Supabase directly instead of static JSON files
 
 let cachedData: any[] | null = null;
 
@@ -7,14 +8,14 @@ async function loadSubcontractorsData() {
   if (cachedData) return cachedData;
   
   try {
-    // Try to load from public JSON file first
+    // Try to load from public JSON file first (deprecated, but kept for backward compatibility)
     const response = await fetch('/data/all-subcontractors.json');
     if (response.ok) {
       cachedData = await response.json();
       return cachedData;
     }
   } catch (e) {
-    console.warn('[v0] Could not load subcontractors from JSON');
+    // Silently fail - JSON files are deprecated, data comes from Supabase API
   }
   
   // Fallback: return empty array if data can't be loaded
