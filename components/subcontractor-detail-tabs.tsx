@@ -374,7 +374,7 @@ export function SubcontractorDetailTabs({
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <p className="font-semibold text-white">{conductor.nombre}</p>
-                              <p className="text-xs text-slate-400 mb-2">RUT: <span className="font-mono text-amber-400">{conductor.rut}</span></p>
+                              <p className="text-xs text-slate-400 mb-2">RUT: <span className="font-mono text-amber-400">{conductor.rut?.replace(/\./g, '')}</span></p>
                               
                               {conductor.is_active && (
                                 <Badge className="bg-green-500/20 text-green-300 text-xs">Activo</Badge>
