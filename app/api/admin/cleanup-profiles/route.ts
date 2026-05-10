@@ -10,7 +10,7 @@ export async function GET() {
       .from('profiles')
       .select('id, email, full_name, rut')
       .not('email', 'ilike', '%@labbe.cl%')
-      .not('email', 'ilike', '%@transporteslabbe.cl%')
+      .not('email', 'ilike', '%@labbe.cl%')
 
     console.log('[v0] Non-labbe profiles found:', nonLabbeProfiles?.length)
 
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
         .from('profiles')
         .select('id')
         .not('email', 'ilike', '%@labbe.cl%')
-        .not('email', 'ilike', '%@transporteslabbe.cl%')
+        .not('email', 'ilike', '%@labbe.cl%')
 
       if (fetchError) {
         console.error('[v0] Error fetching profiles to delete:', fetchError)

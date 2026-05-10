@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
+import { cookies } from 'next/headers'
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,6 +11,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Email, RUT y contraseña son requeridos' },
         { status: 400 }
+      )
+    }
+
+    // Only allow @labbe.cl emails
+    if (!email.toLowerCase().endsWith('@labbe.cl')) {
+      return NextResponse.json(
+        { error: 'Solo usuarios @labbe.cl pueden acceder' },
+        { status: 401 }
       )
     }
 
@@ -52,9 +61,39 @@ export async function POST(request: NextRequest) {
       email: executive.email_auth,
       full_name: executive.full_name,
       rut: executive.rut,
-      role: 'executive',
+      role: 'ejecutiva',
       created_at: new Date().toISOString(),
     }
+
+    // Set cookies for verifyAuth middleware
+    const cookieStore = await cookies()
+    
+    // Set httpOnly cookies for security
+    cookieStore.set('user_email', email, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    })
+
+    cookieStore.set('user_role', session.role, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    })
+
+    cookieStore.set('user_id', executive.id, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    })
+
+    console.log('[v0] Executive login successful and cookies set for:', email)
 
     return NextResponse.json(
       {
@@ -65,7 +104,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Executive login error:', error)
+    console.error('[v0] Executive login error:', error)
     return NextResponse.json(
       { error: 'Error en el servidor' },
       { status: 500 }

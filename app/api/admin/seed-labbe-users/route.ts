@@ -5,32 +5,32 @@ import { NextResponse } from 'next/server'
 
 const executives = [
   {
-    email: 'olga@transporteslabbe.cl',
+    email: 'olga@labbe.cl',
     full_name: 'Olga Lydia Carrasco Olivares',
     password: 'labbe2024',
   },
   {
-    email: 'carolina@transporteslabbe.cl',
+    email: 'carolina@labbe.cl',
     full_name: 'Carolina Sepulveda',
     password: 'labbe2024',
   },
   {
-    email: 'daniela@transporteslabbe.cl',
+    email: 'daniela@labbe.cl',
     full_name: 'Daniela Silva',
     password: 'labbe2024',
   },
   {
-    email: 'cecilia@transporteslabbe.cl',
+    email: 'cecilia@labbe.cl',
     full_name: 'Cecilia Farias',
     password: 'labbe2024',
   },
   {
-    email: 'diego@transporteslabbe.cl',
+    email: 'diego@labbe.cl',
     full_name: 'Diego Gonzalez',
     password: 'labbe2024',
   },
   {
-    email: 'katherinne@transporteslabbe.cl',
+    email: 'katherinne@labbe.cl',
     full_name: 'Katherinne Canales',
     password: 'labbe2024',
   },

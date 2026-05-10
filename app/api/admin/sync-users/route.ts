@@ -3,12 +3,12 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 
 const executives = [
-  { email: 'olga@transporteslabbe.cl', password: 'labbe2024' },
-  { email: 'carolina@transporteslabbe.cl', password: 'labbe2024' },
-  { email: 'daniela@transporteslabbe.cl', password: 'labbe2024' },
-  { email: 'cecilia@transporteslabbe.cl', password: 'labbe2024' },
-  { email: 'diego@transporteslabbe.cl', password: 'labbe2024' },
-  { email: 'katherinne@transporteslabbe.cl', password: 'labbe2024' },
+  { email: 'olga@labbe.cl', password: 'labbe2024' },
+  { email: 'carolina@labbe.cl', password: 'labbe2024' },
+  { email: 'daniela@labbe.cl', password: 'labbe2024' },
+  { email: 'cecilia@labbe.cl', password: 'labbe2024' },
+  { email: 'diego@labbe.cl', password: 'labbe2024' },
+  { email: 'katherinne@labbe.cl', password: 'labbe2024' },
 ]
 
 export async function GET() {

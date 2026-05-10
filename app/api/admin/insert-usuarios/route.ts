@@ -36,37 +36,37 @@ export async function GET() {
       {
         full_name: 'Olga Lydia Carrasco Olivares',
         rut: '10574005-0',
-        email: 'olga.carrasco@transporteslabbe.cl',
+        email: 'olga.carrasco@labbe.cl',
         phone: '+56977764753',
       },
       {
         full_name: 'Carolina Pilar Sepulveda Contreras',
         rut: '15464094-0',
-        email: 'carolina.sepulveda@transporteslabbe.cl',
+        email: 'carolina.sepulveda@labbe.cl',
         phone: '+56950067666',
       },
       {
         full_name: 'Daniela Constanza Silva Rojas',
         rut: '17768246-2',
-        email: 'daniela.silva@transporteslabbe.cl',
+        email: 'daniela.silva@labbe.cl',
         phone: '+56978540722',
       },
       {
         full_name: 'Cecilia Del Carmen Farias Muñoz',
         rut: '9888992-2',
-        email: 'cecilia.farias@transporteslabbe.cl',
+        email: 'cecilia.farias@labbe.cl',
         phone: '+56978540798',
       },
       {
         full_name: 'Diego Andres Gonzalez Valenzuela',
         rut: '20114106-0',
-        email: 'diego.gonzalez@transporteslabbe.cl',
+        email: 'diego.gonzalez@labbe.cl',
         phone: '+56978455527',
       },
       {
         full_name: 'Katherinne Johanna Canales Hernandez',
         rut: '18717311-6',
-        email: 'katherinne.canales@transporteslabbe.cl',
+        email: 'katherinne.canales@labbe.cl',
         phone: '+56956139744',
       },
     ]

@@ -57,7 +57,7 @@ export async function POST() {
           razon_social: 'Transportes Labbe Hermanos Limitada',
           nombre_fantasia: 'Transportes Labbe',
           representante_legal: 'Olga Lydia Carrasco Olivares',
-          email: 'info@transporteslabbe.cl',
+          email: 'info@labbe.cl',
           telefono: '+56977764753',
           region: 'XIII Región Metropolitana',
           comuna: 'Paine',
@@ -85,7 +85,7 @@ export async function POST() {
         nombres: 'Olga Lydia',
         apellido_paterno: 'Carrasco',
         apellido_materno: 'Olivares',
-        email: 'olga@transporteslabbe.cl',
+        email: 'olga@labbe.cl',
         telefono: '+56977764753',
         cargo: 'Gerenta General'
       },
@@ -93,7 +93,7 @@ export async function POST() {
         nombres: 'Carolina',
         apellido_paterno: 'Sepulveda',
         apellido_materno: 'García',
-        email: 'carolina@transporteslabbe.cl',
+        email: 'carolina@labbe.cl',
         telefono: '+56987654321',
         cargo: 'Ejecutiva de Cumplimiento'
       },
@@ -101,7 +101,7 @@ export async function POST() {
         nombres: 'Daniela',
         apellido_paterno: 'Silva',
         apellido_materno: 'Martínez',
-        email: 'daniela@transporteslabbe.cl',
+        email: 'daniela@labbe.cl',
         telefono: '+56987654322',
         cargo: 'Ejecutiva de Operaciones'
       },
@@ -109,7 +109,7 @@ export async function POST() {
         nombres: 'Cecilia',
         apellido_paterno: 'Farias',
         apellido_materno: 'López',
-        email: 'cecilia@transporteslabbe.cl',
+        email: 'cecilia@labbe.cl',
         telefono: '+56987654323',
         cargo: 'Ejecutiva de Finanzas'
       },
@@ -117,7 +117,7 @@ export async function POST() {
         nombres: 'Diego',
         apellido_paterno: 'González',
         apellido_materno: 'Rodríguez',
-        email: 'diego@transporteslabbe.cl',
+        email: 'diego@labbe.cl',
         telefono: '+56987654324',
         cargo: 'Ejecutivo de TI'
       },
@@ -125,7 +125,7 @@ export async function POST() {
         nombres: 'Katherinne',
         apellido_paterno: 'Canales',
         apellido_materno: 'Peña',
-        email: 'katherinne@transporteslabbe.cl',
+        email: 'katherinne@labbe.cl',
         telefono: '+56987654325',
         cargo: 'Ejecutiva de Recursos Humanos'
       }

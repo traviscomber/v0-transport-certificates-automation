@@ -15,7 +15,7 @@ interface AuthUser {
  * to ALL data across all transportistas/companies.
  * Labbe is the mandante (principal company) that manages all subcontractors.
  */
-const SUPER_ADMIN_DOMAINS = ['labbe.cl', 'transporteslabbe.cl']
+const SUPER_ADMIN_DOMAINS = ['labbe.cl']
 
 /**
  * Check if a user has super-admin privileges based on email domain or role.
