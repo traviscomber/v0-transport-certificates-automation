@@ -299,7 +299,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
                 <CheckCircle className="h-4 w-4 text-green-500" />
                 <div className="text-left">
                   <div className="font-medium text-xs">Aprobados</div>
-                  <div className="text-xs text-muted-foreground">Historial</div>
+                  <div className="text-xs text-muted-foreground">{totalAprobados}</div>
                 </div>
               </Button>
             </Link>
@@ -309,7 +309,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
                 <XCircle className="h-4 w-4 text-red-500" />
                 <div className="text-left">
                   <div className="font-medium text-xs">Rechazados</div>
-                  <div className="text-xs text-muted-foreground">Historial</div>
+                  <div className="text-xs text-muted-foreground">{stats.conductores.rechazados + stats.subcontratistas.rechazados}</div>
                 </div>
               </Button>
             </Link>
