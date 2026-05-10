@@ -22,51 +22,22 @@ export function DriverDocumentsManager({
   const handleDocumentSelected = async (documentType: any, file: File, metadata: any) => {
     setUploading(true)
     try {
-      // Read file as Base64
-      const reader = new FileReader()
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const result = reader.result as string
-          console.log('[v0] FileReader result type:', typeof result, 'length:', result?.length)
-          const parts = result.split(',')
-          console.log('[v0] Split result - parts count:', parts.length)
-          const base64 = parts[1]
-          if (!base64) {
-            reject(new Error('Failed to extract Base64 from FileReader result'))
-            return
-          }
-          console.log('[v0] Base64 extracted, length:', base64.length)
-          resolve(base64)
-        }
-        reader.onerror = (error) => {
-          console.error('[v0] FileReader error:', error)
-          reject(error)
-        }
-      })
-      reader.readAsDataURL(file)
-      
-      const fileBase64 = await base64Promise
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('driver_rut', identifier)
+      formData.append('document_type_id', documentType.id)
+      formData.append('metadata', JSON.stringify(metadata))
 
-      console.log('[v0] Upload request with Base64:', { 
+      console.log('[v0] Upload request:', { 
         driver_rut: identifier, 
         document_type_id: documentType.id, 
         file_name: file.name,
-        file_size: file.size,
-        base64_length: fileBase64.length
+        file_size: file.size 
       })
 
       const response = await fetch('/api/company/documents/upload-with-metadata', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          file: fileBase64,
-          fileName: file.name,
-          fileType: file.type,
-          driver_rut: identifier,
-          document_type_id: documentType.id,
-          uploaded_by: '',
-          metadata: metadata
-        }),
+        body: formData,
         credentials: 'include',
       })
 
