@@ -35,9 +35,9 @@ export async function POST(
     const supabase = createAdminClient()
     const ejecutivaName = request.headers.get('x-ejecutiva-name') || 'Sistema'
 
-    // Get current alert details from alerts_log
+    // Get current alert details from alerts table (unified table)
     const { data: alert, error: fetchError } = await supabase
-      .from('alerts_log')
+      .from('alerts')
       .select('*')
       .eq('id', alertId)
       .single()
@@ -52,7 +52,7 @@ export async function POST(
 
     // Update alert with action details
     const { data: updatedAlert, error: updateError } = await supabase
-      .from('alerts_log')
+      .from('alerts')
       .update({
         status: action === 'request_info' ? 'pendiente' : 'resuelto',
         action_type: action,
@@ -103,7 +103,7 @@ export async function POST(
         request_info: 'Informacion Solicitada',
       }
 
-      await supabase.from('alerts_log').insert([
+      await supabase.from('alerts').insert([
         {
           alert_type: action === 'reject' ? 'error' : action === 'approve' ? 'success' : 'info',
           title: actionTitles[action as keyof typeof actionTitles],
