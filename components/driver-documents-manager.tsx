@@ -27,10 +27,21 @@ export function DriverDocumentsManager({
       const base64Promise = new Promise<string>((resolve, reject) => {
         reader.onload = () => {
           const result = reader.result as string
-          const base64 = result.split(',')[1]
+          console.log('[v0] FileReader result type:', typeof result, 'length:', result?.length)
+          const parts = result.split(',')
+          console.log('[v0] Split result - parts count:', parts.length)
+          const base64 = parts[1]
+          if (!base64) {
+            reject(new Error('Failed to extract Base64 from FileReader result'))
+            return
+          }
+          console.log('[v0] Base64 extracted, length:', base64.length)
           resolve(base64)
         }
-        reader.onerror = reject
+        reader.onerror = (error) => {
+          console.error('[v0] FileReader error:', error)
+          reject(error)
+        }
       })
       reader.readAsDataURL(file)
       
@@ -40,7 +51,8 @@ export function DriverDocumentsManager({
         driver_rut: identifier, 
         document_type_id: documentType.id, 
         file_name: file.name,
-        file_size: file.size 
+        file_size: file.size,
+        base64_length: fileBase64.length
       })
 
       const response = await fetch('/api/company/documents/upload-with-metadata', {
