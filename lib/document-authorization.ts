@@ -29,12 +29,20 @@ export async function canChangeDocumentStatus(
     return { allowed: true }
   }
 
-  // Only admin role can change document status (besides super-admin)
-  if (userRole !== 'admin') {
-    console.log('[v0] AUTH DENY - Role check failed:', { userId, userRole, documentId })
+  // Super-admin bypass
+  if (isSuperAdmin(userEmail, userRole)) {
+    console.log('[v0] AUTH ALLOW - Super-admin (Labbe/mandante) bypass:', { userId, userEmail, userRole })
+    return { allowed: true }
+  }
+
+  // Allow admin AND ejecutiva role to change document status
+  // Executives (ejecutiva) and administrators both manage documents
+  const allowedRoles = ['admin', 'ejecutiva']
+  if (!allowedRoles.includes(userRole)) {
+    console.log('[v0] AUTH DENY - Role check failed:', { userId, userRole, documentId, allowedRoles })
     return {
       allowed: false,
-      reason: `Solo administradores pueden cambiar el estado de documentos. Tu rol es: ${userRole}`,
+      reason: `Solo administradores y ejecutivas pueden cambiar el estado de documentos. Tu rol es: ${userRole}`,
     }
   }
 

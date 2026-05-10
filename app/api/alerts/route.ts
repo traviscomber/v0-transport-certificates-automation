@@ -19,11 +19,11 @@ export async function GET(request: Request) {
     const offset = parseInt(url.searchParams.get('offset') || '0')
 
     let query = supabase
-      .from('alerts_log')
+      .from('alerts')
       .select('*', { count: 'exact' })
 
-    // Filter by ejecutiva (only show alerts assigned to this ejecutiva)
-    if (ejecutiva) query = query.eq('ejecutiva_nombre', ejecutiva)
+    // Filter by ejecutiva - check both ejecutiva_asignada and status
+    if (ejecutiva) query = query.eq('metadata', { ejecutiva_asignada: ejecutiva })
     
     if (type) query = query.eq('alert_type', type)
     if (priority) query = query.eq('priority', priority)
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Normalize alerts: map alerts_log fields to expected format
+    // Normalize alerts: map alerts table fields to expected format
     const alerts = (rawAlerts || []).map((a: any) => ({
       id: a.id,
       type: a.alert_type || 'info',
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
       is_read: a.is_read ?? false,
       is_dismissed: a.is_resolved ?? false,
       action_url: a.action_url,
-      ejecutiva_nombre: a.ejecutiva_nombre,
+      ejecutiva_asignada: a.metadata?.ejecutiva_asignada,
       status: a.status || 'pendiente',
       action_type: a.action_type,
       action_notes: a.action_notes,
@@ -95,7 +95,7 @@ export async function PATCH(request: Request) {
     if (is_dismissed !== undefined) updateData.is_resolved = is_dismissed
 
     const { data: updated, error } = await supabase
-      .from('alerts_log')
+      .from('alerts')
       .update(updateData)
       .in('id', ids)
       .select()
