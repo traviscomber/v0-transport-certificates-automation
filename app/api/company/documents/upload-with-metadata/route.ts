@@ -84,21 +84,6 @@ export async function POST(request: NextRequest) {
         contentType: file.type,
         upsert: true,
       })
-      return NextResponse.json({ error: 'Conductor no encontrado en la base de datos', details: `RUT ${driverRut} not found` }, { status: 400 })
-    }
-
-    const conductorUUID = conductorRow.id
-
-    const storagePath = `drivers/${conductorUUID}/${Date.now()}_${fileName}`
-
-    console.log('[v0] Upload endpoint: Uploading to storage:', storagePath)
-
-    const { data: uploadData, error: uploadError } = await adminClient.storage
-      .from('documents')
-      .upload(storagePath, buffer, {
-        contentType: fileType || 'application/octet-stream',
-        upsert: true,
-      })
 
     if (uploadError) {
       console.error('[v0] Upload endpoint: Storage upload error:', uploadError)
@@ -152,7 +137,7 @@ export async function POST(request: NextRequest) {
     const insertPayload: any = {
       conductor_id: conductorUUID,
       document_type_id: documentTypeId,
-      original_filename: fileName,
+      original_filename: file.name,
       file_url: publicUrlData?.publicUrl || '',
       validation_status: validationStatus
     }
