@@ -283,7 +283,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
             <Link href="/dashboard/company/conductores">
               <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
                 <Users className="h-4 w-4 text-blue-500" />
@@ -310,6 +310,16 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
                 <div className="text-left">
                   <div className="font-medium text-xs">Pendientes</div>
                   <div className="text-xs text-muted-foreground">{totalPendientes}</div>
+                </div>
+              </Button>
+            </Link>
+
+            <Link href="/dashboard/company/documentos/aprobados">
+              <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                <div className="text-left">
+                  <div className="font-medium text-xs">Aprobados</div>
+                  <div className="text-xs text-muted-foreground">Historial</div>
                 </div>
               </Button>
             </Link>
