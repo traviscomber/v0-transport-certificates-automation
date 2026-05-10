@@ -136,17 +136,22 @@ export function DocumentManagerHub({ stats }: DocumentManagerHubProps) {
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-amber-900/50 to-amber-950/50 border-amber-700/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-amber-300/80">Pendientes</p>
-                <p className="text-2xl font-bold text-amber-400">{totalPendientes}</p>
+        <Link href="/dashboard/company/conductores">
+          <Card className="bg-gradient-to-br from-amber-900/50 to-amber-950/50 border-amber-700/50 hover:border-amber-500/70 transition-colors cursor-pointer group">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-amber-300/80">Pendientes</p>
+                  <p className="text-2xl font-bold text-amber-400">{totalPendientes}</p>
+                  <p className="text-xs text-amber-400/60 mt-1 group-hover:text-amber-300 transition-colors">
+                    Click para revisar
+                  </p>
+                </div>
+                <Clock className="h-8 w-8 text-amber-500/50 group-hover:text-amber-400 transition-colors" />
               </div>
-              <Clock className="h-8 w-8 text-amber-500/50" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </Link>
         
         <Card className="bg-gradient-to-br from-green-900/50 to-green-950/50 border-green-700/50">
           <CardContent className="p-4">

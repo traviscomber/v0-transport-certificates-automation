@@ -127,9 +127,10 @@ export default async function PendientesPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge className="bg-amber-500/20 text-amber-400 text-xs">Pendiente</Badge>
-                    <Link href="/dashboard/company/conductores">
-                      <Button variant="ghost" size="sm">
-                        <ExternalLink className="h-4 w-4" />
+                    <Link href={`/dashboard/company/conductores?rut=${doc.conductores?.rut?.replace(/\./g, '')}`}>
+                      <Button variant="outline" size="sm" className="text-xs gap-1">
+                        Revisar
+                        <ExternalLink className="h-3 w-3" />
                       </Button>
                     </Link>
                   </div>
