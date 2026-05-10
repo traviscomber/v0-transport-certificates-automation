@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { FileText, Shield, Truck, AlertTriangle, CheckCircle, Clock } from "lucide-react"
+import { useDocumentSync } from "@/contexts/document-sync-context"
 
 interface Alert {
   id: string
@@ -48,9 +49,9 @@ export function DashboardOverview() {
       status: "warning",
     },
   ])
-
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [loading, setLoading] = useState(true)
+  const { onSync } = useDocumentSync()
 
   useEffect(() => {
     const fetchData = async () => {
@@ -128,6 +129,79 @@ export function DashboardOverview() {
 
     fetchData()
   }, [])
+
+  // Listen for document sync events and refetch dashboard stats
+  useEffect(() => {
+    const unsubscribe = onSync((event) => {
+      console.log('[v0] DashboardOverview: Received sync event', event.type)
+      
+      // Refetch dashboard stats when documents change
+      if (event.type === 'document_uploaded' || event.type === 'document_status_changed') {
+        console.log('[v0] DashboardOverview: Refetching stats due to sync event')
+        
+        const fetchUpdatedStats = async () => {
+          try {
+            const docsRes = await fetch(`/api/company/documents/all?_t=${Date.now()}`, {
+              cache: "no-store",
+            })
+            
+            if (docsRes.ok) {
+              const docsData = await docsRes.json()
+              const documents = docsData.documents || []
+              
+              const total = documents.length
+              const approved = documents.filter((d: any) => 
+                d.verification_status === 'aprobado' || d.validation_status === 'approved'
+              ).length
+              const pending = documents.filter((d: any) => 
+                d.verification_status === 'pendiente' || d.validation_status === 'pending' || !d.validation_status
+              ).length
+              const rejected = documents.filter((d: any) => 
+                d.verification_status === 'rechazado' || d.validation_status === 'rejected'
+              ).length
+
+              setStats([
+                {
+                  title: "Total de Documentos",
+                  value: total.toString(),
+                  description: "En el sistema",
+                  icon: FileText,
+                  status: "active",
+                },
+                {
+                  title: "Documentos Aprobados",
+                  value: approved.toString(),
+                  description: "Validados",
+                  icon: CheckCircle,
+                  status: "active",
+                },
+                {
+                  title: "Documentos Pendientes",
+                  value: pending.toString(),
+                  description: "En revisión",
+                  icon: Clock,
+                  status: "active",
+                },
+                {
+                  title: "Documentos Rechazados",
+                  value: rejected.toString(),
+                  description: "No validados",
+                  icon: AlertTriangle,
+                  status: "warning",
+                },
+              ])
+            }
+          } catch (error) {
+            console.error('[v0] DashboardOverview: Error refetching stats:', error)
+          }
+        }
+
+        fetchUpdatedStats()
+      }
+    })
+
+    return unsubscribe
+  }, [onSync])
 
   const getStatusBadge = (type: string) => {
     switch (type) {

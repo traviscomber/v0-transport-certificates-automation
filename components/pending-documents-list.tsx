@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -8,6 +8,7 @@ import { Clock, Users, Truck, ArrowLeft, FileText, Check, X, Loader2, Eye } from
 import Link from "next/link"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
+import { useDocumentSync } from '@/contexts/document-sync-context'
 
 interface PendingDocument {
   id: string
@@ -48,6 +49,7 @@ export function PendingDocumentsList({ conductorDocs: initialConductorDocs, subD
   const [loading, setLoading] = useState<string | null>(null)
   const [previewDoc, setPreviewDoc] = useState<PendingDocument | null>(null)
   const [showRejectModal, setShowRejectModal] = useState(false)
+  const { onSync } = useDocumentSync()
   const [rejectDocId, setRejectDocId] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
   const [docType, setDocType] = useState<'conductor' | 'subcontractor'>('conductor')
@@ -116,6 +118,22 @@ export function PendingDocumentsList({ conductorDocs: initialConductorDocs, subD
       handleStatusChange(rejectDocId, 'rechazado', docType, rejectReason)
     }
   }
+
+  // Listen for document sync events and refetch pending documents if needed
+  useEffect(() => {
+    const unsubscribe = onSync((event) => {
+      console.log('[v0] PendingDocumentsList: Received sync event', event.type)
+      
+      // When status changes elsewhere, remove from pending list
+      if (event.type === 'document_status_changed' && event.documentId) {
+        console.log('[v0] PendingDocumentsList: Removing document from pending list:', event.documentId)
+        setConductorDocs(prev => prev.filter(d => d.id !== event.documentId))
+        setSubDocs(prev => prev.filter(d => d.id !== event.documentId))
+      }
+    })
+
+    return unsubscribe
+  }, [onSync])
 
   return (
     <div className="space-y-6">
