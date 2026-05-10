@@ -22,8 +22,8 @@ export async function GET(request: Request) {
       .from('alerts')
       .select('*', { count: 'exact' })
 
-    // Filter by ejecutiva - check both ejecutiva_asignada and status
-    if (ejecutiva) query = query.eq('metadata', { ejecutiva_asignada: ejecutiva })
+    // Filter by ejecutiva - use the ejecutiva_nombre column directly
+    if (ejecutiva) query = query.eq('ejecutiva_nombre', ejecutiva)
     
     if (type) query = query.eq('alert_type', type)
     if (priority) query = query.eq('priority', priority)
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
       is_read: a.is_read ?? false,
       is_dismissed: a.is_resolved ?? false,
       action_url: a.action_url,
-      ejecutiva_asignada: a.metadata?.ejecutiva_asignada,
+      ejecutiva_asignada: a.ejecutiva_nombre,
       status: a.status || 'pendiente',
       action_type: a.action_type,
       action_notes: a.action_notes,
