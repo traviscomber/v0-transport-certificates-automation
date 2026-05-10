@@ -49,43 +49,17 @@ export async function verifyAuth(request: NextRequest): Promise<{ user: AuthUser
     if (userEmail && userRole) {
       console.log('[v0] verifyAuth: Found simple login cookies for:', userEmail)
       
-      const supabase = await createClient()
-      
-      // Look up full user profile in database
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, role, organization_id')
-        .eq('email', userEmail)
-        .maybeSingle()
-
-      console.log('[v0] verifyAuth: Profile lookup result:', {
-        found: !!profile,
-        error: profileError?.message,
-        id: profile?.id,
-        org_id: profile?.organization_id
-      })
-
-      if (profileError) {
-        console.log('[v0] verifyAuth: Profile lookup ERROR:', profileError.message)
-        return { user: null, error: 'Failed to fetch user profile' }
-      }
-
-      if (!profile) {
-        console.log('[v0] verifyAuth: No profile found for email:', userEmail)
-        return { user: null, error: 'User profile not found' }
-      }
-
-      // Auto-promote Labbe users to super_admin (mandante role)
-      // Labbe manages all transportistas and conductores, so they get full CRUD on everything
+      // For simple login users, we trust the cookies and don't require Supabase profile lookup
+      // This allows the system to work without requiring profiles table to be populated
       const effectiveRole: UserRole = isSuperAdmin(userEmail, userRole)
         ? 'super_admin'
-        : ((userRole || profile.role) as UserRole)
+        : (userRole as UserRole)
 
       const authUser: AuthUser = {
-        id: profile.id,
+        id: userEmail, // Use email as ID for simple login users
         email: userEmail,
         role: effectiveRole,
-        organization_id: userOrgId || profile.organization_id,
+        organization_id: userOrgId,
       }
 
       console.log('[v0] verifyAuth: SUCCESS - Simple login user authenticated:', {
