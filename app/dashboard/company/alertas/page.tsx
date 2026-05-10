@@ -44,7 +44,7 @@ export default function AlertasPage() {
         setAlerts(data.alerts.map((alert: any) => ({
           ...alert,
           status: alert.status || 'pendiente',
-          timestamp: new Date(alert.created_at),
+          // Keep created_at as string - don't convert to Date to avoid hydration mismatch
         })))
       }
       console.log('[v0] Loaded alerts for ejecutiva:', ejecutivaNombre, 'Count:', data.alerts?.length)
