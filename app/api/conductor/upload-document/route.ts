@@ -455,6 +455,13 @@ export async function POST(request: NextRequest) {
           expirationDate: aiExtraction.expirationDate,
         } : null,
         message: `Documento subido ${validationStatus === 'approved' ? 'y aprobado automáticamente' : validationStatus === 'rejected' ? 'pero fue rechazado por IA' : 'y está en revisión'}`,
+        // Sync event information for real-time UI updates
+        syncEvent: {
+          type: 'document_uploaded',
+          conductorId: conductorId,
+          documentId: uploadedDoc.id,
+          timestamp: Date.now(),
+        }
       },
       { status: 200 }
     )

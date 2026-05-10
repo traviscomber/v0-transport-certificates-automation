@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Upload, FileText, CheckCircle2, AlertCircle, Loader, Download, Eye, X, Clock, HelpCircle, Trash2 } from 'lucide-react'
 import Link from 'next/link'
+import { useDocumentSync } from '@/contexts/document-sync-context'
 
 interface UploadedDocument {
   id: string
@@ -98,6 +99,8 @@ export default function ConductorDocumentosPage() {
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [conductorId, setConductorId] = useState<string>('')
+  const { broadcastSync } = useDocumentSync()
   const [compliancePercentage, setCompliancePercentage] = useState(0)
   const [selectedDocumentType, setSelectedDocumentType] = useState('LIC_CONDUCIR')
 
@@ -171,6 +174,19 @@ export default function ConductorDocumentosPage() {
 
       const result = await response.json()
       setSuccess('Documento subido exitosamente. Se validará en 24-48 horas.')
+      
+      // Broadcast sync event so dashboard and other components update
+      if (result.syncEvent) {
+        console.log('[v0] Conductor page: Broadcasting upload sync event')
+        broadcastSync({
+          type: 'document_uploaded',
+          conductorId: result.syncEvent.conductorId || conductorId,
+          documentId: result.syncEvent.documentId || result.documentId,
+          timestamp: result.syncEvent.timestamp || Date.now(),
+          data: { file: file.name, validationStatus: result.validationStatus }
+        })
+      }
+      
       await fetchDocuments()
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Error al subir documento'

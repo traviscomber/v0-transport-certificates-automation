@@ -6,6 +6,7 @@ import "./globals.css"
 import { RoleProvider } from "./providers"
 import { ToastProvider } from "@/lib/toast-context"
 import { ToastContainer } from "@/components/toast-container"
+import { DocumentSyncProvider } from "@/contexts/document-sync-context"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -32,12 +33,14 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark">
       <body className={`font-sans ${inter.variable} ${jetbrainsMono.variable} antialiased`}>
-        <RoleProvider>
-          <ToastProvider>
-            <Suspense fallback={null}>{children}</Suspense>
-            <ToastContainer />
-          </ToastProvider>
-        </RoleProvider>
+        <DocumentSyncProvider>
+          <RoleProvider>
+            <ToastProvider>
+              <Suspense fallback={null}>{children}</Suspense>
+              <ToastContainer />
+            </ToastProvider>
+          </RoleProvider>
+        </DocumentSyncProvider>
       </body>
     </html>
   )

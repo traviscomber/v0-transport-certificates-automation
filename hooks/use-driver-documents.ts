@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useDocumentSync, DocumentSyncEvent } from '@/contexts/document-sync-context'
 
 export interface DriverDocument {
   id: string
@@ -19,6 +20,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
+  const { onSync } = useDocumentSync()
 
   const fetchDocuments = useCallback(async () => {
     if (!driverRut) return
@@ -195,6 +197,28 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       fetchDocuments()
     }
   }, [enabled, driverRut, fetchDocuments])
+
+  // Listen for document sync events and refetch when needed
+  useEffect(() => {
+    const unsubscribe = onSync((event: DocumentSyncEvent) => {
+      if (!enabled) return // Only sync if hook is active
+      
+      console.log('[v0] useDriverDocuments: Received sync event', event.type)
+      
+      // Check if this sync event affects this conductor
+      if (event.conductorId && event.conductorId !== driverId) {
+        return // Event is for a different conductor
+      }
+      
+      // For any document-related sync event, refetch documents
+      if (event.type === 'document_uploaded' || event.type === 'document_status_changed') {
+        console.log('[v0] useDriverDocuments: Refetching documents due to sync event')
+        fetchDocuments()
+      }
+    })
+
+    return unsubscribe
+  }, [enabled, driverId, onSync, fetchDocuments])
 
   return {
     documents,
