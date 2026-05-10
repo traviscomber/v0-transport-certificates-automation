@@ -78,7 +78,10 @@ export function PendingDocumentsList({ conductorDocs: initialConductorDocs, subD
         throw new Error(error.error || error.details?.[0]?.message || 'Error al cambiar estado')
       }
 
-      // Remove from list on success
+      const result = await response.json()
+      console.log('[v0] Pending docs: Status change successful', result)
+
+      // Remove from local list immediately (UI feedback)
       if (type === 'conductor') {
         setConductorDocs(prev => prev.filter(d => d.id !== docId))
       } else {

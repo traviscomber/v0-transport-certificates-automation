@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 import { createClient } from "@/lib/supabase/server"
 import { PendingDocumentsList } from "@/components/pending-documents-list"
@@ -6,7 +7,7 @@ import { PendingDocumentsList } from "@/components/pending-documents-list"
 async function getPendingDocuments() {
   const supabase = await createClient()
   
-  // Get pending conductor documents
+  // Get pending conductor documents with no cache
   const { data: conductorDocs, error: conductorError } = await supabase
     .from("uploaded_documents")
     .select(`
@@ -22,7 +23,7 @@ async function getPendingDocuments() {
         apellido_paterno,
         rut
       )
-    `)
+    `, { count: 'exact' })
     .or('validation_status.eq.pending,validation_status.is.null')
     .order("created_at", { ascending: false })
     .limit(100)
@@ -31,7 +32,7 @@ async function getPendingDocuments() {
     console.error("[v0] Error fetching pending conductor docs:", conductorError)
   }
 
-  // Get pending subcontractor documents
+  // Get pending subcontractor documents with no cache
   const { data: subDocs, error: subError } = await supabase
     .from("subcontractor_documents")
     .select(`
@@ -46,7 +47,7 @@ async function getPendingDocuments() {
         razon_social,
         rut
       )
-    `)
+    `, { count: 'exact' })
     .or('status.eq.pendiente,status.is.null')
     .order("created_at", { ascending: false })
     .limit(100)
