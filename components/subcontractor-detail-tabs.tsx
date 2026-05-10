@@ -373,10 +373,10 @@ export function SubcontractorDetailTabs({
                         <div key={conductor.id} className="p-4 rounded border border-slate-700 bg-slate-800/30">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <p className="font-semibold text-white">{conductor.nombre_completo}</p>
-                              <p className="text-xs text-slate-400 mb-2">Licencia: {conductor.numero_licencia}</p>
+                              <p className="font-semibold text-white">{conductor.nombre}</p>
+                              <p className="text-xs text-slate-400 mb-2">RUT: <span className="font-mono text-amber-400">{conductor.rut}</span></p>
                               
-                              {conductor.status === 'activo' && (
+                              {conductor.is_active && (
                                 <Badge className="bg-green-500/20 text-green-300 text-xs">Activo</Badge>
                               )}
                             </div>
