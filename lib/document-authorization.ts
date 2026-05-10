@@ -24,14 +24,11 @@ export async function canChangeDocumentStatus(
   
   // SUPER-ADMIN BYPASS: Labbe (mandante) users can manage ALL documents
   // regardless of which transportista the conductor belongs to
-  if (isSuperAdmin(userEmail, userRole)) {
-    console.log('[v0] AUTH ALLOW - Super-admin (Labbe/mandante) bypass:', { userId, userEmail, userRole })
-    return { allowed: true }
-  }
-
-  // Super-admin bypass
-  if (isSuperAdmin(userEmail, userRole)) {
-    console.log('[v0] AUTH ALLOW - Super-admin (Labbe/mandante) bypass:', { userId, userEmail, userRole })
+  const isSuperAdminUser = isSuperAdmin(userEmail, userRole)
+  console.log('[v0] Super-admin check:', { isSuperAdminUser, userEmail, userRole })
+  
+  if (isSuperAdminUser) {
+    console.log('[v0] AUTH ALLOW - Super-admin (Labbe/@labbe.cl) bypass:', { userId, userEmail, userRole })
     return { allowed: true }
   }
 
