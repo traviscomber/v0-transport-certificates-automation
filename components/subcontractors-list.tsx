@@ -5,7 +5,7 @@ import { Search, MapPin, Phone, Mail, CheckCircle, AlertCircle, X, Filter, Users
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { SubcontractorDetailCard } from './subcontractor-detail-card'
+import { SubcontractorDetailTabs } from './subcontractor-detail-tabs'
 
 interface Document {
   id: string
@@ -483,7 +483,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
 
       {/* Subcontractor Detail Modal */}
       {selectedDetailSubcontractor && (
-        <SubcontractorDetailCard
+        <SubcontractorDetailTabs
           subcontractor={selectedDetailSubcontractor}
           onClose={() => setSelectedDetailSubcontractor(null)}
         />
