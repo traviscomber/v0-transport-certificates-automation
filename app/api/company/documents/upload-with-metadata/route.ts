@@ -21,25 +21,14 @@ export async function POST(request: NextRequest) {
 
     console.log('[v0] Upload endpoint: Authenticated user:', { id: user.id, email: user.email })
 
-    // Check Content-Type header
-    const contentType = request.headers.get('content-type') || ''
-    console.log('[v0] Upload endpoint: Content-Type:', contentType)
-    
-    if (!contentType.includes('multipart/form-data')) {
-      console.error('[v0] Upload endpoint: Invalid Content-Type. Expected multipart/form-data, got:', contentType)
-      return NextResponse.json(
-        { error: 'Invalid Content-Type. Expected multipart/form-data' },
-        { status: 400 }
-      )
-    }
-
     let formData
     try {
       formData = await request.formData()
     } catch (parseError) {
-      console.error('[v0] Upload endpoint: Failed to parse FormData:', parseError)
+      const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown error parsing form data'
+      console.error('[v0] Upload endpoint: Failed to parse FormData:', errorMessage)
       return NextResponse.json(
-        { error: 'Failed to parse form data: ' + (parseError instanceof Error ? parseError.message : 'Unknown error') },
+        { error: 'Failed to parse form data: ' + errorMessage },
         { status: 400 }
       )
     }
