@@ -57,14 +57,12 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
     // On mount, verify stats are fresh by refetching from API
     const verifyAndRefreshStats = async () => {
       try {
-        console.log('[v0] DocumentManagerHub: Verifying stats freshness on mount')
         const response = await fetch('/api/company/documents/stats?_t=' + Date.now(), {
           cache: 'no-store'
         })
         
         if (response.ok) {
           const data = await response.json()
-          console.log('[v0] DocumentManagerHub: Fresh stats from API', data.stats)
           setStats(data.stats)
         }
       } catch (error) {
@@ -74,35 +72,23 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
     
     verifyAndRefreshStats()
     
-    // Set up sync listener
+    // Set up polling interval - refresh stats every 10 seconds
+    const pollInterval = setInterval(() => {
+      verifyAndRefreshStats()
+    }, 10000) // 10 seconds
+    
+    // Set up sync listener for immediate updates on status changes
     const unsubscribe = onSync((event) => {
-      console.log('[v0] DocumentManagerHub: Received sync event', event.type)
-      
       if (event.type === 'document_status_changed') {
-        console.log('[v0] DocumentManagerHub: Refetching stats due to status change')
-        
-        // Refetch stats from API
-        const fetchUpdatedStats = async () => {
-          try {
-            const response = await fetch('/api/company/documents/stats?_t=' + Date.now(), {
-              cache: 'no-store'
-            })
-            
-            if (response.ok) {
-              const data = await response.json()
-              console.log('[v0] DocumentManagerHub: Updated stats', data)
-              setStats(data.stats)
-            }
-          } catch (error) {
-            console.error('[v0] DocumentManagerHub: Error refetching stats:', error)
-          }
-        }
-        
-        fetchUpdatedStats()
+        // Refetch immediately on status change
+        verifyAndRefreshStats()
       }
     })
 
-    return unsubscribe
+    return () => {
+      clearInterval(pollInterval)
+      unsubscribe()
+    }
   }, [onSync])
 
   const modules = [
