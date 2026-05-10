@@ -36,9 +36,10 @@ export function SmartAlerts() {
         if (!res.ok) throw new Error("Error al cargar alertas")
         
         const data = await res.json()
+        const alertsList = Array.isArray(data) ? data : data?.alerts || []
         
         // Transform API alerts to SmartAlert format
-        const transformedAlerts: SmartAlert[] = (data || []).map((alert: any) => ({
+        const transformedAlerts: SmartAlert[] = alertsList.map((alert: any) => ({
           id: alert.id,
           type: alert.type === 'DOCUMENT_REJECTED' ? 'expiry' : 
                  alert.type === 'DOCUMENT_APPROVED' ? 'compliance' : 
@@ -47,9 +48,9 @@ export function SmartAlerts() {
           title: alert.title,
           description: alert.message,
           daysUntil: 0,
-          documentType: alert.metadata?.document_type || 'Documento',
-          driverName: alert.metadata?.conductor_name,
-          actionRequired: `Revisar documento: ${alert.metadata?.conductor_name || 'Conductor'}`,
+          documentType: alert.document_type || 'Documento',
+          driverName: alert.entity_name,
+          actionRequired: `Revisar documento: ${alert.entity_name || 'Conductor'}`,
           createdAt: new Date(alert.created_at),
         }))
         
