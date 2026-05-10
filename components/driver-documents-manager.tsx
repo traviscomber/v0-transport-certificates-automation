@@ -22,22 +22,29 @@ export function DriverDocumentsManager({
   const handleDocumentSelected = async (documentType: any, file: File, metadata: any) => {
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('driver_rut', identifier)
-      formData.append('document_type_id', documentType.id)
-      formData.append('metadata', JSON.stringify(metadata))
+      // Read file as ArrayBuffer
+      const arrayBuffer = await file.arrayBuffer()
+      const uint8Array = new Uint8Array(arrayBuffer)
 
       console.log('[v0] Upload request:', { 
         driver_rut: identifier, 
         document_type_id: documentType.id, 
         file_name: file.name,
-        file_size: file.size 
+        file_size: file.size,
+        file_type: file.type
       })
 
+      // Send file as binary with metadata in headers to avoid FormData issues
       const response = await fetch('/api/company/documents/upload-with-metadata', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream',
+          'X-File-Name': file.name,
+          'X-Driver-Rut': identifier,
+          'X-Document-Type-Id': documentType.id,
+          'X-Metadata': JSON.stringify(metadata),
+        },
+        body: uint8Array,
         credentials: 'include',
       })
 

@@ -21,47 +21,35 @@ export async function POST(request: NextRequest) {
 
     console.log('[v0] Upload endpoint: Authenticated user:', { id: user.id, email: user.email })
 
-    // Log all request headers for debugging
-    const contentType = request.headers.get('content-type')
-    const contentLength = request.headers.get('content-length')
+    // Get metadata from custom headers instead of FormData
+    const fileName = request.headers.get('X-File-Name')
+    const driverRut = request.headers.get('X-Driver-Rut')
+    const documentTypeId = request.headers.get('X-Document-Type-Id')
+    const metadataHeader = request.headers.get('X-Metadata')
+    const fileType = request.headers.get('Content-Type')
+
     console.log('[v0] Upload endpoint: Request headers:', {
-      'content-type': contentType,
-      'content-length': contentLength,
-      'all-headers': Array.from(request.headers.entries())
+      'X-File-Name': fileName,
+      'X-Driver-Rut': driverRut,
+      'X-Document-Type-Id': documentTypeId,
+      'Content-Type': fileType,
     })
 
-    let formData
-    try {
-      formData = await request.formData()
-    } catch (parseError) {
-      const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown error parsing form data'
-      console.error('[v0] Upload endpoint: Failed to parse FormData:', {
-        error: errorMessage,
-        'content-type': contentType,
-        'stack': parseError instanceof Error ? parseError.stack : 'No stack'
-      })
-      return NextResponse.json(
-        { error: 'Failed to parse form data: ' + errorMessage },
-        { status: 400 }
-      )
+    if (!fileName || !driverRut || !documentTypeId) {
+      console.log('[v0] Upload endpoint: Missing required headers')
+      return NextResponse.json({ error: 'Missing required headers' }, { status: 400 })
     }
 
-    const file = formData.get('file') as File
-    const driverRut = formData.get('driver_rut') as string
-    const documentTypeId = formData.get('document_type_id') as string
-    const metadataJson = formData.get('metadata') as string
+    // Read binary file data
+    const arrayBuffer = await request.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
 
-    console.log('[v0] Upload endpoint: Form data received:', {
-      file: file?.name,
+    console.log('[v0] Upload endpoint: File data received:', {
+      fileName,
+      fileSize: buffer.length,
       driverRut,
       documentTypeId,
-      hasFile: !!file
     })
-
-    if (!file || !driverRut || !documentTypeId) {
-      console.log('[v0] Upload endpoint: Missing required fields')
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-    }
 
     const adminClient = createAdminClient()
 
@@ -85,16 +73,14 @@ export async function POST(request: NextRequest) {
 
     const conductorUUID = conductorRow.id
 
-    const fileName = `${Date.now()}_${file.name}`
-    const storagePath = `drivers/${conductorUUID}/${fileName}`
+    const storagePath = `drivers/${conductorUUID}/${Date.now()}_${fileName}`
 
     console.log('[v0] Upload endpoint: Uploading to storage:', storagePath)
 
-    const arrayBuffer = await file.arrayBuffer()
     const { data: uploadData, error: uploadError } = await adminClient.storage
       .from('documents')
-      .upload(storagePath, Buffer.from(arrayBuffer), {
-        contentType: file.type,
+      .upload(storagePath, buffer, {
+        contentType: fileType || 'application/octet-stream',
         upsert: true,
       })
 
@@ -121,7 +107,7 @@ export async function POST(request: NextRequest) {
       const base64 = buffer.toString('base64')
       
       // Call AI document processor
-      aiExtraction = await extractDocumentMetadata(base64, file.type as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp')
+      aiExtraction = await extractDocumentMetadata(base64, (fileType || 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp')
       console.log('[v0] Upload endpoint: AI extraction successful:', aiExtraction)
     } catch (error) {
       extractionError = error instanceof Error ? error.message : 'AI extraction failed'
