@@ -9,18 +9,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 interface SubcontractorDetailTabsProps {
   subcontractor: any
+  initialTab?: 'resumen' | 'documentos' | 'conductores' | 'certificaciones' | 'onboarding'
   onClose: () => void
 }
 
 export function SubcontractorDetailTabs({
   subcontractor,
+  initialTab = 'resumen',
   onClose,
 }: SubcontractorDetailTabsProps) {
   const [documents, setDocuments] = useState<any[]>([])
   const [requirements, setRequirements] = useState<any[]>([])
   const [conductors, setConductors] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('resumen')
+  const [activeTab, setActiveTab] = useState(initialTab)
   const [summary, setSummary] = useState({
     totalDocumentsUploaded: 0,
     totalRequirements: 0,

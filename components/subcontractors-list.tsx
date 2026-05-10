@@ -83,6 +83,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
   const [expandedSubcontractor, setExpandedSubcontractor] = useState<string | null>(null)
   const [expandedDocuments, setExpandedDocuments] = useState<Set<string>>(new Set())
   const [selectedDetailSubcontractor, setSelectedDetailSubcontractor] = useState<any>(null)
+  const [detailTabToOpen, setDetailTabToOpen] = useState<'resumen' | 'documentos' | 'conductores' | 'certificaciones' | 'onboarding'>('resumen')
 
   // Fetch data from API if not provided as prop
   useEffect(() => {
@@ -389,17 +390,31 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
                     </div>
                   </div>
 
-                  {/* Driver count badge and Ver button */}
+                  {/* Driver count badge and action buttons */}
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-slate-400" />
                     <span className="text-sm text-slate-300">
                       <span className="font-semibold text-amber-400">{driverCount}</span> conductores
                     </span>
+                    {/* Documentos Button */}
                     <button
-                      onClick={() => setSelectedDetailSubcontractor(sub)}
-                      className="ml-auto text-xs px-3 py-1 rounded bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 transition-colors border border-orange-500/30"
+                      onClick={() => {
+                        setDetailTabToOpen('documentos')
+                        setSelectedDetailSubcontractor(sub)
+                      }}
+                      className="ml-auto text-xs px-3 py-1 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors border border-blue-500/30"
                     >
-                      Ver
+                      Documentos
+                    </button>
+                    {/* Conductores Button */}
+                    <button
+                      onClick={() => {
+                        setDetailTabToOpen('conductores')
+                        setSelectedDetailSubcontractor(sub)
+                      }}
+                      className="text-xs px-3 py-1 rounded bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 transition-colors border border-orange-500/30"
+                    >
+                      Ver Conductores
                     </button>
                   </div>
 
@@ -485,7 +500,11 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
       {selectedDetailSubcontractor && (
         <SubcontractorDetailTabs
           subcontractor={selectedDetailSubcontractor}
-          onClose={() => setSelectedDetailSubcontractor(null)}
+          initialTab={detailTabToOpen}
+          onClose={() => {
+            setSelectedDetailSubcontractor(null)
+            setDetailTabToOpen('resumen')
+          }}
         />
       )}
     </div>
