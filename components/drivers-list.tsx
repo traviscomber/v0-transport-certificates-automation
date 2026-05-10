@@ -48,15 +48,29 @@ interface Driver {
 
 interface DriversListProps {
   drivers: Driver[]
+  highlightedRut?: string | null
 }
 
-export function DriversList({ drivers }: DriversListProps) {
+export function DriversList({ drivers, highlightedRut }: DriversListProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null)
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [selectedProviders, setSelectedProviders] = useState<string[]>([])
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'inactive'>('all')
   const [expandedDocuments, setExpandedDocuments] = useState<Set<string>>(new Set())
+
+  // Auto-search and expand when RUT is provided from query param
+  useEffect(() => {
+    if (highlightedRut) {
+      setSearchTerm(highlightedRut)
+      // Find and expand the matching driver
+      const matchingDriver = drivers.find(d => d.rut?.replace(/\./g, '') === highlightedRut)
+      if (matchingDriver) {
+        setSelectedDriver(matchingDriver)
+        setExpandedDocuments(new Set([matchingDriver.id]))
+      }
+    }
+  }, [highlightedRut, drivers])
 
   const filteredDrivers = useMemo(() => {
     const filtered = drivers.filter(driver => {

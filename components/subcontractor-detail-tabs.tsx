@@ -2,6 +2,7 @@
 
 import { X, FileText, Award, AlertCircle, CheckCircle, Loader, Download, Eye, Users, CheckSquare, Mail, Phone } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ export function SubcontractorDetailTabs({
   conductoresData = [],
   onClose,
 }: SubcontractorDetailTabsProps) {
+  const router = useRouter()
   const [documents, setDocuments] = useState<any[]>([])
   const [requirements, setRequirements] = useState<any[]>([])
   const [conductors, setConductors] = useState<any[]>(conductoresData)
@@ -385,7 +387,9 @@ export function SubcontractorDetailTabs({
                               size="sm"
                               className="text-xs"
                               onClick={() => {
-                                // Show conductor details modal
+                                // Navigate to conductores page to show this conductor
+                                onClose()
+                                router.push(`/dashboard/company/conductores?rut=${conductor.rut.replace(/\./g, '')}`)
                               }}
                             >
                               Ver Ficha

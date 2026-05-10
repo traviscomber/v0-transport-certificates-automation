@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import useSWR from 'swr'
 import { DriversList } from '@/components/drivers-list'
 import { HelpBox } from '@/components/ui/help-box'
@@ -35,7 +36,10 @@ const fetcher = (url: string) =>
     })
 
 export default function ConductoresPage() {
+  const searchParams = useSearchParams()
+  const rutParam = searchParams.get('rut')
   const [selectedEjecutiva, setSelectedEjecutiva] = useState<string | null>(null)
+  const [highlightedRut, setHighlightedRut] = useState<string | null>(rutParam)
   
   const { data, error, isLoading, mutate } = useSWR(
     '/api/dashboard/data',
@@ -135,7 +139,7 @@ export default function ConductoresPage() {
           </p>
         </div>
       ) : (
-        <DriversList drivers={filteredDrivers} />
+        <DriversList drivers={filteredDrivers} highlightedRut={highlightedRut} />
       )}
     </div>
   )
