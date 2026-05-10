@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -22,6 +22,7 @@ import {
   Flame
 } from 'lucide-react'
 import Link from 'next/link'
+import { useDocumentSync } from '@/contexts/document-sync-context'
 
 interface DocumentStats {
   total: number
@@ -46,8 +47,42 @@ interface DocumentManagerHubProps {
   stats: ModuleStats
 }
 
-export function DocumentManagerHub({ stats }: DocumentManagerHubProps) {
+export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubProps) {
   const [activeTab, setActiveTab] = useState('overview')
+  const [stats, setStats] = useState(initialStats)
+  const { onSync } = useDocumentSync()
+
+  // Listen for document status changes and refetch stats
+  useEffect(() => {
+    const unsubscribe = onSync((event) => {
+      console.log('[v0] DocumentManagerHub: Received sync event', event.type)
+      
+      if (event.type === 'document_status_changed') {
+        console.log('[v0] DocumentManagerHub: Refetching stats due to status change')
+        
+        // Refetch stats from API
+        const fetchUpdatedStats = async () => {
+          try {
+            const response = await fetch('/api/company/documents/stats', {
+              cache: 'no-store'
+            })
+            
+            if (response.ok) {
+              const data = await response.json()
+              console.log('[v0] DocumentManagerHub: Updated stats', data)
+              setStats(data.stats)
+            }
+          } catch (error) {
+            console.error('[v0] DocumentManagerHub: Error refetching stats:', error)
+          }
+        }
+        
+        fetchUpdatedStats()
+      }
+    })
+
+    return unsubscribe
+  }, [onSync])
 
   const modules = [
     {
