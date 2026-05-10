@@ -187,6 +187,16 @@ export async function POST(request: NextRequest) {
     
     console.log('[v0] Table query successful, sample record:', testQuery?.[0])
     
+    // STEP 3: Ensure validation_status is always in English (required by database schema)
+    // This prevents validation errors from mismatched status values
+    const validStatusValues = ['pending', 'approved', 'rejected']
+    if (!validStatusValues.includes(validationStatus)) {
+      console.warn('[v0] Invalid validation_status value detected, resetting to pending:', validationStatus)
+      validationStatus = 'pending'
+    }
+    
+    console.log('[v0] Final validation_status before insert:', validationStatus)
+
     // Build complete insert payload with all required fields
     const insertPayload: any = {
       conductor_id: conductor.id,
@@ -219,7 +229,9 @@ export async function POST(request: NextRequest) {
         message: dbError.message,
         details: dbError.details,
         hint: (dbError as any).hint,
-        payload: insertPayload
+        payload: insertPayload,
+        validation_status_value: validationStatus,
+        validation_status_type: typeof validationStatus,
       })
       // Try to clean up storage
       await supabase.storage.from('documents').remove([filePath])
@@ -228,7 +240,8 @@ export async function POST(request: NextRequest) {
           message: 'Failed to save document record',
           error: dbError.message,
           details: dbError.details,
-          hint: (dbError as any).hint
+          hint: (dbError as any).hint,
+          code: dbError.code
         },
         { status: 500 }
       )
