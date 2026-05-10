@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 
-const withSentryConfig = require('@sentry/nextjs').withSentryConfig;
+// Only enable Sentry when properly configured with auth token (production builds).
+// In dev or when Sentry env vars are missing, the wrapper injects webpack
+// instrumentation that produces missing chunk errors (e.g. "Cannot find module './2862.js'").
+const sentryEnabled = !!process.env.SENTRY_AUTH_TOKEN && !!process.env.SENTRY_ORG && !!process.env.SENTRY_PROJECT;
+const withSentryConfig = sentryEnabled
+  ? require('@sentry/nextjs').withSentryConfig
+  : (config) => config;
 
 const nextConfig = {
   // Build optimization
@@ -47,9 +53,9 @@ const nextConfig = {
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.vercel-insights.com https://va.vercel-scripts.com https://sentry.io https://*.sentry.io",
-              "style-src 'self' 'unsafe-inline'",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https:",
-              "font-src 'self' data:",
+              "font-src 'self' data: https://fonts.gstatic.com",
               "connect-src 'self' https: wss:",
               "frame-ancestors 'none'",
               "base-uri 'self'",

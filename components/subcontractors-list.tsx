@@ -5,6 +5,26 @@ import { Search, MapPin, Phone, Mail, CheckCircle, AlertCircle, X, Filter, Users
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { SubcontractorDetailCard } from './subcontractor-detail-card'
+
+interface Document {
+  id: string
+  nombre: string
+  tipo: string
+  estado: 'pendiente' | 'aprobado' | 'rechazado' | 'vencido'
+  fecha_subida: string
+  fecha_vencimiento?: string
+  subcontratista_id: string
+}
+
+interface DocumentRequirement {
+  id: string
+  code: string
+  nombre: string
+  descripcion?: string
+  is_active: boolean
+  applicable_to_transportista?: boolean
+}
 
 interface Subcontractor {
   id: string
@@ -26,6 +46,14 @@ interface Subcontractor {
   is_active: boolean
   conductores_count?: number
   region?: string
+  documentos?: Document[]
+  documentos_requeridos?: DocumentRequirement[]
+  certificaciones_count?: {
+    ariztia: number
+    lts: number
+    rendic: number
+    interpolar: number
+  }
 }
 
 interface Driver {
@@ -53,6 +81,8 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
   const [showActiveOnly, setShowActiveOnly] = useState(false)
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [expandedSubcontractor, setExpandedSubcontractor] = useState<string | null>(null)
+  const [expandedDocuments, setExpandedDocuments] = useState<Set<string>>(new Set())
+  const [selectedDetailSubcontractor, setSelectedDetailSubcontractor] = useState<any>(null)
 
   // Fetch data from API if not provided as prop
   useEffect(() => {
@@ -359,20 +389,18 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
                     </div>
                   </div>
 
-                  {/* Driver count badge */}
+                  {/* Driver count badge and Ver button */}
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-slate-400" />
                     <span className="text-sm text-slate-300">
-                      <span className="font-semibold text-amber-400">{driverCount}</span> conductores asociados
+                      <span className="font-semibold text-amber-400">{driverCount}</span> conductores
                     </span>
-                    {driverCount > 0 && (
-                      <button
-                        onClick={() => setExpandedSubcontractor(isExpanded ? null : sub.id)}
-                        className="ml-auto text-xs px-2 py-1 rounded bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
-                      >
-                        {isExpanded ? 'Ocultar' : 'Ver'}
-                      </button>
-                    )}
+                    <button
+                      onClick={() => setSelectedDetailSubcontractor(sub)}
+                      className="ml-auto text-xs px-3 py-1 rounded bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 transition-colors border border-orange-500/30"
+                    >
+                      Ver
+                    </button>
                   </div>
 
                   {/* Contact Info */}
@@ -452,6 +480,14 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
         )}
         </div>
       </div>
+
+      {/* Subcontractor Detail Modal */}
+      {selectedDetailSubcontractor && (
+        <SubcontractorDetailCard
+          subcontractor={selectedDetailSubcontractor}
+          onClose={() => setSelectedDetailSubcontractor(null)}
+        />
+      )}
     </div>
   )
 }

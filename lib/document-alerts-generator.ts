@@ -1,17 +1,83 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 
-// Alert generation system - organization-wide alerts without user_id
-// This prevents foreign key constraint violations from orphaned profile records
-// Alerts are fetched via API and shown to all admins/ejecutivas in dashboard
+// Production-ready alert generation system using alerts_log table
+// Auto-assigns alerts to the correct ejecutiva based on transportista/subcontratista relationships
+// Alerts are fetched via /api/alerts and filtered by ejecutiva_nombre
 
-async function getOrgId(supabase: ReturnType<typeof createAdminClient>): Promise<string | null> {
-  const { data } = await supabase.from('organizations').select('id').limit(1).single()
-  return data?.id ?? null
+/**
+ * Lookup ejecutiva from various entity IDs
+ */
+async function lookupEjecutiva(params: {
+  transportistaId?: string
+  subcontratistaId?: string
+  driverId?: string
+  conductorId?: string
+}): Promise<string | null> {
+  try {
+    const supabase = createAdminClient()
+
+    // Lookup by transportista_id
+    if (params.transportistaId) {
+      const { data } = await supabase
+        .from('transportistas')
+        .select('ejecutivo_nombre, ejecutiva')
+        .eq('id', params.transportistaId)
+        .maybeSingle()
+      if (data) {
+        return data.ejecutivo_nombre || data.ejecutiva || null
+      }
+    }
+
+    // Lookup by subcontratista_id
+    if (params.subcontratistaId) {
+      const { data } = await supabase
+        .from('subcontractors')
+        .select('ejecutiva')
+        .eq('id', params.subcontratistaId)
+        .maybeSingle()
+      if (data) {
+        return data.ejecutiva || null
+      }
+    }
+
+    // Lookup by driver_id or conductor_id - find associated transportista
+    const driverId = params.driverId || params.conductorId
+    if (driverId) {
+      // Try drivers table first
+      let transportistaId: string | null = null
+      const { data: driver } = await supabase
+        .from('drivers')
+        .select('transportista_id')
+        .eq('id', driverId)
+        .maybeSingle()
+      
+      transportistaId = driver?.transportista_id || null
+
+      // Try conductores table if not found
+      if (!transportistaId) {
+        const { data: conductor } = await supabase
+          .from('conductores')
+          .select('transportista_id')
+          .eq('id', driverId)
+          .maybeSingle()
+        transportistaId = conductor?.transportista_id || null
+      }
+
+      if (transportistaId) {
+        return await lookupEjecutiva({ transportistaId })
+      }
+    }
+
+    return null
+  } catch (error) {
+    console.error('[v0] Error looking up ejecutiva:', error)
+    return null
+  }
 }
 
 /**
  * Generate alerts when a document is uploaded by conductor or client
- * Inserts into: alerts (organization_id, title, message, type, priority, category, is_read, action_url, metadata)
+ * Uses alerts_log table with ejecutiva auto-assignment
  */
 export async function generateDocumentUploadAlerts(
   uploadedDocumentId: string,
@@ -22,21 +88,34 @@ export async function generateDocumentUploadAlerts(
 ) {
   try {
     const supabase = createAdminClient()
-    const orgId = await getOrgId(supabase)
 
-    console.log('[v0] generateDocumentUploadAlerts received:', { uploadedDocumentId, documentType, uploaderName, uploaderType, uploaderId })
+    console.log('[v0] generateDocumentUploadAlerts:', { uploadedDocumentId, documentType, uploaderName, uploaderType, uploaderId })
 
-    // Insert alert WITHOUT user_id - organization-wide alert
+    // Lookup ejecutiva based on uploader type
+    const ejecutivaNombre = await lookupEjecutiva({
+      conductorId: uploaderType === 'conductor' ? uploaderId : undefined,
+    })
+
+    const message = `${uploaderName} ha subido ${documentType}. Accion requerida: revisar y validar.`
+
     const { error: insertError } = await supabase
-      .from('alerts')
+      .from('alerts_log')
       .insert({
-        organization_id: orgId,
+        alert_type: 'info',
         title: `Nuevo Documento - ${uploaderName}`,
-        message: `${uploaderName} ha subido ${documentType}. Acción requerida: revisar y validar.`,
-        type: 'DOCUMENT_UPLOADED',
-        priority: 'high',
-        category: 'document_upload',
+        description: message,
+        message: message,
+        priority: 'medium',
+        entity_type: 'document',
+        entity_id: uploadedDocumentId,
+        entity_name: uploaderName,
         is_read: false,
+        is_resolved: false,
+        status: 'pendiente',
+        ejecutiva_nombre: ejecutivaNombre,
+        driver_id: uploaderType === 'conductor' ? uploaderId : null,
+        document_id: uploadedDocumentId,
+        document_type: documentType,
         action_url: `/dashboard/company/documentos`,
         metadata: {
           document_id: uploadedDocumentId,
@@ -49,7 +128,7 @@ export async function generateDocumentUploadAlerts(
     if (insertError) {
       console.error('[v0] Error inserting document upload alert:', insertError)
     } else {
-      console.log(`[v0] Created document upload alert`)
+      console.log(`[v0] Created document upload alert for ejecutiva: ${ejecutivaNombre}`)
     }
   } catch (error) {
     console.error('[v0] Error in generateDocumentUploadAlerts:', error)
@@ -69,84 +148,82 @@ export async function generateDocumentStatusChangeAlert(
 ) {
   try {
     const supabase = createAdminClient()
-    const orgId = await getOrgId(supabase)
 
     console.log('[v0] generateDocumentStatusChangeAlert:', { uploadedDocumentId, documentType, conductorName, newStatus })
 
-    // Generate unique correlation code for this alert (format: ALERT-YYYYMMDD-XXXXXX)
+    // Generate unique correlation code (format: ALERT-YYYYMMDD-XXXXXX)
     const now = new Date()
     const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '')
     const randomCode = Math.random().toString(36).substring(2, 8).toUpperCase()
     const correlationCode = `ALERT-${dateStr}-${randomCode}`
 
-    // Fetch conductor details including transportista and assigned ejecutiva
+    // Fetch conductor's transportista to find ejecutiva
     let transportistaName = 'Transportista Desconocido'
-    let ejecutivaAsignada = 'Sin asignar'
+    let transportistaId: string | null = null
+    let ejecutivaAsignada: string | null = null
     
     const { data: conductor } = await supabase
       .from('conductores')
       .select('id, transportista_id')
       .eq('id', conductorId)
-      .single()
+      .maybeSingle()
 
     if (conductor?.transportista_id) {
+      transportistaId = conductor.transportista_id
       const { data: transportista } = await supabase
         .from('transportistas')
-        .select('razon_social, nombre_fantasia, ejecutivo_nombre')
+        .select('razon_social, nombre_fantasia, ejecutivo_nombre, ejecutiva')
         .eq('id', conductor.transportista_id)
-        .single()
+        .maybeSingle()
       
       if (transportista) {
         transportistaName = transportista.nombre_fantasia || transportista.razon_social || 'Transportista Desconocido'
-        // Use ejecutivo_nombre from transportista
-        ejecutivaAsignada = transportista.ejecutivo_nombre || 'Sin asignar'
+        ejecutivaAsignada = transportista.ejecutivo_nombre || transportista.ejecutiva || null
       }
     }
 
-    // Fetch all ejecutivos with role 'ejecutiva' or 'admin' to show team context
-    const { data: ejecutivos } = await supabase
-      .from('profiles')
-      .select('id, email')
-      .in('role', ['ejecutiva', 'admin'])
-
-    // Build message based on status with formatting for bold names
+    // Build message and severity based on status
     let title = ''
     let message = ''
-    let type = 'DOCUMENT_STATUS_CHANGE'
+    let alertType: string = 'info'
     let priority = 'medium'
-    let category = 'document_status_change'
 
     if (newStatus === 'approved') {
       title = `Documento Aprobado - ${documentType}`
-      message = `El documento ${documentType} de **${conductorName}** (${transportistaName} - Ejecutiva: **${ejecutivaAsignada}**) fue aprobado. [${correlationCode}]`
-      type = 'DOCUMENT_APPROVED'
-      priority = 'medium'
-      category = 'document_approved'
+      message = `El documento ${documentType} de ${conductorName} (${transportistaName}) fue aprobado. [${correlationCode}]`
+      alertType = 'success'
+      priority = 'low'
     } else if (newStatus === 'rejected') {
       title = `Documento Rechazado - ${documentType}`
-      message = `El documento ${documentType} de **${conductorName}** (${transportistaName} - Ejecutiva: **${ejecutivaAsignada}**) fue rechazado. Razón: ${reason || 'Sin especificar'}. [${correlationCode}]`
-      type = 'DOCUMENT_REJECTED'
+      message = `El documento ${documentType} de ${conductorName} (${transportistaName}) fue rechazado. Razon: ${reason || 'Sin especificar'}. [${correlationCode}]`
+      alertType = 'error'
       priority = 'high'
-      category = 'document_rejected'
     } else if (newStatus === 'pending') {
-      title = `Documento en Revisión - ${documentType}`
-      message = `El documento ${documentType} de **${conductorName}** (${transportistaName} - Ejecutiva: **${ejecutivaAsignada}**) ha sido retornado a revisión. [${correlationCode}]`
-      type = 'DOCUMENT_PENDING'
+      title = `Documento en Revision - ${documentType}`
+      message = `El documento ${documentType} de ${conductorName} (${transportistaName}) ha sido retornado a revision. [${correlationCode}]`
+      alertType = 'warning'
       priority = 'medium'
-      category = 'document_pending'
     }
 
-    // Insert alert WITHOUT user_id - organization-wide alert shown to all admins
     const { error: alertError } = await supabase
-      .from('alerts')
+      .from('alerts_log')
       .insert({
-        organization_id: orgId,
+        alert_type: alertType,
         title,
+        description: message,
         message,
-        type,
         priority,
-        category,
+        entity_type: 'document',
+        entity_id: uploadedDocumentId,
+        entity_name: conductorName,
         is_read: false,
+        is_resolved: newStatus !== 'pending',
+        status: newStatus === 'pending' ? 'pendiente' : 'resuelto',
+        ejecutiva_nombre: ejecutivaAsignada,
+        transportista_id: transportistaId,
+        driver_id: conductorId,
+        document_id: uploadedDocumentId,
+        document_type: documentType,
         action_url: `/dashboard/company/documentos`,
         metadata: {
           document_id: uploadedDocumentId,
@@ -158,14 +235,13 @@ export async function generateDocumentStatusChangeAlert(
           reason: reason || null,
           status: newStatus,
           correlation_code: correlationCode,
-          ejecutivos_team: ejecutivos?.map(e => e.email) || [],
         },
       })
 
     if (alertError) {
       console.error('[v0] Error creating status change alert:', alertError)
     } else {
-      console.log(`[v0] Created status change alert for status: ${newStatus}, code: ${correlationCode}`)
+      console.log(`[v0] Created status change alert for ejecutiva: ${ejecutivaAsignada}, code: ${correlationCode}`)
     }
   } catch (error) {
     console.error('[v0] Error in generateDocumentStatusChangeAlert:', error)
@@ -190,36 +266,54 @@ export async function generateExpirationAlerts() {
       .is('last_expiration_alert_sent', null)
 
     if (!expiringDocs || expiringDocs.length === 0) {
+      console.log('[v0] No expiring documents found')
       return
     }
 
-    const orgId = await getOrgId(supabase)
+    // Build alerts with ejecutiva lookup
+    const alertsToCreate = await Promise.all(
+      expiringDocs.map(async (doc: any) => {
+        const ejecutivaNombre = await lookupEjecutiva({
+          conductorId: doc.conductor_id,
+        })
 
-    // Create alerts for each expiring document - WITHOUT user_id
-    const alertsToCreate = expiringDocs.map((doc: any) => ({
-      organization_id: orgId,
-      type: 'DOCUMENT_EXPIRATION',
-      title: `Documento por Vencer - ${doc.document_types?.name || 'Documento'}`,
-      message: `El documento vence el ${new Date(doc.expiration_date).toLocaleDateString('es-MX')}`,
-      priority: 'high',
-      category: 'document_expiration',
-      is_read: false,
-      action_url: `/dashboard/company/documentos`,
-      metadata: {
-        document_id: doc.id,
-        conductor_id: doc.conductor_id,
-        expiration_date: doc.expiration_date,
-      },
-    }))
+        const docName = doc.document_types?.name || 'Documento'
+        const expDate = new Date(doc.expiration_date).toLocaleDateString('es-CL')
+        const message = `El documento ${docName} vence el ${expDate}`
+
+        return {
+          alert_type: 'warning',
+          title: `Documento por Vencer - ${docName}`,
+          description: message,
+          message,
+          priority: 'high',
+          entity_type: 'document',
+          entity_id: doc.id,
+          is_read: false,
+          is_resolved: false,
+          status: 'pendiente',
+          ejecutiva_nombre: ejecutivaNombre,
+          driver_id: doc.conductor_id,
+          document_id: doc.id,
+          document_type: docName,
+          action_url: `/dashboard/company/documentos`,
+          metadata: {
+            document_id: doc.id,
+            conductor_id: doc.conductor_id,
+            expiration_date: doc.expiration_date,
+          },
+        }
+      })
+    )
 
     if (alertsToCreate.length > 0) {
       const { error: insertError } = await supabase
-        .from('alerts')
+        .from('alerts_log')
         .insert(alertsToCreate)
 
       if (!insertError) {
         // Update last alert sent timestamp
-        const { error: updateError } = await supabase
+        await supabase
           .from('uploaded_documents')
           .update({ last_expiration_alert_sent: new Date().toISOString() })
           .in('id', expiringDocs.map((d: any) => d.id))

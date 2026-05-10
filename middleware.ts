@@ -9,6 +9,8 @@ export async function middleware(request: NextRequest) {
   if (
     path.startsWith('/api/auth') ||
     path.startsWith('/auth/login') ||
+    path === '/login' ||  // ✅ Allow /login page
+    path === '/api/login-email' ||  // ✅ Allow login endpoint
     path === '/api/logout'
   ) {
     return NextResponse.next()

@@ -5,6 +5,23 @@ import { SubcontractorsList } from '@/components/subcontractors-list'
 import { HelpBox } from '@/components/ui/help-box'
 import { Card } from '@/components/ui/card'
 
+interface Document {
+  id: string
+  nombre: string
+  tipo: string
+  estado: 'pendiente' | 'aprobado' | 'rechazado' | 'vencido'
+  fecha_subida: string
+  subcontratista_id: string
+}
+
+interface DocumentRequirement {
+  id: string
+  code: string
+  nombre: string
+  is_active: boolean
+  applicable_to_transportista?: boolean
+}
+
 interface Subcontractor {
   id?: string
   nombre?: string
@@ -23,6 +40,8 @@ interface Subcontractor {
   interpolar?: boolean
   is_active: boolean
   conductores_count?: number
+  documentos?: Document[]
+  documentos_requeridos?: DocumentRequirement[]
 }
 
 interface Driver {

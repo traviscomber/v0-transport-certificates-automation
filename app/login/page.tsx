@@ -40,11 +40,14 @@ export default function LoginPage() {
       document.cookie = `user_email=${encodeURIComponent(email.toLowerCase())}; path=/; expires=${expiryDate.toUTCString()}`
       document.cookie = `user_name=${encodeURIComponent(data.user.full_name)}; path=/; expires=${expiryDate.toUTCString()}`
       document.cookie = `user_role=${encodeURIComponent(data.user.role)}; path=/; expires=${expiryDate.toUTCString()}`
+      document.cookie = `user_organization_id=${encodeURIComponent(data.user.organization_id || '')}; path=/; expires=${expiryDate.toUTCString()}`
 
       console.log('[v0] Cookies set via document.cookie:', {
         user_email: document.cookie.includes('user_email'),
         user_name: document.cookie.includes('user_name'),
         user_role: document.cookie.includes('user_role'),
+        user_organization_id: document.cookie.includes('user_organization_id'),
+        organization_id_value: data.user.organization_id,
       })
 
       // Redirect to dashboard

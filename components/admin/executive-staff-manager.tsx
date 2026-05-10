@@ -52,7 +52,9 @@ export function ExecutiveStaffManager() {
 
   const fetchExecutives = async () => {
     try {
-      const response = await fetch('/api/admin/executive-staff')
+      const response = await fetch('/api/admin/executive-staff', {
+        credentials: 'include', // ✅ Send cookies with request
+      })
       const data = await response.json()
       setExecutives(data.executives || [])
     } catch (error) {
@@ -67,6 +69,7 @@ export function ExecutiveStaffManager() {
       const response = await fetch('/api/admin/executive-staff', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // ✅ Send cookies with request
         body: JSON.stringify(formData)
       })
 
@@ -91,7 +94,8 @@ export function ExecutiveStaffManager() {
 
     try {
       await fetch(`/api/admin/executive-staff?id=${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include', // ✅ Send cookies with request
       })
       fetchExecutives()
     } catch (error) {

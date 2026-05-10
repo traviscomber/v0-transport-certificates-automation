@@ -15,36 +15,21 @@ export default function ConductorLoginForm() {
     setIsLoading(true)
 
     try {
-      console.log('[v0] Logging in with RUT:', rut.trim())
-      
       const response = await fetch('/api/auth/login-conductor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // ✅ CRITICAL: Send cookies with request
         body: JSON.stringify({ rut: rut.trim(), password }),
       })
 
-      console.log('[v0] Response status:', response.status)
-      console.log('[v0] Response OK:', response.ok)
-
       if (!response.ok) {
         const errorData = await response.json()
-        console.log('[v0] Error response:', errorData)
         throw new Error(errorData.error || `Error HTTP ${response.status}`)
       }
 
-      // Extract conductor data from response and store in localStorage
       const data = await response.json()
-      console.log('[v0] Login response received:', data)
-      console.log('[v0] Response keys:', Object.keys(data))
-      console.log('[v0] typeof data:', typeof data)
       
-      // Log each field individually
-      console.log('[v0] data.conductor_id:', data.conductor_id, 'type:', typeof data.conductor_id)
-      console.log('[v0] data.rut:', data.rut, 'type:', typeof data.rut)
-      console.log('[v0] data.nombre_completo:', data.nombre_completo, 'type:', typeof data.nombre_completo)
-      console.log('[v0] data.email:', data.email, 'type:', typeof data.email)
-      console.log('[v0] data.transportista_id:', data.transportista_id, 'type:', typeof data.transportista_id)
-      
+      // Store conductor data in localStorage for client-side access
       const conductorData = {
         conductor_id: data.conductor_id,
         rut: data.rut,
@@ -53,21 +38,12 @@ export default function ConductorLoginForm() {
         transportista_id: data.transportista_id
       }
       
-      console.log('[v0] Storing conductor data:', conductorData)
       localStorage.setItem('conductor_data', JSON.stringify(conductorData))
-      
-      // Verify it was stored
-      const stored = localStorage.getItem('conductor_data')
-      console.log('[v0] Verified localStorage contents:', stored)
 
-      // API returns JSON with cookies already set in response headers
-      // Now redirect to /conductor/onboarding — cookies persist because
-      // they were already sent with the API response
-      console.log('[v0] Redirecting to /conductor/onboarding')
+      // Redirect to onboarding - cookies are now set by the API response
       window.location.href = '/conductor/onboarding'
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al iniciar sesión'
-      console.error('[v0] Login error:', message)
       setError(message)
       setIsLoading(false)
     }

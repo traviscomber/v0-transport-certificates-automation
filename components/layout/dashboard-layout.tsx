@@ -7,6 +7,7 @@ import type { User } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { AlertsBell } from "@/components/layout/alerts-bell"
 import {
   FileText,
   Upload,
@@ -24,7 +25,6 @@ import {
   Zap,
   TrendingUp,
   Camera,
-  Bell,
   X,
 } from "lucide-react"
 
@@ -312,11 +312,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
               {/* Right section - alerts and user */}
               <div className="flex items-center gap-2 md:gap-4">
-                {/* Alerts bell */}
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-1 right-1 h-2 w-2 bg-orange-500 rounded-full"></span>
-                </Button>
+                {/* Alerts bell with dynamic alerts */}
+                <AlertsBell />
 
                 {/* User info - hidden on mobile */}
                 {isMounted && (

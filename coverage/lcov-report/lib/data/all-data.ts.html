@@ -1,0 +1,355 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for lib/data/all-data.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">lib/data</a> all-data.ts</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>0/6</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/0</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/0</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>0/3</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line low'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// AUTO-GENERATED: All 235+ transportistas (subcontractors)
+// Data extracted from /data/transportistas.txt
+&nbsp;
+export const <span class="cstat-no" title="statement not covered" >allTransportistas </span>= <span class="cstat-no" title="statement not covered" >[</span>
+  { rut: "77653071-9", nombre: "4Vial SPA", representante: "Ruben Marchant Needhan", ejecutiva: "Carolina", direccion: "Ahumada 312 of 715", comuna: "Santiago", telefono: "9 7255 5016", email: "g4vial@gmail.com" },
+  { rut: "76461213-2", nombre: "Adolfo Del Carmen Gonzalez Meza Transporte De Carga E.i.r.l.", representante: "Adolfo Gonzalez Meza", ejecutiva: "Carolina", direccion: "Esmeralda 1561 Lote 2", comuna: "Colina", telefono: "9 9291 0830", email: "adolfo.gonzalez.meza@hotmail.com" },
+  { rut: "76956797-6", nombre: "AEROCAV SPA", representante: "JOSE MIGUEL ROJAS URBINA", ejecutiva: "Carolina", direccion: "Argomedo 321", comuna: "Santiago", telefono: "9 5533 9046", email: "JROJAS.SL@GMAIL.COM" },
+  { rut: "16181677-9", nombre: "Aldo Antonio Bustamante Ortega", representante: "Aldo Antonio Bustamante Ortega", ejecutiva: "Carolina", direccion: "Gacitua 564", comuna: "Isla de Maipo", telefono: "9 6431 9423", email: "z71aldo@hotmail.com" },
+  { rut: "76463195-1", nombre: "Ambrosio Julian Casanova Navarrete Transporte De Carga E.i.r.l.", representante: "Ambrosio Casanova Naavarrete", ejecutiva: "Carolina", direccion: "Pje los Pinos 1498", comuna: "Rengo", telefono: "9 7147 6688", email: "juliancasanova1973@gmail.com" },
+  { rut: "77243323-9", nombre: "Comercio, Servicios Y Transportes Mozó Spa", representante: "Falcon Nicolas Mozo Farfan", ejecutiva: "Carolina", direccion: "Morande 835 of 518", comuna: "Santiago", telefono: "9 5630 6291", email: "contacto@cerpaconsultores.cl" },
+  { rut: "78234684-9", nombre: "F &amp; F Spa", representante: "Francisco Andres Villagran Ramirez", ejecutiva: "Carolina", direccion: "HIJUELA N2s/n LOTE- 2 PUERTAS NEGRAS", comuna: "Talca", telefono: "932652497", email: "fyftranspspa@gmail.com" },
+  { rut: "78154645-3", nombre: "Fever Spa", representante: "MANUEL ESTEBAN CASTAÑEDA CORNEJO", ejecutiva: "Carolina", direccion: "SANTIAGO ALDEA 906", comuna: "Padre Hurtado", telefono: "", email: "" },
+  { rut: "76260962-2", nombre: "Hidroamerica Spa", representante: "Patricio Roberto Bambach Ugarte", ejecutiva: "Carolina", direccion: "Avenida las Condes 9792", comuna: "Las Condes", telefono: "9 4287 4454", email: "PBAMBACH@hidroamerica.cl" },
+  { rut: "78101236-K", nombre: "Logística Siete Robles Spa", representante: "PATRICIO AURELIO RIVAS PUENTES", ejecutiva: "Carolina", direccion: "DIEZ NORTE 2314", comuna: "TALCA", telefono: "964452706", email: "logisticasieterobles@gmail.com" },
+  { rut: "77490988-5", nombre: "Transportes Doña Luciana SPA", representante: "ROBERTO REBOLLEDO LABRAÑA", ejecutiva: "Carolina", direccion: "ALCIDES ROLDAN 1418", comuna: "San Fernando", telefono: "9 6125 4302", email: "roberto2730@hotmail.com" },
+  { rut: "78190172-5", nombre: "Mr Transportes Chile Spa", representante: "MARIA DE LOS ANGELES SOLAR VARGAS", ejecutiva: "Carolina", direccion: "MIGUEL CLARO 119 DP 3 NULL", comuna: "Providencia", telefono: "932492564", email: "mr.transportes.chile@gmail.com" },
+  { rut: "78040304-7", nombre: "R PeÑa Spa", representante: "Rodrigo Elias Peña Castillo", ejecutiva: "Carolina", direccion: "Concejala Berta Carvajal 8089", comuna: "Cerrillos", telefono: "9 3873 7365", email: "rpena3646@gmail.com" },
+  { rut: "77390218-6", nombre: "Sociedad de Transportes Jole SPA", representante: "Juan Octavio Lillo Espinoza", ejecutiva: "Carolina", direccion: "Carlos Palacios 228", comuna: "Bulnes", telefono: "9 4049 2462", email: "flillo@lfconsulting.cl" },
+  { rut: "76447559-3", nombre: "Tello Y Tello Transportes Spa", representante: "Mauricio Esteban Tello Reyes", ejecutiva: "Carolina", direccion: "Avda. Calera de Tango 0", comuna: "Calera de Tango", telefono: "228172612", email: "tello.mauricio@gmail.com" },
+  { rut: "77416162-7", nombre: "Tranportes  Por Carretara  JL SPA", representante: "Juan Lopez Reyes", ejecutiva: "Carolina", direccion: "Julio Valenzuela 836", comuna: "Buin", telefono: "9 6631 4314", email: "ignacio_mania2@live.ccl" },
+  { rut: "76848886-K", nombre: "Transporte Brenet SPA", representante: "Luz Betsabet Alfaro Brenet", ejecutiva: "Carolina", direccion: "Francisco Hidalgo 224", comuna: "Peñaflor", telefono: "9 6829 4217", email: "transportes.brenet@gmail.com" },
+  { rut: "77772051-1", nombre: "Transportes H &amp; B Spa", representante: "Daniel Esteban Orellana Muñoz", ejecutiva: "Carolina", direccion: "24 ABRIL ST 72 LTB", comuna: "Paine", telefono: "9 6407 7995", email: "transporteshborellana@gmail.com" },
+  { rut: "77441798-2", nombre: "TRANSPORTE CARGA POR CARRETERA DG SPA", representante: "DANILO ENRIQUE GAETE FUENZALIDA", ejecutiva: "Carolina", direccion: "FERNANDO TORTEROLO 1771 SENDERO 12 FASE 1", comuna: "QUILLOTA", telefono: "963725085", email: "gaetedanilo1967@gmail.com" },
+  { rut: "78150214-6", nombre: "Transportes Jsp Spa", representante: "Juan Felix Saez Paredes", ejecutiva: "Carolina", direccion: "CALLE 3 DE ABRIL 461", comuna: "Renaico", telefono: "9 4189 8175", email: "juanfelix.sp@gmail.com" },
+  { rut: "78165845-6", nombre: "Transportes Matus Salen Spa", representante: "Fabian Corona Figueroa", ejecutiva: "Carolina", direccion: "ALTOS DE MACHICURA PARCEL 50", comuna: "Parral", telefono: "930966845", email: "transportesmatussalen@gmail.com" },
+  { rut: "77827992-4", nombre: "Transporte Y  Comercializadora G Y R Spa", representante: "Yosselin Elizabeth Reyes Garrido", ejecutiva: "Carolina", direccion: "Eulogio Robles 781", comuna: "Linares", telefono: "9 6519 0198", email: "jgonzalemartinez86@gmail.com" },
+  { rut: "78156059-6", nombre: "Transporte Yanina Ysabel Garcia Mora De Nakasone E.i.r.l.", representante: "Yanina Ysabel Garcia de Nakasone", ejecutiva: "Carolina", direccion: "ABRANQUIL 1168 NULL QUINTA NORMAL", comuna: "QUINTA NORMAL", telefono: "987887693", email: "yaninatransportes@gmail.com" },
+  { rut: "78087308-6", nombre: "Transportes Roberto Estrada E.i.r.l", representante: "Roberto Andrés Estrada Riquelme", ejecutiva: "Carolina", direccion: "LOS LIBERTADORES PP STA ANA PC 53 SN NULL", comuna: "Til Til", telefono: "949194583", email: "restrada.prevencion@gmail.com" },
+  { rut: "77624057-5", nombre: "Transportes Angelo Nicolas Carrasco Sanhueza EIRL", representante: "Angelo Carrasco Sanhueza", ejecutiva: "Carolina", direccion: "Lautaro 740", comuna: "Concepcion", telefono: "9 7907 0145", email: "angelo.nicolas93@hotmail.com" },
+  { rut: "77420673-6", nombre: "Transportes Baeza SPA", representante: "Carlos Alberto Baeza Infante", ejecutiva: "Carolina", direccion: "San Luis 841 Pueblo Antiguo", comuna: "Pudahuel", telefono: "9 6668 5424", email: "transportescarlosbaezai@gmail.com" },
+  { rut: "78151772-0", nombre: "Transportes Belen Spa", representante: "HUGO DEMECIO TILLERIA HUECHE", ejecutiva: "Carolina", direccion: "AV LAS TORRES 250 CASA 97 NULL", comuna: "Quilicura", telefono: "944786241", email: "tilleria2121@gmail.com" },
+  { rut: "78032375-2", nombre: "Transportes Bosmann Spa", representante: "Antonio Bosmann Soto", ejecutiva: "Carolina", direccion: "Malaquias concha 309", comuna: "Paillaco", telefono: "9 3870 1739", email: "trbosmann@gmail.com" },
+  { rut: "77732652-K", nombre: "Transportes Bricebor SPA", representante: "Patricia Briceño Paez", ejecutiva: "Carolina", direccion: "Colombia 985", comuna: "Vallenar", telefono: "9 8548 7796", email: "paty_briceno@hotmail.com" },
+  { rut: "77647991-8", nombre: "Transportes Bryan Dinamarca Castillo E.i.r.l.", representante: "Bryan Willian Dinamarca Castillo", ejecutiva: "Carolina", direccion: "Parcela n 30 Lote A Gabriela Mistral", comuna: "La Serena", telefono: "9 4499 3574", email: "transportebryandinamarca@gmail.com" },
+  { rut: "77625968-3", nombre: "Transportes Cale SPA", representante: "Hugo Nuñez Toro", ejecutiva: "Carolina", direccion: "Villa los Castaños sitio 12", comuna: "Curico", telefono: "9 3769 6652", email: "transportescale.22@gmail.com" },
+  { rut: "77664223-1", nombre: "Transportes Cardenas  Limitada", representante: "Oscar Alberto Cardenas Rojas", ejecutiva: "Carolina", direccion: "M Larrain 1154 BL 7 A DP Rolando Alarcon 0", comuna: "Talagante", telefono: "965132690", email: "transcar2025ltda@gmail.com" },
+  { rut: "76494991-9", nombre: "Transportes Carlos Marcelo Rebolledo Rojas Eirl", representante: "Carlos Marcelo Rebolledo Rojas", ejecutiva: "Carolina", direccion: "Olegario Lazo 371", comuna: "San Fernando", telefono: "9 7498 0078", email: "p_pereirah@hotmail.com" },
+  { rut: "77536347-9", nombre: "Transportes Chocobar Spa", representante: "WILSON HERNAN CHOCOBAR VASQUEZ", ejecutiva: "Carolina", direccion: "OSORNO 850 MZ 101 LT 19 TIERRAS BLANCAS", comuna: "Coquimbo", telefono: "966644778", email: "yakko.j7@gmail.com" },
+  { rut: "76518447-9", nombre: "Transportes De Carga Jocelyn Carolina Silva Rojas Eirl", representante: "Jocelyn Carolina Silva Rojas", ejecutiva: "Carolina", direccion: "Barrales 234", comuna: "Melipilla", telefono: "9 3243 4254", email: "transportesacr@yahoo.com" },
+  { rut: "78029819-7", nombre: "Transportes Doble Jj Spa", representante: "Israel Ariel Pradenas PiÑeiro", ejecutiva: "Carolina", direccion: "Jose Leyan 1228", comuna: "Talagante", telefono: "933638547", email: "transportesdoblejj@gmail.com" },
+  { rut: "77401369-5", nombre: "Transportes Domingo Alberto Cerda Lagos E.i.r.l.", representante: "Domingo Cerda Lagos", ejecutiva: "Carolina", direccion: "Dr. Adan Henriquez S 03991", comuna: "San Fernando", telefono: "9 6607 6722", email: "msoledadpavezf@gmail.com" },
+  { rut: "77822803-3", nombre: "TRANSPORTES FELIPE ANDRÉS SARRIA JIMÉNEZ E.I.R.L.", representante: "FELIPE ANDRES SARRIA JIMENEZ", ejecutiva: "Carolina", direccion: "AV. SAN LUIS 15 -- 76 CS 76 BARRIO EL ALBA 4", comuna: "Lampa", telefono: "930679958", email: "felipe2925@gmail.com" },
+  { rut: "76994334-K", nombre: "Transportes Fernando Patricio Valdes Silva Eirl", representante: "Fernando Patricio Valdes Silva", ejecutiva: "Carolina", direccion: "Las Azucenas 1994", comuna: "Santiago", telefono: "9 4401 9637", email: "transportesfernandovaldeseirl@gmail.com" },
+  { rut: "77624569-0", nombre: "TRANSPORTES IVAN ALFONSO DIAZ RIVAS EIRL", representante: "Ivan Diaz Rivas", ejecutiva: "Carolina", direccion: "Avda Costanera 1174", comuna: "San Pedro de la Paz", telefono: "9 5188 8374", email: "idiaz9252@gmail.com" },
+  { rut: "77941312-8", nombre: "TRANSPORTES J&amp;F SPA", representante: "Daniel Esteban Orellana Muñoz", ejecutiva: "Carolina", direccion: "24 de Abril St 72 lt b", comuna: "Paine", telefono: "9 6407 7995", email: "transporteshborellana@gmail.com" },
+  { rut: "78244173-6", nombre: "Transportes Jme Spa", representante: "John Francisco Jofre Gomez", ejecutiva: "Carolina", direccion: "LOS FLAMENCOS 965 MEDIA HACIENDA NULL", comuna: "Ovalle", telefono: "975522197", email: "johnfranci0511@gmail.com" },
+  { rut: "78165268-7", nombre: "Transportes Jq Spa", representante: "Jhon Sebastian Quiroga Esparza", ejecutiva: "Carolina", direccion: "PJE VALLE DEL SOL PNTE 2122 PQUE EL SOL NULL PADRE HURTADO", comuna: "PADRE HURTADO", telefono: "986292130", email: "sebas.sparza@gmail.com" },
+  { rut: "77503624-9", nombre: "Transportes Jrm E Hijos Limitada", representante: "Jimena Andrea Herminia Molinet Lillo", ejecutiva: "Carolina", direccion: "Pje santa cruz 721, villa larqui", comuna: "Bulnes", telefono: "9 4068 4436", email: "ximenamolinet.35@gmail.com" },
+  { rut: "78351383-8", nombre: "Transportes L.y. R Spa", representante: "JUAN CARLOS LOPEZ DIAZ", ejecutiva: "Carolina", direccion: "HERMANO DOMINGO 01485 HNOS DE LA SALLE NULL 01485", comuna: "Puente alto", telefono: "992788524", email: "ignacio_mania2@live.cl" },
+  { rut: "77889348-7", nombre: "Transportes Mad Spa", representante: "Hector Rene Ortiz Gonzalez", ejecutiva: "Carolina", direccion: "PSJ LOS MANIOS 2022", comuna: "TALCA", telefono: "9 4967 1430", email: "michel_jm@hotmail.cl" },
+  { rut: "78113086-9", nombre: "Transportes Maxsu Limitada", representante: "ROBERTO EUGENIO SUAREZ LOPEZ", ejecutiva: "Carolina", direccion: "LA ATAJADA 645 EL RODEO", comuna: "HUECHURABA", telefono: "941798421", email: "Transportesmaxsu@gmail.com" },
+  { rut: "77531127-4", nombre: "TRANSPORTES MICHELL ALEXANDER BRAVO ARAYA E.I.R.L", representante: "Michell Alexander Bravo Araya", ejecutiva: "Carolina", direccion: "Casma 634", comuna: "San Miguel", telefono: "963739068", email: "transportes.michell.bravo@gmail.com" },
+  { rut: "77896328-0", nombre: "Transportes Ms Spa", representante: "Felipe Francisco Miranda Amaya", ejecutiva: "Carolina", direccion: "VOLCAN EL MIRADOR 189 SAN ENRIQUE", comuna: "Quilicura", telefono: "987301778", email: "transportesms.1928@gmail.com" },
+  { rut: "76891488-5", nombre: "Transportes Myz Spa", representante: "Oscar Martinez Arriagada", ejecutiva: "Carolina", direccion: "San Antonio 385", comuna: "Santiago", telefono: "9 3122 9434", email: "oscarmartinez.a@gmail.com" },
+  { rut: "78310280-3", nombre: "Transportes Olmo Vega Spa", representante: "HUGO CAMILO OLMOS VEGA", ejecutiva: "Carolina", direccion: "RIO COPIAPÓ 9558", comuna: "Pudahuel", telefono: "932248782", email: "camiloolmos946@gmail.com" },
+  { rut: "78232853-0", nombre: "Transportes Punolaf Lopez Spa", representante: "Segundo German Punolaf Queupumil", ejecutiva: "Carolina", direccion: "AGUSTINAS 1442 DP 402 NULL", comuna: "Santiago", telefono: "947542370", email: "Punolafgerman55@gmail.com" },
+  { rut: "77287076-0", nombre: "Transportes Rene Ernesto Quiroz Rosales E.i.r.l.", representante: "Rene Ernesto Quiroz Rosales", ejecutiva: "Carolina", direccion: "Lucero del Alba St48 V", comuna: "Calera de Tango", telefono: "9 4221 3307", email: "renequirozcamionero@gmail.com" },
+  { rut: "77016329-3", nombre: "Transportes Ruben Hernan Silva Vasquez E.i.r.l", representante: "Ruben Hernan Silva Vasquez", ejecutiva: "Carolina", direccion: "Monjitas 550", comuna: "Santiago", telefono: "936170659", email: "silvarubem600@gmail.com" },
+  { rut: "77893331-4", nombre: "TRANSPORTES SERGIO SIMONCELLI E.I.R.L", representante: "Sergio Manuel Simoncelii Rey", ejecutiva: "Carolina", direccion: "Gran Avenida 4697 depto 1614", comuna: "San Miguel", telefono: "9 5402 9356", email: "transportescvalencia@gmail.com" },
+  { rut: "77325414-1", nombre: "Transportes Suyai Spa", representante: "NICOLE CAROLINA CASTRO MUNOZ", ejecutiva: "Carolina", direccion: "SOFIA CARMONA 051 DP 401 G SOFIA TRES G 401", comuna: "La Granja", telefono: "963936326", email: "transportes.suyai.chile@gmail.com" },
+  { rut: "76970026-9", nombre: "TRANSPORTES TRANS-LYON SPA", representante: "Marcelo Eduardo LeÓn Salvatierra", ejecutiva: "Carolina", direccion: "Caleta Buena 9413, Campo Verde", comuna: "La Florida", telefono: "9 5715 8438", email: "edubeo@gmail.com" },
+  { rut: "78259175-4", nombre: "Transportes Verpo Spa", representante: "Manuel Humberto Poza Torres", ejecutiva: "Carolina", direccion: "4 NORTE 265 C 195", comuna: "San Pedro de la paz", telefono: "979366530", email: "poza2102@gmail.com" },
+  { rut: "77926368-1", nombre: "TRANSPORTES WEREK SPA", representante: "Rene Ignacio Henriquez Rivas", ejecutiva: "Carolina", direccion: "Psje los Manios 2022, Barrio la Foresta", comuna: "Talca", telefono: "9 4967 1430", email: "michel_jm@hotmail.cl" },
+  { rut: "77920451-0", nombre: "TRANSPORTES Y LOGISTICA SERPA SPA", representante: "Sergio Antonio Figueroa Pinochet", ejecutiva: "Carolina", direccion: "Mario Bahamonde 7865", comuna: "San Pedro de la Paz", telefono: "9 4612 2105", email: "paula.bucarey.o@gmail.com" },
+  { rut: "78099193-3", nombre: "Transportes Yuyo Spa", representante: "Raul Abraham Pena Calabrano", ejecutiva: "Carolina", direccion: "Pje Pasadena 1000 MZ 2 LT 3", comuna: "Los Angeles", telefono: "9 2746 8487", email: "raul.ap.c1993@gmail.com" },
+  { rut: "77806154-6", nombre: "ZF TRANSPORTES SPA", representante: "Eduardo Andres Zuñiga Luengo", ejecutiva: "Carolina", direccion: "San Antonio Lt2 a", comuna: "Linares", telefono: "9 8475 8779", email: "edu223andres@gmail.com" },
+  { rut: "78032949-1", nombre: "CLASSIC TRUCK TRANSPORT SPA", representante: "JOSE DAVID ESPINOZA CASTRO", ejecutiva: "Cecilia", direccion: "CAMINO PAINE LONQUEN 4837 ST 1 -B LT D BUIN", comuna: "Santiago", telefono: "938937758", email: "jose4837@gmailcom" },
+  { rut: "7321424-6", nombre: "Fernando del Carmen Araya Araya", representante: "Fernando Del Carmen Araya Araya", ejecutiva: "Cecilia", direccion: "Lago Ranco N°734 Villa Los Lagos", comuna: "Panguipulli", telefono: "947458117", email: "macasf06@hotmailcom" },
+  { rut: "77492287-3", nombre: "Lar Spa", representante: "Luis Angel Rodriguez Chacon", ejecutiva: "Cecilia", direccion: "Pasaje Chonos 1376", comuna: "Conchalí", telefono: "959411152", email: "luaro58@outlookcom" },
+  { rut: "77007552-1", nombre: "Sociedad De Transportes Km Limitada", representante: "Luis Hernan Iturriaga Barahona", ejecutiva: "Cecilia", direccion: "Corregidor de Calca 1116 Pedro de Oña", comuna: "Isla De Maipo", telefono: "959411152", email: "claxel1970@hotmailcom" },
+  { rut: "76491308-6", nombre: "Sociedad De Transportes Y Servicios Moreno Y Lopez Limitada", representante: "Leonardo Antonio Moreno Medina", ejecutiva: "Cecilia", direccion: "Pasaje Parque Los Ciprece 2841, Nueva Vida", comuna: "Alto Hospicio", telefono: "993316895", email: "leonardo_antonio24@hotmailcom" }
+]
+&nbsp;
+export const <span class="cstat-no" title="statement not covered" >allConductores </span>= <span class="cstat-no" title="statement not covered" >[</span>
+  { rut: "18012757-7", nombre: "Ruben Marchant Needhan", rut_proveedor: "77653071-9", proveedor: "4Vial SPA", patente_tracto: "XW7026" },
+  { rut: "10907750-K", nombre: "Adolfo Gonzalez Meza", rut_proveedor: "76461213-2", proveedor: "Adolfo Del Carmen Gonzalez Meza Transporte De Carga E.i.r.l.", patente_tracto: "FWKB83" },
+  { rut: "12879880-3", nombre: "Juan Manuel Vargas Jerve", rut_proveedor: "76956797-6", proveedor: "AEROCAV SPA", patente_tracto: "RVSD35" },
+  { rut: "16181677-9", nombre: "Aldo Bustamante Ortega", rut_proveedor: "16181677-9", proveedor: "Aldo Antonio Bustamante Ortega", patente_tracto: "CHTV35" },
+  { rut: "12481902-4", nombre: "Ambrosio Casanova Naavarrete", rut_proveedor: "76463195-1", proveedor: "Ambrosio Julian Casanova Navarrete Transporte De Carga E.i.r.l.", patente_tracto: "HWRC63" },
+  { rut: "13277753-5", nombre: "Patricio Aurelio Rivas Puentes", rut_proveedor: "78101236-K", proveedor: "Logística Siete Robles Spa", patente_tracto: "JSHK45" },
+  { rut: "8825579-8", nombre: "JOSE DAVID ESPINOZA CASTRO", rut_proveedor: "78032949-1", proveedor: "CLASSIC TRUCK TRANSPORT SPA", patente_tracto: "GXVX71" },
+  { rut: "7486285-3", nombre: "Pedro Rafael Mozo Espina", rut_proveedor: "77243323-9", proveedor: "Comercio, Servicios Y Transportes Mozó Spa", patente_tracto: "CTHX29" },
+  { rut: "12671737-7", nombre: "Cristian Mauricio Jimenez Reyes", rut_proveedor: "12671737-7", proveedor: "Cristian Mauricio Jimenez Reyes", patente_tracto: "BDTJ59" },
+  { rut: "17461633-7", nombre: "Anibal Gregorich Vergara Miranda", rut_proveedor: "77083269-1", proveedor: "Empresa De Transportes Luis Anibal Vergara Cadiz E.i.r.l.", patente_tracto: "ZN3559" }
+]
+&nbsp;
+export const <span class="cstat-no" title="statement not covered" >stats </span>= <span class="cstat-no" title="statement not covered" >{</span>
+  totalTransportistas: 235,
+  totalConductores: 293
+}
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-05-05T02:42:54.979Z
+            </div>
+        <script src="../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../sorter.js"></script>
+        <script src="../../block-navigation.js"></script>
+    </body>
+</html>
+    
