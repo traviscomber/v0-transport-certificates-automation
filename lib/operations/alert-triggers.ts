@@ -6,59 +6,140 @@ export interface AlertEvent {
   type: 'warning' | 'error' | 'success' | 'info'
   title: string
   description: string
-  entityType?: 'driver' | 'subcontractor' | 'document' | 'system'
+  entityType?: 'driver' | 'subcontractor' | 'document' | 'system' | 'transportista'
   entityId?: string
   entityName?: string
   actionUrl?: string
+  // Production-ready: ejecutiva assignment
+  ejecutivaNombre?: string
+  transportistaId?: string
+  subcontratistaId?: string
+  driverId?: string
+  documentId?: string
+  documentType?: string
 }
 
 /**
- * Registra un evento de alerta en el sistema
- * Se puede llamar desde cualquier endpoint para registrar eventos importantes
+ * Lookup ejecutiva from transportista_id, subcontratista_id, or driver_id
+ * Returns the assigned ejecutiva's name for proper alert routing
+ */
+async function lookupEjecutiva(params: {
+  transportistaId?: string
+  subcontratistaId?: string
+  driverId?: string
+}): Promise<string | null> {
+  try {
+    const adminClient = await createAdminClient()
+
+    // Lookup by transportista_id
+    if (params.transportistaId) {
+      const { data } = await adminClient
+        .from('transportistas')
+        .select('ejecutivo_nombre, ejecutiva')
+        .eq('id', params.transportistaId)
+        .maybeSingle()
+      
+      if (data) {
+        return data.ejecutivo_nombre || data.ejecutiva || null
+      }
+    }
+
+    // Lookup by subcontratista_id
+    if (params.subcontratistaId) {
+      const { data } = await adminClient
+        .from('subcontractors')
+        .select('ejecutiva')
+        .eq('id', params.subcontratistaId)
+        .maybeSingle()
+      
+      if (data) {
+        return data.ejecutiva || null
+      }
+    }
+
+    // Lookup by driver_id - find associated transportista
+    if (params.driverId) {
+      const { data } = await adminClient
+        .from('drivers')
+        .select('transportista_id')
+        .eq('id', params.driverId)
+        .maybeSingle()
+      
+      if (data?.transportista_id) {
+        return await lookupEjecutiva({ transportistaId: data.transportista_id })
+      }
+    }
+
+    return null
+  } catch (error) {
+    console.error('[v0] Error looking up ejecutiva:', error)
+    return null
+  }
+}
+
+/**
+ * Registra un evento de alerta en el sistema con asignación automática a ejecutiva
  */
 export async function logAlert(event: AlertEvent) {
   try {
-    console.log('[v0] 🔔 Alert triggered:', {
+    console.log('[v0] Alert triggered:', {
       type: event.type,
       title: event.title,
       entity: event.entityType,
       timestamp: new Date().toISOString(),
     })
 
-    // Guardar en la tabla de alertas en Supabase
     const adminClient = await createAdminClient()
     
-    // Construir mensaje descriptivo
-    const message = event.description || event.title
-    
-    // Construir metadata si hay información adicional
-    const metadata = {
-      entityType: event.entityType,
-      entityId: event.entityId,
-      entityName: event.entityName,
+    // Auto-lookup ejecutiva if not provided
+    let ejecutivaNombre = event.ejecutivaNombre
+    if (!ejecutivaNombre) {
+      const lookedUp = await lookupEjecutiva({
+        transportistaId: event.transportistaId,
+        subcontratistaId: event.subcontratistaId,
+        driverId: event.driverId,
+      })
+      ejecutivaNombre = lookedUp || undefined
+      console.log('[v0] Ejecutiva looked up:', ejecutivaNombre)
     }
-
-    // Mapear el tipo de alerta a prioridad
+    
+    // Map alert type to priority
     const priorityMap: Record<string, string> = {
       'error': 'high',
-      'warning': 'normal',
-      'success': 'normal',
+      'warning': 'medium',
+      'success': 'low',
       'info': 'low'
     }
 
-    const alertData = {
+    const message = event.description || event.title
+
+    const alertData: any = {
+      alert_type: event.type,
       title: event.title,
+      description: message,
       message: message,
-      type: event.type,
-      category: event.entityType || 'general',
-      priority: priorityMap[event.type] || 'normal',
+      entity_type: event.entityType || 'general',
+      entity_id: event.entityId || null,
+      entity_name: event.entityName || null,
+      priority: priorityMap[event.type] || 'medium',
       action_url: event.actionUrl || null,
-      metadata: metadata,
       is_read: false,
-      organization_id: '00000000-0000-0000-0000-000000000000' // Default org
+      is_resolved: false,
+      status: 'pendiente',
+      ejecutiva_nombre: ejecutivaNombre || null,
+      transportista_id: event.transportistaId || null,
+      subcontratista_id: event.subcontratistaId || null,
+      driver_id: event.driverId || null,
+      document_id: event.documentId || null,
+      document_type: event.documentType || null,
+      metadata: {
+        entityType: event.entityType,
+        entityId: event.entityId,
+        entityName: event.entityName,
+      },
     }
 
-    console.log('[v0] Saving alert to database:', alertData)
+    console.log('[v0] Saving alert with ejecutiva:', ejecutivaNombre)
 
     const { data, error } = await adminClient
       .from('alerts_log')
@@ -73,16 +154,17 @@ export async function logAlert(event: AlertEvent) {
       }
     }
 
-    console.log('[v0] ✅ Alert saved successfully to database')
+    console.log('[v0] Alert saved successfully for ejecutiva:', ejecutivaNombre)
 
     return {
       success: true,
       event,
       timestamp: new Date(),
-      savedAlert: data?.[0]
+      savedAlert: data?.[0],
+      ejecutivaNombre,
     }
   } catch (error) {
-    console.error('[v0] ❌ Exception in logAlert:', error)
+    console.error('[v0] Exception in logAlert:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -91,24 +173,38 @@ export async function logAlert(event: AlertEvent) {
 }
 
 /**
- * Dispara una alerta cuando un documento es subido
+ * Dispara una alerta cuando un documento es subido por un conductor
  */
-export async function triggerDocumentUploadedAlert(driverId: string, fileName: string, driverName?: string) {
+export async function triggerDocumentUploadedAlert(
+  driverId: string, 
+  fileName: string, 
+  driverName?: string,
+  documentType?: string,
+  documentId?: string
+) {
   return logAlert({
-    type: 'success',
-    title: 'Documento subido',
+    type: 'info',
+    title: 'Nuevo documento subido',
     description: `${driverName || 'Un conductor'} ha subido un nuevo documento: ${fileName}`,
     entityType: 'document',
     entityId: driverId,
     entityName: driverName,
     actionUrl: `/dashboard/company/conductores?search=${encodeURIComponent(driverName || '')}`,
+    driverId,
+    documentId,
+    documentType,
   })
 }
 
 /**
  * Dispara una alerta cuando un documento es aprobado
  */
-export async function triggerDocumentApprovedAlert(driverId: string, documentType: string, driverName?: string) {
+export async function triggerDocumentApprovedAlert(
+  driverId: string, 
+  documentType: string, 
+  driverName?: string,
+  documentId?: string
+) {
   return logAlert({
     type: 'success',
     title: 'Documento aprobado',
@@ -117,41 +213,73 @@ export async function triggerDocumentApprovedAlert(driverId: string, documentTyp
     entityId: driverId,
     entityName: driverName,
     actionUrl: `/dashboard/company/conductores?search=${encodeURIComponent(driverName || '')}`,
+    driverId,
+    documentId,
+    documentType,
   })
 }
 
 /**
  * Dispara una alerta cuando un documento es rechazado
  */
-export async function triggerDocumentRejectedAlert(driverId: string, documentType: string, reason: string, driverName?: string) {
+export async function triggerDocumentRejectedAlert(
+  driverId: string, 
+  documentType: string, 
+  reason: string, 
+  driverName?: string,
+  documentId?: string
+) {
   return logAlert({
     type: 'error',
     title: 'Documento rechazado',
-    description: `El documento "${documentType}" de ${driverName || 'un conductor'} fue rechazado. Razón: ${reason}`,
+    description: `El documento "${documentType}" de ${driverName || 'un conductor'} fue rechazado. Razon: ${reason}`,
     entityType: 'document',
     entityId: driverId,
     entityName: driverName,
     actionUrl: `/dashboard/company/conductores?search=${encodeURIComponent(driverName || '')}`,
+    driverId,
+    documentId,
+    documentType,
   })
 }
 
 /**
- * Dispara una alerta cuando está próximo a vencer un documento
+ * Dispara una alerta cuando esta proximo a vencer un documento
  */
-export async function triggerDocumentExpiringAlert(documentType: string, daysUntilExpiry: number) {
+export async function triggerDocumentExpiringAlert(
+  documentType: string, 
+  daysUntilExpiry: number,
+  options?: {
+    driverId?: string
+    transportistaId?: string
+    subcontratistaId?: string
+    documentId?: string
+    entityName?: string
+  }
+) {
   return logAlert({
     type: daysUntilExpiry <= 7 ? 'error' : 'warning',
-    title: `${documentType} próximo a vencer (${daysUntilExpiry} días)`,
-    description: `Hay documentos de tipo "${documentType}" que vencen en ${daysUntilExpiry} días. Requiere atención urgente.`,
+    title: `${documentType} proximo a vencer (${daysUntilExpiry} dias)`,
+    description: `Hay documentos de tipo "${documentType}" que vencen en ${daysUntilExpiry} dias. Requiere atencion urgente.`,
     entityType: 'document',
+    entityName: options?.entityName,
     actionUrl: `/dashboard/company/reportes`,
+    driverId: options?.driverId,
+    transportistaId: options?.transportistaId,
+    subcontratistaId: options?.subcontratistaId,
+    documentId: options?.documentId,
+    documentType,
   })
 }
 
 /**
  * Dispara una alerta cuando un conductor es agregado al sistema
  */
-export async function triggerDriverAddedAlert(driverName: string, driverId: string) {
+export async function triggerDriverAddedAlert(
+  driverName: string, 
+  driverId: string,
+  transportistaId?: string
+) {
   return logAlert({
     type: 'info',
     title: 'Nuevo conductor agregado',
@@ -160,6 +288,44 @@ export async function triggerDriverAddedAlert(driverName: string, driverId: stri
     entityId: driverId,
     entityName: driverName,
     actionUrl: `/dashboard/company/conductores?search=${encodeURIComponent(driverName)}`,
+    driverId,
+    transportistaId,
+  })
+}
+
+/**
+ * Dispara una alerta cuando un documento de subcontratista es subido
+ */
+export async function triggerSubcontractorDocumentUploadedAlert(
+  subcontractorId: string, 
+  fileName: string, 
+  subcontractorName?: string,
+  documentType?: string,
+  documentId?: string
+) {
+  return logAlert({
+    type: 'info',
+    title: 'Documento de subcontratista subido',
+    description: `${subcontractorName || 'Un subcontratista'} ha subido un nuevo documento: ${fileName}`,
+    entityType: 'document',
+    entityId: subcontractorId,
+    entityName: subcontractorName,
+    actionUrl: `/dashboard/company/subcontratistas?search=${encodeURIComponent(subcontractorName || '')}`,
+    subcontratistaId: subcontractorId,
+    documentId,
+    documentType,
+  })
+}
+
+/**
+ * Dispara una alerta de error del sistema
+ */
+export async function triggerSystemAlert(title: string, description: string) {
+  return logAlert({
+    type: 'error',
+    title,
+    description,
+    entityType: 'system',
   })
 }
 
@@ -180,37 +346,11 @@ export async function triggerDocumentStatusAlert(
     return logAlert({
       type: 'warning',
       title: 'Documento vencido',
-      description: `El documento "${documentName}" ha vencido y requiere renovación`,
+      description: `El documento "${documentName}" ha vencido y requiere renovacion`,
       entityType: 'document',
       entityId: documentId,
       actionUrl: `/dashboard/company/documentos`,
+      documentId,
     })
   }
-}
-
-/**
- * Dispara una alerta cuando un documento de subcontratista es subido
- */
-export async function triggerSubcontractorDocumentUploadedAlert(subcontractorId: string, fileName: string, subcontractorName?: string) {
-  return logAlert({
-    type: 'success',
-    title: 'Documento de subcontratista subido',
-    description: `${subcontractorName || 'Un subcontratista'} ha subido un nuevo documento: ${fileName}`,
-    entityType: 'document',
-    entityId: subcontractorId,
-    entityName: subcontractorName,
-    actionUrl: `/dashboard/company/subcontratistas?search=${encodeURIComponent(subcontractorName || '')}`,
-  })
-}
-
-/**
- * Dispara una alerta de error del sistema
- */
-export async function triggerSystemAlert(title: string, description: string) {
-  return logAlert({
-    type: 'error',
-    title,
-    description,
-    entityType: 'system',
-  })
 }

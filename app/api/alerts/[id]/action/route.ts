@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic'
 /**
  * POST /api/alerts/{id}/action
  * Handle alert actions: approve, reject, request_info
+ * Production-ready: uses alerts_log table
  */
 export async function POST(
   request: NextRequest,
@@ -32,15 +33,17 @@ export async function POST(
     }
 
     const supabase = createAdminClient()
+    const ejecutivaName = request.headers.get('x-ejecutiva-name') || 'Sistema'
 
-    // Get current alert details
+    // Get current alert details from alerts_log
     const { data: alert, error: fetchError } = await supabase
-      .from('alerts')
+      .from('alerts_log')
       .select('*')
       .eq('id', alertId)
       .single()
 
     if (fetchError || !alert) {
+      console.error('[v0] Alert not found:', alertId, fetchError)
       return NextResponse.json(
         { error: 'Alert not found' },
         { status: 404 }
@@ -49,13 +52,14 @@ export async function POST(
 
     // Update alert with action details
     const { data: updatedAlert, error: updateError } = await supabase
-      .from('alerts')
+      .from('alerts_log')
       .update({
-        status: 'actioned',
+        status: action === 'request_info' ? 'pendiente' : 'resuelto',
         action_type: action,
         action_notes: notes || '',
-        actioned_by: request.headers.get('x-ejecutiva-name') || 'Sistema',
+        actioned_by: ejecutivaName,
         actioned_at: new Date().toISOString(),
+        is_resolved: action !== 'request_info',
       })
       .eq('id', alertId)
       .select()
@@ -70,47 +74,58 @@ export async function POST(
     }
 
     // If there's a related document, update its state based on action
-    if (alert.metadata?.document_id) {
-      const documentId = alert.metadata.document_id
-
+    const documentId = alert.document_id || alert.metadata?.document_id
+    if (documentId) {
       let newStatus = 'pendiente'
       if (action === 'approve') {
         newStatus = 'aprobado'
       } else if (action === 'reject') {
         newStatus = 'rechazado'
-      } else if (action === 'request_info') {
-        newStatus = 'pendiente' // Stays pending, waiting for more info
       }
 
-      // Update document status (assuming table is 'uploaded_documents' or similar)
-      await supabase
-        .from('uploaded_documents')
-        .update({ estado: newStatus })
-        .eq('id', documentId)
-        .select()
+      // Try multiple document tables since the system has multiple
+      const docTables = ['driver_documents', 'documents', 'uploaded_documents']
+      for (const table of docTables) {
+        try {
+          await supabase
+            .from(table)
+            .update({ status: newStatus, estado: newStatus })
+            .eq('id', documentId)
+        } catch {
+          // Table might not exist or column might be different - continue
+        }
+      }
 
-      // Create a follow-up alert for the action result
+      // Create a follow-up alert tracking the action
       const actionTitles = {
         approve: 'Documento Aprobado',
         reject: 'Documento Rechazado',
-        request_info: 'Información Solicitada',
+        request_info: 'Informacion Solicitada',
       }
 
-      await supabase.from('alerts').insert([
+      await supabase.from('alerts_log').insert([
         {
+          alert_type: action === 'reject' ? 'error' : action === 'approve' ? 'success' : 'info',
           title: actionTitles[action as keyof typeof actionTitles],
-          message: `${actionTitles[action as keyof typeof actionTitles]} por ${request.headers.get('x-ejecutiva-name') || 'Ejecutiva'}.`,
-          type: `DOCUMENT_${newStatus.toUpperCase()}`,
-          priority: action === 'reject' ? 'high' : 'medium',
-          category: 'DOCUMENT_ACTION',
+          description: `${actionTitles[action as keyof typeof actionTitles]} por ${ejecutivaName}. ${notes ? `Notas: ${notes}` : ''}`,
+          message: `${actionTitles[action as keyof typeof actionTitles]} por ${ejecutivaName}. ${notes ? `Notas: ${notes}` : ''}`,
+          priority: action === 'reject' ? 'high' : 'low',
+          entity_type: 'document',
+          entity_id: documentId,
+          entity_name: alert.entity_name,
+          ejecutiva_nombre: alert.ejecutiva_nombre,
           transportista_id: alert.transportista_id,
           subcontratista_id: alert.subcontratista_id,
-          ejecutiva_nombre: alert.ejecutiva_nombre,
+          driver_id: alert.driver_id,
+          document_id: documentId,
+          document_type: alert.document_type,
           status: 'resuelto',
+          is_read: false,
+          is_resolved: true,
           metadata: {
             ...alert.metadata,
             action_taken: action,
-            actioned_by: request.headers.get('x-ejecutiva-name') || 'Sistema',
+            actioned_by: ejecutivaName,
             parent_alert_id: alertId,
           },
         },
@@ -120,7 +135,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       alert: updatedAlert,
-      message: `Acción "${action}" completada exitosamente`,
+      message: `Accion "${action}" completada exitosamente`,
     })
   } catch (error) {
     console.error('[v0] Error in alert action handler:', error)

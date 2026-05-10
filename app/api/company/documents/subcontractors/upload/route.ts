@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { triggerSubcontractorDocumentUploadedAlert } from '@/lib/operations/alert-triggers'
 
 export async function POST(request: NextRequest) {
   try {
@@ -98,6 +99,20 @@ export async function POST(request: NextRequest) {
       if (!docError && doc) {
         uploadedDocs.push(doc)
         console.log('[v0] Document saved:', doc.id)
+
+        // Trigger alert for subcontractor document upload
+        try {
+          await triggerSubcontractorDocumentUploadedAlert(
+            subcontractorId,
+            file.name,
+            subcontractor.razon_social,
+            category,
+            doc.id
+          )
+          console.log('[v0] Alert triggered for subcontractor doc upload')
+        } catch (alertError) {
+          console.error('[v0] Alert trigger error (non-fatal):', alertError)
+        }
       }
     }
 
