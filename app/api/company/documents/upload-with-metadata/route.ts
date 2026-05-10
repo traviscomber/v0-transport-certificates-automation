@@ -21,35 +21,35 @@ export async function POST(request: NextRequest) {
 
     console.log('[v0] Upload endpoint: Authenticated user:', { id: user.id, email: user.email })
 
-    // Get metadata from custom headers instead of FormData
-    const fileName = request.headers.get('X-File-Name')
-    const driverRut = request.headers.get('X-Driver-Rut')
-    const documentTypeId = request.headers.get('X-Document-Type-Id')
-    const metadataHeader = request.headers.get('X-Metadata')
-    const fileType = request.headers.get('Content-Type')
-
-    console.log('[v0] Upload endpoint: Request headers:', {
-      'X-File-Name': fileName,
-      'X-Driver-Rut': driverRut,
-      'X-Document-Type-Id': documentTypeId,
-      'Content-Type': fileType,
-    })
-
-    if (!fileName || !driverRut || !documentTypeId) {
-      console.log('[v0] Upload endpoint: Missing required headers')
-      return NextResponse.json({ error: 'Missing required headers' }, { status: 400 })
+    let formData
+    try {
+      formData = await request.formData()
+      console.log('[v0] Upload endpoint: FormData parsed successfully')
+    } catch (parseError) {
+      const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown error'
+      console.error('[v0] Upload endpoint: FormData parse error:', errorMessage)
+      return NextResponse.json(
+        { error: 'Failed to parse form data: ' + errorMessage },
+        { status: 400 }
+      )
     }
 
-    // Read binary file data
-    const arrayBuffer = await request.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
+    const file = formData.get('file') as File
+    const driverRut = formData.get('driver_rut') as string
+    const documentTypeId = formData.get('document_type_id') as string
+    const metadataStr = formData.get('metadata') as string
 
-    console.log('[v0] Upload endpoint: File data received:', {
-      fileName,
-      fileSize: buffer.length,
+    console.log('[v0] Upload endpoint: FormData fields:', {
+      file: file?.name,
       driverRut,
       documentTypeId,
+      hasFile: !!file
     })
+
+    if (!file || !driverRut || !documentTypeId) {
+      console.log('[v0] Upload endpoint: Missing required FormData fields')
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
 
     const adminClient = createAdminClient()
 
@@ -68,6 +68,22 @@ export async function POST(request: NextRequest) {
 
     if (conductorError || !conductorRow?.id) {
       console.log('[v0] Upload endpoint: Conductor not found')
+      return NextResponse.json({ error: 'Conductor no encontrado en la base de datos', details: `RUT ${driverRut} not found` }, { status: 400 })
+    }
+
+    const conductorUUID = conductorRow.id
+
+    const storagePath = `drivers/${conductorUUID}/${Date.now()}_${file.name}`
+
+    console.log('[v0] Upload endpoint: Uploading to storage:', storagePath)
+
+    const arrayBuffer = await file.arrayBuffer()
+    const { data: uploadData, error: uploadError } = await adminClient.storage
+      .from('documents')
+      .upload(storagePath, Buffer.from(arrayBuffer), {
+        contentType: file.type,
+        upsert: true,
+      })
       return NextResponse.json({ error: 'Conductor no encontrado en la base de datos', details: `RUT ${driverRut} not found` }, { status: 400 })
     }
 
@@ -107,7 +123,7 @@ export async function POST(request: NextRequest) {
       const base64 = buffer.toString('base64')
       
       // Call AI document processor
-      aiExtraction = await extractDocumentMetadata(base64, (fileType || 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp')
+      aiExtraction = await extractDocumentMetadata(base64, (file.type || 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp')
       console.log('[v0] Upload endpoint: AI extraction successful:', aiExtraction)
     } catch (error) {
       extractionError = error instanceof Error ? error.message : 'AI extraction failed'
