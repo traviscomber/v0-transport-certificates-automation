@@ -66,7 +66,8 @@ export function DashboardOverview() {
         }
 
         // Fetch REAL document stats from the database
-        const docsRes = await fetch(`/api/company/documents/drivers?_t=${Date.now()}`, {
+        // Query all documents without filtering by driver_id since dashboard needs all documents
+        const docsRes = await fetch(`/api/company/documents/all?_t=${Date.now()}`, {
           cache: "no-store",
         })
         
