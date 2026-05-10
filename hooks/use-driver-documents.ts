@@ -93,12 +93,18 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       if (expirationDate) metadata.expiry_date = expirationDate
       formData.append('metadata', JSON.stringify(metadata))
 
+      console.log('[v0] uploadDocument: FormData prepared with file:', file.name, 'size:', file.size, 'type:', file.type)
+      
       const response = await fetch('/api/company/documents/upload-with-metadata', {
         method: 'POST',
         body: formData,
       })
 
+      console.log('[v0] uploadDocument: Response status:', response.status)
+      
       const result = await response.json()
+      console.log('[v0] uploadDocument: Response body:', result)
+      
       if (!response.ok) {
         throw new Error(result?.error || 'Upload failed')
       }
