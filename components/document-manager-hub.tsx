@@ -54,6 +54,27 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
 
   // Listen for document status changes and refetch stats
   useEffect(() => {
+    // On mount, verify stats are fresh by refetching from API
+    const verifyAndRefreshStats = async () => {
+      try {
+        console.log('[v0] DocumentManagerHub: Verifying stats freshness on mount')
+        const response = await fetch('/api/company/documents/stats?_t=' + Date.now(), {
+          cache: 'no-store'
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          console.log('[v0] DocumentManagerHub: Fresh stats from API', data.stats)
+          setStats(data.stats)
+        }
+      } catch (error) {
+        console.error('[v0] DocumentManagerHub: Error verifying stats on mount:', error)
+      }
+    }
+    
+    verifyAndRefreshStats()
+    
+    // Set up sync listener
     const unsubscribe = onSync((event) => {
       console.log('[v0] DocumentManagerHub: Received sync event', event.type)
       
@@ -63,7 +84,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
         // Refetch stats from API
         const fetchUpdatedStats = async () => {
           try {
-            const response = await fetch('/api/company/documents/stats', {
+            const response = await fetch('/api/company/documents/stats?_t=' + Date.now(), {
               cache: 'no-store'
             })
             
