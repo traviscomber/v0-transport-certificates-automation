@@ -45,18 +45,15 @@ export async function POST(request: NextRequest) {
     const { data: urlData } = adminClient.storage.from('documents').getPublicUrl(filePath)
     const publicUrl = urlData?.publicUrl
 
-    // 4. INSERT into uploaded_documents (UNIFIED TABLE - used by /company/documentos)
-    // Map driver_id to conductor_id for the unified table
+    // 4. INSERT into database
     const { data: insertedDocs, error: insertError } = await adminClient
-      .from('uploaded_documents')
+      .from('driver_documents')
       .insert([{
-        conductor_id: driverId,
-        original_filename: file.name,
+        driver_id: driverId,
+        file_name: file.name,
         document_type: documentType,
         file_url: publicUrl,
-        validation_status: 'pendiente',
-        transportista_id: null, // Will be populated later if needed
-        mandante_id: null, // LABBE is the only mandante for now
+        status: 'pendiente',
       }])
       .select()
 
@@ -65,7 +62,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Database insert failed', details: insertError }, { status: 500 })
     }
 
-    console.log('[v0] Document inserted to uploaded_documents, conductor_id:', driverId)
+    console.log('[v0] Document inserted successfully, driverId:', driverId)
 
     return NextResponse.json({ success: true, documents: insertedDocs || [] })
 

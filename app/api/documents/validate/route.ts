@@ -9,6 +9,7 @@ import {
   calculateComplianceScore,
 } from '@/lib/validations'
 import { generateDocumentStatusChangeAlert } from '@/lib/document-alerts-generator'
+import { logAuditEvent } from '@/lib/audit-logging-service'
 
 export async function POST(request: NextRequest) {
   try {
@@ -153,7 +154,27 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Determine uploader type and name
+      // Log audit event
+      try {
+        await logAuditEvent(
+          user.id,
+          action === 'approve' ? 'DOCUMENT_APPROVED' : 'DOCUMENT_REJECTED',
+          'uploaded_documents',
+          documentId,
+          {
+            previous_status: document.validation_status,
+            new_status: action === 'approve' ? 'approved' : 'rejected',
+            rejection_reason: rejectionReason || null,
+            validated_by_user_id: user.id,
+          },
+          request.headers.get('x-forwarded-for') || undefined,
+          request.headers.get('user-agent') || undefined
+        )
+        console.log('[v0] Audit event logged for document:', documentId)
+      } catch (auditError) {
+        console.error('[v0] Audit logging error (non-fatal):', auditError)
+        // Don't fail the operation if audit logging fails
+      }
       const uploaderType = document.conductor_id ? 'conductor' : 'client'
       const uploaderId = document.conductor_id || document.client_id
       const uploaderName = Array.isArray(document.profiles)
