@@ -82,22 +82,36 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
         uploaderName = user?.user_metadata?.full_name || user?.email || 'Unknown'
       }
 
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('driver_id', driverId)
-      formData.append('driver_rut', driverRut)
-      formData.append('document_type_id', tipo || 'general')
-      formData.append('uploaded_by', uploaderName || '')
+      // Read file as Base64 to send as JSON
+      const reader = new FileReader()
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string
+          const base64 = result.split(',')[1] // Remove "data:image/jpeg;base64," prefix
+          resolve(base64)
+        }
+        reader.onerror = reject
+      })
       
-      const metadata: any = {}
-      if (expirationDate) metadata.expiry_date = expirationDate
-      formData.append('metadata', JSON.stringify(metadata))
-
-      console.log('[v0] uploadDocument: FormData prepared with file:', file.name, 'size:', file.size, 'type:', file.type)
+      const fileBase64 = await base64Promise
+      
+      console.log('[v0] uploadDocument: File converted to Base64, size:', fileBase64.length)
       
       const response = await fetch('/api/company/documents/upload-with-metadata', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          file: fileBase64,
+          fileName: file.name,
+          fileType: file.type,
+          driver_id: driverId,
+          driver_rut: driverRut,
+          document_type_id: tipo || 'general',
+          uploaded_by: uploaderName || '',
+          metadata: {
+            expiry_date: expirationDate,
+          }
+        })
       })
 
       console.log('[v0] uploadDocument: Response status:', response.status)

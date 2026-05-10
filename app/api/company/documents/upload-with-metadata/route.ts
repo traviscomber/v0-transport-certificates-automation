@@ -21,33 +21,31 @@ export async function POST(request: NextRequest) {
 
     console.log('[v0] Upload endpoint: Authenticated user:', { id: user.id, email: user.email })
 
-    let formData
+    let body
     try {
-      formData = await request.formData()
+      body = await request.json()
     } catch (parseError) {
-      const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown error parsing form data'
-      console.error('[v0] Upload endpoint: Failed to parse FormData:', errorMessage)
+      const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown error parsing JSON'
+      console.error('[v0] Upload endpoint: Failed to parse JSON:', errorMessage)
       return NextResponse.json(
-        { error: 'Failed to parse form data: ' + errorMessage },
+        { error: 'Failed to parse request body: ' + errorMessage },
         { status: 400 }
       )
     }
 
-    const file = formData.get('file') as File
-    // driver_id is '1','2','12' etc — NOT a UUID. Use driver_rut to resolve.
-    const driverRut = formData.get('driver_rut') as string
-    const documentTypeId = formData.get('document_type_id') as string
-    const uploadedBy = formData.get('uploaded_by') as string
+    const { file: fileBase64, fileName, fileType, driver_rut: driverRut, document_type_id: documentTypeId, uploaded_by: uploadedBy, metadata } = body
 
-    console.log('[v0] Upload endpoint: Form data received:', {
-      file: file?.name,
+    console.log('[v0] Upload endpoint: Request data received:', {
+      fileName,
+      fileType,
       driverRut,
       documentTypeId,
       uploadedBy,
-      hasFile: !!file
+      hasFile: !!fileBase64,
+      fileSize: fileBase64?.length || 0
     })
 
-    if (!file || !driverRut || !documentTypeId) {
+    if (!fileBase64 || !driverRut || !documentTypeId || !fileName) {
       console.log('[v0] Upload endpoint: Missing required fields')
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
@@ -74,16 +72,16 @@ export async function POST(request: NextRequest) {
 
     const conductorUUID = conductorRow.id
 
-    const fileName = `${Date.now()}_${file.name}`
-    const storagePath = `drivers/${conductorUUID}/${fileName}`
+    const storagePath = `drivers/${conductorUUID}/${Date.now()}_${fileName}`
 
     console.log('[v0] Upload endpoint: Uploading to storage:', storagePath)
 
-    const arrayBuffer = await file.arrayBuffer()
+    // Convert Base64 to Buffer
+    const buffer = Buffer.from(fileBase64, 'base64')
     const { data: uploadData, error: uploadError } = await adminClient.storage
       .from('documents')
-      .upload(storagePath, Buffer.from(arrayBuffer), {
-        contentType: file.type,
+      .upload(storagePath, buffer, {
+        contentType: fileType,
         upsert: true,
       })
 
@@ -105,12 +103,8 @@ export async function POST(request: NextRequest) {
     let extractionError = null
 
     try {
-      // Convert file to base64 for AI processing
-      const buffer = Buffer.from(arrayBuffer)
-      const base64 = buffer.toString('base64')
-      
-      // Call AI document processor
-      aiExtraction = await extractDocumentMetadata(base64, file.type as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp')
+      // Call AI document processor with Base64
+      aiExtraction = await extractDocumentMetadata(fileBase64, fileType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp')
       console.log('[v0] Upload endpoint: AI extraction successful:', aiExtraction)
     } catch (error) {
       extractionError = error instanceof Error ? error.message : 'AI extraction failed'
@@ -139,7 +133,7 @@ export async function POST(request: NextRequest) {
     const insertPayload: any = {
       conductor_id: conductorUUID,
       document_type_id: documentTypeId,
-      original_filename: file.name,
+      original_filename: fileName,
       file_url: publicUrlData?.publicUrl || '',
       validation_status: validationStatus
     }
