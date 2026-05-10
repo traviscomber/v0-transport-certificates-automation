@@ -17,7 +17,9 @@ import {
   ArrowRight,
   Building2,
   FolderOpen,
-  BarChart3
+  BarChart3,
+  Calendar,
+  Flame
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -239,13 +241,13 @@ export function DocumentManagerHub({ stats }: DocumentManagerHubProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
             <Link href="/dashboard/company/conductores">
               <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
                 <Users className="h-4 w-4 text-blue-500" />
                 <div className="text-left">
-                  <div className="font-medium">Conductores</div>
-                  <div className="text-xs text-muted-foreground">Fichas y documentos</div>
+                  <div className="font-medium text-xs">Conductores</div>
+                  <div className="text-xs text-muted-foreground">Fichas</div>
                 </div>
               </Button>
             </Link>
@@ -254,18 +256,8 @@ export function DocumentManagerHub({ stats }: DocumentManagerHubProps) {
               <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
                 <Truck className="h-4 w-4 text-orange-500" />
                 <div className="text-left">
-                  <div className="font-medium">Subcontratistas</div>
-                  <div className="text-xs text-muted-foreground">Empresas y legal</div>
-                </div>
-              </Button>
-            </Link>
-            
-            <Link href="/dashboard/company">
-              <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
-                <BarChart3 className="h-4 w-4 text-green-500" />
-                <div className="text-left">
-                  <div className="font-medium">Dashboard</div>
-                  <div className="text-xs text-muted-foreground">Vista general</div>
+                  <div className="font-medium text-xs">Subcontratistas</div>
+                  <div className="text-xs text-muted-foreground">Empresas</div>
                 </div>
               </Button>
             </Link>
@@ -274,8 +266,38 @@ export function DocumentManagerHub({ stats }: DocumentManagerHubProps) {
               <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
                 <Clock className="h-4 w-4 text-amber-500" />
                 <div className="text-left">
-                  <div className="font-medium">Pendientes</div>
-                  <div className="text-xs text-muted-foreground">{totalPendientes} por revisar</div>
+                  <div className="font-medium text-xs">Pendientes</div>
+                  <div className="text-xs text-muted-foreground">{totalPendientes}</div>
+                </div>
+              </Button>
+            </Link>
+
+            <Link href="/dashboard/company/documentos/renovar">
+              <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
+                <Calendar className="h-4 w-4 text-yellow-500" />
+                <div className="text-left">
+                  <div className="font-medium text-xs">Renovar</div>
+                  <div className="text-xs text-muted-foreground">7-30 días</div>
+                </div>
+              </Button>
+            </Link>
+
+            <Link href="/dashboard/company/documentos/vencidos">
+              <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
+                <Flame className="h-4 w-4 text-red-500" />
+                <div className="text-left">
+                  <div className="font-medium text-xs">Vencidos</div>
+                  <div className="text-xs text-muted-foreground">Crítico</div>
+                </div>
+              </Button>
+            </Link>
+            
+            <Link href="/dashboard/company">
+              <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
+                <BarChart3 className="h-4 w-4 text-green-500" />
+                <div className="text-left">
+                  <div className="font-medium text-xs">Dashboard</div>
+                  <div className="text-xs text-muted-foreground">General</div>
                 </div>
               </Button>
             </Link>
