@@ -283,27 +283,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
-            <Link href="/dashboard/company/conductores">
-              <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
-                <Users className="h-4 w-4 text-blue-500" />
-                <div className="text-left">
-                  <div className="font-medium text-xs">Conductores</div>
-                  <div className="text-xs text-muted-foreground">Fichas</div>
-                </div>
-              </Button>
-            </Link>
-            
-            <Link href="/dashboard/company/subcontratistas">
-              <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
-                <Truck className="h-4 w-4 text-orange-500" />
-                <div className="text-left">
-                  <div className="font-medium text-xs">Subcontratistas</div>
-                  <div className="text-xs text-muted-foreground">Empresas</div>
-                </div>
-              </Button>
-            </Link>
-            
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Link href="/dashboard/company/documentos/pendientes">
               <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
                 <Clock className="h-4 w-4 text-amber-500" />
@@ -324,32 +304,22 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
               </Button>
             </Link>
 
+            <Link href="/dashboard/company/documentos/rechazados">
+              <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
+                <XCircle className="h-4 w-4 text-red-500" />
+                <div className="text-left">
+                  <div className="font-medium text-xs">Rechazados</div>
+                  <div className="text-xs text-muted-foreground">Historial</div>
+                </div>
+              </Button>
+            </Link>
+
             <Link href="/dashboard/company/documentos/renovar">
               <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
                 <Calendar className="h-4 w-4 text-yellow-500" />
                 <div className="text-left">
                   <div className="font-medium text-xs">Renovar</div>
                   <div className="text-xs text-muted-foreground">7-30 días</div>
-                </div>
-              </Button>
-            </Link>
-
-            <Link href="/dashboard/company/documentos/vencidos">
-              <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
-                <Flame className="h-4 w-4 text-red-500" />
-                <div className="text-left">
-                  <div className="font-medium text-xs">Vencidos</div>
-                  <div className="text-xs text-muted-foreground">Crítico</div>
-                </div>
-              </Button>
-            </Link>
-            
-            <Link href="/dashboard/company">
-              <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
-                <BarChart3 className="h-4 w-4 text-green-500" />
-                <div className="text-left">
-                  <div className="font-medium text-xs">Dashboard</div>
-                  <div className="text-xs text-muted-foreground">General</div>
                 </div>
               </Button>
             </Link>

@@ -5,49 +5,50 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { CheckCircle, FileText, Calendar, User, Building2 } from 'lucide-react'
+import { XCircle, FileText, Calendar, User, Building2, AlertCircle } from 'lucide-react'
 import { useDocumentSync } from '@/contexts/document-sync-context'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 
-interface ApprovedDocument {
+interface RejectedDocument {
   id: string
   original_filename?: string
   document_name?: string
   validation_status?: string
   status?: string
   file_url: string
+  rejection_reason?: string
   created_at: string
   conductores?: { id: string; nombres: string; apellido_paterno: string; rut: string }
   transportistas?: { id: string; razon_social: string; rut: string }
 }
 
 interface Props {
-  conductorDocs: ApprovedDocument[]
-  subDocs: ApprovedDocument[]
+  conductorDocs: RejectedDocument[]
+  subDocs: RejectedDocument[]
 }
 
-export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, subDocs: initialSubDocs }: Props) {
+export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, subDocs: initialSubDocs }: Props) {
   const [conductorDocs, setConductorDocs] = useState(initialConductorDocs)
   const [subDocs, setSubDocs] = useState(initialSubDocs)
-  const [previewDoc, setPreviewDoc] = useState<ApprovedDocument | null>(null)
+  const [previewDoc, setPreviewDoc] = useState<RejectedDocument | null>(null)
   const { onSync } = useDocumentSync()
 
   // Listen for document changes
   useEffect(() => {
     const unsubscribe = onSync((event) => {
       if (event.type === 'document_status_changed') {
-        // Refetch approved documents
+        // Refetch rejected documents
         const refetch = async () => {
           try {
-            const response = await fetch('/api/company/documents/aprobados')
+            const response = await fetch('/api/company/documents/rechazados')
             if (response.ok) {
               const data = await response.json()
               setConductorDocs(data.conductorDocs || [])
               setSubDocs(data.subDocs || [])
             }
           } catch (error) {
-            console.error('[v0] Error refetching approved docs:', error)
+            console.error('[v0] Error refetching rejected docs:', error)
           }
         }
         refetch()
@@ -65,9 +66,9 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
     return (
       <Card className="bg-slate-900/50 border-slate-700 text-center py-12">
         <div className="flex justify-center mb-4">
-          <CheckCircle className="h-12 w-12 text-green-500/50" />
+          <XCircle className="h-12 w-12 text-red-500/50" />
         </div>
-        <p className="text-muted-foreground">No hay documentos aprobados aún</p>
+        <p className="text-muted-foreground">No hay documentos rechazados</p>
       </Card>
     )
   }
@@ -80,8 +81,8 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
             <CardContent className="p-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-4 flex-1">
-                  <div className="bg-green-500/10 rounded-lg p-2">
-                    <FileText className="h-6 w-6 text-green-500" />
+                  <div className="bg-red-500/10 rounded-lg p-2">
+                    <FileText className="h-6 w-6 text-red-500" />
                   </div>
                   
                   <div className="flex-1">
@@ -111,16 +112,26 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
                         <span>
-                          Aprobado hace {formatDistanceToNow(new Date(doc.created_at), { locale: es })}
+                          Rechazado hace {formatDistanceToNow(new Date(doc.created_at), { locale: es })}
                         </span>
                       </div>
+
+                      {doc.rejection_reason && (
+                        <div className="flex items-start gap-2 mt-3 bg-red-500/10 p-2 rounded border border-red-500/20">
+                          <AlertCircle className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1">
+                            <p className="text-xs font-medium text-red-300">Motivo del rechazo:</p>
+                            <p className="text-xs text-red-200/80">{doc.rejection_reason}</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
-                    ✓ Aprobado
+                  <Badge className="bg-red-500/20 text-red-300 border-red-500/30">
+                    ✗ Rechazado
                   </Badge>
                   <Button
                     variant="outline"
@@ -145,26 +156,19 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
           
           {previewDoc?.file_url && (
             <div className="w-full bg-black rounded-lg overflow-hidden">
-              {previewDoc.file_url.toLowerCase().includes('.pdf') ? (
+              {previewDoc.file_url.includes('.pdf') ? (
                 <iframe
-                  src={`${previewDoc.file_url}#view=FitH`}
-                  className="w-full h-96 border-0"
+                  src={previewDoc.file_url}
+                  className="w-full h-96"
                   title="Document preview"
-                  allow="fullscreen"
                 />
               ) : (
                 <img
                   src={previewDoc.file_url}
-                  alt="Document preview"
+                  alt="Document"
                   className="w-full h-auto max-h-96 object-contain"
                 />
               )}
-            </div>
-          )}
-
-          {!previewDoc?.file_url && (
-            <div className="w-full h-96 bg-slate-800 rounded-lg flex items-center justify-center">
-              <p className="text-muted-foreground">No hay documento disponible para previsualizar</p>
             </div>
           )}
         </DialogContent>
