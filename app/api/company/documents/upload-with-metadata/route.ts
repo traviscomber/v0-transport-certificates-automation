@@ -21,7 +21,29 @@ export async function POST(request: NextRequest) {
 
     console.log('[v0] Upload endpoint: Authenticated user:', { id: user.id, email: user.email })
 
-    const formData = await request.formData()
+    // Check Content-Type header
+    const contentType = request.headers.get('content-type') || ''
+    console.log('[v0] Upload endpoint: Content-Type:', contentType)
+    
+    if (!contentType.includes('multipart/form-data')) {
+      console.error('[v0] Upload endpoint: Invalid Content-Type. Expected multipart/form-data, got:', contentType)
+      return NextResponse.json(
+        { error: 'Invalid Content-Type. Expected multipart/form-data' },
+        { status: 400 }
+      )
+    }
+
+    let formData
+    try {
+      formData = await request.formData()
+    } catch (parseError) {
+      console.error('[v0] Upload endpoint: Failed to parse FormData:', parseError)
+      return NextResponse.json(
+        { error: 'Failed to parse form data: ' + (parseError instanceof Error ? parseError.message : 'Unknown error') },
+        { status: 400 }
+      )
+    }
+
     const file = formData.get('file') as File
     // driver_id is '1','2','12' etc — NOT a UUID. Use driver_rut to resolve.
     const driverRut = formData.get('driver_rut') as string
