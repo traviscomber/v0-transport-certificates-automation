@@ -122,7 +122,7 @@ export function SubcontractorDetailTabs({
           </CardHeader>
 
           {/* Tabs */}
-          <Tabs defaultValue="resumen" className="flex-1 overflow-hidden flex flex-col">
+          <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)} className="flex-1 overflow-hidden flex flex-col">
             <TabsList className="border-b border-slate-700 rounded-none bg-slate-800/50 w-full justify-start px-6 py-0 h-auto">
               <TabsTrigger value="resumen" className="rounded-none">
                 Resumen
