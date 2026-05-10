@@ -45,8 +45,10 @@ export function SubcontractorDetailTabs({
 
         // Fetch conductors associated with this subcontractor
         const conductorsResponse = await fetch(`/api/subcontractors/${subcontractor.id}/conductors`)
+        console.log('[v0] Conductors API response status:', conductorsResponse.status)
         if (conductorsResponse.ok) {
           const conductorsData = await conductorsResponse.json()
+          console.log('[v0] Conductors fetched:', conductorsData)
           setConductors(conductorsData || [])
         }
       } catch (error) {

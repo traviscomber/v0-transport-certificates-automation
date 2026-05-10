@@ -391,11 +391,26 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
                   </div>
 
                   {/* Driver count badge and action buttons */}
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-slate-400" />
-                    <span className="text-sm text-slate-300">
-                      <span className="font-semibold text-amber-400">{driverCount}</span> conductores
-                    </span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-slate-400" />
+                      <span className="text-sm text-slate-300">
+                        <span className="font-semibold text-amber-400">{driverCount}</span> conductores
+                      </span>
+                      {/* Ver button for conductores */}
+                      {driverCount > 0 && (
+                        <button
+                          onClick={() => {
+                            setDetailTabToOpen('conductores')
+                            setSelectedDetailSubcontractor(sub)
+                          }}
+                          className="text-xs px-2 py-0.5 rounded bg-amber-500/30 text-amber-400 hover:bg-amber-500/40 transition-colors border border-amber-500/40 font-medium"
+                        >
+                          Ver
+                        </button>
+                      )}
+                    </div>
+                    
                     {/* Documentos Button */}
                     <button
                       onClick={() => {
