@@ -587,18 +587,11 @@ export function DriverCard({
         onSetRejectionReason={(reason) => setRejectionReason(reason)}
         onStatusChange={async (docId, newStatus, reason) => {
           try {
-            // Update document status
+            // Update document status in database
             await updateDocumentStatus(docId, newStatus, reason || (newStatus === 'rechazado' ? rejectionReason : undefined))
             setRejectionReason('')
             
-            // Close modal immediately - no delays needed
-            setShowDocumentModal(false)
-            setSelectedDocument(null)
-            
-            // Refetch to sync latest state
-            refetch()
-            
-            // Show success message
+            // Show success message immediately
             if (typeof window !== 'undefined') {
               const msg = document.createElement('div')
               msg.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100]'
@@ -606,6 +599,16 @@ export function DriverCard({
               document.body.appendChild(msg)
               setTimeout(() => msg.remove(), 3000)
             }
+            
+            // Wait for database to persist before refetching
+            await new Promise(resolve => setTimeout(resolve, 500))
+            
+            // Refetch to get fresh data from database
+            await refetch()
+            
+            // Close modal AFTER refetch completes
+            setShowDocumentModal(false)
+            setSelectedDocument(null)
           } catch (error) {
             console.error('[v0] Error updating status:', error)
             alert(`Error: ${error instanceof Error ? error.message : 'Desconocido'}`)
