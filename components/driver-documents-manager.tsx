@@ -22,13 +22,21 @@ export function DriverDocumentsManager({
   const handleDocumentSelected = async (documentType: any, file: File, metadata: any) => {
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      // Send as driver_rut (RUT/identifier), not driver_id
-      formData.append('driver_rut', identifier)
-      formData.append('document_type_id', documentType.id)
+      // Read file as Base64
+      const reader = new FileReader()
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string
+          const base64 = result.split(',')[1]
+          resolve(base64)
+        }
+        reader.onerror = reject
+      })
+      reader.readAsDataURL(file)
+      
+      const fileBase64 = await base64Promise
 
-      console.log('[v0] Upload request:', { 
+      console.log('[v0] Upload request with Base64:', { 
         driver_rut: identifier, 
         document_type_id: documentType.id, 
         file_name: file.name,
@@ -37,9 +45,17 @@ export function DriverDocumentsManager({
 
       const response = await fetch('/api/company/documents/upload-with-metadata', {
         method: 'POST',
-        body: formData,
-        credentials: 'include', // ✅ CRITICAL: Send cookies with request
-        // DO NOT set Content-Type header — browser will set it automatically with boundary
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          file: fileBase64,
+          fileName: file.name,
+          fileType: file.type,
+          driver_rut: identifier,
+          document_type_id: documentType.id,
+          uploaded_by: '',
+          metadata: metadata
+        }),
+        credentials: 'include',
       })
 
       if (!response.ok) {
