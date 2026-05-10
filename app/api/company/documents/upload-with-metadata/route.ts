@@ -21,12 +21,25 @@ export async function POST(request: NextRequest) {
 
     console.log('[v0] Upload endpoint: Authenticated user:', { id: user.id, email: user.email })
 
+    // Log all request headers for debugging
+    const contentType = request.headers.get('content-type')
+    const contentLength = request.headers.get('content-length')
+    console.log('[v0] Upload endpoint: Request headers:', {
+      'content-type': contentType,
+      'content-length': contentLength,
+      'all-headers': Array.from(request.headers.entries())
+    })
+
     let formData
     try {
       formData = await request.formData()
     } catch (parseError) {
       const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown error parsing form data'
-      console.error('[v0] Upload endpoint: Failed to parse FormData:', errorMessage)
+      console.error('[v0] Upload endpoint: Failed to parse FormData:', {
+        error: errorMessage,
+        'content-type': contentType,
+        'stack': parseError instanceof Error ? parseError.stack : 'No stack'
+      })
       return NextResponse.json(
         { error: 'Failed to parse form data: ' + errorMessage },
         { status: 400 }
