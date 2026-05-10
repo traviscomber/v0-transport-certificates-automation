@@ -55,53 +55,69 @@ export function DashboardOverview() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch alerts - now getting more alerts to show in dashboard
+        // Fetch alerts for display
         const alertsRes = await fetch(`/api/alerts?limit=50&_t=${Date.now()}`, {
           cache: "no-store",
         })
         if (alertsRes.ok) {
           const alertsData = await alertsRes.json()
-          // Handle both array and object with alerts property
           const alertsList = Array.isArray(alertsData) ? alertsData : (alertsData.alerts || [])
           setAlerts(alertsList)
-
-          // Calculate stats from alerts
-          const approved = alertsList.filter((a: Alert) => a.type === 'DOCUMENT_APPROVED').length
-          const pending = alertsList.filter((a: Alert) => a.type === 'DOCUMENT_PENDING').length
-          const rejected = alertsList.filter((a: Alert) => a.type === 'DOCUMENT_REJECTED').length
-          const total = alertsList.length
-
-          setStats([
-            {
-              title: "Total de Documentos",
-              value: total.toString(),
-              description: "En el sistema",
-              icon: FileText,
-              status: "active",
-            },
-            {
-              title: "Documentos Aprobados",
-              value: approved.toString(),
-              description: "Validados",
-              icon: CheckCircle,
-              status: "active",
-            },
-            {
-              title: "Documentos Pendientes",
-              value: pending.toString(),
-              description: "En revisión",
-              icon: Clock,
-              status: "active",
-            },
-            {
-              title: "Documentos Rechazados",
-              value: rejected.toString(),
-              description: "No validados",
-              icon: AlertTriangle,
-              status: "warning",
-            },
-          ])
         }
+
+        // Fetch REAL document stats from the database
+        const docsRes = await fetch(`/api/company/documents/drivers?_t=${Date.now()}`, {
+          cache: "no-store",
+        })
+        
+        let total = 0, approved = 0, pending = 0, rejected = 0
+        
+        if (docsRes.ok) {
+          const docsData = await docsRes.json()
+          const documents = docsData.documents || []
+          
+          total = documents.length
+          approved = documents.filter((d: any) => 
+            d.verification_status === 'aprobado' || d.validation_status === 'approved'
+          ).length
+          pending = documents.filter((d: any) => 
+            d.verification_status === 'pendiente' || d.validation_status === 'pending' || !d.validation_status
+          ).length
+          rejected = documents.filter((d: any) => 
+            d.verification_status === 'rechazado' || d.validation_status === 'rejected'
+          ).length
+        }
+
+        setStats([
+          {
+            title: "Total de Documentos",
+            value: total.toString(),
+            description: "En el sistema",
+            icon: FileText,
+            status: "active",
+          },
+          {
+            title: "Documentos Aprobados",
+            value: approved.toString(),
+            description: "Validados",
+            icon: CheckCircle,
+            status: "active",
+          },
+          {
+            title: "Documentos Pendientes",
+            value: pending.toString(),
+            description: "En revisión",
+            icon: Clock,
+            status: "active",
+          },
+          {
+            title: "Documentos Rechazados",
+            value: rejected.toString(),
+            description: "No validados",
+            icon: AlertTriangle,
+            status: "warning",
+          },
+        ])
       } catch (error) {
         console.error('[v0] Error loading dashboard data:', error)
       } finally {
