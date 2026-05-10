@@ -12,13 +12,41 @@ function isValidEmail(email: string): boolean {
   return emailRegex.test(email)
 }
 
-export function validateChangeStatusRequest(body: any): { valid: boolean; errors: ValidationError[] } {
+/**
+ * Normalize status value from Spanish or English to English
+ * Accepts: aprobado/approved, rechazado/rejected, pendiente/pending
+ */
+export function normalizeDocumentStatus(status: string): string | null {
+  if (!status || typeof status !== 'string') return null
+  
+  const statusMap: Record<string, string> = {
+    'aprobado': 'approved',
+    'approved': 'approved',
+    'rechazado': 'rejected',
+    'rejected': 'rejected',
+    'pendiente': 'pending',
+    'pending': 'pending',
+  }
+  
+  return statusMap[status.toLowerCase().trim()] || null
+}
+
+export function validateChangeStatusRequest(body: any): { valid: boolean; errors: ValidationError[]; normalizedStatus?: string } {
   const errors: ValidationError[] = []
 
   if (!body.status) {
     errors.push({ field: 'status', message: 'Status is required' })
-  } else if (!['approved', 'rejected', 'pending'].includes(body.status)) {
-    errors.push({ field: 'status', message: 'Invalid status value' })
+    return { valid: false, errors }
+  }
+  
+  // Normalize status to English (accept both Spanish and English)
+  const normalizedStatus = normalizeDocumentStatus(body.status)
+  
+  if (!normalizedStatus) {
+    errors.push({ 
+      field: 'status', 
+      message: `Invalid status value: ${body.status}. Must be one of: approved, rejected, pending (or aprobado, rechazado, pendiente)` 
+    })
   }
 
   if (body.reason && typeof body.reason !== 'string') {
@@ -32,6 +60,7 @@ export function validateChangeStatusRequest(body: any): { valid: boolean; errors
   return {
     valid: errors.length === 0,
     errors,
+    normalizedStatus: normalizedStatus || undefined,
   }
 }
 

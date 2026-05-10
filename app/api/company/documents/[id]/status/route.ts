@@ -31,7 +31,7 @@ export async function PATCH(
 
     console.log('[v0] STATUS ENDPOINT - Request body:', { documentId, newStatus: body.status, hasReason: !!body.reason })
 
-    // Validate request body
+    // Validate request body (accepts both Spanish and English status values)
     const validation = validateChangeStatusRequest(body)
     if (!validation.valid) {
       console.log('[v0] STATUS ENDPOINT - Validation failed:', validation.errors)
@@ -40,6 +40,10 @@ export async function PATCH(
         details: validation.errors 
       }, { status: 400 })
     }
+    
+    // Use the normalized status (English) for processing
+    const normalizedStatus = validation.normalizedStatus!
+    console.log('[v0] STATUS ENDPOINT - Normalized status:', { original: body.status, normalized: normalizedStatus })
 
     // Check authorization - verify user can change this document's status
     console.log('[v0] STATUS ENDPOINT - Calling canChangeDocumentStatus...')
@@ -69,10 +73,10 @@ export async function PATCH(
 
     console.log('[v0] STATUS ENDPOINT - AUTHORIZATION APPROVED, changing status...')
 
-    // Use centralized status change service
+    // Use centralized status change service with normalized English status
     const result = await changeDocumentStatus({
       documentId,
-      newStatus: body.status,
+      newStatus: normalizedStatus as 'approved' | 'rejected' | 'pending',
       reason: body.reason,
       userId: user.id
     })
