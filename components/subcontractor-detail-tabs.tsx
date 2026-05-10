@@ -10,17 +10,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 interface SubcontractorDetailTabsProps {
   subcontractor: any
   initialTab?: 'resumen' | 'documentos' | 'conductores' | 'certificaciones' | 'onboarding'
+  conductoresData?: any[]
   onClose: () => void
 }
 
 export function SubcontractorDetailTabs({
   subcontractor,
   initialTab = 'resumen',
+  conductoresData = [],
   onClose,
 }: SubcontractorDetailTabsProps) {
   const [documents, setDocuments] = useState<any[]>([])
   const [requirements, setRequirements] = useState<any[]>([])
-  const [conductors, setConductors] = useState<any[]>([])
+  const [conductors, setConductors] = useState<any[]>(conductoresData)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState(initialTab)
   const [summary, setSummary] = useState({
@@ -43,14 +45,8 @@ export function SubcontractorDetailTabs({
           setSummary(data.summary || summary)
         }
 
-        // Fetch conductors associated with this subcontractor
-        const conductorsResponse = await fetch(`/api/subcontractors/${subcontractor.id}/conductors`)
-        console.log('[v0] Conductors API response status:', conductorsResponse.status)
-        if (conductorsResponse.ok) {
-          const conductorsData = await conductorsResponse.json()
-          console.log('[v0] Conductors fetched:', conductorsData)
-          setConductors(conductorsData || [])
-        }
+        // Conductors are passed as a prop from subcontractors-list, no need to fetch
+        // Use the conductoresData that's already been filtered by RUT matching
       } catch (error) {
         console.error('[v0] Error fetching data:', error)
       } finally {

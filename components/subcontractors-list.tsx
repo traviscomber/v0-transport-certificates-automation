@@ -516,6 +516,12 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
         <SubcontractorDetailTabs
           subcontractor={selectedDetailSubcontractor}
           initialTab={detailTabToOpen}
+          conductoresData={selectedDetailSubcontractor.id ? drivers.filter(d => {
+            const normalizeRut = (rut: string) => rut?.replace(/[.\-]/g, '').toUpperCase() || ''
+            const normalizedDriverRut = normalizeRut(d.rut_proveedor)
+            const normalizedSubRut = normalizeRut(selectedDetailSubcontractor.rut)
+            return normalizedDriverRut === normalizedSubRut && d.is_active
+          }) : []}
           onClose={() => {
             setSelectedDetailSubcontractor(null)
             setDetailTabToOpen('resumen')
