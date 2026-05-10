@@ -1,131 +1,105 @@
 export const dynamic = 'force-dynamic'
 
 import { createClient } from "@/lib/supabase/server"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { FileText, ExternalLink, CheckCircle, XCircle, Clock } from "lucide-react"
-import DocumentosFilterClient from "@/components/admin/documentos-filter-client"
-import EjecutivasFilterClient from "@/components/admin/ejecutivas-filter-client"
-import { DocumentosUploadWrapper } from "@/components/admin/documentos-upload-wrapper"
-import { DocumentosClient } from "@/components/admin/documentos-client"
+import { DocumentManagerHub } from "@/components/document-manager-hub"
 
-async function getDocumentos(ejecutiva?: string) {
+async function getDocumentStats() {
   const supabase = await createClient()
   
-  console.log('[v0] getDocumentos called with ejecutiva:', ejecutiva)
-  
-  // Build query for documents - now use ejecutiva column directly
-  let query = supabase
+  // Get conductor documents stats
+  const { data: conductorDocs, error: conductorError } = await supabase
     .from("uploaded_documents")
-    .select(`
-      id,
-      original_filename,
-      conductor_id,
-      document_type_id,
-      validation_status,
-      file_url,
-      created_at,
-      ejecutiva,
-      conductores!inner (
-        id,
-        nombres,
-        apellido_paterno,
-        rut,
-        rut_proveedor
-      )
-    `)
-    .order("created_at", { ascending: false })
-    .limit(2000)
-
-  // Filter by ejecutiva column directly if selected
-  if (ejecutiva) {
-    query = query.eq("ejecutiva", ejecutiva)
+    .select("id, validation_status")
+  
+  if (conductorError) {
+    console.error("[v0] Error fetching conductor docs:", conductorError)
+  }
+  
+  const conductorStats = {
+    total: conductorDocs?.length || 0,
+    pendientes: conductorDocs?.filter(d => d.validation_status === 'pending' || !d.validation_status).length || 0,
+    aprobados: conductorDocs?.filter(d => d.validation_status === 'approved').length || 0,
+    rechazados: conductorDocs?.filter(d => d.validation_status === 'rejected').length || 0,
+    vencidos: 0 // Calculate based on expiry dates if available
   }
 
-  const { data, error } = await query
-
-  if (error) {
-    console.error("[v0] Error fetching documentos:", error)
-    return []
+  // Get subcontractor documents stats
+  const { data: subDocs, error: subError } = await supabase
+    .from("subcontractor_documents")
+    .select("id, status")
+  
+  if (subError) {
+    console.error("[v0] Error fetching subcontractor docs:", subError)
+  }
+  
+  const subStats = {
+    total: subDocs?.length || 0,
+    pendientes: subDocs?.filter(d => d.status === 'pendiente' || !d.status).length || 0,
+    aprobados: subDocs?.filter(d => d.status === 'aprobado').length || 0,
+    rechazados: subDocs?.filter(d => d.status === 'rechazado').length || 0,
+    vencidos: 0
   }
 
-  console.log('[v0] Returned', data?.length || 0, 'documents')
-  return data || []
-}
-
-async function getEjecutivas() {
-  const supabase = await createClient()
+  // Get certifications stats from transportistas
+  const { data: transportistas, error: transError } = await supabase
+    .from("transportistas")
+    .select("id, certificacion_ariztia, certificacion_lts, certificacion_rendic, certificacion_interpolar, ariztia_vencimiento, lts_vencimiento, rendic_vencimiento, interpolar_vencimiento")
   
-  // Get 4 designated executives from LABBE: Carolina, Cecilia, Daniela, Olga
-  const LABBE_EJECUTIVAS = ['Carolina', 'Cecilia', 'Daniela', 'Olga']
-  
-  // Count documents per ejecutiva
-  const result = []
-  
-  for (const name of LABBE_EJECUTIVAS) {
-    const { data, count, error } = await supabase
-      .from('uploaded_documents')
-      .select('id', { count: 'exact', head: true })
-      .eq('ejecutiva', name)
-    
-    if (!error) {
-      result.push({
-        name,
-        count: count || 0
-      })
-    } else {
-      console.error(`[v0] Error counting documents for ${name}:`, error)
-      result.push({ name, count: 0 })
-    }
+  if (transError) {
+    console.error("[v0] Error fetching transportistas:", transError)
   }
-
-  return result
-}
-
-async function getConductores(ejecutiva?: string) {
-  const supabase = await createClient()
   
-  let query = supabase
-    .from("conductores")
-    .select("id, nombres, apellido_paterno, rut")
-    .order("apellido_paterno", { ascending: true })
-
-  const { data, error } = await query
-
-  if (error) {
-    console.error("Error fetching conductores:", error)
-    return []
-  }
-
-  return data || []
-}
-
-export default async function DocumentosPage({ searchParams }: { searchParams: Record<string, string | string[]> }) {
-  const selectedEjecutiva = typeof searchParams.ejecutiva === 'string' ? searchParams.ejecutiva : undefined
-  const documentos = await getDocumentos(selectedEjecutiva)
-  const ejecutivas = await getEjecutivas()
-  const conductores = await getConductores(selectedEjecutiva)
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Documentos</h1>
-        <p className="text-muted-foreground">
-          {selectedEjecutiva 
-            ? `Documentos de ${selectedEjecutiva}`
-            : 'Todos los documentos subidos y procesados'
+  // Count certifications
+  let totalCerts = 0
+  let vigentes = 0
+  let porVencer = 0
+  let vencidas = 0
+  const now = new Date()
+  const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+  
+  const certFields = [
+    { cert: 'certificacion_ariztia', venc: 'ariztia_vencimiento' },
+    { cert: 'certificacion_lts', venc: 'lts_vencimiento' },
+    { cert: 'certificacion_rendic', venc: 'rendic_vencimiento' },
+    { cert: 'certificacion_interpolar', venc: 'interpolar_vencimiento' },
+  ]
+  
+  transportistas?.forEach((t: any) => {
+    certFields.forEach(({ cert, venc }) => {
+      if (t[cert]) {
+        totalCerts++
+        const vencDate = t[venc] ? new Date(t[venc]) : null
+        if (vencDate) {
+          if (vencDate < now) {
+            vencidas++
+          } else if (vencDate < thirtyDaysFromNow) {
+            porVencer++
+          } else {
+            vigentes++
           }
-        </p>
-      </div>
+        } else {
+          vigentes++ // If no expiry date, assume vigente
+        }
+      }
+    })
+  })
 
-      {/* Filter by Ejecutiva */}
-      <EjecutivasFilterClient ejecutivas={ejecutivas} selectedEjecutiva={selectedEjecutiva} />
+  const certStats = {
+    total: totalCerts,
+    vigentes,
+    porVencer,
+    vencidas
+  }
 
-      {/* Upload Section */}
-      <DocumentosUploadWrapper conductores={conductores} />
+  return {
+    conductores: conductorStats,
+    subcontratistas: subStats,
+    certificaciones: certStats
+  }
+}
 
-      {/* Documents List - Client Component */}
-      <DocumentosClient documents={documentos} />
-    </div>
-  )
+export default async function DocumentosPage() {
+  const stats = await getDocumentStats()
+
+  return <DocumentManagerHub stats={stats} />
 }
