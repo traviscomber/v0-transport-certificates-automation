@@ -56,13 +56,14 @@ export function DashboardOverview() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch alerts for display
+        // Fetch alerts for display - with cache busting
         const alertsRes = await fetch(`/api/alerts?limit=50&_t=${Date.now()}`, {
           cache: "no-store",
         })
         if (alertsRes.ok) {
           const alertsData = await alertsRes.json()
           const alertsList = Array.isArray(alertsData) ? alertsData : (alertsData.alerts || [])
+          console.log('[v0] Dashboard: Loaded alerts:', alertsList.length)
           setAlerts(alertsList)
         }
 
@@ -127,7 +128,16 @@ export function DashboardOverview() {
       }
     }
 
+    // Initial fetch
     fetchData()
+
+    // Refresh every 10 seconds to keep alerts up to date
+    const intervalId = setInterval(() => {
+      console.log('[v0] Dashboard: Auto-refreshing alerts')
+      fetchData()
+    }, 10000)
+
+    return () => clearInterval(intervalId)
   }, [])
 
   // Listen for document sync events and refetch dashboard stats
