@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Usuario - Sistema Labbe | Ejecutivas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #f97316;
+            --primary-dark: #ea580c;
+            --secondary: #3b82f6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #0f172a;
+            --darker: #020617;
+            --light: #f8fafc;
+            --gray-400: #cbd5e1;
+            --gray-600: #475569;
+            --gray-700: #334155;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+            background: linear-gradient(135deg, var(--dark) 0%, var(--darker) 100%);
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        header {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(2, 6, 23, 0.95) 100%);
+            border-bottom: 1px solid rgba(249, 115, 22, 0.2);
+            padding: 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 1.25rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--gray-400);
+            font-size: 1.1rem;
+        }
+
+        nav {
+            background: var(--dark);
+            border-bottom: 1px solid var(--gray-700);
+            position: sticky;
+            top: 100px;
+            z-index: 99;
+            padding: 0.5rem;
+            overflow-x: auto;
+        }
+
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        nav a {
+            color: var(--gray-400);
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            font-size: 0.95rem;
+        }
+
+        nav a:hover,
+        nav a.active {
+            background: rgba(249, 115, 22, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(249, 115, 22, 0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        section {
+            margin-bottom: 4rem;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.5) 100%);
+            border: 1px solid rgba(249, 115, 22, 0.1);
+            border-radius: 12px;
+            padding: 2.5rem;
+            scroll-margin-top: 250px;
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            margin: 1.5rem 0 1rem 0;
+            color: var(--secondary);
+            margin-top: 2rem;
+        }
+
+        h3:first-child {
+            margin-top: 0;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: var(--gray-400);
+        }
+
+        .icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .step-container {
+            display: grid;
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .step {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            position: relative;
+            padding-left: 4rem;
+        }
+
+        .step::before {
+            content: attr(data-step);
+            position: absolute;
+            left: 1rem;
+            top: 1.5rem;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .step h4 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .step p {
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        .alert {
+            background: rgba(249, 115, 22, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+
+        .alert.info {
+            background: rgba(59, 130, 246, 0.1);
+            border-left-color: var(--secondary);
+        }
+
+        .alert.success {
+            background: rgba(16, 185, 129, 0.1);
+            border-left-color: var(--success);
+        }
+
+        .alert.warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: var(--warning);
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid var(--gray-700);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--primary);
+            border-bottom: 2px solid rgba(249, 115, 22, 0.3);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-700);
+        }
+
+        tr:hover {
+            background: rgba(249, 115, 22, 0.05);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: var(--primary);
+            background: rgba(249, 115, 22, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .feature-card h4 {
+            color: var(--primary);
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+        .feature-card p {
+            font-size: 0.95rem;
+        }
+
+        .quick-access {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .quick-link {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .quick-link:hover {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%);
+            transform: translateX(4px);
+        }
+
+        footer {
+            background: var(--darker);
+            border-top: 1px solid var(--gray-700);
+            padding: 2rem;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+            color: var(--gray-600);
+        }
+
+        .toc {
+            background: rgba(15, 23, 42, 0.7);
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        .toc h3 {
+            margin-top: 0;
+        }
+
+        .toc ul {
+            list-style: none;
+        }
+
+        .toc li {
+            margin: 0.75rem 0;
+        }
+
+        .toc a {
+            color: var(--secondary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .toc a:hover {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+        .video-placeholder {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+            border: 2px dashed rgba(249, 115, 22, 0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-400);
+            margin: 1.5rem 0;
+            font-size: 1.1rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            color: var(--secondary);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.75rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            section {
+                padding: 1.5rem;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media print {
+            header, nav, footer {
+                display: none;
+            }
+
+            section {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo">L</div>
+                <div>
+                    <h1>Sistema de Gestión Labbe</h1>
+                    <p class="subtitle">Manual de Usuario - Ejecutivas</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <nav>
+        <div class="nav-content">
+            <a href="#inicio" onclick="setActive(this)">Inicio</a>
+            <a href="#dashboard" onclick="setActive(this)">Dashboard</a>
+            <a href="#documentos" onclick="setActive(this)">Documentos</a>
+            <a href="#alertas" onclick="setActive(this)">Alertas</a>
+            <a href="#conductores" onclick="setActive(this)">Conductores</a>
+            <a href="#reportes" onclick="setActive(this)">Reportes</a>
+            <a href="#faq" onclick="setActive(this)">Preguntas</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- INICIO -->
+        <section id="inicio">
+            <h2><span class="icon">📖</span>Guía de Bienvenida</h2>
+            <p>Bienvenida al sistema de gestión de documentos de Labbe. Este manual te ayudará a dominar todas las características disponibles para optimizar tu gestión operativa.</p>
+
+            <div class="toc">
+                <h3>Contenido del Manual</h3>
+                <ul>
+                    <li><a href="#dashboard">Dashboard Principal</a> - Tu centro de control</li>
+                    <li><a href="#documentos">Gestión de Documentos</a> - Upload, validación y seguimiento</li>
+                    <li><a href="#alertas">Sistema de Alertas</a> - Monitoreo en tiempo real</li>
+                    <li><a href="#conductores">Gestión de Conductores</a> - Perfiles y documentación</li>
+                    <li><a href="#reportes">Analytics y Reportes</a> - Análisis de datos</li>
+                    <li><a href="#faq">Preguntas Frecuentes</a> - Solución de problemas</li>
+                </ul>
+            </div>
+
+            <h3>Acceso Rápido</h3>
+            <div class="quick-access">
+                <a href="https://cleaner2.vercel.app/dashboard/company" class="quick-link" target="_blank">
+                    Dashboard →
+                </a>
+                <a href="https://cleaner2.vercel.app/dashboard/company/documentos" class="quick-link" target="_blank">
+                    Documentos →
+                </a>
+                <a href="https://cleaner2.vercel.app/dashboard/company/conductores" class="quick-link" target="_blank">
+                    Conductores →
+                </a>
+                <a href="https://cleaner2.vercel.app/dashboard/company/alertas" class="quick-link" target="_blank">
+                    Alertas →
+                </a>
+            </div>
+
+            <div class="alert info">
+                <strong>💡 Tip:</strong> Usa los atajos de navegación en la parte superior para cambiar entre secciones rápidamente.
+            </div>
+        </section>
+
+        <!-- DASHBOARD -->
+        <section id="dashboard">
+            <h2><span class="icon">📊</span>Dashboard Principal</h2>
+            <p>El dashboard es tu centro de control donde puedes ver resúmenes, métricas y alertas en tiempo real.</p>
+
+            <h3>¿Qué ves en el Dashboard?</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Total de Documentos</h4>
+                    <p>Cantidad total de documentos en el sistema. Haz clic para ver todos.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Documentos Aprobados</h4>
+                    <p>Documentos que pasaron validación. Acceso directo a documentos vigentes.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Documentos Pendientes</h4>
+                    <p>Documentos en revisión. Requieren tu atención.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Documentos Rechazados</h4>
+                    <p>Documentos que no pasaron validación. Necesitan corrección.</p>
+                </div>
+            </div>
+
+            <h3>Alertas Recientes</h3>
+            <p>En el dashboard verás las alertas más recientes del sistema:</p>
+            <div class="step-container">
+                <div class="step" data-step="1">
+                    <h4>Vencimientos de Documentos</h4>
+                    <p>Se alertan documentos próximos a vencer o ya vencidos.</p>
+                </div>
+                <div class="step" data-step="2">
+                    <h4>Anomalías Detectadas</h4>
+                    <p>Problemas o inconsistencias en documentos de conductores.</p>
+                </div>
+                <div class="step" data-step="3">
+                    <h4>Nuevos Documentos</h4>
+                    <p>Notificación de subidas de nuevos documentos.</p>
+                </div>
+                <div class="step" data-step="4">
+                    <h4>Ver todas las Alertas</h4>
+                    <p>Acceso a la página completa de alertas con filtros y búsqueda.</p>
+                </div>
+            </div>
+
+            <div class="alert success">
+                <strong>✓ Pro Tip:</strong> Las alertas se actualizan cada 30 segundos. No necesitas recargar la página.
+            </div>
+        </section>
+
+        <!-- DOCUMENTOS -->
+        <section id="documentos">
+            <h2><span class="icon">📄</span>Gestión de Documentos</h2>
+            <p>Aquí puedes ver, filtrar y gestionar todos los documentos de conductores y subcontratistas.</p>
+
+            <h3>Tipos de Documentos</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Descripción</th>
+                            <th>Validación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge">Licencia</span></td>
+                            <td>Licencia de conducir</td>
+                            <td>Obligatorio</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge">Revisión Técnica</span></td>
+                            <td>Revisión técnica del vehículo</td>
+                            <td>Obligatorio</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge">Seguro</span></td>
+                            <td>Póliza de seguro vigente</td>
+                            <td>Obligatorio</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge">Certificación</span></td>
+                            <td>Certificaciones adicionales</td>
+                            <td>Opcional</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Flujo de Documentos</h3>
+            <div class="step-container">
+                <div class="step" data-step="1">
+                    <h4>Subida de Documento</h4>
+                    <p>Conductor sube documento a través de su portal o ejecutiva lo sube manualmente.</p>
+                </div>
+                <div class="step" data-step="2">
+                    <h4>Pendiente</h4>
+                    <p>Documento aparece en "Documentos Pendientes" aguardando revisión.</p>
+                </div>
+                <div class="step" data-step="3">
+                    <h4>Validación</h4>
+                    <p>Ejecutiva revisa documento y aprueba o rechaza.</p>
+                </div>
+                <div class="step" data-step="4">
+                    <h4>Aprobado o Rechazado</h4>
+                    <p>Documento se mueve a la sección correspondiente.</p>
+                </div>
+            </div>
+
+            <h3>Filtrar Documentos</h3>
+            <p>Puedes acceder a diferentes vistas de documentos:</p>
+            <ul style="margin: 1rem 0 1rem 2rem; color: var(--gray-400);">
+                <li><strong>Todos:</strong> Todos los documentos en el sistema</li>
+                <li><strong>Pendientes:</strong> Documentos en revisión que necesitan acción</li>
+                <li><strong>Aprobados:</strong> Documentos validados y vigentes</li>
+                <li><strong>Rechazados:</strong> Documentos que no pasaron validación</li>
+                <li><strong>Vencidos:</strong> Documentos expirados</li>
+            </ul>
+
+            <div class="alert warning">
+                <strong>⚠️ Importante:</strong> Los documentos vencidos pierden validez automáticamente. Alerta a conductores para renovación.
+            </div>
+        </section>
+
+        <!-- ALERTAS -->
+        <section id="alertas">
+            <h2><span class="icon">🔔</span>Sistema de Alertas</h2>
+            <p>El sistema monitorea en tiempo real eventos importantes y te notifica automáticamente.</p>
+
+            <h3>Tipos de Alertas</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>🗓️ Vencimientos</h4>
+                    <p>Documentos que vencen en los próximos 30 días o ya vencidos.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>⚡ Anomalías</h4>
+                    <p>Inconsistencias detectadas en datos de conductores.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>📥 Nuevos Documentos</h4>
+                    <p>Documentos recientemente subidos esperando validación.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>✓ Validaciones</h4>
+                    <p>Confirmaciones de aprobación o rechazo de documentos.</p>
+                </div>
+            </div>
+
+            <h3>Prioridades de Alerta</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nivel</th>
+                            <th>Color</th>
+                            <th>Significado</th>
+                            <th>Acción Requerida</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">Crítica</span></td>
+                            <td>Rojo</td>
+                            <td>Requiere atención inmediata</td>
+                            <td>Inmediata</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">Alta</span></td>
+                            <td>Naranja</td>
+                            <td>Importante, no ignorar</td>
+                            <td>En 24 horas</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">Media</span></td>
+                            <td>Azul</td>
+                            <td>Información relevante</td>
+                            <td>En 48 horas</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">Baja</span></td>
+                            <td>Verde</td>
+                            <td>Informativa</td>
+                            <td>Cuando disponible</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Acciones en Alertas</h3>
+            <div class="step-container">
+                <div class="step" data-step="1">
+                    <h4>Hacer clic en una alerta</h4>
+                    <p>Te lleva directamente al documento o conductor relacionado.</p>
+                </div>
+                <div class="step" data-step="2">
+                    <h4>Revisar detalles</h4>
+                    <p>Puedes ver información completa de por qué se generó la alerta.</p>
+                </div>
+                <div class="step" data-step="3">
+                    <h4>Tomar acción</h4>
+                    <p>Aprueba, rechaza o solicita documentación adicional.</p>
+                </div>
+                <div class="step" data-step="4">
+                    <h4>Alerta resuelta</h4>
+                    <p>La alerta se marca como resuelta y desaparece.</p>
+                </div>
+            </div>
+
+            <div class="alert info">
+                <strong>💡 Tip:</strong> Accede a todas las alertas en la sección "Alertas Recientes" del dashboard o en la página dedicada.
+            </div>
+        </section>
+
+        <!-- CONDUCTORES -->
+        <section id="conductores">
+            <h2><span class="icon">👥</span>Gestión de Conductores</h2>
+            <p>Administra la información de conductores, subcontratistas y sus documentos asociados.</p>
+
+            <h3>Vistas de Conductores</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Equipo</h4>
+                    <p>Conductores propios de la empresa. Gestiona aquí información de tu equipo.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Subcontratistas</h4>
+                    <p>Conductores externos. Monitorea su documentación completamente.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Credenciales</h4>
+                    <p>Lista de todos los conductores con acceso al sistema.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Analytics</h4>
+                    <p>Métricas y análisis de conductores y su documentación.</p>
+                </div>
+            </div>
+
+            <h3>Información de Conductor</h3>
+            <p>Para cada conductor puedes ver:</p>
+            <ul style="margin: 1rem 0 1rem 2rem; color: var(--gray-400);">
+                <li>Datos personales y contacto</li>
+                <li>Historial de documentos subidos</li>
+                <li>Estado de documentos (aprobados, pendientes, rechazados)</li>
+                <li>Documentos vencidos o próximos a vencer</li>
+                <li>Anomalías o alertas asociadas</li>
+                <li>Historial de acciones</li>
+            </ul>
+
+            <h3>Buscar Conductores</h3>
+            <p>Usa la búsqueda para encontrar conductores por:</p>
+            <ul style="margin: 1rem 0 1rem 2rem; color: var(--gray-400);">
+                <li>Nombre completo</li>
+                <li>RUT</li>
+                <li>Correo electrónico</li>
+                <li>Número de teléfono</li>
+            </ul>
+
+            <div class="alert success">
+                <strong>✓ Pro Tip:</strong> En la página de conductores puedes ver credenciales de acceso de cada conductor.
+            </div>
+        </section>
+
+        <!-- REPORTES -->
+        <section id="reportes">
+            <h2><span class="icon">📈</span>Analytics y Reportes</h2>
+            <p>Accede a análisis detallados del estado de documentos y conductores.</p>
+
+            <h3>Tipos de Reportes Disponibles</h3>
+            <div class="step-container">
+                <div class="step" data-step="1">
+                    <h4>Estado General de Documentos</h4>
+                    <p>Porcentaje de documentos por estado (pendientes, aprobados, rechazados).</p>
+                </div>
+                <div class="step" data-step="2">
+                    <h4>Documentos Próximos a Vencer</h4>
+                    <p>Lista de documentos que vencen en próximos 30, 60 o 90 días.</p>
+                </div>
+                <div class="step" data-step="3">
+                    <h4>Actividad de Conductores</h4>
+                    <p>Cuáles conductores han subido documentos recientemente.</p>
+                </div>
+                <div class="step" data-step="4">
+                    <h4>Cumplimiento Normativo</h4>
+                    <p>Porcentaje de documentación completa y vigente por tipo.</p>
+                </div>
+            </div>
+
+            <h3>Exportar Reportes</h3>
+            <p>Desde la sección de reportes puedes exportar datos en formatos:</p>
+            <ul style="margin: 1rem 0 1rem 2rem; color: var(--gray-400);">
+                <li><code>CSV</code> - Para Excel o Sheets</li>
+                <li><code>PDF</code> - Para compartir o imprimir</li>
+                <li><code>JSON</code> - Para análisis avanzado</li>
+            </ul>
+
+            <div class="alert info">
+                <strong>💡 Tip:</strong> Genera reportes regularmente para auditorías y control de calidad.
+            </div>
+        </section>
+
+        <!-- FAQ -->
+        <section id="faq">
+            <h2><span class="icon">❓</span>Preguntas Frecuentes</h2>
+
+            <h3>¿Cómo valido documentos?</h3>
+            <p>Ve a "Documentos Pendientes", selecciona el documento y haz clic en "Aprobar" o "Rechazar". Si lo rechazas, el conductor recibirá una notificación para reenviar.</p>
+
+            <h3>¿Qué pasa si un documento vence?</h3>
+            <p>El sistema genera una alerta automáticamente. El documento se marca como vencido y pierde validez. Notifica al conductor para renovación urgente.</p>
+
+            <h3>¿Cómo agrego un nuevo conductor?</h3>
+            <p>Ve a "Equipo" o "Subcontratistas", haz clic en "Agregar Conductor" e ingresa sus datos. El sistema genera credenciales de acceso automáticamente.</p>
+
+            <h3>¿Puedo descargar todos mis documentos?</h3>
+            <p>Sí, desde reportes puedes exportar listados completos en CSV o PDF. Desde documentos individuales puedes descargar archivos específicos.</p>
+
+            <h3>¿Qué significa una alerta de "Anomalía"?</h3>
+            <p>Se detectó una inconsistencia en los datos del conductor (documentos inconsistentes, información conflictiva, etc.). Revisa los detalles y contacta al conductor si es necesario.</p>
+
+            <h3>¿Cómo recupero acceso si olvido mi contraseña?</h3>
+            <p>En la pantalla de login, haz clic en "¿Olvidaste tu contraseña?" e ingresa tu correo. Recibirás un enlace para resetearla.</p>
+
+            <h3>¿El sistema se actualiza en tiempo real?</h3>
+            <p>Sí, las alertas se actualizan cada 30 segundos. Los documentos y estados se sincronizar en tiempo real.</p>
+
+            <h3>¿Puedo asignar permisos a otros ejecutivos?</h3>
+            <p>Contacta al administrador del sistema para configurar permisos y roles para otros usuarios.</p>
+
+            <h3>¿Cómo reporto un problema?</h3>
+            <p>Si encuentras un error o comportamiento inesperado, captura una pantalla y contacta al equipo de soporte con detalles del problema.</p>
+
+            <div class="alert success">
+                <strong>✓ Nota:</strong> Este manual se actualiza regularmente. Verifica la última versión periódicamente.
+            </div>
+        </section>
+
+        <!-- CONTACTO Y SOPORTE -->
+        <section>
+            <h2><span class="icon">📧</span>Soporte y Contacto</h2>
+            <p>Si necesitas ayuda, puedes contactarnos a través de:</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Email de Soporte</h4>
+                    <p><code>soporte@labbe.cl</code></p>
+                </div>
+                <div class="feature-card">
+                    <h4>Horario de Atención</h4>
+                    <p>Lunes a Viernes, 8:00 AM - 6:00 PM</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Teléfono</h4>
+                    <p><code>+56 9 XXXX XXXX</code></p>
+                </div>
+                <div class="feature-card">
+                    <h4>Documentación</h4>
+                    <p>Consulta nuestras páginas de ayuda</p>
+                </div>
+            </div>
+
+            <div class="alert info">
+                <strong>💡 Nota Importante:</strong> Mantén tu información de contacto actualizada para recibir notificaciones importantes.
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <p>Sistema de Gestión de Documentos - Labbe</p>
+            <p>Manual de Usuario para Ejecutivas | Versión 1.0 | Mayo 2026</p>
+            <p>© 2026 Labbe. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        function setActive(element) {
+            document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+            element.classList.add('active');
+        }
+
+        // Highlight active section on scroll
+        window.addEventListener('scroll', () => {
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('nav a');
+            
+            sections.forEach((section, index) => {
+                const rect = section.getBoundingClientRect();
+                if (rect.top <= 300 && rect.bottom >= 300) {
+                    navLinks.forEach(link => link.classList.remove('active'));
+                    if (navLinks[index]) navLinks[index].classList.add('active');
+                }
+            });
+        });
+
+        // Print friendly
+        window.addEventListener('beforeprint', () => {
+            document.querySelectorAll('.quick-access, .alert').forEach(el => {
+                el.style.pageBreakInside = 'avoid';
+            });
+        });
+    </script>
+</body>
+</html>
