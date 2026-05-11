@@ -10,8 +10,9 @@ import { verifyAuth } from '@/lib/auth-middleware'
 
 export async function GET(request: NextRequest) {
   try {
-    const authUser = await verifyAuth(request)
-    if (!authUser) {
+    const { user, error: authError } = await verifyAuth(request)
+    if (authError || !user) {
+      console.log('[v0] Stats endpoint: Unauthorized')
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createClient()
 
-    console.log('[v0] Stats endpoint: Fetching document statistics')
+    console.log('[v0] Stats endpoint: Fetching document statistics for user:', user.email)
 
     // Get conductor documents stats
     const { data: conductorDocs, error: conductorError } = await supabase
