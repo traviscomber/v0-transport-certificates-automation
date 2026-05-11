@@ -59,6 +59,8 @@ export async function loginConductor(
 ): Promise<ConductorLoginResponse> {
   const supabase = getServiceClient()
   const normalizedRUT = normalizeRUT(rut)
+  
+  console.log('[v0] Login attempt with RUT:', rut, 'Normalized:', normalizedRUT)
 
   // Step 1 – auth record
   const { data: authData, error: authError } = await supabase
@@ -67,7 +69,11 @@ export async function loginConductor(
     .eq('rut', normalizedRUT)
     .single()
 
+  console.log('[v0] Auth lookup error:', authError)
+  console.log('[v0] Auth data found:', !!authData)
+
   if (authError || !authData) {
+    console.error('[v0] Auth lookup failed:', authError?.message || 'No data')
     throw new Error('RUT o contraseña incorrectos')
   }
 
@@ -76,8 +82,12 @@ export async function loginConductor(
   }
 
   // Step 2 – password verification
+  console.log('[v0] Comparing password with hash')
   const passwordMatch = await bcrypt.compare(password, authData.password_hash)
+  console.log('[v0] Password match result:', passwordMatch)
+  
   if (!passwordMatch) {
+    console.error('[v0] Password does not match')
     throw new Error('RUT o contraseña incorrectos')
   }
 
