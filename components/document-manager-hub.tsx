@@ -19,7 +19,8 @@ import {
   FolderOpen,
   BarChart3,
   Calendar,
-  Flame
+  Flame,
+  RotateCw
 } from 'lucide-react'
 import Link from 'next/link'
 import { useDocumentSync } from '@/contexts/document-sync-context'
@@ -50,7 +51,27 @@ interface DocumentManagerHubProps {
 export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubProps) {
   const [activeTab, setActiveTab] = useState('overview')
   const [stats, setStats] = useState(initialStats)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const { onSync } = useDocumentSync()
+
+  // Manual refresh function
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      const response = await fetch('/api/company/documents/stats?_t=' + Date.now(), {
+        cache: 'no-store'
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setStats(data.stats)
+      }
+    } catch (error) {
+      console.error('[v0] DocumentManagerHub: Error refreshing stats:', error)
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
 
   // Listen for document status changes and refetch stats
   useEffect(() => {
@@ -160,10 +181,22 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
             Centro de gestión documental para conductores, subcontratistas y certificaciones
           </p>
         </div>
-        <Badge variant="outline" className="text-sm px-3 py-1">
-          <BarChart3 className="h-4 w-4 mr-2" />
-          {totalDocumentos} documentos totales
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="text-sm px-3 py-1">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            {totalDocumentos} documentos totales
+          </Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            className="gap-2"
+          >
+            <RotateCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Actualizando...' : 'Actualizar'}
+          </Button>
+        </div>
       </div>
 
       {/* Quick Stats Summary */}
