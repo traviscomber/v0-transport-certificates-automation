@@ -274,7 +274,7 @@ export async function POST(request: NextRequest) {
       await supabase
         .from('notifications')
         .insert({
-          user_id: conductorId,
+          user_id: conductor.id,
           title: 'Documento Subido',
           message: `Tu ${docType.name} ha sido procesado${validationStatus === 'approved' ? ' y aprobado.' : validationStatus === 'rejected' ? ' pero fue rechazado.' : ' y está en revisión.'}`,
           type: validationStatus === 'rejected' ? 'warning' : 'info',
