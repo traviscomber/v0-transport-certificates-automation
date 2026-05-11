@@ -27,6 +27,7 @@ async function createAuthRecords() {
       .from('conductor_auth')
       .insert({
         conductor_id: conductor.id,
+        rut: conductor.rut,
         password_hash: passwordHash,
         is_active: true,
         created_at: new Date().toISOString()
