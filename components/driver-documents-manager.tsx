@@ -28,28 +28,12 @@ export function DriverDocumentsManager({
       formData.append('document_type_id', documentType.id)
       formData.append('metadata', JSON.stringify(metadata))
 
-      console.log('[v0] Upload request with FormData:', { 
-        driver_rut: identifier, 
-        document_type_id: documentType.id, 
-        file_name: file.name,
-        file_size: file.size,
-        file_type: file.type
-      })
-
       const response = await fetch('/api/company/documents/upload-with-metadata', {
         method: 'POST',
         body: formData,
-        credentials: 'include',
       })
 
-      if (!response.ok) {
-        const error = await response.json()
-        console.error('[v0] Upload error response:', error)
-        throw new Error(error.error || 'Upload failed')
-      }
-
-      const result = await response.json()
-      console.log('[v0] Upload success:', result)
+      if (!response.ok) throw new Error('Upload failed')
 
       onUploadSuccess()
       setShowUploadModal(false)
