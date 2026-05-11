@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     }
 
     // Normalize alerts from alerts table
-    const alerts = (rawAlerts || []).map((a: any) => ({
+    const alerts: any[] = (rawAlerts || []).map((a: any) => ({
       id: a.id,
       type: a.alert_type || 'info',
       title: a.title,
