@@ -141,7 +141,71 @@ export async function GET(request: Request) {
       }
     }
 
-    // Sort all alerts by created_at descending and apply limit
+    // Also get anomalies
+    console.log('[v0] Fetching recent anomalies for alerts')
+    const { data: anomalies } = await supabase
+      .from('anomalies_with_document_details')
+      .select('*')
+      .order('detected_at', { ascending: false })
+      .limit(limit)
+
+    if (anomalies && anomalies.length > 0) {
+      for (const anomaly of anomalies) {
+        let severityToPriority = 'medium'
+        if (anomaly.severity === 'critical') severityToPriority = 'high'
+        else if (anomaly.severity === 'warning') severityToPriority = 'medium'
+        else if (anomaly.severity === 'info') severityToPriority = 'low'
+
+        alerts.push({
+          id: `anomaly_${anomaly.id}`,
+          type: 'ANOMALY_DETECTED',
+          title: `Anomalía Detectada - ${anomaly.anomaly_type}`,
+          message: `${anomaly.description}. Conductor: ${anomaly.driver_name || 'Desconocido'}. [ANOMALY-${anomaly.id.substring(0, 8).toUpperCase()}]`,
+          priority: severityToPriority,
+          is_read: false,
+          is_dismissed: anomaly.action_taken ? true : false,
+          created_at: anomaly.detected_at,
+          metadata: {
+            anomaly_id: anomaly.id,
+            anomaly_type: anomaly.anomaly_type,
+            severity: anomaly.severity,
+            driver_id: anomaly.driver_id,
+            document_id: anomaly.document_id,
+            action_taken: anomaly.action_taken,
+          },
+          source: 'anomaly_detection'
+        })
+      }
+    }
+
+    // Also get expiring documents alerts
+    console.log('[v0] Fetching expiring documents for alerts')
+    const { data: expiringDocs } = await supabase
+      .from('alerts')
+      .select('*')
+      .eq('alert_type', 'DOCUMENT_EXPIRING')
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (expiringDocs && expiringDocs.length > 0) {
+      for (const expAlert of expiringDocs) {
+        alerts.push({
+          id: `exp_${expAlert.id}`,
+          type: 'DOCUMENT_EXPIRING',
+          title: `Documento Próximo a Vencer`,
+          message: expAlert.message || `Documento próximo a vencer. [EXPIRY-${expAlert.id.substring(0, 8).toUpperCase()}]`,
+          priority: expAlert.priority || 'high',
+          is_read: expAlert.is_read ?? false,
+          is_dismissed: expAlert.is_resolved ?? false,
+          created_at: expAlert.created_at,
+          metadata: {
+            alert_id: expAlert.id,
+            document_id: expAlert.document_id,
+          },
+          source: 'document_expiry'
+        })
+      }
+    }
     const sortedAlerts = alerts.sort((a, b) => {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     }).slice(0, limit)
