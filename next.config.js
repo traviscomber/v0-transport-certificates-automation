@@ -86,7 +86,7 @@ const nextConfig = {
         ],
       },
       
-      // API routes - stricter CSP
+      // API routes - security headers only (no Content-Type override - breaks FormData uploads)
       {
         source: '/api/:path*',
         headers: [
@@ -97,10 +97,6 @@ const nextConfig = {
           {
             key: 'X-Frame-Options',
             value: 'DENY',
-          },
-          {
-            key: 'Content-Type',
-            value: 'application/json; charset=utf-8',
           },
         ],
       },
