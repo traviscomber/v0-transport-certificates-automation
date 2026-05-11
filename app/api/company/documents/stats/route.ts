@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
  * GET /api/company/documents/stats
  * Returns document statistics for the dashboard
  * Includes counts for pendientes, aprobados, rechazados per module
+ * SYNCED with /dashboard/company/documentos/pendientes logic
  */
 
 import { NextResponse, NextRequest } from 'next/server'
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     console.log('[v0] Stats endpoint: Fetching document statistics for user:', user.email)
 
-    // Get conductor documents stats
+    // Get conductor documents stats - SYNCED with pendientes page logic
     const { data: conductorDocs, error: conductorError } = await supabase
       .from('uploaded_documents')
       .select('validation_status', { count: 'exact', head: false })
@@ -34,13 +35,20 @@ export async function GET(request: NextRequest) {
       throw new Error(`Conductor docs error: ${conductorError.message}`)
     }
 
+    // Count pending: both 'pending' status AND null status (documents with no validation yet)
+    const pendingCount = (conductorDocs || []).filter(d => 
+      d.validation_status === 'pending' || d.validation_status === null
+    ).length
+
     const conductorStats = {
       total: conductorDocs?.length || 0,
-      pendientes: (conductorDocs || []).filter(d => d.validation_status === 'pending').length,
+      pendientes: pendingCount,
       aprobados: (conductorDocs || []).filter(d => d.validation_status === 'approved').length,
       rechazados: (conductorDocs || []).filter(d => d.validation_status === 'rejected').length,
       vencidos: 0
     }
+
+    console.log('[v0] Stats endpoint: Conductor stats -', conductorStats)
 
     // Get subcontractor documents stats
     const { data: subDocs, error: subError } = await supabase
@@ -49,7 +57,7 @@ export async function GET(request: NextRequest) {
 
     const subStats = {
       total: subDocs?.length || 0,
-      pendientes: (subDocs || []).filter(d => d.status === 'pendiente').length,
+      pendientes: (subDocs || []).filter(d => d.status === 'pendiente' || d.status === null).length,
       aprobados: (subDocs || []).filter(d => d.status === 'aprobado').length,
       rechazados: (subDocs || []).filter(d => d.status === 'rechazado').length,
       vencidos: 0

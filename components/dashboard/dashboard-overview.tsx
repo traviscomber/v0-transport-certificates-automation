@@ -76,64 +76,53 @@ export function DashboardOverview() {
           setAlerts(alertsList)
         }
 
-        // Fetch REAL document stats from the database
-        // Query all documents without filtering by driver_id since dashboard needs all documents
-        const docsRes = await fetch(`/api/company/documents/all?_t=${Date.now()}`, {
+        // Fetch document stats from dedicated endpoint (synced with pendientes page logic)
+        const statsRes = await fetch(`/api/company/documents/stats?_t=${Date.now()}`, {
           cache: "no-store",
         })
         
-        let total = 0, approved = 0, pending = 0, rejected = 0
-        
-        if (docsRes.ok) {
-          const docsData = await docsRes.json()
-          const documents = docsData.documents || []
+        if (statsRes.ok) {
+          const statsData = await statsRes.json()
+          const stats = statsData.stats || {}
+          const conductorStats = stats.conductores || {}
           
-          total = documents.length
-          approved = documents.filter((d: any) => 
-            d.verification_status === 'aprobado' || d.validation_status === 'approved'
-          ).length
-          pending = documents.filter((d: any) => 
-            d.verification_status === 'pendiente' || d.validation_status === 'pending' || !d.validation_status
-          ).length
-          rejected = documents.filter((d: any) => 
-            d.verification_status === 'rechazado' || d.validation_status === 'rejected'
-          ).length
-        }
+          console.log('[v0] Dashboard: Stats received -', conductorStats)
 
-        setStats([
-          {
-            title: "Total de Documentos",
-            value: total.toString(),
-            description: "En el sistema",
-            icon: FileText,
-            status: "active",
-            href: "/dashboard/company/documentos",
-          },
-          {
-            title: "Documentos Aprobados",
-            value: approved.toString(),
-            description: "Validados",
-            icon: CheckCircle,
-            status: "active",
-            href: "/dashboard/company/documentos/aprobados",
-          },
-          {
-            title: "Documentos Pendientes",
-            value: pending.toString(),
-            description: "En revisión",
-            icon: Clock,
-            status: "active",
-            href: "/dashboard/company/documentos/pendientes",
-          },
-          {
-            title: "Documentos Rechazados",
-            value: rejected.toString(),
-            description: "No validados",
-            icon: AlertTriangle,
-            status: "warning",
-            href: "/dashboard/company/documentos/rechazados",
-          },
-        ])
+          setStats([
+            {
+              title: "Total de Documentos",
+              value: conductorStats.total?.toString() || "0",
+              description: "En el sistema",
+              icon: FileText,
+              status: "active",
+              href: "/dashboard/company/documentos",
+            },
+            {
+              title: "Documentos Aprobados",
+              value: conductorStats.aprobados?.toString() || "0",
+              description: "Validados",
+              icon: CheckCircle,
+              status: "active",
+              href: "/dashboard/company/documentos/aprobados",
+            },
+            {
+              title: "Documentos Pendientes",
+              value: conductorStats.pendientes?.toString() || "0",
+              description: "En revisión",
+              icon: Clock,
+              status: "active",
+              href: "/dashboard/company/documentos/pendientes",
+            },
+            {
+              title: "Documentos Rechazados",
+              value: conductorStats.rechazados?.toString() || "0",
+              description: "No validados",
+              icon: AlertTriangle,
+              status: "warning",
+              href: "/dashboard/company/documentos/rechazados",
+            },
+          ])
+        }
       } catch (error) {
         console.error('[v0] Error loading dashboard data:', error)
       } finally {
@@ -146,7 +135,7 @@ export function DashboardOverview() {
 
     // Refresh every 10 seconds to keep alerts up to date
     const intervalId = setInterval(() => {
-      console.log('[v0] Dashboard: Auto-refreshing alerts')
+      console.log('[v0] Dashboard: Auto-refreshing data')
       fetchData()
     }, 10000)
 
@@ -164,29 +153,19 @@ export function DashboardOverview() {
         
         const fetchUpdatedStats = async () => {
           try {
-            const docsRes = await fetch(`/api/company/documents/all?_t=${Date.now()}`, {
+            const statsRes = await fetch(`/api/company/documents/stats?_t=${Date.now()}`, {
               cache: "no-store",
             })
             
-            if (docsRes.ok) {
-              const docsData = await docsRes.json()
-              const documents = docsData.documents || []
-              
-              const total = documents.length
-              const approved = documents.filter((d: any) => 
-                d.verification_status === 'aprobado' || d.validation_status === 'approved'
-              ).length
-              const pending = documents.filter((d: any) => 
-                d.verification_status === 'pendiente' || d.validation_status === 'pending' || !d.validation_status
-              ).length
-              const rejected = documents.filter((d: any) => 
-                d.verification_status === 'rechazado' || d.validation_status === 'rejected'
-              ).length
+            if (statsRes.ok) {
+              const statsData = await statsRes.json()
+              const stats = statsData.stats || {}
+              const conductorStats = stats.conductores || {}
 
               setStats([
                 {
                   title: "Total de Documentos",
-                  value: total.toString(),
+                  value: conductorStats.total?.toString() || "0",
                   description: "En el sistema",
                   icon: FileText,
                   status: "active",
@@ -194,7 +173,7 @@ export function DashboardOverview() {
                 },
                 {
                   title: "Documentos Aprobados",
-                  value: approved.toString(),
+                  value: conductorStats.aprobados?.toString() || "0",
                   description: "Validados",
                   icon: CheckCircle,
                   status: "active",
@@ -202,7 +181,7 @@ export function DashboardOverview() {
                 },
                 {
                   title: "Documentos Pendientes",
-                  value: pending.toString(),
+                  value: conductorStats.pendientes?.toString() || "0",
                   description: "En revisión",
                   icon: Clock,
                   status: "active",
@@ -210,7 +189,7 @@ export function DashboardOverview() {
                 },
                 {
                   title: "Documentos Rechazados",
-                  value: rejected.toString(),
+                  value: conductorStats.rechazados?.toString() || "0",
                   description: "No validados",
                   icon: AlertTriangle,
                   status: "warning",
