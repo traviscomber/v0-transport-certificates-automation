@@ -28,12 +28,27 @@ export function DriverDocumentsManager({
       formData.append('document_type_id', documentType.id)
       formData.append('metadata', JSON.stringify(metadata))
 
+      console.log('[v0] Modal upload:', {
+        fileName: file.name,
+        fileSize: file.size,
+        driverRut: identifier,
+        documentTypeId: documentType.id,
+      })
+
       const response = await fetch('/api/company/documents/upload-with-metadata', {
         method: 'POST',
         body: formData,
       })
 
-      if (!response.ok) throw new Error('Upload failed')
+      const result = await response.json().catch(() => ({ error: 'Invalid server response' }))
+
+      if (!response.ok) {
+        const errorMsg = result?.error || result?.details || `Upload failed (${response.status})`
+        console.error('[v0] Modal upload failed:', errorMsg)
+        throw new Error(errorMsg)
+      }
+
+      console.log('[v0] Modal upload success:', result.document?.id)
 
       onUploadSuccess()
       setShowUploadModal(false)

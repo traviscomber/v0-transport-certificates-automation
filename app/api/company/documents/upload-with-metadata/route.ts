@@ -1,117 +1,136 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { extractDocumentMetadata } from '@/lib/ai-document-processor'
-import { normalizeDocumentType, determineValidationStatus } from '@/lib/document-classification'
 
-export const maxDuration = 300 // 5 minutes for file uploads
+export const maxDuration = 60
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
-  try {
-    const formData = await request.formData()
-    const file = formData.get('file') as File
-    // driver_id is '1','2','12' etc — NOT a UUID. Use driver_rut to resolve.
-    const driverRut = formData.get('driver_rut') as string
-    const documentTypeId = formData.get('document_type_id') as string
-    const uploadedBy = formData.get('uploaded_by') as string
+  console.log('[v0] Upload endpoint START')
 
-    if (!file || !driverRut || !documentTypeId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+  try {
+    // Parse FormData
+    let formData: FormData
+    try {
+      formData = await request.formData()
+      console.log('[v0] FormData parsed OK')
+    } catch (parseError) {
+      const msg = parseError instanceof Error ? parseError.message : 'Parse error'
+      console.error('[v0] FormData parse failed:', msg)
+      return NextResponse.json({ error: 'Failed to parse form data: ' + msg }, { status: 400 })
+    }
+
+    // Extract fields
+    const file = formData.get('file') as File | null
+    const driverRut = formData.get('driver_rut') as string | null
+    const documentTypeId = formData.get('document_type_id') as string | null
+    const metadataStr = formData.get('metadata') as string | null
+
+    console.log('[v0] FormData fields:', {
+      hasFile: !!file,
+      fileName: file?.name,
+      fileSize: file?.size,
+      driverRut,
+      documentTypeId,
+    })
+
+    // Validate required fields
+    if (!file) {
+      return NextResponse.json({ error: 'File is required' }, { status: 400 })
+    }
+    if (!driverRut) {
+      return NextResponse.json({ error: 'driver_rut is required' }, { status: 400 })
+    }
+    if (!documentTypeId) {
+      return NextResponse.json({ error: 'document_type_id is required' }, { status: 400 })
+    }
+
+    // Parse metadata (optional)
+    let metadata: Record<string, any> = {}
+    if (metadataStr) {
+      try {
+        metadata = JSON.parse(metadataStr)
+      } catch {
+        console.warn('[v0] Failed to parse metadata, using empty object')
+      }
     }
 
     const adminClient = createAdminClient()
 
-    // Resolve real conductor UUID from conductores table by RUT
-    const { data: conductorRow, error: conductorError } = await adminClient
+    // Resolve conductor UUID from RUT
+    const { data: conductor, error: conductorError } = await adminClient
       .from('conductores')
       .select('id')
       .eq('rut', driverRut)
-      .single()
+      .maybeSingle()
 
-    if (conductorError || !conductorRow?.id) {
-      return NextResponse.json({ error: 'Conductor no encontrado en la base de datos', details: `RUT ${driverRut} not found` }, { status: 400 })
+    if (conductorError) {
+      console.error('[v0] Conductor lookup error:', conductorError)
+      return NextResponse.json(
+        { error: 'Database error looking up driver', details: conductorError.message },
+        { status: 500 }
+      )
     }
 
-    const conductorUUID = conductorRow.id
+    if (!conductor?.id) {
+      console.error('[v0] Conductor not found for RUT:', driverRut)
+      return NextResponse.json(
+        { error: `Conductor not found with RUT ${driverRut}` },
+        { status: 404 }
+      )
+    }
 
-    const fileName = `${Date.now()}_${file.name}`
-    const storagePath = `drivers/${conductorUUID}/${fileName}`
+    const conductorUUID = conductor.id
+    console.log('[v0] Conductor found:', conductorUUID)
+
+    // Upload file to Supabase Storage
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+    const storagePath = `drivers/${conductorUUID}/${Date.now()}_${safeName}`
 
     const arrayBuffer = await file.arrayBuffer()
-    const { data: uploadData, error: uploadError } = await adminClient.storage
+    const buffer = Buffer.from(arrayBuffer)
+
+    console.log('[v0] Uploading to storage:', storagePath, 'size:', buffer.length)
+
+    const { error: uploadError } = await adminClient.storage
       .from('documents')
-      .upload(storagePath, Buffer.from(arrayBuffer), {
-        contentType: file.type,
+      .upload(storagePath, buffer, {
+        contentType: file.type || 'application/octet-stream',
         upsert: true,
       })
 
     if (uploadError) {
       console.error('[v0] Storage upload error:', uploadError)
-      return NextResponse.json({ error: 'Upload failed', details: uploadError.message }, { status: 500 })
+      return NextResponse.json(
+        { error: 'Failed to upload file to storage', details: uploadError.message },
+        { status: 500 }
+      )
     }
+
+    console.log('[v0] File uploaded to storage')
 
     // Get public URL
     const { data: publicUrlData } = adminClient.storage
       .from('documents')
       .getPublicUrl(storagePath)
 
-    // STEP 2: Extract document metadata using AI (async, 5-10 seconds)
-    console.log('[v0] Starting AI document processing...')
-    let aiExtraction = null
-    let extractionError = null
+    const fileUrl = publicUrlData?.publicUrl || ''
 
-    try {
-      // Convert file to base64 for AI processing
-      const buffer = Buffer.from(arrayBuffer)
-      const base64 = buffer.toString('base64')
-      
-      // Call AI document processor
-      aiExtraction = await extractDocumentMetadata(base64, file.type as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp')
-      console.log('[v0] AI extraction successful:', aiExtraction)
-    } catch (error) {
-      extractionError = error instanceof Error ? error.message : 'AI extraction failed'
-      console.warn('[v0] AI extraction failed (non-blocking):', extractionError)
-      // Continue with document upload — AI failure doesn't block the flow
-    }
-
-    // STEP 3: Determine validation status based on AI extraction
-    let validationStatus: string = 'pending'
-    let aiConfidence = 0
-
-    if (aiExtraction && aiExtraction.confidence >= 0.7) {
-      aiConfidence = aiExtraction.confidence
-      const daysUntilExp = aiExtraction.expirationDate 
-        ? Math.floor((new Date(aiExtraction.expirationDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-        : null
-      
-      validationStatus = determineValidationStatus(
-        aiExtraction.confidence,
-        daysUntilExp,
-        !!aiExtraction.documentNumber
-      ) as string
-    }
-
-    // Insert using only columns that exist in the uploaded_documents table
-    const insertPayload: any = {
+    // Insert document record into uploaded_documents
+    const insertPayload: Record<string, any> = {
       conductor_id: conductorUUID,
       document_type_id: documentTypeId,
       original_filename: file.name,
-      file_url: publicUrlData?.publicUrl || '',
-      validation_status: validationStatus
+      file_url: fileUrl,
+      validation_status: 'pending',
+      ai_processing_status: 'pending',
     }
 
-    // Add AI-extracted fields if extraction was successful
-    if (aiExtraction) {
-      insertPayload.extracted_document_type = normalizeDocumentType(aiExtraction.documentType)
-      insertPayload.extracted_expiration_date = aiExtraction.expirationDate
-      insertPayload.extraction_confidence = aiExtraction.confidence
-      insertPayload.extraction_warnings = aiExtraction.warnings || []
-      insertPayload.ai_processing_status = 'completed'
-    } else {
-      insertPayload.ai_processing_status = 'failed'
-      if (extractionError) {
-        insertPayload.extraction_warnings = [extractionError]
-      }
+    // Add expiry_date if provided in metadata
+    if (metadata.expiry_date) {
+      insertPayload.extracted_expiration_date = metadata.expiry_date
     }
+
+    console.log('[v0] Inserting document record')
 
     const { data: docRecord, error: dbError } = await adminClient
       .from('uploaded_documents')
@@ -121,25 +140,27 @@ export async function POST(request: NextRequest) {
 
     if (dbError) {
       console.error('[v0] Database insert error:', dbError)
-      return NextResponse.json({ error: 'Failed to save document', details: dbError.message }, { status: 500 })
+      return NextResponse.json(
+        { error: 'Failed to save document record', details: dbError.message },
+        { status: 500 }
+      )
     }
 
-    // Send notification to ejecutivas if document was auto-rejected by AI
-    if (validationStatus === 'rejected' && aiExtraction) {
-      console.log('[v0] Document auto-rejected by AI, would trigger notification here')
-      // In production: call notifyExecutivas with auto-rejection reason
-    }
+    console.log('[v0] Document upload complete:', docRecord.id)
 
     return NextResponse.json({
       success: true,
       document: docRecord,
-      aiExtraction: aiExtraction || null,
-      validationStatus,
-      message: 'Documento subido y procesado con IA'
+      message: 'Documento subido exitosamente',
     })
   } catch (error) {
-    console.error('[v0] Error in upload:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Server error'
-    return NextResponse.json({ error: errorMessage, success: false }, { status: 500 })
+    const msg = error instanceof Error ? error.message : 'Unknown error'
+    const stack = error instanceof Error ? error.stack : 'No stack'
+    console.error('[v0] Upload endpoint FATAL ERROR:', msg)
+    console.error('[v0] Stack:', stack)
+    return NextResponse.json(
+      { error: 'Internal server error: ' + msg, success: false },
+      { status: 500 }
+    )
   }
 }

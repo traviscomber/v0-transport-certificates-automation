@@ -87,17 +87,30 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       formData.append('file', file)
       formData.append('driver_rut', driverRut)
       formData.append('document_type_id', tipo || 'general')
+      if (expirationDate) {
+        formData.append('metadata', JSON.stringify({ expiry_date: expirationDate }))
+      }
+
+      console.log('[v0] uploadDocument: Sending FormData', { fileName: file.name, fileSize: file.size, driverRut, tipo })
 
       const response = await fetch('/api/company/documents/upload-with-metadata', {
         method: 'POST',
         body: formData,
       })
 
-      if (!response.ok) throw new Error('Upload failed')
+      const result = await response.json().catch(() => ({ error: 'Invalid server response' }))
+
+      if (!response.ok) {
+        const errorMsg = result?.error || result?.details || `Upload failed (${response.status})`
+        console.error('[v0] uploadDocument failed:', errorMsg)
+        throw new Error(errorMsg)
+      }
+
+      console.log('[v0] uploadDocument success:', result.document?.id)
 
       // After upload succeeds, refetch to get the new document
       await fetchDocuments()
-      return (await response.json()).document
+      return result.document
     } catch (err) {
       throw err
     }
