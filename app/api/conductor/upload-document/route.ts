@@ -22,6 +22,8 @@ const DOCUMENT_TYPE_MAPPING: Record<string, string> = {
   'REVISION_TECNICA': '4c3d940c-93ae-4fc7-ab57-8a21b89746a6',
   'SOAP': '88386b93-cdb1-427a-bad0-fde2b6e720c8',
 }
+
+export async function POST(request: NextRequest) {
   try {
     // Validate environment variables
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
