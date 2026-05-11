@@ -52,9 +52,7 @@ async function simulateUpload() {
       conductor_id: conductor.id,
       document_type_id: docType.id,
       original_filename: 'simulation_test.jpg',
-      file_path: `conductores/${conductor.id}/test_${Date.now()}.jpg`,
-      file_size: 357376,
-      mime_type: 'image/jpeg',
+      file_url: `https://storage.example.com/conductores/${conductor.id}/test_${Date.now()}.jpg`,
       validation_status: 'pending'
     };
 
