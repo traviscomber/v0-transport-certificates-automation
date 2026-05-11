@@ -34,11 +34,11 @@ export const allTeamMembers: TeamMember[] = [
   },
   {
     id: '4',
-    nombre_completo: 'Farias Muñoz Cecilia Del Carmen',
-    rut: '9888992-2',
+    nombre_completo: 'Javiera Ayala Rodríguez',
+    rut: '18450987-1',
     cargo: 'Ejecutiva',
-    telefono: '569 78540798',
-    email: 'fmuñoz@labbe.cl'
+    telefono: '569 87654321',
+    email: 'jayala@labbe.cl'
   },
   {
     id: '5',

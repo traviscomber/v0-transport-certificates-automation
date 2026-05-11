@@ -9,7 +9,7 @@ const EJECUTIVAS_LABBE = [
   { rut: '10574005-0', nombre: 'Olga Carrasco' },
   { rut: '15464094-0', nombre: 'Carolina Sepúlveda' },
   { rut: '17768246-2', nombre: 'Daniela Silva' },
-  { rut: '9888992-2',  nombre: 'Cecilia Farias' },
+  { rut: '18450987-1',  nombre: 'Javiera Ayala' },
   { rut: '20114106-0', nombre: 'Diego González' },
   { rut: '18717311-6', nombre: 'Katherinne Canales' },
 ]

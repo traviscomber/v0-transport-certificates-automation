@@ -158,7 +158,7 @@ export async function GET(request: Request) {
       { id: '1', full_name: 'Olga Carrasco', rut: '10574005-0', email: 'ocarrasco@labbe.cl', phone: '+56912345678', cargo: 'Ejecutiva de Cuenta' },
       { id: '2', full_name: 'Carolina Sepúlveda', rut: '15464094-0', email: 'csepulveda@labbe.cl', phone: '+56913456789', cargo: 'Ejecutiva de Cuenta' },
       { id: '3', full_name: 'Daniela Silva', rut: '17768246-2', email: 'dsilva@labbe.cl', phone: '+56914567890', cargo: 'Ejecutiva de Cuenta' },
-      { id: '4', full_name: 'Cecilia Farias', rut: '9888992-2', email: 'cfarias@labbe.cl', phone: '+56914567891', cargo: 'Ejecutiva de Cuenta' },
+      { id: '4', full_name: 'Javiera Ayala', rut: '18450987-1', email: 'jayala@labbe.cl', phone: '+56987654321', cargo: 'Ejecutiva de Cuenta' },
       { id: '5', full_name: 'Diego González', rut: '20114106-0', email: 'dgonzalez@labbe.cl', phone: '+56915678901', cargo: 'Ejecutivo de Cuenta' },
       { id: '6', full_name: 'Katherinne Canales', rut: '18717311-6', email: 'kcanales@labbe.cl', phone: '+56916789012', cargo: 'Ejecutiva de Cuenta' },
     ]

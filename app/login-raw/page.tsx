@@ -116,7 +116,6 @@ export default function LoginRawPage() {
           <li>ocarrasco@labbe.cl - Olga Carrasco</li>
           <li>csepulveda@labbe.cl - Carolina Sepúlveda</li>
           <li>dsilva@labbe.cl - Daniela Silva</li>
-          <li>cfarias@labbe.cl - Cecilia Farías</li>
           <li>dgonzalez@labbe.cl - Diego González</li>
           <li>kcanales@labbe.cl - Katherinne Canales</li>
         </ul>

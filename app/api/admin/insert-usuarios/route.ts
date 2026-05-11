@@ -55,10 +55,10 @@ export async function GET() {
         phone: '+56978540722',
       },
       {
-        full_name: 'Cecilia Del Carmen Farias Muñoz',
-        rut: '9888992-2',
-        email: 'cecilia.farias@labbe.cl',
-        phone: '+56978540798',
+        full_name: 'Javiera Ayala Rodríguez',
+        rut: '18450987-1',
+        email: 'jayala@labbe.cl',
+        phone: '+56987654321',
       },
       {
         full_name: 'Diego Andres Gonzalez Valenzuela',

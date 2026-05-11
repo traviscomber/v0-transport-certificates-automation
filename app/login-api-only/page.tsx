@@ -102,7 +102,6 @@ export default function LoginPage() {
               <p>• ocarrasco@labbe.cl - Olga Carrasco</p>
               <p>• csepulveda@labbe.cl - Carolina Sepúlveda</p>
               <p>• dsilva@labbe.cl - Daniela Silva</p>
-              <p>• cfarias@labbe.cl - Cecilia Farías</p>
               <p>• dgonzalez@labbe.cl - Diego González</p>
               <p>• kcanales@labbe.cl - Katherinne Canales</p>
               <p className="mt-2 text-yellow-400">Contraseña: TempPassword123!</p>

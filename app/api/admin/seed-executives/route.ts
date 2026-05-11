@@ -32,12 +32,12 @@ const EXECUTIVES_DATA = [
     cargo: 'Ejecutiva'
   },
   {
-    full_name: 'Cecilia Del Carmen Farias Muñoz',
-    rut: '9888992-2',
-    email_auth: 'cecilia.farias@labbe.cl',
-    password_hash: '$2a$10$M7N8O9P0Q1R2S3T4U5V6W.X7Y8Z9A0B1C2D3E4F5G6H7I8J9K0L1M2',
-    phone: '+56978540798',
-    email: 'cecilia.farias@labbe.cl',
+    full_name: 'Javiera Ayala Rodríguez',
+    rut: '18450987-1',
+    email_auth: 'jayala@labbe.cl',
+    password_hash: '$2a$10$P0Q1R2S3T4U5V6W7X8Y9Z.A0B1C2D3E4F5G6H7I8J9K0L1M2N3O4P5',
+    phone: '+56987654321',
+    email: 'jayala@labbe.cl',
     cargo: 'Ejecutiva'
   },
   {
