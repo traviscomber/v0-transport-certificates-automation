@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { FileText, Shield, Truck, AlertTriangle, CheckCircle, Clock } from "lucide-react"
 import { useDocumentSync } from "@/contexts/document-sync-context"
 
@@ -298,39 +299,65 @@ export function DashboardOverview() {
         ))}
       </div>
 
-      {/* Recent Alerts */}
+      {/* Recent Alerts - Prominent Section */}
       {alerts.length > 0 && (
-        <Card className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-700">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-xl">Alertas Recientes</CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Últimas alertas del sistema - {alerts.length} total
-            </CardDescription>
+        <Card className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-700 col-span-full">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-xl">Alertas Recientes</CardTitle>
+              <CardDescription className="text-muted-foreground">
+                Últimas alertas del sistema - {alerts.length} total
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push('/dashboard/company/alertas')}
+              className="ml-auto"
+            >
+              Ver todas
+            </Button>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {alerts.slice(0, 10).map((alert) => (
-                <div key={alert.id} className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 p-4 border border-slate-700 rounded-lg hover:bg-slate-800/50 hover:border-orange-500/30 transition-all">
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {alerts.slice(0, 15).map((alert) => (
+                <div 
+                  key={alert.id} 
+                  className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 p-4 border border-slate-700 rounded-lg hover:bg-slate-800/50 hover:border-orange-500/30 transition-all cursor-pointer"
+                  onClick={() => router.push('/dashboard/company/alertas')}
+                >
                   <div className="flex items-start space-x-3 flex-1 min-w-0">
                     <div className="mt-0.5 flex-shrink-0">{getStatusIcon(alert.type)}</div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm text-foreground">{alert.title}</p>
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{alert.message}</p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {new Date(alert.created_at).toLocaleDateString("es-ES", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(alert.created_at).toLocaleDateString("es-ES", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                        {alert.source === 'document_upload' && (
+                          <Badge variant="secondary" className="text-xs">
+                            {alert.metadata?.document_type || 'Documento'}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex-shrink-0">{getStatusBadge(alert.type)}</div>
                 </div>
               ))}
             </div>
+            {alerts.length > 15 && (
+              <p className="text-xs text-muted-foreground text-center mt-3">
+                + {alerts.length - 15} alertas más
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
