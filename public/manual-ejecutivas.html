@@ -3,7 +3,917 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manual de Usuario - Sistema Labbe | Ejecutivas</title>
+    <title>Manual de Usuario - Labbe Transporte</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Brandbook Colors - Sin Gradientes */
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --color-orange: #ff6b35;
+            --color-orange-hover: #cc5529;
+            --color-cyan: #00d9ff;
+            --color-success: #10b981;
+            --color-warning: #f59e0b;
+            --color-error: #ef4444;
+            --border-color: #334155;
+            --muted: #475569;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-orange);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-cyan);
+        }
+
+        /* Header */
+        header {
+            background-color: var(--bg-secondary);
+            border-bottom: 2px solid var(--color-orange);
+            padding: 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            color: var(--color-orange);
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Navigation */
+        nav {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem;
+            position: sticky;
+            top: 4rem;
+            z-index: 99;
+        }
+
+        nav .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        nav a {
+            padding: 0.5rem 1rem;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.4rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        nav a:hover {
+            background-color: var(--color-orange);
+            color: var(--bg-primary);
+            border-color: var(--color-orange);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Sections */
+        section {
+            margin-bottom: 3rem;
+            scroll-margin-top: 8rem;
+        }
+
+        section h2 {
+            font-size: 2rem;
+            color: var(--color-orange);
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        section h3 {
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        section h4 {
+            font-size: 1rem;
+            color: var(--color-cyan);
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        /* Cards */
+        .card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .card h4 {
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.3rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid;
+        }
+
+        .badge-primary {
+            background-color: rgba(255, 107, 53, 0.15);
+            color: var(--color-orange);
+            border-color: var(--color-orange);
+        }
+
+        .badge-success {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: var(--color-success);
+            border-color: var(--color-success);
+        }
+
+        .badge-warning {
+            background-color: rgba(245, 158, 11, 0.15);
+            color: var(--color-warning);
+            border-color: var(--color-warning);
+        }
+
+        .badge-info {
+            background-color: rgba(0, 217, 255, 0.15);
+            color: var(--color-cyan);
+            border-color: var(--color-cyan);
+        }
+
+        /* Lists */
+        ul, ol {
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Code */
+        code {
+            background-color: var(--bg-primary);
+            color: var(--color-cyan);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.3rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        pre {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        /* Step by step */
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .step {
+            display: flex;
+            gap: 1.5rem;
+            background-color: var(--bg-secondary);
+            border-left: 4px solid var(--color-orange);
+            padding: 1rem;
+            border-radius: 0.3rem;
+        }
+
+        .step-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            background-color: var(--color-orange);
+            color: var(--bg-primary);
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .step h4 {
+            color: var(--text-primary);
+            margin-top: 0;
+        }
+
+        .step p {
+            color: var(--text-secondary);
+            margin-bottom: 0;
+        }
+
+        /* Alert Box */
+        .alert {
+            padding: 1rem;
+            border-left: 4px solid;
+            border-radius: 0.4rem;
+            margin: 1rem 0;
+        }
+
+        .alert-info {
+            background-color: rgba(0, 217, 255, 0.1);
+            border-left-color: var(--color-cyan);
+            color: var(--text-secondary);
+        }
+
+        .alert-success {
+            background-color: rgba(16, 185, 129, 0.1);
+            border-left-color: var(--color-success);
+            color: var(--text-secondary);
+        }
+
+        .alert-warning {
+            background-color: rgba(245, 158, 11, 0.1);
+            border-left-color: var(--color-warning);
+            color: var(--text-secondary);
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            background-color: var(--bg-secondary);
+        }
+
+        th {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem;
+            text-align: left;
+            color: var(--color-orange);
+            font-weight: 600;
+        }
+
+        td {
+            border: 1px solid var(--border-color);
+            padding: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        tr:nth-child(even) {
+            background-color: rgba(255, 107, 53, 0.05);
+        }
+
+        /* FAQ */
+        .faq-item {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            margin: 0.75rem 0;
+            border-radius: 0.4rem;
+            overflow: hidden;
+        }
+
+        .faq-question {
+            padding: 1rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--bg-secondary);
+            border: none;
+            width: 100%;
+            color: var(--text-primary);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .faq-question:hover {
+            background-color: rgba(255, 107, 53, 0.1);
+        }
+
+        .faq-arrow {
+            color: var(--color-orange);
+            transition: transform 0.3s ease;
+        }
+
+        .faq-item.open .faq-arrow {
+            transform: rotate(180deg);
+        }
+
+        .faq-answer {
+            padding: 0 1rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            color: var(--text-secondary);
+        }
+
+        .faq-item.open .faq-answer {
+            padding: 0 1rem 1rem;
+            max-height: 500px;
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            padding: 2rem;
+            margin-top: 3rem;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        /* Print */
+        @media print {
+            header {
+                position: static;
+            }
+
+            nav {
+                display: none;
+            }
+
+            a {
+                text-decoration: underline;
+            }
+
+            .faq-item {
+                page-break-inside: avoid;
+            }
+
+            section {
+                page-break-inside: avoid;
+            }
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.5rem;
+            }
+
+            section h2 {
+                font-size: 1.5rem;
+            }
+
+            nav .nav-content {
+                flex-direction: column;
+            }
+
+            nav a {
+                width: 100%;
+            }
+
+            .step {
+                flex-direction: column;
+            }
+
+            .step-number {
+                width: 2rem;
+                height: 2rem;
+                font-size: 0.9rem;
+            }
+
+            table {
+                font-size: 0.9rem;
+            }
+
+            th, td {
+                padding: 0.5rem;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <h1>📘 Manual de Usuario - Labbe Transporte</h1>
+        <p>Guía completa para ejecutivas • Versión 1.0 • Mayo 2026</p>
+    </header>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-content">
+            <a href="#bienvenida">Bienvenida</a>
+            <a href="#acceso">Acceso al Sistema</a>
+            <a href="#dashboard">Dashboard Principal</a>
+            <a href="#documentos">Gestión de Documentos</a>
+            <a href="#alertas">Sistema de Alertas</a>
+            <a href="#conductores">Equipo de Conductores</a>
+            <a href="#reportes">Reportes</a>
+            <a href="#faq">Preguntas Frecuentes</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Bienvenida -->
+        <section id="bienvenida">
+            <h2>Bienvenida al Sistema</h2>
+            <p>Bienvenida a la plataforma de gestión de transporte de Labbe. Este sistema le permite centralizar toda la información de su flota de vehículos, conductores y documentación en un único lugar.</p>
+
+            <div class="card">
+                <h4>✨ ¿Qué puede hacer con esta plataforma?</h4>
+                <ul>
+                    <li>Monitorear documentos de conductores en tiempo real</li>
+                    <li>Recibir alertas automáticas sobre vencimientos y anomalías</li>
+                    <li>Gestionar equipos de conductores y subcontratistas</li>
+                    <li>Generar reportes detallados de cumplimiento</li>
+                    <li>Acceder a analytics sobre el estado de su flota</li>
+                </ul>
+            </div>
+
+            <div class="alert alert-info">
+                <strong>💡 Tip:</strong> Este manual está disponible en línea en cualquier momento. Puede descargarlo en PDF usando Ctrl+P (Cmd+P en Mac) e imprime como PDF.
+            </div>
+        </section>
+
+        <!-- Acceso al Sistema -->
+        <section id="acceso">
+            <h2>Acceso al Sistema</h2>
+
+            <h3>Datos de Acceso</h3>
+            <p>Para acceder al sistema, necesitará:</p>
+            <ul>
+                <li>URL de acceso: <code>https://cleaner2.vercel.app</code></li>
+                <li>Email de su empresa (ejecutiva)</li>
+                <li>Contraseña asignada por administrador</li>
+            </ul>
+
+            <h3>Procedimiento de Login</h3>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>
+                        <h4>Ingresar URL</h4>
+                        <p>Abra su navegador y dirígase a https://cleaner2.vercel.app</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>
+                        <h4>Ingresar Credenciales</h4>
+                        <p>Ingrese su email y contraseña en el formulario de login</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div>
+                        <h4>Acceder al Dashboard</h4>
+                        <p>Una vez autenticada, será dirigida al dashboard principal</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-warning">
+                <strong>⚠️ Seguridad:</strong> Nunca comparta su contraseña. Si olvida su contraseña, contacte al administrador del sistema.
+            </div>
+        </section>
+
+        <!-- Dashboard Principal -->
+        <section id="dashboard">
+            <h2>Dashboard Principal</h2>
+            <p>El dashboard es su centro de control. Aquí puede ver de un vistazo el estado general de su operación.</p>
+
+            <h3>Elementos del Dashboard</h3>
+            <div class="grid">
+                <div class="card">
+                    <h4>📄 Total de Documentos</h4>
+                    <p>Cantidad total de documentos registrados en el sistema para todos sus conductores.</p>
+                    <span class="badge badge-primary">Métrica Clave</span>
+                </div>
+
+                <div class="card">
+                    <h4>✅ Documentos Aprobados</h4>
+                    <p>Documentos que han sido validados y están en orden. Indicador de cumplimiento.</p>
+                    <span class="badge badge-success">Positivo</span>
+                </div>
+
+                <div class="card">
+                    <h4>⏳ Documentos Pendientes</h4>
+                    <p>Documentos en proceso de revisión que requieren validación. Requiere atención.</p>
+                    <span class="badge badge-warning">Requiere Acción</span>
+                </div>
+
+                <div class="card">
+                    <h4>❌ Documentos Rechazados</h4>
+                    <p>Documentos no aprobados. Estos requieren corrección antes de ser reapresentados.</p>
+                    <span class="badge badge-info">Atención Requerida</span>
+                </div>
+            </div>
+
+            <h3>¿Cómo usar las tarjetas del Dashboard?</h3>
+            <ol>
+                <li>Las tarjetas muestran números en tiempo real</li>
+                <li>Puede hacer clic en cada tarjeta para filtrar documentos por estado</li>
+                <li>Los números se actualizan automáticamente cada 30 segundos</li>
+                <li>Use estas métricas para obtener visibilidad rápida del estado</li>
+            </ol>
+
+            <h3>Alertas Recientes</h3>
+            <p>La sección "Alertas Recientes" le muestra los últimos eventos importantes:</p>
+            <ul>
+                <li><span class="badge badge-primary">Documentos Subidos</span> - Nuevos documentos en el sistema</li>
+                <li><span class="badge badge-warning">Anomalías Detectadas</span> - Problemas identificados por el sistema</li>
+                <li><span class="badge badge-info">Próximos a Vencer</span> - Documentos con fecha cercana de expiración</li>
+            </ul>
+
+            <div class="alert alert-success">
+                <strong>💡 Tip:</strong> Haga clic en "Ver todas" para acceder a la página completa de alertas con más detalles y filtros avanzados.
+            </div>
+        </section>
+
+        <!-- Gestión de Documentos -->
+        <section id="documentos">
+            <h2>Gestión de Documentos</h2>
+            <p>Los documentos son el corazón del sistema. Aquí aprenderá cómo gestionar la documentación de sus conductores.</p>
+
+            <h3>Acceder a Documentos</h3>
+            <ol>
+                <li>Desde el dashboard, haga clic en la tarjeta "Total de Documentos"</li>
+                <li>O seleccione "Documentos" del menú principal</li>
+                <li>Se mostrará una lista de todos los documentos registrados</li>
+            </ol>
+
+            <h3>Estados de los Documentos</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Estado</th>
+                        <th>Descripción</th>
+                        <th>Acción Requerida</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge badge-success">Aprobado</span></td>
+                        <td>Documento validado y en orden</td>
+                        <td>Ninguna - Todo bien</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-warning">Pendiente</span></td>
+                        <td>En espera de revisión</td>
+                        <td>Revisar y validar</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-info">Rechazado</span></td>
+                        <td>No cumple requisitos</td>
+                        <td>Solicitar corrección</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Filtrar Documentos</h3>
+            <p>Para encontrar rápidamente lo que busca:</p>
+            <ul>
+                <li><strong>Por Estado:</strong> Pendientes, Aprobados o Rechazados</li>
+                <li><strong>Por Tipo:</strong> Licencia, Certificado, Revisión Técnica, etc.</li>
+                <li><strong>Por Conductor:</strong> Busque por nombre o RUT</li>
+                <li><strong>Por Fecha:</strong> Use rangos de fechas para análisis temporal</li>
+            </ul>
+
+            <h3>Validar Documentos</h3>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>
+                        <h4>Seleccionar Documento</h4>
+                        <p>Haga clic en un documento con estado "Pendiente" de la lista</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>
+                        <h4>Revisar Detalles</h4>
+                        <p>Verifique la información y visualice el documento si está disponible</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div>
+                        <h4>Tomar Decisión</h4>
+                        <p>Seleccione "Aprobar" o "Rechazar" según corresponda</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div>
+                        <h4>Confirmar</h4>
+                        <p>El documento se actualiza inmediatamente en el sistema</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <strong>💡 Tip:</strong> Puede usar los filtros para ver solo documentos "Pendientes" y procesarlos en lotes. Esto acelera el flujo de trabajo.
+            </div>
+        </section>
+
+        <!-- Sistema de Alertas -->
+        <section id="alertas">
+            <h2>Sistema de Alertas en Tiempo Real</h2>
+            <p>Las alertas le notifican sobre eventos importantes en el sistema de manera automática.</p>
+
+            <h3>Tipos de Alertas</h3>
+
+            <div class="card">
+                <h4>📤 Documento Subido</h4>
+                <p>Se dispara cuando un conductor carga un documento nuevo en el sistema.</p>
+                <span class="badge badge-primary">Informativo</span>
+            </div>
+
+            <div class="card">
+                <h4>⏰ Próximo a Vencer</h4>
+                <p>Notificación cuando un documento está a menos de 30 días de expiración.</p>
+                <span class="badge badge-warning">Requiere Atención</span>
+            </div>
+
+            <div class="card">
+                <h4>🚨 Anomalía Detectada</h4>
+                <p>Sistema identifica inconsistencias o problemas potenciales en documentación.</p>
+                <span class="badge badge-info">Investigar</span>
+            </div>
+
+            <h3>Gestionar Alertas</h3>
+            <ol>
+                <li>Las alertas aparecen en la sección "Alertas Recientes" del dashboard</li>
+                <li>Haga clic en "Ver todas" para acceder a la página completa de alertas</li>
+                <li>Filtre por tipo, prioridad o fecha según necesite</li>
+                <li>Haga clic en una alerta para ver detalles completos</li>
+                <li>Marque como "Resuelta" una vez que haya tomado acción</li>
+            </ol>
+
+            <div class="alert alert-success">
+                <strong>💡 Tip:</strong> Revise regularmente sus alertas. Un sistema limpio de alertas sin resolver es un indicador de buen manejo operacional.
+            </div>
+        </section>
+
+        <!-- Gestión de Conductores -->
+        <section id="conductores">
+            <h2>Equipo de Conductores</h2>
+            <p>Gestione su equipo de conductores y subcontratistas desde una interfaz centralizada.</p>
+
+            <h3>Ver Conductores</h3>
+            <ol>
+                <li>Desde el menú principal, seleccione "Conductores"</li>
+                <li>Verá una lista de todos sus conductores activos</li>
+                <li>Haga clic en un conductor para ver sus detalles</li>
+            </ol>
+
+            <h3>Información de Conductor</h3>
+            <p>Para cada conductor encontrará:</p>
+            <ul>
+                <li>Nombre y RUT</li>
+                <li>Email y teléfono de contacto</li>
+                <li>Documentos asociados</li>
+                <li>Estado de cumplimiento documentario</li>
+                <li>Histórico de cambios</li>
+            </ul>
+
+            <h3>Gestión de Subcontratistas</h3>
+            <p>La sección "Subcontratistas" permite gestionar empresas terceras:</p>
+            <ol>
+                <li>Registre nueva información de subcontratista</li>
+                <li>Asigne documentación requerida</li>
+                <li>Monitoree estado de cumplimiento</li>
+                <li>Revise histórico de transacciones</li>
+            </ol>
+
+            <div class="alert alert-info">
+                <strong>💡 Tip:</strong> Use la vista de "Conductores" para obtener un resumen rápido del estado de cumplimiento de todo su equipo.
+            </div>
+        </section>
+
+        <!-- Reportes -->
+        <section id="reportes">
+            <h2>Reportes y Analytics</h2>
+            <p>Genere reportes detallados sobre el estado de su operación.</p>
+
+            <h3>Tipos de Reportes Disponibles</h3>
+
+            <div class="card">
+                <h4>📊 Reporte de Cumplimiento</h4>
+                <p>Resumen del estado documentario de toda la flota. Muestra porcentajes de documentos aprobados, pendientes y rechazados.</p>
+                <span class="badge badge-primary">Recomendado Mensual</span>
+            </div>
+
+            <div class="card">
+                <h4>📈 Analytics de Conductores</h4>
+                <p>Análisis detallado de la documentación por conductor. Identifique quién está rezagado.</p>
+                <span class="badge badge-primary">Recomendado Quincenal</span>
+            </div>
+
+            <div class="card">
+                <h4>⏱️ Reporte de Vencimientos</h4>
+                <p>Lista de documentos que vencerán próximamente. Planifique renovaciones con anticipación.</p>
+                <span class="badge badge-primary">Recomendado Semanal</span>
+            </div>
+
+            <h3>Generar un Reporte</h3>
+            <ol>
+                <li>Vaya a "Reportes" en el menú principal</li>
+                <li>Seleccione el tipo de reporte deseado</li>
+                <li>Configure filtros (fecha, conductor, estado, etc.)</li>
+                <li>Haga clic en "Generar"</li>
+                <li>Descargue en formato PDF o Excel</li>
+            </ol>
+
+            <div class="alert alert-success">
+                <strong>💡 Tip:</strong> Programe reportes automáticos para recibirlos en su email regularmente. Esto le ahorra tiempo.
+            </div>
+        </section>
+
+        <!-- FAQ -->
+        <section id="faq">
+            <h2>Preguntas Frecuentes</h2>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>¿Con qué frecuencia debo revisar las alertas?</span>
+                    <span class="faq-arrow">▼</span>
+                </button>
+                <div class="faq-answer">
+                    Se recomienda revisar el dashboard al menos una vez al día. Las alertas críticas se marcan con prioridad alta. Para operaciones de flota grande, revisar 2-3 veces al día es ideal.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>¿Qué significa "Documento Próximo a Vencer"?</span>
+                    <span class="faq-arrow">▼</span>
+                </button>
+                <div class="faq-answer">
+                    El sistema genera una alerta cuando un documento falta menos de 30 días para su fecha de expiración. Esto le da tiempo suficiente para planificar las renovaciones necesarias.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>¿Puedo exportar datos a Excel?</span>
+                    <span class="faq-arrow">▼</span>
+                </button>
+                <div class="faq-answer">
+                    Sí. Todos los reportes pueden descargarse en formato Excel (.xlsx). Haga clic en el botón "Descargar" dentro de cualquier reporte.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>¿Cómo agrego un nuevo conductor?</span>
+                    <span class="faq-arrow">▼</span>
+                </button>
+                <div class="faq-answer">
+                    Vaya a la sección "Gestión de Equipo", haga clic en "Agregar Conductor" e ingrese los datos básicos (nombre, RUT, email). El sistema enviará automáticamente un email de invitación al conductor.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>¿Qué debo hacer si un documento es rechazado?</span>
+                    <span class="faq-arrow">▼</span>
+                </button>
+                <div class="faq-answer">
+                    Cuando rechaza un documento, incluya una razón clara. El conductor recibirá una notificación con las correcciones necesarias. El documento puede ser reapresentado después de ser corregido.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>¿El sistema tiene respaldo de datos?</span>
+                    <span class="faq-arrow">▼</span>
+                </button>
+                <div class="faq-answer">
+                    Sí. El sistema realiza respaldos automáticos diarios. Toda la información está cifrada y almacenada en servidores seguros con redundancia.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>¿Puedo acceder desde mi teléfono?</span>
+                    <span class="faq-arrow">▼</span>
+                </button>
+                <div class="faq-answer">
+                    Sí. La plataforma es totalmente responsiva. Acceda desde cualquier navegador en móvil, tablet o desktop. La experiencia se adapta automáticamente.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>¿Dónde puedo obtener soporte técnico?</span>
+                    <span class="faq-arrow">▼</span>
+                </button>
+                <div class="faq-answer">
+                    Contacte al equipo de administración de TI. También puede revisar nuestra sección de ayuda dentro del sistema usando el icono de pregunta en la esquina superior derecha.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>¿Cada cuánto tiempo se actualizan los números en el dashboard?</span>
+                    <span class="faq-arrow">▼</span>
+                </button>
+                <div class="faq-answer">
+                    Los datos del dashboard se actualizan cada 30 segundos automáticamente. Puede hacer clic en el icono de actualizar para forzar una actualización inmediata.
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>
+            <strong>Última actualización:</strong> Mayo 2026<br>
+            <strong>Versión del Sistema:</strong> 1.0 - Production<br>
+            <strong>Acceso Manual Online:</strong> https://cleaner2.vercel.app/manual-ejecutivas.html<br>
+            <strong>Soporte Técnico:</strong> Contacte al administrador del sistema
+        </p>
+    </footer>
+
+    <!-- JavaScript para FAQ -->
+    <script>
+        document.querySelectorAll('.faq-question').forEach(button => {
+            button.addEventListener('click', () => {
+                const item = button.parentElement;
+                item.classList.toggle('open');
+            });
+        });
+    </script>
+</body>
+</html>
     <style>
         * {
             margin: 0;
