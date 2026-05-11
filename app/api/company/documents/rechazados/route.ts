@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 /**
  * GET /api/company/documents/rechazados
  * Returns rejected documents for both conductors and subcontractors

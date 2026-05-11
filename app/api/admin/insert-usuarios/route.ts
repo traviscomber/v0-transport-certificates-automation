@@ -2,6 +2,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 
+// Mark this route as dynamic to prevent static generation
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     console.log('[v0] Starting user insertion')

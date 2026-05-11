@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { changeDocumentStatus } from '@/lib/document-status-service'
 import { verifyAuth } from '@/lib/auth-middleware'

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 /**
  * GET /api/company/documents/aprobados
  * Returns approved documents for both conductors and subcontractors

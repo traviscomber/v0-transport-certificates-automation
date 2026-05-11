@@ -2,6 +2,8 @@ import { NextResponse, NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAuth } from '@/lib/auth-middleware'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * POST /api/admin/init-document-requirements
  * Initializes the document_requirements table with all required documents for subcontractors
