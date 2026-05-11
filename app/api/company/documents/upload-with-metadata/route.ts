@@ -4,15 +4,15 @@ import { createAdminClient } from '@/lib/supabase/admin'
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
 
-export async function POST(request: NextRequest) {
-  console.log('[v0] Upload endpoint START')
+// Maximum file size: 50MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024
 
+export async function POST(request: NextRequest) {
   try {
     // Parse FormData
     let formData: FormData
     try {
       formData = await request.formData()
-      console.log('[v0] FormData parsed OK')
     } catch (parseError) {
       const msg = parseError instanceof Error ? parseError.message : 'Parse error'
       console.error('[v0] FormData parse failed:', msg)
@@ -25,14 +25,6 @@ export async function POST(request: NextRequest) {
     const documentTypeId = formData.get('document_type_id') as string | null
     const metadataStr = formData.get('metadata') as string | null
 
-    console.log('[v0] FormData fields:', {
-      hasFile: !!file,
-      fileName: file?.name,
-      fileSize: file?.size,
-      driverRut,
-      documentTypeId,
-    })
-
     // Validate required fields
     if (!file) {
       return NextResponse.json({ error: 'File is required' }, { status: 400 })
@@ -42,6 +34,14 @@ export async function POST(request: NextRequest) {
     }
     if (!documentTypeId) {
       return NextResponse.json({ error: 'document_type_id is required' }, { status: 400 })
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: `File size exceeds maximum of 50MB (received: ${(file.size / 1024 / 1024).toFixed(2)}MB)` },
+        { status: 413 }
+      )
     }
 
     // Parse metadata (optional)
