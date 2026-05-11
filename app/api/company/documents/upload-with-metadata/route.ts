@@ -14,12 +14,6 @@ export async function POST(request: NextRequest) {
     const documentTypeId = formData.get('document_type_id') as string
     const uploadedBy = formData.get('uploaded_by') as string
 
-    const file = formData.get('file') as File
-    // driver_id is '1','2','12' etc — NOT a UUID. Use driver_rut to resolve.
-    const driverRut = formData.get('driver_rut') as string
-    const documentTypeId = formData.get('document_type_id') as string
-    const uploadedBy = formData.get('uploaded_by') as string
-
     if (!file || !driverRut || !documentTypeId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
