@@ -258,12 +258,12 @@ export async function POST(request: NextRequest) {
       // Try to clean up storage
       await supabase.storage.from('documents').remove([filePath])
       return NextResponse.json(
-        { 
+        {
+          success: false,
           message: 'Failed to save document record',
-          error: dbError.message,
-          details: dbError.details,
-          hint: (dbError as any).hint,
-          code: dbError.code
+          error: dbError?.message || 'Unknown database error',
+          details: dbError?.details,
+          code: dbError?.code,
         },
         { status: 500 }
       )
