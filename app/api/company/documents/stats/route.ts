@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
  */
 
 import { NextResponse, NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAuth } from '@/lib/auth-middleware'
 
 export async function GET(request: NextRequest) {
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     console.log('[v0] Stats endpoint: Fetching document statistics for user:', user.email)
 
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     if (conductorError) {
       console.error('[v0] Stats endpoint: Error fetching conductor docs:', conductorError)
-      throw conductorError
+      throw new Error(`Conductor docs error: ${conductorError.message}`)
     }
 
     const conductorStats = {
@@ -46,11 +46,7 @@ export async function GET(request: NextRequest) {
     const { data: subDocs, error: subError } = await supabase
       .from('subcontractor_documents')
       .select('status', { count: 'exact', head: false })
-
-    if (subError) {
-      console.error('[v0] Stats endpoint: Error fetching subcontractor docs:', subError)
-      throw subError
-    }
+      .catch(err => ({ data: null, error: err }))
 
     const subStats = {
       total: subDocs?.length || 0,
@@ -64,11 +60,7 @@ export async function GET(request: NextRequest) {
     const { data: certs, error: certError } = await supabase
       .from('certificaciones')
       .select('estado', { count: 'exact', head: false })
-
-    if (certError) {
-      console.error('[v0] Stats endpoint: Error fetching certifications:', certError)
-      throw certError
-    }
+      .catch(err => ({ data: null, error: err }))
 
     const certStats = {
       total: certs?.length || 0,
@@ -91,7 +83,8 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('[v0] Stats endpoint: Error:', error)
+    console.error('[v0] Stats endpoint: Error:', error instanceof Error ? error.message : error)
+    console.error('[v0] Stats endpoint: Stack:', error instanceof Error ? error.stack : '')
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Error fetching stats' },
       { status: 500 }
