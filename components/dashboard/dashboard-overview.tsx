@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { FileText, Shield, Truck, AlertTriangle, CheckCircle, Clock } from "lucide-react"
@@ -26,6 +27,7 @@ export function DashboardOverview() {
       description: "En el sistema",
       icon: FileText,
       status: "active",
+      href: "/dashboard/company/documentos",
     },
     {
       title: "Documentos Aprobados",
@@ -33,6 +35,7 @@ export function DashboardOverview() {
       description: "Validados",
       icon: CheckCircle,
       status: "active",
+      href: "/dashboard/company/documentos/aprobados",
     },
     {
       title: "Documentos Pendientes",
@@ -40,6 +43,7 @@ export function DashboardOverview() {
       description: "En revisión",
       icon: Clock,
       status: "active",
+      href: "/dashboard/company/documentos/pendientes",
     },
     {
       title: "Documentos Vencidos",
@@ -47,11 +51,13 @@ export function DashboardOverview() {
       description: "Requieren renovación",
       icon: AlertTriangle,
       status: "warning",
+      href: "/dashboard/company/documentos/rechazados",
     },
   ])
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [loading, setLoading] = useState(true)
   const { onSync } = useDocumentSync()
+  const router = useRouter()
 
   useEffect(() => {
     const fetchData = async () => {
@@ -98,6 +104,7 @@ export function DashboardOverview() {
             description: "En el sistema",
             icon: FileText,
             status: "active",
+            href: "/dashboard/company/documentos",
           },
           {
             title: "Documentos Aprobados",
@@ -105,6 +112,7 @@ export function DashboardOverview() {
             description: "Validados",
             icon: CheckCircle,
             status: "active",
+            href: "/dashboard/company/documentos/aprobados",
           },
           {
             title: "Documentos Pendientes",
@@ -112,6 +120,7 @@ export function DashboardOverview() {
             description: "En revisión",
             icon: Clock,
             status: "active",
+            href: "/dashboard/company/documentos/pendientes",
           },
           {
             title: "Documentos Rechazados",
@@ -119,6 +128,7 @@ export function DashboardOverview() {
             description: "No validados",
             icon: AlertTriangle,
             status: "warning",
+            href: "/dashboard/company/documentos/rechazados",
           },
         ])
       } catch (error) {
@@ -177,6 +187,7 @@ export function DashboardOverview() {
                   description: "En el sistema",
                   icon: FileText,
                   status: "active",
+                  href: "/dashboard/company/documentos",
                 },
                 {
                   title: "Documentos Aprobados",
@@ -184,6 +195,7 @@ export function DashboardOverview() {
                   description: "Validados",
                   icon: CheckCircle,
                   status: "active",
+                  href: "/dashboard/company/documentos/aprobados",
                 },
                 {
                   title: "Documentos Pendientes",
@@ -191,6 +203,7 @@ export function DashboardOverview() {
                   description: "En revisión",
                   icon: Clock,
                   status: "active",
+                  href: "/dashboard/company/documentos/pendientes",
                 },
                 {
                   title: "Documentos Rechazados",
@@ -198,6 +211,7 @@ export function DashboardOverview() {
                   description: "No validados",
                   icon: AlertTriangle,
                   status: "warning",
+                  href: "/dashboard/company/documentos/rechazados",
                 },
               ])
             }
@@ -267,7 +281,11 @@ export function DashboardOverview() {
       {/* Stats Grid - Responsive */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.title} className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-700 hover:border-orange-500/50 transition-all">
+          <Card 
+            key={stat.title} 
+            className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-700 hover:border-orange-500/50 transition-all cursor-pointer hover:shadow-lg hover:shadow-orange-500/10 transform hover:-translate-y-1"
+            onClick={() => stat.href && router.push(stat.href)}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
               <stat.icon className={`h-5 w-5 ${getStatIconColor(stat.title)}`} />
