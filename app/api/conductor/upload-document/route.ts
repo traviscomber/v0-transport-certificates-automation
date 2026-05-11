@@ -83,11 +83,32 @@ export async function POST(request: NextRequest) {
 
     console.log('[v0] Found conductor:', { id: conductor.id, rut: conductor.rut, nombre_completo: conductor.nombre_completo })
 
-    // Get document type info
+const DOCUMENT_TYPE_MAPPING = {
+  'CEDULA_IDENTIDAD': '3803861c-5ff3-40ba-a6d7-de8245bc3cd2',
+  'LIC_CONDUCIR': '48e5d7a6-2c92-4616-8eed-e56a956e2c6a',
+  'HOJA_VIDA': 'a53defca-5f31-4ef9-893e-e63ce07929f6',
+  'CERT_ANTECEDENTES': '5370a5e6-9d20-4ee3-b19a-e54fdef1c952',
+  'INHABILIDADES_MENORES': 'e17d797e-e9c3-4642-8f36-862a46b371dc',
+  'CONTRATO_TRABAJO': '3b53c0a2-8607-4c2b-85cf-96a281797c6a',
+  'CERT_AFP': 'c6b67a33-a1d8-4e62-bbe8-01c22e9ff8c0',
+  'REVISION_TECNICA': '4c3d940c-93ae-4fc7-ab57-8a21b89746a6',
+  'SOAP': '88386b93-cdb1-427a-bad0-fde2b6e720c8',
+}
+
+    // Get document type info - look up by ID
+    const docTypeId = DOCUMENT_TYPE_MAPPING[documentType as keyof typeof DOCUMENT_TYPE_MAPPING]
+    
+    if (!docTypeId) {
+      return NextResponse.json(
+        { message: `Invalid document type: ${documentType}` },
+        { status: 400 }
+      )
+    }
+
     const { data: docType, error: docTypeError } = await supabase
       .from('document_types')
       .select('*')
-      .eq('code', documentType)
+      .eq('id', docTypeId)
       .single()
 
     if (docTypeError || !docType) {
