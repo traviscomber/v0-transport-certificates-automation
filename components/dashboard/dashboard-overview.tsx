@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { FileText, Shield, Truck, AlertTriangle, CheckCircle, Clock } from "lucide-react"
 import { useDocumentSync } from "@/contexts/document-sync-context"
+import { StatCard } from "./stat-card"
+import { AlertItem } from "./alert-item"
 
 interface Alert {
   id: string
@@ -22,8 +23,17 @@ interface Alert {
   document_type?: string
 }
 
+interface Stat {
+  title: string
+  value: string
+  description: string
+  icon: any
+  status: "active" | "warning"
+  href: string
+}
+
 export function DashboardOverview() {
-  const [stats, setStats] = useState([
+  const [stats, setStats] = useState<Stat[]>([
     {
       title: "Total de Documentos",
       value: "0",
@@ -49,9 +59,9 @@ export function DashboardOverview() {
       href: "/dashboard/company/documentos/pendientes",
     },
     {
-      title: "Documentos Vencidos",
+      title: "Documentos Rechazados",
       value: "0",
-      description: "Requieren renovación",
+      description: "No validados",
       icon: AlertTriangle,
       status: "warning",
       href: "/dashboard/company/documentos/rechazados",
@@ -201,43 +211,6 @@ export function DashboardOverview() {
     return () => unsubscribe()
   }, [onSync])
 
-  const getStatusBadge = (type: string) => {
-    switch (type) {
-      case "DOCUMENT_APPROVED":
-        return (
-          <Badge variant="default" className="bg-green-600 text-black border border-green-600 hover:bg-green-700">
-            Aprobado
-          </Badge>
-        )
-      case "DOCUMENT_PENDING":
-        return <Badge variant="secondary" className="bg-yellow-200 text-black hover:bg-yellow-200">Pendiente</Badge>
-      case "DOCUMENT_REJECTED":
-        return <Badge variant="destructive" className="bg-red-500 text-black hover:bg-red-600">Rechazado</Badge>
-      default:
-        return <Badge variant="outline">Desconocido</Badge>
-    }
-  }
-
-  const getStatusIcon = (type: string) => {
-    switch (type) {
-      case "DOCUMENT_APPROVED":
-        return <CheckCircle className="h-4 w-4 text-green-600" />
-      case "DOCUMENT_PENDING":
-        return <Clock className="h-4 w-4 text-yellow-400" />
-      case "DOCUMENT_REJECTED":
-        return <AlertTriangle className="h-4 w-4 text-red-500" />
-      default:
-        return null
-    }
-  }
-
-  const getStatIconColor = (title: string): string => {
-    if (title.includes("Aprobados")) return "text-green-600"
-    if (title.includes("Pendientes")) return "text-yellow-400"
-    if (title.includes("Rechazados")) return "text-red-500"
-    return "text-primary"
-  }
-
   return (
     <div className="space-y-6">
       {/* Header Section */}
@@ -252,27 +225,22 @@ export function DashboardOverview() {
         </p>
       </div>
 
-      {/* Stats Grid - Responsive */}
+      {/* Stats Grid - Using memoized StatCard components */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card 
-            key={stat.title} 
-            className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-700 hover:border-orange-500/50 transition-all cursor-pointer hover:shadow-lg hover:shadow-orange-500/10 transform hover:-translate-y-1"
-            onClick={() => stat.href && router.push(stat.href)}
-          >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
-              <stat.icon className={`h-5 w-5 ${getStatIconColor(stat.title)}`} />
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="text-3xl font-bold text-foreground">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">{stat.description}</p>
-            </CardContent>
-          </Card>
+          <StatCard 
+            key={stat.title}
+            title={stat.title}
+            value={stat.value}
+            description={stat.description}
+            icon={stat.icon}
+            status={stat.status}
+            href={stat.href}
+          />
         ))}
       </div>
 
-      {/* Recent Alerts - Prominent Section */}
+      {/* Recent Alerts - Using memoized AlertItem components */}
       {alerts.length > 0 && (
         <Card className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-700 col-span-full">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
@@ -294,36 +262,17 @@ export function DashboardOverview() {
           <CardContent>
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {alerts.slice(0, 15).map((alert) => (
-                <div 
-                  key={alert.id} 
-                  className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 p-4 border border-slate-700 rounded-lg hover:bg-slate-800/50 hover:border-orange-500/30 transition-all cursor-pointer"
-                  onClick={() => router.push('/dashboard/company/alertas')}
-                >
-                  <div className="flex items-start space-x-3 flex-1 min-w-0">
-                    <div className="mt-0.5 flex-shrink-0">{getStatusIcon(alert.type)}</div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm text-foreground">{alert.title}</p>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{alert.message}</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(alert.created_at).toLocaleDateString("es-ES", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                        {alert.source === 'document_upload' && (
-                          <Badge variant="secondary" className="text-xs">
-                            {alert.metadata?.document_type || 'Documento'}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex-shrink-0">{getStatusBadge(alert.type)}</div>
-                </div>
+                <AlertItem
+                  key={alert.id}
+                  id={alert.id}
+                  type={alert.type}
+                  title={alert.title}
+                  message={alert.message}
+                  created_at={alert.created_at}
+                  source={alert.source}
+                  metadata={alert.metadata}
+                  onNavigate={() => router.push('/dashboard/company/alertas')}
+                />
               ))}
             </div>
             {alerts.length > 15 && (
