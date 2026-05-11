@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { generateCompanyFilePath } from '@/lib/utils/file-naming'
 
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
@@ -82,9 +83,35 @@ export async function POST(request: NextRequest) {
     const conductorUUID = conductor.id
     console.log('[v0] Conductor found:', conductorUUID)
 
-    // Upload file to Supabase Storage
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-    const storagePath = `drivers/${conductorUUID}/${Date.now()}_${safeName}`
+    // Get document type name for normalized file path
+    const { data: docType, error: docTypeError } = await adminClient
+      .from('document_types')
+      .select('name')
+      .eq('id', documentTypeId)
+      .maybeSingle()
+
+    if (docTypeError || !docType) {
+      console.error('[v0] Document type lookup failed')
+      return NextResponse.json(
+        { error: 'Failed to get document type' },
+        { status: 500 }
+      )
+    }
+
+    // Generate normalized file path: drivers/{conductorId}/{DOCTYPE}_{RUT}_{YYYYMMDD}_{HASH}.{ext}
+    const documentTypeCode = docType.name
+      .replace(/\s+/g, '_')
+      .toUpperCase()
+      .substring(0, 30)
+    
+    const storagePath = generateCompanyFilePath(
+      conductorUUID,
+      documentTypeCode,
+      driverRut,
+      file.name
+    )
+
+    console.log('[v0] Generated normalized storage path:', storagePath)
 
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
@@ -119,7 +146,7 @@ export async function POST(request: NextRequest) {
     const insertPayload: Record<string, any> = {
       conductor_id: conductorUUID,
       document_type_id: documentTypeId,
-      original_filename: file.name,
+      original_filename: file.name, // Keep original name for reference
       file_url: fileUrl,
       validation_status: 'pending',
       ai_processing_status: 'pending',

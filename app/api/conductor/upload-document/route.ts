@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { v4 as uuidv4 } from 'uuid'
 import { generateDocumentUploadAlerts } from '@/lib/document-alerts-generator'
 import { extractDocumentMetadata } from '@/lib/ai-document-processor'
 import { normalizeDocumentType, determineValidationStatus } from '@/lib/document-classification'
 import { notifyExecutivas } from '@/lib/notifications-helper'
+import { generateConductorFilePath } from '@/lib/utils/file-naming'
 import { cookies } from 'next/headers'
 
 // Set max duration for the route (30 seconds - Vercel free plan limit)
@@ -119,10 +119,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate file path
-    const fileExtension = file.name.split('.').pop()
-    const fileName = `${uuidv4()}.${fileExtension}`
-    const filePath = `conductor-documents/${conductorId}/${fileName}`
+    // Generate normalized file path using standardized naming convention
+    // Format: conductor-documents/{conductorId}/{DOCTYPE}_{RUT}_{YYYYMMDD}_{HASH}.{ext}
+    const documentTypeCode = Object.keys(DOCUMENT_TYPE_MAPPING).find(
+      key => DOCUMENT_TYPE_MAPPING[key as keyof typeof DOCUMENT_TYPE_MAPPING] === docTypeId
+    ) || 'UNKNOWN'
+    
+    const filePath = generateConductorFilePath(
+      conductor.id,
+      documentTypeCode,
+      conductor.rut,
+      file.name
+    )
+
+    console.log('[v0] Generated normalized file path:', filePath)
 
     // Upload file to storage
     const fileBuffer = await file.arrayBuffer()
