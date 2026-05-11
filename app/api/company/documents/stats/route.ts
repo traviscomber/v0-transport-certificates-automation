@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     const conductorStats = {
       total: conductorDocs?.length || 0,
-      pendientes: (conductorDocs || []).filter(d => d.validation_status === 'pending' || !d.validation_status).length,
+      pendientes: (conductorDocs || []).filter(d => d.validation_status === 'pending').length,
       aprobados: (conductorDocs || []).filter(d => d.validation_status === 'approved').length,
       rechazados: (conductorDocs || []).filter(d => d.validation_status === 'rejected').length,
       vencidos: 0
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     const subStats = {
       total: subDocs?.length || 0,
-      pendientes: (subDocs || []).filter(d => d.status === 'pendiente' || !d.status).length,
+      pendientes: (subDocs || []).filter(d => d.status === 'pendiente').length,
       aprobados: (subDocs || []).filter(d => d.status === 'aprobado').length,
       rechazados: (subDocs || []).filter(d => d.status === 'rechazado').length,
       vencidos: 0
