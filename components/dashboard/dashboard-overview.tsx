@@ -18,6 +18,8 @@ interface Alert {
   is_dismissed: boolean
   created_at: string
   metadata?: Record<string, any>
+  source?: string
+  document_type?: string
 }
 
 export function DashboardOverview() {
