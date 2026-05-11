@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 30 // ISR: revalidate every 30 seconds
 
 // Production schema: alerts_log table with ejecutiva_nombre, status, action_type fields
 
@@ -17,8 +18,6 @@ export async function GET(request: Request) {
     const status = url.searchParams.get('status')
     const limit = parseInt(url.searchParams.get('limit') || '100')
     const offset = parseInt(url.searchParams.get('offset') || '0')
-
-    console.log('[v0] Fetching alerts with limit:', limit)
 
     // First, get alerts from the alerts table
     let alertsQuery = supabase
@@ -210,15 +209,19 @@ export async function GET(request: Request) {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     }).slice(0, limit)
 
-    console.log('[v0] Total alerts generated:', sortedAlerts.length)
-
-    return NextResponse.json({
+    const response = NextResponse.json({
       alerts: sortedAlerts,
       total: sortedAlerts.length,
       limit,
       offset,
       ejecutiva: ejecutiva || null,
     })
+
+    // Set cache headers for optimal performance
+    response.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
+    response.headers.set('Content-Type', 'application/json')
+
+    return response
   } catch (error: any) {
     console.error('[ALERTS API] GET unexpected error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })

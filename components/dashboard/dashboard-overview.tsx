@@ -65,28 +65,27 @@ export function DashboardOverview() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch alerts for display - with cache busting
-        const alertsRes = await fetch(`/api/alerts?limit=50&_t=${Date.now()}`, {
-          cache: "no-store",
+        // Fetch alerts - use etag caching instead of cache-busting
+        const alertsRes = await fetch(`/api/alerts?limit=50`, {
+          cache: "default",
+          headers: { 'Cache-Control': 'max-age=30' }
         })
         if (alertsRes.ok) {
           const alertsData = await alertsRes.json()
           const alertsList = Array.isArray(alertsData) ? alertsData : (alertsData.alerts || [])
-          console.log('[v0] Dashboard: Loaded alerts:', alertsList.length)
           setAlerts(alertsList)
         }
 
-        // Fetch document stats from dedicated endpoint (synced with pendientes page logic)
-        const statsRes = await fetch(`/api/company/documents/stats?_t=${Date.now()}`, {
-          cache: "no-store",
+        // Fetch document stats with proper cache headers
+        const statsRes = await fetch(`/api/company/documents/stats`, {
+          cache: "default",
+          headers: { 'Cache-Control': 'max-age=30' }
         })
         
         if (statsRes.ok) {
           const statsData = await statsRes.json()
           const stats = statsData.stats || {}
           const conductorStats = stats.conductores || {}
-          
-          console.log('[v0] Dashboard: Stats received -', conductorStats)
 
           setStats([
             {
@@ -133,11 +132,10 @@ export function DashboardOverview() {
     // Initial fetch
     fetchData()
 
-    // Refresh every 10 seconds to keep alerts up to date
+    // Refresh every 30 seconds instead of 10 (66% reduction in API calls)
     const intervalId = setInterval(() => {
-      console.log('[v0] Dashboard: Auto-refreshing data')
       fetchData()
-    }, 10000)
+    }, 30000)
 
     return () => clearInterval(intervalId)
   }, [])
@@ -145,16 +143,14 @@ export function DashboardOverview() {
   // Listen for document sync events and refetch dashboard stats
   useEffect(() => {
     const unsubscribe = onSync((event) => {
-      console.log('[v0] DashboardOverview: Received sync event', event.type)
-      
-      // Refetch dashboard stats when documents change
+      // Only refetch on actual document changes, not on every event
       if (event.type === 'document_uploaded' || event.type === 'document_status_changed') {
-        console.log('[v0] DashboardOverview: Refetching stats due to sync event')
         
         const fetchUpdatedStats = async () => {
           try {
-            const statsRes = await fetch(`/api/company/documents/stats?_t=${Date.now()}`, {
-              cache: "no-store",
+            const statsRes = await fetch(`/api/company/documents/stats`, {
+              cache: "default",
+              headers: { 'Cache-Control': 'max-age=30' }
             })
             
             if (statsRes.ok) {
@@ -198,15 +194,15 @@ export function DashboardOverview() {
               ])
             }
           } catch (error) {
-            console.error('[v0] DashboardOverview: Error refetching stats:', error)
+            console.error('[v0] Error refetching stats:', error)
           }
         }
-
+        
         fetchUpdatedStats()
       }
     })
-
-    return unsubscribe
+    
+    return () => unsubscribe()
   }, [onSync])
 
   const getStatusBadge = (type: string) => {

@@ -1,9 +1,12 @@
 export const dynamic = 'force-dynamic'
+export const revalidate = 30 // ISR: revalidate every 30 seconds
+
 /**
  * GET /api/company/documents/stats
  * Returns document statistics for the dashboard
  * Includes counts for pendientes, aprobados, rechazados per module
  * SYNCED with /dashboard/company/documentos/pendientes logic
+ * Cached for 30s with stale-while-revalidate for optimal performance
  */
 
 import { NextResponse, NextRequest } from 'next/server'
@@ -14,7 +17,6 @@ export async function GET(request: NextRequest) {
   try {
     const { user, error: authError } = await verifyAuth(request)
     if (authError || !user) {
-      console.log('[v0] Stats endpoint: Unauthorized')
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -23,15 +25,12 @@ export async function GET(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    console.log('[v0] Stats endpoint: Fetching document statistics for user:', user.email)
-
     // Get conductor documents stats - SYNCED with pendientes page logic
     const { data: conductorDocs, error: conductorError } = await supabase
       .from('uploaded_documents')
       .select('validation_status', { count: 'exact', head: false })
 
     if (conductorError) {
-      console.error('[v0] Stats endpoint: Error fetching conductor docs:', conductorError)
       throw new Error(`Conductor docs error: ${conductorError.message}`)
     }
 
@@ -48,10 +47,8 @@ export async function GET(request: NextRequest) {
       vencidos: 0
     }
 
-    console.log('[v0] Stats endpoint: Conductor stats -', conductorStats)
-
     // Get subcontractor documents stats
-    const { data: subDocs, error: subError } = await supabase
+    const { data: subDocs } = await supabase
       .from('subcontractor_documents')
       .select('status', { count: 'exact', head: false })
 
@@ -64,7 +61,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get certification stats
-    const { data: certs, error: certError } = await supabase
+    const { data: certs } = await supabase
       .from('certificaciones')
       .select('estado', { count: 'exact', head: false })
 
@@ -81,16 +78,19 @@ export async function GET(request: NextRequest) {
       certificaciones: certStats
     }
 
-    console.log('[v0] Stats endpoint: Returning updated stats', stats)
-
-    return NextResponse.json({
+    const response = NextResponse.json({
       stats,
       timestamp: new Date().toISOString()
     })
 
+    // Set cache headers for optimal performance
+    response.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
+    response.headers.set('Content-Type', 'application/json')
+
+    return response
+
   } catch (error) {
-    console.error('[v0] Stats endpoint: Error:', error instanceof Error ? error.message : error)
-    console.error('[v0] Stats endpoint: Stack:', error instanceof Error ? error.stack : '')
+    console.error('[v0] Stats endpoint error:', error instanceof Error ? error.message : error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Error fetching stats' },
       { status: 500 }
