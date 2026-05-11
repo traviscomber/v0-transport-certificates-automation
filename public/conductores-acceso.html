@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credenciales de Acceso - Transportes Labbe</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+        }
+
+        .stats {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            display: flex;
+            gap: 30px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .stats span {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            padding: 0 30px;
+            padding-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        thead {
+            background: #f0f2f5;
+            position: sticky;
+            top: 0;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f2f5;
+            font-size: 14px;
+            color: #555;
+        }
+
+        tbody tr:hover {
+            background: #f9f9f9;
+        }
+
+        tr:nth-child(even) {
+            background: #fafbfc;
+        }
+
+        .rut {
+            font-weight: 600;
+            color: #667eea;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .password {
+            background: #fff3cd;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            font-weight: 500;
+            color: #856404;
+        }
+
+        .nombre {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .highlight {
+            background: #fff59d;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .footer {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+
+            .search-box {
+                min-width: 100%;
+            }
+
+            .button-group {
+                width: 100%;
+            }
+
+            button {
+                flex: 1;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 Transportes Labbe</h1>
+            <p>Credenciales de Acceso - Portal de Conductores</p>
+        </div>
+
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Buscar por RUT o nombre...">
+            </div>
+            <div class="button-group">
+                <button onclick="descargarCSV()">📥 Descargar CSV</button>
+                <button onclick="imprimirTabla()">🖨️ Imprimir</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div>Total Conductores: <span id="totalCount">313</span></div>
+            <div>Mostrando: <span id="displayCount">313</span></div>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="conductoresTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>RUT</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Contraseña</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+            <div id="noResults" class="no-results" style="display: none;">
+                No se encontraron resultados
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Documento generado: <strong>11 de Mayo, 2026</strong> | Confidencial - Solo para uso interno</p>
+        </div>
+    </div>
+
+    <script>
+        const conductores = DATA_CONDUCTORES;
+        let filteredData = conductores;
+
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                document.getElementById('noResults').style.display = 'block';
+                document.getElementById('conductoresTable').style.display = 'none';
+                document.getElementById('displayCount').textContent = '0';
+                return;
+            }
+
+            document.getElementById('noResults').style.display = 'none';
+            document.getElementById('conductoresTable').style.display = 'table';
+
+            data.forEach((conductor, index) => {
+                const rut = conductor.rut;
+                const digits = rut.replace(/\D/g, '');
+                const last4 = digits.slice(-4);
+                const password = `labbe${last4}`;
+                const nombreCompleto = `${conductor.nombres} ${conductor.apellido_paterno}${conductor.apellido_materno ? ' ' + conductor.apellido_materno : ''}`;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td class="rut">${rut}</td>
+                    <td class="nombre">${conductor.nombres}</td>
+                    <td>${conductor.apellido_paterno}</td>
+                    <td class="password">${password}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.getElementById('displayCount').textContent = data.length;
+        }
+
+        document.getElementById('searchInput').addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            filteredData = conductores.filter(c => {
+                const searchFields = `${c.rut.toLowerCase()} ${c.nombres.toLowerCase()} ${c.apellido_paterno.toLowerCase()}`;
+                return searchFields.includes(searchTerm);
+            });
+            renderTable(filteredData);
+        });
+
+        function descargarCSV() {
+            const csv = [
+                ['#', 'RUT', 'Nombre', 'Apellido', 'Contraseña'],
+                ...conductores.map((c, i) => {
+                    const digits = c.rut.replace(/\D/g, '');
+                    const last4 = digits.slice(-4);
+                    const password = `labbe${last4}`;
+                    return [i + 1, c.rut, c.nombres, c.apellido_paterno, password];
+                })
+            ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.setAttribute('href', URL.createObjectURL(blob));
+            link.setAttribute('download', `conductores-acceso-${new Date().getTime()}.csv`);
+            link.click();
+        }
+
+        function imprimirTabla() {
+            const printWindow = window.open('', '', 'height=600,width=1200');
+            const tabla = document.getElementById('conductoresTable').outerHTML;
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Credenciales de Acceso - Transportes Labbe</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        h1 { text-align: center; color: #667eea; }
+                        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+                        th { background: #667eea; color: white; }
+                        tr:nth-child(even) { background: #f9f9f9; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Transportes Labbe - Credenciales de Acceso</h1>
+                    ${tabla}
+                    <p style="margin-top: 20px; text-align: center; color: #999; font-size: 12px;">
+                        Documento confidencial. Imprimido el ${new Date().toLocaleDateString('es-ES')}
+                    </p>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            setTimeout(() => printWindow.print(), 250);
+        }
+
+        // Insertar datos
+        const DATA_CONDUCTORES = DATA_HERE;
+
+        // Renderizar tabla inicial
+        renderTable(conductores);
+    </script>
+
+    <script>
+        // Datos de conductores
+        const DATA_HERE = [{"rut":"10071434-5","nombres":"Julio Nelson","apellido_paterno":"Aguilera Diaz","apellido_materno":null},{"rut":"10147115-2","nombres":"Wilson Hernan","apellido_paterno":"Chocobar Gonzalez","apellido_materno":null},{"rut":"10190528-4","nombres":"Luis Ignacio","apellido_paterno":"Urrutia Tiznado","apellido_materno":null},{"rut":"10242490-5","nombres":"Carlos Marcelo","apellido_paterno":"Rebolledo Rojas","apellido_materno":null},{"rut":"10254247-9","nombres":"Jose Rodolfo","apellido_paterno":"Vasquez Balboa","apellido_materno":null},{"rut":"10286272-4","nombres":"Luis Fernando","apellido_paterno":"Bravo Saldias","apellido_materno":null},{"rut":"10356240-6","nombres":"Miguel Angel","apellido_paterno":"Macias Macias","apellido_materno":null},{"rut":"10511943-7","nombres":"Jose Mariano","apellido_paterno":"Benitiz Vega","apellido_materno":null},{"rut":"10516965-5","nombres":"Miguel Angel","apellido_paterno":"Sepulveda  Verdugo","apellido_materno":null},{"rut":"10529089-6","nombres":"Danilo Enrique","apellido_paterno":"Gaete Fuenzalida","apellido_materno":null},{"rut":"10548573-8","nombres":"José Luis","apellido_paterno":"Ubilla Mendoza","apellido_materno":null},{"rut":"10573425-5","nombres":"Juan Octavio","apellido_paterno":"Lillo Espinoza","apellido_materno":null},{"rut":"10583929-4","nombres":"Cristian Emilio","apellido_paterno":"Hidalgo Yanten","apellido_materno":null},{"rut":"10623289-K","nombres":"Marcelo Antonio","apellido_paterno":"Barriga Contreras","apellido_materno":null},{"rut":"10631473-K","nombres":"Juan Manuel","apellido_paterno":"Sarralde Aravena","apellido_materno":null},{"rut":"10697923-5","nombres":"Roberto Eugenio","apellido_paterno":"Suarez Lopez","apellido_materno":null},{"rut":"10748573-3","nombres":"Andrés Lisandro","apellido_paterno":"Ramírez Tapia","apellido_materno":null},{"rut":"10813156-K","nombres":"Daniel Hernan","apellido_paterno":"Pacheco  Villacura","apellido_materno":null},{"rut":"10842565-2","nombres":"Ignacio Santiago","apellido_paterno":"Burgos Alamos","apellido_materno":null},{"rut":"10848573-5","nombres":"Héctor Galaz","apellido_paterno":"Fuentes","apellido_materno":null},{"rut":"10866252-2","nombres":"Antonio Renan","apellido_paterno":"Wolpi Saldias","apellido_materno":null},{"rut":"10891710-5","nombres":"Orlando Del Carmen","apellido_paterno":"Mendez Gutierrez","apellido_materno":null},{"rut":"10907750-K","nombres":"Adolfo","apellido_paterno":"Gonzalez Meza","apellido_materno":null},{"rut":"10990624-7","nombres":"Pedro Enrique","apellido_paterno":"Cortes Rojas","apellido_materno":null},{"rut":"11048573-3","nombres":"José Rodolfo","apellido_paterno":"Vásquez Balboa","apellido_materno":null},{"rut":"11114172-K","nombres":"Segundo German","apellido_paterno":"Punolaf Queupumil","apellido_materno":null},{"rut":"11142090-4","nombres":"Dorian Gilberto","apellido_paterno":"Jamett Maturana","apellido_materno":null},{"rut":"11185990-6","nombres":"Manuel Modesto","apellido_paterno":"Navarrete Valdebenito","apellido_materno":null},{"rut":"11248573-3","nombres":"Hernán Osvaldo","apellido_paterno":"Gutiérrez Muñoz","apellido_materno":null},{"rut":"11271462-6","nombres":"Andrés Marcelo","apellido_paterno":"Santos Fuentes","apellido_materno":null},{"rut":"11363580-0","nombres":"Mario Enrique","apellido_paterno":"Corona Madrid","apellido_materno":null},{"rut":"11412638-1","nombres":"Claudio Antonio Dionisio","apellido_paterno":"Vilogron Paredes","apellido_materno":null},{"rut":"11434690-K","nombres":"Luis Patricio","apellido_paterno":"Tello Reyes","apellido_materno":null},{"rut":"11534975-9","nombres":"Jose Miguel","apellido_paterno":"Alarcon Aguilera","apellido_materno":null},{"rut":"11567390-4","nombres":"Sepulveda","apellido_paterno":"Nelson","apellido_materno":null},{"rut":"11607612-8","nombres":"Jorge Antonio","apellido_paterno":"Quintanilla Catalán","apellido_materno":null},{"rut":"11618935-6","nombres":"Francisco Javier","apellido_paterno":"Oyanadel Ramos","apellido_materno":null},{"rut":"11665170-K","nombres":"Juan Rodolfo","apellido_paterno":"Soto Zuñiga","apellido_materno":null},{"rut":"11801151-1","nombres":"Jhon Chavarria","apellido_paterno":"Muñoz","apellido_materno":null},{"rut":"11836287-K","nombres":"Waldo Agustin","apellido_paterno":"Saldaño Baez","apellido_materno":null},{"rut":"11838643-4","nombres":"Felipe Antonio","apellido_paterno":"Gonzalez Molina","apellido_materno":null},{"rut":"11848573-2","nombres":"Edolfo García","apellido_paterno":"López","apellido_materno":null},{"rut":"11947260-1","nombres":"Juan Andres","apellido_paterno":"Astorga Aros","apellido_materno":null},{"rut":"11948573-0","nombres":"Arnoldo Carrasco","apellido_paterno":"García","apellido_materno":null},{"rut":"11963927-1","nombres":"Oscar Antonio","apellido_paterno":"Landero Vera","apellido_materno":null},{"rut":"11966473-K","nombres":"Juan Felix","apellido_paterno":"Saez Paredes","apellido_materno":null},{"rut":"11971405-2","nombres":"Carlos Alberto","apellido_paterno":"Baeza Infante","apellido_materno":null},{"rut":"11990292-4","nombres":"Jose Antonio","apellido_paterno":"Puebla Quezada","apellido_materno":null},{"rut":"12.345.678-9","nombres":"Juan","apellido_paterno":"Pérez","apellido_materno":"García"},{"rut":"12022695-9","nombres":"Marco Antonio","apellido_paterno":"Sanhueza Espino","apellido_materno":null},{"rut":"12044190-6","nombres":"Victor Marcel","apellido_paterno":"Jimenez Reyes","apellido_materno":null},{"rut":"12083320-0","nombres":"Roberto Alonso","apellido_paterno":"Lopez Hernandez","apellido_materno":null},{"rut":"12097721-0","nombres":"Luis Walter","apellido_paterno":"Jimenez Sepulveda","apellido_materno":null},{"rut":"12141459-7","nombres":"Rafael Eduardo","apellido_paterno":"Vidal Chavarria","apellido_materno":null},{"rut":"12271447-0","nombres":"Mauricio Alberto","apellido_paterno":"Opazo Galloso","apellido_materno":null},{"rut":"12369186-5","nombres":"Hernan Segundo","apellido_paterno":"Cabrera Avila","apellido_materno":null},{"rut":"12393328-1","nombres":"Juan  German","apellido_paterno":"Aguilar Valenzuela","apellido_materno":null},{"rut":"12457226-6","nombres":"Nelson Alejandro","apellido_paterno":"Abarca Leiva","apellido_materno":null},{"rut":"12472735-9","nombres":"Sergio Alejandro","apellido_paterno":"Faundez Mancilla","apellido_materno":null},{"rut":"12481902-4","nombres":"Ambrosio","apellido_paterno":"Casanova Naavarrete","apellido_materno":null},{"rut":"12509107-5","nombres":"Alejandro Daniel","apellido_paterno":"Iquilio Abarzua","apellido_materno":null},{"rut":"12548573-4","nombres":"Héctor Pacheco","apellido_paterno":"Medina","apellido_materno":null},{"rut":"12627398-3","nombres":"Gabriel Andres","apellido_paterno":"Araya Aguilar","apellido_materno":null},{"rut":"12648573-9","nombres":"Daniel Alejandro","apellido_paterno":"Sepúlveda Negrón","apellido_materno":null},{"rut":"12671737-7","nombres":"Cristian Mauricio","apellido_paterno":"Jimenez Reyes","apellido_materno":null},{"rut":"12676471-5","nombres":"Miguel Angel","apellido_paterno":"Ortiz Romero","apellido_materno":null},{"rut":"12748573-1","nombres":"Escalona García","apellido_paterno":"Torres","apellido_materno":null},{"rut":"12756249-0","nombres":"Genaro Francisco","apellido_paterno":"Zurita Hernandez","apellido_materno":null},{"rut":"12785037-2","nombres":"Fernando Edinson","apellido_paterno":"Darat Candia","apellido_materno":null},{"rut":"12794947-6","nombres":"Jose Felix","apellido_paterno":"Castillo Oyarzo","apellido_materno":null},{"rut":"12869737-3","nombres":"Pablo Cesar","apellido_paterno":"Soto Cruz","apellido_materno":null},{"rut":"12879880-3","nombres":"Juan Manuel","apellido_paterno":"Vargas Jerve","apellido_materno":null},{"rut":"12880784-5","nombres":"Luis Eduardo","apellido_paterno":"Perez Vargas","apellido_materno":null},{"rut":"12920772-8","nombres":"Ivan Diaz","apellido_paterno":"Rivas","apellido_materno":null},{"rut":"12924248-5","nombres":"Richard Antonio","apellido_paterno":"Aguilera Contreras","apellido_materno":null},{"rut":"12967316-8","nombres":"Cesar Augusto","apellido_paterno":"Romero Baez","apellido_materno":null},{"rut":"12995031-5","nombres":"Ivan Arturo","apellido_paterno":"Cuevas Gatica","apellido_materno":null},{"rut":"13.456.789-0","nombres":"María","apellido_paterno":"González","apellido_materno":"López"},{"rut":"13049990-2","nombres":"Sergio Albino","apellido_paterno":"Jerez Duran","apellido_materno":null},{"rut":"13131472-8","nombres":"Fernando Antonio","apellido_paterno":"Venegas Sandoval","apellido_materno":null},{"rut":"13138612-5","nombres":"Victor Rogelio","apellido_paterno":"San Martin Campos","apellido_materno":null},{"rut":"13152123-5","nombres":"Rodolfo Rodrigo","apellido_paterno":"Huenchullán Mardones","apellido_materno":null},{"rut":"13269446-K","nombres":"Raul Erasmo","apellido_paterno":"Chandia Zuñiga","apellido_materno":null},{"rut":"13277753-5","nombres":"Patricio Aurelio","apellido_paterno":"Rivas Puentes","apellido_materno":null},{"rut":"13353956-5","nombres":"Luis Hernan","apellido_paterno":"Iturriaga Barahona","apellido_materno":null},{"rut":"13401728-7","nombres":"Cuevas Gatica","apellido_paterno":"Ariel Alejandro","apellido_materno":null},{"rut":"13465290-K","nombres":"Orlando Alfonso","apellido_paterno":"Videla Jorquera","apellido_materno":null},{"rut":"13465548-8","nombres":"Carlos","apellido_paterno":"Miranda Diaz","apellido_materno":null},{"rut":"13498752-9","nombres":"Claudio Alejandro","apellido_paterno":"Painequeo Concha","apellido_materno":null},{"rut":"13548573-4","nombres":"Isidro García","apellido_paterno":"Fuentes","apellido_materno":null},{"rut":"13548573-5","nombres":"Lara García","apellido_paterno":"Fuentes","apellido_materno":null},{"rut":"13548573-6","nombres":"Luis Walter","apellido_paterno":"Jiménez Sepúlveda","apellido_materno":null},{"rut":"13568803-7","nombres":"Hector Antonio","apellido_paterno":"Galaz Contreras","apellido_materno":null},{"rut":"13665163-3","nombres":"Pablo Danilo","apellido_paterno":"Briones Briones","apellido_materno":null},{"rut":"13715309-2","nombres":"Erik Hernan","apellido_paterno":"Zuñiga Perez","apellido_materno":null},{"rut":"13773888-0","nombres":"Rodrigo Andres","apellido_paterno":"Sarralde Diaz","apellido_materno":null},{"rut":"13835882-8","nombres":"Javier Ramon","apellido_paterno":"Fuenzalida Almuna","apellido_materno":null},{"rut":"13839392-5","nombres":"Fernando  Andres","apellido_paterno":"Huenchul  Zambrano","apellido_materno":null},{"rut":"13839705-K","nombres":"Alexis Bladimir","apellido_paterno":"Calfin Araya","apellido_materno":null},{"rut":"13948573-2","nombres":"Diego Galdame","apellido_paterno":"González","apellido_materno":null},{"rut":"14.567.890-1","nombres":"Carlos","apellido_paterno":"Rodríguez","apellido_materno":"Silva"},{"rut":"14046644-1","nombres":"Pedro Enrique","apellido_paterno":"Navarro Delgado","apellido_materno":null},{"rut":"14094120-4","nombres":"Erwin Rodrigo","apellido_paterno":"Rubio Urra","apellido_materno":null},{"rut":"14126191-6","nombres":"Eduardo Enrique","apellido_paterno":"Brito Leiva","apellido_materno":null},{"rut":"14145864-7","nombres":"Rodrigo Alexander","apellido_paterno":"Muñoz Echeverria","apellido_materno":null},{"rut":"14154431-4","nombres":"Hector Fernando","apellido_paterno":"Gonzalez Leyton","apellido_materno":null},{"rut":"14159332-3","nombres":"Cristian Vega","apellido_paterno":"Barahona","apellido_materno":null},{"rut":"14285398-1","nombres":"Luis Rodrigo","apellido_paterno":"Cabrera Jofre","apellido_materno":null},{"rut":"14343223-8","nombres":"Victor Hugo","apellido_paterno":"Barahona Gomez","apellido_materno":null},{"rut":"14445738-2","nombres":"Borys Johan","apellido_paterno":"Luna Hurtado","apellido_materno":null},{"rut":"14467460-K","nombres":"PABLO ANDRES","apellido_paterno":"PEREZ URRUTIA","apellido_materno":null},{"rut":"14564017-2","nombres":"Giovanne Isaac","apellido_paterno":"Martinez Mella","apellido_materno":null},{"rut":"14621104-6","nombres":"Freddy Alexis","apellido_paterno":"Mena Nuñez","apellido_materno":null},{"rut":"14682246-0","nombres":"Carlos Alberto","apellido_paterno":"Castillo Miñano","apellido_materno":null},{"rut":"14725813-9","nombres":"Jaime","apellido_paterno":"Pavez Quintanilla","apellido_materno":null},{"rut":"15107209-7","nombres":"Mauricio Antonio","apellido_paterno":"Arroyo Esfronceda","apellido_materno":null},{"rut":"15148994-K","nombres":"Miguel Luis","apellido_paterno":"Infante Zambrano","apellido_materno":null},{"rut":"15169825-5","nombres":"Pablo Cesar","apellido_paterno":"Silva San Martin","apellido_materno":null},{"rut":"15201366-3","nombres":"Jose Rodrigo","apellido_paterno":"Burgos Muñoz","apellido_materno":null},{"rut":"15213567-K","nombres":"Hector Mario","apellido_paterno":"Ceballos Gallegos","apellido_materno":null},{"rut":"15283662-4","nombres":"Juan Carlos","apellido_paterno":"Araya Rodriguez","apellido_materno":null},{"rut":"15392455-4","nombres":"Raul Marcelo","apellido_paterno":"Soto Bobadilla","apellido_materno":null},{"rut":"15398705-K","nombres":"Luis Antonio","apellido_paterno":"Valdenegro Navarro","apellido_materno":null},{"rut":"15401975-8","nombres":"Hernan Osvaldo","apellido_paterno":"Gutierrez Munoz","apellido_materno":null},{"rut":"15493907-5","nombres":"Juan Pablo","apellido_paterno":"Morales Toloza","apellido_materno":null},{"rut":"15533220-4","nombres":"Israel Ariel","apellido_paterno":"Pradenas Piñeiro","apellido_materno":null},{"rut":"15633374-3","nombres":"Felipe Sarria","apellido_paterno":"Jimenez","apellido_materno":null},{"rut":"15701835-3","nombres":"Cristopher Fernando","apellido_paterno":"Loyola Pinto","apellido_materno":null},{"rut":"15713508-2","nombres":"Sergio HernÁn","apellido_paterno":"Vera Duarte","apellido_materno":null},{"rut":"15790079-K","nombres":"Juan Leandro","apellido_paterno":"Riveros Godoy","apellido_materno":null},{"rut":"15838826-K","nombres":"Alfredo Andres","apellido_paterno":"Berna Gajardo","apellido_materno":null},{"rut":"15868246-K","nombres":"Marco Antonio","apellido_paterno":"Rios Mejias","apellido_materno":null},{"rut":"15931067-1","nombres":"Sebastian Exequiel","apellido_paterno":"Garcia Martini","apellido_materno":null},{"rut":"15931343-3","nombres":"Cristian  Alejandro","apellido_paterno":"Vergara Tapia","apellido_materno":null},{"rut":"15943194-0","nombres":"Wilson Antonio","apellido_paterno":"Cabello Reyes","apellido_materno":null},{"rut":"15947526-3","nombres":"Rodolfo Valentin","apellido_paterno":"Orellana Serrano","apellido_materno":null},{"rut":"15954550-4","nombres":"Manuel Humberto","apellido_paterno":"Poza Torres","apellido_materno":null},{"rut":"15957473-3","nombres":"Rodrigo Esteban","apellido_paterno":"Rojas Araya","apellido_materno":null},{"rut":"16114446-0","nombres":"Felipe Eduardo","apellido_paterno":"Martinez Solar","apellido_materno":null},{"rut":"16117345-2","nombres":"Leonardo Andres","apellido_paterno":"Sanhueza Valdes","apellido_materno":null},{"rut":"16121156-7","nombres":"Jose Matias","apellido_paterno":"Pino Cornejo","apellido_materno":null},{"rut":"16125137-2","nombres":"Eduardo Felipe","apellido_paterno":"Cruz Molina","apellido_materno":null},{"rut":"16146554-2","nombres":"Richard  Andres","apellido_paterno":"Contreras Forton","apellido_materno":null},{"rut":"16181677-9","nombres":"Aldo","apellido_paterno":"Bustamante Ortega","apellido_materno":null},{"rut":"16186315-7","nombres":"Guillermo Andres","apellido_paterno":"Diaz Gallegos","apellido_materno":null},{"rut":"16193591-3","nombres":"Nibaldo Andres","apellido_paterno":"Rossel Allende","apellido_materno":null},{"rut":"16201301-7","nombres":"Alejandro Andres","apellido_paterno":"Calderon Figueroa","apellido_materno":null},{"rut":"16262510-1","nombres":"Cristobal Glem","apellido_paterno":"Vidal Neira","apellido_materno":null},{"rut":"16274214-0","nombres":"Carlos Alejandro","apellido_paterno":"Gonzalez Martinez","apellido_materno":null},{"rut":"16275792-K","nombres":"Eduardo Andres","apellido_paterno":"Zuñiga Luengo","apellido_materno":null},{"rut":"16285933-1","nombres":"Hector Rene","apellido_paterno":"Ortiz Gonzalez","apellido_materno":null},{"rut":"16296370-8","nombres":"Álvaro EfraÍn","apellido_paterno":"Madrid Reyes","apellido_materno":null},{"rut":"16379465-9","nombres":"ALVARO LORENZO","apellido_paterno":"PAILLAN PALMA","apellido_materno":null},{"rut":"16443919-4","nombres":"Ramon Antonio","apellido_paterno":"Perez Michea","apellido_materno":null},{"rut":"16492697-4","nombres":"Fernando Horacio","apellido_paterno":"Galaz Contreras","apellido_materno":null},{"rut":"16515307-3","nombres":"Cristian Felipe","apellido_paterno":"Medina Albornoz","apellido_materno":null},{"rut":"16536523-2","nombres":"Camilo Eduardo","apellido_paterno":"Urrutia Retamal","apellido_materno":null},{"rut":"16568610-1","nombres":"Fernando Jesus","apellido_paterno":"Celis Gutierrez","apellido_materno":null},{"rut":"16572863-7","nombres":"Juan Segundo","apellido_paterno":"Muñoz Bustos","apellido_materno":null},{"rut":"16585579-5","nombres":"Hugo Demecio","apellido_paterno":"Tilleria Hueche","apellido_materno":null},{"rut":"16667244-9","nombres":"Felipe Andres","apellido_paterno":"Rex Villalobos","apellido_materno":null},{"rut":"16669891-K","nombres":"Elvis Antonio","apellido_paterno":"Bravo Gonzalez","apellido_materno":null},{"rut":"16670983-0","nombres":"German Eduardo","apellido_paterno":"Pardo Antihual","apellido_materno":null},{"rut":"16682420-6","nombres":"Luis Quiroz","apellido_paterno":"Salazar","apellido_materno":null},{"rut":"16747931-6","nombres":"Emilio Wladimir","apellido_paterno":"Martinez Simoncelli","apellido_materno":null},{"rut":"16809991-6","nombres":"Claudio Ivan Eduardo","apellido_paterno":"Ortega Escobar","apellido_materno":null},{"rut":"16935590-8","nombres":"Rene Ignacio","apellido_paterno":"Henriquez  Rivas","apellido_materno":null},{"rut":"16973068-7","nombres":"Roberto Rebolledo","apellido_paterno":"Labrana","apellido_materno":null},{"rut":"17041135-8","nombres":"Jonathan David","apellido_paterno":"Rodriguez Vargas","apellido_materno":null},{"rut":"17102045-K","nombres":"Roberto Andres","apellido_paterno":"Estrada Riquelme","apellido_materno":null},{"rut":"17109499-2","nombres":"Sebastian Patricio","apellido_paterno":"Hernandez Beweis","apellido_materno":null},{"rut":"17143468-8","nombres":"Juan  Andres","apellido_paterno":"Herrera  Lagos","apellido_materno":null},{"rut":"17166009-2","nombres":"Moises Antonio","apellido_paterno":"Muñoz Cerda","apellido_materno":null},{"rut":"17168357-2","nombres":"Bruno  Ernesto","apellido_paterno":"Alcantara  Henriquez","apellido_materno":null},{"rut":"17217685-2","nombres":"Raul  Miguel","apellido_paterno":"Panes  Lopez","apellido_materno":null},{"rut":"17231344-2","nombres":"Isaac Rafael","apellido_paterno":"Iturrieta Año","apellido_materno":null},{"rut":"17331983-5","nombres":"Mauricio Eduardo","apellido_paterno":"Lastra Azocar","apellido_materno":null},{"rut":"17338237-5","nombres":"Felipe Francisco","apellido_paterno":"Miranda Amaya","apellido_materno":null},{"rut":"17352242-8","nombres":"Santiago Ignacio","apellido_paterno":"Palma Avila","apellido_materno":null},{"rut":"17381973-0","nombres":"Jaime Ismael","apellido_paterno":"Astroza Rodríguez","apellido_materno":null},{"rut":"17393582-K","nombres":"Luis Alfonso","apellido_paterno":"Guerrero Díaz","apellido_materno":null},{"rut":"17429147-0","nombres":"Alvaro Sebastian","apellido_paterno":"Reyes Alfaro","apellido_materno":null},{"rut":"17449523-8","nombres":"Víctor Rodolfo","apellido_paterno":"Basoalto Tapia","apellido_materno":null},{"rut":"17461633-7","nombres":"Anibal","apellido_paterno":"Gregorich Vergara Miranda","apellido_materno":null},{"rut":"17468168-6","nombres":"Francisco Adolfo","apellido_paterno":"Chamorro Sobarzo","apellido_materno":null},{"rut":"17512443-8","nombres":"Luis Alejandro","apellido_paterno":"Rodriguez Gallardo","apellido_materno":null},{"rut":"17590791-2","nombres":"Daniel Esteban","apellido_paterno":"Orellana Muñoz","apellido_materno":null},{"rut":"17610706-5","nombres":"DIEGO MAURICIO","apellido_paterno":"VERDEJO ROBLES","apellido_materno":null},{"rut":"17690903-K","nombres":"Rodrigo Elias","apellido_paterno":"Peña Castillo","apellido_materno":null},{"rut":"17794905-1","nombres":"Hugo","apellido_paterno":"Nuñez Toro","apellido_materno":null},{"rut":"17803459-5","nombres":"Jorge Silva","apellido_paterno":"Parra","apellido_materno":null},{"rut":"17853819-5","nombres":"Juan Luis","apellido_paterno":"Amaya Albornoz","apellido_materno":null},{"rut":"17900921-8","nombres":"David Salomon","apellido_paterno":"Sanchez Otarola","apellido_materno":null},{"rut":"17925492-1","nombres":"Abraham Ismael","apellido_paterno":"Zapata Contreras","apellido_materno":null},{"rut":"17932540-3","nombres":"Lorenzo Eduardo","apellido_paterno":"Chandia Salazar","apellido_materno":null},{"rut":"17937608-3","nombres":"Jacky Lee","apellido_paterno":"Lopez Neculman","apellido_materno":null},{"rut":"17979506-K","nombres":"Luis Enrique","apellido_paterno":"Araya Lazo","apellido_materno":null},{"rut":"18000462-9","nombres":"Eduardo Ignacio","apellido_paterno":"Olguin Lopez","apellido_materno":null},{"rut":"18011702-4","nombres":"John Francisco","apellido_paterno":"Jofre Gomez","apellido_materno":null},{"rut":"18012757-7","nombres":"Ruben","apellido_paterno":"Marchant Needhan","apellido_materno":null},{"rut":"18144334-0","nombres":"Marcelo Antonio","apellido_paterno":"Sandoval Balboa","apellido_materno":null},{"rut":"18316251-9","nombres":"Jamyr Ajmed","apellido_paterno":"Karim Vargas","apellido_materno":null},{"rut":"18342814-4","nombres":"Jose Luis","apellido_paterno":"Vasquez Solar","apellido_materno":null},{"rut":"18345406-4","nombres":"Raul Abraham","apellido_paterno":"Peña Calabrano","apellido_materno":null},{"rut":"18348389-7","nombres":"Eric Ivan","apellido_paterno":"Mendoza Cid","apellido_materno":null},{"rut":"18364099-2","nombres":"Juan","apellido_paterno":"Lopez Reyes","apellido_materno":null},{"rut":"18388473-5","nombres":"Angelo","apellido_paterno":"Carrasco Sanhueza","apellido_materno":null},{"rut":"18497643-9","nombres":"Jonathan Reinaldo","apellido_paterno":"Cordini Beltran","apellido_materno":null},{"rut":"18512352-9","nombres":"Esteban Ignacio","apellido_paterno":"Villegas Letelier","apellido_materno":null},{"rut":"18525551-4","nombres":"Matias Alexi","apellido_paterno":"Ortiz Castillo","apellido_materno":null},{"rut":"18530382-9","nombres":"Michell Alexander","apellido_paterno":"Bravo Araya","apellido_materno":null},{"rut":"18537453-K","nombres":"Ricardo Antonio","apellido_paterno":"Sepulveda Briones","apellido_materno":null},{"rut":"18537552-8","nombres":"Nicolas Andres","apellido_paterno":"Muñoz Diaz","apellido_materno":null},{"rut":"18592248-0","nombres":"Hugo Camilo","apellido_paterno":"Olmos Vega","apellido_materno":null},{"rut":"18617130-6","nombres":"Hector Hernan","apellido_paterno":"Parra Jara","apellido_materno":null},{"rut":"18633398-5","nombres":"Jonathan Alfredo","apellido_paterno":"Vergara Osorio","apellido_materno":null},{"rut":"18633909-6","nombres":"Pablo Ignacio","apellido_paterno":"Figueroa Plaza","apellido_materno":null},{"rut":"18653683-5","nombres":"Italo Ramiro","apellido_paterno":"Suazo Torres","apellido_materno":null},{"rut":"18662721-0","nombres":"Enzo","apellido_paterno":"Francescolli Villalobos Simoncelli","apellido_materno":null},{"rut":"18670406-1","nombres":"Pedro Sebastian","apellido_paterno":"Villagran Saldias","apellido_materno":null},{"rut":"18748311-5","nombres":"Bryan Andres","apellido_paterno":"Retamales Gallardo","apellido_materno":null},{"rut":"18866252-8","nombres":"Felipe Antonio","apellido_paterno":"Castro Muñoz","apellido_materno":null},{"rut":"18877641-8","nombres":"Alejandro Javier","apellido_paterno":"Soto Morales","apellido_materno":null},{"rut":"18960151-4","nombres":"JOSÉ EDUARDO","apellido_paterno":"CRUZ GONZÁLEZ","apellido_materno":null},{"rut":"19022717-0","nombres":"Yerko Alberto","apellido_paterno":"Meza Vidal","apellido_materno":null},{"rut":"19026207-3","nombres":"Giovanny Andres","apellido_paterno":"Chandia  Caceres","apellido_materno":null},{"rut":"19026744-K","nombres":"Camilo Alejandro","apellido_paterno":"Espinosa Navarro","apellido_materno":null},{"rut":"19034826-1","nombres":"Pablo Ignacio","apellido_paterno":"Escobedo Quintanilla","apellido_materno":null},{"rut":"19123456-8","nombres":"María","apellido_paterno":"González","apellido_materno":"López"},{"rut":"19241866-6","nombres":"Luis Ignacio","apellido_paterno":"Cabrera Vera","apellido_materno":null},{"rut":"19347747-K","nombres":"Bryan Willian","apellido_paterno":"Dinamarca Castillo","apellido_materno":null},{"rut":"19371373-4","nombres":"Jose Ignacio","apellido_paterno":"Mendoza Cid","apellido_materno":null},{"rut":"19422493-1","nombres":"Alan Gabriel","apellido_paterno":"Lara Ubilla","apellido_materno":null},{"rut":"19428444-6","nombres":"Michelle Jacob","apellido_paterno":"Retamales Gallardo","apellido_materno":null},{"rut":"19533779-9","nombres":"Kevin Alexander","apellido_paterno":"Roldan Alegria","apellido_materno":null},{"rut":"19548402-3","nombres":"Matias Braulio","apellido_paterno":"Baez Pacheco","apellido_materno":null},{"rut":"19562294-9","nombres":"Cristopher Matias","apellido_paterno":"Muñoz Soto","apellido_materno":null},{"rut":"19723478-4","nombres":"Diego Dilan","apellido_paterno":"Galdame Gutierrez","apellido_materno":null},{"rut":"19733547-5","nombres":"Alfredo Nicolas","apellido_paterno":"Hidalgo Aravena","apellido_materno":null},{"rut":"19851132-3","nombres":"Matias Jose","apellido_paterno":"Rubio Galaz","apellido_materno":null},{"rut":"20016670-1","nombres":"Antonio Nicolas","apellido_paterno":"Bosmann Soto","apellido_materno":null},{"rut":"20077993-2","nombres":"Francisco  Patricio","apellido_paterno":"Valenzuela Barros","apellido_materno":null},{"rut":"20125037-4","nombres":"Eric Alesander","apellido_paterno":"Carrera Muñoz","apellido_materno":null},{"rut":"20234567-9","nombres":"Carlos","apellido_paterno":"Rodríguez","apellido_materno":"Silva"},{"rut":"20251681-5","nombres":"Robinson Nicolas","apellido_paterno":"Villegas Hernandez","apellido_materno":null},{"rut":"20532359-7","nombres":"Josue Manuel","apellido_paterno":"Diaz Espinoza","apellido_materno":null},{"rut":"20731894-9","nombres":"Benjamin Eduardo","apellido_paterno":"Cid Harcha","apellido_materno":null},{"rut":"21836416-0","nombres":"Antony Jesus","apellido_paterno":"Cosme  Ircanaupa","apellido_materno":null},{"rut":"21935683-8","nombres":"Bastian Elias","apellido_paterno":"Urrutia Gavilán","apellido_materno":null},{"rut":"22027038-6","nombres":"Ruben Hernan","apellido_paterno":"Silva Vasquez","apellido_materno":null},{"rut":"22329060-4","nombres":"Cesar Augusto","apellido_paterno":"Paz  Reyes","apellido_materno":null},{"rut":"22451330-5","nombres":"Oscar Horacio","apellido_paterno":"Uchasara Choque","apellido_materno":null},{"rut":"22504079-6","nombres":"Joaquin Marcos","apellido_paterno":"Quispe Maguina","apellido_materno":null},{"rut":"22518660-K","nombres":"Jose David","apellido_paterno":"Nakasone Deza","apellido_materno":null},{"rut":"22607329-9","nombres":"Omar Christian","apellido_paterno":"Perez Encinas","apellido_materno":null},{"rut":"23642784-6","nombres":"Ariel Martin","apellido_paterno":"Ameijeira","apellido_materno":null},{"rut":"24118167-7","nombres":"Jhon Sebastian","apellido_paterno":"Quiroga Esparza","apellido_materno":null},{"rut":"24334657-6","nombres":"Oscar","apellido_paterno":"Cardenas Rojas","apellido_materno":null},{"rut":"24425491-8","nombres":"Dario Hernan","apellido_paterno":"Calderon Rodriguez","apellido_materno":null},{"rut":"25477804-4","nombres":"Luis Angel","apellido_paterno":"Rodriguez Chacon","apellido_materno":null},{"rut":"25598621-K","nombres":"Wilder Alexander","apellido_paterno":"Naranjo Zapata","apellido_materno":null},{"rut":"26148843-4","nombres":"Jhorney Alejandro","apellido_paterno":"Quintero Prado","apellido_materno":null},{"rut":"26390420-6","nombres":"Jesus Efren","apellido_paterno":"Angulo Calle","apellido_materno":null},{"rut":"26599183-1","nombres":"Rodolfo Jose","apellido_paterno":"Nunez Blanco","apellido_materno":null},{"rut":"26942243-2","nombres":"Alexander Jefrey","apellido_paterno":"Espiritu Santana","apellido_materno":null},{"rut":"26953476-1","nombres":"Alexander Jose","apellido_paterno":"Gonzalez Gil","apellido_materno":null},{"rut":"27113827-K","nombres":"Angel  Elias","apellido_paterno":"Oberto  Serrano","apellido_materno":null},{"rut":"27132464-2","nombres":"Angel Estiben","apellido_paterno":"Zamora Gallego","apellido_materno":null},{"rut":"27364850-K","nombres":"Nino Alvaro","apellido_paterno":"Pinzas Julca","apellido_materno":null},{"rut":"27446096-2","nombres":"Miguel Jesus","apellido_paterno":"Uribe Coca","apellido_materno":null},{"rut":"27704167-7","nombres":"Anderson Alberto","apellido_paterno":"Aguas Acosta","apellido_materno":null},{"rut":"6388956-3","nombres":"Leonardo Antonio","apellido_paterno":"Moreno Medina","apellido_materno":null},{"rut":"6639764-5","nombres":"Arturo Alejandro","apellido_paterno":"Herrera Giadala","apellido_materno":null},{"rut":"6947243-5","nombres":"Hector Rodrigo","apellido_paterno":"Garcia Quintana","apellido_materno":null},{"rut":"7012984-1","nombres":"Patricio Roberto","apellido_paterno":"Bambach Ugarte","apellido_materno":null},{"rut":"7077324-4","nombres":"Sergio  Manuel","apellido_paterno":"Simoncelii Rey","apellido_materno":null},{"rut":"7092038-7","nombres":"Mario Fernando","apellido_paterno":"Urbina San Juan","apellido_materno":null},{"rut":"7321424-6","nombres":"Fernando Del Carmen","apellido_paterno":"Araya Araya","apellido_materno":null},{"rut":"7445306-6","nombres":"Daniel Alejandro","apellido_paterno":"Sepulveda Pastene","apellido_materno":null},{"rut":"7479565-K","nombres":"Carlos Rene","apellido_paterno":"Cornejo Molina","apellido_materno":null},{"rut":"7486285-3","nombres":"Pedro Rafael","apellido_paterno":"Mozo Espina","apellido_materno":null},{"rut":"7654321-1","nombres":"Rudy David","apellido_paterno":"Mora Morales","apellido_materno":null},{"rut":"7919871-4","nombres":"Victor Arsenio","apellido_paterno":"Rojas Gutierrez","apellido_materno":null},{"rut":"7954905-3","nombres":"Andres Lisandro","apellido_paterno":"Ramirez Tapia","apellido_materno":null},{"rut":"8026404-6","nombres":"Juan Carlos","apellido_paterno":"Casanova Sanchez","apellido_materno":null},{"rut":"8163261-8","nombres":"Gabriel Guillermo","apellido_paterno":"Vargas Plaza","apellido_materno":null},{"rut":"8189883-9","nombres":"Juan Eduardo","apellido_paterno":"Chandia Parra","apellido_materno":null},{"rut":"8461526-9","nombres":"Malco Agabo","apellido_paterno":"Cespedes Manquez","apellido_materno":null},{"rut":"8468759-6","nombres":"Antonio Borquez","apellido_paterno":"Varas","apellido_materno":null},{"rut":"8515118-5","nombres":"Claudio Hernan","apellido_paterno":"Acevedo Seguel","apellido_materno":null},{"rut":"8596994-3","nombres":"Eduardo Benjamin","apellido_paterno":"Alarcon Espinoza","apellido_materno":null},{"rut":"8662822-8","nombres":"Luis Hernan","apellido_paterno":"Jara Gonzalez","apellido_materno":null},{"rut":"8769209-4","nombres":"Hugolino Oscar","apellido_paterno":"D'Apremont Fuentes","apellido_materno":null},{"rut":"8825579-8","nombres":"JOSE DAVID","apellido_paterno":"ESPINOZA CASTRO","apellido_materno":null},{"rut":"8865083-2","nombres":"Jorge Antonio","apellido_paterno":"Boada Sepulveda","apellido_materno":null},{"rut":"8942372-4","nombres":"Samuel Marcelino","apellido_paterno":"Vera Palma","apellido_materno":null},{"rut":"9271706-2","nombres":"Juan Carlos","apellido_paterno":"Araya Rodriguez","apellido_materno":null},{"rut":"9348715-K","nombres":"Carlos Alberto","apellido_paterno":"Gonzalez Loyola","apellido_materno":null},{"rut":"9380195-4","nombres":"Claudio Robinson","apellido_paterno":"Urzua Cifuentes","apellido_materno":null},{"rut":"9407328-6","nombres":"Nibaldo Patricio","apellido_paterno":"Araya Astorga","apellido_materno":null},{"rut":"9609199-0","nombres":"Luis Alberto","apellido_paterno":"Silva Atenas","apellido_materno":null},{"rut":"9646548-3","nombres":"Patricio Enrique","apellido_paterno":"Romo Moreno","apellido_materno":null},{"rut":"9659299-K","nombres":"Pedro Benjasmin","apellido_paterno":"Soto Jara","apellido_materno":null},{"rut":"9744124-3","nombres":"Juan Alonso","apellido_paterno":"Quintanilla Catalan","apellido_materno":null},{"rut":"9770990-4","nombres":"Manuel Natalio","apellido_paterno":"Pérez Vilches","apellido_materno":null},{"rut":"9778154-0","nombres":"Juan Carlos","apellido_paterno":"Escobar Monsalve","apellido_materno":null},{"rut":"9795683-9","nombres":"Oscar Custodio","apellido_paterno":"Verdugo Quintanilla","apellido_materno":null},{"rut":"9802602-9","nombres":"Eric Henry","apellido_paterno":"Darat Ramirez","apellido_materno":null},{"rut":"9807595-K","nombres":"Oscar Martinez","apellido_paterno":"Arriagada","apellido_materno":null},{"rut":"9875518-7","nombres":"Luis Anibal","apellido_paterno":"Vergara Cadiz","apellido_materno":null},{"rut":"9921513-5","nombres":"Juan Carlos","apellido_paterno":"Lopez Diaz","apellido_materno":null},{"rut":"9957590-5","nombres":"Domingo Cerda","apellido_paterno":"Lagos","apellido_materno":null},{"rut":"9982464-6","nombres":"Marcelo Eduardo","apellido_paterno":"Leon Salvatierra","apellido_materno":null}];
+
+        const conductoresData = DATA_HERE;
+        document.addEventListener('DOMContentLoaded', function() {
+            renderTable(conductoresData);
+        });
+    </script>
+</body>
+</html>
