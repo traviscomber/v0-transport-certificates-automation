@@ -46,7 +46,6 @@ export async function GET(request: NextRequest) {
     const { data: subDocs, error: subError } = await supabase
       .from('subcontractor_documents')
       .select('status', { count: 'exact', head: false })
-      .catch(err => ({ data: null, error: err }))
 
     const subStats = {
       total: subDocs?.length || 0,
@@ -60,7 +59,6 @@ export async function GET(request: NextRequest) {
     const { data: certs, error: certError } = await supabase
       .from('certificaciones')
       .select('estado', { count: 'exact', head: false })
-      .catch(err => ({ data: null, error: err }))
 
     const certStats = {
       total: certs?.length || 0,
