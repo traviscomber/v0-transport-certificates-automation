@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+// Increase max duration for larger file uploads
+export const maxDuration = 60
+
 /**
  * POST /api/subcontractors/[id]/documents
  * Upload a document for a subcontractor

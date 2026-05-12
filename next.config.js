@@ -13,6 +13,13 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   
+  // API configuration for larger file uploads
+  api: {
+    bodyParser: {
+      sizeLimit: '4.5mb', // Vercel's maximum allowable limit
+    },
+  },
+  
   // Production optimizations
   compress: true,
   poweredByHeader: false,
