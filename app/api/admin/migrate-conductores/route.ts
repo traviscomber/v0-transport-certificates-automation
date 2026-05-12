@@ -45,12 +45,27 @@ export async function POST(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // Format conductores for insertion
-    const conductoresForInsert = conductoresData.map(c => ({
+    // Get all transportistas (subcontractors) to assign to conductores
+    const { data: transportistas } = await supabase
+      .from('transportistas')
+      .select('rut')
+      .eq('is_active', true)
+      .limit(100)
+
+    const transportistaRuts = (transportistas || []).map(t => t.rut).filter(Boolean);
+    
+    if (transportistaRuts.length === 0) {
+      console.log('[v0] No transportistas found, assigning generic RUT')
+      transportistaRuts.push('77777777-7') // Default RUT if no transportistas exist
+    }
+
+    // Format conductores for insertion with assigned transportista RUTs
+    const conductoresForInsert = conductoresData.map((c, idx) => ({
       rut: c.rut,
       nombres: c.nombres,
       apellido_paterno: c.apellidos.split(' ')[0] || c.apellidos,
       apellido_materno: c.apellidos.split(' ').slice(1).join(' ') || '',
+      rut_proveedor: transportistaRuts[idx % transportistaRuts.length], // Assign to a transportista
       is_active: true,
       created_at: new Date().toISOString(),
     }))
