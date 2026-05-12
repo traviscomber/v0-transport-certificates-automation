@@ -62,9 +62,11 @@ export async function POST(
     }
 
     const buffer = await file.arrayBuffer()
+    const uint8Array = new Uint8Array(buffer)
     
     console.log('[v0] Buffer created:', {
       bufferLength: buffer.byteLength,
+      uint8Length: uint8Array.length,
       fileName: file.name,
       fileSize: file.size,
       fileType: file.type
@@ -80,7 +82,7 @@ export async function POST(
     
     const { error: uploadError, data: uploadData } = await supabase.storage
       .from('subcontractor-documents')
-      .upload(fileName, Buffer.from(buffer), {
+      .upload(fileName, uint8Array, {
         cacheControl: '3600',
         upsert: false,
         contentType: file.type || 'application/octet-stream',
