@@ -12,13 +12,27 @@ export async function POST(
   try {
     const supabase = createAdminClient()
     const { id } = params
+    
+    console.log('[v0] ===== PDF UPLOAD DIAGNOSTIC START =====')
+    console.log('[v0] Request method:', request.method)
+    console.log('[v0] Content-Type:', request.headers.get('content-type'))
+    console.log('[v0] Content-Length:', request.headers.get('content-length'))
+    
     const formData = await request.formData()
     
     const file = formData.get('file') as File
     const documentTypeId = formData.get('documentTypeId') as string
     const subcontractorRut = formData.get('subcontractorRut') as string
 
+    console.log('[v0] FormData parsed')
+    console.log('[v0] File exists:', !!file)
+    console.log('[v0] File name:', file?.name)
+    console.log('[v0] File type:', file?.type)
+    console.log('[v0] File.size property:', file?.size)
+    console.log('[v0] documentTypeId:', documentTypeId)
+
     if (!file || !documentTypeId || !subcontractorRut || !id) {
+      console.error('[v0] Missing required fields')
       return NextResponse.json(
         { error: 'Faltan campos requeridos' },
         { status: 400 }
@@ -66,16 +80,14 @@ export async function POST(
     const buffer = await file.arrayBuffer()
     const uint8Array = new Uint8Array(buffer)
     
-    console.log('[v0] === PDF UPLOAD PROCESSING ===')
-    console.log('[v0] File: ' + file.name)
-    console.log('[v0] File size from File object: ' + file.size + ' bytes')
-    console.log('[v0] ArrayBuffer length: ' + buffer.byteLength + ' bytes')
-    console.log('[v0] Uint8Array length: ' + uint8Array.length + ' bytes')
-    console.log('[v0] File type: ' + file.type)
+    console.log('[v0] === BUFFER CONVERSION ===')
+    console.log('[v0] File.size:', file.size)
+    console.log('[v0] ArrayBuffer.byteLength:', buffer.byteLength)
+    console.log('[v0] Uint8Array.length:', uint8Array.length)
+    console.log('[v0] First 20 bytes:', Array.from(uint8Array.slice(0, 20)))
 
     if (buffer.byteLength === 0) {
-      console.error('[v0] CRITICAL ERROR: ArrayBuffer is empty!')
-      console.error('[v0] File object size was: ' + file.size)
+      console.error('[v0] CRITICAL: ArrayBuffer is empty! File.size was:', file.size)
       return NextResponse.json(
         { error: 'El archivo llegó vacío al servidor. Verifica que el archivo no esté corrupto.' },
         { status: 400 }
@@ -83,14 +95,17 @@ export async function POST(
     }
 
     if (uint8Array.length === 0) {
-      console.error('[v0] CRITICAL ERROR: Uint8Array conversion failed!')
+      console.error('[v0] CRITICAL: Uint8Array conversion failed!')
       return NextResponse.json(
         { error: 'Error al procesar el archivo en el servidor' },
         { status: 500 }
       )
     }
     
-    console.log('[v0] Buffer ready for upload. First 10 bytes:', Array.from(uint8Array.slice(0, 10)))
+    console.log('[v0] === UPLOADING TO SUPABASE ===')
+    console.log('[v0] Filename in storage:', fileName)
+    console.log('[v0] Data to upload size:', uint8Array.length + ' bytes')
+    console.log('[v0] Content-Type:', file.type)
     
     const { error: uploadError, data: uploadData } = await supabase.storage
       .from('subcontractor-documents')
@@ -101,15 +116,16 @@ export async function POST(
       })
 
     if (uploadError) {
-      console.error('[v0] UPLOAD ERROR:', uploadError)
+      console.error('[v0] UPLOAD FAILED:', uploadError)
       return NextResponse.json(
         { error: 'Error al subir el archivo: ' + uploadError.message },
         { status: 500 }
       )
     }
 
-    console.log('[v0] UPLOAD SUCCESS:', uploadData)
-    console.log('[v0] File path in storage:', uploadData.path)
+    console.log('[v0] UPLOAD SUCCESS')
+    console.log('[v0] Storage path:', uploadData.path)
+    console.log('[v0] Full path:', uploadData.fullPath)
 
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
