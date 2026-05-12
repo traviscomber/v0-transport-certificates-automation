@@ -19,6 +19,9 @@ export function PDFViewer({ url, filename }: PDFViewerProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Use proxy endpoint to avoid CORS issues
+  const proxyUrl = `/api/documents/proxy?url=${encodeURIComponent(url)}`
+
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     setNumPages(numPages)
     setLoading(false)
@@ -27,7 +30,7 @@ export function PDFViewer({ url, filename }: PDFViewerProps) {
 
   function onDocumentLoadError(error: any) {
     console.error('[v0] PDF load error:', error)
-    setError('Error loading PDF file')
+    setError('Failed to load PDF document.')
     setLoading(false)
   }
 
@@ -41,17 +44,21 @@ export function PDFViewer({ url, filename }: PDFViewerProps) {
         )}
         
         {error && (
-          <div className="flex items-center justify-center h-96 text-red-400">
-            <p>{error}</p>
+          <div className="flex items-center justify-center h-96 text-red-400 text-center">
+            <div>
+              <p className="font-semibold mb-2">{error}</p>
+              <p className="text-sm text-gray-400">The PDF could not be loaded. Try downloading the file instead.</p>
+            </div>
           </div>
         )}
 
         {!loading && !error && (
           <Document
-            file={url}
+            file={proxyUrl}
             onLoadSuccess={onDocumentLoadSuccess}
             onLoadError={onDocumentLoadError}
             loading={<Loader2 className="h-8 w-8 animate-spin" />}
+            error="Failed to load PDF"
           >
             <Page 
               pageNumber={pageNumber}
