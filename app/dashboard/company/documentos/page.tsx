@@ -28,16 +28,18 @@ async function getDocumentStats() {
   const { data: subDocs, error: subError } = await supabase
     .from("subcontractor_documents")
     .select("id, status")
+    .limit(1) // Just check if table exists
   
   if (subError) {
-    console.error("[v0] Error fetching subcontractor docs:", subError)
+    console.error("[v0] Error fetching subcontractor docs:", subError.message)
+    // Table might not exist yet - that's ok
   }
   
   const subStats = {
     total: subDocs?.length || 0,
-    pendientes: subDocs?.filter(d => d.status === 'pendiente' || !d.status).length || 0,
-    aprobados: subDocs?.filter(d => d.status === 'aprobado').length || 0,
-    rechazados: subDocs?.filter(d => d.status === 'rechazado').length || 0,
+    pendientes: subDocs?.filter(d => d.status === 'pending').length || 0,
+    aprobados: subDocs?.filter(d => d.status === 'approved').length || 0,
+    rechazados: subDocs?.filter(d => d.status === 'rejected').length || 0,
     vencidos: 0
   }
 
