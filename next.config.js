@@ -8,6 +8,9 @@ const withSentryConfig = sentryEnabled
   ? require('@sentry/nextjs').withSentryConfig
   : (config) => config;
 
+// Set timezone to America/Santiago
+process.env.TZ = 'America/Santiago';
+
 const nextConfig = {
   // Build optimization
   reactStrictMode: true,

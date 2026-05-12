@@ -60,38 +60,18 @@ export default function PendientesPage() {
   const filteredData = useMemo(() => {
     if (!allData) return null
 
-    console.log('[v0] Filtering with selectedEjecutiva:', selectedEjecutiva)
-    console.log('[v0] allData:', { 
-      subDocs: allData.subDocs?.length,
-      conductorDocs: allData.conductorDocs?.length 
-    })
-
     if (selectedEjecutiva === 'all') {
-      console.log('[v0] Returning all data')
       return allData
     }
 
-    const filtered = {
-      conductorDocs: allData.conductorDocs?.filter((doc: any) => {
-        const docEjecutiva = doc.ejecutiva || 'Sin asignar'
-        const matches = docEjecutiva === selectedEjecutiva
-        console.log('[v0] Conductor doc:', { name: doc.original_filename, ejecutiva: docEjecutiva, matches })
-        return matches
-      }) || [],
-      subDocs: allData.subDocs?.filter((doc: any) => {
-        const docEjecutiva = doc.ejecutiva || 'Sin asignar'
-        const matches = docEjecutiva === selectedEjecutiva
-        console.log('[v0] Subcontractor doc:', { name: doc.file_name, ejecutiva: docEjecutiva, matches })
-        return matches
-      }) || []
+    return {
+      conductorDocs: allData.conductorDocs?.filter((doc: any) =>
+        (doc.ejecutiva || 'Sin asignar') === selectedEjecutiva
+      ) || [],
+      subDocs: allData.subDocs?.filter((doc: any) =>
+        (doc.ejecutiva || 'Sin asignar') === selectedEjecutiva
+      ) || []
     }
-
-    console.log('[v0] Filtered result:', { 
-      subDocs: filtered.subDocs.length,
-      conductorDocs: filtered.conductorDocs.length 
-    })
-
-    return filtered
   }, [allData, selectedEjecutiva])
 
   if (loading) {
