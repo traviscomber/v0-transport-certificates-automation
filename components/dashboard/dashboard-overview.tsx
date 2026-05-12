@@ -75,18 +75,26 @@ export function DashboardOverview() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Use consolidated dashboard endpoint (2 API calls → 1)
-        const dashboardRes = await fetch(`/api/dashboard?alertLimit=50`, {
+        // Use separate endpoints - more reliable than consolidated endpoint
+        const alertsRes = await fetch(`/api/alerts?limit=50`, {
           cache: "default",
-          headers: { 'Cache-Control': 'max-age=30' }
         })
         
-        if (dashboardRes.ok) {
-          const data = await dashboardRes.json()
-          const { stats: dashboardStats, alerts: alertsList } = data
-          const conductorStats = dashboardStats?.conductores || {}
-          
-          // Update stats cards
+        const statsRes = await fetch(`/api/company/documents/stats`, {
+          cache: "default",
+        })
+
+        if (alertsRes.ok) {
+          const alertsData = await alertsRes.json()
+          const alertsList = Array.isArray(alertsData) ? alertsData : (alertsData.alerts || [])
+          setAlerts(alertsList)
+        }
+
+        if (statsRes.ok) {
+          const statsData = await statsRes.json()
+          const statsObj = statsData.stats || {}
+          const conductorStats = statsObj.conductores || {}
+
           setStats([
             {
               title: "Total de Documentos",
@@ -121,9 +129,6 @@ export function DashboardOverview() {
               href: "/dashboard/company/documentos/rechazados",
             },
           ])
-          
-          // Update alerts
-          setAlerts(alertsList || [])
         }
       } catch (error) {
         console.error('[v0] Error loading dashboard data:', error)
@@ -151,16 +156,19 @@ export function DashboardOverview() {
         
         const fetchUpdatedStats = async () => {
           try {
-            // Use consolidated dashboard endpoint for sync updates too
-            const dashboardRes = await fetch(`/api/dashboard?alertLimit=50`, {
+            // Use separate endpoints for sync updates
+            const statsRes = await fetch(`/api/company/documents/stats`, {
               cache: "default",
-              headers: { 'Cache-Control': 'max-age=30' }
             })
             
-            if (dashboardRes.ok) {
-              const data = await dashboardRes.json()
-              const { stats: dashboardStats, alerts: alertsList } = data
-              const conductorStats = dashboardStats?.conductores || {}
+            const alertsRes = await fetch(`/api/alerts?limit=50`, {
+              cache: "default",
+            })
+
+            if (statsRes.ok) {
+              const statsData = await statsRes.json()
+              const statsObj = statsData.stats || {}
+              const conductorStats = statsObj.conductores || {}
 
               setStats([
                 {
@@ -196,8 +204,12 @@ export function DashboardOverview() {
                   href: "/dashboard/company/documentos/rechazados",
                 },
               ])
-              
-              setAlerts(alertsList || [])
+            }
+            
+            if (alertsRes.ok) {
+              const alertsData = await alertsRes.json()
+              const alertsList = Array.isArray(alertsData) ? alertsData : (alertsData.alerts || [])
+              setAlerts(alertsList)
             }
           } catch (error) {
             console.error('[v0] Error refetching stats:', error)
