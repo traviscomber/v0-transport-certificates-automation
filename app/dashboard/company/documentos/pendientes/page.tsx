@@ -64,14 +64,25 @@ export default function PendientesPage() {
       return allData
     }
 
-    return {
-      conductorDocs: allData.conductorDocs?.filter((doc: any) =>
-        (doc.ejecutiva || 'Sin asignar') === selectedEjecutiva
-      ) || [],
-      subDocs: allData.subDocs?.filter((doc: any) =>
-        (doc.ejecutiva || 'Sin asignar') === selectedEjecutiva
-      ) || []
+    const filtered = {
+      conductorDocs: allData.conductorDocs?.filter((doc: any) => {
+        const docEjecutiva = doc.ejecutiva || 'Sin asignar'
+        return docEjecutiva === selectedEjecutiva
+      }) || [],
+      subDocs: allData.subDocs?.filter((doc: any) => {
+        const docEjecutiva = doc.ejecutiva || 'Sin asignar'
+        return docEjecutiva === selectedEjecutiva
+      }) || []
     }
+    
+    console.log('[v0] Filter applied:', {
+      selected: selectedEjecutiva,
+      conductor: filtered.conductorDocs.length,
+      subcontractor: filtered.subDocs.length,
+      total: filtered.conductorDocs.length + filtered.subDocs.length
+    })
+    
+    return filtered
   }, [allData, selectedEjecutiva])
 
   if (loading) {
@@ -147,11 +158,6 @@ export default function PendientesPage() {
       </div>
 
       {/* Documents List */}
-      {filteredData && (
-        <div className="text-xs text-slate-500 mb-2">
-          DEBUG: filtered {filteredData.subDocs?.length || 0} sub + {filteredData.conductorDocs?.length || 0} conductor = {(filteredData.subDocs?.length || 0) + (filteredData.conductorDocs?.length || 0)} total | selectedEjecutiva: {selectedEjecutiva}
-        </div>
-      )}
       <PendingDocumentsList
         conductorDocs={filteredData?.conductorDocs || []}
         subDocs={filteredData?.subDocs || []}
