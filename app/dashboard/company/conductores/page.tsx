@@ -6,6 +6,9 @@ import useSWR from 'swr'
 import { DriversList } from '@/components/drivers-list'
 import { HelpBox } from '@/components/ui/help-box'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Plus } from 'lucide-react'
+import { AddConductorModal } from '@/components/add-conductor-modal'
 
 const fetcher = (url: string) => 
   fetch(url, {
@@ -40,6 +43,7 @@ export default function ConductoresPage() {
   const rutParam = searchParams.get('rut')
   const [selectedEjecutiva, setSelectedEjecutiva] = useState<string | null>(null)
   const [highlightedRut, setHighlightedRut] = useState<string | null>(rutParam)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   
   const { data, error, isLoading, mutate } = useSWR(
     '/api/dashboard/data',
@@ -54,6 +58,7 @@ export default function ConductoresPage() {
   )
 
   const drivers = data?.dashboard?.conductores || []
+  const transportistas = data?.subcontractors || []
   
   // Get unique ejecutivas from drivers
   const ejecutivas = Array.from(
@@ -67,11 +72,17 @@ export default function ConductoresPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Gestión de Conductores</h1>
-        <p className="text-muted-foreground">
-          Administra y visualiza los conductores de LABBE ({drivers.length} total)
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Gestión de Conductores</h1>
+          <p className="text-muted-foreground">
+            Administra y visualiza los conductores de LABBE ({drivers.length} total)
+          </p>
+        </div>
+        <Button onClick={() => setIsAddModalOpen(true)} className="gap-2">
+          <Plus className="w-4 h-4" />
+          Agregar Conductor
+        </Button>
       </div>
 
       <HelpBox
@@ -141,6 +152,16 @@ export default function ConductoresPage() {
       ) : (
         <DriversList drivers={filteredDrivers} highlightedRut={highlightedRut} />
       )}
+
+      <AddConductorModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSuccess={() => {
+          mutate() // Refresh the data
+        }}
+        transportistas={transportistas.map((t: any) => ({ rut: t.rut, nombre: t.nombre }))}
+        currentEjecutiva={selectedEjecutiva || undefined}
+      />
     </div>
   )
 }
