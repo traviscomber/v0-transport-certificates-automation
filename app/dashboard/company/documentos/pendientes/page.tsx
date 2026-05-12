@@ -147,6 +147,11 @@ export default function PendientesPage() {
       </div>
 
       {/* Documents List */}
+      {filteredData && (
+        <div className="text-xs text-slate-500 mb-2">
+          DEBUG: filtered {filteredData.subDocs?.length || 0} sub + {filteredData.conductorDocs?.length || 0} conductor = {(filteredData.subDocs?.length || 0) + (filteredData.conductorDocs?.length || 0)} total | selectedEjecutiva: {selectedEjecutiva}
+        </div>
+      )}
       <PendingDocumentsList
         conductorDocs={filteredData?.conductorDocs || []}
         subDocs={filteredData?.subDocs || []}
