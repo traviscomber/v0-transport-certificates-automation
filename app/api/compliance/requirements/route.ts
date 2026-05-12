@@ -4,6 +4,8 @@ import { createClient } from '@supabase/supabase-js'
  * GET /api/compliance/requirements
  * Fetch all document requirements
  */
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: Request,
   { searchParams }: { searchParams: Record<string, string | string[] | undefined> }
@@ -21,8 +23,8 @@ export async function GET(
 
     const supabase = createClient(supabaseUrl, serviceRoleKey)
 
-    const category = searchParams.category as string | undefined
-    const applicableTo = searchParams.applicable_to as string | undefined
+    const category = (searchParams.category as string) || undefined
+    const applicableTo = (searchParams.applicable_to as string) || undefined
 
     let query = supabase
       .from('document_requirements')
