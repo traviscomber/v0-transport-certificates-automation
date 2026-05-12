@@ -152,6 +152,7 @@ export async function POST(
       .from('subcontractor_documents')
       .insert({
         subcontractor_id: id,
+        subcontractor_rut: subcontractorRut,
         document_type_id: documentTypeId,
         file_url: publicUrl,
         file_name: file.name,
