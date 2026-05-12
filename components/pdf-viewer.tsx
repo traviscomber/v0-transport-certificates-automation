@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-// Set up the worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`
+// Set up the worker from CDN
+if (typeof window !== 'undefined') {
+  pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`
+}
 
 interface PDFViewerProps {
   url: string
@@ -22,13 +24,17 @@ export function PDFViewer({ url, filename }: PDFViewerProps) {
   // Use proxy endpoint to avoid CORS issues
   const proxyUrl = `/api/documents/proxy?url=${encodeURIComponent(url)}`
 
-  function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
-    setNumPages(numPages)
-    setLoading(false)
-    setError(null)
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    try {
+      setNumPages(numPages)
+      setLoading(false)
+      setError(null)
+    } catch (err) {
+      console.error('[v0] Error in onDocumentLoadSuccess:', err)
+    }
   }
 
-  function onDocumentLoadError(error: any) {
+  const onDocumentLoadError = (error: any) => {
     console.error('[v0] PDF load error:', error)
     setError('Failed to load PDF document.')
     setLoading(false)
@@ -53,20 +59,22 @@ export function PDFViewer({ url, filename }: PDFViewerProps) {
         )}
 
         {!loading && !error && (
-          <Document
-            file={proxyUrl}
-            onLoadSuccess={onDocumentLoadSuccess}
-            onLoadError={onDocumentLoadError}
-            loading={<Loader2 className="h-8 w-8 animate-spin" />}
-            error="Failed to load PDF"
-          >
-            <Page 
-              pageNumber={pageNumber}
-              scale={1.2}
-              renderTextLayer={false}
-              renderAnnotationLayer={false}
-            />
-          </Document>
+          <div className="w-full flex justify-center">
+            <Document
+              file={proxyUrl}
+              onLoadSuccess={onDocumentLoadSuccess}
+              onLoadError={onDocumentLoadError}
+              loading={<Loader2 className="h-8 w-8 animate-spin" />}
+              error="Failed to load PDF"
+            >
+              <Page 
+                pageNumber={pageNumber}
+                scale={1.2}
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+              />
+            </Document>
+          </div>
         )}
       </div>
 
