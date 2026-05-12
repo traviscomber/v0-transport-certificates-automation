@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Mail, Phone, MapPin, FileText, Download, ChevronDown, Plus, X, Upload, AlertCircle, Loader, Eye, RefreshCw, ArrowRight } from 'lucide-react'
+import { Mail, Phone, MapPin, FileText, Download, ChevronDown, Plus, X, Upload, AlertCircle, Loader, Eye, RefreshCw, ArrowRight, Edit } from 'lucide-react'
 import { useDriverDocuments, type DriverDocument } from '@/hooks/use-driver-documents'
 import { DocumentActionModal } from './document-action-modal'
+import { EditConductorModal } from './edit-conductor-modal'
 
 interface Driver {
   id: string
@@ -48,6 +49,9 @@ export function DriverCard({
   console.log('[v0] DriverCard hook returned - documents:', documents.length, 'loading:', loading, 'driver.id:', driver.id)
 
   const [showUploadModal, setShowUploadModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [transportistas, setTransportistas] = useState<Array<{ rut: string; nombre: string }>>([])
+  const [loadingTransportistas, setLoadingTransportistas] = useState(false)
   const [uploadDocTypeId, setUploadDocTypeId] = useState<string>('')
   const [uploadFileName, setUploadFileName] = useState('')
   const [uploadFile, setUploadFile] = useState<File | null>(null)
@@ -76,6 +80,19 @@ export function DriverCard({
       })
     }
   }, [selectedDocument, currentSelectedDocument, documents])
+
+  useEffect(() => {
+    if (showEditModal) {
+      setLoadingTransportistas(true)
+      fetch('/api/company/data')
+        .then(res => res.json())
+        .then(data => {
+          setTransportistas(data.subcontractors?.map((s: any) => ({ rut: s.rut, nombre: s.nombre })) || [])
+        })
+        .catch(err => console.error('[v0] Error loading transportistas:', err))
+        .finally(() => setLoadingTransportistas(false))
+    }
+  }, [showEditModal])
 
   useEffect(() => {
     if (showUploadModal) {
@@ -176,13 +193,22 @@ export function DriverCard({
           <div className="space-y-4">
             {/* Header with RUT and status */}
             <div className="mb-3 flex items-start justify-between pb-3 border-b border-slate-700/50">
-              <div>
-                <p className="text-xs font-semibold uppercase text-slate-500">RUT</p>
-                <p className="font-mono text-lg font-bold text-orange-400">{driver.rut}</p>
-              </div>
-              <Badge className={`${statusText} bg-transparent border border-current`}>
-                {driver.is_active ? 'Activo' : 'Inactivo'}
-              </Badge>
+          <div>
+            <p className="text-xs font-semibold uppercase text-slate-500">RUT</p>
+            <p className="font-mono text-lg font-bold text-orange-400">{driver.rut}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="p-2 rounded hover:bg-slate-700/60 transition-colors text-slate-400 hover:text-slate-200"
+              title="Editar conductor"
+            >
+              <Edit className="h-4 w-4" />
+            </button>
+            <Badge className={`${statusText} bg-transparent border border-current`}>
+              {driver.is_active ? 'Activo' : 'Inactivo'}
+            </Badge>
+          </div>
             </div>
 
             {/* Nombre with number */}
@@ -619,6 +645,27 @@ export function DriverCard({
           setShowDocumentModal(false)
           setSelectedDocument(null)
         }}
+      />
+
+      <EditConductorModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSuccess={() => {
+          refetch()
+          window.dispatchEvent(new Event('conductorUpdated'))
+        }}
+        driver={{
+          id: driver.conductor_id || driver.id,
+          rut: driver.rut,
+          nombres: driver.nombre,
+          apellido_paterno: driver.nombre?.split(' ')[1],
+          apellido_materno: '',
+          rut_proveedor: driver.rut_proveedor,
+          clase_licencia: driver.clase_licencia,
+          is_active: driver.is_active,
+          nombre_subcontratista: driver.nombre_subcontratista
+        }}
+        transportistas={transportistas}
       />
     </>
   )
