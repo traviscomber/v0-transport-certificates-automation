@@ -141,13 +141,13 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
         const query = searchTerm.toLowerCase()
         const matchesSearch =
           (sub.razon_social || sub.nombre || '').toLowerCase().includes(query) ||
-          sub.nombre_fantasia?.toLowerCase().includes(query) ||
-          sub.rut.includes(query) ||
-          sub.representante_legal?.toLowerCase().includes(query) ||
-          sub.ejecutivo_nombre?.toLowerCase().includes(query) ||
-          sub.comuna?.toLowerCase().includes(query) ||
-          sub.telefono.includes(query) ||
-          sub.email?.toLowerCase().includes(query)
+          (sub.nombre_fantasia || '').toLowerCase().includes(query) ||
+          (sub.rut || '').includes(query) ||
+          (sub.representante_legal || '').toLowerCase().includes(query) ||
+          (sub.ejecutivo_nombre || '').toLowerCase().includes(query) ||
+          (sub.comuna || '').toLowerCase().includes(query) ||
+          (sub.telefono || '').includes(query) ||
+          (sub.email || '').toLowerCase().includes(query)
         if (!matchesSearch) return false
       }
 
