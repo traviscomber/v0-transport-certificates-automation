@@ -1,3 +1,4 @@
+import { LABBE_SUBCONTRACTORS } from '../subcontractors-data'
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
@@ -19,20 +20,30 @@ export async function GET(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     )
 
-    console.log('[v0] Fetching real data from Supabase for subcontractors and drivers')
+    console.log('[v0] Fetching real data from Supabase for drivers')
 
-    // Fetch real transportistas from the transportistas table
-    const { data: subcontratistas, error: subcontratistasError } = await supabase
-      .from('transportistas')
-      .select('*')
-      .order('razon_social', { ascending: true })
+    // Use local subcontractors data with full information
+    const subcontractorsData = LABBE_SUBCONTRACTORS.map(s => ({
+      id: s.rut,
+      nombre: s.nombre,
+      nombre_fantasia: s.nombre || '',
+      rut: s.rut || '',
+      region: s.region || 'N/A',
+      ejecutiva_nombre: s.ejecutiva || 'N/A',
+      comuna: s.comuna || 'N/A',
+      representante: s.representante || '',
+      telefono: s.telefono || '',
+      email: s.email || '',
+      ariztia: s.ariztia || false,
+      lts: s.lts || false,
+      rendic: s.rendic || false,
+      interpolar: s.interpolar || false,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      activeDriverCount: 0,
+    }))
 
-    if (subcontratistasError) {
-      console.error('[v0] Error fetching transportistas:', subcontratistasError)
-      throw subcontratistasError
-    }
-
-    // Fetch real conductores (drivers)
+    // Fetch real conductores (drivers) from Supabase
     const { data: conductores, error: conductoresError } = await supabase
       .from('conductores')
       .select('id, rut, nombres, apellido_paterno, apellido_materno, transportista_id, rut_proveedor, is_active, created_at')
@@ -43,49 +54,26 @@ export async function GET(request: Request) {
       throw conductoresError
     }
 
-    // Create a map of transportista_id to transportista for quick lookup
-    const transportistaMap = new Map(subcontratistas?.map(s => [s.id, s]) || [])
-
-    // Format subcontractors with active driver count
-    const subcontractorsData = (subcontratistas || []).map(s => {
-      // Count active drivers for this subcontractor by matching rut_proveedor
+    // Count active drivers per subcontractor
+    subcontractorsData.forEach(s => {
       const activeDriverCount = (conductores || []).filter(c => 
         c.rut_proveedor === s.rut && c.is_active === true
       ).length
-
-      return {
-        id: s.id,
-        nombre: s.razon_social,
-        nombre_fantasia: s.razon_social || '',
-        rut: s.rut || '',
-        region: s.region || 'N/A',
-        ejecutiva: 'N/A', // Se asigna por RUT en el frontend si es necesario
-        comuna: s.comuna || 'N/A',
-        representante: s.nombre_contacto || '',
-        telefono: s.telefono || '',
-        email: s.email || '',
-        ariztia: false,
-        lts: false,
-        rendic: false,
-        interpolar: false,
-        is_active: s.is_active || true,
-        created_at: s.created_at,
-        activeDriverCount: activeDriverCount,
-      }
+      s.activeDriverCount = activeDriverCount
     })
 
-    // Create a map of RUT to transportista for quick lookup of provider names
-    const rutToSubcontratista = new Map(subcontratistas?.map(s => [s.rut, s]) || [])
+    // Create a map of RUT to subcontractor for quick lookup
+    const rutToSubcontratista = new Map(subcontractorsData.map(s => [s.rut, s]))
 
-    // Format drivers - use rut_proveedor to lookup the actual company name from transportistas
+    // Format drivers - use rut_proveedor to lookup the company from local subcontractors data
     const driversData = (conductores || []).map(c => {
-      const transportista = rutToSubcontratista.get(c.rut_proveedor)
+      const subcontratista = rutToSubcontratista.get(c.rut_proveedor)
       return {
         id: c.id,
         rut: c.rut || '',
         nombre: `${c.nombres || ''} ${c.apellido_paterno || ''} ${c.apellido_materno || ''}`.trim(),
         rut_proveedor: c.rut_proveedor || '',
-        proveedor: transportista?.razon_social || c.rut_proveedor || 'N/A',
+        proveedor: subcontratista?.nombre || c.rut_proveedor || 'N/A',
         is_active: c.is_active || true,
       }
     })
