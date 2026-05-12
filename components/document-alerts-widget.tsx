@@ -3,157 +3,151 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { FileCheck, FileX, AlertCircle, Clock } from 'lucide-react'
+import { CheckCircle2, Clock, AlertCircle, XCircle } from 'lucide-react'
+import useSWR from 'swr'
 
 interface DocumentAlert {
   id: string
-  title: string
+  subcontractor_id: string
+  subcontractor_name: string
+  document_type: string
+  alert_type: 'pending_review' | 'expiring_soon' | 'expired' | 'rejected'
   message: string
-  type: 'DOCUMENT_UPLOADED' | 'DOCUMENT_VALIDATED' | 'DOCUMENT_REJECTED' | 'DOCUMENT_VALIDATION_PENDING'
-  priority: 'high' | 'normal' | 'low'
-  metadata: {
-    document_id: string
-    document_type: string
-    uploader_name: string
-    uploader_type: 'conductor' | 'client'
-    timestamp: string
-    action_url?: string
-  }
-  is_resolved: boolean
+  expires_at?: string
+  is_read: boolean
 }
 
 export function DocumentAlertsWidget() {
-  const [alerts, setAlerts] = useState<DocumentAlert[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data, isLoading } = useSWR<{ alerts: DocumentAlert[] }>(
+    '/api/subcontractors/alerts',
+    (url) => fetch(url).then((res) => res.ok ? res.json() : { alerts: [] }),
+    { revalidateOnFocus: false, refreshInterval: 30000 }
+  )
 
-  useEffect(() => {
-    const fetchAlerts = async () => {
-      try {
-        const res = await fetch('/api/alerts?type=document_upload')
-        const data = await res.json()
-        setAlerts(data.data || [])
-      } catch (error) {
-        console.error('[v0] Error fetching document alerts:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
+  const alerts = data?.alerts || []
+  
+  const counts = {
+    pending: alerts.filter((a) => a.alert_type === 'pending_review').length,
+    expiring: alerts.filter((a) => a.alert_type === 'expiring_soon').length,
+    expired: alerts.filter((a) => a.alert_type === 'expired').length,
+    rejected: alerts.filter((a) => a.alert_type === 'rejected').length,
+  }
 
-    fetchAlerts()
-    const interval = setInterval(fetchAlerts, 30000) // Refresh every 30 seconds
-
-    return () => clearInterval(interval)
-  }, [])
+  const total = Object.values(counts).reduce((a, b) => a + b, 0)
 
   const getIcon = (type: string) => {
+    const iconClass = 'w-4 h-4'
     switch (type) {
-      case 'DOCUMENT_VALIDATED':
-        return <FileCheck className="w-4 h-4 text-green-600" />
-      case 'DOCUMENT_REJECTED':
-        return <FileX className="w-4 h-4 text-red-600" />
-      case 'DOCUMENT_VALIDATION_PENDING':
-        return <Clock className="w-4 h-4 text-yellow-600" />
+      case 'pending_review':
+        return <AlertCircle className={`${iconClass} text-blue-400`} />
+      case 'expiring_soon':
+        return <Clock className={`${iconClass} text-yellow-400`} />
+      case 'expired':
+        return <AlertCircle className={`${iconClass} text-red-400`} />
+      case 'rejected':
+        return <XCircle className={`${iconClass} text-red-500`} />
       default:
-        return <AlertCircle className="w-4 h-4 text-blue-600" />
+        return <AlertCircle className={`${iconClass}`} />
     }
   }
 
-  const getTypeLabel = (type: string) => {
+  const getColor = (type: string) => {
     switch (type) {
-      case 'DOCUMENT_UPLOADED':
-        return 'Documento Subido'
-      case 'DOCUMENT_VALIDATED':
-        return 'Documento Aprobado'
-      case 'DOCUMENT_REJECTED':
-        return 'Documento Rechazado'
-      case 'DOCUMENT_VALIDATION_PENDING':
-        return 'Pendiente de Validación'
+      case 'pending_review':
+        return 'bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20'
+      case 'expiring_soon':
+        return 'bg-yellow-500/10 border-yellow-500/30 hover:bg-yellow-500/20'
+      case 'expired':
+        return 'bg-red-500/10 border-red-500/30 hover:bg-red-500/20'
+      case 'rejected':
+        return 'bg-red-600/10 border-red-600/30 hover:bg-red-600/20'
       default:
-        return 'Alerta de Documento'
+        return 'bg-slate-500/10 border-slate-500/30'
     }
   }
 
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Alertas de Documentos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center text-muted-foreground">
-            Cargando alertas...
-          </div>
-        </CardContent>
-      </Card>
-    )
+  if (isLoading) {
+    return <div className="text-slate-400 text-sm">Cargando alertas...</div>
   }
 
-  if (alerts.length === 0) {
+  if (total === 0) {
     return (
-      <Card>
+      <Card className="border-slate-700 bg-slate-800/50">
         <CardHeader>
-          <CardTitle>Alertas de Documentos</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CheckCircle2 className="w-5 h-5 text-green-400" />
+            Documentos
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-muted-foreground py-8">
-            No hay alertas de documentos en este momento
-          </div>
+          <p className="text-sm text-slate-400">✓ Todo en orden</p>
         </CardContent>
       </Card>
     )
   }
 
   return (
-    <Card>
+    <Card className="border-slate-700 bg-slate-800/50">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Alertas de Documentos</span>
-          <Badge variant="outline">{alerts.length}</Badge>
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base">Alertas de Documentos</CardTitle>
+          <Badge className="bg-red-500/20 text-red-400">{total}</Badge>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {alerts.map((alert) => (
-          <div
-            key={alert.id}
-            className="flex items-start gap-4 p-3 rounded-lg border border-border bg-card/50 hover:bg-card/75 transition"
-          >
-            <div className="mt-1">{getIcon(alert.type)}</div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h4 className="font-semibold text-sm">{getTypeLabel(alert.type)}</h4>
-                <Badge
-                  variant="outline"
-                  className={
-                    alert.priority === 'high'
-                      ? 'bg-red-50 text-red-700 border-red-200'
-                      : 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                  }
-                >
-                  {alert.priority === 'high' ? 'Urgente' : 'Normal'}
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground mt-1">{alert.message}</p>
-              <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                <span>{alert.metadata.document_type}</span>
-                <span>•</span>
-                <span>{alert.metadata.uploader_name}</span>
+      <CardContent className="space-y-2">
+        {/* Summary badges */}
+        <div className="grid grid-cols-4 gap-1 mb-3">
+          {counts.pending > 0 && (
+            <div className="px-2 py-1 rounded bg-blue-500/10 border border-blue-500/20 text-center">
+              <div className="text-xs font-semibold text-blue-400">{counts.pending}</div>
+              <div className="text-xs text-blue-300">Revisar</div>
+            </div>
+          )}
+          {counts.expiring > 0 && (
+            <div className="px-2 py-1 rounded bg-yellow-500/10 border border-yellow-500/20 text-center">
+              <div className="text-xs font-semibold text-yellow-400">{counts.expiring}</div>
+              <div className="text-xs text-yellow-300">Pronto</div>
+            </div>
+          )}
+          {counts.expired > 0 && (
+            <div className="px-2 py-1 rounded bg-red-500/10 border border-red-500/20 text-center">
+              <div className="text-xs font-semibold text-red-400">{counts.expired}</div>
+              <div className="text-xs text-red-300">Vencidos</div>
+            </div>
+          )}
+          {counts.rejected > 0 && (
+            <div className="px-2 py-1 rounded bg-red-600/10 border border-red-600/20 text-center">
+              <div className="text-xs font-semibold text-red-500">{counts.rejected}</div>
+              <div className="text-xs text-red-400">Rechazados</div>
+            </div>
+          )}
+        </div>
+
+        {/* Alert items */}
+        <div className="space-y-2 max-h-60 overflow-y-auto">
+          {alerts.slice(0, 5).map((alert) => (
+            <div
+              key={alert.id}
+              className={`p-2 rounded border cursor-pointer transition-colors ${getColor(alert.alert_type)}`}
+            >
+              <div className="flex items-start gap-2">
+                {getIcon(alert.alert_type)}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-white truncate">{alert.subcontractor_name}</p>
+                  <p className="text-xs text-slate-300">{alert.document_type}</p>
+                </div>
               </div>
             </div>
-            {alert.metadata.action_url && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  window.location.href = alert.metadata.action_url!
-                }}
-              >
-                Ver
-              </Button>
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
+        
+        {alerts.length > 5 && (
+          <p className="text-xs text-slate-400 text-center pt-2">
+            +{alerts.length - 5} más...
+          </p>
+        )}
       </CardContent>
     </Card>
   )
 }
+
