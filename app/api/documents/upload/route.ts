@@ -56,7 +56,7 @@ async function handleSubcontractorUpload(file: File, requirementId: string, subc
   const buffer = Buffer.from(bytes)
 
   const { data: uploadData, error: uploadError } = await supabase.storage
-    .from('documents')
+    .from('subcontractor-documents')
     .upload(fileName, buffer, {
       contentType: file.type,
     })
@@ -68,18 +68,22 @@ async function handleSubcontractorUpload(file: File, requirementId: string, subc
     )
   }
 
+  // Get public URL for the uploaded file
+  const { data: { publicUrl } } = supabase.storage
+    .from('subcontractor-documents')
+    .getPublicUrl(uploadData.path)
+
   // Create document record in database
   const { data: doc, error: dbError } = await supabase
     .from('subcontractor_documents')
     .insert([
       {
-        subcontratista_id: subcontractorId,
-        nombre: file.name,
-        tipo: file.type,
-        documento_requerimiento_id: requirementId,
-        archivo_url: uploadData.path,
-        estado: 'pendiente',
-        fecha_subida: new Date().toISOString(),
+        subcontractor_id: subcontractorId,
+        file_name: file.name,
+        document_type_id: requirementId,
+        file_url: publicUrl,
+        status: 'pending',
+        uploaded_at: new Date().toISOString(),
       },
     ])
     .select()
@@ -87,7 +91,7 @@ async function handleSubcontractorUpload(file: File, requirementId: string, subc
 
   if (dbError) {
     // Clean up uploaded file if DB insert fails
-    await supabase.storage.from('documents').remove([fileName])
+    await supabase.storage.from('subcontractor-documents').remove([fileName])
     return NextResponse.json(
       { error: `Database error: ${dbError.message}` },
       { status: 500 }
@@ -96,10 +100,10 @@ async function handleSubcontractorUpload(file: File, requirementId: string, subc
 
   return NextResponse.json({
     id: doc.id,
-    nombre: doc.nombre,
-    tipo: doc.tipo,
-    estado: doc.estado,
-    fecha_subida: doc.fecha_subida,
+    file_name: doc.file_name,
+    status: doc.status,
+    uploaded_at: doc.uploaded_at,
+    file_url: doc.file_url,
   })
 }
 
