@@ -93,12 +93,44 @@ export async function POST(request: NextRequest) {
       console.log('[v0] Conductor auth record created successfully')
     }
 
+    // Create mandatory documents for the conductor (2 licenses)
+    const documentTypesToCreate = [
+      { code: 'LIC_CONDUCIR', name: 'Licencia de Conducir' },
+      { code: 'CERT_ANTECEDENTES', name: 'Certificado de Antecedentes' }
+    ]
+
+    const { data: createdDocTypes } = await supabase
+      .from('document_types')
+      .select('id, code')
+      .in('code', ['LIC_CONDUCIR', 'CERT_ANTECEDENTES'])
+
+    if (createdDocTypes && createdDocTypes.length > 0) {
+      const documentsToInsert = createdDocTypes.map(docType => ({
+        conductor_id: newConductor.id,
+        conductor_rut: rut,
+        document_type_id: docType.id,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+      }))
+
+      const { error: docError } = await supabase
+        .from('driver_documents')
+        .insert(documentsToInsert)
+
+      if (docError) {
+        console.warn('[v0] Warning: Could not create default documents for conductor:', docError)
+        // Don't fail - conductor is created, just warn about documents
+      } else {
+        console.log('[v0] Default documents created for conductor')
+      }
+    }
+
     return NextResponse.json({
       success: true,
       conductor: newConductor,
       password: conductorPassword,
       message: `Conductor creado exitosamente. Contraseña: ${conductorPassword}`,
-      instructions: 'El conductor puede usar su RUT y esta contraseña para acceder y subir documentos.'
+      instructions: 'El conductor puede usar su RUT y esta contraseña para acceder y subir documentos. Se han creado 2 documentos obligatorios: Licencia de Conducir y Certificado de Antecedentes.'
     })
   } catch (error) {
     console.error('[v0] Error:', error)
