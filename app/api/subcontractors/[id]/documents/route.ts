@@ -63,11 +63,27 @@ export async function POST(
 
     const buffer = await file.arrayBuffer()
     
+    console.log('[v0] Buffer created:', {
+      bufferLength: buffer.byteLength,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type
+    })
+
+    if (buffer.byteLength === 0) {
+      console.error('[v0] ERROR: Buffer is empty! File size:', file.size)
+      return NextResponse.json(
+        { error: 'El archivo está vacío' },
+        { status: 400 }
+      )
+    }
+    
     const { error: uploadError, data: uploadData } = await supabase.storage
       .from('subcontractor-documents')
-      .upload(fileName, buffer, {
+      .upload(fileName, Buffer.from(buffer), {
         cacheControl: '3600',
         upsert: false,
+        contentType: file.type || 'application/octet-stream',
       })
 
     if (uploadError) {
