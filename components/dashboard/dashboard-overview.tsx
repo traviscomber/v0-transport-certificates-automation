@@ -30,6 +30,7 @@ interface Stat {
   icon: any
   status: "active" | "warning"
   href: string
+  color?: "blue" | "green" | "orange" | "red"
 }
 
 export function DashboardOverview() {
@@ -41,6 +42,7 @@ export function DashboardOverview() {
       icon: FileText,
       status: "active",
       href: "/dashboard/company/documentos",
+      color: "blue",
     },
     {
       title: "Documentos Aprobados",
@@ -49,6 +51,7 @@ export function DashboardOverview() {
       icon: CheckCircle,
       status: "active",
       href: "/dashboard/company/documentos/aprobados",
+      color: "green",
     },
     {
       title: "Documentos Pendientes",
@@ -57,6 +60,7 @@ export function DashboardOverview() {
       icon: Clock,
       status: "active",
       href: "/dashboard/company/documentos/pendientes",
+      color: "orange",
     },
     {
       title: "Documentos Rechazados",
@@ -65,6 +69,7 @@ export function DashboardOverview() {
       icon: AlertTriangle,
       status: "warning",
       href: "/dashboard/company/documentos/rechazados",
+      color: "red",
     },
   ])
   const [alerts, setAlerts] = useState<Alert[]>([])
@@ -110,6 +115,7 @@ export function DashboardOverview() {
               icon: FileText,
               status: "active",
               href: "/dashboard/company/documentos",
+              color: "blue",
             },
             {
               title: "Documentos Aprobados",
@@ -118,6 +124,7 @@ export function DashboardOverview() {
               icon: CheckCircle,
               status: "active",
               href: "/dashboard/company/documentos/aprobados",
+              color: "green",
             },
             {
               title: "Documentos Pendientes",
@@ -126,6 +133,7 @@ export function DashboardOverview() {
               icon: Clock,
               status: "active",
               href: "/dashboard/company/documentos/pendientes",
+              color: "orange",
             },
             {
               title: "Documentos Rechazados",
@@ -134,6 +142,7 @@ export function DashboardOverview() {
               icon: AlertTriangle,
               status: "warning",
               href: "/dashboard/company/documentos/rechazados",
+              color: "red",
             },
           ])
         }
@@ -255,6 +264,7 @@ export function DashboardOverview() {
             icon={stat.icon}
             status={stat.status}
             href={stat.href}
+            color={stat.color}
           />
         ))}
       </div>
