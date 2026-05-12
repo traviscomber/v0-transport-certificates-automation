@@ -1,0 +1,68 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { razon_social, rut, region, comuna, telefono, email, nombre_contacto, is_active } = body
+
+    // Validate required fields
+    if (!razon_social || !rut) {
+      return NextResponse.json(
+        { error: 'razon_social y rut son requeridos' },
+        { status: 400 }
+      )
+    }
+
+    const supabase = createAdminClient()
+
+    // Check if RUT already exists
+    const { data: existing } = await supabase
+      .from('transportistas')
+      .select('id')
+      .eq('rut', rut)
+      .single()
+
+    if (existing) {
+      return NextResponse.json(
+        { error: 'Ya existe un subcontratista con este RUT' },
+        { status: 400 }
+      )
+    }
+
+    // Create new transportista
+    const { data, error } = await supabase
+      .from('transportistas')
+      .insert({
+        razon_social,
+        rut,
+        region: region || '',
+        comuna: comuna || '',
+        telefono: telefono || '',
+        email: email || '',
+        nombre_contacto: nombre_contacto || '',
+        is_active: is_active !== false,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+
+    if (error) {
+      console.error('[v0] Error creating transportista:', error)
+      throw error
+    }
+
+    console.log('[v0] New transportista created:', data?.[0])
+
+    return NextResponse.json({
+      success: true,
+      transportista: data?.[0],
+      message: 'Subcontratista creado exitosamente'
+    })
+  } catch (error) {
+    console.error('[v0] Error creating transportista:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Error creating transportista' },
+      { status: 500 }
+    )
+  }
+}
