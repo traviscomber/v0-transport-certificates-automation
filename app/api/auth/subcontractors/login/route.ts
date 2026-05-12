@@ -7,9 +7,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'transportista-secret-key'
 
 export async function POST(request: NextRequest) {
   try {
-    const { rut, password } = await request.json()
+    const body = await request.json()
+    const rut = body.rut?.trim()
+    const password = body.password?.trim()
 
-    console.log('[v0] Login attempt with RUT:', rut)
+    console.log('[v0] Login attempt - RUT:', rut, 'Password length:', password?.length)
 
     if (!rut || !password) {
       return NextResponse.json(
@@ -20,59 +22,48 @@ export async function POST(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // Normalize RUT for flexibility - remove all non-alphanumeric except hyphen
-    const normalizedForSearch = rut.replace(/\./g, '').toUpperCase()
-    console.log('[v0] Searching for RUT:', rut, 'normalized:', normalizedForSearch)
-
-    // Try to find auth record - try exact match first, then try without dots
-    let authRecord = null
-    let authError = null
-
-    // First try exact match
-    const { data: exactMatch, error: exactError } = await supabase
+    // Search for the RUT in transportista_auth - exact match
+    console.log('[v0] Searching for RUT:', rut)
+    const { data: authRecord, error: findError } = await supabase
       .from('transportista_auth')
       .select('id, rut, password_hash, is_active, transportista_id')
       .eq('rut', rut)
-      .single()
+      .maybeSingle() // Returns null instead of error if not found
 
-    if (!exactError && exactMatch) {
-      authRecord = exactMatch
-      console.log('[v0] Found exact RUT match')
-    } else {
-      // Try normalized (without dots)
-      const { data: normalizedMatch, error: normalizedError } = await supabase
-        .from('transportista_auth')
-        .select('id, rut, password_hash, is_active, transportista_id')
-        .eq('rut', normalizedForSearch)
-        .single()
-
-      if (!normalizedError && normalizedMatch) {
-        authRecord = normalizedMatch
-        console.log('[v0] Found normalized RUT match')
-      } else {
-        authError = normalizedError
-      }
+    if (findError) {
+      console.error('[v0] Database error:', findError)
+      return NextResponse.json(
+        { error: 'Error en la búsqueda' },
+        { status: 500 }
+      )
     }
 
-    if (authError || !authRecord) {
-      console.warn('[v0] Auth record not found for RUT:', rut, 'Error:', authError?.message)
+    if (!authRecord) {
+      console.warn('[v0] RUT not found:', rut)
       return NextResponse.json(
         { error: 'RUT o contraseña incorrectos' },
         { status: 401 }
       )
     }
 
+    console.log('[v0] Found auth record for RUT:', authRecord.rut)
+    console.log('[v0] Account is_active:', authRecord.is_active)
+    console.log('[v0] Password hash length:', authRecord.password_hash?.length)
+
+    // Check if account is active
     if (!authRecord.is_active) {
       return NextResponse.json(
-        { error: 'Esta cuenta no está activa' },
+        { error: 'Esta cuenta está inactiva' },
         { status: 403 }
       )
     }
 
     // Verify password
-    const passwordMatch = await bcrypt.compare(password, authRecord.password_hash)
+    console.log('[v0] Comparing password with hash...')
+    const passwordMatches = await bcrypt.compare(password, authRecord.password_hash)
+    console.log('[v0] Password match result:', passwordMatches)
 
-    if (!passwordMatch) {
+    if (!passwordMatches) {
       console.warn('[v0] Password mismatch for RUT:', rut)
       return NextResponse.json(
         { error: 'RUT o contraseña incorrectos' },
@@ -85,9 +76,9 @@ export async function POST(request: NextRequest) {
       .from('transportistas')
       .select('id, rut, razon_social, nombre_fantasia')
       .eq('id', authRecord.transportista_id)
-      .single()
+      .maybeSingle()
 
-    if (transpError || !transportista) {
+    if (transpError) {
       console.error('[v0] Error fetching transportista:', transpError)
       return NextResponse.json(
         { error: 'Error al cargar datos de la empresa' },
@@ -99,7 +90,7 @@ export async function POST(request: NextRequest) {
     const token = jwt.sign(
       {
         rut: authRecord.rut,
-        transportista_id: transportista.id,
+        transportista_id: transportista?.id,
         tipo: 'subcontratista',
       },
       JWT_SECRET,
@@ -111,15 +102,16 @@ export async function POST(request: NextRequest) {
       .from('transportista_auth')
       .update({ last_login: new Date().toISOString() })
       .eq('id', authRecord.id)
+      .then(() => console.log('[v0] Updated last_login'))
 
-    // Create response with secure HTTP-only cookie
+    // Create response
     const response = NextResponse.json({
       success: true,
       message: 'Login exitoso',
       transportista: {
-        id: transportista.id,
-        rut: transportista.rut,
-        nombre: transportista.razon_social || transportista.nombre_fantasia,
+        id: transportista?.id,
+        rut: transportista?.rut,
+        nombre: transportista?.razon_social || transportista?.nombre_fantasia,
       },
     })
 
@@ -130,18 +122,17 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 86400, // 24 hours
+      maxAge: 86400,
       path: '/',
     })
 
-    console.log('[v0] Subcontractor login successful:', rut)
-
+    console.log('[v0] Login successful for:', rut)
     return response
 
   } catch (error) {
-    console.error('[v0] Error in login endpoint:', error)
+    console.error('[v0] Login endpoint error:', error instanceof Error ? error.message : error)
     return NextResponse.json(
-      { error: 'Error al procesar el login' },
+      { error: 'Error al procesar el login', details: error instanceof Error ? error.message : 'Unknown' },
       { status: 500 }
     )
   }
