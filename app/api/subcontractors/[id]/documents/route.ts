@@ -64,21 +64,31 @@ export async function POST(
     const buffer = await file.arrayBuffer()
     const uint8Array = new Uint8Array(buffer)
     
-    console.log('[v0] Buffer created:', {
-      bufferLength: buffer.byteLength,
-      uint8Length: uint8Array.length,
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type
-    })
+    console.log('[v0] === PDF UPLOAD PROCESSING ===')
+    console.log('[v0] File: ' + file.name)
+    console.log('[v0] File size from File object: ' + file.size + ' bytes')
+    console.log('[v0] ArrayBuffer length: ' + buffer.byteLength + ' bytes')
+    console.log('[v0] Uint8Array length: ' + uint8Array.length + ' bytes')
+    console.log('[v0] File type: ' + file.type)
 
     if (buffer.byteLength === 0) {
-      console.error('[v0] ERROR: Buffer is empty! File size:', file.size)
+      console.error('[v0] CRITICAL ERROR: ArrayBuffer is empty!')
+      console.error('[v0] File object size was: ' + file.size)
       return NextResponse.json(
-        { error: 'El archivo está vacío' },
+        { error: 'El archivo llegó vacío al servidor. Verifica que el archivo no esté corrupto.' },
         { status: 400 }
       )
     }
+
+    if (uint8Array.length === 0) {
+      console.error('[v0] CRITICAL ERROR: Uint8Array conversion failed!')
+      return NextResponse.json(
+        { error: 'Error al procesar el archivo en el servidor' },
+        { status: 500 }
+      )
+    }
+    
+    console.log('[v0] Buffer ready for upload. First 10 bytes:', Array.from(uint8Array.slice(0, 10)))
     
     const { error: uploadError, data: uploadData } = await supabase.storage
       .from('subcontractor-documents')
@@ -89,12 +99,15 @@ export async function POST(
       })
 
     if (uploadError) {
-      console.error('[v0] Storage upload failed:', uploadError)
+      console.error('[v0] UPLOAD ERROR:', uploadError)
       return NextResponse.json(
-        { error: 'Error al subir el archivo' },
+        { error: 'Error al subir el archivo: ' + uploadError.message },
         { status: 500 }
       )
     }
+
+    console.log('[v0] UPLOAD SUCCESS:', uploadData)
+    console.log('[v0] File path in storage:', uploadData.path)
 
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
@@ -118,7 +131,6 @@ export async function POST(
       .from('subcontractor_documents')
       .insert({
         subcontractor_id: id,
-        subcontractor_rut: subcontractorRut,
         document_type_id: documentTypeId,
         file_url: publicUrl,
         file_name: file.name,
