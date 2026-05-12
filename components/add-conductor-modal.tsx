@@ -298,6 +298,8 @@ export function AddConductorModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="A2">Clase A2</SelectItem>
+                  <SelectItem value="A5">Clase A5</SelectItem>
                   <SelectItem value="A">Clase A</SelectItem>
                   <SelectItem value="B">Clase B</SelectItem>
                   <SelectItem value="C">Clase C</SelectItem>
