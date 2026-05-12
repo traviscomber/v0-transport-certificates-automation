@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { v4 as uuidv4 } from 'uuid';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -16,14 +17,12 @@ async function createJaviera() {
       .from('profiles')
       .insert([
         {
+          id: uuidv4(),
           email: 'jayala@labbe.cl',
           full_name: 'Javiera Ayala Rodríguez',
           rut: '18450987-1',
           phone: '+56987654321',
           role: 'executive',
-          company: 'Labbe',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
         },
       ])
       .select();
