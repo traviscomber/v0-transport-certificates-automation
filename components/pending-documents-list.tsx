@@ -19,6 +19,9 @@ interface PendingDocument {
   file_url?: string
   created_at?: string
   uploaded_at?: string
+  ejecutiva?: string
+  reviewed_by_ejecutiva?: string
+  uploaded_by_ejecutiva?: string
   docType?: { code: string; nombre: string }
   conductores?: {
     id: string
@@ -297,8 +300,14 @@ export function PendingDocumentsList({ conductorDocs: initialConductorDocs, subD
                             {doc.docType.nombre}
                           </Badge>
                         )}
+                        {doc.ejecutiva && doc.ejecutiva !== 'Sin asignar' && (
+                          <Badge variant="outline" className="text-xs bg-purple-500/10 border-purple-500/30 text-purple-300">
+                            👤 {doc.ejecutiva}
+                          </Badge>
+                        )}
                         {doc.uploaded_at && (
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
                             {new Date(doc.uploaded_at).toLocaleDateString('es-CL', {
                               year: 'numeric',
                               month: 'short',
