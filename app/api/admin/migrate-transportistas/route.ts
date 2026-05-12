@@ -19,15 +19,21 @@ export async function POST(request: NextRequest) {
       console.error('[v0] Error clearing transportistas:', deleteError)
     }
 
-    // Format transportistas for insertion from local data (only existing columns)
-    const transportistasForInsert = LABBE_SUBCONTRACTORS.map(s => ({
+    // Format transportistas for insertion from local data (only columns that exist in Supabase)
+    // Remove duplicates by RUT to prevent CONFLICT error
+    const seenRuts = new Set<string>()
+    const transportistasForInsert = LABBE_SUBCONTRACTORS.filter(s => {
+      if (seenRuts.has(s.rut)) {
+        console.log('[v0] Skipping duplicate RUT:', s.rut, s.nombre)
+        return false
+      }
+      seenRuts.add(s.rut)
+      return true
+    }).map(s => ({
       rut: s.rut,
       razon_social: s.nombre,
-      region: s.region || '',
-      comuna: s.comuna || '',
-      nombre_contacto: s.representante || '',
-      telefono: s.telefono || '',
-      email: s.email || '',
+      // Note: Only include columns that exist in the transportistas table
+      // region, comuna, representante, telefono, email will be added later if schema allows
       is_active: true,
       created_at: new Date().toISOString(),
     }))
