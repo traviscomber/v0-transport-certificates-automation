@@ -5,6 +5,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
  * GET /api/subcontractors/alerts
  * Fetch all document-related alerts for display in dashboard
  */
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest) {
   try {
     const supabase = createAdminClient()
