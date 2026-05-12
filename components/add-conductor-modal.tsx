@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertCircle, Loader, Copy, Check } from 'lucide-react'
-import { useState as useStateExtra } from 'react'
 
 interface AddConductorModalProps {
   isOpen: boolean
@@ -28,7 +27,7 @@ export function AddConductorModal({
   const [copiedPassword, setCopiedPassword] = useState(false)
   const [successData, setSuccessData] = useState<{
     conductor: any
-    temporaryPassword: string
+    password: string
     instructions: string
   } | null>(null)
   const [formData, setFormData] = useState({
@@ -99,10 +98,10 @@ export function AddConductorModal({
         throw new Error(data.error || 'Error al crear conductor')
       }
 
-      // Show success with temporary password
+      // Show success with password
       setSuccessData({
         conductor: data.conductor,
-        temporaryPassword: data.temporaryPassword,
+        password: data.password,
         instructions: data.instructions
       })
     } catch (err) {
@@ -113,8 +112,8 @@ export function AddConductorModal({
   }
 
   const handleCopyPassword = () => {
-    if (successData?.temporaryPassword) {
-      navigator.clipboard.writeText(successData.temporaryPassword)
+    if (successData?.password) {
+      navigator.clipboard.writeText(successData.password)
       setCopiedPassword(true)
       setTimeout(() => setCopiedPassword(false), 2000)
     }
@@ -167,10 +166,10 @@ export function AddConductorModal({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-base font-semibold">Contraseña Temporal</Label>
+                <Label className="text-base font-semibold">Contraseña</Label>
                 <div className="flex gap-2">
                   <div className="flex-1 p-3 bg-gray-100 rounded border border-gray-300 font-mono text-center text-lg tracking-widest">
-                    {successData.temporaryPassword}
+                    {successData.password}
                   </div>
                   <Button
                     type="button"
