@@ -11,14 +11,18 @@ interface EditSubcontractorModalProps {
   onSuccess: () => void
   subcontractor?: {
     id: string
-    razon_social: string
+    razon_social?: string
+    nombre?: string
     rut: string
     region?: string
     comuna?: string
     telefono?: string
     email?: string
     nombre_contacto?: string
+    representante_legal?: string
+    direccion?: string
     is_active: boolean
+    [key: string]: any
   }
 }
 

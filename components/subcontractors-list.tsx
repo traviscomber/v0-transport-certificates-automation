@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { Search, MapPin, Phone, Mail, CheckCircle, AlertCircle, X, Filter, Users } from 'lucide-react'
+import { Search, MapPin, Phone, Mail, CheckCircle, AlertCircle, X, Filter, Users, Edit } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { SubcontractorDetailTabs } from './subcontractor-detail-tabs'
+import { EditSubcontractorModal } from './edit-subcontractor-modal'
 
 interface Document {
   id: string
@@ -84,6 +86,8 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
   const [expandedDocuments, setExpandedDocuments] = useState<Set<string>>(new Set())
   const [selectedDetailSubcontractor, setSelectedDetailSubcontractor] = useState<any>(null)
   const [detailTabToOpen, setDetailTabToOpen] = useState<'resumen' | 'documentos' | 'conductores' | 'certificaciones' | 'onboarding'>('resumen')
+  const [editingSubcontractor, setEditingSubcontractor] = useState<Subcontractor | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   // Fetch data from API if not provided as prop
   useEffect(() => {
@@ -399,13 +403,25 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
                       </span>
                     </div>
                     
+                    {/* Edit Button */}
+                    <button
+                      onClick={() => {
+                        setEditingSubcontractor(sub)
+                        setIsEditModalOpen(true)
+                      }}
+                      className="ml-auto p-2 rounded hover:bg-slate-700/60 transition-colors text-slate-400 hover:text-slate-200"
+                      title="Editar subcontratista"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+
                     {/* Documentos Button */}
                     <button
                       onClick={() => {
                         setDetailTabToOpen('documentos')
                         setSelectedDetailSubcontractor(sub)
                       }}
-                      className="ml-auto text-xs px-3 py-1 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors border border-blue-500/30"
+                      className="text-xs px-3 py-1 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors border border-blue-500/30"
                     >
                       Documentos
                     </button>
@@ -516,6 +532,18 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
           }}
         />
       )}
+
+      <EditSubcontractorModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSuccess={() => {
+          setIsEditModalOpen(false)
+          setEditingSubcontractor(null)
+          // Refetch data by reloading from API
+          window.location.reload()
+        }}
+        subcontractor={editingSubcontractor || undefined}
+      />
     </div>
   )
 }
