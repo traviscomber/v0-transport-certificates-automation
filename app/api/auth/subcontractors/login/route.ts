@@ -20,15 +20,42 @@ export async function POST(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // Find auth record
-    const { data: authRecord, error: authError } = await supabase
+    // Normalize RUT for flexibility - remove all non-alphanumeric except hyphen
+    const normalizedForSearch = rut.replace(/\./g, '').toUpperCase()
+    console.log('[v0] Searching for RUT:', rut, 'normalized:', normalizedForSearch)
+
+    // Try to find auth record - try exact match first, then try without dots
+    let authRecord = null
+    let authError = null
+
+    // First try exact match
+    const { data: exactMatch, error: exactError } = await supabase
       .from('transportista_auth')
       .select('id, rut, password_hash, is_active, transportista_id')
       .eq('rut', rut)
       .single()
 
+    if (!exactError && exactMatch) {
+      authRecord = exactMatch
+      console.log('[v0] Found exact RUT match')
+    } else {
+      // Try normalized (without dots)
+      const { data: normalizedMatch, error: normalizedError } = await supabase
+        .from('transportista_auth')
+        .select('id, rut, password_hash, is_active, transportista_id')
+        .eq('rut', normalizedForSearch)
+        .single()
+
+      if (!normalizedError && normalizedMatch) {
+        authRecord = normalizedMatch
+        console.log('[v0] Found normalized RUT match')
+      } else {
+        authError = normalizedError
+      }
+    }
+
     if (authError || !authRecord) {
-      console.warn('[v0] Auth record not found for RUT:', rut)
+      console.warn('[v0] Auth record not found for RUT:', rut, 'Error:', authError?.message)
       return NextResponse.json(
         { error: 'RUT o contraseña incorrectos' },
         { status: 401 }
