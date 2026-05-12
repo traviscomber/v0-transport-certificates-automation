@@ -8,7 +8,6 @@ export async function GET() {
     const { data: documentTypes, error } = await supabase
       .from('subcontractor_document_types')
       .select('id, code, nombre, periodicidad, es_obligatorio')
-      .eq('es_obligatorio', true)
       .order('nombre', { ascending: true })
 
     if (error) {

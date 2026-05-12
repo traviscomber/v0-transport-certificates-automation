@@ -42,30 +42,46 @@ export async function POST(
       )
     }
 
-    // Upload file to Vercel Blob
+    // Upload file to Supabase Storage
     const fileName = `${id}/${docType.code}/${Date.now()}_${file.name}`
+    
+    // Create documents bucket if it doesn't exist
+    try {
+      const { data: buckets } = await supabase.storage.listBuckets()
+      const bucketExists = buckets?.some((b: any) => b.name === 'subcontractor-documents')
+      
+      if (!bucketExists) {
+        console.log('[v0] Creating subcontractor-documents bucket...')
+        await supabase.storage.createBucket('subcontractor-documents', {
+          public: true,
+          fileSizeLimit: 52428800, // 50MB
+        })
+      }
+    } catch (bucketError) {
+      console.log('[v0] Bucket check (may already exist):', bucketError)
+    }
+
     const buffer = await file.arrayBuffer()
     
-    const response = await fetch('https://blob.vercel-storage.com/upload', {
-      method: 'POST',
-      headers: {
-        'x-access-token': process.env.BLOB_READ_WRITE_TOKEN || '',
-      },
-      body: buffer,
-    })
+    const { error: uploadError, data: uploadData } = await supabase.storage
+      .from('subcontractor-documents')
+      .upload(fileName, buffer, {
+        cacheControl: '3600',
+        upsert: false,
+      })
 
-    if (!response.ok) {
-      console.error('[v0] Blob upload failed:', response.statusText)
+    if (uploadError) {
+      console.error('[v0] Storage upload failed:', uploadError)
       return NextResponse.json(
         { error: 'Error al subir el archivo' },
         { status: 500 }
       )
     }
 
-    const blob = await response.json()
-    const fileUrl = blob.url
-
-    console.log('[v0] File uploaded to:', fileUrl)
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('subcontractor-documents')
+      .getPublicUrl(fileName)
 
     // Calculate expiry date based on periodicity
     const now = new Date()
@@ -86,7 +102,7 @@ export async function POST(
         subcontractor_id: id,
         subcontractor_rut: subcontractorRut,
         document_type_id: documentTypeId,
-        file_url: fileUrl,
+        file_url: publicUrl,
         file_name: file.name,
         status: 'uploaded',
         uploaded_at: new Date().toISOString(),

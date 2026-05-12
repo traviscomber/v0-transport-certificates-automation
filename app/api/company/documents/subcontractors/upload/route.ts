@@ -42,8 +42,8 @@ export async function POST(request: NextRequest) {
 
     // Verify subcontractor exists
     const { data: subcontractor, error: subError } = await adminClient
-      .from('subcontractors')
-      .select('id, razon_social')
+      .from('transportistas')
+      .select('id, rut, razon_social')
       .eq('id', subcontractorId)
       .single()
 
@@ -80,18 +80,17 @@ export async function POST(request: NextRequest) {
         .from('documents')
         .getPublicUrl(filePath)
 
-      // Save metadata to documents table
+      // Save metadata to subcontractor_documents table
       const { data: doc, error: docError } = await adminClient
-        .from('documents')
+        .from('subcontractor_documents')
         .insert({
-          file_name: file.name,
-          file_size: file.size,
-          file_type: file.type,
-          document_type: category,
           subcontractor_id: subcontractorId,
-          storage_path: filePath,
-          public_url: publicUrl,
-          expiry_date: expiryDate || null,
+          subcontractor_rut: subcontractor.rut || '',
+          document_type_id: category,
+          file_url: publicUrl,
+          file_name: file.name,
+          status: 'pending',
+          uploaded_at: new Date().toISOString(),
         })
         .select()
         .single()
