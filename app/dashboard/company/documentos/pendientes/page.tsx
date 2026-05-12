@@ -63,7 +63,7 @@ export default function PendientesPage() {
       return allData
     }
 
-    const filtered = {
+    return {
       conductorDocs: allData.conductorDocs?.filter((doc: any) => {
         const docEjecutiva = doc.ejecutiva || 'Sin asignar'
         return docEjecutiva === selectedEjecutiva
@@ -73,15 +73,6 @@ export default function PendientesPage() {
         return docEjecutiva === selectedEjecutiva
       }) || []
     }
-    
-    console.log('[v0] Filter applied:', {
-      selected: selectedEjecutiva,
-      conductor: filtered.conductorDocs.length,
-      subcontractor: filtered.subDocs.length,
-      total: filtered.conductorDocs.length + filtered.subDocs.length
-    })
-    
-    return filtered
   }, [allData, selectedEjecutiva])
 
   if (loading) {
