@@ -100,6 +100,25 @@ export default function SubcontractorDashboardPage() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      // Validaciones profesionales
+      const maxSize = 50 * 1024 * 1024 // 50MB
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg']
+      
+      if (!allowedTypes.includes(file.type)) {
+        setUploadError('Solo se permiten: PDF, JPG, PNG')
+        return
+      }
+      
+      if (file.size > maxSize) {
+        setUploadError(`Archivo muy grande. Máximo: 50MB. Tu archivo: ${(file.size / 1024 / 1024).toFixed(2)}MB`)
+        return
+      }
+
+      if (file.size === 0) {
+        setUploadError('El archivo está vacío')
+        return
+      }
+
       setSelectedFile(file)
       setUploadError('')
     }
@@ -123,6 +142,13 @@ export default function SubcontractorDashboardPage() {
       formData.append('documentTypeId', selectedDocType)
       formData.append('subcontractorRut', transportista.rut)
 
+      console.log('[v0] Uploading file:', {
+        name: selectedFile.name,
+        size: selectedFile.size,
+        type: selectedFile.type,
+        documentTypeId: selectedDocType
+      })
+
       const response = await fetch(
         `/api/subcontractors/${transportista.id}/documents`,
         {
@@ -131,16 +157,25 @@ export default function SubcontractorDashboardPage() {
         }
       )
 
+      console.log('[v0] Upload response status:', response.status)
       const data = await response.json()
+      console.log('[v0] Upload response data:', data)
 
       if (!response.ok) {
-        setUploadError(data.error || 'Error al subir el documento')
+        const errorMsg = data.error || 'Error al subir el documento'
+        console.error('[v0] Upload failed:', errorMsg)
+        setUploadError(errorMsg)
         return
       }
 
-      setUploadSuccess(data.message || 'Documento subido exitosamente')
+      console.log('[v0] Upload successful:', data)
+      setUploadSuccess('Documento subido exitosamente')
       setSelectedFile(null)
       setSelectedDocType('')
+      
+      // Clear file input
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+      if (fileInput) fileInput.value = ''
       
       // Refetch documents
       await fetchDocuments(transportista.id)
@@ -149,8 +184,8 @@ export default function SubcontractorDashboardPage() {
       setTimeout(() => setUploadSuccess(''), 5000)
 
     } catch (error) {
-      setUploadError('Error al subir el documento. Intenta nuevamente.')
       console.error('[v0] Upload error:', error)
+      setUploadError('Error al subir el documento. Intenta nuevamente.')
     } finally {
       setUploading(false)
     }
@@ -263,10 +298,11 @@ export default function SubcontractorDashboardPage() {
                     onChange={handleFileSelect}
                     disabled={uploading}
                     className="bg-slate-700/50 border-slate-600 text-slate-300 cursor-pointer"
-                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                    accept=".pdf,.jpg,.jpeg,.png"
                   />
                   <p className="text-xs text-slate-400">
-                    {selectedFile ? selectedFile.name : 'PDF, JPG, PNG, DOC, DOCX máximo 10MB'}
+                    {selectedFile && `✓ ${selectedFile.name} (${(selectedFile.size / 1024 / 1024).toFixed(2)}MB)`}
+                    {!selectedFile && 'PDF, JPG, PNG máximo 50MB'}
                   </p>
                 </div>
               </div>
