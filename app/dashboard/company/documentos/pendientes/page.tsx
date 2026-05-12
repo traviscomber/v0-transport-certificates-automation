@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft, Filter, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { PendingDocumentsList } from '@/components/pending-documents-list'
-import { Badge } from '@/components/ui/badge'
 
 export default function PendientesPage() {
   const [allData, setAllData] = useState<any>(null)
@@ -135,23 +134,31 @@ export default function PendientesPage() {
           </p>
         ) : (
           <div className="flex flex-wrap gap-2">
-            <Badge
-              variant={selectedEjecutiva === 'all' ? 'default' : 'outline'}
-              className="cursor-pointer px-3 py-2 text-sm font-medium transition-all hover:scale-105"
+            <button
+              type="button"
               onClick={() => setSelectedEjecutiva('all')}
+              className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
+                selectedEjecutiva === 'all'
+                  ? 'bg-orange-500 text-white border border-orange-600'
+                  : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
+              }`}
             >
               Todas ({totalPending})
-            </Badge>
+            </button>
 
             {ejecutivas.map(({ name, count }) => (
-              <Badge
+              <button
                 key={name}
-                variant={selectedEjecutiva === name ? 'default' : 'outline'}
-                className="cursor-pointer px-3 py-2 text-sm font-medium transition-all hover:scale-105"
+                type="button"
                 onClick={() => setSelectedEjecutiva(name)}
+                className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
+                  selectedEjecutiva === name
+                    ? 'bg-orange-500 text-white border border-orange-600'
+                    : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
+                }`}
               >
                 {name === 'Sin asignar' ? '📋' : '👤'} {name} ({count})
-              </Badge>
+              </button>
             ))}
           </div>
         )}
