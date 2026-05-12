@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -37,15 +37,32 @@ export function EditSubcontractorModal({
   const [error, setError] = useState<string>('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [formData, setFormData] = useState({
-    razon_social: subcontractor?.razon_social || '',
-    rut: subcontractor?.rut || '',
-    region: subcontractor?.region || '',
-    comuna: subcontractor?.comuna || '',
-    telefono: subcontractor?.telefono || '',
-    email: subcontractor?.email || '',
-    nombre_contacto: subcontractor?.nombre_contacto || '',
-    is_active: subcontractor?.is_active !== false
+    razon_social: '',
+    rut: '',
+    region: '',
+    comuna: '',
+    telefono: '',
+    email: '',
+    nombre_contacto: '',
+    is_active: true
   })
+
+  // Update form data when subcontractor changes
+  useEffect(() => {
+    if (subcontractor) {
+      setFormData({
+        razon_social: subcontractor?.razon_social || subcontractor?.nombre || '',
+        rut: subcontractor?.rut || '',
+        region: subcontractor?.region || '',
+        comuna: subcontractor?.comuna || '',
+        telefono: subcontractor?.telefono || '',
+        email: subcontractor?.email || '',
+        nombre_contacto: subcontractor?.nombre_contacto || subcontractor?.representante_legal || '',
+        is_active: subcontractor?.is_active !== false
+      })
+      console.log('[v0] Edit modal loaded subcontractor:', subcontractor)
+    }
+  }, [subcontractor, isOpen])
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
