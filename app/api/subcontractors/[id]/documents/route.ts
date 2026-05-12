@@ -1,127 +1,213 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 /**
- * GET /api/subcontractors/[id]/documents
- * Fetch all documents and requirements for a specific subcontractor
+ * POST /api/subcontractors/[id]/documents
+ * Upload a document for a subcontractor
  */
-export async function GET(
-  request: Request,
+export async function POST(
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const subcontractorId = params.id
+    const supabase = createAdminClient()
+    const { id } = params
+    const formData = await request.formData()
+    
+    const file = formData.get('file') as File
+    const documentTypeId = formData.get('documentTypeId') as string
+    const subcontractorRut = formData.get('subcontractorRut') as string
 
-    if (!subcontractorId) {
+    if (!file || !documentTypeId || !subcontractorRut || !id) {
+      return NextResponse.json(
+        { error: 'Faltan campos requeridos' },
+        { status: 400 }
+      )
+    }
+
+    console.log('[v0] Starting document upload for subcontractor:', id)
+
+    // Get document type details
+    const { data: docType, error: docTypeError } = await supabase
+      .from('subcontractor_document_types')
+      .select('id, code, periodicidad')
+      .eq('id', documentTypeId)
+      .single()
+
+    if (docTypeError || !docType) {
+      console.error('[v0] Error fetching document type:', docTypeError)
+      return NextResponse.json(
+        { error: 'Tipo de documento no encontrado' },
+        { status: 404 }
+      )
+    }
+
+    // Upload file to Vercel Blob
+    const fileName = `${id}/${docType.code}/${Date.now()}_${file.name}`
+    const buffer = await file.arrayBuffer()
+    
+    const response = await fetch('https://blob.vercel-storage.com/upload', {
+      method: 'POST',
+      headers: {
+        'x-access-token': process.env.BLOB_READ_WRITE_TOKEN || '',
+      },
+      body: buffer,
+    })
+
+    if (!response.ok) {
+      console.error('[v0] Blob upload failed:', response.statusText)
+      return NextResponse.json(
+        { error: 'Error al subir el archivo' },
+        { status: 500 }
+      )
+    }
+
+    const blob = await response.json()
+    const fileUrl = blob.url
+
+    console.log('[v0] File uploaded to:', fileUrl)
+
+    // Calculate expiry date based on periodicity
+    const now = new Date()
+    let expiresAt = new Date(now)
+    
+    if (docType.periodicidad === 'Mensual') {
+      expiresAt.setMonth(expiresAt.getMonth() + 1)
+    } else if (docType.periodicidad === 'Trimestral') {
+      expiresAt.setMonth(expiresAt.getMonth() + 3)
+    } else if (docType.periodicidad === 'Anual') {
+      expiresAt.setFullYear(expiresAt.getFullYear() + 1)
+    }
+
+    // Save document record
+    const { data: newDocument, error: saveError } = await supabase
+      .from('subcontractor_documents')
+      .insert({
+        subcontractor_id: id,
+        subcontractor_rut: subcontractorRut,
+        document_type_id: documentTypeId,
+        file_url: fileUrl,
+        file_name: file.name,
+        status: 'uploaded',
+        uploaded_at: new Date().toISOString(),
+        expires_at: expiresAt.toISOString(),
+      })
+      .select()
+      .single()
+
+    if (saveError) {
+      console.error('[v0] Error saving document record:', saveError)
+      return NextResponse.json(
+        { error: 'Error al guardar el documento' },
+        { status: 500 }
+      )
+    }
+
+    // Create alert for pending review
+    const { error: alertError } = await supabase
+      .from('subcontractor_document_alerts')
+      .insert({
+        subcontractor_id: id,
+        document_id: newDocument.id,
+        alert_type: 'pending_review',
+        message: `Nuevo documento ${docType.code} subido - Pendiente de revisión`,
+      })
+
+    if (alertError) {
+      console.warn('[v0] Warning: Could not create alert:', alertError)
+    }
+
+    console.log('[v0] Document uploaded successfully:', newDocument.id)
+
+    return NextResponse.json({
+      success: true,
+      document: newDocument,
+      message: `Documento subido exitosamente. Se vencerá el ${expiresAt.toLocaleDateString('es-CL')}`,
+    })
+
+  } catch (error) {
+    console.error('[v0] Error in document upload:', error)
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * GET /api/subcontractors/[id]/documents
+ * Fetch all documents for a specific subcontractor
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const supabase = createAdminClient()
+    const { id } = params
+
+    if (!id) {
       return NextResponse.json(
         { error: 'Subcontractor ID is required' },
         { status: 400 }
       )
     }
 
-    const supabase = createAdminClient()
-
     // Fetch documents uploaded by this subcontractor
     const { data: documents, error: docsError } = await supabase
-      .from('documents')
-      .select('*')
-      .eq('subcontratista_id', subcontractorId)
-      .order('fecha_subida', { ascending: false })
+      .from('subcontractor_documents')
+      .select(`
+        *,
+        document_type:subcontractor_document_types(code, nombre, periodicidad)
+      `)
+      .eq('subcontractor_id', id)
+      .order('uploaded_at', { ascending: false })
 
     if (docsError) {
       console.error('[v0] Error fetching documents:', docsError)
       return NextResponse.json(
-        { error: 'Failed to fetch documents' },
+        { error: 'Error al obtener documentos' },
         { status: 500 }
       )
     }
 
-    // Fetch document requirements for subcontractors
-    // Include "Empresa", "Subcontratación", and "certificaciones" categories
-    const { data: requirements, error: reqError } = await supabase
-      .from('document_requirements')
+    // Fetch document types (requirements)
+    const { data: documentTypes, error: typesError } = await supabase
+      .from('subcontractor_document_types')
       .select('*')
-      .eq('is_active', true)
-      .in('category', ['Subcontratación', 'Empresa', 'certificaciones'])
-      .order('category', { ascending: true })
-      .order('code', { ascending: true })
+      .eq('es_obligatorio', true)
+      .order('nombre', { ascending: true })
 
-    if (reqError) {
-      console.error('[v0] Error fetching requirements:', reqError)
+    if (typesError) {
+      console.error('[v0] Error fetching document types:', typesError)
       return NextResponse.json(
-        { error: 'Failed to fetch requirements' },
+        { error: 'Error al obtener tipos de documento' },
         { status: 500 }
       )
     }
 
-    // Fetch subcontractor to get certification flags
-    const { data: subcontractor, error: subError } = await supabase
-      .from('transportistas')
-      .select('id, rut, ariztia, lts, rendic, interpolar')
-      .eq('id', subcontractorId)
-      .single()
-
-    if (subError) {
-      console.error('[v0] Error fetching subcontractor:', subError)
-      return NextResponse.json(
-        { error: 'Subcontractor not found' },
-        { status: 404 }
-      )
+    // Calculate summary
+    const summary = {
+      totalDocumentsUploaded: documents?.length || 0,
+      totalRequirements: documentTypes?.length || 0,
+      approvedDocuments: documents?.filter((d) => d.status === 'approved').length || 0,
+      pendingDocuments: documents?.filter((d) => d.status === 'uploaded').length || 0,
+      expiredDocuments: documents?.filter((d) => d.status === 'expired').length || 0,
+      rejectedDocuments: documents?.filter((d) => d.status === 'rejected').length || 0,
     }
-
-    // Calculate certification counts (these are boolean flags, so max 1 each)
-    const certificationsCount = {
-      ariztia: subcontractor.ariztia ? 1 : 0,
-      lts: subcontractor.lts ? 1 : 0,
-      rendic: subcontractor.rendic ? 1 : 0,
-      interpolar: subcontractor.interpolar ? 1 : 0,
-    }
-
-    // Map document requirements with compliance status
-    const requirementsWithStatus = requirements?.map((req) => {
-      const uploadedDoc = documents?.find(
-        (d) =>
-          d.tipo === req.code &&
-          (d.estado === 'aprobado' || d.estado === 'pendiente' || d.estado === 'vencido')
-      )
-
-      return {
-        id: req.id,
-        code: req.code,
-        nombre: req.nombre,
-        descripcion: req.descripcion,
-        category: req.category,
-        dias_vigencia: req.dias_vigencia,
-        status: uploadedDoc
-          ? uploadedDoc.estado
-          : 'no_subido',
-        uploadedDocument: uploadedDoc || null,
-      }
-    }) || []
 
     return NextResponse.json({
       success: true,
-      subcontractorId,
+      subcontractorId: id,
       documents: documents || [],
-      requirements: requirementsWithStatus,
-      certificationsCount,
-      summary: {
-        totalDocumentsUploaded: documents?.length || 0,
-        totalRequirements: requirements?.length || 0,
-        approvedDocuments:
-          documents?.filter((d) => d.estado === 'aprobado').length || 0,
-        pendingDocuments:
-          documents?.filter((d) => d.estado === 'pendiente').length || 0,
-        expiredDocuments:
-          documents?.filter((d) => d.estado === 'vencido').length || 0,
-      },
+      requirements: documentTypes || [],
+      summary,
     })
+
   } catch (error) {
-    console.error('[v0] Error in subcontractor documents endpoint:', error)
+    console.error('[v0] Error in subcontractor documents GET:', error)
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
+      { error: error instanceof Error ? error.message : 'Error interno del servidor' },
       { status: 500 }
     )
   }
