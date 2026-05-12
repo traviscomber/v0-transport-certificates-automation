@@ -24,13 +24,14 @@ export async function POST(request: NextRequest) {
     const adminClient = createAdminClient()
 
     // Asegurar que el bucket existe
+    const bucketName = 'subcontractor-documents'
     try {
       const { data: buckets } = await adminClient.storage.listBuckets()
-      const bucketExists = buckets?.some((b: any) => b.name === 'documents')
+      const bucketExists = buckets?.some((b: any) => b.name === bucketName)
       
       if (!bucketExists) {
-        console.log('[v0] Creating documents bucket...')
-        await adminClient.storage.createBucket('documents', {
+        console.log('[v0] Creating', bucketName, 'bucket...')
+        await adminClient.storage.createBucket(bucketName, {
           public: true,
           fileSizeLimit: 52428800, // 50MB
         })
@@ -62,22 +63,33 @@ export async function POST(request: NextRequest) {
       const fileName = `${Date.now()}_${file.name}`
       const filePath = `subcontractors/${subcontractorId}/${fileName}`
 
+      console.log('[v0] Uploading file:', { fileName, size: file.size, type: file.type })
+
+      // Convert File to Buffer for upload
+      const arrayBuffer = await file.arrayBuffer()
+      const buffer = Buffer.from(arrayBuffer)
+
+      console.log('[v0] File converted to buffer:', { bufferSize: buffer.length })
+
       // Upload to Supabase Storage
-      const { error: uploadError } = await adminClient.storage
-        .from('documents')
-        .upload(filePath, file, {
+      const { error: uploadError, data: uploadData } = await adminClient.storage
+        .from(bucketName)
+        .upload(filePath, buffer, {
           cacheControl: '3600',
           upsert: false,
+          contentType: file.type,
         })
 
       if (uploadError) {
-        console.error('[v0] Upload error:', uploadError)
+        console.error('[v0] Upload error:', uploadError.message)
         continue
       }
 
+      console.log('[v0] Upload successful:', uploadData)
+
       // Get signed URL
       const { data: { publicUrl } } = adminClient.storage
-        .from('documents')
+        .from(bucketName)
         .getPublicUrl(filePath)
 
       // Save metadata to subcontractor_documents table
