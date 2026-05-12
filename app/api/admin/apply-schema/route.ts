@@ -59,29 +59,14 @@ export async function POST() {
     
     const supabase = createAdminClient()
     
-    // Execute the schema
-    const { error } = await supabase.rpc('exec_sql', {
-      sql: schemaSQL
-    }).then(res => {
-      // If RPC doesn't work, try raw query approach
-      if (res.error?.code === 'PGRST102') {
-        return { error: null } // Tables might already exist
-      }
-      return res
-    }).catch(() => {
-      // Fallback: assume tables created successfully
-      return { error: null }
-    })
-
-    if (error) {
-      console.error('[v0] Schema error:', error)
-    }
-
-    console.log('[v0] Phase 2 schema applied successfully')
+    // For now, return success - Schema should be applied via Supabase dashboard
+    // In production, use Supabase migrations or direct SQL execution
+    console.log('[v0] Phase 2 schema ready to apply via Supabase dashboard')
     
     return NextResponse.json({
       success: true,
-      message: 'Phase 2 schema applied',
+      message: 'Phase 2 schema configuration ready',
+      instructions: 'Apply the SQL from scripts/phase-2-schema.sql via Supabase SQL editor',
       tables: ['subcontractor_documents', 'document_upload_log'],
       indexes: 4,
       rls_enabled: true
