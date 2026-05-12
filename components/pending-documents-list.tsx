@@ -66,7 +66,8 @@ export function PendingDocumentsList({ conductorDocs: initialConductorDocs, subD
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           status: newStatus,  // Send Spanish - API will normalize to English
-          reason: reason      // Use 'reason', not 'rejection_reason'
+          reason: reason,     // Use 'reason', not 'rejection_reason'
+          documentType: type  // NEW: Send which table to use (conductor or subcontractor)
         })
       })
 

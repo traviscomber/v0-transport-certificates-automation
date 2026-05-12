@@ -20,6 +20,7 @@ export interface DocumentStatusChangeRequest {
   newStatus: DocumentStatus
   reason?: string
   userId?: string
+  documentType?: 'conductor' | 'subcontractor'  // NEW: specify which table to use
 }
 
 export interface DocumentStatusChangeResult {
@@ -84,7 +85,7 @@ function normalizeStatus(input: string): DocumentStatus | null {
 export async function changeDocumentStatus(
   request: DocumentStatusChangeRequest
 ): Promise<DocumentStatusChangeResult> {
-  const { documentId, newStatus, reason, userId } = request
+  const { documentId, newStatus, reason, userId, documentType = 'conductor' } = request
 
   if (!documentId) {
     return { success: false, documentId, previousStatus: '', newStatus, message: 'Document ID is required', error: 'MISSING_DOCUMENT_ID' }
@@ -98,8 +99,14 @@ export async function changeDocumentStatus(
     const adminClient = await createAdminClient()
 
     // STEP 1: Fetch current document state
+    // Determine which table to use based on document type
+    const tableName = documentType === 'subcontractor' ? 'subcontractor_documents' : 'uploaded_documents'
+    const statusColumn = documentType === 'subcontractor' ? 'status' : 'validation_status'
+
+    console.log('[v0] changeDocumentStatus: Fetching from', tableName, 'with statusColumn:', statusColumn)
+
     const { data: documentBefore, error: fetchError } = await adminClient
-      .from('uploaded_documents')
+      .from(tableName)
       .select('*')
       .eq('id', documentId)
       .single()
@@ -115,7 +122,7 @@ export async function changeDocumentStatus(
       }
     }
 
-    const previousStatus = documentBefore.validation_status || 'pending'
+    const previousStatus = documentBefore[statusColumn] || 'pending'
 
     // STEP 2: Validate status transition
     if (!isValidStatusTransition(previousStatus, newStatus)) {
@@ -131,18 +138,18 @@ export async function changeDocumentStatus(
 
     // STEP 3: Prepare update payload
     const updatePayload: any = {
-      validation_status: newStatus,
+      [statusColumn]: newStatus,  // Use dynamic column name based on table
       updated_at: new Date().toISOString(),
     }
 
-    // Store rejection reason if rejecting
+    // Store rejection reason if rejecting (both table schemas should support this)
     if (newStatus === 'rejected' && reason) {
       updatePayload.rejection_reason = reason
     }
 
     // STEP 4: Update document status in database
     const { error: updateError, data: updatedDocument } = await adminClient
-      .from('uploaded_documents')
+      .from(tableName)  // Use dynamic table name
       .update(updatePayload)
       .eq('id', documentId)
       .select()

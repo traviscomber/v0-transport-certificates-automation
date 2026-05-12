@@ -72,14 +72,15 @@ export async function PATCH(
       )
     }
 
-    console.log('[v0] STATUS ENDPOINT - AUTHORIZATION APPROVED, changing status...')
+    console.log('[v0] STATUS ENDPOINT - Calling changeDocumentStatus...')
 
-    // Use centralized status change service with normalized English status
+    // Use the centralized status change service with normalized English status
     const result = await changeDocumentStatus({
       documentId,
       newStatus: normalizedStatus as 'approved' | 'rejected' | 'pending',
       reason: body.reason,
-      userId: user.id
+      userId: user.id,
+      documentType: body.documentType || 'conductor'  // NEW: Accept document type from frontend
     })
 
     if (!result.success) {
