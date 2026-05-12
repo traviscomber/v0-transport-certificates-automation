@@ -213,7 +213,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
           </CardContent>
         </Card>
         
-        <Link href="/dashboard/company/conductores">
+        <Link href="/dashboard/company/documentos/pendientes">
           <Card className="bg-gradient-to-br from-amber-900/50 to-amber-950/50 border-amber-700/50 hover:border-amber-500/70 transition-colors cursor-pointer group">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
