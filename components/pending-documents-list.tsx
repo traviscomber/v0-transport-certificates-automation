@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Clock, Users, Truck, ArrowLeft, FileText, Check, X, Loader2, Eye, Download } from "lucide-react"
+import { Clock, Users, Truck, ArrowLeft, FileText, Check, X, Loader2, Eye, Download, Calendar } from "lucide-react"
 import Link from "next/link"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
@@ -17,6 +17,9 @@ interface PendingDocument {
   file_name?: string
   document_type_id?: string
   file_url?: string
+  created_at?: string
+  uploaded_at?: string
+  docType?: { code: string; nombre: string }
   conductores?: {
     id: string
     nombres: string
@@ -280,14 +283,32 @@ export function PendingDocumentsList({ conductorDocs: initialConductorDocs, subD
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <FileText className="h-4 w-4 text-orange-400 flex-shrink-0" />
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="font-medium text-sm truncate">{doc.file_name}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {(() => {
-                          const t = Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas
-                          return t ? `${t.razon_social} - ${t.rut}` : ''
-                        })()}
-                      </p>
+                      <div className="flex gap-3 mt-1 flex-wrap">
+                        <p className="text-xs text-muted-foreground">
+                          {(() => {
+                            const t = Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas
+                            return t ? `${t.razon_social} - ${t.rut}` : ''
+                          })()}
+                        </p>
+                        {doc.docType && (
+                          <Badge variant="outline" className="text-xs bg-blue-500/10 border-blue-500/30 text-blue-300">
+                            {doc.docType.nombre}
+                          </Badge>
+                        )}
+                        {doc.uploaded_at && (
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(doc.uploaded_at).toLocaleDateString('es-CL', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0 ml-2">

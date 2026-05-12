@@ -42,7 +42,9 @@ async function getPendingDocuments() {
       status,
       file_url,
       created_at,
-      subcontractor_id
+      uploaded_at,
+      subcontractor_id,
+      subcontractor_rut
     `, { count: 'exact' })
     .eq('status', 'pending')
     .order("created_at", { ascending: false })
@@ -51,6 +53,13 @@ async function getPendingDocuments() {
   if (subError) {
     console.error("[v0] Error fetching pending sub docs:", subError)
   }
+
+  // Fetch document types for all documents
+  const { data: docTypes } = await supabase
+    .from("subcontractor_document_types")
+    .select("id, code, nombre");
+  
+  const docTypeMap = new Map(docTypes?.map(dt => [dt.id, { code: dt.code, nombre: dt.nombre }]) || [])
 
   // Fetch transportista data for each document
   let subDocs: any[] = []
@@ -64,7 +73,8 @@ async function getPendingDocuments() {
     
     subDocs = subDocsRaw.map(doc => ({
       ...doc,
-      transportistas: transportistaMap.get(doc.subcontractor_id)
+      transportistas: transportistaMap.get(doc.subcontractor_id),
+      docType: docTypeMap.get(doc.document_type_id)
     }))
   }
 
