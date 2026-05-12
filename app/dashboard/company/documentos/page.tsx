@@ -28,7 +28,6 @@ async function getDocumentStats() {
   const { data: subDocs, error: subError } = await supabase
     .from("subcontractor_documents")
     .select("id, status")
-    .limit(1) // Just check if table exists
   
   if (subError) {
     console.error("[v0] Error fetching subcontractor docs:", subError.message)

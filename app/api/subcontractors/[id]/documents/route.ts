@@ -104,7 +104,7 @@ export async function POST(
         document_type_id: documentTypeId,
         file_url: publicUrl,
         file_name: file.name,
-        status: 'uploaded',
+        status: 'pending',
         uploaded_at: new Date().toISOString(),
         expires_at: expiresAt.toISOString(),
       })
@@ -207,7 +207,7 @@ export async function GET(
       totalDocumentsUploaded: documents?.length || 0,
       totalRequirements: documentTypes?.length || 0,
       approvedDocuments: documents?.filter((d) => d.status === 'approved').length || 0,
-      pendingDocuments: documents?.filter((d) => d.status === 'uploaded').length || 0,
+      pendingDocuments: documents?.filter((d) => d.status === 'pending').length || 0,
       expiredDocuments: documents?.filter((d) => d.status === 'expired').length || 0,
       rejectedDocuments: documents?.filter((d) => d.status === 'rejected').length || 0,
     }
