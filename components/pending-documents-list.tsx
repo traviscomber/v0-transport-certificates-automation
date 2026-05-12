@@ -61,6 +61,12 @@ export function PendingDocumentsList({ conductorDocs: initialConductorDocs, subD
   const [rejectReason, setRejectReason] = useState('')
   const [docType, setDocType] = useState<'conductor' | 'subcontractor'>('conductor')
 
+  // Update local state when props change (for filtering)
+  useEffect(() => {
+    setConductorDocs(initialConductorDocs)
+    setSubDocs(initialSubDocs)
+  }, [initialConductorDocs, initialSubDocs])
+
   const totalPendientes = conductorDocs.length + subDocs.length
 
   const handleStatusChange = async (docId: string, newStatus: 'aprobado' | 'rechazado', type: 'conductor' | 'subcontractor', reason?: string) => {
