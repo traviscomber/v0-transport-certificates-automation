@@ -69,66 +69,71 @@ export function ConductoresListClient({
 
     return initialConductores.filter((conductor, index) => {
       // Build search fields array - BOTH normalized and non-normalized
-      const searchFields: string[] = []
+      const searchFields: (string | null | undefined)[] = []
 
-      // 1. RUT del conductor
-      if (conductor.rut) {
-        searchFields.push(normalizeRut(conductor.rut))
-        searchFields.push(conductor.rut.toLowerCase())
-      }
+      try {
+        // 1. RUT del conductor
+        if (conductor?.rut) {
+          searchFields.push(normalizeRut(conductor.rut))
+          searchFields.push(conductor.rut.toLowerCase())
+        }
 
-      // 2. Nombre completo
-      const fullName = `${conductor.nombres || ''} ${conductor.apellido_paterno || ''} ${conductor.apellido_materno || ''}`.toLowerCase()
-      if (fullName.trim()) {
-        searchFields.push(fullName)
-      }
+        // 2. Nombre completo
+        const fullName = `${conductor?.nombres || ''} ${conductor?.apellido_paterno || ''} ${conductor?.apellido_materno || ''}`.toLowerCase()
+        if (fullName.trim()) {
+          searchFields.push(fullName)
+        }
 
-      // 3. Nombre de la empresa/proveedor
-      if (conductor.transportistas?.razon_social) {
-        searchFields.push(conductor.transportistas.razon_social.toLowerCase())
-      }
+        // 3. Nombre de la empresa/proveedor
+        if (conductor?.transportistas?.razon_social) {
+          searchFields.push(conductor.transportistas.razon_social.toLowerCase())
+        }
 
-      // 4. RUT del proveedor - CRITICAL FIELD
-      if (conductor.transportistas?.rut) {
-        searchFields.push(normalizeRut(conductor.transportistas.rut))
-        searchFields.push(conductor.transportistas.rut.toLowerCase())
-      }
+        // 4. RUT del proveedor - CRITICAL FIELD
+        if (conductor?.transportistas?.rut) {
+          searchFields.push(normalizeRut(conductor.transportistas.rut))
+          searchFields.push(conductor.transportistas.rut.toLowerCase())
+        }
 
-      // 5. Licencia
-      if (conductor.clase_licencia) {
-        searchFields.push(conductor.clase_licencia.toLowerCase())
-      }
+        // 5. Licencia
+        if (conductor?.clase_licencia) {
+          searchFields.push(conductor.clase_licencia.toLowerCase())
+        }
 
-      // 6. Patentes de tractos
-      if (conductor.subcontractor_drivers && Array.isArray(conductor.subcontractor_drivers)) {
-        conductor.subcontractor_drivers.forEach((sd: any) => {
-          if (sd.vehicle_plate) {
-            searchFields.push(sd.vehicle_plate.toLowerCase())
-            searchFields.push(normalizeRut(sd.vehicle_plate))
-          }
-        })
-      }
+        // 6. Patentes de tractos
+        if (conductor?.subcontractor_drivers && Array.isArray(conductor.subcontractor_drivers)) {
+          conductor.subcontractor_drivers.forEach((sd: any) => {
+            if (sd?.vehicle_plate) {
+              searchFields.push(sd.vehicle_plate.toLowerCase())
+              searchFields.push(normalizeRut(sd.vehicle_plate))
+            }
+          })
+        }
 
-      // Debug: log first 5 conductors when searching
-      if (index < 5) {
-        const matches = searchFields.some(field => 
+        // Debug: log first 5 conductors when searching
+        if (index < 5) {
+          const matches = searchFields.some(field => 
+            field && (field.includes(searchQuery) || field.includes(normalizedQuery))
+          )
+          console.log(`[v0] Conductor ${index} - ${conductor?.nombres}:`, {
+            rut: conductor?.rut,
+            providerRut: conductor?.transportistas?.rut,
+            providerRutNormalized: normalizeRut(conductor?.transportistas?.rut),
+            searchQuery,
+            normalizedQuery,
+            searchFields,
+            matches,
+          })
+        }
+
+        // Check if any field matches - try both original and normalized query
+        return searchFields.some(field => 
           field && (field.includes(searchQuery) || field.includes(normalizedQuery))
         )
-        console.log(`[v0] Conductor ${index} - ${conductor.nombres}:`, {
-          rut: conductor.rut,
-          providerRut: conductor.transportistas?.rut,
-          providerRutNormalized: normalizeRut(conductor.transportistas?.rut),
-          searchQuery,
-          normalizedQuery,
-          searchFields,
-          matches,
-        })
+      } catch (error) {
+        console.error(`[v0] Error filtering conductor ${index}:`, error)
+        return false
       }
-
-      // Check if any field matches - try both original and normalized query
-      return searchFields.some(field => 
-        field && (field.includes(searchQuery) || field.includes(normalizedQuery))
-      )
     })
   }, [searchInput, filters.searchQuery, initialConductores])
 
