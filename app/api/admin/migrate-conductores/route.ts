@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { allConductores } from '@/lib/data/all-data'
+import { allConductores, allTransportistas } from '@/lib/data/all-data'
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('[v0] Starting migration of', allConductores.length, 'REAL conductores to Supabase...')
-
     const supabase = createAdminClient()
 
     // First, delete all fake conductores (RUTs starting with 0700)
@@ -21,8 +19,8 @@ export async function POST(request: NextRequest) {
       console.log('[v0] Fake conductores deleted successfully')
     }
 
-    // Format real conductores for insertion
-    const conductoresForInsert = allConductores.map(c => {
+    // Create conductores from allConductores (explicit list)
+    const conductoresFromList = allConductores.map(c => {
       const nameParts = c.nombre.split(' ')
       const nombres = nameParts.slice(0, 2).join(' ') || c.nombre
       const apellidoPaterno = nameParts[2] || ''
@@ -38,6 +36,30 @@ export async function POST(request: NextRequest) {
         created_at: new Date().toISOString(),
       }
     })
+
+    // Create conductores from transportistas representatives (each transportista has 1 conductor = representante)
+    const existingRuts = new Set(conductoresFromList.map(c => c.rut))
+    const conductoresFromTransportistas = allTransportistas
+      .filter(t => !existingRuts.has(t.rut)) // Don't duplicate if already in allConductores
+      .map(t => {
+        const nameParts = t.representante.split(' ')
+        const nombres = nameParts.slice(0, 2).join(' ') || t.representante
+        const apellidoPaterno = nameParts[2] || ''
+        const apellidoMaterno = nameParts.slice(3).join(' ') || ''
+        
+        return {
+          rut: t.rut, // Use transportista RUT as conductor RUT (representante is the driver)
+          nombres: nombres,
+          apellido_paterno: apellidoPaterno,
+          apellido_materno: apellidoMaterno,
+          rut_proveedor: t.rut, // Link back to the transportista
+          is_active: true,
+          created_at: new Date().toISOString(),
+        }
+      })
+
+    const conductoresForInsert = [...conductoresFromList, ...conductoresFromTransportistas]
+    console.log('[v0] Starting migration of', conductoresForInsert.length, 'conductores (', allConductores.length, 'explicit +', conductoresFromTransportistas.length, 'from transportistas)')
 
     // Insert real conductores
     const { data, error } = await supabase
