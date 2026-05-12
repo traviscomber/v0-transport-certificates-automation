@@ -54,9 +54,9 @@ export async function GET(request: NextRequest) {
 
     const subStats = {
       total: subDocs?.length || 0,
-      pendientes: (subDocs || []).filter(d => d.status === 'pendiente' || d.status === null).length,
-      aprobados: (subDocs || []).filter(d => d.status === 'aprobado').length,
-      rechazados: (subDocs || []).filter(d => d.status === 'rechazado').length,
+      pendientes: (subDocs || []).filter(d => d.status === 'pending' || d.status === null).length,
+      aprobados: (subDocs || []).filter(d => d.status === 'approved').length,
+      rechazados: (subDocs || []).filter(d => d.status === 'rejected').length,
       vencidos: 0
     }
 

@@ -94,11 +94,18 @@ export function DashboardOverview() {
           const statsData = await statsRes.json()
           const statsObj = statsData.stats || {}
           const conductorStats = statsObj.conductores || {}
+          const subStats = statsObj.subcontratistas || {}
+
+          // Aggregate both conductor and subcontractor documents
+          const totalDocs = (conductorStats.total || 0) + (subStats.total || 0)
+          const pendingDocs = (conductorStats.pendientes || 0) + (subStats.pendientes || 0)
+          const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
+          const rejectedDocs = (conductorStats.rechazados || 0) + (subStats.rechazados || 0)
 
           setStats([
             {
               title: "Total de Documentos",
-              value: conductorStats.total?.toString() || "0",
+              value: totalDocs.toString(),
               description: "En el sistema",
               icon: FileText,
               status: "active",
@@ -106,7 +113,7 @@ export function DashboardOverview() {
             },
             {
               title: "Documentos Aprobados",
-              value: conductorStats.aprobados?.toString() || "0",
+              value: approvedDocs.toString(),
               description: "Validados",
               icon: CheckCircle,
               status: "active",
@@ -114,7 +121,7 @@ export function DashboardOverview() {
             },
             {
               title: "Documentos Pendientes",
-              value: conductorStats.pendientes?.toString() || "0",
+              value: pendingDocs.toString(),
               description: "En revisión",
               icon: Clock,
               status: "active",
@@ -122,7 +129,7 @@ export function DashboardOverview() {
             },
             {
               title: "Documentos Rechazados",
-              value: conductorStats.rechazados?.toString() || "0",
+              value: rejectedDocs.toString(),
               description: "No validados",
               icon: AlertTriangle,
               status: "warning",
