@@ -33,7 +33,7 @@ async function getPendingDocuments() {
   }
 
   // Get pending subcontractor documents with no cache
-  const { data: subDocs, error: subError } = await supabase
+  const { data: subDocsRaw, error: subError } = await supabase
     .from("subcontractor_documents")
     .select(`
       id,
@@ -42,12 +42,7 @@ async function getPendingDocuments() {
       status,
       file_url,
       created_at,
-      subcontractor_id,
-      transportistas:subcontractor_id (
-        id,
-        razon_social,
-        rut
-      )
+      subcontractor_id
     `, { count: 'exact' })
     .eq('status', 'pending')
     .order("created_at", { ascending: false })
@@ -55,6 +50,22 @@ async function getPendingDocuments() {
   
   if (subError) {
     console.error("[v0] Error fetching pending sub docs:", subError)
+  }
+
+  // Fetch transportista data for each document
+  let subDocs: any[] = []
+  if (subDocsRaw && subDocsRaw.length > 0) {
+    const { data: transportistas } = await supabase
+      .from("transportistas")
+      .select("id, razon_social, rut")
+      .in("id", subDocsRaw.map(d => d.subcontractor_id))
+    
+    const transportistaMap = new Map(transportistas?.map(t => [t.id, t]) || [])
+    
+    subDocs = subDocsRaw.map(doc => ({
+      ...doc,
+      transportistas: transportistaMap.get(doc.subcontractor_id)
+    }))
   }
 
   return {
