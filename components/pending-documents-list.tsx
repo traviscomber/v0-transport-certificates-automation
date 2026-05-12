@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Clock, Users, Truck, ArrowLeft, FileText, Check, X, Loader2, Eye } from "lucide-react"
+import { Clock, Users, Truck, ArrowLeft, FileText, Check, X, Loader2, Eye, Download } from "lucide-react"
 import Link from "next/link"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { useDocumentSync } from '@/contexts/document-sync-context'
+import { PDFViewer } from '@/components/pdf-viewer'
 
 interface PendingDocument {
   id: string
@@ -334,19 +335,49 @@ export function PendingDocumentsList({ conductorDocs: initialConductorDocs, subD
 
       {/* Preview Modal */}
       <Dialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)}>
-        <DialogContent className="max-w-3xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>{previewDoc?.original_filename || previewDoc?.file_name}</DialogTitle>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="flex flex-row items-center justify-between">
+            <DialogTitle className="flex-1">{previewDoc?.original_filename || previewDoc?.file_name}</DialogTitle>
+            {previewDoc?.file_url && (
+              <a
+                href={previewDoc.file_url}
+                download={previewDoc.original_filename || previewDoc?.file_name}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-2"
+              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1 border-blue-500/50 text-blue-400 hover:bg-blue-500/20"
+                >
+                  <Download className="h-4 w-4" />
+                  Descargar
+                </Button>
+              </a>
+            )}
           </DialogHeader>
+          
           {previewDoc?.file_url && (
-            <div className="flex justify-center items-center bg-slate-900 rounded-lg p-4 max-h-[60vh] overflow-auto">
-              <img 
-                src={previewDoc.file_url} 
-                alt="Preview" 
-                className="max-w-full max-h-[50vh] object-contain"
-              />
+            <div className="w-full">
+              {previewDoc.file_url.toLowerCase().endsWith('.pdf') ? (
+                <PDFViewer 
+                  url={previewDoc.file_url}
+                  filename={previewDoc.original_filename || previewDoc?.file_name || 'document'}
+                />
+              ) : (
+                // Fallback for non-PDF files (images, etc)
+                <div className="flex justify-center items-center bg-slate-900 rounded-lg p-4 max-h-[60vh] overflow-auto">
+                  <img 
+                    src={previewDoc.file_url} 
+                    alt="Preview" 
+                    className="max-w-full max-h-[50vh] object-contain"
+                  />
+                </div>
+              )}
             </div>
           )}
+          
           <div className="flex justify-end gap-2 mt-4">
             <Button
               variant="outline"
