@@ -93,33 +93,42 @@ export default function PendientesPage() {
         </div>
       </div>
 
-      {/* Ejecutiva Filter */}
-      <div className="rounded-lg bg-slate-800/50 border border-slate-700 p-4">
+      {/* Ejecutiva Filter - Enhanced */}
+      <div className="rounded-lg bg-gradient-to-r from-slate-800/70 to-slate-800/40 border border-orange-500/30 p-4 shadow-lg">
         <div className="flex items-center gap-3 mb-4">
-          <Filter className="h-4 w-4 text-slate-400" />
-          <span className="text-sm font-medium text-slate-200">Filtrar por ejecutiva:</span>
+          <Filter className="h-5 w-5 text-orange-400" />
+          <span className="text-sm font-semibold text-slate-100">Filtrar por Ejecutiva:</span>
+          <span className="ml-auto text-xs text-slate-400 bg-slate-700/50 px-2 py-1 rounded">
+            {ejecutivas.length} ejecutivas
+          </span>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Badge
-            variant={selectedEjecutiva === 'all' ? 'default' : 'outline'}
-            className="cursor-pointer px-3 py-1.5"
-            onClick={() => setSelectedEjecutiva('all')}
-          >
-            Todas ({totalPending})
-          </Badge>
-
-          {ejecutivas.map(({ name, count }) => (
+        {ejecutivas.length === 0 ? (
+          <p className="text-sm text-slate-400 italic">
+            Todos los documentos están sin asignar a una ejecutiva específica
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
             <Badge
-              key={name}
-              variant={selectedEjecutiva === name ? 'default' : 'outline'}
-              className="cursor-pointer px-3 py-1.5"
-              onClick={() => setSelectedEjecutiva(name)}
+              variant={selectedEjecutiva === 'all' ? 'default' : 'outline'}
+              className="cursor-pointer px-3 py-2 text-sm font-medium transition-all hover:scale-105"
+              onClick={() => setSelectedEjecutiva('all')}
             >
-              {name} ({count})
+              Todas ({totalPending})
             </Badge>
-          ))}
-        </div>
+
+            {ejecutivas.map(({ name, count }) => (
+              <Badge
+                key={name}
+                variant={selectedEjecutiva === name ? 'default' : 'outline'}
+                className="cursor-pointer px-3 py-2 text-sm font-medium transition-all hover:scale-105"
+                onClick={() => setSelectedEjecutiva(name)}
+              >
+                {name === 'Sin asignar' ? '📋' : '👤'} {name} ({count})
+              </Badge>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Documents List */}
