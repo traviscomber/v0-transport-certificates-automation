@@ -9,6 +9,8 @@ export async function POST(request: NextRequest) {
   try {
     const { rut, password } = await request.json()
 
+    console.log('[v0] Login attempt with RUT:', rut)
+
     if (!rut || !password) {
       return NextResponse.json(
         { error: 'RUT y contraseña son requeridos' },
