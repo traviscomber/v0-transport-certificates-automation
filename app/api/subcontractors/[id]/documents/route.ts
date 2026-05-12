@@ -42,8 +42,10 @@ export async function POST(
       )
     }
 
-    // Upload file to Supabase Storage
-    const fileName = `${id}/${docType.code}/${Date.now()}_${file.name}`
+    // Upload file to Supabase Storage with simple, safe filename
+    const fileExtension = file.name.split('.').pop() || 'pdf'
+    const safeFileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`
+    const fileName = `${id}/${safeFileName}`
     
     // Create documents bucket if it doesn't exist
     try {
