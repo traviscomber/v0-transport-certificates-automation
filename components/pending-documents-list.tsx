@@ -13,8 +13,8 @@ import { useDocumentSync } from '@/contexts/document-sync-context'
 interface PendingDocument {
   id: string
   original_filename?: string
-  document_name?: string
-  document_type?: string
+  file_name?: string
+  document_type_id?: string
   file_url?: string
   conductores?: {
     id: string
@@ -279,7 +279,7 @@ export function PendingDocumentsList({ conductorDocs: initialConductorDocs, subD
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <FileText className="h-4 w-4 text-orange-400 flex-shrink-0" />
                     <div className="min-w-0">
-                      <p className="font-medium text-sm truncate">{doc.document_name || doc.document_type}</p>
+                      <p className="font-medium text-sm truncate">{doc.file_name}</p>
                       <p className="text-xs text-muted-foreground truncate">
                         {(() => {
                           const t = Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas
@@ -335,7 +335,7 @@ export function PendingDocumentsList({ conductorDocs: initialConductorDocs, subD
       <Dialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)}>
         <DialogContent className="max-w-3xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle>{previewDoc?.original_filename || previewDoc?.document_name}</DialogTitle>
+            <DialogTitle>{previewDoc?.original_filename || previewDoc?.file_name}</DialogTitle>
           </DialogHeader>
           {previewDoc?.file_url && (
             <div className="flex justify-center items-center bg-slate-900 rounded-lg p-4 max-h-[60vh] overflow-auto">

@@ -37,18 +37,19 @@ async function getPendingDocuments() {
     .from("subcontractor_documents")
     .select(`
       id,
-      document_name,
-      document_type,
+      file_name,
+      document_type_id,
       status,
       file_url,
       created_at,
-      transportistas (
+      subcontractor_id,
+      transportistas:subcontractor_id (
         id,
         razon_social,
         rut
       )
     `, { count: 'exact' })
-    .or('status.eq.pendiente,status.is.null')
+    .eq('status', 'pending')
     .order("created_at", { ascending: false })
     .limit(100)
   
