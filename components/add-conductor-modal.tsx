@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,7 +10,7 @@ interface AddConductorModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
-  transportistas: Array<{ rut: string; nombre: string }>
+  transportistas?: Array<{ rut: string; nombre: string }>
   currentEjecutiva?: string
 }
 
@@ -18,11 +18,12 @@ export function AddConductorModal({
   isOpen,
   onClose,
   onSuccess,
-  transportistas,
+  transportistas: initialTransportistas = [],
   currentEjecutiva
 }: AddConductorModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>('')
+  const [transportistas, setTransportistas] = useState<Array<{ rut: string; nombre: string }>>(initialTransportistas)
   const [formData, setFormData] = useState({
     rut: '',
     nombres: '',
@@ -32,6 +33,27 @@ export function AddConductorModal({
     clase_licencia: 'B',
     is_active: true
   })
+
+  // Load transportistas from API on modal open
+  useEffect(() => {
+    if (isOpen && transportistas.length === 0) {
+      const loadTransportistas = async () => {
+        try {
+          const response = await fetch('/api/company/data')
+          const data = await response.json()
+          const subs = (data.subcontractors || []).map((s: any) => ({
+            rut: s.rut,
+            nombre: s.nombre
+          }))
+          setTransportistas(subs)
+          console.log('[v0] Loaded', subs.length, 'transportistas')
+        } catch (err) {
+          console.error('[v0] Error loading transportistas:', err)
+        }
+      }
+      loadTransportistas()
+    }
+  }, [isOpen, transportistas.length])
 
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({

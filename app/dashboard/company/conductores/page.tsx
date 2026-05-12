@@ -159,7 +159,6 @@ export default function ConductoresPage() {
         onSuccess={() => {
           mutate() // Refresh the data
         }}
-        transportistas={transportistas.map((t: any) => ({ rut: t.rut, nombre: t.nombre }))}
         currentEjecutiva={selectedEjecutiva || undefined}
       />
     </div>
