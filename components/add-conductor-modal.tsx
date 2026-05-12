@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { AlertCircle, Loader } from 'lucide-react'
+import { AlertCircle, Loader, Copy, Check } from 'lucide-react'
+import { useState as useStateExtra } from 'react'
 
 interface AddConductorModalProps {
   isOpen: boolean
@@ -24,6 +25,12 @@ export function AddConductorModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>('')
   const [transportistas, setTransportistas] = useState<Array<{ rut: string; nombre: string }>>(initialTransportistas)
+  const [copiedPassword, setCopiedPassword] = useState(false)
+  const [successData, setSuccessData] = useState<{
+    conductor: any
+    temporaryPassword: string
+    instructions: string
+  } | null>(null)
   const [formData, setFormData] = useState({
     rut: '',
     nombres: '',
@@ -92,18 +99,12 @@ export function AddConductorModal({
         throw new Error(data.error || 'Error al crear conductor')
       }
 
-      // Success - reset and close
-      setFormData({
-        rut: '',
-        nombres: '',
-        apellido_paterno: '',
-        apellido_materno: '',
-        rut_proveedor: '',
-        clase_licencia: 'B',
-        is_active: true
+      // Show success with temporary password
+      setSuccessData({
+        conductor: data.conductor,
+        temporaryPassword: data.temporaryPassword,
+        instructions: data.instructions
       })
-      onSuccess()
-      onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
     } finally {
@@ -111,23 +112,120 @@ export function AddConductorModal({
     }
   }
 
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Agregar Nuevo Conductor</DialogTitle>
-          <DialogDescription>
-            Completa los campos requeridos para agregar un nuevo conductor a tu flota
-          </DialogDescription>
-        </DialogHeader>
+  const handleCopyPassword = () => {
+    if (successData?.temporaryPassword) {
+      navigator.clipboard.writeText(successData.temporaryPassword)
+      setCopiedPassword(true)
+      setTimeout(() => setCopiedPassword(false), 2000)
+    }
+  }
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="flex gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-600">{error}</p>
+  const handleCloseSuccess = () => {
+    // Reset and close
+    setFormData({
+      rut: '',
+      nombres: '',
+      apellido_paterno: '',
+      apellido_materno: '',
+      rut_proveedor: '',
+      clase_licencia: 'B',
+      is_active: true
+    })
+    setSuccessData(null)
+    onSuccess()
+    onClose()
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        if (successData) {
+          handleCloseSuccess()
+        } else {
+          onClose()
+        }
+      }
+    }}>
+      <DialogContent className="sm:max-w-[500px]">
+        {successData ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Conductor Creado Exitosamente</DialogTitle>
+              <DialogDescription>
+                El conductor ha sido habilitado para acceder y subir documentos
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="p-4 bg-green-50 border border-green-200 rounded-md">
+                <p className="text-sm font-medium text-green-900">
+                  {successData.conductor.nombres} {successData.conductor.apellido_paterno}
+                </p>
+                <p className="text-xs text-green-700 mt-1">
+                  RUT: {successData.conductor.rut}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-base font-semibold">Contraseña Temporal</Label>
+                <div className="flex gap-2">
+                  <div className="flex-1 p-3 bg-gray-100 rounded border border-gray-300 font-mono text-center text-lg tracking-widest">
+                    {successData.temporaryPassword}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyPassword}
+                    className="gap-2"
+                  >
+                    {copiedPassword ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        Copiado
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        Copiar
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-xs font-semibold text-blue-900 mb-2">Instrucciones:</p>
+                <ul className="text-xs text-blue-800 space-y-1">
+                  <li>• El conductor usa su RUT + esta contraseña para acceder</li>
+                  <li>• Acceso inmediato habilitado para subir documentos</li>
+                  <li>• Comparte estas credenciales de forma segura</li>
+                </ul>
+              </div>
             </div>
-          )}
+
+            <DialogFooter>
+              <Button onClick={handleCloseSuccess} className="w-full">
+                Entendido
+              </Button>
+            </DialogFooter>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>Agregar Nuevo Conductor</DialogTitle>
+              <DialogDescription>
+                Completa los campos requeridos para agregar un nuevo conductor a tu flota
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="flex gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -244,6 +342,8 @@ export function AddConductorModal({
             {loading ? 'Creando...' : 'Crear Conductor'}
           </Button>
         </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   )
