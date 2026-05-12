@@ -56,22 +56,32 @@ export async function GET() {
 
     const docTypeMap = new Map(docTypes?.map(dt => [dt.id, { code: dt.code, nombre: dt.nombre }]) || [])
 
-    // Fetch transportistas for subcontractor documents
+    // Fetch transportistas for subcontractor documents with ejecutiva info
     let subDocs: any[] = []
     if (subDocsRaw && subDocsRaw.length > 0) {
       const { data: transportistas } = await supabase
         .from("transportistas")
-        .select("id, razon_social, rut")
+        .select("id, razon_social, rut, ejecutivo_asignado, ejecutivo_nombre")
         .in("id", subDocsRaw.map(d => d.subcontractor_id))
 
       const transportistaMap = new Map(transportistas?.map(t => [t.id, t]) || [])
 
-      subDocs = subDocsRaw.map(doc => ({
-        ...doc,
-        transportistas: transportistaMap.get(doc.subcontractor_id),
-        docType: docTypeMap.get(doc.document_type_id),
-        ejecutiva: doc.reviewed_by_ejecutiva || doc.uploaded_by_ejecutiva || 'Sin asignar'
-      }))
+      subDocs = subDocsRaw.map(doc => {
+        const transportista = transportistaMap.get(doc.subcontractor_id)
+        
+        // Priority: ejecutivo_nombre from transportista > reviewed_by > uploaded_by > Sin asignar
+        const ejecutiva = transportista?.ejecutivo_nombre ||
+                         doc.reviewed_by_ejecutiva ||
+                         doc.uploaded_by_ejecutiva ||
+                         'Sin asignar'
+        
+        return {
+          ...doc,
+          transportistas: transportista,
+          docType: docTypeMap.get(doc.document_type_id),
+          ejecutiva: ejecutiva
+        }
+      })
     }
 
     return NextResponse.json({

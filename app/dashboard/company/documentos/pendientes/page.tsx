@@ -22,16 +22,29 @@ export default function PendientesPage() {
         const data = await response.json()
         setAllData(data)
 
-        // Extract unique ejecutivas with counts
+        // Extract unique ejecutivas from BOTH conductor and subcontractor documents
         const ejecutivasMap = new Map<string, number>()
+        
+        // Count from subcontractor documents
         data.subDocs?.forEach((doc: any) => {
           const ejecutiva = doc.ejecutiva || 'Sin asignar'
           ejecutivasMap.set(ejecutiva, (ejecutivasMap.get(ejecutiva) || 0) + 1)
         })
+        
+        // Count from conductor documents
+        data.conductorDocs?.forEach((doc: any) => {
+          const ejecutiva = doc.ejecutiva || 'Sin asignar'
+          ejecutivasMap.set(ejecutiva, (ejecutivasMap.get(ejecutiva) || 0) + 1)
+        })
 
+        // Sort: "Sin asignar" last, others by count descending
         const sorted = Array.from(ejecutivasMap.entries())
           .map(([name, count]) => ({ name, count }))
-          .sort((a, b) => b.count - a.count)
+          .sort((a, b) => {
+            if (a.name === 'Sin asignar') return 1
+            if (b.name === 'Sin asignar') return -1
+            return b.count - a.count
+          })
 
         setEjecutivas(sorted)
       } catch (error) {
@@ -52,7 +65,9 @@ export default function PendientesPage() {
     }
 
     return {
-      ...allData,
+      conductorDocs: allData.conductorDocs?.filter((doc: any) =>
+        (doc.ejecutiva || 'Sin asignar') === selectedEjecutiva
+      ) || [],
       subDocs: allData.subDocs?.filter((doc: any) =>
         (doc.ejecutiva || 'Sin asignar') === selectedEjecutiva
       ) || []
@@ -70,8 +85,8 @@ export default function PendientesPage() {
     )
   }
 
-  const totalPending = allData?.subDocs?.length || 0
-  const filteredCount = filteredData?.subDocs?.length || 0
+  const totalPending = (allData?.conductorDocs?.length || 0) + (allData?.subDocs?.length || 0)
+  const filteredCount = (filteredData?.conductorDocs?.length || 0) + (filteredData?.subDocs?.length || 0)
 
   return (
     <div className="space-y-6">
