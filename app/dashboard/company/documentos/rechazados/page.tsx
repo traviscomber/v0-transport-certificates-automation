@@ -1,77 +1,42 @@
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+'use client'
 
-import { createClient } from '@/lib/supabase/server'
-import { RejectedDocumentsList } from '@/components/rejected-documents-list'
+import { useEffect, useState } from 'react'
 import { XCircle } from 'lucide-react'
+import { RejectedDocumentsList } from '@/components/rejected-documents-list'
 
-async function getRejectedDocuments() {
-  const supabase = await createClient()
-  
-  // Get rejected conductor documents - check both English and Spanish status values
-  const { data: conductorDocs, error: conductorError } = await supabase
-    .from('uploaded_documents')
-    .select(`
-      id,
-      original_filename,
-      document_type_id,
-      validation_status,
-      file_url,
-      rejection_reason,
-      created_at,
-      updated_at,
-      reviewed_at,
-      conductor_id,
-      conductores (
-        id,
-        nombres,
-        apellido_paterno,
-        rut
-      )
-    `)
-    .in('validation_status', ['rejected', 'rechazado'])
-    .order('updated_at', { ascending: false })
-    .limit(100)
-  
-  if (conductorError) {
-    console.error('[v0] Error fetching rejected conductor docs:', conductorError)
-  }
+export default function RejectedDocumentsPage() {
+  const [conductorDocs, setConductorDocs] = useState([])
+  const [subDocs, setSubDocs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Get rejected subcontractor documents - use both English and Spanish
-  const { data: subDocs, error: subError } = await supabase
-    .from('subcontractor_documents')
-    .select(`
-      id,
-      document_name,
-      document_type,
-      status,
-      file_url,
-      rejection_reason,
-      created_at,
-      updated_at,
-      transportista_id,
-      transportistas (
-        id,
-        razon_social,
-        rut
-      )
-    `)
-    .in('status', ['rejected', 'rechazado'])
-    .order('updated_at', { ascending: false })
-    .limit(100)
-  
-  if (subError) {
-    console.error('[v0] Error fetching rejected sub docs:', subError)
-  }
+  useEffect(() => {
+    async function fetchRejectedDocuments() {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/company/documents/rechazados')
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch rejected documents')
+        }
 
-  return {
-    conductorDocs: conductorDocs || [],
-    subDocs: subDocs || []
-  }
-}
+        const data = await response.json()
+        setConductorDocs(data.conductorDocs || [])
+        setSubDocs(data.subDocs || [])
+        setError(null)
+      } catch (err) {
+        console.error('[v0] Error fetching rejected documents:', err)
+        setError(err instanceof Error ? err.message : 'Error loading documents')
+        setConductorDocs([])
+        setSubDocs([])
+      } finally {
+        setLoading(false)
+      }
+    }
 
-export default async function RejectedDocumentsPage() {
-  const { conductorDocs, subDocs } = await getRejectedDocuments()
+    fetchRejectedDocuments()
+  }, [])
+
   const totalRejected = conductorDocs.length + subDocs.length
 
   return (
@@ -88,10 +53,20 @@ export default async function RejectedDocumentsPage() {
       </div>
 
       {/* Content */}
-      <RejectedDocumentsList 
-        conductorDocs={conductorDocs as any} 
-        subDocs={subDocs as any} 
-      />
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-slate-400">Cargando documentos...</div>
+        </div>
+      ) : error ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-red-400">Error: {error}</div>
+        </div>
+      ) : (
+        <RejectedDocumentsList 
+          conductorDocs={conductorDocs as any} 
+          subDocs={subDocs as any} 
+        />
+      )}
     </div>
   )
 }

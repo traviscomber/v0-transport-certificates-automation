@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 /**
  * GET /api/company/documents/aprobados
  * Returns approved documents for both conductors and subcontractors
+ * FIXED: Using correct field names from the actual database schema
  */
 
 import { NextResponse, NextRequest } from 'next/server'
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     console.log('[v0] Aprobados endpoint: Fetching approved documents')
 
-    // Get approved conductor documents - check both English and Spanish status values
+    // Get approved conductor documents - only 'approved' (English)
     const { data: conductorDocs, error: conductorError } = await supabase
       .from('uploaded_documents')
       .select(`
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
         file_url,
         created_at,
         updated_at,
-        reviewed_at,
+        conductor_id,
         conductores (
           id,
           nombres,
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
           rut
         )
       `)
-      .in('validation_status', ['approved', 'aprobado'])
+      .eq('validation_status', 'approved')
       .order('updated_at', { ascending: false })
       .limit(100)
 
@@ -50,25 +51,25 @@ export async function GET(request: NextRequest) {
       throw conductorError
     }
 
-    // Get approved subcontractor documents - use both English and Spanish
+    // Get approved subcontractor documents - use CORRECT field names: file_name NOT document_name
     const { data: subDocs, error: subError } = await supabase
       .from('subcontractor_documents')
       .select(`
         id,
-        document_name,
-        document_type,
+        file_name,
+        document_type_id,
         status,
         file_url,
         created_at,
         updated_at,
-        reviewed_at,
+        transportista_id,
         transportistas (
           id,
           razon_social,
           rut
         )
       `)
-      .in('status', ['approved', 'aprobado'])
+      .eq('status', 'approved')
       .order('updated_at', { ascending: false })
       .limit(100)
 
@@ -77,14 +78,43 @@ export async function GET(request: NextRequest) {
       throw subError
     }
 
-    console.log('[v0] Aprobados endpoint: Returning approved documents', {
-      conductor: conductorDocs?.length || 0,
-      subcontractor: subDocs?.length || 0
-    })
+    // Normalize data to consistent format
+    const normalizedConductor = (conductorDocs || []).map((doc: any) => ({
+      id: doc.id,
+      filename: doc.original_filename,
+      document_type_id: doc.document_type_id,
+      status: doc.validation_status,
+      file_url: doc.file_url,
+      created_at: doc.created_at,
+      updated_at: doc.updated_at,
+      person_name: doc.conductores ? `${doc.conductores.nombres} ${doc.conductores.apellido_paterno}` : 'Unknown',
+      person_rut: doc.conductores?.rut,
+      document_source: 'conductor'
+    }))
+
+    const normalizedSub = (subDocs || []).map((doc: any) => ({
+      id: doc.id,
+      filename: doc.file_name,
+      document_type_id: doc.document_type_id,
+      status: doc.status,
+      file_url: doc.file_url,
+      created_at: doc.created_at,
+      updated_at: doc.updated_at,
+      person_name: doc.transportistas?.razon_social,
+      person_rut: doc.transportistas?.rut,
+      document_source: 'subcontractor'
+    }))
+
+    const allDocs = [...normalizedConductor, ...normalizedSub]
+      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+
+    console.log('[v0] Aprobados endpoint: Returning', allDocs.length, 'approved documents')
 
     return NextResponse.json({
-      conductorDocs: conductorDocs || [],
-      subDocs: subDocs || [],
+      conductorDocs: normalizedConductor,
+      subDocs: normalizedSub,
+      allDocs: allDocs,
+      total: allDocs.length,
       timestamp: new Date().toISOString()
     })
 

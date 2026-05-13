@@ -1,81 +1,42 @@
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+'use client'
 
-import { createClient } from "@/lib/supabase/server"
-import { ApprovedDocumentsList } from "@/components/approved-documents-list"
-import { CheckCircle2 } from "lucide-react"
+import { useEffect, useState } from 'react'
+import { CheckCircle2 } from 'lucide-react'
+import { ApprovedDocumentsList } from '@/components/approved-documents-list'
 
-async function getApprovedDocuments() {
-  const supabase = await createClient()
-  
-  console.log("[v0] APROBADOS: Starting fetch...")
-  
-  // Get approved conductor documents - check both English and Spanish status values
-  const { data: conductorDocs, error: conductorError } = await supabase
-    .from("uploaded_documents")
-    .select(`
-      id,
-      original_filename,
-      document_type_id,
-      validation_status,
-      file_url,
-      created_at,
-      updated_at,
-      reviewed_at,
-      conductores (
-        id,
-        nombres,
-        apellido_paterno,
-        rut
-      )
-    `)
-    .in('validation_status', ['approved', 'aprobado'])
-    .order("updated_at", { ascending: false })
-    .limit(100)
-  
-  console.log("[v0] APROBADOS: Conductor docs fetched:", conductorDocs?.length || 0, "error:", conductorError?.message || "none")
-  
-  if (conductorError) {
-    console.error("[v0] Error fetching approved conductor docs:", conductorError)
-  }
+export default function ApprovedDocumentsPage() {
+  const [conductorDocs, setConductorDocs] = useState([])
+  const [subDocs, setSubDocs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Get approved subcontractor documents - use 'approved' (English) to match dashboard
-  const { data: subDocs, error: subError } = await supabase
-    .from("subcontractor_documents")
-    .select(`
-      id,
-      document_name,
-      document_type,
-      status,
-      file_url,
-      created_at,
-      updated_at,
-      transportistas (
-        id,
-        razon_social,
-        rut
-      )
-    `)
-    .in('status', ['approved', 'aprobado'])
-    .order("updated_at", { ascending: false })
-    .limit(100)
-  
-  console.log("[v0] APROBADOS: Sub docs fetched:", subDocs?.length || 0, "error:", subError?.message || "none")
-  
-  if (subError) {
-    console.error("[v0] Error fetching approved sub docs:", subError)
-  }
+  useEffect(() => {
+    async function fetchApprovedDocuments() {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/company/documents/aprobados')
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch approved documents')
+        }
 
-  console.log("[v0] APROBADOS: Returning", (conductorDocs?.length || 0) + (subDocs?.length || 0), "total documents")
-  
-  return {
-    conductorDocs: conductorDocs || [],
-    subDocs: subDocs || []
-  }
-}
+        const data = await response.json()
+        setConductorDocs(data.conductorDocs || [])
+        setSubDocs(data.subDocs || [])
+        setError(null)
+      } catch (err) {
+        console.error('[v0] Error fetching approved documents:', err)
+        setError(err instanceof Error ? err.message : 'Error loading documents')
+        setConductorDocs([])
+        setSubDocs([])
+      } finally {
+        setLoading(false)
+      }
+    }
 
-export default async function ApprovedDocumentsPage() {
-  const { conductorDocs, subDocs } = await getApprovedDocuments()
+    fetchApprovedDocuments()
+  }, [])
+
   const totalApproved = conductorDocs.length + subDocs.length
 
   return (
@@ -92,10 +53,20 @@ export default async function ApprovedDocumentsPage() {
       </div>
 
       {/* Content */}
-      <ApprovedDocumentsList 
-        conductorDocs={conductorDocs as any} 
-        subDocs={subDocs as any} 
-      />
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-slate-400">Cargando documentos...</div>
+        </div>
+      ) : error ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-red-400">Error: {error}</div>
+        </div>
+      ) : (
+        <ApprovedDocumentsList 
+          conductorDocs={conductorDocs as any} 
+          subDocs={subDocs as any} 
+        />
+      )}
     </div>
   )
 }
