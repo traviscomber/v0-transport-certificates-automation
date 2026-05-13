@@ -74,45 +74,63 @@ export async function GET() {
     }
 
     // Normalize data to match component expectations - keep nested objects intact
-    const normalizedConductor = (conductorDocs || []).map((doc: any) => ({
-      id: doc.id,
-      original_filename: doc.original_filename,
-      document_type_id: doc.document_type_id,
-      validation_status: doc.validation_status,
-      status: doc.validation_status, // For component compatibility
-      file_url: doc.file_url,
-      rejection_reason: doc.rejection_reason,
-      validated_at: doc.validated_at || doc.updated_at, // Use updated_at as fallback
-      ejecutiva: doc.ejecutiva || 'No especificado',
-      created_at: doc.created_at,
-      updated_at: doc.updated_at,
-      reviewed_at: doc.validated_at || doc.updated_at,
-      conductores: doc.conductores,
-      document_source: 'conductor'
-    }))
+    const normalizedConductor = (conductorDocs || []).map((doc: any) => {
+      // Determine file type from file extension
+      const fileExtension = doc.original_filename?.split('.').pop()?.toLowerCase() || ''
+      const file_type = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(fileExtension) 
+        ? (fileExtension === 'pdf' ? 'pdf' : 'image')
+        : 'unknown'
+      
+      return {
+        id: doc.id,
+        original_filename: doc.original_filename,
+        document_type_id: doc.document_type_id,
+        validation_status: doc.validation_status,
+        status: doc.validation_status, // For component compatibility
+        file_url: doc.file_url,
+        file_type: file_type, // Add calculated file_type
+        rejection_reason: doc.rejection_reason,
+        validated_at: doc.validated_at || doc.updated_at,
+        ejecutiva: doc.ejecutiva || 'No especificado',
+        created_at: doc.created_at,
+        updated_at: doc.updated_at,
+        reviewed_at: doc.validated_at || doc.updated_at,
+        conductores: doc.conductores,
+        document_source: 'conductor'
+      }
+    })
 
-    const normalizedSub = (subDocs || []).map((doc: any) => ({
-      id: doc.id,
-      document_name: doc.file_name,
-      file_name: doc.file_name,
-      original_filename: doc.file_name, // For component compatibility
-      document_type_id: doc.document_type_id,
-      status: doc.status,
-      file_url: doc.file_url,
-      rejection_reason: doc.rejection_reason,
-      approved_at: doc.approved_at || doc.updated_at, // Use updated_at as fallback
-      reviewed_by_ejecutiva: doc.reviewed_by_ejecutiva || 'No especificado',
-      created_at: doc.created_at,
-      updated_at: doc.updated_at,
-      reviewed_at: doc.approved_at || doc.updated_at,
-      // Create transportistas object from available data
-      transportistas: {
-        id: doc.subcontractor_id,
-        razon_social: 'Subcontratista', // Default name
-        rut: doc.subcontractor_rut
-      },
-      document_source: 'subcontractor'
-    }))
+    const normalizedSub = (subDocs || []).map((doc: any) => {
+      // Determine file type from file extension
+      const fileExtension = doc.file_name?.split('.').pop()?.toLowerCase() || ''
+      const file_type = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(fileExtension) 
+        ? (fileExtension === 'pdf' ? 'pdf' : 'image')
+        : 'unknown'
+      
+      return {
+        id: doc.id,
+        document_name: doc.file_name,
+        file_name: doc.file_name,
+        original_filename: doc.file_name,
+        document_type_id: doc.document_type_id,
+        status: doc.status,
+        file_url: doc.file_url,
+        file_type: file_type, // Add calculated file_type
+        rejection_reason: doc.rejection_reason,
+        approved_at: doc.approved_at || doc.updated_at,
+        reviewed_by_ejecutiva: doc.reviewed_by_ejecutiva || 'No especificado',
+        created_at: doc.created_at,
+        updated_at: doc.updated_at,
+        reviewed_at: doc.approved_at || doc.updated_at,
+        // Create transportistas object from available data
+        transportistas: {
+          id: doc.subcontractor_id,
+          razon_social: 'Subcontratista',
+          rut: doc.subcontractor_rut
+        },
+        document_source: 'subcontractor'
+      }
+    })
 
     const allDocs = [...normalizedConductor, ...normalizedSub]
       .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
