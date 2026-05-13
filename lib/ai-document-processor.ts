@@ -37,7 +37,7 @@ export async function extractDocumentMetadata(
     console.log('[v0] Starting document extraction with OpenAI Vision...')
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4-vision-preview',
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'user',
