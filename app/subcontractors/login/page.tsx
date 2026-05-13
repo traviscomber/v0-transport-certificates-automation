@@ -79,7 +79,7 @@ export default function SubcontratistasLoginPage() {
                 disabled={loading}
                 className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-400"
               />
-              <p className="text-xs text-slate-400">Ingresa el RUT sin puntos ni guiones (ej: 12345678-9)</p>
+              <p className="text-xs text-slate-400">Ingresa el RUT con puntos y guion (ej: 12.345.678-9)</p>
             </div>
 
             <div className="space-y-2">
@@ -95,7 +95,12 @@ export default function SubcontratistasLoginPage() {
                 disabled={loading}
                 className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-400"
               />
-              <p className="text-xs text-slate-400">labbe + últimos 4 dígitos de tu RUT</p>
+              <p className="text-xs text-slate-400">
+                <strong className="text-slate-300">labbe</strong> + últimos 4 dígitos de tu RUT
+              </p>
+              <p className="text-xs text-slate-500">
+                Ejemplo RUT 12.345.678-9 → Contraseña: <strong>labbe5678</strong>
+              </p>
             </div>
 
             <Button
@@ -114,10 +119,15 @@ export default function SubcontratistasLoginPage() {
             </Button>
           </form>
 
-          <div className="mt-4 p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
-            <p className="text-xs text-blue-300">
-              <strong>Nota:</strong> Tu contraseña es <strong>labbe</strong> seguido de los últimos 4 dígitos de tu RUT.
+          <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+            <p className="text-xs text-amber-300 font-medium mb-2">
+              <strong>📋 Instrucciones de Login:</strong>
             </p>
+            <ul className="text-xs text-amber-300 space-y-1 ml-4">
+              <li>RUT: Ingresa con puntos y guion (ej: 12.345.678-9)</li>
+              <li>Contraseña: labbe + últimos 4 dígitos del RUT (antes del guion)</li>
+              <li>Ejemplo: RUT 12.345.678-9 → Contraseña: <strong>labbe5678</strong></li>
+            </ul>
           </div>
         </CardContent>
       </Card>
