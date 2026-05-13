@@ -65,7 +65,7 @@ export async function PUT(
   }
 }
 
-// DELETE alert
+// DELETE alert (only superadmin can delete)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -74,14 +74,52 @@ export async function DELETE(
     const supabase = await createClient()
     const { id } = await params
     
-    const { error } = await supabase
+    // Get current user info
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - must be logged in' },
+        { status: 401 }
+      )
+    }
+
+    // Check if user is superadmin
+    const { data: superadminUser, error: superadminError } = await supabase
+      .from('executive_staff')
+      .select('id, cargo, email')
+      .eq('email', user.email)
+      .eq('cargo', 'SUPERADMIN')
+      .single()
+
+    if (superadminError || !superadminUser) {
+      console.log('[v0] DELETE alert denied - user not superadmin:', user.email)
+      return NextResponse.json(
+        { error: 'Forbidden - only superadmin can delete alerts' },
+        { status: 403 }
+      )
+    }
+
+    console.log('[v0] Superadmin deleting alert:', { alertId: id, user: user.email })
+    
+    // Delete from alerts table
+    const { error: alertError } = await supabase
       .from('alerts')
       .delete()
       .eq('id', id)
     
-    if (error) throw error
+    if (alertError) throw alertError
+
+    // Also try to delete from alerts_log if the id format suggests it came from there
+    if (id.startsWith('log_')) {
+      const logId = id.replace('log_', '')
+      await supabase
+        .from('alerts_log')
+        .delete()
+        .eq('id', logId)
+    }
     
-    return NextResponse.json({ success: true, message: 'Alert deleted' })
+    return NextResponse.json({ success: true, message: 'Alert deleted by superadmin' })
   } catch (error) {
     console.error('Error deleting alert:', error)
     return NextResponse.json({ error: 'Failed to delete alert' }, { status: 500 })
