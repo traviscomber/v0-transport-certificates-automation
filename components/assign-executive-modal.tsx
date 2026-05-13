@@ -46,11 +46,14 @@ export function AssignExecutiveModal({
       const response = await fetch('/api/admin/executive-staff?is_active=true')
       if (!response.ok) throw new Error('Failed to fetch executives')
       const data = await response.json()
-      setExecutives(data)
+      // Handle both direct array and { executives: [] } response format
+      const executivesList = Array.isArray(data) ? data : data.executives || []
+      setExecutives(executivesList)
       setSelectedExecutive('')
     } catch (err) {
       setError('Error loading executives')
       console.error(err)
+      setExecutives([])
     } finally {
       setLoading(false)
     }
@@ -93,9 +96,9 @@ export function AssignExecutiveModal({
     }
   }
 
-  const selectedExecName = executives.find(
-    (e) => e.id === selectedExecutive
-  )?.nombre
+  const selectedExecName = Array.isArray(executives) 
+    ? executives.find((e) => e.id === selectedExecutive)?.nombre 
+    : undefined
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
