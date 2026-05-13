@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { XCircle, FileText, Calendar, User, Building2, AlertTriangle } from 'lucide-react'
+import { XCircle, FileText, Calendar, User, Building2, AlertTriangle, Eye, Download } from 'lucide-react'
 import { useDocumentSync } from '@/contexts/document-sync-context'
 import { getChileDate, getChileTime } from '@/lib/timezone-utils'
 
@@ -159,19 +159,34 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
                   </div>
                 </div>
 
-                {/* Right section with status and button */}
-                <div className="flex items-center gap-3 flex-shrink-0">
+                {/* Right section with status and buttons */}
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <Badge className="bg-red-500/20 text-red-300 border-red-500/30 whitespace-nowrap">
                     ✗ Rechazado
                   </Badge>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPreviewDoc(doc)}
-                    className="border-slate-600 hover:bg-slate-800/50 whitespace-nowrap"
-                  >
-                    Ver
-                  </Button>
+                  {doc.file_url && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setPreviewDoc(doc)}
+                      className="text-slate-400 hover:text-white"
+                      title="Ver documento"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {doc.file_url && (
+                    <a href={doc.file_url} download target="_blank" rel="noopener noreferrer">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-slate-400 hover:text-white"
+                        title="Descargar documento"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </a>
+                  )}
                 </div>
               </div>
             </CardContent>
