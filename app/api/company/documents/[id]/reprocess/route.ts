@@ -24,7 +24,7 @@ export async function POST(
 
     // Fetch document and its storage URL
     const { data: doc, error: fetchError } = await adminClient
-      .from('uploaded_documents')
+      .from('documents')
       .select('*')
       .eq('id', documentId)
       .single()
@@ -82,7 +82,7 @@ export async function POST(
 
     // Update document with new extraction data
     const { data: updated, error: updateError } = await adminClient
-      .from('uploaded_documents')
+      .from('documents')
       .update({
         extracted_document_type: normalizeDocumentType(aiExtraction.documentType),
         extracted_expiration_date: aiExtraction.expirationDate,
