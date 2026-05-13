@@ -23,6 +23,8 @@ export async function GET() {
         document_type_id,
         validation_status,
         file_url,
+        validated_at,
+        ejecutiva,
         created_at,
         updated_at,
         conductor_id,
@@ -51,6 +53,8 @@ export async function GET() {
         document_type_id,
         status,
         file_url,
+        approved_at,
+        reviewed_by_ejecutiva,
         created_at,
         updated_at,
         transportista_id,
@@ -77,9 +81,11 @@ export async function GET() {
       validation_status: doc.validation_status,
       status: doc.validation_status, // For component compatibility
       file_url: doc.file_url,
+      validated_at: doc.validated_at,
+      ejecutiva: doc.ejecutiva,
       created_at: doc.created_at,
       updated_at: doc.updated_at,
-      reviewed_at: doc.updated_at, // Use updated_at as reviewed_at
+      reviewed_at: doc.validated_at, // Map validated_at to reviewed_at for component compatibility
       conductores: doc.conductores,
       document_source: 'conductor'
     }))
@@ -92,9 +98,11 @@ export async function GET() {
       document_type_id: doc.document_type_id,
       status: doc.status,
       file_url: doc.file_url,
+      approved_at: doc.approved_at,
+      reviewed_by_ejecutiva: doc.reviewed_by_ejecutiva,
       created_at: doc.created_at,
       updated_at: doc.updated_at,
-      reviewed_at: doc.updated_at, // Use updated_at as reviewed_at
+      reviewed_at: doc.approved_at, // Map approved_at to reviewed_at for component compatibility
       transportistas: doc.transportistas,
       document_source: 'subcontractor'
     }))
