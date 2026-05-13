@@ -23,6 +23,7 @@ interface Document {
   status: string
   uploaded_at: string
   expires_at: string
+  rejection_reason?: string
 }
 
 interface TransportistaData {
@@ -336,17 +337,24 @@ export default function SubcontractorDashboardPage() {
                     key={doc.id}
                     className="flex items-center justify-between p-3 rounded-lg bg-slate-700/30 border border-slate-600"
                   >
-                    <div>
+                    <div className="flex-1">
                       <p className="text-white font-medium">{doc.file_name}</p>
                       <p className="text-xs text-slate-400">
                         Subido: {new Date(doc.uploaded_at).toLocaleDateString('es-CL')}
                       </p>
+                      {doc.status === 'rejected' && doc.rejection_reason && (
+                        <p className="text-xs text-red-400 mt-1">
+                          Motivo del rechazo: {doc.rejection_reason}
+                        </p>
+                      )}
                     </div>
                     <div className="text-right">
                       {getStatusBadge(doc.status)}
-                      <p className="text-xs text-slate-400 mt-1">
-                        Vence: {new Date(doc.expires_at).toLocaleDateString('es-CL')}
-                      </p>
+                      {doc.expires_at && (
+                        <p className="text-xs text-slate-400 mt-1">
+                          Vence: {new Date(doc.expires_at).toLocaleDateString('es-CL')}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}
