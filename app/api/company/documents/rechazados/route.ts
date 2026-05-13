@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     console.log('[v0] Rechazados endpoint: Fetching rejected documents')
 
-    // Get rejected conductor documents
+    // Get rejected conductor documents - check both English and Spanish status values
     const { data: conductorDocs, error: conductorError } = await supabase
       .from('uploaded_documents')
       .select(`
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
           rut
         )
       `)
-      .eq('validation_status', 'rejected')
+      .in('validation_status', ['rejected', 'rechazado'])
       .order('updated_at', { ascending: false })
       .limit(100)
 

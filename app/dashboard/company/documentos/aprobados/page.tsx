@@ -8,7 +8,7 @@ import { CheckCircle2 } from "lucide-react"
 async function getApprovedDocuments() {
   const supabase = await createClient()
   
-  // Get approved conductor documents with no cache
+  // Get approved conductor documents - check both English and Spanish status values
   const { data: conductorDocs, error: conductorError } = await supabase
     .from("uploaded_documents")
     .select(`
@@ -27,7 +27,7 @@ async function getApprovedDocuments() {
         rut
       )
     `, { count: 'exact' })
-    .eq('validation_status', 'approved')
+    .in('validation_status', ['approved', 'aprobado'])
     .order("updated_at", { ascending: false })
     .limit(100)
   

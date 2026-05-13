@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     console.log('[v0] Aprobados endpoint: Fetching approved documents')
 
-    // Get approved conductor documents
+    // Get approved conductor documents - check both English and Spanish status values
     const { data: conductorDocs, error: conductorError } = await supabase
       .from('uploaded_documents')
       .select(`
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
           rut
         )
       `)
-      .eq('validation_status', 'approved')
+      .in('validation_status', ['approved', 'aprobado'])
       .order('updated_at', { ascending: false })
       .limit(100)
 

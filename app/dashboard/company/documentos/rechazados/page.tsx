@@ -8,7 +8,7 @@ import { XCircle } from 'lucide-react'
 async function getRejectedDocuments() {
   const supabase = await createClient()
   
-  // Get rejected conductor documents
+  // Get rejected conductor documents - check both English and Spanish status values
   const { data: conductorDocs, error: conductorError } = await supabase
     .from('uploaded_documents')
     .select(`
@@ -29,7 +29,7 @@ async function getRejectedDocuments() {
         rut
       )
     `)
-    .eq('validation_status', 'rejected')
+    .in('validation_status', ['rejected', 'rechazado'])
     .order('updated_at', { ascending: false })
     .limit(100)
   
