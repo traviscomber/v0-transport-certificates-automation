@@ -117,7 +117,7 @@ export function NotificationCenter() {
 
       {/* Notification Panel */}
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-96 max-h-96 overflow-y-auto bg-slate-900 border border-slate-700 rounded-lg shadow-2xl z-50">
+        <div className="fixed top-16 right-4 w-96 max-h-96 overflow-y-auto bg-slate-900 border border-slate-700 rounded-lg shadow-2xl z-[9999]">
           <div className="p-4 border-b border-slate-700 sticky top-0 bg-slate-900/95">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-white">Notificaciones</h3>

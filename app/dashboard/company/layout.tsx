@@ -103,14 +103,14 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
               </Button>
             </SheetTrigger>
 
-            {/* Brand info - Mobile */}
-            <div className="flex-1 md:hidden min-w-0">
-              <h1 className="text-sm font-bold text-slate-900 truncate">Transportes Labbé</h1>
+            {/* Brand info - shows on mobile, hidden on desktop since sidebar has it */}
+            <div className="flex-1 min-w-0">
+              <h1 className="text-sm md:text-lg font-bold text-slate-900 truncate">Transportes Labbé</h1>
               <p className="text-xs text-slate-600 truncate">Portal de Empresa</p>
             </div>
 
-            {/* Right side - Notifications and close button */}
-            <div className="flex items-center gap-2 md:gap-4">
+            {/* Right side - Notifications - always in top right corner */}
+            <div className="flex items-center gap-2 md:gap-4 ml-auto">
               <NotificationCenter />
             </div>
           </div>
