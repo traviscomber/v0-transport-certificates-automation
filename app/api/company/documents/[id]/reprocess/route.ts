@@ -68,6 +68,22 @@ export async function POST(
 
     console.log('[v0] Fetching document from storage:', doc.file_url)
 
+    // Check if file is a PDF - GPT-4o-mini cannot process PDFs directly
+    const fileUrl = doc.file_url.toLowerCase()
+    const isPdf = fileUrl.endsWith('.pdf') || fileUrl.includes('.pdf?')
+    
+    if (isPdf) {
+      console.log('[v0] Document is a PDF - cannot analyze directly')
+      return NextResponse.json(
+        { 
+          error: 'Los archivos PDF no pueden ser analizados directamente. Por favor, suba una imagen (JPG, PNG) del documento para usar el análisis con IA.',
+          isPdf: true,
+          suggestion: 'Tome una foto o captura de pantalla del documento y súbala como imagen.'
+        },
+        { status: 400 }
+      )
+    }
+
     // Download document from storage
     const fileResponse = await fetch(doc.file_url)
     if (!fileResponse.ok) {
@@ -80,12 +96,15 @@ export async function POST(
     const buffer = await fileResponse.arrayBuffer()
     const base64 = Buffer.from(buffer).toString('base64')
 
+    // Detect MIME type from URL
+    let mimeType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/jpeg'
+    if (fileUrl.includes('.png')) mimeType = 'image/png'
+    else if (fileUrl.includes('.gif')) mimeType = 'image/gif'
+    else if (fileUrl.includes('.webp')) mimeType = 'image/webp'
+
     // Re-extract metadata
-    console.log('[v0] Starting re-extraction...')
-    const aiExtraction = await extractDocumentMetadata(
-      base64,
-      'image/jpeg' // Assume JPEG, could detect from doc.file_url
-    )
+    console.log('[v0] Starting re-extraction with mimeType:', mimeType)
+    const aiExtraction = await extractDocumentMetadata(base64, mimeType)
 
     console.log('[v0] Re-extraction successful:', aiExtraction)
 

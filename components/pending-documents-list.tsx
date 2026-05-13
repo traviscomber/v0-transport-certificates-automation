@@ -86,6 +86,15 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
 
       if (!response.ok) {
         const error = await response.json()
+        // Show specific message for PDFs
+        if (error.isPdf) {
+          const msg = document.createElement('div')
+          msg.className = 'fixed bottom-4 right-4 bg-yellow-600 text-white px-6 py-4 rounded-lg shadow-lg z-[100] max-w-md'
+          msg.innerHTML = '<strong>PDF no soportado para OCR</strong><br/><span class="text-sm">El analisis IA solo funciona con imagenes (JPG, PNG). Suba una foto del documento.</span>'
+          document.body.appendChild(msg)
+          setTimeout(() => msg.remove(), 5000)
+          return
+        }
         throw new Error(error.error || 'Error al analizar documento')
       }
 
