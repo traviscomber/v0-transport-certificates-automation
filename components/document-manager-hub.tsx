@@ -15,11 +15,8 @@ import {
   XCircle, 
   AlertTriangle,
   ArrowRight,
-  Building2,
   FolderOpen,
   BarChart3,
-  Calendar,
-  Flame,
   RotateCw
 } from 'lucide-react'
 import Link from 'next/link'
@@ -166,6 +163,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
   // Calculate totals
   const totalPendientes = stats.conductores.pendientes + stats.subcontratistas.pendientes
   const totalAprobados = stats.conductores.aprobados + stats.subcontratistas.aprobados
+  const totalRechazados = stats.conductores.rechazados + stats.subcontratistas.rechazados
   const totalDocumentos = stats.conductores.total + stats.subcontratistas.total
 
   return (
@@ -230,29 +228,39 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
           </Card>
         </Link>
         
-        <Card className="bg-gradient-to-br from-green-900/50 to-green-950/50 border-green-700/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-300/80">Aprobados</p>
-                <p className="text-2xl font-bold text-green-400">{totalAprobados}</p>
+        <Link href="/dashboard/company/documentos/aprobados">
+          <Card className="bg-gradient-to-br from-green-900/50 to-green-950/50 border-green-700/50 hover:border-green-500/70 transition-colors cursor-pointer group">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-green-300/80">Aprobados</p>
+                  <p className="text-2xl font-bold text-green-400">{totalAprobados}</p>
+                  <p className="text-xs text-green-400/60 mt-1 group-hover:text-green-300 transition-colors">
+                    Click para revisar
+                  </p>
+                </div>
+                <CheckCircle className="h-8 w-8 text-green-500/50 group-hover:text-green-400 transition-colors" />
               </div>
-              <CheckCircle className="h-8 w-8 text-green-500/50" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card className="bg-gradient-to-br from-purple-900/50 to-purple-950/50 border-purple-700/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-purple-300/80">Certificaciones</p>
-                <p className="text-2xl font-bold text-purple-400">{stats.certificaciones.total}</p>
+        <Link href="/dashboard/company/documentos/rechazados">
+          <Card className="bg-gradient-to-br from-red-900/50 to-red-950/50 border-red-700/50 hover:border-red-500/70 transition-colors cursor-pointer group">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-red-300/80">Rechazados</p>
+                  <p className="text-2xl font-bold text-red-400">{totalRechazados}</p>
+                  <p className="text-xs text-red-400/60 mt-1 group-hover:text-red-300 transition-colors">
+                    Click para revisar
+                  </p>
+                </div>
+                <XCircle className="h-8 w-8 text-red-500/50 group-hover:text-red-400 transition-colors" />
               </div>
-              <Award className="h-8 w-8 text-purple-500/50" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* Module Cards */}
@@ -306,59 +314,6 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
           )
         })}
       </div>
-
-      {/* Quick Links */}
-      <Card className="bg-slate-900/50 border-slate-700">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
-            Accesos Rapidos
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Link href="/dashboard/company/documentos/pendientes">
-              <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
-                <Clock className="h-4 w-4 text-amber-500" />
-                <div className="text-left">
-                  <div className="font-medium text-xs">Pendientes</div>
-                  <div className="text-xs text-muted-foreground">{totalPendientes}</div>
-                </div>
-              </Button>
-            </Link>
-
-            <Link href="/dashboard/company/documentos/aprobados">
-              <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <div className="text-left">
-                  <div className="font-medium text-xs">Aprobados</div>
-                  <div className="text-xs text-muted-foreground">{totalAprobados}</div>
-                </div>
-              </Button>
-            </Link>
-
-            <Link href="/dashboard/company/documentos/rechazados">
-              <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
-                <XCircle className="h-4 w-4 text-red-500" />
-                <div className="text-left">
-                  <div className="font-medium text-xs">Rechazados</div>
-                  <div className="text-xs text-muted-foreground">{stats.conductores.rechazados + stats.subcontratistas.rechazados}</div>
-                </div>
-              </Button>
-            </Link>
-
-            <Link href="/dashboard/company/documentos/renovar">
-              <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3">
-                <Calendar className="h-4 w-4 text-yellow-500" />
-                <div className="text-left">
-                  <div className="font-medium text-xs">Renovar</div>
-                  <div className="text-xs text-muted-foreground">7-30 días</div>
-                </div>
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }
