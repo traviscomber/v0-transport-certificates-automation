@@ -50,9 +50,9 @@ interface Props {
   subDocs: PendingDocument[]
 }
 
-export function PendingDocumentsList({ conductorDocs: initialConductorDocs, subDocs: initialSubDocs }: Props) {
-  const [conductorDocs, setConductorDocs] = useState(initialConductorDocs)
-  const [subDocs, setSubDocs] = useState(initialSubDocs)
+export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs: propSubDocs }: Props) {
+  // Use props directly for display, local state only for removal after approve/reject
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState<string | null>(null)
   const [previewDoc, setPreviewDoc] = useState<PendingDocument | null>(null)
   const [showRejectModal, setShowRejectModal] = useState(false)
@@ -61,11 +61,14 @@ export function PendingDocumentsList({ conductorDocs: initialConductorDocs, subD
   const [rejectReason, setRejectReason] = useState('')
   const [docType, setDocType] = useState<'conductor' | 'subcontractor'>('conductor')
 
-  // Update local state when props change (for filtering)
+  // Reset removed IDs when props change (new filter applied)
   useEffect(() => {
-    setConductorDocs(initialConductorDocs)
-    setSubDocs(initialSubDocs)
-  }, [initialConductorDocs, initialSubDocs])
+    setRemovedIds(new Set())
+  }, [propConductorDocs, propSubDocs])
+
+  // Filter out removed docs from props
+  const conductorDocs = propConductorDocs.filter(doc => !removedIds.has(doc.id))
+  const subDocs = propSubDocs.filter(doc => !removedIds.has(doc.id))
 
   const totalPendientes = conductorDocs.length + subDocs.length
 
@@ -96,11 +99,7 @@ export function PendingDocumentsList({ conductorDocs: initialConductorDocs, subD
       console.log('[v0] Pending docs: Status change successful', result)
 
       // Remove from local list immediately (UI feedback)
-      if (type === 'conductor') {
-        setConductorDocs(prev => prev.filter(d => d.id !== docId))
-      } else {
-        setSubDocs(prev => prev.filter(d => d.id !== docId))
-      }
+      setRemovedIds(prev => new Set([...prev, docId]))
 
       // BROADCAST SYNC EVENT - Update all views in real-time
       console.log('[v0] Pending docs: Broadcasting status change event')
@@ -155,9 +154,9 @@ export function PendingDocumentsList({ conductorDocs: initialConductorDocs, subD
       
       // When status changes elsewhere, remove from pending list
       if (event.type === 'document_status_changed' && event.documentId) {
-        console.log('[v0] PendingDocumentsList: Removing document from pending list:', event.documentId)
-        setConductorDocs(prev => prev.filter(d => d.id !== event.documentId))
-        setSubDocs(prev => prev.filter(d => d.id !== event.documentId))
+        const docId = event.documentId
+        console.log('[v0] PendingDocumentsList: Removing document from pending list:', docId)
+        setRemovedIds(prev => new Set([...prev, docId]))
       }
     })
 
