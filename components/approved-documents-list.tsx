@@ -20,6 +20,10 @@ interface ApprovedDocument {
   created_at: string
   updated_at?: string
   reviewed_at?: string
+  validated_at?: string
+  ejecutiva?: string
+  approved_at?: string
+  reviewed_by_ejecutiva?: string
   conductores?: { id: string; nombres: string; apellido_paterno: string; rut: string }
   transportistas?: { id: string; razon_social: string; rut: string }
 }
@@ -63,6 +67,15 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   const getApprovalDate = (doc: ApprovedDocument) => {
     const dateStr = doc.updated_at || doc.reviewed_at || doc.created_at
     return format(new Date(dateStr), "d 'de' MMMM 'de' yyyy", { locale: es })
+  }
+
+  const getApprovalTime = (doc: ApprovedDocument) => {
+    const dateStr = doc.validated_at || doc.approved_at || doc.updated_at || doc.reviewed_at || doc.created_at
+    return format(new Date(dateStr), 'HH:mm:ss', { locale: es })
+  }
+
+  const getExecutive = (doc: ApprovedDocument) => {
+    return doc.ejecutiva || doc.reviewed_by_ejecutiva || 'No especificado'
   }
 
   if (allDocs.length === 0) {
@@ -123,6 +136,14 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
                       <div className="flex items-center gap-2 text-sm text-slate-400">
                         <Calendar className="h-4 w-4 flex-shrink-0 text-slate-500" />
                         <span>{getApprovalDate(doc)}</span>
+                        <span className="text-xs text-slate-600 flex-shrink-0 ml-2">
+                          {getApprovalTime(doc)}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 text-sm text-slate-400">
+                        <User className="h-4 w-4 flex-shrink-0 text-slate-500" />
+                        <span className="truncate text-xs">Aprobado por: {getExecutive(doc)}</span>
                       </div>
                     </div>
                   </div>
