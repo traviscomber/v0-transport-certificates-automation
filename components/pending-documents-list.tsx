@@ -9,7 +9,6 @@ import Link from "next/link"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { useDocumentSync } from '@/contexts/document-sync-context'
-import { PDFViewer } from '@/components/pdf-viewer'
 
 interface PendingDocument {
   id: string
@@ -395,21 +394,14 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
           
           {previewDoc?.file_url && (
             <div className="w-full">
-              {previewDoc.file_url.toLowerCase().endsWith('.pdf') ? (
-                <PDFViewer 
-                  url={previewDoc.file_url}
-                  filename={previewDoc.original_filename || previewDoc?.file_name || 'document'}
-                />
-              ) : (
-                // Fallback for non-PDF files (images, etc)
-                <div className="flex justify-center items-center bg-slate-900 rounded-lg p-4 max-h-[60vh] overflow-auto">
-                  <img 
-                    src={previewDoc.file_url} 
-                    alt="Preview" 
-                    className="max-w-full max-h-[50vh] object-contain"
-                  />
-                </div>
-              )}
+              {/* PDF preview disabled - use download instead */}
+              <div className="flex flex-col items-center justify-center bg-slate-900 rounded-lg p-8 min-h-[400px]">
+                <FileText className="h-16 w-16 text-slate-600 mb-4" />
+                <p className="text-slate-400 text-center mb-4">
+                  PDF preview is temporarily unavailable.<br />
+                  <span className="text-sm">Please use the download button to view the file.</span>
+                </p>
+              </div>
             </div>
           )}
           
