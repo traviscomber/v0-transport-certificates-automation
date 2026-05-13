@@ -197,20 +197,8 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
         </div>
       </div>
 
-      {/* Quick Stats Summary */}
+      {/* Quick Stats Summary - Pendientes first as main focus */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-400">Total Documentos</p>
-                <p className="text-2xl font-bold text-white">{totalDocumentos}</p>
-              </div>
-              <FileText className="h-8 w-8 text-slate-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
         <Link href="/dashboard/company/documentos/pendientes">
           <Card className="bg-gradient-to-br from-amber-900/50 to-amber-950/50 border-amber-700/50 hover:border-amber-500/70 transition-colors cursor-pointer group">
             <CardContent className="p-4">
@@ -227,6 +215,18 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
             </CardContent>
           </Card>
         </Link>
+        
+        <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-400">Total Documentos</p>
+                <p className="text-2xl font-bold text-white">{totalDocumentos}</p>
+              </div>
+              <FileText className="h-8 w-8 text-slate-500" />
+            </div>
+          </CardContent>
+        </Card>
         
         <Link href="/dashboard/company/documentos/aprobados">
           <Card className="bg-gradient-to-br from-green-900/50 to-green-950/50 border-green-700/50 hover:border-green-500/70 transition-colors cursor-pointer group">
