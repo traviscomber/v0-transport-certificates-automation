@@ -150,9 +150,29 @@ export async function GET(request: NextRequest) {
       }))
 
     return NextResponse.json({
-      status: 'success',
-      timestamp: new Date().toISOString(),
-      statistics: stats,
+      totalDocuments: allDocs.length,
+      analyzedDocuments: allDocs.length,
+      averageConfidence: stats.averageConfidence,
+      accuracyRate: Object.keys(stats.documentTypes).length > 0 
+        ? Object.values(stats.documentTypes).reduce((sum: any, t: any) => sum + t.accuracy, 0) / Object.keys(stats.documentTypes).length 
+        : 0,
+      documentsByType: Object.entries(stats.documentTypes).map(([type, data]: any) => ({
+        type,
+        count: data.count,
+        accuracy: data.accuracy,
+      })),
+      confidenceDistribution: [
+        { range: '90-100%', count: stats.confidenceDistribution.veryHigh },
+        { range: '70-90%', count: stats.confidenceDistribution.high },
+        { range: '50-70%', count: stats.confidenceDistribution.medium },
+        { range: '0-50%', count: stats.confidenceDistribution.low },
+      ],
+      expirationDateAccuracy: stats.expirationDateDetection.detectionRate,
+      trendByDate: stats.lastAnalyzedDocuments.slice(0, 7).map((doc: any) => ({
+        date: new Date(doc.analyzedAt).toLocaleDateString(),
+        total: 1,
+        accurate: doc.confidence > 0.7 ? 1 : 0,
+      })),
       recommendations: generateRecommendations(stats),
     })
 
