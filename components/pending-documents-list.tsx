@@ -109,6 +109,39 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
     }
   }
 
+  const handleProvideFeedback = async (correctedType?: string, correctedDate?: string) => {
+    if (!analysisResult) return
+    
+    try {
+      const response = await fetch('/api/company/ai-training/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          documentId: analysisResult.documentId,
+          documentTable: analysisResult.documentTable,
+          aiDetectedType: analysisResult.analysis.documentType,
+          actualDocumentType: correctedType || analysisResult.analysis.documentType,
+          aiExpirationDate: analysisResult.analysis.expirationDate,
+          actualExpirationDate: correctedDate || analysisResult.analysis.expirationDate,
+          isAccurate: !correctedType && !correctedDate,
+          confidenceScore: analysisResult.analysis.confidence,
+        })
+      })
+
+      if (response.ok) {
+        const msg = document.createElement('div')
+        msg.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100]'
+        msg.textContent = 'Feedback guardado - ayudando a entrenar el modelo'
+        document.body.appendChild(msg)
+        setTimeout(() => msg.remove(), 3000)
+        
+        setShowAnalysisModal(false)
+      }
+    } catch (error) {
+      console.error('[v0] Feedback error:', error)
+    }
+  }
+
   const handleStatusChange = async (docId: string, newStatus: 'aprobado' | 'rechazado', type: 'conductor' | 'subcontractor', reason?: string) => {
     setLoading(docId)
     try {
@@ -610,13 +643,43 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                 </div>
               )}
 
-              <div className="flex justify-end pt-2">
+              {/* Feedback Section */}
+              <div className="border-t border-slate-700 pt-3">
+                <p className="text-xs text-slate-400 mb-2">¿Es correcto el análisis?</p>
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 border-green-600/50 text-green-400 hover:bg-green-900/20"
+                    onClick={() => handleProvideFeedback()}
+                  >
+                    ✓ Correcto
+                  </Button>
+                  <Button 
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 border-red-600/50 text-red-400 hover:bg-red-900/20"
+                    onClick={() => handleProvideFeedback('Correctar', 'Correctar')}
+                  >
+                    ✕ Corregir
+                  </Button>
+                </div>
+                <p className="text-xs text-slate-500 mt-2 text-center">Tu feedback entrena al modelo</p>
+              </div>
+
+              <div className="flex justify-end pt-2 gap-2">
                 <Button 
-                  variant="outline" 
+                  variant="ghost" 
                   onClick={() => setShowAnalysisModal(false)}
-                  className="border-slate-600"
+                  className="text-slate-400"
                 >
                   Cerrar
+                </Button>
+                <Button 
+                  onClick={() => handleProvideFeedback()}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Guardar & Continuar
                 </Button>
               </div>
             </div>

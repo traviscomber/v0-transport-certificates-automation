@@ -21,6 +21,7 @@ import {
   Upload,
   CheckCircle,
   Lock,
+  Brain,
 } from 'lucide-react'
 
 interface NavItem {
@@ -40,6 +41,7 @@ const navItems: NavItem[] = [
   { label: 'Portal OCR', href: '/ocr', icon: <CheckCircle className="h-5 w-5" /> },
   { label: 'Alertas', href: '/alerts', icon: <Bell className="h-5 w-5" /> },
   { label: 'Reportes', href: '/reports', icon: <BarChart3 className="h-5 w-5" /> },
+  { label: 'AI Insights', href: '/dashboard/company/ai-insights', icon: <Brain className="h-5 w-5" /> },
   { label: 'Métricas de Usuarios', href: '/admin/metrics', icon: <Lock className="h-5 w-5" />, roles: ['admin'] },
   { label: 'Compliance', href: '/compliance', icon: <Shield className="h-5 w-5" />, roles: ['admin', 'mandante'] },
 ]
