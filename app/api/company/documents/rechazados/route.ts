@@ -5,21 +5,11 @@ export const dynamic = 'force-dynamic'
  * FIXED: Using correct field names from the actual database schema
  */
 
-import { NextResponse, NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { verifyAuth } from '@/lib/auth-middleware'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const authResult = await verifyAuth(request)
-    if (!authResult.user) {
-      console.log('[v0] Rechazados: Unauthorized access attempt')
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const supabase = await createClient()
 
     console.log('[v0] Rechazados endpoint: Fetching rejected documents')
