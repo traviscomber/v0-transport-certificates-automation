@@ -159,7 +159,7 @@ export function AlertsBell() {
 
       {isOpen && (
         <div 
-          className="fixed w-96 bg-background border border-border rounded-lg shadow-lg z-50"
+          className="fixed w-96 bg-background border border-border rounded-lg shadow-xl z-[9999]"
           style={{
             top: `${dropdownPosition.top}px`,
             right: `${dropdownPosition.right}px`
@@ -254,7 +254,7 @@ export function AlertsBell() {
       {/* Close dropdown when clicking outside */}
       {isOpen && (
         <div 
-          className="fixed inset-0 z-40" 
+          className="fixed inset-0 z-[9998]" 
           onClick={() => setIsOpen(false)}
         />
       )}
