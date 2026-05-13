@@ -112,37 +112,37 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
                     
                     <div className="mt-3 space-y-2">
                       {doc.conductores && (
-                        <div className="flex items-center gap-2 text-sm text-slate-400">
-                          <User className="h-4 w-4 flex-shrink-0 text-slate-500" />
+                        <div className="flex items-center gap-2 text-sm text-slate-200">
+                          <User className="h-4 w-4 flex-shrink-0 text-slate-300" />
                           <span className="truncate">
                             {doc.conductores.nombres} {doc.conductores.apellido_paterno}
                           </span>
-                          <span className="text-xs text-slate-600 flex-shrink-0">
+                          <span className="text-xs text-slate-300 flex-shrink-0">
                             ({doc.conductores.rut})
                           </span>
                         </div>
                       )}
                       
                       {doc.transportistas && (
-                        <div className="flex items-center gap-2 text-sm text-slate-400">
-                          <Building2 className="h-4 w-4 flex-shrink-0 text-slate-500" />
+                        <div className="flex items-center gap-2 text-sm text-slate-200">
+                          <Building2 className="h-4 w-4 flex-shrink-0 text-slate-300" />
                           <span className="truncate">{doc.transportistas.razon_social}</span>
-                          <span className="text-xs text-slate-600 flex-shrink-0">
+                          <span className="text-xs text-slate-300 flex-shrink-0">
                             ({doc.transportistas.rut})
                           </span>
                         </div>
                       )}
                       
-                      <div className="flex items-center gap-2 text-sm text-slate-400">
-                        <Calendar className="h-4 w-4 flex-shrink-0 text-slate-500" />
+                      <div className="flex items-center gap-2 text-sm text-slate-200">
+                        <Calendar className="h-4 w-4 flex-shrink-0 text-slate-300" />
                         <span>{getRejectionDate(doc)}</span>
-                        <span className="text-xs text-slate-600 flex-shrink-0 ml-2">
+                        <span className="text-xs text-slate-300 flex-shrink-0 ml-2">
                           {getRejectionTime(doc)}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2 text-sm text-slate-400">
-                        <User className="h-4 w-4 flex-shrink-0 text-slate-500" />
+                      <div className="flex items-center gap-2 text-sm text-slate-200">
+                        <User className="h-4 w-4 flex-shrink-0 text-slate-300" />
                         <span className="truncate text-xs">Rechazado por: {getExecutive(doc)}</span>
                       </div>
 

@@ -88,11 +88,11 @@ export async function GET() {
       status: doc.validation_status, // For component compatibility
       file_url: doc.file_url,
       rejection_reason: doc.rejection_reason,
-      validated_at: doc.validated_at,
-      ejecutiva: doc.ejecutiva,
+      validated_at: doc.validated_at || doc.updated_at, // Use updated_at as fallback
+      ejecutiva: doc.ejecutiva || 'No especificado',
       created_at: doc.created_at,
       updated_at: doc.updated_at,
-      reviewed_at: doc.validated_at, // Map validated_at to reviewed_at for component compatibility
+      reviewed_at: doc.validated_at || doc.updated_at,
       conductores: doc.conductores,
       document_source: 'conductor'
     }))
@@ -106,11 +106,11 @@ export async function GET() {
       status: doc.status,
       file_url: doc.file_url,
       rejection_reason: doc.rejection_reason,
-      approved_at: doc.approved_at,
-      reviewed_by_ejecutiva: doc.reviewed_by_ejecutiva,
+      approved_at: doc.approved_at || doc.updated_at, // Use updated_at as fallback
+      reviewed_by_ejecutiva: doc.reviewed_by_ejecutiva || 'No especificado',
       created_at: doc.created_at,
       updated_at: doc.updated_at,
-      reviewed_at: doc.approved_at, // Map approved_at to reviewed_at for component compatibility
+      reviewed_at: doc.approved_at || doc.updated_at,
       transportistas: doc.transportistas,
       document_source: 'subcontractor'
     }))
