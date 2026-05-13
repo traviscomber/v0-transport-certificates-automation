@@ -8,7 +8,7 @@ export async function GET() {
   try {
     const supabase = await createClient()
     
-    // Get pending conductor documents
+    // Get pending conductor documents - REMOVED LIMIT to get ALL pending documents
     const { data: conductorDocs } = await supabase
       .from("uploaded_documents")
       .select(`
@@ -27,9 +27,8 @@ export async function GET() {
       `)
       .or('validation_status.eq.pending,validation_status.is.null')
       .order("created_at", { ascending: false })
-      .limit(100)
 
-    // Get pending subcontractor documents with ALL fields
+    // Get pending subcontractor documents with ALL fields - REMOVED LIMIT to get ALL pending documents
     const { data: subDocsRaw } = await supabase
       .from("subcontractor_documents")
       .select(`
@@ -47,7 +46,6 @@ export async function GET() {
       `)
       .eq('status', 'pending')
       .order("created_at", { ascending: false })
-      .limit(100)
 
     // Fetch document types
     const { data: docTypes } = await supabase

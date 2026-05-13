@@ -37,7 +37,6 @@ export async function GET() {
       `)
       .eq('validation_status', 'approved')
       .order('updated_at', { ascending: false })
-      .limit(100)
 
     if (conductorError) {
       console.error('[v0] Aprobados endpoint: Conductor error:', conductorError)
@@ -66,7 +65,6 @@ export async function GET() {
       `)
       .eq('status', 'approved')
       .order('updated_at', { ascending: false })
-      .limit(100)
 
     if (subError) {
       console.error('[v0] Aprobados endpoint: Sub error:', subError)

@@ -38,7 +38,6 @@ export async function GET() {
       `)
       .eq('validation_status', 'rejected')
       .order('updated_at', { ascending: false })
-      .limit(100)
 
     console.log('[v0] Rechazados: Conductor docs result -', conductorDocs?.length || 0, 'docs,', conductorError ? 'ERROR' : 'OK')
     
@@ -70,7 +69,6 @@ export async function GET() {
       `)
       .eq('status', 'rejected')
       .order('updated_at', { ascending: false })
-      .limit(100)
 
     console.log('[v0] Rechazados: Sub docs result -', subDocs?.length || 0, 'docs,', subError ? 'ERROR' : 'OK')
     
