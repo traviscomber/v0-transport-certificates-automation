@@ -30,16 +30,36 @@ export function SmartAlerts() {
     const fetchAlerts = async () => {
       try {
         // Fetch real alerts from API
-        const res = await fetch(`/api/alerts?limit=20&_t=${Date.now()}`, {
+        const res = await fetch(`/api/alerts?limit=50&_t=${Date.now()}`, {
           cache: "no-store",
         })
         if (!res.ok) throw new Error("Error al cargar alertas")
         
         const data = await res.json()
-        const alertsList = Array.isArray(data) ? data : data?.alerts || []
+        const alertsList = Array.isArray(data) ? data : (data?.alerts || [])
         
+        // Filter: Only show alerts about document expiration with high confidence
+        // Also include document upload/approval/rejection alerts
+        const filteredList = alertsList.filter((alert: any) => {
+          const type = alert.alert_type?.toLowerCase() || ''
+          const priority = alert.priority?.toLowerCase() || ''
+          const confidence = alert.ai_confidence || 0
+          
+          // Include document state changes
+          if (type.includes('approved') || type.includes('rejected') || type.includes('uploaded')) {
+            return true
+          }
+          
+          // Include expiration alerts only if high confidence (>85%)
+          if (type.includes('expir') || priority === 'critical' || priority === 'high') {
+            return confidence >= 0.85 || !alert.ai_confidence // Show if no AI involved or high confidence
+          }
+          
+          return false
+        })
+
         // Transform API alerts to SmartAlert format
-        const transformedAlerts: SmartAlert[] = alertsList.map((alert: any) => {
+        const transformedAlerts: SmartAlert[] = filteredList.map((alert: any) => {
           // Normalize priority - API returns critical/high/medium/low, component expects high/medium/low
           let normalizedPriority: 'high' | 'medium' | 'low' = 'medium'
           if (alert.priority === 'critical' || alert.priority === 'high') {
@@ -75,6 +95,10 @@ export function SmartAlerts() {
     }
 
     fetchAlerts()
+    
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchAlerts, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   const filteredAlerts = alerts.filter((alert) => filter === "all" || alert.priority === filter)
@@ -116,9 +140,9 @@ export function SmartAlerts() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Bell className="h-5 w-5 text-orange-600" />
-          Alertas Inteligentes
+          Alertas Inteligentes - Fechas de Vencimiento
         </CardTitle>
-        <CardDescription>Sistema de alertas predictivo basado en IA para gestión proactiva</CardDescription>
+        <CardDescription>Análisis de IA con >85% confianza. Detecta automáticamente fechas de vencimiento en documentos</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
