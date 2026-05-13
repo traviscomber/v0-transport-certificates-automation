@@ -35,6 +35,7 @@ export async function GET(request: Request) {
       .order('created_at', { ascending: false })
       .limit(limit * 2) // Fetch more to account for duplicates
 
+    console.log('[v0] alerts_log result:', { count: logAlerts?.length || 0, error: logError?.message || null })
     if (logError) console.error('[v0] alerts_log query error:', logError)
 
     // SECOND: Get alerts from alerts table (legacy alerts)
