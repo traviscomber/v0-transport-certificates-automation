@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient()
 
     // Check if RUT already exists
-    const { data: existing } = await supabase
+    const { data: existing, error: checkError } = await supabase
       .from('transportistas')
       .select('id')
       .eq('rut', rut)
@@ -30,19 +30,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create new transportista
+    // Create new transportista with only valid columns
     const { data, error } = await supabase
       .from('transportistas')
       .insert({
         razon_social,
         rut,
-        region: region || '',
-        comuna: comuna || '',
-        telefono: telefono || '',
-        email: email || '',
-        nombre_contacto: nombre_contacto || '',
+        region: region || null,
+        comuna: comuna || null,
+        telefono: telefono || null,
+        email: email || null,
+        representante_legal: nombre_contacto || null,
         is_active: is_active !== false,
-        created_at: new Date().toISOString(),
       })
       .select()
 
