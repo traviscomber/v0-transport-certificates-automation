@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Filter, Loader2 } from 'lucide-react'
+import { ArrowLeft, Filter, Loader2, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import { PendingDocumentsList } from '@/components/pending-documents-list'
 
@@ -10,6 +10,7 @@ export default function PendientesPage() {
   const [allData, setAllData] = useState<any>(null)
   const [selectedEjecutiva, setSelectedEjecutiva] = useState<string>('all')
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [ejecutivas, setEjecutivas] = useState<{ name: string; count: number }[]>([])
 
   useEffect(() => {
@@ -54,6 +55,11 @@ export default function PendientesPage() {
     }
 
     fetchData()
+    
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchData, 30000)
+    
+    return () => clearInterval(interval)
   }, [])
 
   const filteredData = useMemo(() => {
@@ -89,6 +95,21 @@ export default function PendientesPage() {
     }
   }, [allData, selectedEjecutiva])
 
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    try {
+      const response = await fetch('/api/dashboard/pending-documents', {
+        cache: 'no-store'
+      })
+      const data = await response.json()
+      setAllData(data)
+    } catch (error) {
+      console.error('[v0] Error refreshing documents:', error)
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -121,6 +142,16 @@ export default function PendientesPage() {
             </p>
           </div>
         </div>
+        
+        <Button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="bg-orange-500 hover:bg-orange-600 text-white"
+          size="sm"
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+          Actualizar
+        </Button>
       </div>
 
       {/* Ejecutiva Filter - Enhanced */}
