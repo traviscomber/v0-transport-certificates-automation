@@ -37,7 +37,7 @@ async function getRejectedDocuments() {
     console.error('[v0] Error fetching rejected conductor docs:', conductorError)
   }
 
-  // Get rejected subcontractor documents
+  // Get rejected subcontractor documents - use both English and Spanish
   const { data: subDocs, error: subError } = await supabase
     .from('subcontractor_documents')
     .select(`
@@ -56,7 +56,7 @@ async function getRejectedDocuments() {
         rut
       )
     `)
-    .eq('status', 'rechazado')
+    .in('status', ['rejected', 'rechazado'])
     .order('updated_at', { ascending: false })
     .limit(100)
   

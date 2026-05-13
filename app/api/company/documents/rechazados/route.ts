@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       throw conductorError
     }
 
-    // Get rejected subcontractor documents
+    // Get rejected subcontractor documents - use both English and Spanish
     const { data: subDocs, error: subError } = await supabase
       .from('subcontractor_documents')
       .select(`
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
           rut
         )
       `)
-      .eq('status', 'rechazado')
+      .in('status', ['rejected', 'rechazado'])
       .order('updated_at', { ascending: false })
       .limit(100)
 

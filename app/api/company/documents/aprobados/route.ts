@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       throw conductorError
     }
 
-    // Get approved subcontractor documents
+    // Get approved subcontractor documents - use both English and Spanish
     const { data: subDocs, error: subError } = await supabase
       .from('subcontractor_documents')
       .select(`
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
           rut
         )
       `)
-      .eq('status', 'aprobado')
+      .in('status', ['approved', 'aprobado'])
       .order('updated_at', { ascending: false })
       .limit(100)
 

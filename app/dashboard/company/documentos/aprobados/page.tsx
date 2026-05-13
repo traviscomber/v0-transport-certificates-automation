@@ -35,7 +35,7 @@ async function getApprovedDocuments() {
     console.error("[v0] Error fetching approved conductor docs:", conductorError)
   }
 
-  // Get approved subcontractor documents with no cache
+  // Get approved subcontractor documents - use 'approved' (English) to match dashboard
   const { data: subDocs, error: subError } = await supabase
     .from("subcontractor_documents")
     .select(`
@@ -52,7 +52,7 @@ async function getApprovedDocuments() {
         rut
       )
     `, { count: 'exact' })
-    .eq('status', 'aprobado')
+    .in('status', ['approved', 'aprobado'])
     .order("updated_at", { ascending: false })
     .limit(100)
   
