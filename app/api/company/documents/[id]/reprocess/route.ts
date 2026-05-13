@@ -22,14 +22,37 @@ export async function POST(
 
     console.log('[v0] Reprocessing document:', documentId)
 
-    // Fetch document and its storage URL
-    const { data: doc, error: fetchError } = await adminClient
-      .from('documents')
+    // Try to find document in subcontractor_documents first (most common for pending)
+    let doc: any = null
+    let docTable = ''
+    
+    const { data: subDoc, error: subError } = await adminClient
+      .from('subcontractor_documents')
       .select('*')
       .eq('id', documentId)
       .single()
+    
+    if (subDoc) {
+      doc = subDoc
+      docTable = 'subcontractor_documents'
+      console.log('[v0] Found document in subcontractor_documents')
+    } else {
+      // Try uploaded_documents (conductor documents)
+      const { data: uploadedDoc, error: uploadedError } = await adminClient
+        .from('uploaded_documents')
+        .select('*')
+        .eq('id', documentId)
+        .single()
+      
+      if (uploadedDoc) {
+        doc = uploadedDoc
+        docTable = 'uploaded_documents'
+        console.log('[v0] Found document in uploaded_documents')
+      }
+    }
 
-    if (fetchError || !doc) {
+    if (!doc) {
+      console.log('[v0] Document not found in any table:', documentId)
       return NextResponse.json(
         { error: 'Document not found' },
         { status: 404 }
@@ -80,17 +103,29 @@ export async function POST(
       !!aiExtraction.documentNumber
     )
 
-    // Update document with new extraction data
+    // Update document with new extraction data based on which table it came from
+    const updateData = docTable === 'subcontractor_documents' 
+      ? {
+          // subcontractor_documents schema
+          ai_extracted_type: normalizeDocumentType(aiExtraction.documentType),
+          ai_extracted_expiry: aiExtraction.expirationDate,
+          ai_confidence: aiExtraction.confidence,
+          ai_warnings: aiExtraction.warnings || [],
+          ai_processed: true,
+        }
+      : {
+          // uploaded_documents schema
+          extracted_document_type: normalizeDocumentType(aiExtraction.documentType),
+          extracted_expiration_date: aiExtraction.expirationDate,
+          extraction_confidence: aiExtraction.confidence,
+          extraction_warnings: aiExtraction.warnings || [],
+          ai_processing_status: 'completed',
+          validation_status: newValidationStatus,
+        }
+
     const { data: updated, error: updateError } = await adminClient
-      .from('documents')
-      .update({
-        extracted_document_type: normalizeDocumentType(aiExtraction.documentType),
-        extracted_expiration_date: aiExtraction.expirationDate,
-        extraction_confidence: aiExtraction.confidence,
-        extraction_warnings: aiExtraction.warnings || [],
-        ai_processing_status: 'completed',
-        validation_status: newValidationStatus,
-      })
+      .from(docTable)
+      .update(updateData)
       .eq('id', documentId)
       .select()
       .single()
