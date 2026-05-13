@@ -142,7 +142,7 @@ export function SmartAlerts() {
           <Bell className="h-5 w-5 text-orange-600" />
           Alertas Inteligentes - Fechas de Vencimiento
         </CardTitle>
-        <CardDescription>Análisis de IA con >85% confianza. Detecta automáticamente fechas de vencimiento en documentos</CardDescription>
+        <CardDescription>Análisis de IA con &gt;85% confianza. Detecta automáticamente fechas de vencimiento en documentos</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
