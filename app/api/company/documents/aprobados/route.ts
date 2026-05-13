@@ -32,6 +32,8 @@ export async function GET(request: NextRequest) {
         validation_status,
         file_url,
         created_at,
+        updated_at,
+        reviewed_at,
         conductores (
           id,
           nombres,
@@ -40,7 +42,7 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq('validation_status', 'approved')
-      .order('created_at', { ascending: false })
+      .order('updated_at', { ascending: false })
       .limit(100)
 
     if (conductorError) {
@@ -58,6 +60,8 @@ export async function GET(request: NextRequest) {
         status,
         file_url,
         created_at,
+        updated_at,
+        reviewed_at,
         transportistas (
           id,
           razon_social,
@@ -65,7 +69,7 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq('status', 'aprobado')
-      .order('created_at', { ascending: false })
+      .order('updated_at', { ascending: false })
       .limit(100)
 
     if (subError) {

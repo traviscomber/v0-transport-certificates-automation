@@ -33,6 +33,8 @@ export async function GET(request: NextRequest) {
         file_url,
         rejection_reason,
         created_at,
+        updated_at,
+        reviewed_at,
         conductores (
           id,
           nombres,
@@ -41,7 +43,7 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq('validation_status', 'rejected')
-      .order('created_at', { ascending: false })
+      .order('updated_at', { ascending: false })
       .limit(100)
 
     if (conductorError) {
@@ -60,6 +62,8 @@ export async function GET(request: NextRequest) {
         file_url,
         rejection_reason,
         created_at,
+        updated_at,
+        reviewed_at,
         transportistas (
           id,
           razon_social,
@@ -67,7 +71,7 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq('status', 'rechazado')
-      .order('created_at', { ascending: false })
+      .order('updated_at', { ascending: false })
       .limit(100)
 
     if (subError) {
