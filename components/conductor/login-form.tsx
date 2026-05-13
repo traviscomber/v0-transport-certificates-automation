@@ -108,7 +108,7 @@ export default function ConductorLoginForm() {
               <input
                 suppressHydrationWarning
                 type="text"
-                placeholder="12.345.678-9"
+                placeholder="12345678-9"
                 value={rut}
                 onChange={(e) => setRut(e.target.value)}
                 required
@@ -128,7 +128,7 @@ export default function ConductorLoginForm() {
                 disabled={isLoading}
               />
               <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '6px', margin: '6px 0 0 0' }}>
-                Ejemplo: 12.345.678-9 (con puntos y guion)
+                Ejemplo: 12345678-9 (sin puntos, solo guion)
               </p>
             </div>
 
@@ -162,7 +162,7 @@ export default function ConductorLoginForm() {
                 <strong style={{ color: '#cbd5e1' }}>labbe</strong> + últimos 4 dígitos de tu RUT
               </p>
               <p style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
-                Ejemplo: RUT 12.345.678-9 → Contraseña: <strong>labbe5678</strong>
+                Ejemplo: RUT 12345678-9 → Contraseña: <strong>labbe5678</strong>
               </p>
             </div>
 
@@ -200,13 +200,13 @@ export default function ConductorLoginForm() {
             <strong style={{ color: '#e2e8f0', display: 'block', marginBottom: '8px' }}>📋 Instrucciones de Login:</strong>
             <ul style={{ margin: '0', paddingLeft: '16px' }}>
               <li>
-                <strong style={{ color: '#cbd5e1' }}>RUT:</strong> Ingresa con puntos y guion (ej: 12.345.678-9)
+                <strong style={{ color: '#cbd5e1' }}>RUT:</strong> Sin puntos, solo con guion (ej: 12345678-9)
               </li>
               <li style={{ marginTop: '6px' }}>
                 <strong style={{ color: '#cbd5e1' }}>Contraseña:</strong> labbe + últimos 4 dígitos del RUT (antes del guion)
               </li>
               <li style={{ marginTop: '6px' }}>
-                Ejemplo RUT <strong>12.345.678-9</strong> → Contraseña: <strong>labbe5678</strong>
+                Ejemplo RUT <strong>12345678-9</strong> → Contraseña: <strong>labbe5678</strong>
               </li>
             </ul>
           </div>

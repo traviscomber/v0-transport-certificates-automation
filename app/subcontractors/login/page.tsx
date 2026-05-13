@@ -73,13 +73,13 @@ export default function SubcontratistasLoginPage() {
               </Label>
               <Input
                 id="rut"
-                placeholder="12.345.678-9"
+                placeholder="12345678-9"
                 value={rut}
                 onChange={(e) => setRut(e.target.value)}
                 disabled={loading}
                 className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-400"
               />
-              <p className="text-xs text-slate-400">Ingresa el RUT con puntos y guion (ej: 12.345.678-9)</p>
+              <p className="text-xs text-slate-400">Ingresa el RUT sin puntos, solo con guion (ej: 12345678-9)</p>
             </div>
 
             <div className="space-y-2">
@@ -99,7 +99,7 @@ export default function SubcontratistasLoginPage() {
                 <strong className="text-slate-300">labbe</strong> + últimos 4 dígitos de tu RUT
               </p>
               <p className="text-xs text-slate-500">
-                Ejemplo RUT 12.345.678-9 → Contraseña: <strong>labbe5678</strong>
+                Ejemplo RUT 12345678-9 → Contraseña: <strong>labbe5678</strong>
               </p>
             </div>
 
@@ -124,9 +124,9 @@ export default function SubcontratistasLoginPage() {
               <strong>📋 Instrucciones de Login:</strong>
             </p>
             <ul className="text-xs text-amber-300 space-y-1 ml-4">
-              <li>RUT: Ingresa con puntos y guion (ej: 12.345.678-9)</li>
+              <li>RUT: Sin puntos, solo con guion (ej: 12345678-9)</li>
               <li>Contraseña: labbe + últimos 4 dígitos del RUT (antes del guion)</li>
-              <li>Ejemplo: RUT 12.345.678-9 → Contraseña: <strong>labbe5678</strong></li>
+              <li>Ejemplo: RUT 12345678-9 → Contraseña: <strong>labbe5678</strong></li>
             </ul>
           </div>
         </CardContent>
