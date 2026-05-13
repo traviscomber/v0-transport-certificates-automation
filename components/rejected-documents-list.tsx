@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,7 @@ import { XCircle, FileText, Calendar, User, Building2, AlertTriangle, Eye, Downl
 import { useDocumentSync } from '@/contexts/document-sync-context'
 import { getChileDate, getChileTime } from '@/lib/timezone-utils'
 import { PDFViewer } from '@/components/pdf-viewer'
+import { DocumentFilter, type DocumentFilters } from '@/components/document-filter'
 
 interface RejectedDocument {
   id: string
@@ -38,6 +39,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
   const [conductorDocs, setConductorDocs] = useState(initialConductorDocs)
   const [subDocs, setSubDocs] = useState(initialSubDocs)
   const [previewDoc, setPreviewDoc] = useState<RejectedDocument | null>(null)
+  const [filters, setFilters] = useState<DocumentFilters>({ searchQuery: '' })
   const { onSync } = useDocumentSync()
 
   useEffect(() => {
@@ -64,6 +66,65 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
   const allDocs = [...conductorDocs, ...subDocs].sort(
     (a, b) => new Date(b.updated_at || b.reviewed_at || b.created_at).getTime() - new Date(a.updated_at || a.reviewed_at || a.created_at).getTime()
   )
+
+  // Get unique executives and companies for filter options
+  const executives = useMemo(() => {
+    const execs = new Map<string, string>()
+    allDocs.forEach((doc) => {
+      const exec = getExecutive(doc)
+      if (exec && exec !== 'No especificado') {
+        execs.set(exec, exec)
+      }
+    })
+    return Array.from(execs).map(([id, nombre]) => ({ id, nombre }))
+  }, [allDocs])
+
+  const companies = useMemo(() => {
+    const comps = new Map<string, { nombre: string; rut: string }>()
+    allDocs.forEach((doc) => {
+      if (doc.transportistas) {
+        const comp = Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas
+        if (comp) {
+          comps.set(comp.id, { nombre: comp.razon_social, rut: comp.rut })
+        }
+      }
+    })
+    return Array.from(comps).map(([id, data]) => ({ id, ...data }))
+  }, [allDocs])
+
+  // Filter documents based on filter criteria
+  const filteredDocs = useMemo(() => {
+    return allDocs.filter((doc) => {
+      // Search query
+      if (filters.searchQuery) {
+        const query = filters.searchQuery.toLowerCase()
+        const filename = (doc.original_filename || doc.document_name || '').toLowerCase()
+        const company = doc.transportistas ? (Array.isArray(doc.transportistas) ? doc.transportistas[0].razon_social : doc.transportistas.razon_social).toLowerCase() : ''
+        const conductor = doc.conductores ? (Array.isArray(doc.conductores) ? doc.conductores[0].nombres : doc.conductores.nombres).toLowerCase() : ''
+        
+        if (!filename.includes(query) && !company.includes(query) && !conductor.includes(query)) {
+          return false
+        }
+      }
+
+      // Executive filter
+      if (filters.executiveId) {
+        if (getExecutive(doc) !== filters.executiveId) {
+          return false
+        }
+      }
+
+      // Company filter
+      if (filters.companyId) {
+        const docCompany = doc.transportistas ? (Array.isArray(doc.transportistas) ? doc.transportistas[0].id : doc.transportistas.id) : null
+        if (docCompany !== filters.companyId) {
+          return false
+        }
+      }
+
+      return true
+    })
+  }, [allDocs, filters])
 
   const getRejectionDate = (doc: RejectedDocument) => {
     const dateStr = doc.updated_at || doc.reviewed_at || doc.created_at
@@ -93,8 +154,19 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
 
   return (
     <>
-      <div className="space-y-4">
-        {allDocs.map((doc) => (
+      <DocumentFilter 
+        onFilterChange={setFilters}
+        executives={executives}
+        companies={companies}
+      />
+      
+      {filteredDocs.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 px-4">
+          <p className="text-slate-400">No hay documentos que coincidan con los filtros seleccionados</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredDocs.map((doc) => (
           <Card key={doc.id} className="bg-gradient-to-r from-slate-900/80 to-slate-800/80 border-slate-700/50 hover:border-red-500/30 transition-all hover:shadow-lg hover:shadow-red-500/10">
             <CardContent className="p-6">
               <div className="flex items-start justify-between gap-6">
@@ -192,8 +264,9 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Preview Modal */}
       <Dialog open={!!previewDoc} onOpenChange={(open) => !open && setPreviewDoc(null)}>
