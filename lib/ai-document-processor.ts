@@ -107,6 +107,91 @@ Respond ONLY with valid JSON matching this structure:
 }
 
 /**
+ * Extract metadata from PDF text content using GPT
+ * @param text - Extracted text from PDF
+ * @param expectedType - Expected document type hint
+ * @returns Extracted metadata
+ */
+export async function extractDocumentFromText(
+  text: string,
+  expectedType: string = 'documento'
+): Promise<DocumentExtraction> {
+  try {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY environment variable is not set')
+    }
+
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+
+    console.log('[v0] Starting text analysis with GPT-4o-mini...')
+
+    // Truncate text if too long
+    const truncatedText = text.length > 4000 ? text.substring(0, 4000) + '...' : text
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `Eres un experto en análisis de documentos chilenos de transporte y empresas. 
+Analiza el texto extraído de un documento y extrae información clave.
+El tipo de documento esperado es: ${expectedType}`
+        },
+        {
+          role: 'user',
+          content: `Analiza el siguiente texto extraído de un documento PDF y extrae la información relevante.
+
+TEXTO DEL DOCUMENTO:
+${truncatedText}
+
+Responde SOLO con JSON válido con esta estructura:
+{
+  "documentType": "tipo de documento identificado",
+  "expirationDate": "YYYY-MM-DD o null si no se encuentra",
+  "issuanceDate": "YYYY-MM-DD o null si no se encuentra", 
+  "documentNumber": "número de documento o null",
+  "extractedText": "resumen de información clave encontrada",
+  "confidence": 0.85,
+  "warnings": ["cualquier problema o advertencia"]
+}`
+        },
+      ],
+      max_tokens: 500,
+      temperature: 0.1,
+    })
+
+    const content = response.choices[0]?.message?.content
+    if (!content) {
+      throw new Error('No response from OpenAI')
+    }
+
+    console.log('[v0] GPT text analysis response:', content)
+
+    // Parse JSON from response
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      throw new Error('Could not extract JSON from response')
+    }
+
+    const parsed = JSON.parse(jsonMatch[0])
+    const extraction = DocumentExtractionSchema.parse(parsed)
+
+    console.log('[v0] Text extraction successful:', {
+      documentType: extraction.documentType,
+      expirationDate: extraction.expirationDate,
+      confidence: extraction.confidence,
+    })
+
+    return extraction
+  } catch (error) {
+    console.error('[v0] Text extraction error:', error)
+    throw error
+  }
+}
+
+/**
  * Determine document status based on expiration date
  */
 export function getDocumentStatus(

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { extractDocumentMetadata } from '@/lib/ai-document-processor'
+import { extractDocumentMetadata, extractDocumentFromText } from '@/lib/ai-document-processor'
 import { normalizeDocumentType, determineValidationStatus } from '@/lib/document-classification'
-import { pdf } from 'pdf-to-img'
+import { extractText } from 'unpdf'
 
 export const maxDuration = 300 // 5 minutes
 export const dynamic = 'force-dynamic'
@@ -83,54 +83,51 @@ export async function POST(
     const fileUrl = doc.file_url.toLowerCase()
     const isPdf = fileUrl.endsWith('.pdf') || fileUrl.includes('.pdf?')
     
-    let base64: string
-    let mimeType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/png'
+    let aiExtraction: any
     
     if (isPdf) {
-      // Convert PDF first page to image
-      console.log('[v0] Converting PDF to image for OCR analysis...')
+      // Extract text from PDF using pdf-parse
+      console.log('[v0] Extracting text from PDF...')
       try {
-        const pdfBuffer = Buffer.from(buffer)
-        const document = await pdf(pdfBuffer, { scale: 2 }) // scale 2 for better quality
+        const pdfBuffer = new Uint8Array(buffer)
+        const { text: textArray } = await extractText(pdfBuffer)
         
-        // Get first page as PNG
-        let firstPageImage: Buffer | null = null
-        for await (const page of document) {
-          firstPageImage = page
-          break // Only need first page
-        }
+        // unpdf returns an array of strings (one per page), join them
+        const pdfText = Array.isArray(textArray) ? textArray.join('\n') : String(textArray)
         
-        if (!firstPageImage) {
+        if (!pdfText || pdfText.trim().length < 10) {
           return NextResponse.json(
-            { error: 'No se pudo extraer la primera página del PDF' },
+            { error: 'El PDF no contiene texto extraíble. Puede ser un PDF escaneado como imagen.' },
             { status: 400 }
           )
         }
         
-        base64 = firstPageImage.toString('base64')
-        mimeType = 'image/png'
-        console.log('[v0] PDF converted to PNG image successfully')
+        console.log('[v0] PDF text extracted, length:', pdfText.length)
+        console.log('[v0] First 500 chars:', pdfText.substring(0, 500))
+        
+        // Analyze extracted text with GPT
+        aiExtraction = await extractDocumentFromText(pdfText, doc.document_type || 'documento')
+        console.log('[v0] PDF text analysis complete')
       } catch (pdfError) {
-        console.error('[v0] PDF conversion error:', pdfError)
+        console.error('[v0] PDF parsing error:', pdfError)
         return NextResponse.json(
-          { error: 'Error al procesar el PDF. Intente con una imagen.' },
+          { error: 'Error al procesar el PDF: ' + (pdfError as Error).message },
           { status: 500 }
         )
       }
     } else {
-      // Regular image file
-      base64 = Buffer.from(buffer).toString('base64')
+      // Regular image file - use vision API
+      const base64 = Buffer.from(buffer).toString('base64')
       
       // Detect MIME type from URL
+      let mimeType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/jpeg'
       if (fileUrl.includes('.png')) mimeType = 'image/png'
       else if (fileUrl.includes('.gif')) mimeType = 'image/gif'
       else if (fileUrl.includes('.webp')) mimeType = 'image/webp'
-      else mimeType = 'image/jpeg'
+      
+      console.log('[v0] Starting image analysis with mimeType:', mimeType)
+      aiExtraction = await extractDocumentMetadata(base64, mimeType)
     }
-
-    // Extract metadata using AI
-    console.log('[v0] Starting AI extraction with mimeType:', mimeType)
-    const aiExtraction = await extractDocumentMetadata(base64, mimeType)
 
     console.log('[v0] Re-extraction successful:', aiExtraction)
 
