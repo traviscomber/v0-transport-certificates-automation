@@ -3,6 +3,32 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { allDriversData } from '@/lib/data/all-drivers'
 import { triggerDocumentUploadedAlert } from '@/lib/operations/alert-triggers'
 
+// Helper to trigger automatic AI analysis after upload
+async function triggerAutoAnalysis(documentId: string) {
+  try {
+    console.log('[v0] Triggering automatic AI analysis for document:', documentId)
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : 'http://localhost:3000'
+    
+    const response = await fetch(`${baseUrl}/api/company/documents/${documentId}/reprocess`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ documentId }),
+    })
+    
+    if (response.ok) {
+      const result = await response.json()
+      console.log('[v0] Auto-analysis completed:', result)
+      return result
+    } else {
+      console.error('[v0] Auto-analysis failed with status:', response.status)
+    }
+  } catch (error) {
+    console.error('[v0] Error triggering auto-analysis:', error)
+  }
+}
+
 export const dynamic = 'force-dynamic'
 
 const normalizeRUT = (rut: string | undefined) => {
@@ -119,6 +145,11 @@ export async function POST(request: NextRequest) {
       id: savedDoc?.id,
       fileName: savedDoc?.file_name 
     })
+
+    // Trigger automatic AI analysis (run in background, don't wait)
+    if (savedDoc?.id) {
+      triggerAutoAnalysis(savedDoc.id).catch(err => console.error('[v0] Background auto-analysis error:', err))
+    }
 
     // Trigger alert
     try {

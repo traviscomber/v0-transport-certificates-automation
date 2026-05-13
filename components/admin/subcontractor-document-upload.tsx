@@ -1,21 +1,37 @@
 'use client'
 
 import { useState } from 'react'
-import { Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import { Upload, Loader2, CheckCircle, AlertCircle, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 interface SubcontractorDocumentUploadProps {
   subcontractorId: string
   onUploadSuccess?: () => void
 }
 
+interface AnalysisResult {
+  success: boolean
+  analysis: {
+    documentType: string
+    expirationDate: string | null
+    confidence: number
+    extractedText: string
+    warnings: string[]
+  }
+  alertsGenerated: boolean
+}
+
 export function SubcontractorDocumentUpload({ subcontractorId, onUploadSuccess }: SubcontractorDocumentUploadProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [analyzing, setAnalyzing] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [selectedCategory, setSelectedCategory] = useState('Contract')
   const [expiryDate, setExpiryDate] = useState('')
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false)
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
 
   const categories = [
     'Insurance',
@@ -62,13 +78,52 @@ export function SubcontractorDocumentUpload({ subcontractorId, onUploadSuccess }
         throw new Error(error.error || 'Error uploading document')
       }
 
-      setMessage({ type: 'success', text: `${files.length} documento(s) subido(s) exitosamente` })
-      onUploadSuccess?.()
+      const data = await response.json()
+      setMessage({ type: 'success', text: `${files.length} documento(s) subido(s) y analizando...` })
+      
+      // Wait a bit for auto-analysis to complete, then show results
+      setAnalyzing(true)
+      setTimeout(async () => {
+        if (data.documents && data.documents.length > 0) {
+          // Fetch the first document's analysis results
+          try {
+            const docId = data.documents[0].id
+            const analysisResponse = await fetch(`/api/company/documents/${docId}`, {
+              method: 'GET',
+            })
+            
+            if (analysisResponse.ok) {
+              const docData = await analysisResponse.json()
+              
+              // Extract AI analysis results
+              const result: AnalysisResult = {
+                success: true,
+                analysis: {
+                  documentType: docData.ai_document_type || 'No detectado',
+                  expirationDate: docData.ai_expiration_date || null,
+                  confidence: docData.ai_confidence || 0,
+                  extractedText: docData.ai_extracted_text || '',
+                  warnings: docData.ai_warnings || [],
+                },
+                alertsGenerated: !!docData.ai_expiration_date,
+              }
+              
+              setAnalysisResult(result)
+              setShowAnalysisModal(true)
+            }
+          } catch (error) {
+            console.error('[v0] Error fetching analysis results:', error)
+          }
+        }
+        setAnalyzing(false)
+        onUploadSuccess?.()
+      }, 2000) // Wait 2 seconds for analysis to complete
     } catch (error) {
       setMessage({
         type: 'error',
         text: error instanceof Error ? error.message : 'Error al subir documento'
       })
+      setAnalyzing(false)
     } finally {
       setUploading(false)
       setIsDragging(false)
@@ -167,8 +222,68 @@ export function SubcontractorDocumentUpload({ subcontractorId, onUploadSuccess }
               <AlertCircle className="h-5 w-5 flex-shrink-0" />
             )}
             <p className="text-sm">{message.text}</p>
+            {analyzing && <Loader2 className="h-4 w-4 animate-spin ml-auto" />}
           </div>
         )}
+
+        {/* Analysis Results Modal */}
+        <Dialog open={showAnalysisModal} onOpenChange={setShowAnalysisModal}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-blue-400" />
+                Resultados del Analisis IA
+              </DialogTitle>
+            </DialogHeader>
+            
+            {analysisResult && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-slate-100 rounded-lg p-3">
+                    <p className="text-xs text-slate-600">Tipo Detectado</p>
+                    <p className="text-sm font-medium">{analysisResult.analysis.documentType}</p>
+                  </div>
+                  
+                  <div className="bg-slate-100 rounded-lg p-3">
+                    <p className="text-xs text-slate-600">Confianza</p>
+                    <p className="text-sm font-medium">
+                      {Math.round(analysisResult.analysis.confidence * 100)}%
+                    </p>
+                  </div>
+                </div>
+
+                {analysisResult.analysis.expirationDate && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <p className="text-xs text-yellow-800 font-medium">Fecha de Vencimiento</p>
+                    <p className="text-sm text-yellow-900">
+                      {new Date(analysisResult.analysis.expirationDate).toLocaleDateString('es-CL')}
+                    </p>
+                  </div>
+                )}
+
+                {analysisResult.analysis.extractedText && (
+                  <div className="bg-slate-50 rounded-lg p-3">
+                    <p className="text-xs text-slate-600 mb-2">Informacion Extraida</p>
+                    <p className="text-sm text-slate-700">{analysisResult.analysis.extractedText}</p>
+                  </div>
+                )}
+
+                {analysisResult.alertsGenerated && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-sm text-blue-800">✓ Alertas de vencimiento generadas automaticamente</p>
+                  </div>
+                )}
+
+                <Button 
+                  onClick={() => setShowAnalysisModal(false)}
+                  className="w-full"
+                >
+                  Cerrar
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   )
