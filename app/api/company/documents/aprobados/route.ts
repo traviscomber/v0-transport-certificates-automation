@@ -69,30 +69,33 @@ export async function GET() {
       // Don't throw, just log and continue
     }
 
-    // Normalize data to consistent format
+    // Normalize data to match component expectations - keep nested objects intact
     const normalizedConductor = (conductorDocs || []).map((doc: any) => ({
       id: doc.id,
-      filename: doc.original_filename,
+      original_filename: doc.original_filename,
       document_type_id: doc.document_type_id,
-      status: doc.validation_status,
+      validation_status: doc.validation_status,
+      status: doc.validation_status, // For component compatibility
       file_url: doc.file_url,
       created_at: doc.created_at,
       updated_at: doc.updated_at,
-      person_name: doc.conductores ? `${doc.conductores.nombres} ${doc.conductores.apellido_paterno}` : 'Unknown',
-      person_rut: doc.conductores?.rut,
+      reviewed_at: doc.updated_at, // Use updated_at as reviewed_at
+      conductores: doc.conductores,
       document_source: 'conductor'
     }))
 
     const normalizedSub = (subDocs || []).map((doc: any) => ({
       id: doc.id,
-      filename: doc.file_name,
+      document_name: doc.file_name,
+      file_name: doc.file_name,
+      original_filename: doc.file_name, // For component compatibility
       document_type_id: doc.document_type_id,
       status: doc.status,
       file_url: doc.file_url,
       created_at: doc.created_at,
       updated_at: doc.updated_at,
-      person_name: doc.transportistas?.razon_social,
-      person_rut: doc.transportistas?.rut,
+      reviewed_at: doc.updated_at, // Use updated_at as reviewed_at
+      transportistas: doc.transportistas,
       document_source: 'subcontractor'
     }))
 
