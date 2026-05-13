@@ -46,7 +46,7 @@ export async function GET() {
       // Don't throw, just log and continue
     }
 
-    // Get rejected subcontractor documents - use CORRECT field names and FK: subcontractor_id NOT transportista_id
+    // Get rejected subcontractor documents with assigned ejecutiva
     const { data: subDocs, error: subError } = await supabase
       .from('subcontractor_documents')
       .select(`
@@ -61,7 +61,12 @@ export async function GET() {
         created_at,
         updated_at,
         subcontractor_id,
-        subcontractor_rut
+        subcontractor_rut,
+        transportistas:subcontractor_id (
+          id,
+          razon_social,
+          rut
+        )
       `)
       .eq('status', 'rejected')
       .order('updated_at', { ascending: false })
@@ -71,6 +76,23 @@ export async function GET() {
     if (subError) {
       console.error('[v0] Rechazados endpoint: Sub error:', subError)
       // Don't throw, just log and continue
+    }
+
+    // Get assigned executives for subcontractors
+    let executiveMap = new Map<string, string>()
+    if (subDocs && subDocs.length > 0) {
+      const subcontractorIds = [...new Set((subDocs as any[]).map(doc => doc.subcontractor_id))]
+      const { data: executives, error: execError } = await supabase
+        .from('executive_staff')
+        .select('transportista_id, full_name, email')
+        .in('transportista_id', subcontractorIds)
+        .eq('is_active', true)
+
+      if (!execError && executives) {
+        executives.forEach((exec: any) => {
+          executiveMap.set(exec.transportista_id, exec.full_name || exec.email)
+        })
+      }
     }
 
     // Normalize data to match component expectations - keep nested objects intact
@@ -107,6 +129,9 @@ export async function GET() {
         ? (fileExtension === 'pdf' ? 'pdf' : 'image')
         : 'unknown'
       
+      // Get assigned ejecutiva from executiveMap, fallback to reviewed_by_ejecutiva
+      const assignedEjecutiva = executiveMap.get(doc.subcontractor_id) || doc.reviewed_by_ejecutiva || 'No especificado'
+      
       return {
         id: doc.id,
         document_name: doc.file_name,
@@ -118,12 +143,13 @@ export async function GET() {
         file_type: file_type, // Add calculated file_type
         rejection_reason: doc.rejection_reason,
         approved_at: doc.approved_at || doc.updated_at,
-        reviewed_by_ejecutiva: doc.reviewed_by_ejecutiva || 'No especificado',
+        reviewed_by_ejecutiva: assignedEjecutiva,
+        ejecutiva: assignedEjecutiva, // Use assigned ejecutiva for filtering
         created_at: doc.created_at,
         updated_at: doc.updated_at,
         reviewed_at: doc.approved_at || doc.updated_at,
-        // Create transportistas object from available data
-        transportistas: {
+        // Use transportistas from relationship if available
+        transportistas: doc.transportistas || {
           id: doc.subcontractor_id,
           razon_social: 'Subcontratista',
           rut: doc.subcontractor_rut
