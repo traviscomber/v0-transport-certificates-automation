@@ -1,8 +1,10 @@
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 /**
  * GET /api/company/documents/rechazados
  * Returns rejected documents for both conductors and subcontractors
  * FIXED: Using correct field names from the actual database schema
+ * Last updated: 2026-05-13 - Added revalidate=0 for fresh data
  */
 
 import { NextResponse } from 'next/server'
