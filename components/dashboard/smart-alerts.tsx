@@ -39,20 +39,32 @@ export function SmartAlerts() {
         const alertsList = Array.isArray(data) ? data : data?.alerts || []
         
         // Transform API alerts to SmartAlert format
-        const transformedAlerts: SmartAlert[] = alertsList.map((alert: any) => ({
-          id: alert.id,
-          type: alert.type === 'DOCUMENT_REJECTED' ? 'expiry' : 
-                 alert.type === 'DOCUMENT_APPROVED' ? 'compliance' : 
-                 alert.type === 'DOCUMENT_PENDING' ? 'renewal' : 'maintenance',
-          priority: alert.priority as 'high' | 'medium' | 'low',
-          title: alert.title,
-          description: alert.message,
-          daysUntil: 0,
-          documentType: alert.document_type || 'Documento',
-          driverName: alert.entity_name,
-          actionRequired: `Revisar documento: ${alert.entity_name || 'Conductor'}`,
-          createdAt: new Date(alert.created_at),
-        }))
+        const transformedAlerts: SmartAlert[] = alertsList.map((alert: any) => {
+          // Normalize priority - API returns critical/high/medium/low, component expects high/medium/low
+          let normalizedPriority: 'high' | 'medium' | 'low' = 'medium'
+          if (alert.priority === 'critical' || alert.priority === 'high') {
+            normalizedPriority = 'high'
+          } else if (alert.priority === 'medium') {
+            normalizedPriority = 'medium'
+          } else {
+            normalizedPriority = 'low'
+          }
+
+          return {
+            id: alert.id,
+            type: alert.type === 'DOCUMENT_REJECTED' || alert.type === 'error' ? 'expiry' : 
+                   alert.type === 'DOCUMENT_APPROVED' || alert.type === 'success' ? 'compliance' : 
+                   alert.type === 'DOCUMENT_PENDING' || alert.type === 'info' ? 'renewal' : 'maintenance',
+            priority: normalizedPriority,
+            title: alert.title || 'Alerta del sistema',
+            description: alert.message || alert.description || '',
+            daysUntil: 0,
+            documentType: alert.document_type || 'Documento',
+            driverName: alert.entity_name || alert.ejecutiva_asignada,
+            actionRequired: `Revisar: ${alert.title || 'Documento'}`,
+            createdAt: new Date(alert.created_at),
+          }
+        })
         
         setAlerts(transformedAlerts)
       } catch (error) {
