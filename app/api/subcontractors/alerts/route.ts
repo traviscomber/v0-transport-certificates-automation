@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 /**
  * GET /api/subcontractors/alerts
  * Fetch all document-related alerts for display in dashboard
+ * Sources: alerts_log (AI/automated) and alerts (legacy)
  */
 export const dynamic = 'force-dynamic'
 
@@ -11,67 +12,75 @@ export async function GET(req: NextRequest) {
   try {
     const supabase = createAdminClient()
 
-    // Get all active document alerts with subcontractor info
-    const { data: alerts, error } = await supabase
-      .from('subcontractor_document_alerts')
-      .select(`
-        id,
-        subcontractor_id,
-        alert_type,
-        message,
-        is_read,
-        transportistas (
-          id,
-          razon_social,
-          rut
-        ),
-        subcontractor_documents (
-          id,
-          file_name,
-          expires_at,
-          status
-        )
-      `)
-      .eq('dismissed_at', null)
-      .eq('transportistas.is_active', true)
+    // Get alerts from alerts_log (new automated alerts)
+    const { data: logAlerts = [], error: logError } = await supabase
+      .from('alerts_log')
+      .select('*')
       .order('created_at', { ascending: false })
-      .limit(100)
+      .limit(50)
 
-    if (error) {
-      console.error('[v0] Error fetching alerts:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (logError) {
+      console.error('[v0] Error fetching alerts_log:', logError)
     }
 
-    // Get document type names
-    const { data: docTypes, error: docTypesError } = await supabase
-      .from('subcontractor_document_types')
-      .select('id, nombre')
+    // Get alerts from legacy alerts table
+    const { data: legacyAlerts = [], error: legacyError } = await supabase
+      .from('alerts')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50)
 
-    if (docTypesError) {
-      console.warn('[v0] Error fetching document types:', docTypesError)
+    if (legacyError) {
+      console.error('[v0] Error fetching legacy alerts:', legacyError)
     }
 
-    // Map document type IDs to names
-    const docTypeMap = new Map(docTypes?.map((dt: any) => [dt.id, dt.nombre]) || [])
+    // Map alert_type/priority to frontend expected types
+    const mapAlertType = (alert: any): 'pending_review' | 'expiring_soon' | 'expired' | 'rejected' => {
+      const type = alert.alert_type?.toLowerCase() || ''
+      const priority = alert.priority?.toLowerCase() || ''
+      
+      if (type.includes('rejected') || type === 'error') return 'rejected'
+      if (type.includes('expired') || priority === 'critical') return 'expired'
+      if (type.includes('expiring') || priority === 'high' || priority === 'medium') return 'expiring_soon'
+      return 'pending_review'
+    }
 
-    // Format alerts for frontend
-    const formattedAlerts = alerts?.map((alert: any) => ({
-      id: alert.id,
-      subcontractor_id: alert.subcontractor_id,
-      subcontractor_name: alert.transportistas?.razon_social || 'N/A',
-      document_type: alert.subcontractor_documents?.[0]?.file_name || 'Documento',
-      alert_type: alert.alert_type,
-      message: alert.message,
-      expires_at: alert.subcontractor_documents?.[0]?.expires_at,
-      is_read: alert.is_read,
+    // Format alerts from alerts_log
+    const formattedLogAlerts = (logAlerts || []).map((alert: any) => ({
+      id: `log_${alert.id}`,
+      subcontractor_id: alert.transportista_id || alert.driver_id || '',
+      subcontractor_name: alert.entity_name || 'Sistema',
+      document_type: alert.document_type || alert.title || 'Documento',
+      alert_type: mapAlertType(alert),
+      message: alert.message || alert.description || '',
+      expires_at: null,
+      is_read: alert.is_read || false,
       created_at: alert.created_at
-    })) || []
+    }))
 
-    console.log(`[v0] Fetched ${formattedAlerts.length} document alerts`)
+    // Format alerts from legacy table
+    const formattedLegacyAlerts = (legacyAlerts || []).map((alert: any) => ({
+      id: alert.id,
+      subcontractor_id: alert.transportista_id || alert.subcontratista_id || alert.driver_id || '',
+      subcontractor_name: alert.entity_name || alert.ejecutiva_nombre || 'Sistema',
+      document_type: alert.document_type || alert.title || 'Documento',
+      alert_type: mapAlertType(alert),
+      message: alert.message || alert.description || '',
+      expires_at: null,
+      is_read: alert.is_read || false,
+      created_at: alert.created_at
+    }))
 
-    return NextResponse.json({ alerts: formattedAlerts })
+    // Combine and sort by date
+    const allAlerts = [...formattedLogAlerts, ...formattedLegacyAlerts]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 50)
+
+    console.log(`[v0] Fetched ${allAlerts.length} total alerts (${formattedLogAlerts.length} from alerts_log, ${formattedLegacyAlerts.length} from alerts)`)
+
+    return NextResponse.json({ alerts: allAlerts })
   } catch (error) {
-    console.error('[v0] Error in GET alerts:', error)
+    console.error('[v0] Error in GET subcontractors/alerts:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error', alerts: [] },
       { status: 500 }
