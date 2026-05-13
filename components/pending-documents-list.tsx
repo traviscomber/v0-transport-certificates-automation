@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Clock, Users, Truck, ArrowLeft, FileText, Check, X, Loader2, Eye, Download, Calendar } from "lucide-react"
+import { Clock, Users, Truck, ArrowLeft, FileText, Check, X, Loader2, Eye, Download, Calendar, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
@@ -54,6 +54,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
   // Use props directly for display, local state only for removal after approve/reject
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState<string | null>(null)
+  const [analyzing, setAnalyzing] = useState<string | null>(null)
   const [previewDoc, setPreviewDoc] = useState<PendingDocument | null>(null)
   const [showRejectModal, setShowRejectModal] = useState(false)
   const { onSync, broadcastSync } = useDocumentSync()
@@ -71,6 +72,53 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
   const subDocs = propSubDocs.filter(doc => !removedIds.has(doc.id))
 
   const totalPendientes = conductorDocs.length + subDocs.length
+
+  const handleAnalyzeDocument = async (docId: string) => {
+    setAnalyzing(docId)
+    try {
+      console.log('[v0] Analyzing document with OCR/IA:', docId)
+      
+      const response = await fetch(`/api/company/documents/${docId}/reprocess`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId: docId })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Error al analizar documento')
+      }
+
+      const result = await response.json()
+      console.log('[v0] Document analysis complete:', result)
+
+      // Show success message
+      const msg = document.createElement('div')
+      msg.className = 'fixed bottom-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100]'
+      msg.textContent = 'Documento analizado con IA ✨'
+      document.body.appendChild(msg)
+      setTimeout(() => msg.remove(), 3000)
+
+      // Refresh the data
+      broadcastSync({
+        type: 'document_status_changed',
+        documentId: docId,
+        timestamp: Date.now(),
+        data: {
+          analyzed: true
+        }
+      })
+    } catch (error) {
+      console.error('[v0] Analysis error:', error)
+      const msg = document.createElement('div')
+      msg.className = 'fixed bottom-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100]'
+      msg.textContent = 'Error al analizar: ' + (error as Error).message
+      document.body.appendChild(msg)
+      setTimeout(() => msg.remove(), 3000)
+    } finally {
+      setAnalyzing(null)
+    }
+  }
 
   const handleStatusChange = async (docId: string, newStatus: 'aprobado' | 'rechazado', type: 'conductor' | 'subcontractor', reason?: string) => {
     setLoading(docId)
@@ -236,6 +284,21 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => handleAnalyzeDocument(doc.id)}
+                      disabled={analyzing === doc.id}
+                      className="text-xs gap-1 border-blue-400/50 text-blue-300 hover:bg-blue-500/20"
+                      title="Analizar con IA (OCR)"
+                    >
+                      {analyzing === doc.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3 w-3" />
+                      )}
+                      Analizar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleApprove(doc.id, 'conductor')}
                       disabled={loading === doc.id}
                       className="text-xs gap-1 border-green-500/50 text-green-400 hover:bg-green-500/20"
@@ -336,6 +399,21 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                         <Eye className="h-4 w-4" />
                       </Button>
                     )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAnalyzeDocument(doc.id)}
+                      disabled={analyzing === doc.id}
+                      className="text-xs gap-1 border-blue-400/50 text-blue-300 hover:bg-blue-500/20"
+                      title="Analizar con IA (OCR)"
+                    >
+                      {analyzing === doc.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3 w-3" />
+                      )}
+                      Analizar
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
