@@ -3,6 +3,7 @@ export const revalidate = 0
 
 import { createClient } from "@/lib/supabase/server"
 import { ApprovedDocumentsList } from "@/components/approved-documents-list"
+import { CheckCircle2 } from "lucide-react"
 
 async function getApprovedDocuments() {
   const supabase = await createClient()
@@ -17,6 +18,8 @@ async function getApprovedDocuments() {
       validation_status,
       file_url,
       created_at,
+      updated_at,
+      reviewed_at,
       conductores (
         id,
         nombres,
@@ -25,7 +28,7 @@ async function getApprovedDocuments() {
       )
     `, { count: 'exact' })
     .eq('validation_status', 'approved')
-    .order("created_at", { ascending: false })
+    .order("updated_at", { ascending: false })
     .limit(100)
   
   if (conductorError) {
@@ -42,6 +45,7 @@ async function getApprovedDocuments() {
       status,
       file_url,
       created_at,
+      updated_at,
       transportistas (
         id,
         razon_social,
@@ -49,7 +53,7 @@ async function getApprovedDocuments() {
       )
     `, { count: 'exact' })
     .eq('status', 'aprobado')
-    .order("created_at", { ascending: false })
+    .order("updated_at", { ascending: false })
     .limit(100)
   
   if (subError) {
@@ -64,19 +68,22 @@ async function getApprovedDocuments() {
 
 export default async function ApprovedDocumentsPage() {
   const { conductorDocs, subDocs } = await getApprovedDocuments()
+  const totalApproved = conductorDocs.length + subDocs.length
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <span>✓</span>
-          Documentos Aprobados
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Historial de documentos que han sido aprobados
-        </p>
+    <div className="flex flex-col gap-8 p-6">
+      {/* Header */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10 border border-green-500/20">
+            <CheckCircle2 className="h-6 w-6 text-green-500" />
+          </div>
+          <h1 className="text-4xl font-bold text-white">Documentos Aprobados</h1>
+        </div>
+        <p className="text-slate-400">Historial completo de documentos aprobados • Total: {totalApproved} documentos</p>
       </div>
 
+      {/* Content */}
       <ApprovedDocumentsList 
         conductorDocs={conductorDocs as any} 
         subDocs={subDocs as any} 

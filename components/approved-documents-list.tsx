@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { CheckCircle, FileText, Calendar, User, Building2 } from 'lucide-react'
+import { CheckCircle2, FileText, Calendar, User, Building2 } from 'lucide-react'
 import { useDocumentSync } from '@/contexts/document-sync-context'
-import { formatDistanceToNow } from 'date-fns'
+import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 interface ApprovedDocument {
@@ -18,6 +18,8 @@ interface ApprovedDocument {
   status?: string
   file_url: string
   created_at: string
+  updated_at?: string
+  reviewed_at?: string
   conductores?: { id: string; nombres: string; apellido_paterno: string; rut: string }
   transportistas?: { id: string; razon_social: string; rut: string }
 }
@@ -33,11 +35,9 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   const [previewDoc, setPreviewDoc] = useState<ApprovedDocument | null>(null)
   const { onSync } = useDocumentSync()
 
-  // Listen for document changes
   useEffect(() => {
     const unsubscribe = onSync((event) => {
       if (event.type === 'document_status_changed') {
-        // Refetch approved documents
         const refetch = async () => {
           try {
             const response = await fetch('/api/company/documents/aprobados')
@@ -53,79 +53,91 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
         refetch()
       }
     })
-
     return unsubscribe
   }, [onSync])
 
   const allDocs = [...conductorDocs, ...subDocs].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    (a, b) => new Date(b.updated_at || b.reviewed_at || b.created_at).getTime() - new Date(a.updated_at || a.reviewed_at || a.created_at).getTime()
   )
+
+  const getApprovalDate = (doc: ApprovedDocument) => {
+    const dateStr = doc.updated_at || doc.reviewed_at || doc.created_at
+    return format(new Date(dateStr), "d 'de' MMMM 'de' yyyy", { locale: es })
+  }
 
   if (allDocs.length === 0) {
     return (
-      <Card className="bg-slate-900/50 border-slate-700 text-center py-12">
-        <div className="flex justify-center mb-4">
-          <CheckCircle className="h-12 w-12 text-green-500/50" />
+      <div className="flex flex-col items-center justify-center py-12 px-4">
+        <div className="rounded-full bg-green-500/10 p-3 mb-4">
+          <CheckCircle2 className="h-12 w-12 text-green-500" />
         </div>
-        <p className="text-muted-foreground">No hay documentos aprobados aún</p>
-      </Card>
+        <p className="text-lg font-medium text-slate-300">No hay documentos aprobados aún</p>
+        <p className="text-sm text-slate-500 mt-2">Los documentos aprobados aparecerán aquí</p>
+      </div>
     )
   }
 
   return (
     <>
-      <div className="grid gap-4">
+      <div className="space-y-4">
         {allDocs.map((doc) => (
-          <Card key={doc.id} className="bg-slate-900/50 border-slate-700 hover:border-slate-600 transition-colors">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-4 flex-1">
-                  <div className="bg-green-500/10 rounded-lg p-2">
-                    <FileText className="h-6 w-6 text-green-500" />
+          <Card key={doc.id} className="bg-gradient-to-r from-slate-900/80 to-slate-800/80 border-slate-700/50 hover:border-green-500/30 transition-all hover:shadow-lg hover:shadow-green-500/10">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between gap-6">
+                {/* Left section with icon and details */}
+                <div className="flex items-start gap-4 flex-1 min-w-0">
+                  <div className="flex-shrink-0">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-500/10 border border-green-500/20">
+                      <FileText className="h-6 w-6 text-green-500" />
+                    </div>
                   </div>
                   
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-white">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-white truncate text-lg">
                       {doc.original_filename || doc.document_name}
                     </h3>
                     
-                    <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+                    <div className="mt-3 space-y-2">
                       {doc.conductores && (
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4" />
-                          <span>
+                        <div className="flex items-center gap-2 text-sm text-slate-400">
+                          <User className="h-4 w-4 flex-shrink-0 text-slate-500" />
+                          <span className="truncate">
                             {doc.conductores.nombres} {doc.conductores.apellido_paterno}
                           </span>
-                          <span className="text-xs">({doc.conductores.rut})</span>
+                          <span className="text-xs text-slate-600 flex-shrink-0">
+                            ({doc.conductores.rut})
+                          </span>
                         </div>
                       )}
                       
                       {doc.transportistas && (
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4" />
-                          <span>{doc.transportistas.razon_social}</span>
-                          <span className="text-xs">({doc.transportistas.rut})</span>
+                        <div className="flex items-center gap-2 text-sm text-slate-400">
+                          <Building2 className="h-4 w-4 flex-shrink-0 text-slate-500" />
+                          <span className="truncate">{doc.transportistas.razon_social}</span>
+                          <span className="text-xs text-slate-600 flex-shrink-0">
+                            ({doc.transportistas.rut})
+                          </span>
                         </div>
                       )}
                       
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        <span>
-                          Aprobado hace {formatDistanceToNow(new Date(doc.created_at), { locale: es })}
-                        </span>
+                      <div className="flex items-center gap-2 text-sm text-slate-400">
+                        <Calendar className="h-4 w-4 flex-shrink-0 text-slate-500" />
+                        <span>{getApprovalDate(doc)}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                {/* Right section with status and button */}
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <Badge className="bg-green-500/20 text-green-300 border-green-500/30 whitespace-nowrap">
                     ✓ Aprobado
                   </Badge>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setPreviewDoc(doc)}
+                    className="border-slate-600 hover:bg-slate-800/50 whitespace-nowrap"
                   >
                     Ver
                   </Button>

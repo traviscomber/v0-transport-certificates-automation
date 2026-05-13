@@ -3,6 +3,7 @@ export const revalidate = 0
 
 import { createClient } from '@/lib/supabase/server'
 import { RejectedDocumentsList } from '@/components/rejected-documents-list'
+import { XCircle } from 'lucide-react'
 
 async function getRejectedDocuments() {
   const supabase = await createClient()
@@ -18,6 +19,8 @@ async function getRejectedDocuments() {
       file_url,
       rejection_reason,
       created_at,
+      updated_at,
+      reviewed_at,
       conductor_id,
       conductores (
         id,
@@ -27,7 +30,7 @@ async function getRejectedDocuments() {
       )
     `)
     .eq('validation_status', 'rejected')
-    .order('created_at', { ascending: false })
+    .order('updated_at', { ascending: false })
     .limit(100)
   
   if (conductorError) {
@@ -45,6 +48,7 @@ async function getRejectedDocuments() {
       file_url,
       rejection_reason,
       created_at,
+      updated_at,
       transportista_id,
       transportistas (
         id,
@@ -53,7 +57,7 @@ async function getRejectedDocuments() {
       )
     `)
     .eq('status', 'rechazado')
-    .order('created_at', { ascending: false })
+    .order('updated_at', { ascending: false })
     .limit(100)
   
   if (subError) {
@@ -68,19 +72,22 @@ async function getRejectedDocuments() {
 
 export default async function RejectedDocumentsPage() {
   const { conductorDocs, subDocs } = await getRejectedDocuments()
+  const totalRejected = conductorDocs.length + subDocs.length
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <span>✗</span>
-          Documentos Rechazados
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Historial de documentos que han sido rechazados
-        </p>
+    <div className="flex flex-col gap-8 p-6">
+      {/* Header */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20">
+            <XCircle className="h-6 w-6 text-red-500" />
+          </div>
+          <h1 className="text-4xl font-bold text-white">Documentos Rechazados</h1>
+        </div>
+        <p className="text-slate-400">Historial completo de documentos rechazados • Total: {totalRejected} documentos</p>
       </div>
 
+      {/* Content */}
       <RejectedDocumentsList 
         conductorDocs={conductorDocs as any} 
         subDocs={subDocs as any} 
