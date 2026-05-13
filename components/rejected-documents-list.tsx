@@ -67,6 +67,20 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
     (a, b) => new Date(b.updated_at || b.reviewed_at || b.created_at).getTime() - new Date(a.updated_at || a.reviewed_at || a.created_at).getTime()
   )
 
+  const getExecutive = (doc: RejectedDocument) => {
+    return doc.ejecutiva || doc.reviewed_by_ejecutiva || 'No especificado'
+  }
+
+  const getRejectionDate = (doc: RejectedDocument) => {
+    const dateStr = doc.updated_at || doc.reviewed_at || doc.created_at
+    return getChileDate(dateStr)
+  }
+
+  const getRejectionTime = (doc: RejectedDocument) => {
+    const dateStr = doc.validated_at || doc.approved_at || doc.updated_at || doc.reviewed_at || doc.created_at
+    return getChileTime(dateStr)
+  }
+
   // Get unique executives and companies for filter options
   const executives = useMemo(() => {
     const execs = new Map<string, string>()
@@ -125,20 +139,6 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
       return true
     })
   }, [allDocs, filters])
-
-  const getRejectionDate = (doc: RejectedDocument) => {
-    const dateStr = doc.updated_at || doc.reviewed_at || doc.created_at
-    return getChileDate(dateStr)
-  }
-
-  const getRejectionTime = (doc: RejectedDocument) => {
-    const dateStr = doc.validated_at || doc.approved_at || doc.updated_at || doc.reviewed_at || doc.created_at
-    return getChileTime(dateStr)
-  }
-
-  const getExecutive = (doc: RejectedDocument) => {
-    return doc.ejecutiva || doc.reviewed_by_ejecutiva || 'No especificado'
-  }
 
   if (allDocs.length === 0) {
     return (
