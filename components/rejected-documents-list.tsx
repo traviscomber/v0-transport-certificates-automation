@@ -16,7 +16,7 @@ interface RejectedDocument {
   document_name?: string
   validation_status?: string
   status?: string
-  file_url: string
+  file_url?: string
   rejection_reason?: string
   created_at: string
   updated_at?: string

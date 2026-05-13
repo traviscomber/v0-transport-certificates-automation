@@ -16,7 +16,7 @@ interface ApprovedDocument {
   document_name?: string
   validation_status?: string
   status?: string
-  file_url: string
+  file_url?: string
   created_at: string
   updated_at?: string
   reviewed_at?: string
