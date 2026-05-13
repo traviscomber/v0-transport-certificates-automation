@@ -95,11 +95,19 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   const companies = useMemo(() => {
     const comps = new Map<string, { nombre: string; rut: string }>()
     allDocs.forEach((doc) => {
-      if (doc.transportistas) {
-        const comp = Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas
-        if (comp) {
-          comps.set(comp.id, { nombre: comp.razon_social, rut: comp.rut })
+      try {
+        if (doc.transportistas) {
+          const comp = Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas
+          if (comp && comp.razon_social) {
+            comps.set(comp.id || comp.rut, { nombre: comp.razon_social, rut: comp.rut || '' })
+          }
         }
+        // For subcontractor docs, try to get company from subcontractor_rut
+        if ((doc as any).subcontractor_rut && !doc.transportistas) {
+          comps.set((doc as any).subcontractor_rut, { nombre: 'Empresa', rut: (doc as any).subcontractor_rut })
+        }
+      } catch (e) {
+        console.log('[v0] Error extracting company:', e)
       }
     })
     return Array.from(comps).map(([id, data]) => ({ id, ...data }))
@@ -111,11 +119,11 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
       // Search query
       if (filters.searchQuery) {
         const query = filters.searchQuery.toLowerCase()
-        const filename = (doc.original_filename || doc.document_name || '').toLowerCase()
-        const company = doc.transportistas ? (Array.isArray(doc.transportistas) ? doc.transportistas[0].razon_social : doc.transportistas.razon_social).toLowerCase() : ''
-        const conductor = doc.conductores ? (Array.isArray(doc.conductores) ? doc.conductores[0].nombres : doc.conductores.nombres).toLowerCase() : ''
+        const filename = (doc.original_filename || doc.document_name || doc.file_name || '').toLowerCase()
+        const company = doc.transportistas ? ((Array.isArray(doc.transportistas) ? doc.transportistas[0]?.razon_social : doc.transportistas?.razon_social) || '') : ''
+        const conductor = doc.conductores ? ((Array.isArray(doc.conductores) ? doc.conductores[0]?.nombres : doc.conductores?.nombres) || '') : ''
         
-        if (!filename.includes(query) && !company.includes(query) && !conductor.includes(query)) {
+        if (!filename.includes(query) && !company.toLowerCase().includes(query) && !conductor.toLowerCase().includes(query)) {
           return false
         }
       }
@@ -129,8 +137,12 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
 
       // Company filter
       if (filters.companyId) {
-        const docCompany = doc.transportistas ? (Array.isArray(doc.transportistas) ? doc.transportistas[0].id : doc.transportistas.id) : null
-        if (docCompany !== filters.companyId) {
+        try {
+          const docCompany = doc.transportistas ? (Array.isArray(doc.transportistas) ? doc.transportistas[0]?.id : doc.transportistas?.id) : (doc as any).subcontractor_rut
+          if (docCompany !== filters.companyId) {
+            return false
+          }
+        } catch (e) {
           return false
         }
       }
@@ -198,9 +210,9 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
                       {doc.transportistas && (
                         <div className="flex items-center gap-2 text-sm text-slate-200">
                           <Building2 className="h-4 w-4 flex-shrink-0 text-slate-300" />
-                          <span className="truncate">{doc.transportistas.razon_social}</span>
+                          <span className="truncate">{(Array.isArray(doc.transportistas) ? doc.transportistas[0]?.razon_social : doc.transportistas?.razon_social) || 'N/A'}</span>
                           <span className="text-xs text-slate-300 flex-shrink-0">
-                            ({doc.transportistas.rut})
+                            ({(Array.isArray(doc.transportistas) ? doc.transportistas[0]?.rut : doc.transportistas?.rut) || 'N/A'})
                           </span>
                         </div>
                       )}
