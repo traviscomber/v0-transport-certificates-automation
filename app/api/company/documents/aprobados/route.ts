@@ -150,8 +150,20 @@ export async function GET() {
     console.error('[v0] Error stack:', errorStack)
     
     return NextResponse.json(
-      { error: errorMessage, detail: 'Aprobados endpoint error' },
-      { status: 500 }
+      {
+        conductorDocs: normalizedConductor,
+        subDocs: normalizedSub,
+        allDocs: allDocs,
+        total: allDocs.length,
+        timestamp: new Date().toISOString()
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      }
     )
   }
 }
