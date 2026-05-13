@@ -1,6 +1,8 @@
 import { DashboardOverview } from '@/components/dashboard/dashboard-overview'
-import { SmartAlerts } from '@/components/dashboard/smart-alerts'
 import { DocumentAlertsWidget } from '@/components/document-alerts-widget'
+import dynamic from 'next/dynamic'
+
+const SmartAlerts = dynamic(() => import('@/components/dashboard/smart-alerts').then(mod => ({ default: mod.SmartAlerts })), { ssr: false })
 
 export default function DashboardPage() {
   return (
