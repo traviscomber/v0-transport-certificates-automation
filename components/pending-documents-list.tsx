@@ -57,6 +57,8 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
   const [analyzing, setAnalyzing] = useState<string | null>(null)
   const [previewDoc, setPreviewDoc] = useState<PendingDocument | null>(null)
   const [showRejectModal, setShowRejectModal] = useState(false)
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false)
+  const [analysisResult, setAnalysisResult] = useState<any>(null)
   const { onSync, broadcastSync } = useDocumentSync()
   const [rejectDocId, setRejectDocId] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
@@ -92,29 +94,16 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
       const result = await response.json()
       console.log('[v0] Document analysis complete:', result)
 
-      // Show success message
-      const msg = document.createElement('div')
-      msg.className = 'fixed bottom-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100]'
-      msg.textContent = 'Documento analizado con IA ✨'
-      document.body.appendChild(msg)
-      setTimeout(() => msg.remove(), 3000)
-
-      // Refresh the data
-      broadcastSync({
-        type: 'document_status_changed',
-        documentId: docId,
-        timestamp: Date.now(),
-        data: {
-          analyzed: true
-        }
-      })
+      // Show analysis results in modal
+      setAnalysisResult(result)
+      setShowAnalysisModal(true)
     } catch (error) {
       console.error('[v0] Analysis error:', error)
       const msg = document.createElement('div')
       msg.className = 'fixed bottom-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100]'
       msg.textContent = 'Error al analizar: ' + (error as Error).message
       document.body.appendChild(msg)
-      setTimeout(() => msg.remove(), 3000)
+      setTimeout(() => msg.remove(), 5000)
     } finally {
       setAnalyzing(null)
     }
@@ -549,6 +538,89 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
               Confirmar Rechazo
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Analysis Results Modal */}
+      <Dialog open={showAnalysisModal} onOpenChange={setShowAnalysisModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-blue-400" />
+              Resultados del Analisis IA
+            </DialogTitle>
+          </DialogHeader>
+          
+          {analysisResult && (
+            <div className="space-y-4">
+              {/* Document Info */}
+              <div className="bg-slate-800/50 rounded-lg p-3">
+                <p className="text-sm text-slate-400">Archivo</p>
+                <p className="text-white font-medium">{analysisResult.originalDocument?.file_name || 'Sin nombre'}</p>
+              </div>
+
+              {/* Analysis Results */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-800/50 rounded-lg p-3">
+                  <p className="text-sm text-slate-400">Tipo Detectado</p>
+                  <p className="text-white font-medium">{analysisResult.analysis?.documentType || 'No detectado'}</p>
+                </div>
+                
+                <div className="bg-slate-800/50 rounded-lg p-3">
+                  <p className="text-sm text-slate-400">Confianza</p>
+                  <p className="text-white font-medium">
+                    {analysisResult.analysis?.confidence 
+                      ? `${Math.round(analysisResult.analysis.confidence * 100)}%` 
+                      : 'N/A'}
+                  </p>
+                </div>
+                
+                {analysisResult.analysis?.expirationDate && (
+                  <div className="bg-slate-800/50 rounded-lg p-3">
+                    <p className="text-sm text-slate-400">Fecha Vencimiento</p>
+                    <p className="text-white font-medium">{analysisResult.analysis.expirationDate}</p>
+                  </div>
+                )}
+                
+                {analysisResult.analysis?.documentNumber && (
+                  <div className="bg-slate-800/50 rounded-lg p-3">
+                    <p className="text-sm text-slate-400">Numero Documento</p>
+                    <p className="text-white font-medium">{analysisResult.analysis.documentNumber}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Extracted Text Summary */}
+              {analysisResult.analysis?.extractedText && (
+                <div className="bg-slate-800/50 rounded-lg p-3">
+                  <p className="text-sm text-slate-400 mb-1">Informacion Extraida</p>
+                  <p className="text-white text-sm">{analysisResult.analysis.extractedText}</p>
+                </div>
+              )}
+
+              {/* Warnings */}
+              {analysisResult.analysis?.warnings?.length > 0 && (
+                <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-3">
+                  <p className="text-sm text-yellow-400 font-medium mb-1">Advertencias</p>
+                  <ul className="text-yellow-200 text-sm list-disc list-inside">
+                    {analysisResult.analysis.warnings.map((w: string, i: number) => (
+                      <li key={i}>{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowAnalysisModal(false)}
+                  className="border-slate-600"
+                >
+                  Cerrar
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

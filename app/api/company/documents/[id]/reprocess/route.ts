@@ -129,62 +129,29 @@ export async function POST(
       aiExtraction = await extractDocumentMetadata(base64, mimeType)
     }
 
-    console.log('[v0] Re-extraction successful:', aiExtraction)
+    console.log('[v0] Analysis successful:', aiExtraction)
 
-    // Determine new validation status
-    const daysUntilExp = aiExtraction.expirationDate
-      ? Math.floor(
-          (new Date(aiExtraction.expirationDate).getTime() - new Date().getTime()) /
-            (1000 * 60 * 60 * 24)
-        )
-      : null
-
-    const newValidationStatus = determineValidationStatus(
-      aiExtraction.confidence,
-      daysUntilExp,
-      !!aiExtraction.documentNumber
-    )
-
-    // Update document with new extraction data based on which table it came from
-    const updateData = docTable === 'subcontractor_documents' 
-      ? {
-          // subcontractor_documents schema
-          ai_extracted_type: normalizeDocumentType(aiExtraction.documentType),
-          ai_extracted_expiry: aiExtraction.expirationDate,
-          ai_confidence: aiExtraction.confidence,
-          ai_warnings: aiExtraction.warnings || [],
-          ai_processed: true,
-        }
-      : {
-          // uploaded_documents schema
-          extracted_document_type: normalizeDocumentType(aiExtraction.documentType),
-          extracted_expiration_date: aiExtraction.expirationDate,
-          extraction_confidence: aiExtraction.confidence,
-          extraction_warnings: aiExtraction.warnings || [],
-          ai_processing_status: 'completed',
-          validation_status: newValidationStatus,
-        }
-
-    const { data: updated, error: updateError } = await adminClient
-      .from(docTable)
-      .update(updateData)
-      .eq('id', documentId)
-      .select()
-      .single()
-
-    if (updateError) {
-      return NextResponse.json(
-        { error: 'Failed to update document', details: updateError.message },
-        { status: 500 }
-      )
-    }
-
+    // Just return the analysis results without updating the database
+    // The ejecutiva can review and decide whether to approve or reject
     return NextResponse.json({
       success: true,
-      document: updated,
-      aiExtraction,
-      newValidationStatus,
-      message: 'Document reprocessed successfully',
+      documentId,
+      documentTable: docTable,
+      originalDocument: {
+        file_name: doc.file_name || doc.filename,
+        document_type: doc.document_type,
+        uploaded_at: doc.uploaded_at || doc.created_at,
+      },
+      analysis: {
+        documentType: aiExtraction.documentType,
+        expirationDate: aiExtraction.expirationDate,
+        issuanceDate: aiExtraction.issuanceDate,
+        documentNumber: aiExtraction.documentNumber,
+        extractedText: aiExtraction.extractedText,
+        confidence: aiExtraction.confidence,
+        warnings: aiExtraction.warnings || [],
+      },
+      message: 'Analisis completado exitosamente',
     })
   } catch (error) {
     console.error('[v0] Reprocess error:', error)
