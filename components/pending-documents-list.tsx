@@ -659,7 +659,19 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                     size="sm"
                     variant="outline"
                     className="flex-1 border-red-600/50 text-red-400 hover:bg-red-900/20"
-                    onClick={() => handleProvideFeedback('Correctar', 'Correctar')}
+                    onClick={() => {
+                      const correctedType = window.prompt(
+                        'Ingrese el tipo de documento correcto:',
+                        analysisResult?.analysis?.documentType || ''
+                      )
+                      if (correctedType) {
+                        const correctedDate = window.prompt(
+                          'Ingrese la fecha de vencimiento correcta (DD/MM/YYYY) o deje vacío:',
+                          analysisResult?.analysis?.expirationDate || ''
+                        )
+                        handleProvideFeedback(correctedType, correctedDate || undefined)
+                      }
+                    }}
                   >
                     ✕ Corregir
                   </Button>

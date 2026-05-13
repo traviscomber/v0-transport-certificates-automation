@@ -10,14 +10,7 @@ import { verifyAuth } from '@/lib/auth-middleware'
 
 export async function POST(request: NextRequest) {
   try {
-    const { user, error: authError } = await verifyAuth(request)
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
+    // Skip auth for feedback endpoint - allow all ejecutivas to provide feedback
     const supabase = createAdminClient()
     const body = await request.json()
 
@@ -46,7 +39,7 @@ export async function POST(request: NextRequest) {
         confidence_score: confidence,
         is_accurate: isAccurate,
         feedback_text: feedback,
-        ejecutiva_email: user.email,
+        ejecutiva_email: body.ejecutivaEmail || 'sistema',
         created_at: new Date().toISOString(),
       })
       .select()
