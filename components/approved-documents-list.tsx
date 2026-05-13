@@ -119,7 +119,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
       // Search query
       if (filters.searchQuery) {
         const query = filters.searchQuery.toLowerCase()
-        const filename = (doc.original_filename || doc.document_name || doc.file_name || '').toLowerCase()
+        const filename = (doc.original_filename || doc.document_name || '').toLowerCase()
         const company = doc.transportistas ? ((Array.isArray(doc.transportistas) ? doc.transportistas[0]?.razon_social : doc.transportistas?.razon_social) || '') : ''
         const conductor = doc.conductores ? ((Array.isArray(doc.conductores) ? doc.conductores[0]?.nombres : doc.conductores?.nombres) || '') : ''
         
