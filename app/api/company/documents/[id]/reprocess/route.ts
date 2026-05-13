@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { extractDocumentMetadata, extractDocumentFromText } from '@/lib/ai-document-processor'
 import { normalizeDocumentType, determineValidationStatus } from '@/lib/document-classification'
 import { extractText } from 'unpdf'
+import { generateAIAnalysisAlerts } from '@/lib/document-alerts-generator'
 
 export const maxDuration = 300 // 5 minutes
 export const dynamic = 'force-dynamic'
@@ -131,14 +132,54 @@ export async function POST(
 
     console.log('[v0] Analysis successful:', aiExtraction)
 
-    // Just return the analysis results without updating the database
-    // The ejecutiva can review and decide whether to approve or reject
+    // Save the analysis results to the database
+    const updateData = {
+      ai_document_type: aiExtraction.documentType,
+      ai_expiration_date: aiExtraction.expirationDate || null,
+      ai_issuance_date: aiExtraction.issuanceDate || null,
+      ai_document_number: aiExtraction.documentNumber || null,
+      ai_extracted_text: aiExtraction.extractedText || null,
+      ai_confidence: aiExtraction.confidence || null,
+      ai_warnings: aiExtraction.warnings || [],
+      ai_analyzed_at: new Date().toISOString(),
+    }
+
+    const { error: updateError } = await adminClient
+      .from(docTable)
+      .update(updateData)
+      .eq('id', documentId)
+
+    if (updateError) {
+      console.error('[v0] Error saving analysis to DB:', updateError)
+    } else {
+      console.log('[v0] Analysis results saved to database')
+    }
+
+    // Generate alerts based on analysis results (especially expiration dates)
+    const transportistaId = doc.transportista_id || doc.subcontractor_id || null
+    const conductorId = doc.conductor_id || doc.driver_id || null
+    const fileName = doc.file_name || doc.filename || 'documento'
+    const detectedDocType = aiExtraction.documentType || doc.document_type || 'Documento'
+
+    await generateAIAnalysisAlerts({
+      documentId,
+      documentTable: docTable as 'subcontractor_documents' | 'uploaded_documents',
+      transportistaId,
+      conductorId,
+      documentType: detectedDocType,
+      aiExpirationDate: aiExtraction.expirationDate,
+      aiConfidence: aiExtraction.confidence || 0.5,
+      fileName,
+    })
+
+    // Return the analysis results to show in the modal
     return NextResponse.json({
       success: true,
+      saved: !updateError,
       documentId,
       documentTable: docTable,
       originalDocument: {
-        file_name: doc.file_name || doc.filename,
+        file_name: fileName,
         document_type: doc.document_type,
         uploaded_at: doc.uploaded_at || doc.created_at,
       },
@@ -151,7 +192,12 @@ export async function POST(
         confidence: aiExtraction.confidence,
         warnings: aiExtraction.warnings || [],
       },
-      message: 'Analisis completado exitosamente',
+      alertsGenerated: !!aiExtraction.expirationDate,
+      message: updateError 
+        ? 'Analisis completado (no guardado)' 
+        : aiExtraction.expirationDate 
+          ? 'Analisis completado, guardado y alertas generadas' 
+          : 'Analisis completado y guardado',
     })
   } catch (error) {
     console.error('[v0] Reprocess error:', error)
