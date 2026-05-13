@@ -59,19 +59,33 @@ export default function PendientesPage() {
   const filteredData = useMemo(() => {
     if (!allData) return null
 
+    console.log('[v0] Filtering with selectedEjecutiva:', selectedEjecutiva)
+    console.log('[v0] allData:', { subDocs: allData.subDocs?.length, conductorDocs: allData.conductorDocs?.length })
+
     if (selectedEjecutiva === 'all') {
+      console.log('[v0] Returning all data')
       return allData
     }
 
+    const filteredSubDocs = allData.subDocs?.filter((doc: any) => {
+      const docEjecutiva = doc.ejecutiva || 'Sin asignar'
+      const matches = docEjecutiva === selectedEjecutiva
+      if (!matches && allData.subDocs?.length < 20) {
+        console.log('[v0] Subcontractor doc:', { name: doc.file_name, ejecutiva: docEjecutiva, matches })
+      }
+      return matches
+    }) || []
+
+    const filteredConductorDocs = allData.conductorDocs?.filter((doc: any) => {
+      const docEjecutiva = doc.ejecutiva || 'Sin asignar'
+      return docEjecutiva === selectedEjecutiva
+    }) || []
+
+    console.log('[v0] Filtered result:', { subDocs: filteredSubDocs.length, conductorDocs: filteredConductorDocs.length })
+
     return {
-      conductorDocs: allData.conductorDocs?.filter((doc: any) => {
-        const docEjecutiva = doc.ejecutiva || 'Sin asignar'
-        return docEjecutiva === selectedEjecutiva
-      }) || [],
-      subDocs: allData.subDocs?.filter((doc: any) => {
-        const docEjecutiva = doc.ejecutiva || 'Sin asignar'
-        return docEjecutiva === selectedEjecutiva
-      }) || []
+      conductorDocs: filteredConductorDocs,
+      subDocs: filteredSubDocs
     }
   }, [allData, selectedEjecutiva])
 
@@ -155,8 +169,9 @@ export default function PendientesPage() {
         )}
       </div>
 
-      {/* Documents List */}
+      {/* Documents List - key forces re-render when filter changes */}
       <PendingDocumentsList
+        key={`${selectedEjecutiva}-${filteredData?.subDocs?.length || 0}`}
         conductorDocs={filteredData?.conductorDocs || []}
         subDocs={filteredData?.subDocs || []}
       />
