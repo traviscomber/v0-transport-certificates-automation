@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { extractDocumentMetadata } from '@/lib/ai-document-processor'
 import { normalizeDocumentType, determineValidationStatus } from '@/lib/document-classification'
+import { pdf } from 'pdf-to-img'
 
 export const maxDuration = 300 // 5 minutes
+export const dynamic = 'force-dynamic'
 
 /**
  * Endpoint to manually reprocess a document with AI
@@ -68,22 +70,6 @@ export async function POST(
 
     console.log('[v0] Fetching document from storage:', doc.file_url)
 
-    // Check if file is a PDF - GPT-4o-mini cannot process PDFs directly
-    const fileUrl = doc.file_url.toLowerCase()
-    const isPdf = fileUrl.endsWith('.pdf') || fileUrl.includes('.pdf?')
-    
-    if (isPdf) {
-      console.log('[v0] Document is a PDF - cannot analyze directly')
-      return NextResponse.json(
-        { 
-          error: 'Los archivos PDF no pueden ser analizados directamente. Por favor, suba una imagen (JPG, PNG) del documento para usar el análisis con IA.',
-          isPdf: true,
-          suggestion: 'Tome una foto o captura de pantalla del documento y súbala como imagen.'
-        },
-        { status: 400 }
-      )
-    }
-
     // Download document from storage
     const fileResponse = await fetch(doc.file_url)
     if (!fileResponse.ok) {
@@ -94,16 +80,56 @@ export async function POST(
     }
 
     const buffer = await fileResponse.arrayBuffer()
-    const base64 = Buffer.from(buffer).toString('base64')
+    const fileUrl = doc.file_url.toLowerCase()
+    const isPdf = fileUrl.endsWith('.pdf') || fileUrl.includes('.pdf?')
+    
+    let base64: string
+    let mimeType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/png'
+    
+    if (isPdf) {
+      // Convert PDF first page to image
+      console.log('[v0] Converting PDF to image for OCR analysis...')
+      try {
+        const pdfBuffer = Buffer.from(buffer)
+        const document = await pdf(pdfBuffer, { scale: 2 }) // scale 2 for better quality
+        
+        // Get first page as PNG
+        let firstPageImage: Buffer | null = null
+        for await (const page of document) {
+          firstPageImage = page
+          break // Only need first page
+        }
+        
+        if (!firstPageImage) {
+          return NextResponse.json(
+            { error: 'No se pudo extraer la primera página del PDF' },
+            { status: 400 }
+          )
+        }
+        
+        base64 = firstPageImage.toString('base64')
+        mimeType = 'image/png'
+        console.log('[v0] PDF converted to PNG image successfully')
+      } catch (pdfError) {
+        console.error('[v0] PDF conversion error:', pdfError)
+        return NextResponse.json(
+          { error: 'Error al procesar el PDF. Intente con una imagen.' },
+          { status: 500 }
+        )
+      }
+    } else {
+      // Regular image file
+      base64 = Buffer.from(buffer).toString('base64')
+      
+      // Detect MIME type from URL
+      if (fileUrl.includes('.png')) mimeType = 'image/png'
+      else if (fileUrl.includes('.gif')) mimeType = 'image/gif'
+      else if (fileUrl.includes('.webp')) mimeType = 'image/webp'
+      else mimeType = 'image/jpeg'
+    }
 
-    // Detect MIME type from URL
-    let mimeType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/jpeg'
-    if (fileUrl.includes('.png')) mimeType = 'image/png'
-    else if (fileUrl.includes('.gif')) mimeType = 'image/gif'
-    else if (fileUrl.includes('.webp')) mimeType = 'image/webp'
-
-    // Re-extract metadata
-    console.log('[v0] Starting re-extraction with mimeType:', mimeType)
+    // Extract metadata using AI
+    console.log('[v0] Starting AI extraction with mimeType:', mimeType)
     const aiExtraction = await extractDocumentMetadata(base64, mimeType)
 
     console.log('[v0] Re-extraction successful:', aiExtraction)
