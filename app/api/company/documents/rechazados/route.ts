@@ -11,8 +11,8 @@ import { verifyAuth } from '@/lib/auth-middleware'
 
 export async function GET(request: NextRequest) {
   try {
-    const authUser = await verifyAuth(request)
-    if (!authUser) {
+    const authResult = await verifyAuth(request)
+    if (!authResult.user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
