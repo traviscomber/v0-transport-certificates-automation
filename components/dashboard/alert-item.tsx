@@ -2,7 +2,7 @@
 
 import React from "react"
 import { Badge } from "@/components/ui/badge"
-import { AlertTriangle, CheckCircle, Clock, Info } from "lucide-react"
+import { AlertTriangle, CheckCircle, Clock, Info, XCircle, FileUp, Brain, FileCheck, FileX } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 interface AlertItemProps {
@@ -29,30 +29,64 @@ const AlertItem = React.memo<AlertItemProps>(({
 }) => {
   const router = useRouter()
   
+  // Normalize type for matching (handle both upper and lower case)
+  const normalizedType = type?.toUpperCase() || ''
+  
   const getStatusIcon = (alertType: string) => {
-    switch (alertType) {
-      case "DOCUMENT_UPLOADED":
-        return <CheckCircle className="h-5 w-5 text-green-500" />
-      case "ANOMALY_DETECTED":
-        return <AlertTriangle className="h-5 w-5 text-yellow-500" />
-      case "DOCUMENT_EXPIRING":
-        return <Clock className="h-5 w-5 text-orange-500" />
-      default:
-        return <Info className="h-5 w-5 text-blue-500" />
+    const t = alertType?.toUpperCase() || ''
+    
+    if (t.includes('APPROVED') || t.includes('APROBADO')) {
+      return <CheckCircle className="h-5 w-5 text-green-500" />
     }
+    if (t.includes('REJECTED') || t.includes('RECHAZADO')) {
+      return <XCircle className="h-5 w-5 text-red-500" />
+    }
+    if (t.includes('UPLOAD') || t.includes('SUBIDO')) {
+      return <FileUp className="h-5 w-5 text-blue-500" />
+    }
+    if (t.includes('EXPIR') || t.includes('VENC')) {
+      return <Clock className="h-5 w-5 text-orange-500" />
+    }
+    if (t.includes('PENDING') || t.includes('PENDIENTE')) {
+      return <Clock className="h-5 w-5 text-yellow-500" />
+    }
+    if (t.includes('ANOMAL') || t.includes('WARNING')) {
+      return <AlertTriangle className="h-5 w-5 text-yellow-500" />
+    }
+    if (t.includes('AI') || t.includes('ANALISIS') || t.includes('IA')) {
+      return <Brain className="h-5 w-5 text-purple-500" />
+    }
+    return <Info className="h-5 w-5 text-blue-500" />
   }
 
   const getStatusBadge = (alertType: string) => {
-    switch (alertType) {
-      case "DOCUMENT_UPLOADED":
-        return <Badge className="bg-green-500/20 text-green-700">Documento</Badge>
-      case "ANOMALY_DETECTED":
-        return <Badge className="bg-yellow-500/20 text-yellow-700">Anomalía</Badge>
-      case "DOCUMENT_EXPIRING":
-        return <Badge className="bg-orange-500/20 text-orange-700">Vencimiento</Badge>
-      default:
-        return <Badge variant="secondary">Alerta</Badge>
+    const t = alertType?.toUpperCase() || ''
+    
+    if (t.includes('APPROVED') || t.includes('APROBADO')) {
+      return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Aprobado</Badge>
     }
+    if (t.includes('REJECTED') || t.includes('RECHAZADO')) {
+      return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Rechazado</Badge>
+    }
+    if (t.includes('UPLOAD') || t.includes('SUBIDO')) {
+      return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Subido</Badge>
+    }
+    if (t.includes('EXPIR') || t.includes('VENC')) {
+      return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">Vencimiento</Badge>
+    }
+    if (t.includes('PENDING') || t.includes('PENDIENTE')) {
+      return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Pendiente</Badge>
+    }
+    if (t.includes('ANOMAL') || t.includes('WARNING')) {
+      return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Anomalia</Badge>
+    }
+    if (t.includes('AI') || t.includes('ANALISIS') || t.includes('IA')) {
+      return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">IA</Badge>
+    }
+    if (t.includes('INFO') || t.includes('SUCCESS')) {
+      return <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">Info</Badge>
+    }
+    return <Badge variant="secondary" className="bg-slate-500/20 text-slate-400">Sistema</Badge>
   }
 
   const handleClick = () => {

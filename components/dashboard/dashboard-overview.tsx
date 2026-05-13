@@ -271,28 +271,62 @@ export function DashboardOverview() {
         ))}
       </div>
 
-      {/* Recent Alerts - Using memoized AlertItem components */}
+      {/* Recent Alerts - Organized by category */}
       {alerts.length > 0 && (
         <Card className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-700 col-span-full">
-          <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-xl">Alertas Recientes</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Últimas alertas del sistema - {alerts.length} total
-              </CardDescription>
+          <CardHeader className="pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <CardTitle className="text-xl">Alertas Recientes</CardTitle>
+                <CardDescription className="text-muted-foreground">
+                  Actividad del sistema - {alerts.length} alertas
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Quick stats badges */}
+                {(() => {
+                  const approved = alerts.filter(a => a.type?.toUpperCase().includes('APPROVED')).length
+                  const rejected = alerts.filter(a => a.type?.toUpperCase().includes('REJECTED')).length
+                  const pending = alerts.filter(a => a.type?.toUpperCase().includes('PENDING') || a.type?.toUpperCase().includes('UPLOAD')).length
+                  const expiring = alerts.filter(a => a.type?.toUpperCase().includes('EXPIR') || a.type?.toUpperCase().includes('VENC')).length
+                  return (
+                    <>
+                      {approved > 0 && (
+                        <span className="px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-medium">
+                          {approved} aprobados
+                        </span>
+                      )}
+                      {rejected > 0 && (
+                        <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-400 text-xs font-medium">
+                          {rejected} rechazados
+                        </span>
+                      )}
+                      {pending > 0 && (
+                        <span className="px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs font-medium">
+                          {pending} nuevos
+                        </span>
+                      )}
+                      {expiring > 0 && (
+                        <span className="px-2 py-1 rounded-full bg-orange-500/20 text-orange-400 text-xs font-medium">
+                          {expiring} por vencer
+                        </span>
+                      )}
+                    </>
+                  )
+                })()}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push('/dashboard/company/alertas')}
+                >
+                  Ver todas
+                </Button>
+              </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push('/dashboard/company/alertas')}
-              className="ml-auto"
-            >
-              Ver todas
-            </Button>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {alerts.slice(0, 15).map((alert) => (
+            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+              {alerts.slice(0, 20).map((alert) => (
                 <AlertItem
                   key={alert.id}
                   id={alert.id}
@@ -306,9 +340,9 @@ export function DashboardOverview() {
                 />
               ))}
             </div>
-            {alerts.length > 15 && (
-              <p className="text-xs text-muted-foreground text-center mt-3">
-                + {alerts.length - 15} alertas más
+            {alerts.length > 20 && (
+              <p className="text-xs text-muted-foreground text-center mt-4 py-2 border-t border-slate-700">
+                + {alerts.length - 20} alertas más - <button onClick={() => router.push('/dashboard/company/alertas')} className="text-orange-400 hover:underline">Ver todas</button>
               </p>
             )}
           </CardContent>
