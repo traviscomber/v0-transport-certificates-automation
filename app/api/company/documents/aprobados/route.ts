@@ -43,6 +43,8 @@ export async function GET() {
       // Don't throw, just log and continue
     }
 
+    console.log('[v0] Aprobados: Conductor docs count:', conductorDocs?.length || 0)
+
     // Get approved subcontractor documents - use CORRECT field names: file_name NOT document_name
     const { data: subDocs, error: subError } = await supabase
       .from('subcontractor_documents')
@@ -69,6 +71,11 @@ export async function GET() {
     if (subError) {
       console.error('[v0] Aprobados endpoint: Sub error:', subError)
       // Don't throw, just log and continue
+    }
+
+    console.log('[v0] Aprobados: Sub docs count:', subDocs?.length || 0)
+    if (subDocs && subDocs.length > 0) {
+      console.log('[v0] Aprobados: First sub doc:', JSON.stringify(subDocs[0], null, 2))
     }
 
     // Normalize data to match component expectations - keep nested objects intact
