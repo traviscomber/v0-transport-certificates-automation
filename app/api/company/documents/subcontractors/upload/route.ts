@@ -4,32 +4,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { triggerSubcontractorDocumentUploadedAlert } from '@/lib/operations/alert-triggers'
 
-// Helper to trigger automatic AI analysis after upload
-async function triggerAutoAnalysis(documentId: string) {
-  try {
-    console.log('[v0] Triggering automatic AI analysis for document:', documentId)
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'http://localhost:3000'
-    
-    const response = await fetch(`${baseUrl}/api/company/documents/${documentId}/reprocess`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ documentId }),
-    })
-    
-    if (response.ok) {
-      const result = await response.json()
-      console.log('[v0] Auto-analysis completed:', result)
-      return result
-    } else {
-      console.error('[v0] Auto-analysis failed with status:', response.status)
-    }
-  } catch (error) {
-    console.error('[v0] Error triggering auto-analysis:', error)
-  }
-}
-
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
@@ -136,9 +110,6 @@ export async function POST(request: NextRequest) {
       if (!docError && doc) {
         uploadedDocs.push(doc)
         console.log('[v0] Document saved:', doc.id)
-
-        // Trigger automatic AI analysis (run in background, don't wait)
-        triggerAutoAnalysis(doc.id).catch(err => console.error('[v0] Background auto-analysis error:', err))
 
         // Trigger alert for subcontractor document upload
         try {
