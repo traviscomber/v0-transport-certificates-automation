@@ -82,7 +82,10 @@ export function DashboardOverview() {
       try {
         // Use separate endpoints - more reliable than consolidated endpoint
         const alertsRes = await fetch(`/api/alerts?limit=50`, {
-          cache: "default",
+          cache: "no-store",
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+          }
         })
         
         const statsRes = await fetch(`/api/company/documents/stats`, {
@@ -91,6 +94,7 @@ export function DashboardOverview() {
 
         if (alertsRes.ok) {
           const alertsData = await alertsRes.json()
+          console.log('[v0] Fetched alerts:', alertsData)
           const alertsList = Array.isArray(alertsData) ? alertsData : (alertsData.alerts || [])
           setAlerts(alertsList)
         }
@@ -153,15 +157,13 @@ export function DashboardOverview() {
       }
     }
 
-    // Initial fetch
+    // Fetch data immediately
     fetchData()
 
-    // Refresh every 30 seconds instead of 10 (66% reduction in API calls)
-    const intervalId = setInterval(() => {
-      fetchData()
-    }, 30000)
+    // Set interval to refresh alerts every 10 seconds (source of truth)
+    const interval = setInterval(fetchData, 10000)
 
-    return () => clearInterval(intervalId)
+    return () => clearInterval(interval)
   }, [])
 
   // Listen for document sync events and refetch dashboard stats
