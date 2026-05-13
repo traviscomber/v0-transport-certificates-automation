@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { XCircle, FileText, Calendar, User, Building2, AlertTriangle, Eye, Download } from 'lucide-react'
 import { useDocumentSync } from '@/contexts/document-sync-context'
 import { getChileDate, getChileTime } from '@/lib/timezone-utils'
+import { PDFViewer } from '@/components/pdf-viewer'
 
 interface RejectedDocument {
   id: string
@@ -202,20 +203,21 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
           </DialogHeader>
           
           {previewDoc?.file_url && (
-            <div className="w-full bg-black rounded-lg overflow-hidden">
-              {previewDoc.file_url.toLowerCase().includes('.pdf') ? (
-                <iframe
-                  src={`${previewDoc.file_url}#view=FitH`}
-                  className="w-full h-96 border-0"
-                  title="Document preview"
-                  allow="fullscreen"
+            <div className="w-full">
+              {previewDoc.file_url.toLowerCase().endsWith('.pdf') ? (
+                <PDFViewer
+                  url={previewDoc.file_url}
+                  filename={previewDoc.original_filename || previewDoc?.document_name || 'document.pdf'}
                 />
               ) : (
-                <img
-                  src={previewDoc.file_url}
-                  alt="Document preview"
-                  className="w-full h-auto max-h-96 object-contain"
-                />
+                // Fallback for non-PDF files (images, etc)
+                <div className="flex justify-center items-center bg-slate-900 rounded-lg p-4 max-h-[60vh] overflow-auto">
+                  <img
+                    src={previewDoc.file_url}
+                    alt="Preview"
+                    className="max-w-full max-h-[50vh] object-contain"
+                  />
+                </div>
               )}
             </div>
           )}
