@@ -1,10 +1,11 @@
 'use client'
 
-import { X, FileText, Award, AlertCircle, CheckCircle, Loader, Download, Eye } from 'lucide-react'
+import { X, FileText, Award, AlertCircle, CheckCircle, Loader, Download, Eye, Edit2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DocumentManagementModal } from './document-management-modal'
+import { ChangeEjecutivaModal } from './change-ejecutiva-modal'
 
 interface SubcontractorDetailCardProps {
   subcontractor: any
@@ -19,6 +20,10 @@ export function SubcontractorDetailCard({
   const [requirements, setRequirements] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showDocumentManagement, setShowDocumentManagement] = useState(false)
+  const [showChangeEjecutiva, setShowChangeEjecutiva] = useState(false)
+  const [ejecutivaNombre, setEjecutivaNombre] = useState<string | null>(
+    subcontractor.ejecutivo_nombre || null
+  )
   const [summary, setSummary] = useState({
     totalDocumentsUploaded: 0,
     totalRequirements: 0,
@@ -124,7 +129,16 @@ export function SubcontractorDetailCard({
                 <p className="text-xs text-slate-400 font-semibold mb-1">
                   EJECUTIVA ASIGNADA
                 </p>
-                <p className="text-white">{subcontractor.ejecutivo_nombre || 'Sin asignar'}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-white">{ejecutivaNombre || 'Sin asignar'}</p>
+                  <button
+                    onClick={() => setShowChangeEjecutiva(true)}
+                    className="p-1.5 rounded hover:bg-slate-700 transition-colors text-slate-400 hover:text-white"
+                    title="Cambiar ejecutiva"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -337,6 +351,16 @@ export function SubcontractorDetailCard({
           uploadedDocuments={documents}
           onClose={() => setShowDocumentManagement(false)}
           onDocumentsUpdated={handleDocumentsUpdated}
+        />
+      )}
+
+      {/* Change Ejecutiva Modal */}
+      {showChangeEjecutiva && (
+        <ChangeEjecutivaModal
+          subcontractor={subcontractor}
+          currentEjecutiva={subcontractor.ejecutivo_nombre || null}
+          onClose={() => setShowChangeEjecutiva(false)}
+          onSuccess={(newEjecutiva) => setEjecutivaNombre(newEjecutiva)}
         />
       )}
     </>
