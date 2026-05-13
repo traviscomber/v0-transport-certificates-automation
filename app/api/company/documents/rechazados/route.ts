@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request)
     if (!authResult.user) {
+      console.log('[v0] Rechazados: Unauthorized access attempt')
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -47,9 +48,11 @@ export async function GET(request: NextRequest) {
       .order('updated_at', { ascending: false })
       .limit(100)
 
+    console.log('[v0] Rechazados: Conductor docs result -', conductorDocs?.length || 0, 'docs,', conductorError ? 'ERROR' : 'OK')
+    
     if (conductorError) {
-      console.error('[v0] Rechazados endpoint: Error fetching conductor docs:', conductorError)
-      throw conductorError
+      console.error('[v0] Rechazados endpoint: Conductor error:', conductorError)
+      // Don't throw, just log and continue
     }
 
     // Get rejected subcontractor documents - use CORRECT field names: file_name NOT document_name
@@ -75,9 +78,11 @@ export async function GET(request: NextRequest) {
       .order('updated_at', { ascending: false })
       .limit(100)
 
+    console.log('[v0] Rechazados: Sub docs result -', subDocs?.length || 0, 'docs,', subError ? 'ERROR' : 'OK')
+    
     if (subError) {
-      console.error('[v0] Rechazados endpoint: Error fetching subcontractor docs:', subError)
-      throw subError
+      console.error('[v0] Rechazados endpoint: Sub error:', subError)
+      // Don't throw, just log and continue
     }
 
     // Normalize data to consistent format
@@ -123,9 +128,13 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('[v0] Rechazados endpoint: Error:', error)
+    console.error('[v0] Rechazados endpoint: Caught error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : ''
+    console.error('[v0] Error stack:', errorStack)
+    
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Error fetching rejected documents' },
+      { error: errorMessage, detail: 'Rechazados endpoint error' },
       { status: 500 }
     )
   }
