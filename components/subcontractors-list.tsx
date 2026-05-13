@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { Search, MapPin, Phone, Mail, CheckCircle, AlertCircle, X, Filter, Users, Edit } from 'lucide-react'
+import { Search, MapPin, Phone, Mail, CheckCircle, AlertCircle, X, Filter, Users, Edit, UserPlus } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { SubcontractorDetailTabs } from './subcontractor-detail-tabs'
 import { EditSubcontractorModal } from './edit-subcontractor-modal'
+import { AssignExecutiveModal } from './assign-executive-modal'
 
 interface Document {
   id: string
@@ -88,6 +89,8 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
   const [detailTabToOpen, setDetailTabToOpen] = useState<'resumen' | 'documentos' | 'conductores' | 'certificaciones' | 'onboarding'>('resumen')
   const [editingSubcontractor, setEditingSubcontractor] = useState<Subcontractor | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [assigningSubcontractor, setAssigningSubcontractor] = useState<Subcontractor | null>(null)
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false)
 
   // Fetch data from API if not provided as prop
   useEffect(() => {
@@ -415,6 +418,18 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
                       <Edit className="w-4 h-4" />
                     </button>
 
+                    {/* Assign Executive Button */}
+                    <button
+                      onClick={() => {
+                        setAssigningSubcontractor(sub)
+                        setIsAssignModalOpen(true)
+                      }}
+                      className="p-2 rounded hover:bg-slate-700/60 transition-colors text-slate-400 hover:text-slate-200"
+                      title="Asignar ejecutiva"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                    </button>
+
                     {/* Documentos Button */}
                     <button
                       onClick={() => {
@@ -543,6 +558,18 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
           window.location.reload()
         }}
         subcontractor={editingSubcontractor || undefined}
+      />
+
+      <AssignExecutiveModal
+        open={isAssignModalOpen}
+        onOpenChange={setIsAssignModalOpen}
+        transportistaId={assigningSubcontractor?.id || ''}
+        transportistaNombre={assigningSubcontractor?.nombre || ''}
+        onAssignmentSuccess={() => {
+          setAssigningSubcontractor(null)
+          // Refetch data by reloading from API
+          window.location.reload()
+        }}
       />
     </div>
   )
