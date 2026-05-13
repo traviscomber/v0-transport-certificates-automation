@@ -514,34 +514,48 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
           )}
           
           <div className="flex justify-end gap-2 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (previewDoc) {
-                  const hasConductor = previewDoc.conductores && (Array.isArray(previewDoc.conductores) ? previewDoc.conductores.length > 0 : true)
-                  handleApprove(previewDoc.id, hasConductor ? 'conductor' : 'subcontractor')
-                }
-                setPreviewDoc(null)
-              }}
-              className="gap-1 border-green-500/50 text-green-400 hover:bg-green-500/20"
-            >
-              <Check className="h-4 w-4" />
-              Aprobar
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (previewDoc) {
-                  const hasConductor = previewDoc.conductores && (Array.isArray(previewDoc.conductores) ? previewDoc.conductores.length > 0 : true)
-                  handleRejectClick(previewDoc.id, hasConductor ? 'conductor' : 'subcontractor')
-                  setPreviewDoc(null)
-                }
-              }}
-              className="gap-1 border-red-500/50 text-red-400 hover:bg-red-500/20"
-            >
-              <X className="h-4 w-4" />
-              Rechazar
-            </Button>
+            {(!previewDoc?.validation_status || previewDoc?.validation_status === 'pendiente' || previewDoc?.status === 'pendiente') && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (previewDoc) {
+                      const hasConductor = previewDoc.conductores && (Array.isArray(previewDoc.conductores) ? previewDoc.conductores.length > 0 : true)
+                      handleApprove(previewDoc.id, hasConductor ? 'conductor' : 'subcontractor')
+                    }
+                    setPreviewDoc(null)
+                  }}
+                  className="gap-1 border-green-500/50 text-green-400 hover:bg-green-500/20"
+                >
+                  <Check className="h-4 w-4" />
+                  Aprobar
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (previewDoc) {
+                      const hasConductor = previewDoc.conductores && (Array.isArray(previewDoc.conductores) ? previewDoc.conductores.length > 0 : true)
+                      handleRejectClick(previewDoc.id, hasConductor ? 'conductor' : 'subcontractor')
+                      setPreviewDoc(null)
+                    }
+                  }}
+                  className="gap-1 border-red-500/50 text-red-400 hover:bg-red-500/20"
+                >
+                  <X className="h-4 w-4" />
+                  Rechazar
+                </Button>
+              </>
+            )}
+            {previewDoc?.validation_status === 'aprobado' && (
+              <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                ✓ Aprobado
+              </Badge>
+            )}
+            {previewDoc?.validation_status === 'rechazado' && (
+              <Badge className="bg-red-500/20 text-red-300 border-red-500/30">
+                ✗ Rechazado
+              </Badge>
+            )}
           </div>
         </DialogContent>
       </Dialog>
