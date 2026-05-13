@@ -8,6 +8,8 @@ import { CheckCircle2 } from "lucide-react"
 async function getApprovedDocuments() {
   const supabase = await createClient()
   
+  console.log("[v0] APROBADOS: Starting fetch...")
+  
   // Get approved conductor documents - check both English and Spanish status values
   const { data: conductorDocs, error: conductorError } = await supabase
     .from("uploaded_documents")
@@ -26,10 +28,12 @@ async function getApprovedDocuments() {
         apellido_paterno,
         rut
       )
-    `, { count: 'exact' })
+    `)
     .in('validation_status', ['approved', 'aprobado'])
     .order("updated_at", { ascending: false })
     .limit(100)
+  
+  console.log("[v0] APROBADOS: Conductor docs fetched:", conductorDocs?.length || 0, "error:", conductorError?.message || "none")
   
   if (conductorError) {
     console.error("[v0] Error fetching approved conductor docs:", conductorError)
@@ -51,15 +55,19 @@ async function getApprovedDocuments() {
         razon_social,
         rut
       )
-    `, { count: 'exact' })
+    `)
     .in('status', ['approved', 'aprobado'])
     .order("updated_at", { ascending: false })
     .limit(100)
+  
+  console.log("[v0] APROBADOS: Sub docs fetched:", subDocs?.length || 0, "error:", subError?.message || "none")
   
   if (subError) {
     console.error("[v0] Error fetching approved sub docs:", subError)
   }
 
+  console.log("[v0] APROBADOS: Returning", (conductorDocs?.length || 0) + (subDocs?.length || 0), "total documents")
+  
   return {
     conductorDocs: conductorDocs || [],
     subDocs: subDocs || []
