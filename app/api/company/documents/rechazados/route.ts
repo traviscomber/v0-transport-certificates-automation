@@ -46,7 +46,7 @@ export async function GET() {
       // Don't throw, just log and continue
     }
 
-    // Get rejected subcontractor documents - use CORRECT field names: file_name NOT document_name
+    // Get rejected subcontractor documents - use CORRECT field names and FK: subcontractor_id NOT transportista_id
     const { data: subDocs, error: subError } = await supabase
       .from('subcontractor_documents')
       .select(`
@@ -60,12 +60,8 @@ export async function GET() {
         reviewed_by_ejecutiva,
         created_at,
         updated_at,
-        transportista_id,
-        transportistas (
-          id,
-          razon_social,
-          rut
-        )
+        subcontractor_id,
+        subcontractor_rut
       `)
       .eq('status', 'rejected')
       .order('updated_at', { ascending: false })
@@ -109,7 +105,12 @@ export async function GET() {
       created_at: doc.created_at,
       updated_at: doc.updated_at,
       reviewed_at: doc.approved_at || doc.updated_at,
-      transportistas: doc.transportistas,
+      // Create transportistas object from available data
+      transportistas: {
+        id: doc.subcontractor_id,
+        razon_social: 'Subcontratista', // Default name
+        rut: doc.subcontractor_rut
+      },
       document_source: 'subcontractor'
     }))
 
