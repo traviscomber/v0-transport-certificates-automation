@@ -41,43 +41,11 @@ export async function POST(request: Request) {
       })
     }
 
-    // Get or create a superadmin transportista (for reference)
-    const { data: superTransportista } = await supabase
-      .from('transportistas')
-      .select('id')
-      .eq('razon_social', 'LABBE_INTERNAL')
-      .single()
-
-    let transportistaId = superTransportista?.id
-
-    // If no internal transportista exists, create one
-    if (!transportistaId) {
-      const { data: newTransportista, error: transError } = await supabase
-        .from('transportistas')
-        .insert([{
-          razon_social: 'LABBE_INTERNAL',
-          rut: '00000000-0',
-          activo: true
-        }])
-        .select('id')
-        .single()
-
-      if (transError) {
-        console.error('[v0] Error creating internal transportista:', transError)
-        return NextResponse.json(
-          { error: 'Failed to create internal transportista' },
-          { status: 500 }
-        )
-      }
-
-      transportistaId = newTransportista?.id
-    }
-
-    // Create superadmin user
+    // Create superadmin user (transportista_id can be NULL for superadmin)
     const { data: newUser, error } = await supabase
       .from('executive_staff')
       .insert([{
-        transportista_id: transportistaId,
+        transportista_id: null,
         nombres: 'Oscar',
         apellido_paterno: 'Carrasco',
         apellido_materno: '',
