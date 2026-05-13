@@ -151,13 +151,16 @@ export async function GET() {
     
     return NextResponse.json(
       {
-        conductorDocs: normalizedConductor,
-        subDocs: normalizedSub,
-        allDocs: allDocs,
-        total: allDocs.length,
+        error: 'Failed to fetch approved documents',
+        message: errorMessage,
+        conductorDocs: [],
+        subDocs: [],
+        allDocs: [],
+        total: 0,
         timestamp: new Date().toISOString()
       },
       {
+        status: 500,
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
           'Pragma': 'no-cache',
