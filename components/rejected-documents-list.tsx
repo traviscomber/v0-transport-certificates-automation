@@ -7,8 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { XCircle, FileText, Calendar, User, Building2, AlertTriangle } from 'lucide-react'
 import { useDocumentSync } from '@/contexts/document-sync-context'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { getChileDate, getChileTime } from '@/lib/timezone-utils'
 
 interface RejectedDocument {
   id: string
@@ -67,12 +66,12 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
 
   const getRejectionDate = (doc: RejectedDocument) => {
     const dateStr = doc.updated_at || doc.reviewed_at || doc.created_at
-    return format(new Date(dateStr), "d 'de' MMMM 'de' yyyy", { locale: es })
+    return getChileDate(dateStr)
   }
 
   const getRejectionTime = (doc: RejectedDocument) => {
     const dateStr = doc.validated_at || doc.approved_at || doc.updated_at || doc.reviewed_at || doc.created_at
-    return format(new Date(dateStr), 'HH:mm:ss', { locale: es })
+    return getChileTime(dateStr)
   }
 
   const getExecutive = (doc: RejectedDocument) => {

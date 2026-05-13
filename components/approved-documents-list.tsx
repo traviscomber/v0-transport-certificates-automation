@@ -7,8 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { CheckCircle2, FileText, Calendar, User, Building2 } from 'lucide-react'
 import { useDocumentSync } from '@/contexts/document-sync-context'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { getChileDate, getChileTime } from '@/lib/timezone-utils'
 
 interface ApprovedDocument {
   id: string
@@ -66,12 +65,12 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
 
   const getApprovalDate = (doc: ApprovedDocument) => {
     const dateStr = doc.updated_at || doc.reviewed_at || doc.created_at
-    return format(new Date(dateStr), "d 'de' MMMM 'de' yyyy", { locale: es })
+    return getChileDate(dateStr)
   }
 
   const getApprovalTime = (doc: ApprovedDocument) => {
     const dateStr = doc.validated_at || doc.approved_at || doc.updated_at || doc.reviewed_at || doc.created_at
-    return format(new Date(dateStr), 'HH:mm:ss', { locale: es })
+    return getChileTime(dateStr)
   }
 
   const getExecutive = (doc: ApprovedDocument) => {
