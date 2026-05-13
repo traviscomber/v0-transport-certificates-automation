@@ -45,7 +45,7 @@ export async function GET() {
         reviewed_by_ejecutiva,
         uploaded_by_ejecutiva
       `)
-      .eq('status', 'pending')
+      .eq('status', 'pendiente')
       .order("created_at", { ascending: false })
       .limit(100)
 
