@@ -132,7 +132,26 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
     fetchData()
   }, [initialSubcontractors])
 
-  // Get unique values for filters
+  // Function to refresh a single subcontractor after update
+  const refreshSubcontractor = async (subcontractorId: string) => {
+    try {
+      const response = await fetch(`/api/transportistas/${subcontractorId}`)
+      if (response.ok) {
+        const data = await response.json()
+        const updatedTransportista = data.transportista
+        
+        // Update the subcontractors list with the updated data
+        setSubcontractors(prev => 
+          prev.map(s => s.id === subcontractorId ? { ...s, ...updatedTransportista } : s)
+        )
+        console.log('[v0] Subcontractor refreshed:', subcontractorId)
+      }
+    } catch (error) {
+      console.error('[v0] Error refreshing subcontractor:', error)
+      // Fallback to full reload if refresh fails
+      window.location.reload()
+    }
+  }
   const ejecutivas = useMemo(() => Array.from(new Set(subcontractors.map(s => s.ejecutivo_nombre || 'Sin asignar'))).filter(Boolean).sort(), [subcontractors])
   const certifications = { ariztia: 'Ariztia', lts: 'LTS', rendic: 'Rendic', interpolar: 'Interpolar' }
 
@@ -553,9 +572,11 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
         onClose={() => setIsEditModalOpen(false)}
         onSuccess={() => {
           setIsEditModalOpen(false)
+          // Refresh the updated subcontractor data
+          if (editingSubcontractor?.id) {
+            refreshSubcontractor(editingSubcontractor.id)
+          }
           setEditingSubcontractor(null)
-          // Refetch data by reloading from API
-          window.location.reload()
         }}
         subcontractor={editingSubcontractor || undefined}
       />
