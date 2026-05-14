@@ -18,13 +18,13 @@ export async function GET() {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Fetch all executives with @labbe.cl email
+    // Fetch all executives with @labbe.cl email - using select(*) to get all available columns
     const { data, error } = await supabase
       .from('executive_staff')
-      .select('id, email, full_name, nombres, apellido_paterno, cargo, is_active')
+      .select('*')
       .ilike('email', '%@labbe.cl')
       .eq('is_active', true)
-      .order('full_name', { ascending: true })
+      .order('id', { ascending: true })
 
     if (error) {
       return NextResponse.json(

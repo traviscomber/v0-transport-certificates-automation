@@ -9,9 +9,7 @@ import { AlertCircle, Loader, Trash2 } from 'lucide-react'
 interface Executive {
   id: string
   email: string
-  full_name?: string
-  nombres?: string
-  apellido_paterno?: string
+  full_name: string
   cargo?: string
 }
 
@@ -311,7 +309,7 @@ export function EditSubcontractorModal({
                       )}
                       {executives.map((exec) => (
                         <SelectItem key={exec.id} value={exec.id}>
-                          {exec.full_name || `${exec.nombres || ''} ${exec.apellido_paterno || ''}`.trim()} - {exec.email}
+                          {exec.full_name} - {exec.email}
                         </SelectItem>
                       ))}
                     </SelectContent>
