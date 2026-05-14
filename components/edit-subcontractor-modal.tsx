@@ -100,12 +100,7 @@ export function EditSubcontractorModal({
   }, [subcontractor, isOpen])
 
   const handleInputChange = (field: string, value: any) => {
-    // Handle special value for clearing executive assignment
-    if (field === 'assigned_executive_id' && value === '__clear__') {
-      setFormData(prev => ({ ...prev, [field]: '' }))
-    } else {
-      setFormData(prev => ({ ...prev, [field]: value }))
-    }
+    setFormData(prev => ({ ...prev, [field]: value }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -301,15 +296,20 @@ export function EditSubcontractorModal({
                     disabled={loading || loadingExecutives}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={loadingExecutives ? "Cargando..." : "Seleccionar ejecutiva"} />
+                      <SelectValue 
+                        placeholder={loadingExecutives ? "Cargando..." : "Seleccionar ejecutiva"}
+                      >
+                        {formData.assigned_executive_id
+                          ? executives.find(e => e.id === formData.assigned_executive_id)?.full_name || 'Ejecutiva desconocida'
+                          : 'Sin asignar'
+                        }
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      {executives.length > 0 && formData.assigned_executive_id && (
-                        <SelectItem value="__clear__">Sin asignar</SelectItem>
-                      )}
+                      <SelectItem value="">Sin asignar</SelectItem>
                       {executives.map((exec) => (
                         <SelectItem key={exec.id} value={exec.id}>
-                          {exec.full_name} - {exec.email}
+                          {exec.full_name} ({exec.email})
                         </SelectItem>
                       ))}
                     </SelectContent>
