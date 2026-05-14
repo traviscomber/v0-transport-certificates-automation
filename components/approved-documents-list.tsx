@@ -25,6 +25,7 @@ interface ApprovedDocument {
   ejecutiva?: string
   approved_at?: string
   reviewed_by_ejecutiva?: string
+  docType?: { code: string; nombre: string }
   conductores?: { id: string; nombres: string; apellido_paterno: string; rut: string }
   transportistas?: { id: string; razon_social: string; rut: string }
 }
@@ -238,6 +239,11 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
                   <Badge className="bg-green-500/20 text-green-300 border-green-500/30 whitespace-nowrap">
                     ✓ Aprobado
                   </Badge>
+                  {doc.docType && (
+                    <Badge variant="outline" className="text-xs bg-blue-500/10 border-blue-500/30 text-blue-300 whitespace-nowrap">
+                      {doc.docType.nombre}
+                    </Badge>
+                  )}
                   {doc.file_url && (
                     <Button
                       variant="outline"

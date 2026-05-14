@@ -80,6 +80,13 @@ export async function GET() {
       // Don't throw, just log and continue
     }
 
+    // Fetch document types
+    const { data: docTypes } = await supabase
+      .from("subcontractor_document_types")
+      .select("id, code, nombre")
+
+    const docTypeMap = new Map(docTypes?.map(dt => [dt.id, { code: dt.code, nombre: dt.nombre }]) || [])
+
     // Get assigned executives for subcontractors
     let executiveMap = new Map<string, string>()
     if (subDocs && subDocs.length > 0) {
@@ -114,12 +121,13 @@ export async function GET() {
         file_url: doc.file_url,
         file_type: file_type, // Add calculated file_type
         rejection_reason: doc.rejection_reason,
-        validated_at: doc.validated_at || doc.updated_at,
+        rejected_at: doc.validated_at || doc.updated_at,
         ejecutiva: doc.ejecutiva || 'No especificado',
         created_at: doc.created_at,
         updated_at: doc.updated_at,
         reviewed_at: doc.validated_at || doc.updated_at,
         conductores: doc.conductores,
+        docType: docTypeMap.get(doc.document_type_id),
         document_source: 'conductor'
       }
     })
@@ -156,6 +164,7 @@ export async function GET() {
           razon_social: 'Subcontratista',
           rut: doc.subcontractor_rut
         },
+        docType: docTypeMap.get(doc.document_type_id),
         document_source: 'subcontractor'
       }
     })

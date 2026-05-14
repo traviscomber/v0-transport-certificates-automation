@@ -79,6 +79,13 @@ export async function GET() {
       console.log('[v0] Aprobados: First sub doc:', JSON.stringify(subDocs[0], null, 2))
     }
 
+    // Fetch document types
+    const { data: docTypes } = await supabase
+      .from("subcontractor_document_types")
+      .select("id, code, nombre")
+
+    const docTypeMap = new Map(docTypes?.map(dt => [dt.id, { code: dt.code, nombre: dt.nombre }]) || [])
+
     // Get assigned executives for subcontractors
     let executiveMap = new Map<string, string>()
     if (subDocs && subDocs.length > 0) {
@@ -118,6 +125,7 @@ export async function GET() {
         updated_at: doc.updated_at,
         reviewed_at: doc.validated_at || doc.updated_at,
         conductores: doc.conductores,
+        docType: docTypeMap.get(doc.document_type_id),
         document_source: 'conductor'
       }
     })
@@ -152,6 +160,7 @@ export async function GET() {
           razon_social: 'Subcontratista',
           rut: doc.subcontractor_rut
         },
+        docType: docTypeMap.get(doc.document_type_id),
         document_source: 'subcontractor'
       }
     })
