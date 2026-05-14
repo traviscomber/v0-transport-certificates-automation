@@ -159,7 +159,7 @@ export default function ConductorLoginForm() {
                 disabled={isLoading}
               />
               <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '6px' }}>
-                <strong style={{ color: '#cbd5e1' }}>labbe</strong> + últimos 4 dígitos de tu RUT
+                <strong style={{ color: '#cbd5e1' }}>labbe</strong> + últimos 4 dígitos (antes del guion)
               </p>
               <p style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
                 Ejemplo: RUT 12345678-9 → Contraseña: <strong>labbe5678</strong>
