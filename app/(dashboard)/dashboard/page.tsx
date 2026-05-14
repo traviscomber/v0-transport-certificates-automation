@@ -1,6 +1,7 @@
 'use client'
 
 import { useAuth } from '@/lib/auth-context'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { AlertTriangle } from 'lucide-react'
@@ -8,8 +9,25 @@ import { DocumentAlertsWidget } from '@/components/admin/document-alerts-widget'
 
 export default function DashboardPage() {
   const { user } = useAuth()
+  const [simpleUser, setSimpleUser] = useState<{ email: string; name: string } | null>(null)
 
-  if (!user) return null
+  useEffect(() => {
+    // Check for simple email login (ejecutivas)
+    const userEmail = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('user_email='))
+      ?.split('=')[1]
+    
+    if (userEmail) {
+      const decodedEmail = decodeURIComponent(userEmail)
+      const name = decodedEmail.split('@')[0]
+      setSimpleUser({ email: decodedEmail, name })
+    }
+  }, [])
+
+  // Use either Supabase Auth user or simple login user
+  const currentUser = user || simpleUser
+  if (!currentUser) return null
 
   const roleLabels: Record<string, string> = {
     admin: 'Administrador',
@@ -27,18 +45,20 @@ export default function DashboardPage() {
     transportista: 'Administración de flota y conductores',
   }
 
+  const userRole = 'admin' in currentUser ? (currentUser as any).role : 'admin'
+
   return (
     <div className="space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">
-          Bienvenido, {user.full_name || user.email.split('@')[0]}
+          Bienvenida, {currentUser.name}
         </h1>
         <p className="text-slate-400">
-          Iniciaste sesión como <span className="text-orange-400 font-semibold">{roleLabels[user.role] || user.role}</span>
+          Iniciaste sesión como <span className="text-orange-400 font-semibold">{roleLabels[userRole] || userRole}</span>
         </p>
         <p className="text-sm text-slate-500 mt-1">
-          {roleDescriptions[user.role] || 'Acceso al sistema DocuFleet'}
+          {roleDescriptions[userRole] || 'Acceso al sistema DocuFleet'}
         </p>
       </div>
 
