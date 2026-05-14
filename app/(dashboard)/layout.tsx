@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar'
@@ -12,12 +12,26 @@ export default function DashboardLayout({
 }) {
   const { user, loading } = useAuth()
   const router = useRouter()
+  const [hasSimpleLogin, setHasSimpleLogin] = useState(false)
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace('/auth/login')
+    // Check if user has a simple email login (from /login endpoint, not Supabase Auth)
+    const userEmail = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('user_email='))
+      ?.split('=')[1]
+    
+    if (userEmail) {
+      setHasSimpleLogin(true)
     }
-  }, [user, loading, router])
+  }, [])
+
+  useEffect(() => {
+    // Redirect to /login only if no Supabase Auth user AND no simple login
+    if (!loading && !user && !hasSimpleLogin) {
+      router.replace('/login')
+    }
+  }, [user, loading, hasSimpleLogin, router])
 
   if (loading) {
     return (
@@ -27,7 +41,8 @@ export default function DashboardLayout({
     )
   }
 
-  if (!user) {
+  // Allow access if user has Supabase Auth OR simple email login
+  if (!user && !hasSimpleLogin) {
     return null
   }
 
