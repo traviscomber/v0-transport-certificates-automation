@@ -2,7 +2,7 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 const CHILE_TIMEZONE = 'America/Santiago'
-const CHILE_OFFSET_MS = 3 * 60 * 60 * 1000 // UTC-3 (simplification, ignores DST)
+const CHILE_OFFSET_MS = 4 * 60 * 60 * 1000 // UTC-4 (daylight saving time)
 
 /**
  * Format a date/time to Chile timezone (CLT - UTC-3/UTC-4)
