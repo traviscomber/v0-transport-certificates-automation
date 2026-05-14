@@ -1,3 +1,5 @@
+"use client"
+
 import { HelpCircle, Lightbulb, Info, CheckCircle2, ArrowRight, ChevronDown } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useState } from "react"
