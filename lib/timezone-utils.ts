@@ -39,7 +39,7 @@ export function formatToChileTime(
     }
 
     // For date-only format like "d 'de' MMMM 'de' yyyy"
-    if (formatStr.includes("'de'")) {
+    if (formatStr.includes("'de'") && !formatStr.includes('HH:mm')) {
       const day = String(chileDate.getDate()).padStart(2, '0')
       const month = String(chileDate.getMonth() + 1).padStart(2, '0')
       const year = chileDate.getFullYear()
@@ -85,6 +85,18 @@ export function formatToChileTime(
       '12': 'diciembre',
     }
     const monthName = monthNames[month] || 'mes desconocido'
+    
+    // If format includes 'de' (Spanish date format)
+    if (formatStr.includes("'de'")) {
+      // If format includes HH:mm but not ss, don't include seconds
+      if (formatStr.includes('HH:mm') && !formatStr.includes('ss')) {
+        return `${parseInt(day)} de ${monthName} de ${year} ${hours}:${minutes}`
+      }
+      // If format includes full timestamp
+      return `${parseInt(day)} de ${monthName} de ${year} ${hours}:${minutes}:${seconds}`
+    }
+    
+    // For other formats, just return with all components
     return `${parseInt(day)} de ${monthName} de ${year} ${hours}:${minutes}:${seconds}`
   } catch (error) {
     console.error('[v0] Error formatting Chile time:', error)
