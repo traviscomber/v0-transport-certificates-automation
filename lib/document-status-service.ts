@@ -187,12 +187,12 @@ export async function changeDocumentStatus(
     // STEP 5: Verify update was persisted (handle DB replication lag)
     await new Promise(resolve => setTimeout(resolve, 100))
     const { data: verifyData } = await adminClient
-      .from('uploaded_documents')
-      .select('validation_status')
+      .from(tableName)  // Use the SAME table we updated, not always uploaded_documents
+      .select(statusColumn)  // Use the correct status column based on table
       .eq('id', documentId)
       .single()
 
-    if (verifyData?.validation_status !== newStatus) {
+    if (verifyData?.[statusColumn] !== newStatus) {
       console.warn('[v0] Status update verification failed, but update likely succeeded')
     }
 
