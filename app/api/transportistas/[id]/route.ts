@@ -37,18 +37,22 @@ export async function PATCH(
 
     const supabase = createAdminClient()
 
-    // Build update object with only the fields that actually exist in transportistas table
+    // Build update object with all fields that now exist in transportistas table
     const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     }
 
     // Add fields only if they are provided in the body and defined
     if (body.razon_social !== undefined) updateData.razon_social = body.razon_social
+    if (body.nombre !== undefined) updateData.nombre = body.nombre || null
     if (body.rut !== undefined) updateData.rut = body.rut
     if (body.region !== undefined) updateData.region = body.region || null
     if (body.comuna !== undefined) updateData.comuna = body.comuna || null
     if (body.telefono !== undefined) updateData.telefono = body.telefono || null
     if (body.email !== undefined) updateData.email = body.email || null
+    if (body.nombre_contacto !== undefined) updateData.nombre_contacto = body.nombre_contacto || null
+    if (body.representante_legal !== undefined) updateData.representante_legal = body.representante_legal || null
+    if (body.direccion !== undefined) updateData.direccion = body.direccion || null
     if (body.is_active !== undefined) updateData.is_active = body.is_active
     
     // Handle assigned executive - allow null/empty to clear assignment
