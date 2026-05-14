@@ -111,10 +111,16 @@ export function EditSubcontractorModal({
     setError('')
 
     try {
+      // Convert "unassigned" to empty string for API
+      const submitData = {
+        ...formData,
+        assigned_executive_id: formData.assigned_executive_id === 'unassigned' ? '' : formData.assigned_executive_id
+      }
+
       const response = await fetch(`/api/transportistas/${subcontractor.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(submitData)
       })
 
       const data = await response.json()
@@ -306,7 +312,7 @@ export function EditSubcontractorModal({
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Sin asignar</SelectItem>
+                      <SelectItem value="unassigned">Sin asignar</SelectItem>
                       {executives.map((exec) => (
                         <SelectItem key={exec.id} value={exec.id}>
                           {exec.full_name} ({exec.email})
