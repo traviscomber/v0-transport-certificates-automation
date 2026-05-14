@@ -13,6 +13,7 @@ export default function DashboardLayout({
   const { user, loading } = useAuth()
   const router = useRouter()
   const [hasSimpleLogin, setHasSimpleLogin] = useState(false)
+  const [cookieCheckDone, setCookieCheckDone] = useState(false)
 
   useEffect(() => {
     // Check if user has a simple email login (from /login endpoint, not Supabase Auth)
@@ -24,16 +25,17 @@ export default function DashboardLayout({
     if (userEmail) {
       setHasSimpleLogin(true)
     }
+    setCookieCheckDone(true)
   }, [])
 
   useEffect(() => {
-    // Redirect to /login only if no Supabase Auth user AND no simple login
-    if (!loading && !user && !hasSimpleLogin) {
+    // Only redirect after we've checked the cookie AND loading is done
+    if (cookieCheckDone && !loading && !user && !hasSimpleLogin) {
       router.replace('/login')
     }
-  }, [user, loading, hasSimpleLogin, router])
+  }, [user, loading, hasSimpleLogin, cookieCheckDone, router])
 
-  if (loading) {
+  if (loading || !cookieCheckDone) {
     return (
       <div className="min-h-screen bg-gradient-dark flex items-center justify-center">
         <div className="text-slate-400 text-sm">Cargando...</div>
