@@ -54,7 +54,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
               setSubDocs(data.subDocs || [])
             }
           } catch (error) {
-            // Silent fail - will retry on next sync
+            console.error('[v0] Error refetching rejected docs:', error)
           }
         }
         refetch()
@@ -108,7 +108,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
           comps.set((doc as any).subcontractor_rut, { nombre: 'Empresa', rut: (doc as any).subcontractor_rut })
         }
       } catch (e) {
-        // Silent fail
+        console.log('[v0] Error extracting company:', e)
       }
     })
     return Array.from(comps).map(([id, data]) => ({ id, ...data }))
@@ -289,19 +289,18 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
           
           {previewDoc?.file_url && (
             <div className="w-full">
-              {previewDoc.file_url.toLowerCase().includes('.pdf') ? (
+              {previewDoc.file_url.toLowerCase().endsWith('.pdf') ? (
                 <PDFViewer
                   url={previewDoc.file_url}
                   filename={previewDoc.original_filename || previewDoc?.document_name || 'document.pdf'}
                 />
               ) : (
-                // Fallback for non-PDF files (images, etc) - use proxy for CORS
+                // Fallback for non-PDF files (images, etc)
                 <div className="flex justify-center items-center bg-slate-900 rounded-lg p-4 max-h-[60vh] overflow-auto">
                   <img
-                    src={`/api/documents/proxy?url=${encodeURIComponent(previewDoc.file_url)}`}
+                    src={previewDoc.file_url}
                     alt="Preview"
                     className="max-w-full max-h-[50vh] object-contain"
-                    crossOrigin="anonymous"
                   />
                 </div>
               )}
