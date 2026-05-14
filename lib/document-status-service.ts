@@ -206,7 +206,7 @@ export async function changeDocumentStatus(
       .eq('id', documentId)
       .single()
 
-    if (verifyData?.[statusColumn] !== newStatus) {
+    if (verifyData && (verifyData as Record<string, any>)[statusColumn] !== newStatus) {
       console.warn('[v0] Status update verification failed, but update likely succeeded')
     }
 
