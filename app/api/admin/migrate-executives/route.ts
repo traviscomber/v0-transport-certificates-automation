@@ -4,15 +4,6 @@ import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-// Mapping de nombres de ejecutivas a emails
-const EXECUTIVES_EMAIL_MAP: Record<string, string> = {
-  'Olga': 'ocarrasco@labbe.cl',
-  'Carolina': 'csepulveda@labbe.cl',
-  'Daniela': 'dsilva@labbe.cl',
-  'Javiera': 'jayala@labbe.cl',
-  'Katherinne': 'kcanales@labbe.cl',
-}
-
 export async function POST() {
   try {
     const supabase = createAdminClient()
@@ -26,33 +17,36 @@ export async function POST() {
     
     for (const exec of allExecutives || []) {
       if (exec.full_name) {
-        // Store by first name and full name
         const firstName = exec.full_name.split(' ')[0]
         executivesByName[firstName.toLowerCase()] = exec.id
         executivesByName[exec.full_name.toLowerCase()] = exec.id
       }
     }
 
-    // 2. Get all transportistas from DB
-    const { data: allTransportistas } = await supabase
-      .from('transportistas')
-      .select('id, rut')
-
-    // Create RUT map for quick lookup
-    const rutMap = new Map(
-      (allTransportistas || []).map(t => [
-        t.rut?.toLowerCase().trim().replace(/\s/g, ''),
-        t.id
-      ])
-    )
-
-    // 3. Create map of subcontractor RUT -> ejecutiva from LABBE_SUBCONTRACTORS
+    // 2. Create map of RUT -> ejecutiva from LABBE_SUBCONTRACTORS
     const rutEjecutivaMap = new Map<string, string>()
     
     for (const sub of LABBE_SUBCONTRACTORS) {
       if (sub.rut && sub.ejecutiva) {
-        const normalizedRut = sub.rut.toLowerCase().trim().replace(/\s/g, '')
+        const normalizedRut = sub.rut.toLowerCase().trim().replace(/[^\w\d\-k]/g, '')
         rutEjecutivaMap.set(normalizedRut, sub.ejecutiva)
+      }
+    }
+
+    // 3. Get all conductores with rut_proveedor and transportista_id from DB
+    const { data: allConductores } = await supabase
+      .from('conductores')
+      .select('id, rut_proveedor, transportista_id')
+
+    // Create map of transportista_id -> rut_proveedor from conductores
+    const transportistaRutMap = new Map<string, string>()
+    
+    for (const conductor of allConductores || []) {
+      if (conductor.transportista_id && conductor.rut_proveedor) {
+        transportistaRutMap.set(
+          conductor.transportista_id,
+          conductor.rut_proveedor.toLowerCase().trim().replace(/[^\w\d\-k]/g, '')
+        )
       }
     }
 
@@ -61,13 +55,14 @@ export async function POST() {
     const updateResults: any[] = []
     const notFoundResults: any[] = []
 
-    for (const [rutNorm, ejecutivaNombre] of rutEjecutivaMap.entries()) {
-      const transportistaId = rutMap.get(rutNorm)
-      if (!transportistaId) {
+    for (const [transportistaId, rutProveedor] of transportistaRutMap.entries()) {
+      const ejecutivaNombre = rutEjecutivaMap.get(rutProveedor)
+      
+      if (!ejecutivaNombre) {
         notFoundResults.push({
-          rut: rutNorm,
-          ejecutiva: ejecutivaNombre,
-          reason: 'Transportista not found in DB',
+          transportista_id: transportistaId,
+          rut_proveedor: rutProveedor,
+          reason: 'No ejecutiva found in subcontractors data',
         })
         continue
       }
@@ -76,9 +71,10 @@ export async function POST() {
       const executiveId = executivesByName[ejecutivaNombre.toLowerCase()]
       if (!executiveId) {
         notFoundResults.push({
-          rut: rutNorm,
+          transportista_id: transportistaId,
+          rut_proveedor: rutProveedor,
           ejecutiva: ejecutivaNombre,
-          reason: 'Executive not found',
+          reason: 'Executive name not found',
         })
         continue
       }
@@ -93,25 +89,31 @@ export async function POST() {
         updatedCount++
         if (updateResults.length < 20) {
           updateResults.push({
-            rut: rutNorm,
             transportista_id: transportistaId,
+            rut_proveedor: rutProveedor,
             ejecutiva: ejecutivaNombre,
             assigned_executive_id: executiveId,
           })
         }
+      } else {
+        notFoundResults.push({
+          transportista_id: transportistaId,
+          rut_proveedor: rutProveedor,
+          error: error.message,
+        })
       }
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Executive assignment migration completed',
+      message: 'Executive assignment migration completed via conductores',
       executives_found: Object.keys(executivesByName).length,
-      subcontractors_total: LABBE_SUBCONTRACTORS.length,
+      conductores_total: allConductores?.length || 0,
+      conductores_with_transportista_id: transportistaRutMap.size,
       subcontractors_with_ejecutiva: rutEjecutivaMap.size,
-      transportistas_in_db: allTransportistas?.length || 0,
       transportistas_updated: updatedCount,
       transportistas_not_found: notFoundResults.length,
-      success_rate: `${Math.round((updatedCount / (rutEjecutivaMap.size || 1)) * 100)}%`,
+      success_rate: `${Math.round((updatedCount / (transportistaRutMap.size || 1)) * 100)}%`,
       sample_linked: updateResults,
       sample_not_found: notFoundResults.slice(0, 10),
     })
