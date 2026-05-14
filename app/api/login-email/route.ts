@@ -60,6 +60,34 @@ export async function POST(request: NextRequest) {
 
       console.log('[v0] Found in profiles table:', { email, role, fullName })
     } else {
+      // Not in profiles, try executive_staff table (ejecutivas)
+      console.log('[v0] Not in profiles, checking executive_staff table...')
+      
+      const executiveResponse = await fetch(
+        `${supabaseUrl}/rest/v1/executive_staff?email=eq.${encodeURIComponent(email)}&is_active=eq.true`,
+        {
+          headers: {
+            apikey: supabaseServiceKey,
+            Authorization: `Bearer ${supabaseServiceKey}`,
+          },
+        }
+      )
+
+      const executives = await executiveResponse.json()
+
+      if (executives && executives.length > 0) {
+        // Found in executive_staff table
+        const executive = executives[0]
+        user = executive
+        fullName = executive.full_name
+        role = 'ejecutiva'
+        organizationId = executive.transportista_id
+
+        console.log('[v0] Found in executive_staff table (ejecutiva):', { email, fullName, organizationId })
+      }
+    }
+
+    if (!user) {
       // Not in profiles, try conductores table (drivers)
       console.log('[v0] Not in profiles, checking conductores table...')
       

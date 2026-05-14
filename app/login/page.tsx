@@ -50,10 +50,17 @@ export default function LoginPage() {
         organization_id_value: data.user.organization_id,
       })
 
-      // Redirect to dashboard
+      // Redirect based on role
       setTimeout(() => {
-        console.log('[v0] Redirecting to dashboard...')
-        window.location.href = '/dashboard/company'
+        const userRole = data.user.role
+        console.log('[v0] Redirecting to dashboard, role:', userRole)
+        
+        // Ejecutivas go to /dashboard, companies go to /dashboard/company
+        if (userRole === 'ejecutiva' || userRole === 'admin') {
+          window.location.href = '/dashboard'
+        } else {
+          window.location.href = '/dashboard/company'
+        }
       }, 300)
     } catch (err) {
       console.error('[v0] Login error:', err)
