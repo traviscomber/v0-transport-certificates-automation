@@ -40,6 +40,22 @@ export default function DashboardPage() {
   const userName = 'name' in currentUser ? (currentUser as any).name : (currentUser as any).full_name || (currentUser as any).email?.split('@')[0] || 'Usuario'
   const userEmail = 'email' in currentUser ? (currentUser as any).email : ''
 
+  const roleLabels: Record<string, string> = {
+    admin: 'Administrador',
+    dispatcher: 'Despachador',
+    driver: 'Conductor',
+    mandante: 'Mandante',
+    transportista: 'Transportista',
+  }
+
+  const roleDescriptions: Record<string, string> = {
+    admin: 'Control total del sistema y organizaciones',
+    dispatcher: 'Administración de conductores y compliance del equipo',
+    driver: 'Gestión de tus documentos y certificados personales',
+    mandante: 'Monitoreo de compliance y reportes',
+    transportista: 'Administración de flota y conductores',
+  }
+
   return (
     <div className="space-y-8">
       {/* Header */}
