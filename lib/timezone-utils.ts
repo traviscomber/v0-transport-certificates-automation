@@ -26,23 +26,23 @@ export function formatToChileTime(
       return 'Fecha inválida'
     }
     
-    // Timestamps from DB are in UTC (e.g., "2026-05-14T17:34:42Z")
-    // Simply subtract 3 hours to get Chile time (UTC-3)
+    // Timestamps from DB are in UTC (e.g., "2026-05-14T21:34:42Z")
+    // Subtract 8 hours to get Chile time
     const chileDate = new Date(date.getTime() - CHILE_OFFSET_MS)
     
     // For simple time-only format like 'HH:mm:ss'
     if (formatStr === 'HH:mm:ss') {
-      const hours = String(chileDate.getUTCHours()).padStart(2, '0')
-      const minutes = String(chileDate.getUTCMinutes()).padStart(2, '0')
-      const seconds = String(chileDate.getUTCSeconds()).padStart(2, '0')
+      const hours = String(chileDate.getHours()).padStart(2, '0')
+      const minutes = String(chileDate.getMinutes()).padStart(2, '0')
+      const seconds = String(chileDate.getSeconds()).padStart(2, '0')
       return `${hours}:${minutes}:${seconds}`
     }
 
     // For date-only format like "d 'de' MMMM 'de' yyyy"
     if (formatStr.includes("'de'")) {
-      const day = String(chileDate.getUTCDate()).padStart(2, '0')
-      const month = String(chileDate.getUTCMonth() + 1).padStart(2, '0')
-      const year = chileDate.getUTCFullYear()
+      const day = String(chileDate.getDate()).padStart(2, '0')
+      const month = String(chileDate.getMonth() + 1).padStart(2, '0')
+      const year = chileDate.getFullYear()
       
       const monthNames: Record<string, string> = {
         '01': 'enero',
@@ -63,12 +63,12 @@ export function formatToChileTime(
     }
 
     // For combined date-time formats or custom formats
-    const day = String(chileDate.getUTCDate()).padStart(2, '0')
-    const month = String(chileDate.getUTCMonth() + 1).padStart(2, '0')
-    const year = chileDate.getUTCFullYear()
-    const hours = String(chileDate.getUTCHours()).padStart(2, '0')
-    const minutes = String(chileDate.getUTCMinutes()).padStart(2, '0')
-    const seconds = String(chileDate.getUTCSeconds()).padStart(2, '0')
+    const day = String(chileDate.getDate()).padStart(2, '0')
+    const month = String(chileDate.getMonth() + 1).padStart(2, '0')
+    const year = chileDate.getFullYear()
+    const hours = String(chileDate.getHours()).padStart(2, '0')
+    const minutes = String(chileDate.getMinutes()).padStart(2, '0')
+    const seconds = String(chileDate.getSeconds()).padStart(2, '0')
 
     const monthNames: Record<string, string> = {
       '01': 'enero',
