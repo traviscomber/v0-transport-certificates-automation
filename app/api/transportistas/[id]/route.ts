@@ -48,10 +48,10 @@ export async function PATCH(
     }
 
     // Add optional fields if provided
-    if (body.region) updateData.region = body.region
-    if (body.comuna) updateData.comuna = body.comuna
-    if (body.telefono) updateData.telefono = body.telefono
-    if (body.email) updateData.email = body.email
+    if (body.region !== undefined) updateData.region = body.region
+    if (body.comuna !== undefined) updateData.comuna = body.comuna
+    if (body.telefono !== undefined) updateData.telefono = body.telefono
+    if (body.email !== undefined) updateData.email = body.email
     if (body.nombre_contacto !== undefined) updateData.nombre_contacto = body.nombre_contacto
     
     // Handle assigned executive - allow null/empty to clear assignment
