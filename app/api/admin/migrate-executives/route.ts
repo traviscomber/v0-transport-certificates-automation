@@ -17,7 +17,7 @@ export async function POST() {
   try {
     const supabase = createAdminClient()
 
-    // 1. Get all executives - fetch once instead of one by one
+    // 1. Get all executives and create email->id map
     const { data: allExecutives } = await supabase
       .from('executive_staff')
       .select('id, email')
@@ -31,34 +31,20 @@ export async function POST() {
       }
     }
 
-    console.log('[v0] Found executives:', executiveIds)
-
-    // 2. Get all transportistas with RUT for matching
-    const { data: allTransportistas } = await supabase
+    // 2. Get all transportistas in DB to create RUT map
+    const { data: allTransportistasDB } = await supabase
       .from('transportistas')
       .select('id, rut, razon_social')
 
-    console.log('[v0] Total transportistas in DB:', allTransportistas?.length)
-    console.log('[v0] Sample transportistas from DB:')
-    allTransportistas?.slice(0, 5).forEach(t => {
-      console.log('[v0]   ID:', t.id, 'RUT:', t.rut, 'Name:', t.razon_social)
-    })
-    console.log('[v0] Sample subcontractors from data:')
-    LABBE_SUBCONTRACTORS.slice(0, 5).forEach(s => {
-      console.log('[v0]   RUT:', s.rut, 'Nombre:', s.nombre, 'Ejecutiva:', s.ejecutiva)
-    })
-
     // Create RUT map for quick lookup
     const rutMap = new Map(
-      (allTransportistas || []).map(t => [
+      (allTransportistasDB || []).map(t => [
         t.rut?.toLowerCase().trim().replace(/\s/g, ''),
         { id: t.id, razon_social: t.razon_social }
       ])
     )
 
-    console.log('[v0] RUT map size:', rutMap.size)
-
-    // 3. Update transportistas with assigned_executive_id based on ejecutiva field
+    // 3. Iterate through LABBE_SUBCONTRACTORS and link with executives
     let updatedCount = 0
     const updateResults: any[] = []
     const notFoundResults: any[] = []
@@ -69,7 +55,7 @@ export async function POST() {
       const executiveId = executiveIds[subcontractor.ejecutiva]
       if (!executiveId) continue
 
-      // Find transportista by RUT - normalize both
+      // Normalize RUT for consistency
       const normalizedRut = subcontractor.rut.toLowerCase().trim().replace(/\s/g, '')
       const transportistaInfo = rutMap.get(normalizedRut)
 
@@ -82,7 +68,7 @@ export async function POST() {
         continue
       }
 
-      // Update the transportista
+      // Update the transportista with assigned_executive_id
       const { error } = await supabase
         .from('transportistas')
         .update({ assigned_executive_id: executiveId })
@@ -90,35 +76,35 @@ export async function POST() {
 
       if (!error) {
         updatedCount++
-        if (updateResults.length < 10) {
+        if (updateResults.length < 20) {
           updateResults.push({
             transportista_id: transportistaInfo.id,
-            razon_social: transportistaInfo.razon_social,
             rut: subcontractor.rut,
+            nombre: subcontractor.nombre,
+            razon_social: transportistaInfo.razon_social,
             ejecutiva: subcontractor.ejecutiva,
-            executive_id: executiveId,
+            assigned_executive_id: executiveId,
           })
         }
       }
     }
 
-    console.log('[v0] Migration complete - updated:', updatedCount, 'not found:', notFoundResults.length)
-
     return NextResponse.json({
       success: true,
-      message: 'Migration completed',
-      executives_found: Object.entries(executiveIds).length,
+      message: 'Executive assignment migration completed',
+      executives_created: Object.entries(executiveIds).length,
       executives_map: executiveIds,
-      subcontractistas_total: LABBE_SUBCONTRACTORS.length,
-      subcontractistas_updated: updatedCount,
-      subcontractistas_not_found: notFoundResults.length,
-      sample_updates: updateResults,
+      subcontractors_in_file: LABBE_SUBCONTRACTORS.length,
+      transportistas_in_db: allTransportistasDB?.length || 0,
+      transportistas_updated: updatedCount,
+      transportistas_not_found: notFoundResults.length,
+      success_rate: `${Math.round((updatedCount / LABBE_SUBCONTRACTORS.length) * 100)}%`,
+      sample_linked: updateResults.slice(0, 10),
       sample_not_found: notFoundResults.slice(0, 5),
     })
   } catch (error: any) {
-    console.error('[v0] Migration error:', error)
     return NextResponse.json(
-      { error: error.message || 'Migration failed', stack: error.stack },
+      { error: error.message || 'Migration failed' },
       { status: 500 }
     )
   }
