@@ -1,10 +1,9 @@
-import { redirect } from 'next/navigation'
+import { ReactNode } from 'react'
 
 export default function SubcontractorsLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: ReactNode
 }) {
-  // Root subcontractors layout - redirect base path to login
-  redirect('/subcontractors/login')
+  return children
 }
