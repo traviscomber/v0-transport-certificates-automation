@@ -1,6 +1,5 @@
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { utcToZonedTime } from 'date-fns-tz'
 
 const CHILE_TIMEZONE = 'America/Santiago'
 
@@ -26,21 +25,68 @@ export function formatToChileTime(
       return 'Fecha inválida'
     }
     
-    // Convert UTC time to Chile timezone
-    const chileDate = utcToZonedTime(date, CHILE_TIMEZONE)
+    // Use Intl.DateTimeFormat to get Chile timezone parts
+    const formatter = new Intl.DateTimeFormat('es-CL', {
+      timeZone: CHILE_TIMEZONE,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    })
+
+    const parts = formatter.formatToParts(date)
+    const year = parts.find(p => p.type === 'year')?.value
+    const month = parts.find(p => p.type === 'month')?.value
+    const day = parts.find(p => p.type === 'day')?.value
+    const hour = parts.find(p => p.type === 'hour')?.value
+    const minute = parts.find(p => p.type === 'minute')?.value
+    const second = parts.find(p => p.type === 'second')?.value
     
     // For simple time-only format like 'HH:mm:ss'
     if (formatStr === 'HH:mm:ss') {
-      return format(chileDate, 'HH:mm:ss', { locale: es })
+      return `${hour}:${minute}:${second}`
     }
 
     // For date-only format like "d 'de' MMMM 'de' yyyy"
     if (formatStr.includes("'de'")) {
-      return format(chileDate, "d 'de' MMMM 'de' yyyy", { locale: es })
+      const monthNames: Record<string, string> = {
+        '01': 'enero',
+        '02': 'febrero',
+        '03': 'marzo',
+        '04': 'abril',
+        '05': 'mayo',
+        '06': 'junio',
+        '07': 'julio',
+        '08': 'agosto',
+        '09': 'septiembre',
+        '10': 'octubre',
+        '11': 'noviembre',
+        '12': 'diciembre',
+      }
+      const monthName = monthNames[month || '01'] || 'mes desconocido'
+      return `${parseInt(day || '01')} de ${monthName} de ${year}`
     }
 
     // For combined date-time formats or custom formats
-    return format(chileDate, formatStr || "d 'de' MMMM 'de' yyyy HH:mm:ss", { locale: es })
+    const monthNames: Record<string, string> = {
+      '01': 'enero',
+      '02': 'febrero',
+      '03': 'marzo',
+      '04': 'abril',
+      '05': 'mayo',
+      '06': 'junio',
+      '07': 'julio',
+      '08': 'agosto',
+      '09': 'septiembre',
+      '10': 'octubre',
+      '11': 'noviembre',
+      '12': 'diciembre',
+    }
+    const monthName = monthNames[month || '01'] || 'mes desconocido'
+    return `${parseInt(day || '01')} de ${monthName} de ${year} ${hour}:${minute}:${second}`
   } catch (error) {
     console.error('[v0] Error formatting Chile time:', error)
     return 'Hora desconocida'
