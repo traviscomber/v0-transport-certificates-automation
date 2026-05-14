@@ -260,7 +260,6 @@ export async function GET() {
       documents: allDocs,
       executiva: executiveName,
       executiva_id: executiveId,
-      total: allDocs.length
       total: allDocs.length,
       timestamp: new Date().toISOString()
     })
