@@ -147,6 +147,19 @@ export async function changeDocumentStatus(
       updatePayload.rejection_reason = reason
     }
 
+    // Track who approved or rejected the document
+    if (newStatus === 'approved' && userId) {
+      updatePayload.approved_by = userId
+      updatePayload.approved_at = new Date().toISOString()
+      console.log('[v0] Document approved by user:', userId)
+    }
+
+    if (newStatus === 'rejected' && userId) {
+      updatePayload.rejected_by = userId
+      updatePayload.rejected_at = new Date().toISOString()
+      console.log('[v0] Document rejected by user:', userId)
+    }
+
     // STEP 4: Update document status in database
     const { error: updateError, data: updatedDocument } = await adminClient
       .from(tableName)  // Use dynamic table name

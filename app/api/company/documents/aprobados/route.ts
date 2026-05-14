@@ -49,6 +49,8 @@ export async function GET() {
         validation_status,
         file_url,
         validated_at,
+        approved_at,
+        approved_by_email,
         ejecutiva,
         created_at,
         updated_at,
@@ -81,6 +83,7 @@ export async function GET() {
         status,
         file_url,
         approved_at,
+        approved_by_email,
         reviewed_by_ejecutiva,
         created_at,
         updated_at,
@@ -146,6 +149,8 @@ export async function GET() {
         file_url: doc.file_url,
         file_type: file_type, // Add calculated file_type
         validated_at: doc.validated_at || doc.updated_at,
+        approved_at: doc.approved_at || doc.updated_at,
+        approved_by_email: doc.approved_by_email,
         ejecutiva: doc.ejecutiva || 'No especificado',
         created_at: doc.created_at,
         updated_at: doc.updated_at,
@@ -176,6 +181,7 @@ export async function GET() {
         file_url: doc.file_url,
         file_type: file_type, // Add calculated file_type
         approved_at: doc.approved_at || doc.updated_at,
+        approved_by_email: doc.approved_by_email,
         reviewed_by_ejecutiva: assignedEjecutiva,
         ejecutiva: assignedEjecutiva, // Use assigned ejecutiva for filtering
         created_at: doc.created_at,

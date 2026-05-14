@@ -51,6 +51,8 @@ export async function GET() {
         validation_status,
         file_url,
         rejection_reason,
+        rejected_at,
+        rejected_by_email,
         validated_at,
         ejecutiva,
         created_at,
