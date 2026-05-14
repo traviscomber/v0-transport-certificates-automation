@@ -8,9 +8,8 @@ export async function POST() {
     const supabase = createAdminClient()
 
     // Check if column already exists
-    const { data: columns } = await supabase
+    const { data: columns, error: colError } = await supabase
       .rpc('get_table_columns', { table_name: 'transportistas' })
-      .catch(() => ({ data: [] }))
 
     const hasColumn = columns?.some((col: any) => col.column_name === 'assigned_executive_id')
 
@@ -32,21 +31,6 @@ export async function POST() {
     })
 
     if (error) {
-      // Alternative: try direct SQL query
-      const { error: altError } = await supabase
-        .from('transportistas')
-        .select('id')
-        .limit(1)
-        .then(async () => {
-          // Fallback: we can't add column via normal queries
-          // User needs to do this manually in Supabase SQL Editor
-          return {
-            error: {
-              message: 'Column needs to be added via Supabase SQL Editor',
-            },
-          }
-        })
-
       return NextResponse.json({
         success: false,
         error: error.message || 'Could not add column',
