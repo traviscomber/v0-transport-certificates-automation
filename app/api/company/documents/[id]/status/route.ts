@@ -80,6 +80,7 @@ export async function PATCH(
       newStatus: normalizedStatus as 'approved' | 'rejected' | 'pending',
       reason: body.reason,
       userId: user.id,
+      userEmail: user.email,
       documentType: body.documentType || 'conductor'  // NEW: Accept document type from frontend
     })
 
