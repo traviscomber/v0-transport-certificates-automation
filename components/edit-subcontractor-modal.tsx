@@ -94,7 +94,7 @@ export function EditSubcontractorModal({
         email: subcontractor?.email || '',
         nombre_contacto: subcontractor?.nombre_contacto || subcontractor?.representante_legal || '',
         is_active: subcontractor?.is_active !== false,
-        assigned_executive_id: subcontractor?.assigned_executive_id || ''
+        assigned_executive_id: subcontractor?.assigned_executive_id ? subcontractor.assigned_executive_id : 'unassigned'
       })
     }
   }, [subcontractor, isOpen])

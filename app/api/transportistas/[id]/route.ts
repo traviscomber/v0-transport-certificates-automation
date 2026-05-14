@@ -50,9 +50,8 @@ export async function PATCH(
     if (body.comuna !== undefined) updateData.comuna = body.comuna || null
     if (body.telefono !== undefined) updateData.telefono = body.telefono || null
     if (body.email !== undefined) updateData.email = body.email || null
-    if (body.nombre_contacto !== undefined) updateData.nombre_contacto = body.nombre_contacto || null
-    if (body.representante_legal !== undefined) updateData.representante_legal = body.representante_legal || null
-    if (body.direccion !== undefined) updateData.direccion = body.direccion || null
+    // Map nombre_contacto to representante_legal (the actual column name)
+    if (body.nombre_contacto !== undefined) updateData.representante_legal = body.nombre_contacto || null
     if (body.is_active !== undefined) updateData.is_active = body.is_active
     
     // Handle assigned executive - allow null/empty to clear assignment
