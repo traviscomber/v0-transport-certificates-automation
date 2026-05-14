@@ -111,10 +111,10 @@ export default function SubcontratistasLoginPage() {
                 </button>
               </div>
               <p className="text-xs text-slate-400">
-                <strong className="text-slate-300">labbe</strong> + últimos 4 dígitos (incluyendo verificador)
+                <strong className="text-slate-300">labbe</strong> + últimos 4 dígitos de tu RUT
               </p>
               <p className="text-xs text-slate-500">
-                Ejemplo RUT 12345678-9 → Contraseña: <strong>labbe8789</strong>
+                Ejemplo RUT 12345678-9 → Contraseña: <strong>labbe5678</strong>
               </p>
             </div>
 
@@ -140,8 +140,8 @@ export default function SubcontratistasLoginPage() {
             </p>
             <ul className="text-xs text-amber-300 space-y-1 ml-4">
               <li>RUT: Sin puntos, solo con guion (ej: 12345678-9)</li>
-              <li>Contraseña: labbe + últimos 4 dígitos del RUT (incluyendo verificador)</li>
-              <li>Ejemplo: RUT 12345678-9 → Contraseña: <strong>labbe8789</strong></li>
+              <li>Contraseña: labbe + últimos 4 dígitos del RUT (antes del guion)</li>
+              <li>Ejemplo: RUT 12345678-9 → Contraseña: <strong>labbe5678</strong></li>
             </ul>
           </div>
         </CardContent>
