@@ -46,11 +46,8 @@ export async function POST(request: NextRequest) {
       .select()
 
     if (error) {
-      console.error('[v0] Error creating transportista:', error)
       throw error
     }
-
-    console.log('[v0] New transportista created:', data?.[0])
 
     return NextResponse.json({
       success: true,
@@ -58,7 +55,6 @@ export async function POST(request: NextRequest) {
       message: 'Subcontratista creado exitosamente'
     })
   } catch (error) {
-    console.error('[v0] Error creating transportista:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Error creating transportista' },
       { status: 500 }
