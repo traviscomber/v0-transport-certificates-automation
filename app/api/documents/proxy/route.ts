@@ -6,6 +6,18 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export const dynamic = 'force-dynamic'
 
+// Handle CORS preflight requests
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    }
+  })
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
@@ -34,7 +46,6 @@ export async function GET(request: NextRequest) {
     })
 
     if (!response.ok) {
-      console.error('[v0] Failed to fetch document:', response.status, response.statusText)
       return NextResponse.json(
         { error: `Failed to fetch document: ${response.statusText}` },
         { status: response.status }
@@ -49,11 +60,15 @@ export async function GET(request: NextRequest) {
       headers: {
         'Content-Type': contentType,
         'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'X-Frame-Options': 'SAMEORIGIN',
+        'Content-Security-Policy': "frame-ancestors 'self' *",
+        'X-Content-Type-Options': 'nosniff',
         'Cache-Control': 'public, max-age=3600',
       }
     })
   } catch (error) {
-    console.error('[v0] Proxy error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to proxy document' },
       { status: 500 }
