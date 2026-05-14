@@ -1,8 +1,11 @@
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { utcToZonedTime } from 'date-fns-tz'
+
+const CHILE_TIMEZONE = 'America/Santiago'
 
 /**
- * Format a date/time to Chile timezone (CLT - UTC-4)
+ * Format a date/time to Chile timezone (CLT - UTC-3/UTC-4)
  * Always displays in Chile local time regardless of server/browser timezone
  */
 export function formatToChileTime(
@@ -10,82 +13,34 @@ export function formatToChileTime(
   formatStr: string = "d 'de' MMMM 'de' yyyy HH:mm:ss"
 ): string {
   try {
-    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput
-    
-    // Format using Chile timezone (America/Santiago)
-    const formatter = new Intl.DateTimeFormat('es-CL', {
-      timeZone: 'America/Santiago',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    })
+    // Parse the input date
+    let date: Date
+    if (typeof dateInput === 'string') {
+      date = new Date(dateInput)
+    } else {
+      date = dateInput
+    }
 
+    // Verify we have a valid date
+    if (isNaN(date.getTime())) {
+      return 'Fecha inválida'
+    }
+    
+    // Convert UTC time to Chile timezone
+    const chileDate = utcToZonedTime(date, CHILE_TIMEZONE)
+    
     // For simple time-only format like 'HH:mm:ss'
     if (formatStr === 'HH:mm:ss') {
-      const parts = formatter.formatToParts(date)
-      const hour = parts.find(p => p.type === 'hour')?.value || '00'
-      const minute = parts.find(p => p.type === 'minute')?.value || '00'
-      const second = parts.find(p => p.type === 'second')?.value || '00'
-      return `${hour}:${minute}:${second}`
+      return format(chileDate, 'HH:mm:ss', { locale: es })
     }
 
     // For date-only format like "d 'de' MMMM 'de' yyyy"
     if (formatStr.includes("'de'")) {
-      const parts = formatter.formatToParts(date)
-      const day = parts.find(p => p.type === 'day')?.value || '01'
-      const month = parts.find(p => p.type === 'month')?.value || '01'
-      const year = parts.find(p => p.type === 'year')?.value || '2026'
-
-      // Map month numbers to Spanish month names
-      const monthNames: Record<string, string> = {
-        '01': 'enero',
-        '02': 'febrero',
-        '03': 'marzo',
-        '04': 'abril',
-        '05': 'mayo',
-        '06': 'junio',
-        '07': 'julio',
-        '08': 'agosto',
-        '09': 'septiembre',
-        '10': 'octubre',
-        '11': 'noviembre',
-        '12': 'diciembre',
-      }
-
-      const monthName = monthNames[month] || 'mes desconocido'
-      return `${parseInt(day)} de ${monthName} de ${year}`
+      return format(chileDate, "d 'de' MMMM 'de' yyyy", { locale: es })
     }
 
-    // For combined date-time formats
-    const parts = formatter.formatToParts(date)
-    const day = parts.find(p => p.type === 'day')?.value || '01'
-    const month = parts.find(p => p.type === 'month')?.value || '01'
-    const year = parts.find(p => p.type === 'year')?.value || '2026'
-    const hour = parts.find(p => p.type === 'hour')?.value || '00'
-    const minute = parts.find(p => p.type === 'minute')?.value || '00'
-    const second = parts.find(p => p.type === 'second')?.value || '00'
-
-    const monthNames: Record<string, string> = {
-      '01': 'enero',
-      '02': 'febrero',
-      '03': 'marzo',
-      '04': 'abril',
-      '05': 'mayo',
-      '06': 'junio',
-      '07': 'julio',
-      '08': 'agosto',
-      '09': 'septiembre',
-      '10': 'octubre',
-      '11': 'noviembre',
-      '12': 'diciembre',
-    }
-
-    const monthName = monthNames[month] || 'mes desconocido'
-    return `${parseInt(day)} de ${monthName} de ${year} ${hour}:${minute}:${second}`
+    // For combined date-time formats or custom formats
+    return format(chileDate, formatStr || "d 'de' MMMM 'de' yyyy HH:mm:ss", { locale: es })
   } catch (error) {
     console.error('[v0] Error formatting Chile time:', error)
     return 'Hora desconocida'
