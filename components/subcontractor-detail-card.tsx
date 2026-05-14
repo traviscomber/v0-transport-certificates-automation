@@ -1,6 +1,6 @@
 'use client'
 
-import { X, FileText, Award, AlertCircle, CheckCircle, Loader, Download, Eye, Edit2 } from 'lucide-react'
+import { X, FileText, Award, AlertCircle, CheckCircle, Loader, Download, Eye } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -125,21 +125,7 @@ export function SubcontractorDetailCard({
                 </p>
                 <p className="text-white">{subcontractor.representante_legal || 'N/A'}</p>
               </div>
-              <div>
-                <p className="text-xs text-slate-400 font-semibold mb-1">
-                  EJECUTIVA ASIGNADA
-                </p>
-                <div className="flex items-center gap-2">
-                  <p className="text-white">{ejecutivaNombre || 'Sin asignar'}</p>
-                  <button
-                    onClick={() => setShowChangeEjecutiva(true)}
-                    className="p-1.5 rounded hover:bg-slate-700 transition-colors text-slate-400 hover:text-white"
-                    title="Cambiar ejecutiva"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+              {/* EJECUTIVA ASIGNADA - Hidden, edit via modal only */}
             </div>
 
             {/* Contact Information */}
