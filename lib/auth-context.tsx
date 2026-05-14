@@ -142,6 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         company_name: meta.company_name,
       })
       setError(null)
+      setLoading(false)
     } catch (error) {
       console.error('[v0] Login catch error:', error)
       const errorMessage = getErrorMessage(error)
