@@ -162,19 +162,48 @@ export async function GET() {
     const docTypeMap = new Map(docTypes?.map(dt => [dt.id, { code: dt.code, nombre: dt.nombre }]) || [])
 
     // Get assigned executives for subcontractors
+    // Workflow: subcontractor_id -> transportistas.id -> transportistas.assigned_executive_id -> executive_staff.full_name
     let executiveMap = new Map<string, string>()
     if (subDocs && subDocs.length > 0) {
       const subcontractorIds = [...new Set((subDocs as any[]).map(doc => doc.subcontractor_id))]
-      const { data: executives, error: execError } = await supabase
-        .from('executive_staff')
-        .select('transportista_id, full_name, email')
-        .in('transportista_id', subcontractorIds)
-        .eq('is_active', true)
+      console.log('[v0] Aprobados: Getting executives for subcontractors:', subcontractorIds)
+      
+      // Get transportistas with their assigned executives
+      const { data: transportistas, error: transError } = await supabase
+        .from('transportistas')
+        .select('id, assigned_executive_id')
+        .in('id', subcontractorIds)
 
-      if (!execError && executives) {
-        executives.forEach((exec: any) => {
-          executiveMap.set(exec.transportista_id, exec.full_name || exec.email)
-        })
+      console.log('[v0] Aprobados: Transportistas found:', transportistas?.length, 'Error:', transError)
+
+      if (transportistas && transportistas.length > 0) {
+        const executiveIds = transportistas
+          .map(t => t.assigned_executive_id)
+          .filter(Boolean) as string[]
+
+        if (executiveIds.length > 0) {
+          // Get executive names
+          const { data: executives, error: execError } = await supabase
+            .from('executive_staff')
+            .select('id, full_name')
+            .in('id', executiveIds)
+
+          console.log('[v0] Aprobados: Executives found:', executives?.length, 'Error:', execError)
+
+          if (executives) {
+            const execMap = new Map(executives.map(e => [e.id, e.full_name]))
+            // Map subcontractor_id -> executive_name
+            transportistas.forEach((t: any) => {
+              if (t.assigned_executive_id) {
+                const execName = execMap.get(t.assigned_executive_id)
+                if (execName) {
+                  executiveMap.set(t.id, execName)
+                  console.log('[v0] Aprobados: Mapped subcontractor', t.id, 'to executive', execName)
+                }
+              }
+            })
+          }
+        }
       }
     }
 
