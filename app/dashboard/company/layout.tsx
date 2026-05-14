@@ -2,12 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { LayoutDashboard, Users, FileText, BarChart3, LogOut, Zap, Users2, Lock, TrendingUp, Menu, Bell, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { NotificationCenter } from '@/components/notification-center'
-import { useState } from 'react'
 
 const navItems = [
   { href: '/dashboard/company', label: 'Dashboard', icon: LayoutDashboard },
@@ -24,6 +24,31 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
   const pathname = usePathname()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [hasAccess, setHasAccess] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    // Check if user has a simple email login (ejecutivas, subcontratistas, conductores via /login)
+    const userEmail = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('user_email='))
+      ?.split('=')[1]
+    
+    if (userEmail) {
+      setHasAccess(true)
+    }
+    setIsLoading(false)
+  }, [])
+
+  useEffect(() => {
+    if (!isLoading && !hasAccess) {
+      router.push('/login')
+    }
+  }, [isLoading, hasAccess, router])
+
+  if (isLoading || !hasAccess) {
+    return null
+  }
 
   const handleLogout = async () => {
     try {

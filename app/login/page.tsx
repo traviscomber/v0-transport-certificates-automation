@@ -50,17 +50,13 @@ export default function LoginPage() {
         organization_id_value: data.user.organization_id,
       })
 
-      // Redirect based on role
+      // Redirect based on role - ALL users including ejecutivas go to /dashboard/company
       setTimeout(() => {
         const userRole = data.user.role
-        console.log('[v0] Redirecting to dashboard, role:', userRole)
+        console.log('[v0] Redirecting, role:', userRole)
         
-        // Ejecutivas go to /dashboard, companies go to /dashboard/company
-        if (userRole === 'ejecutiva' || userRole === 'admin') {
-          window.location.href = '/dashboard'
-        } else {
-          window.location.href = '/dashboard/company'
-        }
+        // All users go to /dashboard/company (Labbe company portal)
+        window.location.href = '/dashboard/company'
       }, 300)
     } catch (err) {
       console.error('[v0] Login error:', err)
