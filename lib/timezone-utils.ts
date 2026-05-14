@@ -2,7 +2,7 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 const CHILE_TIMEZONE = 'America/Santiago'
-const CHILE_OFFSET_MS = 8 * 60 * 60 * 1000 // UTC-8
+const CHILE_OFFSET_MS = 0 // Supabase now stores all timestamps in Chile timezone
 
 /**
  * Format a date/time to Chile timezone (CLT - UTC-3/UTC-4)
