@@ -12,9 +12,67 @@ export async function GET() {
   try {
     const supabase = await createClient()
 
-    console.log('[v0] Aprobados endpoint: Fetching approved documents')
+    // Get current user session
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError || !user) {
+      console.error('[v0] Aprobados endpoint: Auth error:', userError)
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
 
-    // Get approved conductor documents - only 'approved' (English)
+    console.log('[v0] Aprobados endpoint: User:', user.email)
+
+    // Get current user's role and executive info
+    const { data: userRole, error: roleError } = await supabase
+      .from('users')
+      .select('cargo, email')
+      .eq('email', user.email)
+      .single()
+
+    if (roleError || !userRole) {
+      console.error('[v0] Aprobados endpoint: Role error:', roleError)
+      return NextResponse.json(
+        { error: 'User role not found' },
+        { status: 403 }
+      )
+    }
+
+    console.log('[v0] Aprobados endpoint: User cargo:', userRole.cargo)
+
+    // Get executive info if user is an executive
+    let executiveId: string | null = null
+    let executiveName: string | null = null
+    
+    if (userRole.cargo === 'EJECUTIVA' || userRole.cargo === 'ejecutiva') {
+      const { data: execData, error: execError } = await supabase
+        .from('executive_staff')
+        .select('id, full_name, email')
+        .eq('email', user.email)
+        .single()
+
+      if (!execError && execData) {
+        executiveId = execData.id
+        executiveName = execData.full_name
+        console.log('[v0] Aprobados endpoint: Executive:', executiveName)
+      }
+    }
+
+    // If user is not an executive, return empty list
+    if (!executiveId) {
+      console.log('[v0] Aprobados endpoint: User is not an executive')
+      return NextResponse.json({
+        documents: [],
+        executiva: 'No especificado',
+        total: 0
+      })
+    }
+
+    console.log('[v0] Aprobados endpoint: Fetching approved documents for executive:', executiveId)
+
+    // Get approved conductor documents - filter by current executive
     const { data: conductorDocs, error: conductorError } = await supabase
       .from('uploaded_documents')
       .select(`
@@ -36,6 +94,7 @@ export async function GET() {
         )
       `)
       .eq('validation_status', 'approved')
+      .eq('ejecutiva', executiveName)
       .order('updated_at', { ascending: false })
 
     if (conductorError) {
@@ -46,7 +105,21 @@ export async function GET() {
     console.log('[v0] Aprobados: Conductor docs count:', conductorDocs?.length || 0)
 
     // Get approved subcontractor documents with assigned ejecutiva
-    const { data: subDocs, error: subError } = await supabase
+    // First, get subcontractors assigned to this executive
+    const { data: assignedTransportistas, error: transpError } = await supabase
+      .from('transportistas')
+      .select('id')
+      .eq('assigned_executive_id', executiveId)
+
+    if (transpError) {
+      console.error('[v0] Aprobados endpoint: Error fetching assigned transportistas:', transpError)
+    }
+
+    const assignedTransportistaIds = assignedTransportistas?.map(t => t.id) || []
+    console.log('[v0] Aprobados: Assigned transportistas count:', assignedTransportistaIds.length)
+
+    // Get approved subcontractor documents - filter by assigned transportistas
+    let subDocsQuery = supabase
       .from('subcontractor_documents')
       .select(`
         id,
@@ -67,6 +140,16 @@ export async function GET() {
         )
       `)
       .eq('status', 'approved')
+
+    // Filter by assigned subcontractors if there are any
+    if (assignedTransportistaIds.length > 0) {
+      subDocsQuery = subDocsQuery.in('subcontractor_id', assignedTransportistaIds)
+    } else {
+      // If no assigned subcontractors, return empty list
+      subDocsQuery = subDocsQuery.eq('subcontractor_id', 'null-no-match')
+    }
+
+    const { data: subDocs, error: subError } = await subDocsQuery
       .order('updated_at', { ascending: false })
 
     if (subError) {
@@ -174,6 +257,10 @@ export async function GET() {
       conductorDocs: normalizedConductor,
       subDocs: normalizedSub,
       allDocs: allDocs,
+      documents: allDocs,
+      executiva: executiveName,
+      executiva_id: executiveId,
+      total: allDocs.length
       total: allDocs.length,
       timestamp: new Date().toISOString()
     })
