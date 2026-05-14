@@ -51,8 +51,6 @@ export async function GET() {
         validation_status,
         file_url,
         rejection_reason,
-        rejected_at,
-        rejected_by_email,
         validated_at,
         ejecutiva,
         created_at,
@@ -76,7 +74,6 @@ export async function GET() {
     }
 
     // Get rejected subcontractor documents - NO FILTER, fetch all
-    // (User can filter by ejecutiva on frontend)
     const { data: subDocs, error: subError } = await supabase
       .from('subcontractor_documents')
       .select(`
@@ -86,7 +83,6 @@ export async function GET() {
         status,
         file_url,
         rejection_reason,
-        approved_at,
         reviewed_by_ejecutiva,
         created_at,
         updated_at,

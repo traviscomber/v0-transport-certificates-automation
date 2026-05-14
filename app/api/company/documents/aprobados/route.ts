@@ -49,8 +49,6 @@ export async function GET() {
         validation_status,
         file_url,
         validated_at,
-        approved_at,
-        approved_by_email,
         ejecutiva,
         created_at,
         updated_at,
@@ -73,7 +71,6 @@ export async function GET() {
     console.log('[v0] Aprobados: Conductor docs count:', conductorDocs?.length || 0)
 
     // Get approved subcontractor documents - NO FILTER, fetch all
-    // (User can filter by ejecutiva on frontend)
     const { data: subDocs, error: subError } = await supabase
       .from('subcontractor_documents')
       .select(`
@@ -82,8 +79,6 @@ export async function GET() {
         document_type_id,
         status,
         file_url,
-        approved_at,
-        approved_by_email,
         reviewed_by_ejecutiva,
         created_at,
         updated_at,
