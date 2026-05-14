@@ -8,8 +8,9 @@ import { AlertTriangle } from 'lucide-react'
 import { DocumentAlertsWidget } from '@/components/admin/document-alerts-widget'
 
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const [simpleUser, setSimpleUser] = useState<{ email: string; name: string } | null>(null)
+  const [cookieCheckDone, setCookieCheckDone] = useState(false)
 
   useEffect(() => {
     // Check for simple email login (ejecutivas)
@@ -23,7 +24,13 @@ export default function DashboardPage() {
       const name = decodedEmail.split('@')[0]
       setSimpleUser({ email: decodedEmail, name })
     }
+    setCookieCheckDone(true)
   }, [])
+
+  // Wait for both auth loading and cookie check to complete
+  if (loading || !cookieCheckDone) {
+    return null
+  }
 
   // Use either Supabase Auth user or simple login user
   const currentUser = user || simpleUser
