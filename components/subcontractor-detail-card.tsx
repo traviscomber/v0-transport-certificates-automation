@@ -36,22 +36,19 @@ export function SubcontractorDetailCard({
     const fetchDocuments = async () => {
       try {
         const response = await fetch(`/api/subcontractors/${subcontractor.id}/documents`)
-        console.log('[v0] Fetching subcontractor documents for:', subcontractor.id)
         
         if (!response.ok) {
-          console.error('[v0] Error response:', response.status, response.statusText)
           setLoading(false)
           return
         }
         
         const data = await response.json()
-        console.log('[v0] Documents response data:', data)
         
         setDocuments(data.documents || [])
         setRequirements(data.requirements || [])
         setSummary(data.summary || summary)
       } catch (error) {
-        console.error('[v0] Error fetching documents:', error)
+        console.error('Error fetching documents:', error)
       } finally {
         setLoading(false)
       }
