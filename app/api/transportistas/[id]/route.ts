@@ -37,33 +37,28 @@ export async function PATCH(
 
     const supabase = createAdminClient()
 
-    // Validate required fields
-    if (!body.razon_social) {
-      return NextResponse.json({ error: 'razon_social is required' }, { status: 400 })
-    }
-
-    // Build update object - transportistas table has: telefono, email, region, comuna, etc.
+    // Build update object with only the fields that actually exist in transportistas table
     const updateData: Record<string, unknown> = {
-      razon_social: body.razon_social,
-      is_active: body.is_active ?? true,
       updated_at: new Date().toISOString(),
     }
 
-    // Only add rut if it's provided and valid
-    if (body.rut) {
-      updateData.rut = body.rut
-    }
-
-    // Add optional fields if provided (these columns exist in transportistas table)
+    // Add fields only if they are provided in the body and defined
+    if (body.razon_social !== undefined) updateData.razon_social = body.razon_social
+    if (body.rut !== undefined) updateData.rut = body.rut
     if (body.region !== undefined) updateData.region = body.region || null
     if (body.comuna !== undefined) updateData.comuna = body.comuna || null
     if (body.telefono !== undefined) updateData.telefono = body.telefono || null
     if (body.email !== undefined) updateData.email = body.email || null
-    if (body.nombre_contacto !== undefined) updateData.representante_legal = body.nombre_contacto || null
+    if (body.is_active !== undefined) updateData.is_active = body.is_active
     
     // Handle assigned executive - allow null/empty to clear assignment
     if (body.assigned_executive_id !== undefined) {
       updateData.assigned_executive_id = body.assigned_executive_id || null
+    }
+
+    // Validate that at least razon_social is provided
+    if (!updateData.razon_social) {
+      return NextResponse.json({ error: 'razon_social is required' }, { status: 400 })
     }
 
     console.log('[v0] PATCH transportistas - UpdateData:', JSON.stringify(updateData))
