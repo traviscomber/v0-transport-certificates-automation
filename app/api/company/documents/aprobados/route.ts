@@ -166,42 +166,54 @@ export async function GET() {
     let executiveMap = new Map<string, string>()
     if (subDocs && subDocs.length > 0) {
       const subcontractorIds = [...new Set((subDocs as any[]).map(doc => doc.subcontractor_id))]
-      console.log('[v0] Aprobados: Getting executives for subcontractors:', subcontractorIds)
+      console.log('[v0] Aprobados: Getting executives for subcontractors:', subcontractorIds.length, 'IDs')
+      console.log('[v0] Aprobados: First 3 subcontractor IDs:', subcontractorIds.slice(0, 3))
       
-      // Get transportistas with their assigned executives
-      const { data: transportistas, error: transError } = await supabase
-        .from('transportistas')
-        .select('id, assigned_executive_id')
-        .in('id', subcontractorIds)
+      if (subcontractorIds.length === 0) {
+        console.log('[v0] Aprobados: ERROR - No subcontractor IDs to fetch!')
+      } else {
+        // Get transportistas with their assigned executives
+        const { data: transportistas, error: transError } = await supabase
+          .from('transportistas')
+          .select('id, assigned_executive_id')
+          .in('id', subcontractorIds)
 
-      console.log('[v0] Aprobados: Transportistas found:', transportistas?.length, 'Error:', transError)
+        console.log('[v0] Aprobados: Transportistas query returned:', transportistas?.length || 0, 'records, Error:', transError?.message || 'none')
 
-      if (transportistas && transportistas.length > 0) {
-        const executiveIds = transportistas
-          .map(t => t.assigned_executive_id)
-          .filter(Boolean) as string[]
+        if (transError) {
+          console.error('[v0] Aprobados: Transportistas query error details:', transError)
+        }
 
-        if (executiveIds.length > 0) {
-          // Get executive names
-          const { data: executives, error: execError } = await supabase
-            .from('executive_staff')
-            .select('id, full_name')
-            .in('id', executiveIds)
+        if (transportistas && transportistas.length > 0) {
+          const executiveIds = transportistas
+            .map(t => t.assigned_executive_id)
+            .filter(Boolean) as string[]
+          
+          console.log('[v0] Aprobados: Found', executiveIds.length, 'unique executive IDs from transportistas')
 
-          console.log('[v0] Aprobados: Executives found:', executives?.length, 'Error:', execError)
+          if (executiveIds.length > 0) {
+            // Get executive names
+            const { data: executives, error: execError } = await supabase
+              .from('executive_staff')
+              .select('id, full_name')
+              .in('id', executiveIds)
 
-          if (executives) {
-            const execMap = new Map(executives.map(e => [e.id, e.full_name]))
-            // Map subcontractor_id -> executive_name
-            transportistas.forEach((t: any) => {
-              if (t.assigned_executive_id) {
-                const execName = execMap.get(t.assigned_executive_id)
-                if (execName) {
-                  executiveMap.set(t.id, execName)
-                  console.log('[v0] Aprobados: Mapped subcontractor', t.id, 'to executive', execName)
+            console.log('[v0] Aprobados: Executives found:', executives?.length, 'Error:', execError?.message || 'none')
+
+            if (executives) {
+              const execMap = new Map(executives.map(e => [e.id, e.full_name]))
+              // Map subcontractor_id -> executive_name
+              transportistas.forEach((t: any) => {
+                if (t.assigned_executive_id) {
+                  const execName = execMap.get(t.assigned_executive_id)
+                  if (execName) {
+                    executiveMap.set(t.id, execName)
+                    console.log('[v0] Aprobados: Mapped transportista', t.id.substring(0, 8), 'to executive', execName)
+                  }
                 }
-              }
-            })
+              })
+              console.log('[v0] Aprobados: Executive map final size:', executiveMap.size)
+            }
           }
         }
       }
