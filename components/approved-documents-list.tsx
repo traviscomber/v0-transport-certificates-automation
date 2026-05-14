@@ -240,24 +240,26 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
                   </Badge>
                   {doc.file_url && (
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       onClick={() => setPreviewDoc(doc)}
-                      className="text-slate-400 hover:text-white"
+                      className="text-xs gap-1 border-blue-400/50 text-blue-300 hover:bg-blue-500/20"
                       title="Ver documento"
                     >
                       <Eye className="h-4 w-4" />
+                      Ver
                     </Button>
                   )}
                   {doc.file_url && (
                     <a href={doc.file_url} download target="_blank" rel="noopener noreferrer">
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        className="text-slate-400 hover:text-white"
+                        className="text-xs gap-1 border-slate-400/50 text-slate-300 hover:bg-slate-500/20"
                         title="Descargar documento"
                       >
                         <Download className="h-4 w-4" />
+                        Descar
                       </Button>
                     </a>
                   )}
