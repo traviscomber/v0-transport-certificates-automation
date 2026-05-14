@@ -4,7 +4,7 @@ import { LABBE_SUBCONTRACTORS } from '@/app/api/company/subcontractors-data'
 
 export const dynamic = 'force-dynamic'
 
-// Mapping de nombres de ejecutivas a emails (para encontrarlas en la BD)
+// Mapping de nombres de ejecutivas a emails
 const EXECUTIVES_EMAIL_MAP: Record<string, string> = {
   'Olga': 'ocarrasco@labbe.cl',
   'Carolina': 'csepulveda@labbe.cl',
@@ -13,116 +13,112 @@ const EXECUTIVES_EMAIL_MAP: Record<string, string> = {
   'Katherinne': 'kcanales@labbe.cl',
 }
 
-const NEW_EXECUTIVES = [
-  {
-    full_name: 'Olga Carrasco',
-    rut: '10574005-0',
-    email: 'ocarrasco@labbe.cl',
-    cargo: 'Ejecutiva de Cuenta',
-  },
-  {
-    full_name: 'Carolina Sepúlveda',
-    rut: '15464094-0',
-    email: 'csepulveda@labbe.cl',
-    cargo: 'Ejecutiva de Cuenta',
-  },
-  {
-    full_name: 'Javiera Ayala',
-    rut: '18450987-1',
-    email: 'jayala@labbe.cl',
-    cargo: 'Ejecutiva de Cuenta',
-  },
-  {
-    full_name: 'Katherinne Canales',
-    rut: '18717311-6',
-    email: 'kcanales@labbe.cl',
-    cargo: 'Ejecutiva de Cuenta',
-  },
-]
-
 export async function POST() {
   try {
     const supabase = createAdminClient()
 
-    // 1. Get all existing executives by email
+    // 1. Get all executives - fetch once instead of one by one
+    const { data: allExecutives } = await supabase
+      .from('executive_staff')
+      .select('id, email')
+
     const executiveIds: Record<string, string> = {}
     
     for (const [name, email] of Object.entries(EXECUTIVES_EMAIL_MAP)) {
-      const { data, error } = await supabase
-        .from('executive_staff')
-        .select('id')
-        .eq('email', email)
-        .limit(1)
-        .single()
-
-      if (data) {
-        executiveIds[name] = data.id
+      const exec = allExecutives?.find(e => e.email?.toLowerCase() === email.toLowerCase())
+      if (exec) {
+        executiveIds[name] = exec.id
       }
     }
 
-    // 2. Insert missing executives  (only those not found)
-    const missingNames = Object.entries(EXECUTIVES_EMAIL_MAP)
-      .filter(([name]) => !executiveIds[name])
-      .map(([name]) => name)
+    console.log('[v0] Found executives:', executiveIds)
 
-    for (const name of missingNames) {
-      const exec = NEW_EXECUTIVES.find(e => e.email === EXECUTIVES_EMAIL_MAP[name])
-      if (!exec) continue
-
-      // Need a dummy transportista_id - use the first existing one or create association later
-      // For now, we'll use a placeholder since these are company executives, not subcontractor staff
-      // We'll handle this differently by just updating transportistas.assigned_executive_id directly
-    }
-
-    // 3. Update transportistas/subcontractistas with assigned_executive_id based on ejecutiva field
+    // 2. Get all transportistas with RUT for matching
     const { data: allTransportistas } = await supabase
       .from('transportistas')
-      .select('id, razon_social')
+      .select('id, rut, razon_social')
 
+    console.log('[v0] Total transportistas in DB:', allTransportistas?.length)
+    console.log('[v0] Sample transportistas from DB:')
+    allTransportistas?.slice(0, 5).forEach(t => {
+      console.log('[v0]   ID:', t.id, 'RUT:', t.rut, 'Name:', t.razon_social)
+    })
+    console.log('[v0] Sample subcontractors from data:')
+    LABBE_SUBCONTRACTORS.slice(0, 5).forEach(s => {
+      console.log('[v0]   RUT:', s.rut, 'Nombre:', s.nombre, 'Ejecutiva:', s.ejecutiva)
+    })
+
+    // Create RUT map for quick lookup
+    const rutMap = new Map(
+      (allTransportistas || []).map(t => [
+        t.rut?.toLowerCase().trim().replace(/\s/g, ''),
+        { id: t.id, razon_social: t.razon_social }
+      ])
+    )
+
+    console.log('[v0] RUT map size:', rutMap.size)
+
+    // 3. Update transportistas with assigned_executive_id based on ejecutiva field
     let updatedCount = 0
     const updateResults: any[] = []
+    const notFoundResults: any[] = []
 
-    // Map subcontractors data to transportistas
-    for (const sub of LABBE_SUBCONTRACTORS) {
-      if (!sub.ejecutiva) continue
+    for (const subcontractor of LABBE_SUBCONTRACTORS) {
+      if (!subcontractor.ejecutiva || !subcontractor.rut) continue
 
-      const executiveId = executiveIds[sub.ejecutiva]
+      const executiveId = executiveIds[subcontractor.ejecutiva]
       if (!executiveId) continue
 
-      // Find transportista by RUT
-      const transportista = allTransportistas?.find(
-        t => t.razon_social && (t.razon_social.includes(sub.nombre) || sub.nombre.includes(t.razon_social))
-      )
+      // Find transportista by RUT - normalize both
+      const normalizedRut = subcontractor.rut.toLowerCase().trim().replace(/\s/g, '')
+      const transportistaInfo = rutMap.get(normalizedRut)
 
-      if (!transportista) continue
+      if (!transportistaInfo) {
+        notFoundResults.push({
+          rut: subcontractor.rut,
+          nombre: subcontractor.nombre,
+          ejecutiva: subcontractor.ejecutiva,
+        })
+        continue
+      }
 
+      // Update the transportista
       const { error } = await supabase
         .from('transportistas')
         .update({ assigned_executive_id: executiveId })
-        .eq('id', transportista.id)
+        .eq('id', transportistaInfo.id)
 
       if (!error) {
         updatedCount++
-        updateResults.push({
-          transportista_id: transportista.id,
-          razon_social: transportista.razon_social,
-          ejecutiva: sub.ejecutiva,
-          executive_id: executiveId,
-        })
+        if (updateResults.length < 10) {
+          updateResults.push({
+            transportista_id: transportistaInfo.id,
+            razon_social: transportistaInfo.razon_social,
+            rut: subcontractor.rut,
+            ejecutiva: subcontractor.ejecutiva,
+            executive_id: executiveId,
+          })
+        }
       }
     }
+
+    console.log('[v0] Migration complete - updated:', updatedCount, 'not found:', notFoundResults.length)
 
     return NextResponse.json({
       success: true,
       message: 'Migration completed',
       executives_found: Object.entries(executiveIds).length,
       executives_map: executiveIds,
+      subcontractistas_total: LABBE_SUBCONTRACTORS.length,
       subcontractistas_updated: updatedCount,
-      sample_updates: updateResults.slice(0, 10),
+      subcontractistas_not_found: notFoundResults.length,
+      sample_updates: updateResults,
+      sample_not_found: notFoundResults.slice(0, 5),
     })
   } catch (error: any) {
+    console.error('[v0] Migration error:', error)
     return NextResponse.json(
-      { error: error.message || 'Migration failed' },
+      { error: error.message || 'Migration failed', stack: error.stack },
       { status: 500 }
     )
   }
