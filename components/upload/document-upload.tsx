@@ -240,7 +240,6 @@ export function DocumentUpload() {
       }))
 
     try {
-      console.log("[v0] Saving documents to Supabase:", documentsToSave)
 
       const response = await fetch("/api/documents", {
         method: "POST",
@@ -256,14 +255,12 @@ export function DocumentUpload() {
         throw new Error(result.error || "Error saving documents")
       }
 
-      console.log("[v0] Documents saved to Supabase successfully:", result)
 
       const message = `¡Documentos guardados exitosamente en la base de datos!\n\nDocumentos procesados: ${documentsToSave.length}\nAnálisis OCR exitosos: ${documentsToSave.filter((d) => d.ocrData && Object.keys(d.ocrData).length > 0).length}\n\n¿Deseas ver los documentos guardados?`
 
       if (confirm(message)) {
         // Navigate to appropriate section based on document type
         const targetPath = getNavigationPath(formData.documentType)
-        console.log("[v0] Navigating to:", targetPath)
 
         // Use window.location.href for immediate navigation
         window.location.href = targetPath

@@ -3,12 +3,10 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function POST(request: NextRequest) {
   try {
-    if (process.env.NODE_ENV === 'development') console.log("[v0] API: Starting document save to Supabase...")
 
     const supabase = await createClient()
     const body = await request.json()
 
-    if (process.env.NODE_ENV === 'development') console.log("[v0] API: Received document data:", body)
 
     const { documents } = body
 
@@ -68,11 +66,9 @@ export async function POST(request: NextRequest) {
         }, { status: 400 })
       }
 
-      if (process.env.NODE_ENV === 'development') console.log("[v0] API: Document saved successfully:", documentData)
       savedDocuments.push(documentData)
     }
 
-    if (process.env.NODE_ENV === 'development') console.log("[v0] API: All documents processed successfully")
 
     return NextResponse.json({
       success: true,

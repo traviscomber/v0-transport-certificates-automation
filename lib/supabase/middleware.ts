@@ -8,7 +8,6 @@ export async function updateSession(request: NextRequest) {
   // If environment variables are not set, pass through
   if (!url || !key) {
     if (process.env.NODE_ENV === 'development') {
-      console.log("[v0] Supabase env vars not set in middleware")
     }
     return NextResponse.next({ request })
   }
@@ -83,7 +82,6 @@ export async function updateSession(request: NextRequest) {
     return response
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.log("[v0] Middleware error:", error)
     }
     return NextResponse.next({ request })
   }

@@ -106,7 +106,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         const { data: { user }, error } = await supabase.auth.getUser()
         
         if (process.env.NODE_ENV === "development") {
-          console.log("[v0] Dashboard-Layout - Auth user:", user?.email, "Error:", error)
         }
 
         setUser(user)
@@ -121,21 +120,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               .maybeSingle()
 
             if (process.env.NODE_ENV === "development") {
-              console.log("[v0] Dashboard-Layout - Profile fetched:", profile)
-              if (profileError) console.log("[v0] Profile fetch error:", profileError)
             }
 
             setUserProfile(profile || {})
           } catch (err) {
             if (process.env.NODE_ENV === "development") {
-              console.log("[v0] Profile fetch exception:", err)
             }
             setUserProfile({})
           }
         }
       } catch (err) {
         if (process.env.NODE_ENV === "development") {
-          console.log("[v0] Auth user fetch error:", err)
         }
       }
 
@@ -149,7 +144,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       setUser(user)
 
       if (process.env.NODE_ENV === "development") {
-        console.log("[v0] Dashboard-Layout - Auth state changed:", user?.email, "Event:", event)
       }
 
       // Fetch profile when auth state changes
@@ -164,7 +158,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           setUserProfile(profile || {})
         } catch (err) {
           if (process.env.NODE_ENV === "development") {
-            console.log("[v0] Profile fetch on auth change failed:", err)
           }
           setUserProfile({})
         }

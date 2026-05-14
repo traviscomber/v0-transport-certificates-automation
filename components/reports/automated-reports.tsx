@@ -61,7 +61,6 @@ export function AutomatedReports() {
     // Simulate report generation
     setTimeout(() => {
       setIsGenerating(false)
-      console.log("[v0] Generated instant report for period:", selectedPeriod)
     }, 3000)
   }
 

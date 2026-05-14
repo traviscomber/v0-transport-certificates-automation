@@ -38,16 +38,13 @@ function validateChileanDate(dateStr: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
-    if (process.env.NODE_ENV === 'development') console.log("[v0] Starting document analysis...")
 
     const formData = await request.formData()
     const file = formData.get("file") as File
     const documentType = formData.get("documentType") as string
 
-    if (process.env.NODE_ENV === 'development') console.log("[v0] File received:", file?.name, "Type:", documentType)
 
     if (!file) {
-      if (process.env.NODE_ENV === 'development') console.log("[v0] No file provided")
       return NextResponse.json({ error: "No file provided" }, { status: 400 })
     }
 
@@ -67,7 +64,6 @@ export async function POST(request: NextRequest) {
     const base64 = Buffer.from(bytes).toString("base64")
     const mimeType = file.type
 
-    if (process.env.NODE_ENV === 'development') console.log("[v0] File converted to base64, size:", bytes.byteLength, "bytes")
 
     const getPromptForDocumentType = (type: string) => {
       const baseInstructions = `
@@ -337,7 +333,6 @@ Responde ÚNICAMENTE en formato JSON válido con las claves más apropiadas para
       }
     }
 
-    console.log("[v0] Calling OpenAI Vision API directly with gpt-4o...")
 
     const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -378,7 +373,6 @@ Responde ÚNICAMENTE en formato JSON válido con las claves más apropiadas para
     const responseData = await openaiResponse.json()
     const text = responseData.choices[0]?.message?.content || ""
 
-    if (process.env.NODE_ENV === 'development') console.log("[v0] OpenAI response received:", text.substring(0, 200) + "...")
 
     // Parse the JSON response with robust error handling
     let extractedData: Record<string, any>
@@ -386,7 +380,6 @@ Responde ÚNICAMENTE en formato JSON válido con las claves más apropiadas para
       // Clean up the response text - sometimes OpenAI returns escaped JSON or extra formatting
       let cleanedText = text.trim()
       
-      console.log("[v0] Raw response:", cleanedText.substring(0, 100))
       
       // Remove markdown code blocks if present (multiple patterns)
       // Handle: ```json { ... }```, ```{ ... }```, or just ``json
@@ -401,7 +394,6 @@ Responde ÚNICAMENTE en formato JSON válido con las claves más apropiadas para
         cleanedText = jsonMatch[0]
       }
       
-      console.log("[v0] Cleaned response:", cleanedText.substring(0, 100))
       
       // Parse the cleaned JSON
       extractedData = JSON.parse(cleanedText)
@@ -453,10 +445,8 @@ Responde ÚNICAMENTE en formato JSON válido con las claves más apropiadas para
           extractedData.confidence = "low"
         }
         
-        console.log("[v0] Confidence calculation:", { fieldCoverage, hasInvalidData, validDates, confidence: extractedData.confidence })
       }
     } catch (parseError) {
-      if (process.env.NODE_ENV === 'development') console.log("[v0] JSON parsing failed, attempting text extraction")
       
       // If JSON parsing fails, try to extract key-value pairs manually
       extractedData = {
@@ -484,7 +474,6 @@ Responde ÚNICAMENTE en formato JSON válido con las claves más apropiadas para
       })
     }
 
-    if (process.env.NODE_ENV === 'development') console.log("[v0] Analysis completed successfully")
 
     return NextResponse.json({
       success: true,

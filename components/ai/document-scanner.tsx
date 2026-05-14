@@ -58,7 +58,6 @@ export function DocumentScanner() {
       }
 
       const result = await response.json()
-      console.log("[v0] API Response:", result.extractedData)
 
       // Use all extracted data directly
       const apiData = result.extractedData
@@ -97,7 +96,6 @@ export function DocumentScanner() {
   const saveExtractedData = () => {
     if (extractedData) {
       // In real implementation, save to database
-      console.log("[v0] Saving extracted data:", extractedData)
       setExtractedData(null)
       setScanProgress(0)
     }

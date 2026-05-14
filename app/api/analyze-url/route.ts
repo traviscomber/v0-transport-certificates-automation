@@ -4,21 +4,16 @@ import path from "path"
 
 export async function POST(request: NextRequest) {
   try {
-    if (process.env.NODE_ENV === "development") console.log("[v0] Starting URL document analysis...")
 
     const body = await request.json()
     const { imageUrl, documentType } = body
 
-    if (process.env.NODE_ENV === "development")
-      console.log("[v0] Image URL received:", imageUrl, "Type:", documentType)
-
     if (!imageUrl || !documentType) {
-      if (process.env.NODE_ENV === "development") console.log("[v0] Missing imageUrl or documentType")
       return NextResponse.json({ error: "Missing imageUrl or documentType" }, { status: 400 })
     }
 
     if (!process.env.OPENAI_API_KEY) {
-      console.error("[v0] OPENAI_API_KEY not found in environment variables")
+      console.error("OPENAI_API_KEY not found in environment variables")
       return NextResponse.json(
         {
           error: "OpenAI API key not configured",
@@ -35,9 +30,6 @@ export async function POST(request: NextRequest) {
     if (imageUrl.startsWith("/")) {
       try {
         const filePath = path.join(process.cwd(), "public", imageUrl)
-        if (process.env.NODE_ENV === "development")
-          console.log("[v0] Reading file from path:", filePath)
-
         const fileBuffer = fs.readFileSync(filePath)
         base64 = fileBuffer.toString("base64")
 
@@ -51,11 +43,8 @@ export async function POST(request: NextRequest) {
           ".gif": "image/gif"
         }
         mimeType = mimeTypes[ext] || "image/jpeg"
-
-        if (process.env.NODE_ENV === "development")
-          console.log("[v0] File read successfully, size:", fileBuffer.length, "bytes, type:", mimeType)
       } catch (error) {
-        console.error("[v0] Error reading file:", error)
+        console.error("Error reading file:", error)
         return NextResponse.json({ error: "Failed to read image file" }, { status: 400 })
       }
     } else {
@@ -75,7 +64,7 @@ export async function POST(request: NextRequest) {
           const contentType = response.headers.get("content-type") || "image/jpeg"
           mimeType = contentType
         } catch (error) {
-          console.error("[v0] Error fetching external image:", error)
+          console.error("Error fetching external image:", error)
           return NextResponse.json({ error: "Failed to fetch image from URL" }, { status: 400 })
         }
       }
@@ -123,9 +112,6 @@ Analiza este PERMISO DE CIRCULACIÓN CHILENO y extrae en JSON:
 
     const prompt = getPromptForDocumentType(documentType)
 
-    if (process.env.NODE_ENV === "development")
-      console.log("[v0] Calling OpenAI Vision API directly...")
-
     // Call OpenAI API directly
     const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -159,7 +145,7 @@ Analiza este PERMISO DE CIRCULACIÓN CHILENO y extrae en JSON:
 
     if (!openaiResponse.ok) {
       const errorData = await openaiResponse.json()
-      console.error("[v0] OpenAI API Error:", errorData)
+      console.error("OpenAI API Error:", errorData)
       return NextResponse.json(
         {
           error: "OpenAI Vision API error",
@@ -172,10 +158,7 @@ Analiza este PERMISO DE CIRCULACIÓN CHILENO y extrae en JSON:
     const responseData = await openaiResponse.json()
     const text = responseData.choices[0]?.message?.content || ""
 
-    if (process.env.NODE_ENV === "development")
-      console.log("[v0] OpenAI response received:", text.substring(0, 200) + "...")
-
-    let extractedData: any = {}
+    let extractedData: Record<string, unknown> = {}
     try {
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
@@ -184,16 +167,11 @@ Analiza este PERMISO DE CIRCULACIÓN CHILENO y extrae en JSON:
         extractedData = { rawAnalysis: text }
       }
     } catch (parseError) {
-      if (process.env.NODE_ENV === "development")
-        console.log("[v0] JSON parsing failed, using raw text")
       extractedData = {
         rawAnalysis: text,
         parseError: "Could not parse response as JSON"
       }
     }
-
-    if (process.env.NODE_ENV === "development")
-      console.log("[v0] Analysis completed successfully")
 
     return NextResponse.json({
       success: true,
@@ -201,7 +179,7 @@ Analiza este PERMISO DE CIRCULACIÓN CHILENO y extrae en JSON:
       rawResponse: text
     })
   } catch (error) {
-    console.error("[v0] Analyze URL error:", error)
+    console.error("Analyze URL error:", error)
     return NextResponse.json(
       {
         error: "Failed to analyze document",

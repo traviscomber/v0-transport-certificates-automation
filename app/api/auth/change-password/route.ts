@@ -1,5 +1,20 @@
 import { cookies } from 'next/headers'
 
+/**
+ * FUTURE FEATURE: Change password endpoint
+ * Currently not implemented as password changes are managed through Supabase Auth
+ * or direct admin endpoints for conductor/subcontractor users.
+ * 
+ * TODO for Phase 2 (when self-service password changes are required):
+ * 1. Verify current password against bcryptjs hash in conductor_auth or company_auth table
+ * 2. Hash new password with bcryptjs
+ * 3. Update password in appropriate table (conductor_auth, company_auth, etc)
+ * 4. Log password change attempt in audit table
+ * 5. Send confirmation email if applicable
+ * 
+ * Dependencies needed: bcryptjs (already in project)
+ * Security: Implement rate limiting on this endpoint
+ */
 export async function POST(request: Request) {
   try {
     const cookieStore = await cookies()
@@ -35,14 +50,14 @@ export async function POST(request: Request) {
       )
     }
 
-    // TODO: Implement password change with bcryptjs
+    // TODO: Implement password change with bcryptjs (see comments above)
     return Response.json(
-      { error: 'Cambio de contraseña no disponible en este momento' },
+      { error: 'Cambio de contraseña no disponible en este momento. Feature planeada para fase 2.' },
       { status: 503 }
     )
   } catch (err) {
-    console.error('[v0] Change password error:', err)
     const errorMessage = err instanceof Error ? err.message : 'Error al cambiar contraseña'
+    console.error('Change password error:', errorMessage)
 
     return Response.json(
       { error: errorMessage },

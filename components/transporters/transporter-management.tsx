@@ -179,13 +179,11 @@ export function TransporterManagement() {
   useEffect(() => {
     const loadSupabaseTransporters = async () => {
       try {
-        console.log("[v0] Loading transporters from Supabase...")
 
         const response = await fetch("/api/documents?type=transporters")
         const result = await response.json()
 
         if (result.success) {
-          console.log("[v0] Loaded Supabase transporters:", result.data)
           setSupabaseTransporters(result.data)
         } else {
           console.error("[v0] Error loading transporters:", result.error)
@@ -203,7 +201,6 @@ export function TransporterManagement() {
             doc.documentType === "Licencia de Conducir" || doc.ocrData?.nombreConductor || doc.ocrData?.rutConductor,
         )
         setUploadedDocuments(transporterDocs)
-        console.log("[v0] Loaded transporter documents:", transporterDocs)
       } catch (error) {
         console.error("[v0] Error loading documents:", error)
       }
@@ -241,7 +238,6 @@ export function TransporterManagement() {
     if (!editingTransporter) return
 
     try {
-      console.log("[v0] Saving transporter edit:", editingTransporter.id, newTransporter)
 
       // Check if this is a Supabase transporter
       if (editingTransporter.id.startsWith("supabase-")) {
@@ -310,7 +306,6 @@ export function TransporterManagement() {
 
   const handleDeleteTransporter = async (transporter: Transporter) => {
     try {
-      console.log("[v0] Deleting transporter:", transporter.id)
 
       // Check if this is a Supabase transporter
       if (transporter.id.startsWith("supabase-")) {
@@ -341,7 +336,6 @@ export function TransporterManagement() {
     const transportersFromSupabase = supabaseTransporters.map((transporter: any) => {
       const document = transporter.documents
 
-      console.log("[v0] Processing Supabase transporter:", transporter)
 
       return {
         id: `supabase-${transporter.id}`,
@@ -375,7 +369,6 @@ export function TransporterManagement() {
       const ocrData = doc.ocrData || {}
       const formData = doc.formData || {}
 
-      console.log("[v0] Processing document:", doc.fileName, "OCR Data:", ocrData, "Form Data:", formData)
 
       let companyName = "Información no disponible"
       if (formData.transporterName) companyName = formData.transporterName
@@ -391,7 +384,6 @@ export function TransporterManagement() {
       if (ocrData.nombreConductor) contactName = ocrData.nombreConductor
       else if (formData.transporterName) contactName = formData.transporterName
 
-      console.log("[v0] Extracted data - Company:", companyName, "RUT:", rut, "Contact:", contactName)
 
       return {
         id: `uploaded-${doc.id}`,
@@ -417,8 +409,6 @@ export function TransporterManagement() {
       }
     })
 
-    console.log("[v0] Merged transporters from documents:", transportersFromDocs)
-    console.log("[v0] Merged transporters from Supabase:", transportersFromSupabase)
     return [...mockTransporters, ...transportersFromSupabase, ...transportersFromDocs]
   }, [supabaseTransporters, uploadedDocuments])
 

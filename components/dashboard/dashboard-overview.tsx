@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { FileText, Shield, Truck, AlertTriangle, CheckCircle, Clock } from "lucide-react"
+import { FileText, Shield, Truck, AlertTriangle, CheckCircle, Clock, LucideIcon } from "lucide-react"
 import { useDocumentSync } from "@/contexts/document-sync-context"
 import { StatCard } from "./stat-card"
 import { AlertItem } from "./alert-item"
@@ -18,7 +18,7 @@ interface Alert {
   is_read: boolean
   is_dismissed: boolean
   created_at: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   source?: string
   document_type?: string
 }
@@ -27,7 +27,7 @@ interface Stat {
   title: string
   value: string
   description: string
-  icon: any
+  icon: LucideIcon
   status: "active" | "warning"
   href: string
   color?: "blue" | "green" | "orange" | "red"

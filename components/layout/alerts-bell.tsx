@@ -78,7 +78,6 @@ export function AlertsBell() {
           table: "compliance_alerts",
         },
         (payload) => {
-          console.log("[v0] Alert change detected:", payload)
           fetchAlerts()
         }
       )
