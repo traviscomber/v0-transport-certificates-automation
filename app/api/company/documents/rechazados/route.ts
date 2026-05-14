@@ -111,22 +111,98 @@ export async function GET() {
 
     const docTypeMap = new Map(docTypes?.map(dt => [dt.id, { code: dt.code, nombre: dt.nombre }]) || [])
 
+    // Get assigned executives for conductors
+    // Workflow: conductor_id -> conductores.rut_proveedor -> transportistas.rut -> transportistas.assigned_executive_id -> executive_staff.full_name
+    let conductorExecutiveMap = new Map<string, string>()
+    if (conductorDocs && conductorDocs.length > 0) {
+      // Get unique rut_proveedor from conductores
+      const { data: conductorRuts } = await supabase
+        .from('conductores')
+        .select('id, rut_proveedor')
+        .in('id', (conductorDocs as any[]).map(doc => doc.conductor_id))
+
+      if (conductorRuts && conductorRuts.length > 0) {
+        const transportistaRuts = conductorRuts.map(c => c.rut_proveedor).filter(Boolean)
+        
+        // Get transportistas with their assigned executives
+        const { data: transportistas } = await supabase
+          .from('transportistas')
+          .select('rut, assigned_executive_id')
+          .in('rut', transportistaRuts)
+
+        if (transportistas && transportistas.length > 0) {
+          const executiveIds = transportistas
+            .map(t => t.assigned_executive_id)
+            .filter(Boolean) as string[]
+
+          if (executiveIds.length > 0) {
+            // Get ALL executive names
+            const { data: executives } = await supabase
+              .from('executive_staff')
+              .select('id, full_name')
+
+            if (executives) {
+              const execMap = new Map(executives.map(e => [e.id, e.full_name]))
+              // Map conductor_id -> executive_name
+              conductorRuts.forEach(cr => {
+                const transportista = transportistas.find(t => t.rut === cr.rut_proveedor)
+                if (transportista && transportista.assigned_executive_id) {
+                  const execName = execMap.get(transportista.assigned_executive_id)
+                  if (execName) {
+                    conductorExecutiveMap.set(cr.id, execName)
+                  }
+                }
+              })
+            }
+          }
+        }
+      }
+    }
+
     // Get assigned executives for subcontractors
     let executiveMap = new Map<string, string>()
     if (subDocs && subDocs.length > 0) {
       const subcontractorIds = [...new Set((subDocs as any[]).map(doc => doc.subcontractor_id))]
-      const { data: executives, error: execError } = await supabase
-        .from('executive_staff')
-        .select('transportista_id, full_name, email')
-        .in('transportista_id', subcontractorIds)
-        .eq('is_active', true)
+      console.log('[v0] Rechazados: Getting executives for subcontractors:', subcontractorIds.length, 'IDs')
+      
+      // Get transportistas with their assigned executives
+      const { data: transportistas, error: transError } = await supabase
+        .from('transportistas')
+        .select('id, assigned_executive_id')
+        .in('id', subcontractorIds)
 
-      if (!execError && executives) {
-        executives.forEach((exec: any) => {
-          executiveMap.set(exec.transportista_id, exec.full_name || exec.email)
-        })
+      console.log('[v0] Rechazados: Transportistas query returned:', transportistas?.length || 0, 'records')
+
+      if (transportistas && transportistas.length > 0) {
+        const executiveIds = transportistas
+          .map(t => t.assigned_executive_id)
+          .filter(Boolean) as string[]
+
+        if (executiveIds.length > 0) {
+          // Get ALL executive names (not just filtered ones)
+          const { data: executives } = await supabase
+            .from('executive_staff')
+            .select('id, full_name')
+
+          console.log('[v0] Rechazados: ALL Executives found:', executives?.length)
+
+          if (executives) {
+            const execMap = new Map(executives.map(e => [e.id, e.full_name]))
+            // Map subcontractor_id -> executive_name
+            transportistas.forEach((t: any) => {
+              if (t.assigned_executive_id) {
+                const execName = execMap.get(t.assigned_executive_id)
+                if (execName) {
+                  executiveMap.set(t.id, execName)
+                  console.log('[v0] Rechazados: Mapped transportista', t.id.substring(0, 8), 'to executive', execName)
+                }
+              }
+            })
+          }
+        }
       }
     }
+
 
     // Normalize data to match component expectations - keep nested objects intact
     const normalizedConductor = (conductorDocs || []).map((doc: any) => {
@@ -135,6 +211,9 @@ export async function GET() {
       const file_type = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(fileExtension) 
         ? (fileExtension === 'pdf' ? 'pdf' : 'image')
         : 'unknown'
+      
+      // Get assigned ejecutiva from map, fallback to doc.ejecutiva or 'No especificado'
+      const assignedEjecutiva = conductorExecutiveMap.get(doc.conductor_id) || doc.ejecutiva || 'No especificado'
       
       return {
         id: doc.id,
@@ -146,7 +225,7 @@ export async function GET() {
         file_type: file_type, // Add calculated file_type
         rejection_reason: doc.rejection_reason,
         rejected_at: doc.validated_at || doc.updated_at,
-        ejecutiva: doc.ejecutiva || 'No especificado',
+        ejecutiva: assignedEjecutiva,
         created_at: doc.created_at,
         updated_at: doc.updated_at,
         reviewed_at: doc.validated_at || doc.updated_at,
