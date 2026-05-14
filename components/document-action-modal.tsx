@@ -67,8 +67,6 @@ export function DocumentActionModal({
       return
     }
 
-    console.log('[v0] handleStatusChange - About to send:', { newStatus, rejectionReason, reasonLength: rejectionReason.length })
-
     setIsChanging(true)
     try {
       // Pass rejection reason to parent component if available
@@ -89,12 +87,10 @@ export function DocumentActionModal({
         })
       }
       
-      console.log('[v0] Document status changed to:', newStatus, 'with reason:', rejectionReason)
       setRejectionReason('')
       setShowRejectionForm(false)
       setTimeout(() => onClose(), 500)
     } catch (error) {
-      console.error('[v0] Error changing status:', error)
       alert('Error al cambiar el estado del documento')
     } finally {
       setIsChanging(false)
@@ -130,7 +126,6 @@ export function DocumentActionModal({
       }
       onClose()
     } catch (error) {
-      console.error('[v0] Error deleting document:', error)
       alert('Error al eliminar el documento')
     } finally {
       setIsDeleting(false)
@@ -217,18 +212,14 @@ export function DocumentActionModal({
                 {localDocument.public_url ? (
                   <div className="flex flex-col items-center justify-center w-full">
                     <img
-                      src={localDocument.public_url}
+                      src={`/api/documents/proxy?url=${encodeURIComponent(localDocument.public_url)}`}
                       alt={localDocument.nombre}
                       className="max-w-full max-h-96 object-contain rounded"
                       crossOrigin="anonymous"
                       onError={(e) => {
-                        console.error('[v0] Image failed to load:', localDocument.public_url)
                         e.currentTarget.style.display = 'none'
                         const errorMsg = e.currentTarget.nextElementSibling as HTMLElement
                         if (errorMsg) errorMsg.style.display = 'block'
-                      }}
-                      onLoad={() => {
-                        console.log('[v0] Image loaded successfully:', localDocument.public_url)
                       }}
                     />
                     <div className="hidden text-center py-8 w-full">

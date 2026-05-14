@@ -30,9 +30,6 @@ export function PDFViewer({ url, filename }: PDFViewerProps) {
           src={proxyUrl}
           className="w-full h-full border-0"
           title="PDF Preview"
-          onError={(e) => {
-            console.error('[v0] PDF iframe error:', e)
-          }}
         />
       </div>
     </div>
