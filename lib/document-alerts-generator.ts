@@ -117,6 +117,7 @@ export async function generateDocumentUploadAlerts(
         document_id: uploadedDocumentId,
         document_type: documentType,
         action_url: `/dashboard/company/documentos`,
+        created_at: new Date().toISOString(),
         metadata: {
           document_id: uploadedDocumentId,
           uploader_type: uploaderType,
@@ -225,6 +226,7 @@ export async function generateDocumentStatusChangeAlert(
         document_id: uploadedDocumentId,
         document_type: documentType,
         action_url: `/dashboard/company/documentos`,
+        created_at: new Date().toISOString(),
         metadata: {
           document_id: uploadedDocumentId,
           conductor_id: conductorId,
@@ -348,6 +350,7 @@ export async function generateAIAnalysisAlerts(params: {
               document_id: documentId,
               document_type: documentType,
               action_url: `/dashboard/company/documentos/pendientes`,
+              created_at: new Date().toISOString(),
               metadata: {
                 document_id: documentId,
                 document_table: documentTable,
@@ -405,6 +408,7 @@ export async function generateAIAnalysisAlerts(params: {
         document_id: documentId,
         document_type: documentType,
         action_url: `/dashboard/company/documentos/pendientes`,
+        created_at: new Date().toISOString(),
         metadata: {
           document_id: documentId,
           document_table: documentTable,
@@ -472,6 +476,7 @@ export async function generateExpirationAlerts() {
           document_id: doc.id,
           document_type: docName,
           action_url: `/dashboard/company/documentos`,
+          created_at: new Date().toISOString(),
           metadata: {
             document_id: doc.id,
             conductor_id: doc.conductor_id,
