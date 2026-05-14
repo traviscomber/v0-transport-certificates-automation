@@ -20,7 +20,6 @@ export async function GET(
 
     return NextResponse.json({ success: true, transportista: data })
   } catch (error) {
-    console.error('[v0] Error fetching transportista:', error)
     return NextResponse.json({ error: 'Error fetching transportista' }, { status: 500 })
   }
 }
@@ -41,7 +40,7 @@ export async function PATCH(
     }
 
     // Build update object with only provided fields
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       razon_social: body.razon_social,
       rut: body.rut,
       is_active: body.is_active ?? true,
@@ -54,6 +53,11 @@ export async function PATCH(
     if (body.telefono) updateData.telefono = body.telefono
     if (body.email) updateData.email = body.email
     if (body.nombre_contacto !== undefined) updateData.nombre_contacto = body.nombre_contacto
+    
+    // Handle assigned executive - allow null/empty to clear assignment
+    if (body.assigned_executive_id !== undefined) {
+      updateData.assigned_executive_id = body.assigned_executive_id || null
+    }
 
     const { data, error } = await supabase
       .from('transportistas')
@@ -62,11 +66,8 @@ export async function PATCH(
       .select()
 
     if (error) {
-      console.error('[v0] Error updating transportista:', error)
       throw error
     }
-
-    console.log('[v0] Transportista updated:', data?.[0])
 
     return NextResponse.json({
       success: true,
@@ -74,7 +75,6 @@ export async function PATCH(
       message: 'Subcontratista actualizado exitosamente'
     })
   } catch (error) {
-    console.error('[v0] Error updating transportista:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Error updating transportista' },
       { status: 500 }
@@ -111,14 +111,11 @@ export async function DELETE(
 
     if (error) throw error
 
-    console.log('[v0] Transportista deleted:', id)
-
     return NextResponse.json({
       success: true,
       message: 'Subcontratista eliminado exitosamente'
     })
   } catch (error) {
-    console.error('[v0] Error deleting transportista:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Error deleting transportista' },
       { status: 500 }

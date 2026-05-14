@@ -3,7 +3,17 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertCircle, Loader, Trash2 } from 'lucide-react'
+
+interface Executive {
+  id: string
+  email: string
+  full_name?: string
+  nombres?: string
+  apellido_paterno?: string
+  cargo?: string
+}
 
 interface EditSubcontractorModalProps {
   isOpen: boolean
@@ -22,6 +32,8 @@ interface EditSubcontractorModalProps {
     representante_legal?: string
     direccion?: string
     is_active: boolean
+    assigned_executive_id?: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any
   }
 }
@@ -36,6 +48,8 @@ export function EditSubcontractorModal({
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState<string>('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [executives, setExecutives] = useState<Executive[]>([])
+  const [loadingExecutives, setLoadingExecutives] = useState(false)
   const [formData, setFormData] = useState({
     razon_social: '',
     rut: '',
@@ -44,8 +58,31 @@ export function EditSubcontractorModal({
     telefono: '',
     email: '',
     nombre_contacto: '',
-    is_active: true
+    is_active: true,
+    assigned_executive_id: ''
   })
+
+  // Fetch executives when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchExecutives()
+    }
+  }, [isOpen])
+
+  const fetchExecutives = async () => {
+    setLoadingExecutives(true)
+    try {
+      const response = await fetch('/api/admin/labbe-executives')
+      const data = await response.json()
+      if (data.executives) {
+        setExecutives(data.executives)
+      }
+    } catch (err) {
+      // Silent fail - executives dropdown will be empty
+    } finally {
+      setLoadingExecutives(false)
+    }
+  }
 
   // Update form data when subcontractor changes
   useEffect(() => {
@@ -58,9 +95,9 @@ export function EditSubcontractorModal({
         telefono: subcontractor?.telefono || '',
         email: subcontractor?.email || '',
         nombre_contacto: subcontractor?.nombre_contacto || subcontractor?.representante_legal || '',
-        is_active: subcontractor?.is_active !== false
+        is_active: subcontractor?.is_active !== false,
+        assigned_executive_id: subcontractor?.assigned_executive_id || ''
       })
-      console.log('[v0] Edit modal loaded subcontractor:', subcontractor)
     }
   }, [subcontractor, isOpen])
 
@@ -251,6 +288,27 @@ export function EditSubcontractorModal({
                     onChange={(e) => handleInputChange('nombre_contacto', e.target.value)}
                     disabled={loading}
                   />
+                </div>
+
+                <div className="col-span-2">
+                  <Label htmlFor="assigned_executive_id">Ejecutiva Asignada</Label>
+                  <Select
+                    value={formData.assigned_executive_id}
+                    onValueChange={(value) => handleInputChange('assigned_executive_id', value)}
+                    disabled={loading || loadingExecutives}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={loadingExecutives ? "Cargando..." : "Seleccionar ejecutiva"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Sin asignar</SelectItem>
+                      {executives.map((exec) => (
+                        <SelectItem key={exec.id} value={exec.id}>
+                          {exec.full_name || `${exec.nombres || ''} ${exec.apellido_paterno || ''}`.trim()} - {exec.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="col-span-2">
