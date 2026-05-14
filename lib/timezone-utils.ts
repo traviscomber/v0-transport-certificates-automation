@@ -26,13 +26,9 @@ export function formatToChileTime(
       return 'Fecha inválida'
     }
     
-    // Get the current browser's timezone offset
-    const browserOffsetMs = new Date().getTimezoneOffset() * 60 * 1000
-    
-    // Calculate the correct Chile time
-    // If browser is in UTC, subtract 3 hours to get Chile time
-    // If browser is elsewhere, adjust accordingly
-    const chileDate = new Date(date.getTime() - browserOffsetMs - CHILE_OFFSET_MS)
+    // Timestamps from DB are in UTC (e.g., "2026-05-14T17:34:42Z")
+    // Simply subtract 3 hours to get Chile time (UTC-3)
+    const chileDate = new Date(date.getTime() - CHILE_OFFSET_MS)
     
     // For simple time-only format like 'HH:mm:ss'
     if (formatStr === 'HH:mm:ss') {
