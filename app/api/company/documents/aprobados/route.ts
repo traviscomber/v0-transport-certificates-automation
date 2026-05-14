@@ -62,7 +62,7 @@ export async function GET() {
           rut
         )
       `)
-      .eq('validation_status', 'approved')
+      .eq('validation_status', 'validated')
       .order('updated_at', { ascending: false })
 
     if (conductorError) {
@@ -95,7 +95,7 @@ export async function GET() {
           rut
         )
       `)
-      .eq('status', 'approved')
+      .eq('status', 'validated')
       .order('updated_at', { ascending: false })
 
     if (subError) {
