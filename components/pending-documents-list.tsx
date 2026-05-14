@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea"
 import { useDocumentSync } from '@/contexts/document-sync-context'
 import { PDFViewer } from '@/components/pdf-viewer'
+import { formatToChileTime } from '@/lib/timezone-utils'
 
 interface PendingDocument {
   id: string
@@ -398,13 +399,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                         {doc.uploaded_at && (
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {new Date(doc.uploaded_at).toLocaleDateString('es-CL', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                            {formatToChileTime(doc.uploaded_at, "d 'de' MMMM 'de' yyyy HH:mm")}
                           </span>
                         )}
                       </div>
