@@ -30,11 +30,14 @@ export async function middleware(request: NextRequest) {
     const userEmail = request.cookies.get('user_email')?.value
     
     if (!userEmail) {
-      console.log('[v0] Middleware: Redirecting to login - no user_email cookie for path:', path)
       return NextResponse.redirect(new URL('/login', request.url))
     }
     
-    console.log('[v0] Middleware: User authorized for path:', path)
+    // /dashboard (exact) always redirects to /dashboard/company
+    if (path === '/dashboard' || path === '/dashboard/') {
+      return NextResponse.redirect(new URL('/dashboard/company', request.url))
+    }
+    
     return NextResponse.next()
   }
 
