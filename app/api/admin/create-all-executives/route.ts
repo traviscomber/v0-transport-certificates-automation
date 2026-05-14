@@ -35,12 +35,6 @@ const LABBE_EXECUTIVES = [
     email: 'kcanales@labbe.cl',
     cargo: 'Ejecutiva de Cuenta',
   },
-  {
-    full_name: 'Dandús',
-    rut: '19999999-9',
-    email: 'dandus@labbe.cl',
-    cargo: 'Ejecutiva de Cuenta',
-  },
 ]
 
 export async function POST() {
