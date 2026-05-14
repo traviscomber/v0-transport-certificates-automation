@@ -112,6 +112,23 @@ export async function POST(request: NextRequest) {
       console.log('[v0] License classes A2 and A5 created for conductor')
     }
 
+    // Enable document uploads by creating conductor_settings
+    const { error: settingsError } = await supabase
+      .from('conductor_settings')
+      .insert({
+        conductor_id: newConductor.id,
+        can_upload_documents: true,
+        documents_enabled_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      })
+
+    if (settingsError) {
+      console.error('[v0] Error creating conductor settings:', settingsError)
+      // Don't throw - conductor is already created
+    } else {
+      console.log('[v0] Document upload enabled for conductor:', newConductor.id)
+    }
+
     return NextResponse.json({
       success: true,
       conductor: newConductor,

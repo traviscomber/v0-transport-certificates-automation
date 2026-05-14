@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
+import * as bcrypt from 'bcrypt'
 
 export const dynamic = 'force-dynamic'
 
@@ -70,6 +71,38 @@ export async function POST(request: Request) {
     }
 
     console.log('[v0] Organization created:', data.id)
+
+    // Auto-setup: Create transportista auth for subcontractor portal access
+    try {
+      // Generate password: labbe + last 4 digits of RUT (without guion)
+      const rutDigits = tax_id.replace(/[.-]/g, '')
+      const last4Digits = rutDigits.slice(-4)
+      const plainPassword = `labbe${last4Digits}`
+      
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(plainPassword, 10)
+      
+      // Create transportista_auth record
+      const { error: authError } = await supabase
+        .from('transportista_auth')
+        .upsert(
+          {
+            rut: tax_id,
+            password_hash: hashedPassword,
+            is_active: true,
+          },
+          { onConflict: 'rut' }
+        )
+
+      if (authError) {
+        console.error('[v0] Error creating transportista auth:', authError)
+      } else {
+        console.log('[v0] Transportista auth created for:', tax_id, 'Password:', plainPassword)
+      }
+    } catch (setupError) {
+      console.warn('[v0] Organization created but auto-auth setup failed:', setupError)
+      // Don't fail the organization creation if setup fails
+    }
     
     return NextResponse.json({ id: data.id, name: data.name }, { status: 201 })
   } catch (error) {
