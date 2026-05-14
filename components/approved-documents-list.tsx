@@ -174,21 +174,28 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
     )
   }
 
+  // If we have documents, always show them (no filtering by executive)
+  // The filter component is optional - show documents regardless
+  const docsToDisplay = allDocs.length > 0 ? allDocs : []
+
   return (
     <>
-      <DocumentFilter 
-        onFilterChange={setFilters}
-        executives={executives}
-        companies={companies}
-      />
+      {/* Only show filter if we have executives */}
+      {executives.length > 0 && (
+        <DocumentFilter 
+          onFilterChange={setFilters}
+          executives={executives}
+          companies={companies}
+        />
+      )}
       
-      {filteredDocs.length === 0 ? (
+      {filteredDocs.length === 0 && executives.length > 0 ? (
         <div className="flex flex-col items-center justify-center py-12 px-4">
           <p className="text-slate-400">No hay documentos que coincidan con los filtros seleccionados</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredDocs.map((doc) => (
+          {(executives.length > 0 ? filteredDocs : allDocs).map((doc) => (
           <Card key={doc.id} className="bg-gradient-to-r from-slate-900/80 to-slate-800/80 border-slate-700/50 hover:border-green-500/30 transition-all hover:shadow-lg hover:shadow-green-500/10">
             <CardContent className="p-6">
               <div className="flex items-start justify-between gap-6">
