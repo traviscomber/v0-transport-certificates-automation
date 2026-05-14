@@ -75,8 +75,13 @@ export async function PATCH(
       .select()
 
     if (error) {
-      console.error('[v0] PATCH transportistas - Error:', error.message, error.details, error.hint)
-      throw error
+      console.error('[v0] PATCH transportistas - Supabase Error:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      })
+      throw new Error(`Database error: ${error.message}`)
     }
 
     console.log('[v0] PATCH transportistas - Success:', data?.[0]?.id)
@@ -85,11 +90,16 @@ export async function PATCH(
       success: true,
       transportista: data?.[0],
       message: 'Subcontratista actualizado exitosamente'
-    })
+    }, { status: 200 })
   } catch (error) {
-    console.error('[v0] PATCH transportistas - Catch Error:', error)
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    console.error('[v0] PATCH transportistas - Exception:', errorMsg, error)
+    
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Error updating transportista' },
+      { 
+        error: errorMsg,
+        success: false
+      },
       { status: 500 }
     )
   }
