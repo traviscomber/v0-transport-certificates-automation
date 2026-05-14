@@ -21,50 +21,50 @@ export async function POST(request: NextRequest) {
 
     if (!transportista_id || !ejecutiva_id) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields: transportista_id and ejecutiva_id' },
         { status: 400 }
       )
     }
 
-    // Check if executive-company relationship already exists
-    const { data: existing } = await supabase
+    // Verify that the executive exists
+    const { data: executive, error: execError } = await supabase
       .from('executive_staff')
-      .select('*')
-      .eq('transportista_id', transportista_id)
-      .eq('ejecutiva_id', ejecutiva_id)
+      .select('id, full_name')
+      .eq('id', ejecutiva_id)
       .single()
 
-    if (existing) {
+    if (execError || !executive) {
       return NextResponse.json(
-        { message: 'Executive already assigned to this company' },
-        { status: 200 }
+        { error: 'Executive not found' },
+        { status: 404 }
       )
     }
 
-    // Assign executive to company
+    // Update transportista with the assigned executive
     const { data, error } = await supabase
-      .from('executive_staff')
-      .insert({
-        transportista_id,
-        ejecutiva_id,
-        created_at: new Date().toISOString(),
-      })
+      .from('transportistas')
+      .update({ assigned_executive_id: ejecutiva_id })
+      .eq('id', transportista_id)
       .select()
       .single()
 
     if (error) {
       console.error('Error assigning executive:', error)
       return NextResponse.json(
-        { error: error.message },
+        { error: error.message || 'Failed to assign executive' },
         { status: 500 }
       )
     }
 
-    return NextResponse.json(data, { status: 200 })
-  } catch (error) {
+    return NextResponse.json({
+      success: true,
+      message: `Executive ${executive.full_name} assigned successfully`,
+      data,
+    }, { status: 200 })
+  } catch (error: any) {
     console.error('Error in assign-executive:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: error.message || 'Internal server error' },
       { status: 500 }
     )
   }

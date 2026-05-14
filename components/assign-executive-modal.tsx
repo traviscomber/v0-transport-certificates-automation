@@ -97,7 +97,7 @@ export function AssignExecutiveModal({
   }
 
   const selectedExecName = Array.isArray(executives) 
-    ? executives.find((e) => e.id === selectedExecutive)?.nombre 
+    ? executives.find((e) => e.id === selectedExecutive)?.full_name 
     : undefined
 
   return (
@@ -155,7 +155,7 @@ export function AssignExecutiveModal({
                           : 'bg-slate-700/30 border-slate-600 text-slate-300 hover:bg-slate-700/50'
                       }`}
                     >
-                      <p className="font-medium">{exec.nombre}</p>
+                      <p className="font-medium">{exec.full_name}</p>
                       <p className="text-xs text-slate-400">{exec.email}</p>
                     </button>
                   ))
