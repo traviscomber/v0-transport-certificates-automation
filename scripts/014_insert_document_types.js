@@ -17,7 +17,7 @@ async function insertDocumentTypes() {
     { code: 'AFP', nombre: 'AFP', descripcion: 'Afiliación y cotizaciones AFP', periodicidad: 'Mensual', es_obligatorio: true },
     { code: 'SALUD', nombre: 'Salud', descripcion: 'Certificado de afiliación a FONASA o Isapre', periodicidad: 'Trimestral', es_obligatorio: true },
     { code: 'MUTUAL', nombre: 'Mutual', descripcion: 'Certificado de afiliación a mutual', periodicidad: 'Trimestral', es_obligatorio: true },
-    { code: 'F23', nombre: 'Formulario F23', descripcion: 'Declaración de impuesto a la renta', periodicidad: 'Anual', es_obligatorio: true },
+    { code: 'F29', nombre: 'Formulario F29', descripcion: 'Declaración de impuesto a la renta', periodicidad: 'Anual', es_obligatorio: true },
     { code: 'F30', nombre: 'F30', descripcion: 'Certificado de afiliación tributaria', periodicidad: 'Anual', es_obligatorio: true },
     { code: 'F30_DOÑA_ISIDORA', nombre: 'F30-I Doña Isidora', descripcion: 'F30 Emitido a Doña Isidora', periodicidad: 'Anual', es_obligatorio: true },
     { code: 'F30_CLIENTE', nombre: 'F30-I Emitido a Cliente', descripcion: 'F30 Emitido a cliente', periodicidad: 'Anual', es_obligatorio: true },
@@ -26,6 +26,7 @@ async function insertDocumentTypes() {
     { code: 'CERT_AFIL_MUTUAL', nombre: 'Cert. Afil Mutual', descripcion: 'Certificado de afiliación a mutual', periodicidad: 'Trimestral', es_obligatorio: false },
     { code: 'CERT_TASAS_MUTUAL', nombre: 'Cert. Tasas Mutual', descripcion: 'Certificado de tasas de afiliación mutual', periodicidad: 'Trimestral', es_obligatorio: false },
     { code: 'CERT_ANTECEDENTES', nombre: 'Cert. Antecedentes', descripcion: 'Certificado de antecedentes', periodicidad: 'Anual', es_obligatorio: true },
+    { code: 'CERT_AFILIACIONES', nombre: 'Certificado de Afiliaciones', descripcion: 'Certificado de afiliaciones a organismos', periodicidad: 'Trimestral', es_obligatorio: true },
     { code: 'HOJA_VIDA', nombre: 'Hoja de Vida', descripcion: 'Hoja de vida del conductor', periodicidad: 'Anual', es_obligatorio: true },
     { code: 'FOTO_PATENTES', nombre: 'Foto Estado Patentes', descripcion: 'Fotografía del estado de las patentes', periodicidad: 'Mensual', es_obligatorio: true }
   ];
