@@ -192,13 +192,12 @@ export async function GET() {
           console.log('[v0] Aprobados: Found', executiveIds.length, 'unique executive IDs from transportistas')
 
           if (executiveIds.length > 0) {
-            // Get executive names
+            // Get ALL executive names (just get all since we need them anyway)
             const { data: executives, error: execError } = await supabase
               .from('executive_staff')
               .select('id, full_name')
-              .in('id', executiveIds)
 
-            console.log('[v0] Aprobados: Executives found:', executives?.length, 'Error:', execError?.message || 'none')
+            console.log('[v0] Aprobados: ALL Executives found:', executives?.length, 'Error:', execError?.message || 'none')
 
             if (executives) {
               const execMap = new Map(executives.map(e => [e.id, e.full_name]))
