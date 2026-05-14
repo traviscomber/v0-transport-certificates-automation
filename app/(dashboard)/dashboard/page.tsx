@@ -82,38 +82,38 @@ export default function DashboardPage() {
             <CardContent className="space-y-4">
               <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
                 <p className="text-sm text-slate-300">
-                  <span className="font-semibold">Correo:</span> {user.email}
+                  <span className="font-semibold">Correo:</span> {currentUser.email}
                 </p>
                 <p className="text-sm text-slate-300 mt-2">
-                  <span className="font-semibold">Rol:</span> {roleLabels[user.role] || user.role}
+                  <span className="font-semibold">Rol:</span> {roleLabels[userRole] || userRole}
                 </p>
                 <p className="text-sm text-slate-300 mt-2">
-                  <span className="font-semibold">Descripción:</span> {roleDescriptions[user.role] || 'Usuario del sistema'}
+                  <span className="font-semibold">Descripción:</span> {roleDescriptions[userRole] || 'Usuario del sistema'}
                 </p>
               </div>
 
               <div className="pt-4 border-t border-slate-700">
                 <p className="text-xs text-slate-500 mb-3">Acciones disponibles:</p>
                 <div className="flex flex-wrap gap-2">
-                  {user.role === 'driver' && (
+                  {userRole === 'driver' && (
                     <>
                       <Button variant="outline" size="sm">Subir Certificados</Button>
                       <Button variant="outline" size="sm">Ver Estado</Button>
                     </>
                   )}
-                  {user.role === 'dispatcher' && (
+                  {userRole === 'dispatcher' && (
                     <>
                       <Button variant="outline" size="sm">Gestionar Conductores</Button>
                       <Button variant="outline" size="sm">Ver Reportes</Button>
                     </>
                   )}
-                  {user.role === 'admin' && (
+                  {userRole === 'admin' && (
                     <>
                       <Button variant="outline" size="sm">Panel Admin</Button>
                       <Button variant="outline" size="sm">Gestionar Organizaciones</Button>
                     </>
                   )}
-                  {!['driver', 'dispatcher', 'admin'].includes(user.role) && (
+                  {!['driver', 'dispatcher', 'admin'].includes(userRole) && (
                     <Button variant="outline" size="sm">Explorar Dashboard</Button>
                   )}
                 </div>
