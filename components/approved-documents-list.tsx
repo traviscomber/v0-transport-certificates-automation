@@ -70,14 +70,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   )
 
   const getExecutive = (doc: ApprovedDocument) => {
-    // Prefer the email of who actually approved it
-    if (doc.approved_by_email) {
-      // Extract name from email (before @) and format nicely
-      const emailParts = doc.approved_by_email.split('@')[0].split('.')
-      const name = emailParts.map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ')
-      return name
-    }
-    // Fallback to ejecutiva field
+    // Return assigned executive name (now populated from transportistas.assigned_executive_id)
     return doc.ejecutiva || doc.reviewed_by_ejecutiva || 'No especificado'
   }
 

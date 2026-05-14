@@ -70,6 +70,57 @@ export async function GET() {
 
     console.log('[v0] Aprobados: Conductor docs count:', conductorDocs?.length || 0)
 
+    // Get assigned executives for conductors
+    // Workflow: conductores.rut_proveedor -> transportistas.rut -> transportistas.assigned_executive_id -> executive_staff.full_name
+    let conductorExecutiveMap = new Map<string, string>()
+    if (conductorDocs && conductorDocs.length > 0) {
+      // Get unique rut_proveedor from conductores
+      const { data: conductorRuts } = await supabase
+        .from('conductores')
+        .select('id, rut_proveedor')
+        .in('id', (conductorDocs as any[]).map(doc => doc.conductor_id))
+
+      if (conductorRuts && conductorRuts.length > 0) {
+        const transportistaRuts = conductorRuts.map(c => c.rut_proveedor).filter(Boolean)
+        
+        // Get transportistas with their assigned executives
+        const { data: transportistas } = await supabase
+          .from('transportistas')
+          .select('rut, assigned_executive_id')
+          .in('rut', transportistaRuts)
+
+        if (transportistas && transportistas.length > 0) {
+          const executiveIds = transportistas
+            .map(t => t.assigned_executive_id)
+            .filter(Boolean) as string[]
+
+          if (executiveIds.length > 0) {
+            // Get executive names
+            const { data: executives } = await supabase
+              .from('executive_staff')
+              .select('id, full_name')
+              .in('id', executiveIds)
+
+            if (executives) {
+              const execMap = new Map(executives.map(e => [e.id, e.full_name]))
+              // Map conductor_id -> executive_name
+              conductorRuts.forEach(cr => {
+                const transportista = transportistas.find(t => t.rut === cr.rut_proveedor)
+                if (transportista && transportista.assigned_executive_id) {
+                  const execName = execMap.get(transportista.assigned_executive_id)
+                  if (execName) {
+                    conductorExecutiveMap.set(cr.id, execName)
+                  }
+                }
+              })
+            }
+          }
+        }
+      }
+    }
+
+    console.log('[v0] Aprobados: Conductor executive map:', Array.from(conductorExecutiveMap.entries()))
+
     // Get approved subcontractor documents - NO FILTER, fetch all
     const { data: subDocs, error: subError } = await supabase
       .from('subcontractor_documents')
@@ -135,6 +186,9 @@ export async function GET() {
         ? (fileExtension === 'pdf' ? 'pdf' : 'image')
         : 'unknown'
       
+      // Get assigned ejecutiva from map, fallback to doc.ejecutiva or 'No especificado'
+      const assignedEjecutiva = conductorExecutiveMap.get(doc.conductor_id) || doc.ejecutiva || 'No especificado'
+      
       return {
         id: doc.id,
         original_filename: doc.original_filename,
@@ -144,9 +198,7 @@ export async function GET() {
         file_url: doc.file_url,
         file_type: file_type, // Add calculated file_type
         validated_at: doc.validated_at || doc.updated_at,
-        approved_at: doc.approved_at || doc.updated_at,
-        approved_by_email: doc.approved_by_email,
-        ejecutiva: doc.ejecutiva || 'No especificado',
+        ejecutiva: assignedEjecutiva,
         created_at: doc.created_at,
         updated_at: doc.updated_at,
         reviewed_at: doc.validated_at || doc.updated_at,
