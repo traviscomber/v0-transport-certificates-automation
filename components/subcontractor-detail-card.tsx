@@ -36,12 +36,20 @@ export function SubcontractorDetailCard({
     const fetchDocuments = async () => {
       try {
         const response = await fetch(`/api/subcontractors/${subcontractor.id}/documents`)
-        if (response.ok) {
-          const data = await response.json()
-          setDocuments(data.documents || [])
-          setRequirements(data.requirements || [])
-          setSummary(data.summary || summary)
+        console.log('[v0] Fetching subcontractor documents for:', subcontractor.id)
+        
+        if (!response.ok) {
+          console.error('[v0] Error response:', response.status, response.statusText)
+          setLoading(false)
+          return
         }
+        
+        const data = await response.json()
+        console.log('[v0] Documents response data:', data)
+        
+        setDocuments(data.documents || [])
+        setRequirements(data.requirements || [])
+        setSummary(data.summary || summary)
       } catch (error) {
         console.error('[v0] Error fetching documents:', error)
       } finally {
@@ -258,49 +266,69 @@ export function SubcontractorDetailCard({
                       <p className="text-xs font-semibold text-slate-400">Documentos Requeridos</p>
                       <div className="max-h-48 overflow-y-auto space-y-1">
                         {requirements.map((req) => {
+                          // Find uploaded document for this requirement
+                          const uploadedDoc = documents.find((d) => {
+                            const docTypeCode = d.document_type?.code || d.code
+                            const reqCode = req.code || req
+                            return docTypeCode === reqCode
+                          })
+                          
                           const statusColors: Record<string, string> = {
                             aprobado: 'bg-green-900/20 border-green-800 text-green-400',
+                            approved: 'bg-green-900/20 border-green-800 text-green-400',
                             pendiente: 'bg-yellow-900/20 border-yellow-800 text-yellow-400',
+                            pending: 'bg-yellow-900/20 border-yellow-800 text-yellow-400',
                             rechazado: 'bg-red-900/20 border-red-800 text-red-400',
+                            rejected: 'bg-red-900/20 border-red-800 text-red-400',
                             vencido: 'bg-orange-900/20 border-orange-800 text-orange-400',
+                            expired: 'bg-orange-900/20 border-orange-800 text-orange-400',
                             no_subido: 'bg-slate-800 text-slate-400',
                           }
-                          const statusColor = statusColors[req.status] || statusColors.no_subido
+                          
+                          let documentStatus = 'no_subido'
+                          if (uploadedDoc) {
+                            const status = uploadedDoc.status?.toLowerCase() || 'pending'
+                            documentStatus = status === 'aprobado' ? 'aprobado' : status === 'approved' ? 'aprobado' : status
+                          }
+                          
+                          const statusColor = statusColors[documentStatus] || statusColors.no_subido
                           const statusLabel: Record<string, string> = {
                             aprobado: 'Aprobado',
+                            approved: 'Aprobado',
                             pendiente: 'Pendiente',
+                            pending: 'Pendiente',
                             rechazado: 'Rechazado',
+                            rejected: 'Rechazado',
                             vencido: 'Vencido',
+                            expired: 'Vencido',
                             no_subido: 'No subido',
                           }
                           
-                          // Find uploaded document for this requirement
-                          const uploadedDoc = documents.find((d) => d.nombre.includes(req.code))
-                          
                           return (
                             <div
-                              key={req.id}
+                              key={req.id || req.code}
                               className={`p-2 rounded border text-xs flex items-center justify-between ${statusColor}`}
                             >
-                              <span className="font-mono">{req.code}</span>
+                              <span className="font-mono">{req.code || req.nombre}</span>
                               <div className="flex items-center gap-2">
-                                <span className="text-right">{statusLabel[req.status]}</span>
-                                {uploadedDoc && uploadedDoc.archivo_url && (
+                                <span className="text-right">{statusLabel[documentStatus]}</span>
+                                {uploadedDoc && uploadedDoc.file_url && (
                                   <div className="flex gap-1">
                                     <a
-                                      href={`/api/documents/download?path=${encodeURIComponent(uploadedDoc.archivo_url)}`}
-                                      download
+                                      href={uploadedDoc.file_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
                                       className="hover:opacity-75 transition-opacity"
                                       title="Descargar"
                                     >
                                       <Download className="w-3 h-3" />
                                     </a>
                                     <a
-                                      href={`/api/documents/preview?path=${encodeURIComponent(uploadedDoc.archivo_url)}`}
+                                      href={uploadedDoc.file_url}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="hover:opacity-75 transition-opacity"
-                                      title="Ver"
+                                      title="Ver documento"
                                     >
                                       <Eye className="w-3 h-3" />
                                     </a>
