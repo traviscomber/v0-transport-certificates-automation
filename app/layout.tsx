@@ -31,8 +31,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className="dark">
-      <body className={`font-sans ${inter.variable} ${jetbrainsMono.variable} antialiased`}>
+    <html lang="es" className="dark bg-background">
+      <body className={`font-sans ${inter.variable} ${jetbrainsMono.variable} antialiased text-foreground`}>
         <DocumentSyncProvider>
           <RoleProvider>
             <ToastProvider>
