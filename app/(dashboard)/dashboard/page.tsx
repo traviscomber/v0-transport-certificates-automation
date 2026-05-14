@@ -36,30 +36,16 @@ export default function DashboardPage() {
   const currentUser = user || simpleUser
   if (!currentUser) return null
 
-  const roleLabels: Record<string, string> = {
-    admin: 'Administrador',
-    dispatcher: 'Despachador',
-    driver: 'Conductor',
-    mandante: 'Mandante',
-    transportista: 'Transportista',
-  }
-
-  const roleDescriptions: Record<string, string> = {
-    admin: 'Control total del sistema y organizaciones',
-    dispatcher: 'Administración de conductores y compliance del equipo',
-    driver: 'Gestión de tus documentos y certificados personales',
-    mandante: 'Monitoreo de compliance y reportes',
-    transportista: 'Administración de flota y conductores',
-  }
-
   const userRole = 'admin' in currentUser ? (currentUser as any).role : 'admin'
+  const userName = 'name' in currentUser ? (currentUser as any).name : (currentUser as any).full_name || (currentUser as any).email?.split('@')[0] || 'Usuario'
+  const userEmail = 'email' in currentUser ? (currentUser as any).email : ''
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">
-          Bienvenida, {currentUser.name}
+          Bienvenida, {userName}
         </h1>
         <p className="text-slate-400">
           Iniciaste sesión como <span className="text-orange-400 font-semibold">{roleLabels[userRole] || userRole}</span>
@@ -82,7 +68,7 @@ export default function DashboardPage() {
             <CardContent className="space-y-4">
               <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
                 <p className="text-sm text-slate-300">
-                  <span className="font-semibold">Correo:</span> {currentUser.email}
+                  <span className="font-semibold">Correo:</span> {userEmail}
                 </p>
                 <p className="text-sm text-slate-300 mt-2">
                   <span className="font-semibold">Rol:</span> {roleLabels[userRole] || userRole}
