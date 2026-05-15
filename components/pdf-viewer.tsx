@@ -11,9 +11,6 @@ interface PDFViewerProps {
 
 export function PDFViewer({ url, filename }: PDFViewerProps) {
   const [hasError, setHasError] = useState(false)
-  
-  // Use Google's PDF viewer (more reliable than iframe with proxy)
-  const pdfViewerUrl = `https://docs.google.com/gvfs/render-proxy/viewer?url=${encodeURIComponent(url)}`
 
   if (hasError) {
     return (
@@ -29,10 +26,10 @@ export function PDFViewer({ url, filename }: PDFViewerProps) {
         <div className="w-full bg-slate-900 rounded-lg overflow-hidden p-6 flex items-center justify-center gap-3 min-h-[60vh]">
           <AlertCircle className="h-6 w-6 text-orange-400 flex-shrink-0" />
           <div>
-            <p className="text-orange-300 font-medium">No se pudo cargar el PDF</p>
+            <p className="text-orange-300 font-medium">Vista previa no disponible</p>
             <p className="text-sm text-slate-400 mt-1">
-              <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
-                Descargar documento aquí
+              <a href={url} download={filename} className="text-blue-400 hover:underline">
+                Descargar documento
               </a>
             </p>
           </div>
@@ -48,24 +45,21 @@ export function PDFViewer({ url, filename }: PDFViewerProps) {
         <a href={url} download={filename} target="_blank" rel="noopener noreferrer">
           <Button variant="outline" size="sm" className="gap-2" title="Descargar">
             <Download className="h-4 w-4" />
-            Descargar PDF
+            Descargar
           </Button>
         </a>
       </div>
 
-      {/* PDF Viewer using Google Docs (no sandbox restrictions) */}
+      {/* PDF Embed - works directly with Supabase URLs */}
       <div className="w-full bg-slate-900 rounded-lg overflow-hidden" style={{ height: '60vh' }}>
-        <iframe
-          src={pdfViewerUrl}
-          className="w-full h-full border-0"
-          title="PDF Preview"
-          allow="fullscreen"
+        <embed
+          src={url}
+          type="application/pdf"
+          width="100%"
+          height="100%"
           onError={() => {
-            console.error('[v0] PDF viewer error loading:', url)
+            console.error('[v0] PDF embed error loading:', url)
             setHasError(true)
-          }}
-          onLoad={() => {
-            console.log('[v0] PDF viewer loaded successfully')
           }}
         />
       </div>
