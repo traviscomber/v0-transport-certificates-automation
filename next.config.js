@@ -32,10 +32,10 @@ const nextConfig = {
             value: 'nosniff',
           },
           
-          // Prevent clickjacking attacks
+          // Prevent clickjacking attacks (SAMEORIGIN allows PDF preview iframes from our own proxy)
           {
             key: 'X-Frame-Options',
-            value: 'DENY',
+            value: 'SAMEORIGIN',
           },
           
           // Enable XSS protection in older browsers
@@ -89,7 +89,7 @@ const nextConfig = {
         ],
       },
       
-      // API routes - security headers only (no Content-Type override - breaks FormData uploads)
+      // API routes - security headers
       {
         source: '/api/:path*',
         headers: [
@@ -99,7 +99,7 @@ const nextConfig = {
           },
           {
             key: 'X-Frame-Options',
-            value: 'DENY',
+            value: 'SAMEORIGIN',
           },
         ],
       },
