@@ -172,17 +172,19 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
       // Remove from local list immediately (UI feedback)
       setRemovedIds(prev => new Set([...prev, docId]))
 
-      // BROADCAST SYNC EVENT - Update all views in real-time
-      console.log('[v0] Pending docs: Broadcasting status change event')
-      broadcastSync({
-        type: 'document_status_changed',
-        documentId: docId,
-        timestamp: Date.now(),
-        data: { 
-          oldStatus: 'pending',
-          newStatus: newStatus === 'aprobado' ? 'approved' : 'rejected'
-        }
-      })
+      // BROADCAST SYNC EVENT - with small delay to ensure DB write is committed
+      console.log('[v0] Pending docs: Broadcasting status change event after 200ms delay')
+      setTimeout(() => {
+        broadcastSync({
+          type: 'document_status_changed',
+          documentId: docId,
+          timestamp: Date.now(),
+          data: { 
+            oldStatus: 'pending',
+            newStatus: newStatus === 'aprobado' ? 'approved' : 'rejected'
+          }
+        })
+      }, 200)
 
       // Show success toast
       const msg = document.createElement('div')

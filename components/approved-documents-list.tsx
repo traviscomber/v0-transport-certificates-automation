@@ -47,19 +47,24 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   useEffect(() => {
     const unsubscribe = onSync((event) => {
       if (event.type === 'document_status_changed') {
-        const refetch = async () => {
+        console.log('[v0] ApprovedDocumentsList: Received document_status_changed event, refetching...')
+        // Add small delay to ensure database write is committed
+        const timer = setTimeout(async () => {
           try {
             const response = await fetch('/api/company/documents/aprobados')
             if (response.ok) {
               const data = await response.json()
+              console.log('[v0] ApprovedDocumentsList: Refetch successful, conductorDocs:', data.conductorDocs?.length, 'subDocs:', data.subDocs?.length)
               setConductorDocs(data.conductorDocs || [])
               setSubDocs(data.subDocs || [])
+            } else {
+              console.error('[v0] ApprovedDocumentsList: Refetch failed with status:', response.status)
             }
           } catch (error) {
-            console.error('[v0] Error refetching approved docs:', error)
+            console.error('[v0] ApprovedDocumentsList: Error refetching approved docs:', error)
           }
-        }
-        refetch()
+        }, 500) // 500ms delay to ensure DB write
+        return () => clearTimeout(timer)
       }
     })
     return unsubscribe
