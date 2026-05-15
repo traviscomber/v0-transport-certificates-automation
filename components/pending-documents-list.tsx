@@ -464,7 +464,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
       </Card>
 
       {/* Preview Modal */}
-      <Dialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)}>
+      <Dialog open={!!previewDoc} onOpenChange={(open) => { if (!open) setPreviewDoc(null) }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-label={`Preview de ${previewDoc?.file_name || 'documento'}`}>
           <DialogHeader className="flex flex-row items-center justify-between">
             <DialogTitle className="flex-1">{previewDoc?.original_filename || previewDoc?.file_name}</DialogTitle>

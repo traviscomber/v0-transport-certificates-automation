@@ -176,10 +176,13 @@ export function ExpiredDocumentsList({ initialDocuments }: Props) {
         })
       )}
 
-      {/* Preview Modal */}
+      {/* Preview Modal - No se cierra por click fuera, solo por X o Escape */}
       {previewDoc && (
-        <Dialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)}>
-          <DialogContent className="bg-slate-900 border-slate-700 max-w-2xl">
+        <Dialog open={!!previewDoc} onOpenChange={(open) => { if (!open) setPreviewDoc(null) }}>
+          <DialogContent 
+            className="bg-slate-900 border-slate-700 max-w-2xl"
+            onPointerDownOutside={(e) => e.preventDefault()}
+          >
             <DialogHeader>
               <DialogTitle className="text-white flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-red-500" />

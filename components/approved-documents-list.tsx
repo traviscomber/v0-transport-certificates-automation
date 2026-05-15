@@ -287,9 +287,12 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
         </div>
       )}
 
-      {/* Preview Modal */}
-      <Dialog open={!!previewDoc} onOpenChange={(open) => !open && setPreviewDoc(null)}>
-        <DialogContent className="max-w-4xl bg-slate-900 border-slate-700">
+      {/* Preview Modal - No se cierra por click fuera, solo por X o Escape */}
+      <Dialog open={!!previewDoc} onOpenChange={(open) => { if (!open) setPreviewDoc(null) }}>
+        <DialogContent 
+          className="max-w-4xl bg-slate-900 border-slate-700"
+          onPointerDownOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>{previewDoc?.original_filename || previewDoc?.document_name}</DialogTitle>
           </DialogHeader>
