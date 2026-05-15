@@ -7,9 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 const EJECUTIVAS = [
   { email: 'dsilva@labbe.cl', nombre: 'Daniela Constanza Silva Rojas' },
-  { email: 'olga@labbe.cl', nombre: 'Olga' },
-  { email: 'carolina@labbe.cl', nombre: 'Carolina' },
-  { email: 'cecilia@labbe.cl', nombre: 'Cecilia' },
+  { email: 'ocarrasco@labbe.cl', nombre: 'Olga Carrasco' },
+  { email: 'csepulveda@labbe.cl', nombre: 'Carolina Sepúlveda' },
   { email: 'jayala@labbe.cl', nombre: 'Javiera Ayala Rodriguez' },
 ]
 
