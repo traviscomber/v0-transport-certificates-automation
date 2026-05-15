@@ -12,8 +12,8 @@ interface PDFViewerProps {
 export function PDFViewer({ url, filename }: PDFViewerProps) {
   const [hasError, setHasError] = useState(false)
   
-  // Use proxy endpoint to serve PDF - handles CORS and auth
-  const proxyUrl = `/api/documents/proxy?url=${encodeURIComponent(url)}`
+  // Use Google's PDF viewer (more reliable than iframe with proxy)
+  const pdfViewerUrl = `https://docs.google.com/gvfs/render-proxy/viewer?url=${encodeURIComponent(url)}`
 
   if (hasError) {
     return (
@@ -22,7 +22,7 @@ export function PDFViewer({ url, filename }: PDFViewerProps) {
           <a href={url} download={filename} target="_blank" rel="noopener noreferrer">
             <Button variant="outline" size="sm" className="gap-2" title="Download">
               <Download className="h-4 w-4" />
-              Download PDF
+              Descargar
             </Button>
           </a>
         </div>
@@ -46,26 +46,26 @@ export function PDFViewer({ url, filename }: PDFViewerProps) {
       {/* Controls */}
       <div className="flex items-center justify-end bg-slate-800 p-3 rounded-lg">
         <a href={url} download={filename} target="_blank" rel="noopener noreferrer">
-          <Button variant="outline" size="sm" className="gap-2" title="Download">
+          <Button variant="outline" size="sm" className="gap-2" title="Descargar">
             <Download className="h-4 w-4" />
             Descargar PDF
           </Button>
         </a>
       </div>
 
-      {/* PDF Iframe */}
+      {/* PDF Viewer using Google Docs (no sandbox restrictions) */}
       <div className="w-full bg-slate-900 rounded-lg overflow-hidden" style={{ height: '60vh' }}>
         <iframe
-          src={proxyUrl}
+          src={pdfViewerUrl}
           className="w-full h-full border-0"
           title="PDF Preview"
-          sandbox="allow-scripts allow-same-origin"
+          allow="fullscreen"
           onError={() => {
-            console.error('[v0] PDF iframe error loading:', url)
+            console.error('[v0] PDF viewer error loading:', url)
             setHasError(true)
           }}
           onLoad={() => {
-            console.log('[v0] PDF iframe loaded successfully')
+            console.log('[v0] PDF viewer loaded successfully')
           }}
         />
       </div>
