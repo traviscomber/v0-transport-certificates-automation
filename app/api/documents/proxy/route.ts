@@ -18,40 +18,52 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Validate that URL is from our Supabase bucket
-    if (!url.includes('supabase.co') || !url.includes('subcontractor-documents')) {
+    // Validate that URL is from our allowed storage services
+    const allowedHosts = ['supabase.co', 'blob.vercel-storage.com', 'amazonaws.com', 's3.amazonaws.com']
+    const isAllowed = allowedHosts.some(host => url.includes(host))
+    
+    if (!isAllowed) {
       return NextResponse.json(
-        { error: 'Invalid URL - must be from Supabase storage' },
+        { error: 'Invalid URL - must be from approved storage service' },
         { status: 403 }
       )
     }
 
-    // Fetch the file from Supabase
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/pdf, image/*',
-      }
-    })
+    // Fetch the file with timeout
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 30000) // 30 second timeout
 
-    if (!response.ok) {
-      console.error('[v0] Failed to fetch document:', response.status, response.statusText)
-      return NextResponse.json(
-        { error: `Failed to fetch document: ${response.statusText}` },
-        { status: response.status }
-      )
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'application/pdf, image/*, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'User-Agent': 'DocumentProxy/1.0',
+        },
+        signal: controller.signal
+      })
+
+      if (!response.ok) {
+        console.error('[v0] Failed to fetch document:', response.status, response.statusText)
+        return NextResponse.json(
+          { error: `Failed to fetch document: ${response.statusText}` },
+          { status: response.status }
+        )
+      }
+
+      const buffer = await response.arrayBuffer()
+      const contentType = response.headers.get('content-type') || 'application/octet-stream'
+
+      return new NextResponse(buffer, {
+        status: 200,
+        headers: {
+          'Content-Type': contentType,
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'public, max-age=3600',
+        }
+      })
+    } finally {
+      clearTimeout(timeout)
     }
-
-    const buffer = await response.arrayBuffer()
-    const contentType = response.headers.get('content-type') || 'application/octet-stream'
-
-    return new NextResponse(buffer, {
-      status: 200,
-      headers: {
-        'Content-Type': contentType,
-        'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'public, max-age=3600',
-      }
-    })
   } catch (error) {
     console.error('[v0] Proxy error:', error)
     return NextResponse.json(
