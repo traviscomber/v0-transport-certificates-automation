@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
 /**
  * POST /api/admin/executive-staff
  * Create a new executive (Labbe employee)
- * Body: { email: "name@labbe.cl", nombre: "Name", apellido: "Lastname" }
+ * Body: { email: "name@labbe.cl", nombre: "Name", apellido: "Lastname", rut: "12345678-9" (optional) }
  */
 export async function POST(request: NextRequest) {
   try {
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     const body = await request.json()
-    const { email, nombre, apellido } = body
+    const { email, nombre, apellido, rut } = body
 
     // Validate email format
     if (!email || !nombre) {
@@ -126,12 +126,15 @@ export async function POST(request: NextRequest) {
 
     // Insert new executive using full_name field
     const fullName = apellido ? `${nombre} ${apellido}` : nombre
+    // Generate a placeholder RUT if not provided
+    const execRut = rut || `${Math.floor(Math.random() * 10000000)}-${Math.floor(Math.random() * 9)}`
 
     const { data, error } = await supabase
       .from('executive_staff')
       .insert([{
         email,
         full_name: fullName,
+        rut: execRut,
         cargo: 'Ejecutiva de Cuenta',
         is_active: true,
         transportista_id: defaultTransportista.id,
@@ -148,7 +151,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[v0] Created executive:', email)
+    console.log('[v0] Created executive:', email, 'with RUT:', execRut)
     return NextResponse.json({ 
       executive: { ...data, nombre: data?.full_name },
       message: 'Executive created successfully'
