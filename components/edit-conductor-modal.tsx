@@ -23,7 +23,7 @@ interface EditConductorModalProps {
   onClose: () => void
   onSuccess: () => void
   driver: Driver | null
-  transportistas: Array<{ rut: string; nombre: string }>
+  transportistas: Array<{ rut: string; nombre: string; ejecutivo_nombre?: string }>
 }
 
 export function EditConductorModal({
@@ -37,6 +37,7 @@ export function EditConductorModal({
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState<string>('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [selectedEjecutiva, setSelectedEjecutiva] = useState<string>('')
   const [formData, setFormData] = useState({
     rut: '',
     nombres: '',
@@ -58,9 +59,12 @@ export function EditConductorModal({
         clase_licencia: driver.clase_licencia || 'B',
         is_active: driver.is_active !== false
       })
+      // Find ejecutiva from selected transportista
+      const selectedTransportista = transportistas.find(t => t.rut === driver.rut_proveedor)
+      setSelectedEjecutiva(selectedTransportista?.ejecutivo_nombre || 'Sin asignar')
       setError('')
     }
-  }, [driver, isOpen])
+  }, [driver, isOpen, transportistas])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -208,7 +212,14 @@ export function EditConductorModal({
 
               <div>
                 <Label className="text-sm font-semibold">Transportista/Subcontratista *</Label>
-                <Select value={formData.rut_proveedor} onValueChange={(value) => setFormData({...formData, rut_proveedor: value})}>
+                <Select 
+                  value={formData.rut_proveedor} 
+                  onValueChange={(value) => {
+                    setFormData({...formData, rut_proveedor: value})
+                    const selectedTransportista = transportistas.find(t => t.rut === value)
+                    setSelectedEjecutiva(selectedTransportista?.ejecutivo_nombre || 'Sin asignar')
+                  }}
+                >
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Selecciona un transportista" />
                   </SelectTrigger>
@@ -220,6 +231,15 @@ export function EditConductorModal({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <Label className="text-sm font-semibold">Ejecutiva Asignada</Label>
+                <Input
+                  value={selectedEjecutiva}
+                  disabled
+                  className="mt-1"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">

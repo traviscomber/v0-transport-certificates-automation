@@ -50,7 +50,7 @@ export function DriverCard({
 
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
-  const [transportistas, setTransportistas] = useState<Array<{ rut: string; nombre: string }>>([])
+  const [transportistas, setTransportistas] = useState<Array<{ rut: string; nombre: string; ejecutivo_nombre?: string }>>([])
   const [loadingTransportistas, setLoadingTransportistas] = useState(false)
   const [uploadDocTypeId, setUploadDocTypeId] = useState<string>('')
   const [uploadFileName, setUploadFileName] = useState('')
@@ -87,7 +87,11 @@ export function DriverCard({
       fetch('/api/company/data')
         .then(res => res.json())
         .then(data => {
-          setTransportistas(data.subcontractors?.map((s: any) => ({ rut: s.rut, nombre: s.nombre })) || [])
+          setTransportistas(data.subcontractors?.map((s: any) => ({ 
+            rut: s.rut, 
+            nombre: s.nombre,
+            ejecutivo_nombre: s.ejecutivo_nombre || s.ejecutiva || 'Sin asignar'
+          })) || [])
         })
         .catch(err => console.error('[v0] Error loading transportistas:', err))
         .finally(() => setLoadingTransportistas(false))
