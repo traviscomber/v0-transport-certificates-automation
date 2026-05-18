@@ -23,16 +23,21 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get unassigned transportistas
-    const { data: unassigned, error: unassignedError } = await supabase
+    // Get unassigned transportistas (NULL or with invalid executive_id)
+    const { data: allTransportistas, error: transportistaError } = await supabase
       .from('transportistas')
       .select('id, rut, razon_social, assigned_executive_id')
-      .is('assigned_executive_id', null)
       .order('created_at')
 
-    if (unassignedError) {
-      throw unassignedError
+    if (transportistaError) {
+      throw transportistaError
     }
+
+    // Filter to only unassigned or with invalid assignment
+    const validExecutiveIds = new Set(executives.map(e => e.id))
+    const unassigned = allTransportistas?.filter(t => 
+      !t.assigned_executive_id || !validExecutiveIds.has(t.assigned_executive_id)
+    ) || []
 
     if (!unassigned || unassigned.length === 0) {
       return NextResponse.json({
