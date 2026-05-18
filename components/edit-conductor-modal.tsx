@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertCircle, Loader, Trash2 } from 'lucide-react'
+import { createClient } from '@supabase/supabase-js'
 
 interface Driver {
   id: string
