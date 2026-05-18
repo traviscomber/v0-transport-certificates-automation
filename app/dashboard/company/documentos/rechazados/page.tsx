@@ -82,17 +82,7 @@ export default function RechazadosPage() {
     let filteredSubDocs = allData.subDocs || []
     let filteredConductorDocs = allData.conductorDocs || []
 
-    // Apply ejecutiva filter
-    if (selectedEjecutiva !== 'all') {
-      filteredSubDocs = filteredSubDocs.filter((doc: any) => {
-        const docEjecutiva = doc.reviewed_by_ejecutiva || 'Sin asignar'
-        return docEjecutiva === selectedEjecutiva
-      })
-      filteredConductorDocs = filteredConductorDocs.filter((doc: any) => {
-        const docEjecutiva = doc.ejecutiva || 'Sin asignar'
-        return docEjecutiva === selectedEjecutiva
-      })
-    }
+    // No ejecutiva filter - show all documents to all executivas
 
     // Apply date filter
     if (minDate) {
@@ -110,7 +100,7 @@ export default function RechazadosPage() {
       conductorDocs: filteredConductorDocs,
       subDocs: filteredSubDocs
     }
-  }, [allData, selectedEjecutiva, dateFilter])
+  }, [allData, dateFilter])
 
   const handleRefresh = async () => {
     setRefreshing(true)
