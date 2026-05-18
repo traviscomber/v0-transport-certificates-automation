@@ -37,9 +37,10 @@ export async function GET() {
     }
 
     console.log('[v0] Aprobados endpoint: Current ejecutiva:', currentExecutiva)
+    console.log('[v0] Aprobados endpoint: Fetching ALL approved documents')
 
-    // Get approved conductor documents - FILTER by current ejecutiva
-    let conductorQuery = supabase
+    // Get approved conductor documents - NO FILTER, fetch all
+    const { data: conductorDocs, error: conductorError } = await supabase
       .from('uploaded_documents')
       .select(`
         id,
@@ -60,13 +61,7 @@ export async function GET() {
         )
       `)
       .eq('validation_status', 'approved')
-    
-    // Filter by ejecutiva if user is ejecutiva
-    if (currentExecutiva) {
-      conductorQuery = conductorQuery.or(`ejecutiva.eq.${currentExecutiva},ejecutiva.is.null`)
-    }
-    
-    const { data: conductorDocs, error: conductorError } = await conductorQuery.order('updated_at', { ascending: false })
+      .order('updated_at', { ascending: false })
 
     if (conductorError) {
       console.error('[v0] Aprobados endpoint: Conductor error:', conductorError)
@@ -126,8 +121,8 @@ export async function GET() {
 
     console.log('[v0] Aprobados: Conductor executive map:', Array.from(conductorExecutiveMap.entries()))
 
-    // Get approved subcontractor documents - FILTER by current ejecutiva
-    let subQuery = supabase
+    // Get approved subcontractor documents - NO FILTER, fetch all
+    const { data: subDocs, error: subError } = await supabase
       .from('subcontractor_documents')
       .select(`
         id,
@@ -147,13 +142,7 @@ export async function GET() {
         )
       `)
       .eq('status', 'approved')
-    
-    // Filter by ejecutiva if user is ejecutiva
-    if (currentExecutiva) {
-      subQuery = subQuery.or(`reviewed_by_ejecutiva.eq.${currentExecutiva},reviewed_by_ejecutiva.is.null`)
-    }
-
-    const { data: subDocs, error: subError } = await subQuery.order('updated_at', { ascending: false })
+      .order('updated_at', { ascending: false })
 
     if (subError) {
       console.error('[v0] Aprobados endpoint: Sub error:', subError)
