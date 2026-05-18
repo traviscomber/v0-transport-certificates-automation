@@ -82,17 +82,7 @@ export default function AprobadosPage() {
     let filteredSubDocs = allData.subDocs || []
     let filteredConductorDocs = allData.conductorDocs || []
 
-    // Apply ejecutiva filter
-    if (selectedEjecutiva !== 'all') {
-      filteredSubDocs = filteredSubDocs.filter((doc: any) => {
-        const docEjecutiva = doc.reviewed_by_ejecutiva || 'Sin asignar'
-        return docEjecutiva === selectedEjecutiva
-      })
-      filteredConductorDocs = filteredConductorDocs.filter((doc: any) => {
-        const docEjecutiva = doc.ejecutiva || 'Sin asignar'
-        return docEjecutiva === selectedEjecutiva
-      })
-    }
+    // No ejecutiva filter - show all documents to all executivas
 
     // Apply date filter
     if (minDate) {
@@ -110,7 +100,7 @@ export default function AprobadosPage() {
       conductorDocs: filteredConductorDocs,
       subDocs: filteredSubDocs
     }
-  }, [allData, selectedEjecutiva, dateFilter])
+  }, [allData, dateFilter])
 
   const handleRefresh = async () => {
     setRefreshing(true)
@@ -171,51 +161,7 @@ export default function AprobadosPage() {
         </Button>
       </div>
 
-      {/* Ejecutiva Filter - Enhanced */}
-      <div className="rounded-lg bg-gradient-to-r from-slate-800/70 to-slate-800/40 border border-green-500/30 p-4 shadow-lg">
-        <div className="flex items-center gap-3 mb-4">
-          <Filter className="h-5 w-5 text-green-400" />
-          <span className="text-sm font-semibold text-slate-100">Filtrar por Ejecutiva:</span>
-          <span className="ml-auto text-xs text-slate-400 bg-slate-700/50 px-2 py-1 rounded">
-            {ejecutivas.length} ejecutivas
-          </span>
-        </div>
-
-        {ejecutivas.length === 0 ? (
-          <p className="text-sm text-slate-400 italic">
-            Todos los documentos están sin asignar a una ejecutiva específica
-          </p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedEjecutiva('all')}
-              className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
-                selectedEjecutiva === 'all'
-                  ? 'bg-green-600 text-white border border-green-700'
-                  : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
-              }`}
-            >
-              Todas ({totalApproved})
-            </button>
-
-            {ejecutivas.map(({ name, count }) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => setSelectedEjecutiva(name)}
-                className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
-                  selectedEjecutiva === name
-                    ? 'bg-green-600 text-white border border-green-700'
-                    : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
-                }`}
-              >
-                {name === 'Sin asignar' ? '📋' : '👤'} {name} ({count})
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Ejecutiva Filter - REMOVED: All executivas see all documents */}
 
       {/* Date Filter */}
       <div className="rounded-lg bg-gradient-to-r from-slate-800/70 to-slate-800/40 border border-blue-500/30 p-4 shadow-lg">
