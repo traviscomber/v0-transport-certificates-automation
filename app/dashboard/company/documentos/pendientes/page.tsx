@@ -175,15 +175,7 @@ export default function PendientesPage() {
         </Button>
       </div>
 
-      {/* Ejecutiva Filter - Enhanced */}
-      <div className="rounded-lg bg-gradient-to-r from-slate-800/70 to-slate-800/40 border border-orange-500/30 p-4 shadow-lg">
-        <div className="flex items-center gap-3 mb-4">
-          <Filter className="h-5 w-5 text-orange-400" />
-          <span className="text-sm font-semibold text-slate-100">Filtrar por Ejecutiva:</span>
-          <span className="ml-auto text-xs text-slate-400 bg-slate-700/50 px-2 py-1 rounded">
-            {ejecutivas.length} ejecutivas
-          </span>
-        </div>
+      {/* Ejecutiva Filter - REMOVED: All executivas see all documents */}
 
         {ejecutivas.length === 0 ? (
           <p className="text-sm text-slate-400 italic">
