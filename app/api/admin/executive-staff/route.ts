@@ -22,12 +22,12 @@ export async function GET(request: NextRequest) {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Get all executives from auth.users that match @labbe.cl email
+    // Get all executives from executive_staff table
     const { data, error } = await supabase
       .from('executive_staff')
-      .select('id, email, nombre, apellido, is_active')
+      .select('id, email, full_name, rut, cargo')
       .eq('is_active', true)
-      .order('nombre', { ascending: true })
+      .order('full_name', { ascending: true })
 
     if (error) {
       console.error('[v0] Error fetching executives:', error)
@@ -37,11 +37,19 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Filter to only @labbe.cl emails (Labbe employees)
-    const labbExecutives = (data || []).filter(e => e.email?.endsWith('@labbe.cl'))
-    console.log('[v0] Fetched', labbExecutives.length, 'Labbe executives')
+    // Transform to match expected format (nombre instead of full_name)
+    const executives = (data || [])
+      .filter(e => e.email?.endsWith('@labbe.cl'))
+      .map(e => ({
+        id: e.id,
+        email: e.email,
+        nombre: e.full_name,
+        apellido: '', // Not stored separately in this table
+      }))
 
-    return NextResponse.json({ executives: labbExecutives })
+    console.log('[v0] Fetched', executives.length, 'Labbe executives')
+
+    return NextResponse.json({ executives })
   } catch (error) {
     console.error('[v0] Error fetching executives:', error)
     return NextResponse.json(
@@ -101,13 +109,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Insert new executive
+    // Insert new executive using full_name field
+    const fullName = apellido ? `${nombre} ${apellido}` : nombre
+
     const { data, error } = await supabase
       .from('executive_staff')
       .insert([{
         email,
-        nombre,
-        apellido,
+        full_name: fullName,
+        cargo: 'Ejecutiva de Cuenta',
         is_active: true
       }])
       .select()
@@ -121,7 +131,10 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[v0] Created executive:', email)
-    return NextResponse.json({ executive: data?.[0], message: 'Executive created' }, { status: 201 })
+    return NextResponse.json({ 
+      executive: { ...data?.[0], nombre: data?.[0]?.full_name },
+      message: 'Executive created'
+    }, { status: 201 })
   } catch (error) {
     console.error('[v0] Error creating executive:', error)
     return NextResponse.json(

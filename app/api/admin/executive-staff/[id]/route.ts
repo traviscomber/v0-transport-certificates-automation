@@ -37,13 +37,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       )
     }
 
+    // Combine nombre and apellido into full_name
+    const fullName = apellido ? `${nombre} ${apellido}` : nombre
+
     // Update executive
     const { data, error } = await supabase
       .from('executive_staff')
       .update({
-        nombre,
-        apellido,
-        updated_at: new Date().toISOString(),
+        full_name: fullName,
       })
       .eq('id', id)
       .select()
@@ -64,7 +65,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     console.log('[v0] Updated executive:', id)
-    return NextResponse.json({ executive: data[0], message: 'Executive updated' })
+    return NextResponse.json({ 
+      executive: { ...data[0], nombre: data[0].full_name },
+      message: 'Executive updated'
+    })
   } catch (error) {
     console.error('[v0] Error updating executive:', error)
     return NextResponse.json(
@@ -105,7 +109,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       .from('executive_staff')
       .update({
         is_active: false,
-        updated_at: new Date().toISOString(),
       })
       .eq('id', id)
       .select()
