@@ -1,16 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Loader } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
-const EJECUTIVAS = [
-  { email: 'dsilva@labbe.cl', nombre: 'Daniela Constanza Silva Rojas' },
-  { email: 'ocarrasco@labbe.cl', nombre: 'Olga Carrasco' },
-  { email: 'csepulveda@labbe.cl', nombre: 'Carolina Sepúlveda' },
-  { email: 'jayala@labbe.cl', nombre: 'Javiera Ayala Rodriguez' },
-]
+interface Executive {
+  id: string
+  email: string
+  nombre: string
+  apellido?: string
+}
 
 interface ChangeEjecutivaModalProps {
   subcontractor: any
@@ -27,7 +27,30 @@ export function ChangeEjecutivaModal({
 }: ChangeEjecutivaModalProps) {
   const [selectedEjecutiva, setSelectedEjecutiva] = useState<string>(currentEjecutiva || '')
   const [loading, setLoading] = useState(false)
+  const [loadingExecutives, setLoadingExecutives] = useState(true)
   const [error, setError] = useState('')
+  const [executives, setExecutives] = useState<Executive[]>([])
+
+  // Fetch executives from API when modal opens
+  useEffect(() => {
+    fetchExecutives()
+  }, [])
+
+  const fetchExecutives = async () => {
+    try {
+      setLoadingExecutives(true)
+      const response = await fetch('/api/admin/executive-staff')
+      if (!response.ok) throw new Error('Error fetching executives')
+      const data = await response.json()
+      setExecutives(data.executives || [])
+      console.log('[v0] Loaded executives:', data.executives?.length)
+    } catch (err) {
+      console.error('[v0] Error fetching executives:', err)
+      setError('Error loading executives')
+    } finally {
+      setLoadingExecutives(false)
+    }
+  }
 
   const handleSubmit = async () => {
     if (!selectedEjecutiva) {
@@ -53,11 +76,14 @@ export function ChangeEjecutivaModal({
       }
 
       const data = await response.json()
-      const nuevaNombre = EJECUTIVAS.find((e) => e.email === selectedEjecutiva)?.nombre
+      const nuevaNombre = executives.find((e) => e.email === selectedEjecutiva)?.nombre
+      console.log('[v0] Executive assigned successfully:', nuevaNombre)
       onSuccess(nuevaNombre || selectedEjecutiva)
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido')
+      const msg = err instanceof Error ? err.message : 'Error desconocido'
+      console.error('[v0] Error assigning executive:', msg)
+      setError(msg)
     } finally {
       setLoading(false)
     }
@@ -90,23 +116,32 @@ export function ChangeEjecutivaModal({
                 Selecciona nueva ejecutiva:
               </label>
               <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
-                {EJECUTIVAS.map((exec) => (
-                  <button
-                    key={exec.email}
-                    onClick={() => {
-                      setSelectedEjecutiva(exec.email)
-                      setError('')
-                    }}
-                    className={`p-3 rounded border-2 transition-all text-left ${
-                      selectedEjecutiva === exec.email
-                        ? 'bg-orange-500/20 border-orange-500 text-white'
-                        : 'bg-slate-800/50 border-slate-600 text-slate-300 hover:border-slate-500'
-                    }`}
-                  >
-                    <div className="font-medium">{exec.nombre}</div>
-                    <div className="text-xs text-slate-400">{exec.email}</div>
-                  </button>
-                ))}
+                {loadingExecutives ? (
+                  <div className="flex items-center justify-center p-4">
+                    <Loader className="w-4 h-4 animate-spin text-slate-400 mr-2" />
+                    <span className="text-slate-400 text-sm">Cargando ejecutivas...</span>
+                  </div>
+                ) : executives.length === 0 ? (
+                  <p className="text-slate-400 text-sm p-4">No hay ejecutivas disponibles</p>
+                ) : (
+                  executives.map((exec) => (
+                    <button
+                      key={exec.email}
+                      onClick={() => {
+                        setSelectedEjecutiva(exec.email)
+                        setError('')
+                      }}
+                      className={`p-3 rounded border-2 transition-all text-left ${
+                        selectedEjecutiva === exec.email
+                          ? 'bg-primary/20 border-primary text-white'
+                          : 'bg-slate-800/50 border-slate-600 text-slate-300 hover:border-slate-500'
+                      }`}
+                    >
+                      <div className="font-medium">{exec.nombre}</div>
+                      <div className="text-xs text-slate-400">{exec.email}</div>
+                    </button>
+                  ))
+                )}
               </div>
             </div>
 
@@ -121,13 +156,14 @@ export function ChangeEjecutivaModal({
                 onClick={onClose}
                 variant="outline"
                 className="flex-1 bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700"
+                disabled={loading}
               >
                 Cancelar
               </Button>
               <Button
                 onClick={handleSubmit}
-                disabled={loading || !selectedEjecutiva}
-                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50"
+                disabled={loading || !selectedEjecutiva || loadingExecutives}
+                className="flex-1 bg-primary hover:bg-primary/90 text-white disabled:opacity-50"
               >
                 {loading ? (
                   <>
