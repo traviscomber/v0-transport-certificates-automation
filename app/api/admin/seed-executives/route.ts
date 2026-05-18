@@ -107,12 +107,10 @@ export async function POST(request: NextRequest) {
           transportista_id: labbe_id,
           full_name: exec.full_name,
           rut: exec.rut,
-          email_auth: exec.email_auth,
-          password_hash: exec.password_hash,
-          phone: exec.phone,
           email: exec.email,
+          password_hash: exec.password_hash,
           cargo: exec.cargo,
-          login_enabled: true
+          is_active: true
         }, {
           onConflict: 'rut'
         })
@@ -129,7 +127,7 @@ export async function POST(request: NextRequest) {
           name: exec.full_name,
           status: 'success',
           rut: exec.rut,
-          email: exec.email_auth
+          email: exec.email
         })
       }
     }
