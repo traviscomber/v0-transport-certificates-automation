@@ -1,144 +1,193 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 
 /**
- * Auto-assign unassigned transportistas to executives with load balancing
+ * Auto-assign transportistas using the ORIGINAL CSV data (scripts/subcontratistas.csv)
+ * The CSV has the real executive assignments per company (Ejecutiva column).
+ * 
+ * Mapping: Cecilia (original) -> Javiera Ayala (replacement)
+ * 
  * GET /api/admin/auto-assign-transportistas
  */
 export async function GET(request: NextRequest) {
   try {
     const supabase = createAdminClient()
 
-    // Get all active executives
+    // 1. Read the original CSV file
+    const csvPath = join(process.cwd(), 'scripts', 'subcontratistas.csv')
+    const csvContent = readFileSync(csvPath, 'utf-8')
+    const lines = csvContent.split('\n').filter(line => line.trim())
+    
+    // Parse CSV (semicolon-separated)
+    // Headers: Rut_Proveedor;Proveedor;Representante Legal;Rut R.L.;Ejecutiva;...
+    const csvData: { rut: string; ejecutiva: string }[] = []
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(';')
+      if (cols.length >= 5 && cols[0] && cols[4]) {
+        csvData.push({
+          rut: cols[0].trim(),
+          ejecutiva: cols[4].trim(),
+        })
+      }
+    }
+
+    // 2. Build name mapping from CSV ejecutiva names to executive_staff records
+    // CSV uses first names only: "Cecilia", "Carolina", "Daniela", "Olga"
+    // Cecilia Farias was replaced by Javiera Ayala
+    const NAME_MAPPING: Record<string, string> = {
+      'Cecilia': 'Javiera',   // Cecilia Farias -> Javiera Ayala (replacement)
+      'Carolina': 'Carolina', // Carolina Sepulveda
+      'Daniela': 'Daniela',   // Daniela Silva
+      'Olga': 'Olga',         // Olga Carrasco
+    }
+
+    // 3. Get all active executives from DB
     const { data: executives, error: execError } = await supabase
       .from('executive_staff')
       .select('id, full_name, email')
       .eq('is_active', true)
-      .order('full_name')
 
     if (execError || !executives || executives.length === 0) {
       return NextResponse.json(
-        { error: 'No hay ejecutivas activas disponibles' },
+        { error: 'No hay ejecutivas activas en la BD' },
         { status: 400 }
       )
     }
 
-    // Get unassigned transportistas (NULL or with invalid executive_id)
-    const { data: allTransportistas, error: transportistaError } = await supabase
+    // 4. Build lookup: first name -> executive ID
+    const execByFirstName = new Map<string, { id: string; full_name: string }>()
+    for (const exec of executives) {
+      const firstName = exec.full_name.split(' ')[0]
+      execByFirstName.set(firstName, { id: exec.id, full_name: exec.full_name })
+    }
+
+    // 5. Get all transportistas from DB
+    const { data: allTransportistas, error: tError } = await supabase
       .from('transportistas')
       .select('id, rut, razon_social, assigned_executive_id')
-      .order('created_at')
 
-    if (transportistaError) {
-      throw transportistaError
-    }
+    if (tError) throw tError
 
-    // Filter to only unassigned or with invalid assignment
-    const validExecutiveIds = new Set(executives.map(e => e.id))
-    const unassigned = allTransportistas?.filter(t => 
-      !t.assigned_executive_id || !validExecutiveIds.has(t.assigned_executive_id)
-    ) || []
+    // Build RUT -> transportista map
+    const transportistaByRut = new Map<string, any>()
+    allTransportistas?.forEach(t => transportistaByRut.set(t.rut, t))
 
-    if (!unassigned || unassigned.length === 0) {
-      return NextResponse.json({
-        success: true,
-        message: 'No hay transportistas sin asignar',
-        processed: 0,
-      })
-    }
+    // 6. Match CSV ejecutiva to DB executive for each transportista
+    const assignments: any[] = []
+    const errors: string[] = []
+    const updatesByExecutive = new Map<string, string[]>()
 
-    // Count current load for each executive
-    const executiveLoadMap = new Map<string, number>()
-    executives.forEach(exec => executiveLoadMap.set(exec.id, 0))
-
-    // Only count those assigned to VALID executives
-    if (allTransportistas) {
-      allTransportistas.forEach((t: any) => {
-        if (t.assigned_executive_id && validExecutiveIds.has(t.assigned_executive_id)) {
-          const count = executiveLoadMap.get(t.assigned_executive_id) || 0
-          executiveLoadMap.set(t.assigned_executive_id, count + 1)
-        }
-      })
-    }
-
-    // Auto-assign each unassigned transportista to executive with lowest load
-    const updates: any[] = []
-    const updateBatch: any[] = []
-    
-    for (const transportista of unassigned) {
-      // Find executive with minimum load
-      let selectedExecutive = executives[0]
-      let minLoad = executiveLoadMap.get(selectedExecutive.id) || 0
-
-      for (const exec of executives) {
-        const load = executiveLoadMap.get(exec.id) || 0
-        if (load < minLoad) {
-          selectedExecutive = exec
-          minLoad = load
-        }
+    for (const csvRow of csvData) {
+      const transportista = transportistaByRut.get(csvRow.rut)
+      if (!transportista) {
+        errors.push(`RUT ${csvRow.rut} not found in DB`)
+        continue
       }
 
-      // Update load for next iteration
-      const newLoad = (executiveLoadMap.get(selectedExecutive.id) || 0) + 1
-      executiveLoadMap.set(selectedExecutive.id, newLoad)
+      const mappedName = NAME_MAPPING[csvRow.ejecutiva]
+      if (!mappedName) {
+        errors.push(`Unknown ejecutiva name: "${csvRow.ejecutiva}" for RUT ${csvRow.rut}`)
+        continue
+      }
 
-      // Record update
-      updates.push({
-        transportista_id: transportista.id,
-        transportista_rut: transportista.rut,
-        transportista_name: transportista.razon_social,
-        assigned_to: selectedExecutive.full_name,
-        assigned_to_id: selectedExecutive.id,
-      })
-      
-      updateBatch.push({
-        id: transportista.id,
-        assigned_executive_id: selectedExecutive.id
+      const executive = execByFirstName.get(mappedName)
+      if (!executive) {
+        errors.push(`Executive "${mappedName}" (mapped from "${csvRow.ejecutiva}") not found in DB. Available: ${Array.from(execByFirstName.keys()).join(', ')}`)
+        continue
+      }
+
+      // Group updates by executive ID for batch update
+      if (!updatesByExecutive.has(executive.id)) {
+        updatesByExecutive.set(executive.id, [])
+      }
+      updatesByExecutive.get(executive.id)!.push(transportista.id)
+
+      assignments.push({
+        rut: csvRow.rut,
+        razon_social: transportista.razon_social,
+        csv_ejecutiva: csvRow.ejecutiva,
+        assigned_to: executive.full_name,
       })
     }
 
-    // Batch update - execute ALL updates together
-    if (updateBatch.length > 0) {
-      // Use RPC or multiple updates - for now do grouped updates by executive
-      const updatesByExecutive = new Map<string, string[]>()
-      
-      updateBatch.forEach(item => {
-        const execId = item.assigned_executive_id
-        if (!updatesByExecutive.has(execId)) {
-          updatesByExecutive.set(execId, [])
-        }
-        updatesByExecutive.get(execId)!.push(item.id)
-      })
+    // 7. Execute batch updates grouped by executive
+    for (const [execId, transportistaIds] of updatesByExecutive.entries()) {
+      const { error: updateError } = await supabase
+        .from('transportistas')
+        .update({ assigned_executive_id: execId })
+        .in('id', transportistaIds)
 
-      // Update by executive_id
-      for (const [execId, transportistaIds] of updatesByExecutive.entries()) {
+      if (updateError) {
+        return NextResponse.json(
+          { error: `Update failed: ${updateError.message}` },
+          { status: 500 }
+        )
+      }
+    }
+
+    // 8. Handle transportistas NOT in CSV (new ones added after CSV import)
+    const csvRuts = new Set(csvData.map(c => c.rut))
+    const notInCsv = allTransportistas?.filter(t => !csvRuts.has(t.rut)) || []
+    
+    // For new transportistas not in CSV, assign with load balancing
+    if (notInCsv.length > 0) {
+      // Count current loads after CSV assignments
+      const loadCounts = new Map<string, number>()
+      executives.forEach(e => loadCounts.set(e.id, 0))
+      for (const [execId, ids] of updatesByExecutive.entries()) {
+        loadCounts.set(execId, ids.length)
+      }
+
+      for (const t of notInCsv) {
+        // Find executive with minimum load
+        let minExec = executives[0]
+        let minLoad = loadCounts.get(minExec.id) || 0
+        for (const exec of executives) {
+          const load = loadCounts.get(exec.id) || 0
+          if (load < minLoad) {
+            minExec = exec
+            minLoad = load
+          }
+        }
+
         const { error: updateError } = await supabase
           .from('transportistas')
-          .update({ assigned_executive_id: execId })
-          .in('id', transportistaIds)
+          .update({ assigned_executive_id: minExec.id })
+          .eq('id', t.id)
 
-        if (updateError) {
-          console.error('[v0] Update error for executive', execId, ':', updateError)
-          return NextResponse.json(
-            { error: `Update failed for executive ${execId}: ${updateError.message}` },
-            { status: 500 }
-          )
+        if (!updateError) {
+          loadCounts.set(minExec.id, (loadCounts.get(minExec.id) || 0) + 1)
+          assignments.push({
+            rut: t.rut,
+            razon_social: t.razon_social,
+            csv_ejecutiva: '(new - not in CSV)',
+            assigned_to: minExec.full_name,
+          })
         }
       }
-      
-      console.log(`[v0] Batch assigned ${updateBatch.length} transportistas`)
     }
+
+    // 9. Build final distribution summary
+    const distribution: Record<string, number> = {}
+    assignments.forEach(a => {
+      distribution[a.assigned_to] = (distribution[a.assigned_to] || 0) + 1
+    })
 
     return NextResponse.json({
       success: true,
-      processed: updates.length,
-      assignments: updates,
-      message: `Auto-asignados ${updates.length} transportistas a ejecutivas`,
+      processed: assignments.length,
+      csv_rows: csvData.length,
+      not_in_csv: notInCsv.length,
+      distribution,
+      errors: errors.length > 0 ? errors : undefined,
+      message: `Asignados ${assignments.length} transportistas usando datos originales del CSV`,
     })
   } catch (error) {
-    console.error('[v0] Error in auto-assign:', error)
+    console.error('[v0] Error in CSV-based auto-assign:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Error en auto-asignación' },
+      { error: error instanceof Error ? error.message : 'Error en auto-asignacion' },
       { status: 500 }
     )
   }
