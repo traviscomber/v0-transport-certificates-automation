@@ -39,10 +39,9 @@ export async function GET() {
     }
 
     console.log('[v0] Rechazados endpoint: Current ejecutiva:', currentExecutiva)
-    console.log('[v0] Rechazados endpoint: Fetching ALL rejected documents')
 
-    // Get rejected conductor documents - NO FILTER, fetch all
-    const { data: conductorDocs, error: conductorError } = await supabase
+    // Get rejected conductor documents - FILTER by current ejecutiva
+    let conductorQuery = supabase
       .from('uploaded_documents')
       .select(`
         id,
@@ -64,7 +63,13 @@ export async function GET() {
         )
       `)
       .eq('validation_status', 'rejected')
-      .order('updated_at', { ascending: false })
+    
+    // Filter by ejecutiva if user is ejecutiva
+    if (currentExecutiva) {
+      conductorQuery = conductorQuery.or(`ejecutiva.eq.${currentExecutiva},ejecutiva.is.null`)
+    }
+
+    const { data: conductorDocs, error: conductorError } = await conductorQuery.order('updated_at', { ascending: false })
 
     console.log('[v0] Rechazados: Conductor docs result -', conductorDocs?.length || 0, 'docs,', conductorError ? 'ERROR' : 'OK')
     
@@ -73,8 +78,8 @@ export async function GET() {
       // Don't throw, just log and continue
     }
 
-    // Get rejected subcontractor documents - NO FILTER, fetch all
-    const { data: subDocs, error: subError } = await supabase
+    // Get rejected subcontractor documents - FILTER by current ejecutiva
+    let subQuery = supabase
       .from('subcontractor_documents')
       .select(`
         id,
@@ -95,7 +100,13 @@ export async function GET() {
         )
       `)
       .eq('status', 'rejected')
-      .order('updated_at', { ascending: false })
+    
+    // Filter by ejecutiva if user is ejecutiva
+    if (currentExecutiva) {
+      subQuery = subQuery.or(`reviewed_by_ejecutiva.eq.${currentExecutiva},reviewed_by_ejecutiva.is.null`)
+    }
+
+    const { data: subDocs, error: subError } = await subQuery.order('updated_at', { ascending: false })
 
     console.log('[v0] Rechazados: Sub docs result -', subDocs?.length || 0, 'docs,', subError ? 'ERROR' : 'OK')
     
