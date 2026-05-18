@@ -100,12 +100,27 @@ export async function POST(request: NextRequest) {
       .from('executive_staff')
       .select('id')
       .eq('email', email)
-      .single()
+      .maybeSingle()
 
     if (existing) {
       return NextResponse.json(
         { error: 'Executive already exists with this email' },
         { status: 400 }
+      )
+    }
+
+    // Get a default transportista to link to (required by schema)
+    const { data: defaultTransportista, error: transportistaError } = await supabase
+      .from('transportistas')
+      .select('id')
+      .limit(1)
+      .maybeSingle()
+
+    if (!defaultTransportista) {
+      console.error('[v0] No transportista available for new executive')
+      return NextResponse.json(
+        { error: 'System configuration error: no default company available' },
+        { status: 500 }
       )
     }
 
@@ -118,22 +133,25 @@ export async function POST(request: NextRequest) {
         email,
         full_name: fullName,
         cargo: 'Ejecutiva de Cuenta',
-        is_active: true
+        is_active: true,
+        transportista_id: defaultTransportista.id,
+        password_hash: 'hash_placeholder',
       }])
       .select()
+      .single()
 
     if (error) {
       console.error('[v0] Error creating executive:', error)
       return NextResponse.json(
-        { error: error.message },
+        { error: error.message || 'Failed to create executive' },
         { status: 400 }
       )
     }
 
     console.log('[v0] Created executive:', email)
     return NextResponse.json({ 
-      executive: { ...data?.[0], nombre: data?.[0]?.full_name },
-      message: 'Executive created'
+      executive: { ...data, nombre: data?.full_name },
+      message: 'Executive created successfully'
     }, { status: 201 })
   } catch (error) {
     console.error('[v0] Error creating executive:', error)
