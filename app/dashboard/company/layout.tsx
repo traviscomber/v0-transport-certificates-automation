@@ -69,7 +69,9 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
       <nav className="p-3 md:p-4 space-y-1 flex-1 overflow-y-auto bg-slate-900/60">
         {navItems.map(item => {
           const Icon = item.icon
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+          // Only highlight exact match or exact prefix match (not substring)
+          const isActive = pathname === item.href || 
+            (pathname.startsWith(item.href + '/') && pathname.split('/').length > item.href.split('/').length)
           
           return (
             <Link key={item.href} href={item.href}>

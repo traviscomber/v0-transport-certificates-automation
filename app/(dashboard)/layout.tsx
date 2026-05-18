@@ -12,6 +12,7 @@ export default function DashboardLayout({
 }) {
   const { user, loading } = useAuth()
   const router = useRouter()
+  const pathname = useRouter().pathname
   const [hasSimpleLogin, setHasSimpleLogin] = useState(false)
   const [cookieCheckDone, setCookieCheckDone] = useState(false)
 
@@ -46,6 +47,12 @@ export default function DashboardLayout({
   // Allow access if user has Supabase Auth OR simple email login
   if (!user && !hasSimpleLogin) {
     return null
+  }
+
+  // If this is a /dashboard/company route, let its own layout handle everything
+  // (CompanyLayout will render its own sidebar and layout)
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/dashboard/company')) {
+    return <main className="min-h-screen">{children}</main>
   }
 
   return (
