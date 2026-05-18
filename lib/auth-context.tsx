@@ -83,44 +83,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    console.log('[v0] Setting up auth state listener')
-    
-    try {
-      const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event, session) => {
-        try {
-          console.log('[v0] Auth state changed:', _event)
-          if (!session) {
-            setUser(null)
-            setError(null)
-          } else if (session.user) {
-            const meta = session.user.user_metadata || {}
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              role: (meta.role as UserRole) || getRoleFromEmail(session.user.email || ''),
-              full_name: meta.full_name || session.user.email?.split('@')[0] || 'Usuario',
-              company_name: meta.company_name,
-            })
-            setError(null)
-          }
-          setLoading(false)
-        } catch (callbackError) {
-          console.error('[v0] Auth state callback error:', callbackError)
-          setLoading(false)
+    // Check if user already has a session from cookies (simple login or Supabase)
+    const checkSession = async () => {
+      try {
+        console.log('[v0] Checking for existing session')
+        
+        // Try Supabase session first
+        const { data: { session }, error } = await supabaseClient.auth.getSession()
+        
+        if (session?.user && !error) {
+          const meta = session.user.user_metadata || {}
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            role: (meta.role as UserRole) || getRoleFromEmail(session.user.email || ''),
+            full_name: meta.full_name || session.user.email?.split('@')[0] || 'Usuario',
+            company_name: meta.company_name,
+          })
+          console.log('[v0] Session found:', session.user.email)
+        } else {
+          console.log('[v0] No session found')
+          setUser(null)
         }
-      })
-
-      return () => {
-        try {
-          subscription?.unsubscribe()
-        } catch (unsubError) {
-          console.error('[v0] Error unsubscribing:', unsubError)
-        }
+      } catch (err) {
+        console.error('[v0] Error checking session:', err)
+        setUser(null)
+      } finally {
+        setLoading(false)
       }
-    } catch (setupError) {
-      console.error('[v0] Error setting up auth listener:', setupError)
-      setLoading(false)
     }
+    
+    checkSession()
   }, [])
 
   const login = async (email: string, password: string) => {
