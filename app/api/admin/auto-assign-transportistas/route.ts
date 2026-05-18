@@ -63,6 +63,8 @@ export async function GET(request: NextRequest) {
 
     // Auto-assign each unassigned transportista to executive with lowest load
     const updates: any[] = []
+    const updateBatch: any[] = []
+    
     for (const transportista of unassigned) {
       // Find executive with minimum load
       let selectedExecutive = executives[0]
@@ -88,18 +90,28 @@ export async function GET(request: NextRequest) {
         assigned_to: selectedExecutive.full_name,
         assigned_to_id: selectedExecutive.id,
       })
+      
+      updateBatch.push({
+        id: transportista.id,
+        assigned_executive_id: selectedExecutive.id
+      })
+    }
 
-      // Execute update
-      const { error: updateError } = await supabase
+    // Batch update - execute ALL updates together
+    if (updateBatch.length > 0) {
+      const { error: batchError } = await supabase
         .from('transportistas')
-        .update({ assigned_executive_id: selectedExecutive.id })
-        .eq('id', transportista.id)
+        .upsert(updateBatch, { onConflict: 'id' })
 
-      if (updateError) {
-        console.error(`[v0] Error assigning ${transportista.rut}:`, updateError)
-      } else {
-        console.log(`[v0] Assigned ${transportista.razon_social} to ${selectedExecutive.full_name}`)
+      if (batchError) {
+        console.error('[v0] Batch update error:', batchError)
+        return NextResponse.json(
+          { error: `Batch update failed: ${batchError.message}` },
+          { status: 500 }
+        )
       }
+      
+      console.log(`[v0] Batch assigned ${updateBatch.length} transportistas`)
     }
 
     return NextResponse.json({
