@@ -60,6 +60,8 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { razon_social, rut, region, comuna, telefono, email, nombre_contacto, is_active } = body
