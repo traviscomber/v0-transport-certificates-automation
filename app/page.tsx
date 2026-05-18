@@ -184,7 +184,7 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-3 gap-6">
             {[
               { icon: <Truck className="w-8 h-8 text-orange-400" />, title: "Empresa de Transporte de Carga", desc: "Control de vencimientos de flota completa, carpetas para mandantes" },
-              { icon: <HardHat className="w-8 h-8 text-orange-400" />, title: "Contratista Minero", desc: "Documentacion de personal, seguridad laboral, cumplimiento regulatorio", href: "http://localhost:3001" },
+              { icon: <HardHat className="w-8 h-8 text-orange-400" />, title: "Contratista Minero", desc: "Documentacion de personal, seguridad laboral, cumplimiento regulatorio", href: "/mining/landing" },
               { icon: <Wrench className="w-8 h-8 text-orange-400" />, title: "Flota de Servicios Tecnicos", desc: "Vehiculos asignados a tecnicos con documentacion centralizada" },
               { icon: <Package className="w-8 h-8 text-orange-400" />, title: "Operador Logistico", desc: "Gestion de conductores propios y subcontratados" },
               { icon: <Building2 className="w-8 h-8 text-orange-400" />, title: "Empresa Construccion", desc: "Control de equipos, vehiculos y personal de obra" },
@@ -192,11 +192,11 @@ export default function LandingPage() {
             ].map((useCase, i) => (
               <div key={i}>
                 {useCase.href ? (
-                  <a href={useCase.href} target="_blank" rel="noopener noreferrer" className="block p-6 bg-slate-800/30 border border-slate-700 rounded-lg hover:border-orange-500/50 hover:bg-slate-800/50 transition-all cursor-pointer h-full">
+                  <Link href={useCase.href} className="block p-6 bg-slate-800/30 border border-slate-700 rounded-lg hover:border-orange-500/50 hover:bg-slate-800/50 transition-all cursor-pointer h-full">
                     <div className="mb-3">{useCase.icon}</div>
                     <h3 className="font-semibold text-white mb-2">{useCase.title}</h3>
                     <p className="text-slate-300 text-sm">{useCase.desc}</p>
-                  </a>
+                  </Link>
                 ) : (
                   <div className="p-6 bg-slate-800/30 border border-slate-700 rounded-lg h-full">
                     <div className="mb-3">{useCase.icon}</div>
