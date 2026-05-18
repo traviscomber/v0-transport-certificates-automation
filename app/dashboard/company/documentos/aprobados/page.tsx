@@ -19,6 +19,12 @@ export default function AprobadosPage() {
           cache: 'no-store'
         })
         const data = await response.json()
+        console.log('[v0] Aprobados page: API response:', {
+          total: data.total,
+          conductorDocs: data.conductorDocs?.length,
+          subDocs: data.subDocs?.length,
+          error: data.error
+        })
         setAllData(data)
       } catch (error) {
         console.error('[v0] Error fetching approved documents:', error)
