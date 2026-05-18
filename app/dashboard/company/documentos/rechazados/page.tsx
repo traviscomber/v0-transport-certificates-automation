@@ -195,7 +195,7 @@ export default function RechazadosPage() {
 
       {/* Documents List - key forces re-render when filter changes */}
       <RejectedDocumentsList
-        key={`${selectedEjecutiva}-${filteredData?.subDocs?.length || 0}`}
+        key={`rejected-${dateFilter}-${filteredData?.subDocs?.length || 0}`}
         conductorDocs={filteredData?.conductorDocs || []}
         subDocs={filteredData?.subDocs || []}
       />

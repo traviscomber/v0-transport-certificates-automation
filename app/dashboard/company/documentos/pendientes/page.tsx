@@ -38,8 +38,6 @@ export default function PendientesPage() {
   const filteredData = useMemo(() => {
     if (!allData) return null
 
-    console.log('[v0] Filtering with selectedEjecutiva:', selectedEjecutiva, 'dateFilter:', dateFilter)
-
     // Calculate date range for filtering
     let minDate: Date | null = null
     if (dateFilter !== 'all') {
@@ -199,7 +197,7 @@ export default function PendientesPage() {
 
       {/* Documents List - key forces re-render when filter changes */}
       <PendingDocumentsList
-        key={`${selectedEjecutiva}-${filteredData?.subDocs?.length || 0}`}
+        key={`pending-${dateFilter}-${filteredData?.subDocs?.length || 0}`}
         conductorDocs={filteredData?.conductorDocs || []}
         subDocs={filteredData?.subDocs || []}
       />

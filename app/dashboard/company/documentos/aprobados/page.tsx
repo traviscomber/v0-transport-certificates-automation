@@ -195,7 +195,7 @@ export default function AprobadosPage() {
 
       {/* Documents List - key forces re-render when filter changes */}
       <ApprovedDocumentsList
-        key={`${selectedEjecutiva}-${filteredData?.subDocs?.length || 0}`}
+        key={`approved-${dateFilter}-${filteredData?.subDocs?.length || 0}`}
         conductorDocs={filteredData?.conductorDocs || []}
         subDocs={filteredData?.subDocs || []}
       />
