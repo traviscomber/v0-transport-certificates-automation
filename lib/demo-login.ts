@@ -1,27 +1,34 @@
 'use client'
 
-// Single source of truth for demo accounts
+// Single source of truth for demo accounts - Real ejecutivas
 export const DEMO_ACCOUNTS = [
   {
-    role: 'driver',
-    title: 'Conductor',
-    name: 'Conductor',
-    email: 'conductor@demo.cl',
-    password: 'demo123',
+    role: 'ejecutiva',
+    title: 'Ejecutiva',
+    name: 'Olga Carrasco',
+    email: 'olga.carrasco@labbe.cl',
+    password: 'labbe4005',
   },
   {
-    role: 'dispatcher',
-    title: 'Despachador',
-    name: 'Despachador',
-    email: 'despachador@demo.cl',
-    password: 'demo123',
+    role: 'ejecutiva',
+    title: 'Ejecutiva',
+    name: 'Carolina Sepulveda',
+    email: 'carolina.sepulveda@labbe.cl',
+    password: 'labbe4094',
   },
   {
-    role: 'admin',
-    title: 'Administrador',
-    name: 'Administrador',
-    email: 'admin@demo.cl',
-    password: 'demo123',
+    role: 'ejecutiva',
+    title: 'Ejecutiva',
+    name: 'Daniela Silva',
+    email: 'daniela.silva@labbe.cl',
+    password: 'labbe8246',
+  },
+  {
+    role: 'ejecutiva',
+    title: 'Ejecutiva',
+    name: 'Javiera Ayala',
+    email: 'jayala@labbe.cl',
+    password: 'labbe0987',
   },
 ]
 
