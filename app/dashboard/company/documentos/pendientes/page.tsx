@@ -9,6 +9,7 @@ import { PendingDocumentsList } from '@/components/pending-documents-list'
 export default function PendientesPage() {
   const [allData, setAllData] = useState<any>(null)
   const [selectedEjecutiva, setSelectedEjecutiva] = useState<string>('all')
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [ejecutivas, setEjecutivas] = useState<{ name: string; count: number }[]>([])
@@ -65,27 +66,47 @@ export default function PendientesPage() {
   const filteredData = useMemo(() => {
     if (!allData) return null
 
-    console.log('[v0] Filtering with selectedEjecutiva:', selectedEjecutiva)
-    console.log('[v0] allData:', { subDocs: allData.subDocs?.length, conductorDocs: allData.conductorDocs?.length })
+    console.log('[v0] Filtering with selectedEjecutiva:', selectedEjecutiva, 'dateFilter:', dateFilter)
 
-    if (selectedEjecutiva === 'all') {
-      console.log('[v0] Returning all data')
-      return allData
+    // Calculate date range for filtering
+    let minDate: Date | null = null
+    if (dateFilter !== 'all') {
+      const now = new Date()
+      if (dateFilter === 'today') {
+        minDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      } else if (dateFilter === 'week') {
+        minDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      } else if (dateFilter === 'month') {
+        minDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      }
     }
 
-    const filteredSubDocs = allData.subDocs?.filter((doc: any) => {
-      const docEjecutiva = doc.ejecutiva || 'Sin asignar'
-      const matches = docEjecutiva === selectedEjecutiva
-      if (!matches && allData.subDocs?.length < 20) {
-        console.log('[v0] Subcontractor doc:', { name: doc.file_name, ejecutiva: docEjecutiva, matches })
-      }
-      return matches
-    }) || []
+    let filteredSubDocs = allData.subDocs || []
+    let filteredConductorDocs = allData.conductorDocs || []
 
-    const filteredConductorDocs = allData.conductorDocs?.filter((doc: any) => {
-      const docEjecutiva = doc.ejecutiva || 'Sin asignar'
-      return docEjecutiva === selectedEjecutiva
-    }) || []
+    // Apply ejecutiva filter
+    if (selectedEjecutiva !== 'all') {
+      filteredSubDocs = filteredSubDocs.filter((doc: any) => {
+        const docEjecutiva = doc.ejecutiva || 'Sin asignar'
+        return docEjecutiva === selectedEjecutiva
+      })
+      filteredConductorDocs = filteredConductorDocs.filter((doc: any) => {
+        const docEjecutiva = doc.ejecutiva || 'Sin asignar'
+        return docEjecutiva === selectedEjecutiva
+      })
+    }
+
+    // Apply date filter
+    if (minDate) {
+      filteredSubDocs = filteredSubDocs.filter((doc: any) => {
+        const docDate = new Date(doc.updated_at || doc.created_at)
+        return docDate >= minDate!
+      })
+      filteredConductorDocs = filteredConductorDocs.filter((doc: any) => {
+        const docDate = new Date(doc.updated_at || doc.created_at)
+        return docDate >= minDate!
+      })
+    }
 
     console.log('[v0] Filtered result:', { subDocs: filteredSubDocs.length, conductorDocs: filteredConductorDocs.length })
 
@@ -93,7 +114,7 @@ export default function PendientesPage() {
       conductorDocs: filteredConductorDocs,
       subDocs: filteredSubDocs
     }
-  }, [allData, selectedEjecutiva])
+  }, [allData, selectedEjecutiva, dateFilter])
 
   const handleRefresh = async () => {
     setRefreshing(true)
@@ -198,6 +219,64 @@ export default function PendientesPage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Date Filter */}
+      <div className="rounded-lg bg-gradient-to-r from-slate-800/70 to-slate-800/40 border border-blue-500/30 p-4 shadow-lg">
+        <div className="flex items-center gap-3 mb-4">
+          <Filter className="h-5 w-5 text-blue-400" />
+          <span className="text-sm font-semibold text-slate-100">Filtrar por Fecha:</span>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setDateFilter('all')}
+            className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
+              dateFilter === 'all'
+                ? 'bg-blue-500 text-white border border-blue-600'
+                : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
+            }`}
+          >
+            Todos
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setDateFilter('today')}
+            className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
+              dateFilter === 'today'
+                ? 'bg-blue-500 text-white border border-blue-600'
+                : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
+            }`}
+          >
+            Hoy
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setDateFilter('week')}
+            className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
+              dateFilter === 'week'
+                ? 'bg-blue-500 text-white border border-blue-600'
+                : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
+            }`}
+          >
+            Última semana
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setDateFilter('month')}
+            className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
+              dateFilter === 'month'
+                ? 'bg-blue-500 text-white border border-blue-600'
+                : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
+            }`}
+          >
+            Último mes
+          </button>
+        </div>
       </div>
 
       {/* Documents List - key forces re-render when filter changes */}
