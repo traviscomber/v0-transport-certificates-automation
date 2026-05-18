@@ -49,6 +49,21 @@ export function EditConductorModal({
   })
 
   useEffect(() => {
+    if (driver && isOpen) {
+      setFormData({
+        rut: driver.rut || '',
+        nombres: driver.nombres || '',
+        apellido_paterno: driver.apellido_paterno || '',
+        apellido_materno: driver.apellido_materno || '',
+        rut_proveedor: driver.rut_proveedor || '',
+        clase_licencia: driver.clase_licencia || 'B',
+        is_active: driver.is_active !== false
+      })
+      setError('')
+    }
+  }, [driver, isOpen])
+
+  useEffect(() => {
     if (driver && isOpen && transportistas.length > 0) {
       // Only run when transportistas data is loaded
       const selectedTransportista = transportistas.find(t => t.rut === driver.rut_proveedor)
