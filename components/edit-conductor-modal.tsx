@@ -99,10 +99,12 @@ export function EditConductorModal({
     if (driver && isOpen && transportistas.length > 0) {
       // Find transportista and get ejecutiva full name from executive_staff
       const selectedTransportista = transportistas.find(t => t.rut === driver.rut_proveedor)
-      if (selectedTransportista?.ejecutivo_nombre && ejecutivas.length > 0) {
+      const ejecutivoNombre = selectedTransportista?.ejecutivo_nombre
+      
+      if (ejecutivoNombre && ejecutivas.length > 0) {
         // Find ejecutiva by matching name
         const matchedEjecutiva = ejecutivas.find(e => 
-          e.full_name.toLowerCase().includes(selectedTransportista.ejecutivo_nombre.toLowerCase())
+          e.full_name.toLowerCase().includes(ejecutivoNombre.toLowerCase())
         )
         setSelectedEjecutiva(matchedEjecutiva?.full_name || 'Sin asignar')
       } else {
@@ -115,16 +117,18 @@ export function EditConductorModal({
   useEffect(() => {
     if (formData.rut_proveedor && transportistas.length > 0 && ejecutivas.length > 0) {
       const selectedTransportista = transportistas.find(t => t.rut === formData.rut_proveedor)
-      if (selectedTransportista?.ejecutivo_nombre) {
+      const ejecutivoNombre = selectedTransportista?.ejecutivo_nombre
+      
+      if (ejecutivoNombre) {
         const matchedEjecutiva = ejecutivas.find(e => 
-          e.full_name.toLowerCase().includes(selectedTransportista.ejecutivo_nombre.toLowerCase())
+          e.full_name.toLowerCase().includes(ejecutivoNombre.toLowerCase())
         )
         setSelectedEjecutiva(matchedEjecutiva?.full_name || 'Sin asignar')
       } else {
         setSelectedEjecutiva('Sin asignar')
       }
     }
-  }, [formData.rut_proveedor, transportistas])
+  }, [formData.rut_proveedor, transportistas, ejecutivas])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
