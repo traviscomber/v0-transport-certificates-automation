@@ -99,16 +99,31 @@ export async function GET(request: NextRequest) {
 
     // Batch update - execute ALL updates together
     if (updateBatch.length > 0) {
-      const { error: batchError } = await supabase
-        .from('transportistas')
-        .upsert(updateBatch, { onConflict: 'id' })
+      // Use RPC or multiple updates - for now do grouped updates by executive
+      const updatesByExecutive = new Map<string, string[]>()
+      
+      updateBatch.forEach(item => {
+        const execId = item.assigned_executive_id
+        if (!updatesByExecutive.has(execId)) {
+          updatesByExecutive.set(execId, [])
+        }
+        updatesByExecutive.get(execId)!.push(item.id)
+      })
 
-      if (batchError) {
-        console.error('[v0] Batch update error:', batchError)
-        return NextResponse.json(
-          { error: `Batch update failed: ${batchError.message}` },
-          { status: 500 }
-        )
+      // Update by executive_id
+      for (const [execId, transportistaIds] of updatesByExecutive.entries()) {
+        const { error: updateError } = await supabase
+          .from('transportistas')
+          .update({ assigned_executive_id: execId })
+          .in('id', transportistaIds)
+
+        if (updateError) {
+          console.error('[v0] Update error for executive', execId, ':', updateError)
+          return NextResponse.json(
+            { error: `Update failed for executive ${execId}: ${updateError.message}` },
+            { status: 500 }
+          )
+        }
       }
       
       console.log(`[v0] Batch assigned ${updateBatch.length} transportistas`)
