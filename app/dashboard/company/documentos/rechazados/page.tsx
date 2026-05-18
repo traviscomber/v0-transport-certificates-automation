@@ -9,6 +9,7 @@ import { RejectedDocumentsList } from '@/components/rejected-documents-list'
 export default function RechazadosPage() {
   const [allData, setAllData] = useState<any>(null)
   const [selectedEjecutiva, setSelectedEjecutiva] = useState<string>('all')
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [ejecutivas, setEjecutivas] = useState<{ name: string; count: number }[]>([])
@@ -65,25 +66,51 @@ export default function RechazadosPage() {
   const filteredData = useMemo(() => {
     if (!allData) return null
 
-    if (selectedEjecutiva === 'all') {
-      return allData
+    // Calculate date range for filtering
+    let minDate: Date | null = null
+    if (dateFilter !== 'all') {
+      const now = new Date()
+      if (dateFilter === 'today') {
+        minDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      } else if (dateFilter === 'week') {
+        minDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      } else if (dateFilter === 'month') {
+        minDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      }
     }
 
-    const filteredSubDocs = allData.subDocs?.filter((doc: any) => {
-      const docEjecutiva = doc.reviewed_by_ejecutiva || 'Sin asignar'
-      return docEjecutiva === selectedEjecutiva
-    }) || []
+    let filteredSubDocs = allData.subDocs || []
+    let filteredConductorDocs = allData.conductorDocs || []
 
-    const filteredConductorDocs = allData.conductorDocs?.filter((doc: any) => {
-      const docEjecutiva = doc.ejecutiva || 'Sin asignar'
-      return docEjecutiva === selectedEjecutiva
-    }) || []
+    // Apply ejecutiva filter
+    if (selectedEjecutiva !== 'all') {
+      filteredSubDocs = filteredSubDocs.filter((doc: any) => {
+        const docEjecutiva = doc.reviewed_by_ejecutiva || 'Sin asignar'
+        return docEjecutiva === selectedEjecutiva
+      })
+      filteredConductorDocs = filteredConductorDocs.filter((doc: any) => {
+        const docEjecutiva = doc.ejecutiva || 'Sin asignar'
+        return docEjecutiva === selectedEjecutiva
+      })
+    }
+
+    // Apply date filter
+    if (minDate) {
+      filteredSubDocs = filteredSubDocs.filter((doc: any) => {
+        const docDate = new Date(doc.updated_at || doc.created_at)
+        return docDate >= minDate!
+      })
+      filteredConductorDocs = filteredConductorDocs.filter((doc: any) => {
+        const docDate = new Date(doc.updated_at || doc.created_at)
+        return docDate >= minDate!
+      })
+    }
 
     return {
       conductorDocs: filteredConductorDocs,
       subDocs: filteredSubDocs
     }
-  }, [allData, selectedEjecutiva])
+  }, [allData, selectedEjecutiva, dateFilter])
 
   const handleRefresh = async () => {
     setRefreshing(true)
