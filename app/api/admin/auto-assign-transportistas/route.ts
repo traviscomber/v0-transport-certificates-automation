@@ -51,14 +51,10 @@ export async function GET(request: NextRequest) {
     const executiveLoadMap = new Map<string, number>()
     executives.forEach(exec => executiveLoadMap.set(exec.id, 0))
 
-    const { data: assigned } = await supabase
-      .from('transportistas')
-      .select('assigned_executive_id')
-      .not('assigned_executive_id', 'is', null)
-
-    if (assigned) {
-      assigned.forEach((t: any) => {
-        if (t.assigned_executive_id) {
+    // Only count those assigned to VALID executives
+    if (allTransportistas) {
+      allTransportistas.forEach((t: any) => {
+        if (t.assigned_executive_id && validExecutiveIds.has(t.assigned_executive_id)) {
           const count = executiveLoadMap.get(t.assigned_executive_id) || 0
           executiveLoadMap.set(t.assigned_executive_id, count + 1)
         }
