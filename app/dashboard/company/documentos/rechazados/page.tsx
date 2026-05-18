@@ -217,6 +217,64 @@ export default function RechazadosPage() {
         )}
       </div>
 
+      {/* Date Filter */}
+      <div className="rounded-lg bg-gradient-to-r from-slate-800/70 to-slate-800/40 border border-blue-500/30 p-4 shadow-lg">
+        <div className="flex items-center gap-3 mb-4">
+          <Filter className="h-5 w-5 text-blue-400" />
+          <span className="text-sm font-semibold text-slate-100">Filtrar por Fecha:</span>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setDateFilter('all')}
+            className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
+              dateFilter === 'all'
+                ? 'bg-blue-500 text-white border border-blue-600'
+                : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
+            }`}
+          >
+            Todos
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setDateFilter('today')}
+            className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
+              dateFilter === 'today'
+                ? 'bg-blue-500 text-white border border-blue-600'
+                : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
+            }`}
+          >
+            Hoy
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setDateFilter('week')}
+            className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
+              dateFilter === 'week'
+                ? 'bg-blue-500 text-white border border-blue-600'
+                : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
+            }`}
+          >
+            Última semana
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setDateFilter('month')}
+            className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
+              dateFilter === 'month'
+                ? 'bg-blue-500 text-white border border-blue-600'
+                : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
+            }`}
+          >
+            Último mes
+          </button>
+        </div>
+      </div>
+
       {/* Documents List - key forces re-render when filter changes */}
       <RejectedDocumentsList
         key={`${selectedEjecutiva}-${filteredData?.subDocs?.length || 0}`}
