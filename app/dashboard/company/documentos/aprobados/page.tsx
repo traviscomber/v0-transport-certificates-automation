@@ -42,7 +42,12 @@ export default function AprobadosPage() {
   }, [])
 
   const filteredData = useMemo(() => {
-    if (!allData) return null
+    if (!allData) {
+      console.log('[v0] Aprobados: allData is null/empty')
+      return null
+    }
+
+    console.log('[v0] Aprobados: Processing allData with', allData.total, 'total documents')
 
     // Calculate date range for filtering
     let minDate: Date | null = null
@@ -60,6 +65,8 @@ export default function AprobadosPage() {
     let filteredSubDocs = allData.subDocs || []
     let filteredConductorDocs = allData.conductorDocs || []
 
+    console.log('[v0] Aprobados: Before filter - sub:', filteredSubDocs.length, 'conductor:', filteredConductorDocs.length)
+
     // No ejecutiva filter - show all documents to all executivas
 
     // Apply date filter
@@ -73,6 +80,8 @@ export default function AprobadosPage() {
         return docDate >= minDate!
       })
     }
+
+    console.log('[v0] Aprobados: After filter - sub:', filteredSubDocs.length, 'conductor:', filteredConductorDocs.length)
 
     return {
       conductorDocs: filteredConductorDocs,
