@@ -40,24 +40,6 @@ const EXECUTIVES_DATA = [
     email: 'jayala@labbe.cl',
     cargo: 'Ejecutiva'
   },
-  {
-    full_name: 'Diego Andres Gonzalez Valenzuela',
-    rut: '20114106-0',
-    email_auth: 'diego.gonzalez@labbe.cl',
-    password_hash: '$2a$10$N8O9P0Q1R2S3T4U5V6W7X.Y8Z9A0B1C2D3E4F5G6H7I8J9K0L1M2N3',
-    phone: '+56978455527',
-    email: 'diego.gonzalez@labbe.cl',
-    cargo: 'Jefe RRHH'
-  },
-  {
-    full_name: 'Katherinne Johanna Canales Hernandez',
-    rut: '18717311-6',
-    email_auth: 'katherinne.canales@labbe.cl',
-    password_hash: '$2a$10$O9P0Q1R2S3T4U5V6W7X8Y.Z9A0B1C2D3E4F5G6H7I8J9K0L1M2N3O4',
-    phone: '+56956139744',
-    email: 'katherinne.canales@labbe.cl',
-    cargo: 'Asistente RRHH'
-  }
 ]
 
 export async function POST(request: NextRequest) {
