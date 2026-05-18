@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar'
 
@@ -12,7 +12,7 @@ export default function DashboardLayout({
 }) {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const pathname = useRouter().pathname
+  const pathname = usePathname()
   const [hasSimpleLogin, setHasSimpleLogin] = useState(false)
   const [cookieCheckDone, setCookieCheckDone] = useState(false)
 
@@ -51,7 +51,7 @@ export default function DashboardLayout({
 
   // If this is a /dashboard/company route, let its own layout handle everything
   // (CompanyLayout will render its own sidebar and layout)
-  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/dashboard/company')) {
+  if (pathname.startsWith('/dashboard/company')) {
     return <main className="min-h-screen">{children}</main>
   }
 
