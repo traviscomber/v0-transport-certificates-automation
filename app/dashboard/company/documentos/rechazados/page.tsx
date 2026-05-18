@@ -8,11 +8,9 @@ import { RejectedDocumentsList } from '@/components/rejected-documents-list'
 
 export default function RechazadosPage() {
   const [allData, setAllData] = useState<any>(null)
-  const [selectedEjecutiva, setSelectedEjecutiva] = useState<string>('all')
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [ejecutivas, setEjecutivas] = useState<{ name: string; count: number }[]>([])
 
   useEffect(() => {
     const fetchData = async () => {

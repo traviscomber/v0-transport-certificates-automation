@@ -8,11 +8,9 @@ import { PendingDocumentsList } from '@/components/pending-documents-list'
 
 export default function PendientesPage() {
   const [allData, setAllData] = useState<any>(null)
-  const [selectedEjecutiva, setSelectedEjecutiva] = useState<string>('all')
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [ejecutivas, setEjecutivas] = useState<{ name: string; count: number }[]>([])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -22,32 +20,6 @@ export default function PendientesPage() {
         })
         const data = await response.json()
         setAllData(data)
-
-        // Extract unique ejecutivas from BOTH conductor and subcontractor documents
-        const ejecutivasMap = new Map<string, number>()
-        
-        // Count from subcontractor documents
-        data.subDocs?.forEach((doc: any) => {
-          const ejecutiva = doc.ejecutiva || 'Sin asignar'
-          ejecutivasMap.set(ejecutiva, (ejecutivasMap.get(ejecutiva) || 0) + 1)
-        })
-        
-        // Count from conductor documents
-        data.conductorDocs?.forEach((doc: any) => {
-          const ejecutiva = doc.ejecutiva || 'Sin asignar'
-          ejecutivasMap.set(ejecutiva, (ejecutivasMap.get(ejecutiva) || 0) + 1)
-        })
-
-        // Sort: "Sin asignar" last, others by count descending
-        const sorted = Array.from(ejecutivasMap.entries())
-          .map(([name, count]) => ({ name, count }))
-          .sort((a, b) => {
-            if (a.name === 'Sin asignar') return 1
-            if (b.name === 'Sin asignar') return -1
-            return b.count - a.count
-          })
-
-        setEjecutivas(sorted)
       } catch (error) {
         console.error('[v0] Error fetching pending documents:', error)
       } finally {
