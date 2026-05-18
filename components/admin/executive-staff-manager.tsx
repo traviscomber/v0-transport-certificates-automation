@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import {
   Table,
   TableBody,
@@ -20,18 +19,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Phone, Mail, FileText, Plus, Trash2, Edit } from 'lucide-react'
+import { Phone, Mail, Plus, Trash2 } from 'lucide-react'
 
 interface Executive {
   id: string
-  nombre_completo: string
-  rut: string
-  cargo: string
-  telefono: string
+  nombre?: string
+  full_name?: string
   email?: string
-  transportista_id: string
-  is_active: boolean
-  created_at: string
+  rut?: string
+  cargo?: string
+  is_active?: boolean
 }
 
 export function ExecutiveStaffManager() {
@@ -39,10 +36,8 @@ export function ExecutiveStaffManager() {
   const [loading, setLoading] = useState(true)
   const [isOpen, setIsOpen] = useState(false)
   const [formData, setFormData] = useState({
-    nombre_completo: '',
-    rut: '',
-    cargo: '',
-    telefono: '',
+    nombre: '',
+    apellido: '',
     email: ''
   })
 
@@ -69,16 +64,14 @@ export function ExecutiveStaffManager() {
       const response = await fetch('/api/admin/executive-staff', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // ✅ Send cookies with request
+        credentials: 'include',
         body: JSON.stringify(formData)
       })
 
       if (response.ok) {
         setFormData({
-          nombre_completo: '',
-          rut: '',
-          cargo: '',
-          telefono: '',
+          nombre: '',
+          apellido: '',
           email: ''
         })
         setIsOpen(false)
@@ -103,7 +96,8 @@ export function ExecutiveStaffManager() {
     }
   }
 
-  const getRoleBadgeColor = (cargo: string) => {
+  const getRoleBadgeColor = (cargo?: string) => {
+    if (!cargo) return 'bg-gray-100 text-gray-800'
     if (cargo.toLowerCase().includes('ejecutiva')) return 'bg-blue-100 text-blue-800'
     if (cargo.toLowerCase().includes('jefe')) return 'bg-purple-100 text-purple-800'
     if (cargo.toLowerCase().includes('asistente')) return 'bg-green-100 text-green-800'
@@ -140,27 +134,17 @@ export function ExecutiveStaffManager() {
             </DialogHeader>
             <div className="space-y-4">
               <Input
-                placeholder="Full Name"
-                value={formData.nombre_completo}
-                onChange={(e) => setFormData({ ...formData, nombre_completo: e.target.value })}
+                placeholder="First Name"
+                value={formData.nombre}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
               />
               <Input
-                placeholder="RUT"
-                value={formData.rut}
-                onChange={(e) => setFormData({ ...formData, rut: e.target.value })}
+                placeholder="Last Name"
+                value={formData.apellido}
+                onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
               />
               <Input
-                placeholder="Position/Cargo"
-                value={formData.cargo}
-                onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
-              />
-              <Input
-                placeholder="Phone"
-                value={formData.telefono}
-                onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-              />
-              <Input
-                placeholder="Email"
+                placeholder="Email (@labbe.cl)"
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -183,9 +167,6 @@ export function ExecutiveStaffManager() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>RUT</TableHead>
-                  <TableHead>Position</TableHead>
-                  <TableHead>Phone</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -193,21 +174,7 @@ export function ExecutiveStaffManager() {
               <TableBody>
                 {executives.map((exec) => (
                   <TableRow key={exec.id}>
-                    <TableCell className="font-medium">{exec.nombre_completo}</TableCell>
-                    <TableCell>{exec.rut}</TableCell>
-                    <TableCell>
-                      <Badge className={getRoleBadgeColor(exec.cargo)}>
-                        {exec.cargo}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {exec.telefono && (
-                        <a href={`tel:${exec.telefono}`} className="flex items-center gap-1 text-blue-600 hover:underline">
-                          <Phone className="w-4 h-4" />
-                          {exec.telefono}
-                        </a>
-                      )}
-                    </TableCell>
+                    <TableCell className="font-medium">{exec.full_name || exec.nombre || 'N/A'}</TableCell>
                     <TableCell>
                       {exec.email && (
                         <a href={`mailto:${exec.email}`} className="flex items-center gap-1 text-blue-600 hover:underline">
