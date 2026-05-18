@@ -18,7 +18,20 @@ export async function GET(
     if (error) throw error
     if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-    return NextResponse.json({ success: true, transportista: data })
+    // Resolve assigned_executive_id to ejecutivo_nombre
+    let ejecutivo_nombre = data.ejecutivo_nombre || 'Sin asignar'
+    if (data.assigned_executive_id) {
+      const { data: exec } = await supabase
+        .from('executive_staff')
+        .select('full_name')
+        .eq('id', data.assigned_executive_id)
+        .single()
+      if (exec) {
+        ejecutivo_nombre = exec.full_name
+      }
+    }
+
+    return NextResponse.json({ success: true, transportista: { ...data, ejecutivo_nombre } })
   } catch (error) {
     return NextResponse.json({ error: 'Error fetching transportista' }, { status: 500 })
   }

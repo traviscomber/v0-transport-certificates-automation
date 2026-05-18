@@ -586,10 +586,12 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
         onOpenChange={setIsAssignModalOpen}
         transportistaId={assigningSubcontractor?.id || ''}
         transportistaNombre={assigningSubcontractor?.nombre || ''}
-        onAssignmentSuccess={() => {
+        onAssignmentSuccess={async () => {
+          // Refresh the updated subcontractor data from API
+          if (assigningSubcontractor?.id) {
+            await refreshSubcontractor(assigningSubcontractor.id)
+          }
           setAssigningSubcontractor(null)
-          // Refetch data by reloading from API
-          window.location.reload()
         }}
       />
     </div>
