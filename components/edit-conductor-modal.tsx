@@ -249,11 +249,25 @@ export function EditConductorModal({
 
               <div>
                 <Label className="text-sm font-semibold">Ejecutiva Asignada</Label>
-                <Input
-                  value={selectedEjecutiva}
-                  disabled
-                  className="mt-1"
-                />
+                <Select 
+                  value={selectedEjecutiva} 
+                  onValueChange={(value) => setSelectedEjecutiva(value)}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Selecciona ejecutiva" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Sin asignar">Sin asignar</SelectItem>
+                    {Array.from(new Set(transportistas
+                      .filter(t => t.ejecutivo_nombre && t.ejecutivo_nombre !== 'Sin asignar')
+                      .map(t => t.ejecutivo_nombre)
+                    )).map(ejecutiva => (
+                      <SelectItem key={ejecutiva} value={ejecutiva || 'Sin asignar'}>
+                        {ejecutiva || 'Sin asignar'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
