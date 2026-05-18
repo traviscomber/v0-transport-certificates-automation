@@ -144,9 +144,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
           
           {/* Main content */}
           <main className="flex-1 overflow-auto p-3 md:p-6 lg:p-8">
-            <div className="mx-auto w-full max-w-7xl">
-              {children}
-            </div>
+            {children}
           </main>
         </div>
       </div>
