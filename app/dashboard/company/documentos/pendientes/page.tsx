@@ -167,42 +167,6 @@ export default function PendientesPage() {
 
       {/* Ejecutiva Filter - REMOVED: All executivas see all documents */}
 
-        {ejecutivas.length === 0 ? (
-          <p className="text-sm text-slate-400 italic">
-            Todos los documentos están sin asignar a una ejecutiva específica
-          </p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedEjecutiva('all')}
-              className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
-                selectedEjecutiva === 'all'
-                  ? 'bg-orange-500 text-white border border-orange-600'
-                  : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
-              }`}
-            >
-              Todas ({totalPending})
-            </button>
-
-            {ejecutivas.map(({ name, count }) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => setSelectedEjecutiva(name)}
-                className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
-                  selectedEjecutiva === name
-                    ? 'bg-orange-500 text-white border border-orange-600'
-                    : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
-                }`}
-              >
-                {name === 'Sin asignar' ? '📋' : '👤'} {name} ({count})
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* Date Filter */}
       <div className="rounded-lg bg-gradient-to-r from-slate-800/70 to-slate-800/40 border border-blue-500/30 p-4 shadow-lg">
         <div className="flex items-center gap-3 mb-4">
