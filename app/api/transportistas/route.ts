@@ -1,7 +1,65 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = createAdminClient()
+
+    // Get all transportistas with their assigned executives
+    const { data: transportistas, error } = await supabase
+      .from('transportistas')
+      .select(`
+        id,
+        rut,
+        razon_social,
+        region,
+        comuna,
+        telefono,
+        email,
+        representante_legal,
+        assigned_executive_id,
+        is_active,
+        created_at
+      `)
+      .order('razon_social')
+
+    if (error) {
+      throw error
+    }
+
+    // Get all executives for mapping
+    const { data: executives } = await supabase
+      .from('executive_staff')
+      .select('id, full_name, email')
+
+    // Map executives for easy lookup
+    const executiveMap = new Map()
+    if (executives) {
+      executives.forEach(exec => {
+        executiveMap.set(exec.id, { nombre: exec.full_name, email: exec.email })
+      })
+    }
+
+    // Enrich transportistas with executive info
+    const enrichedTransportistas = transportistas?.map(t => ({
+      ...t,
+      ejecutivo: t.assigned_executive_id ? executiveMap.get(t.assigned_executive_id)?.nombre : null,
+      ejecutivo_email: t.assigned_executive_id ? executiveMap.get(t.assigned_executive_id)?.email : null,
+    })) || []
+
+    return NextResponse.json({
+      success: true,
+      count: enrichedTransportistas.length,
+      transportistas: enrichedTransportistas,
+    })
+  } catch (error) {
+    console.error('[v0] Error fetching transportistas:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Error fetching transportistas' },
+      { status: 500 }
+    )
+  }
+}
   try {
     const body = await request.json()
     const { razon_social, rut, region, comuna, telefono, email, nombre_contacto, is_active } = body
@@ -30,7 +88,54 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create new transportista with only valid columns
+    // Get all active executives with their current company counts (balance load)
+    const { data: executives, error: execError } = await supabase
+      .from('executive_staff')
+      .select('id, full_name, email')
+      .eq('is_active', true)
+      .order('full_name')
+
+    if (execError || !executives || executives.length === 0) {
+      console.error('[v0] No active executives found:', execError)
+      return NextResponse.json(
+        { error: 'No hay ejecutivas activas disponibles para asignación' },
+        { status: 500 }
+      )
+    }
+
+    // Count how many companies each executive already has (load balancing)
+    const executiveLoadMap = new Map<string, number>()
+    executives.forEach(exec => executiveLoadMap.set(exec.id, 0))
+
+    const { data: allTransportistas } = await supabase
+      .from('transportistas')
+      .select('assigned_executive_id')
+      .not('assigned_executive_id', 'is', null)
+
+    if (allTransportistas) {
+      allTransportistas.forEach((t: any) => {
+        if (t.assigned_executive_id) {
+          const count = executiveLoadMap.get(t.assigned_executive_id) || 0
+          executiveLoadMap.set(t.assigned_executive_id, count + 1)
+        }
+      })
+    }
+
+    // Find executive with least companies (round-robin load balancing)
+    let selectedExecutive = executives[0]
+    let minLoad = executiveLoadMap.get(selectedExecutive.id) || 0
+
+    for (const exec of executives) {
+      const load = executiveLoadMap.get(exec.id) || 0
+      if (load < minLoad) {
+        selectedExecutive = exec
+        minLoad = load
+      }
+    }
+
+    console.log(`[v0] Creating transportista with auto-assigned executive: ${selectedExecutive.full_name} (load: ${minLoad})`)
+
+    // Create new transportista with auto-assigned executive
     const { data, error } = await supabase
       .from('transportistas')
       .insert({
@@ -42,6 +147,7 @@ export async function POST(request: NextRequest) {
         email: email || null,
         representante_legal: nombre_contacto || null,
         is_active: is_active !== false,
+        assigned_executive_id: selectedExecutive.id, // AUTO-ASSIGN
       })
       .select()
 
@@ -52,7 +158,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       transportista: data?.[0],
-      message: 'Subcontratista creado exitosamente'
+      assigned_executive: selectedExecutive,
+      message: `Subcontratista creado y asignado a ${selectedExecutive.full_name}`
     })
   } catch (error) {
     return NextResponse.json(
