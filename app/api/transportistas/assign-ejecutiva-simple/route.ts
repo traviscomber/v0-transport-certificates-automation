@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     // Find the ejecutiva by email
     const { data: ejecutiva, error: ejecutivaError } = await supabase
       .from('executive_staff')
-      .select('id, nombre, email')
+      .select('id, full_name, email')
       .eq('email', executive_email)
       .eq('is_active', true)
       .single()
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Ejecutiva ${ejecutiva.nombre} assigned successfully`,
+      message: `Ejecutiva ${ejecutiva.full_name} assigned successfully`,
       data,
     }, { status: 200 })
   } catch (error: any) {
@@ -147,7 +147,7 @@ export async function PUT(request: NextRequest) {
     // Find the ejecutiva by email
     const { data: ejecutiva, error: ejecutivaError } = await supabase
       .from('executive_staff')
-      .select('id, nombre, email')
+      .select('id, full_name, email')
       .eq('email', ejecutiva_email)
       .eq('is_active', true)
       .single()
