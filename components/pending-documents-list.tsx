@@ -345,235 +345,151 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
         companies={companies}
       />
 
-      {allDocs.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 px-4">
-          <Clock className="h-12 w-12 text-amber-500 mb-4" />
-          <p className="text-lg font-medium text-slate-300">No hay documentos pendientes</p>
-          <p className="text-sm text-slate-500 mt-2">Los documentos esperando revisión aparecerán aquí</p>
-        </div>
-      ) : filteredDocs.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 px-4">
-          <p className="text-slate-400">No hay documentos que coincidan con los filtros seleccionados</p>
-        </div>
-      ) : (
-        <>
-          {/* Conductor Documents Section */}
-      {(() => {
-        const conductorFiltered = filteredDocs.filter(doc => propConductorDocs.some(d => d.id === doc.id))
-        return (
-          <Card className="border-blue-500/30 bg-blue-500/5">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-blue-500" />
-                  <CardTitle>Documentos de Conductores</CardTitle>
-                </div>
-                <Badge variant="secondary">{conductorFiltered.length} pendientes</Badge>
-              </div>
-              <CardDescription>Licencias, antecedentes y documentos personales</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {conductorFiltered.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No hay documentos de conductores pendientes
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {conductorFiltered.map((doc) => (
-                <div 
-                  key={doc.id} 
-                  className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700"
-                >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <FileText className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm truncate">{doc.original_filename}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {(() => {
-                          const c = Array.isArray(doc.conductores) ? doc.conductores[0] : doc.conductores
-                          return c ? `${c.nombres} ${c.apellido_paterno} - ${c.rut}` : ''
-                        })()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                    {doc.file_url && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setPreviewDoc(doc)}
-                        className="text-slate-400 hover:text-white"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleAnalyzeDocument(doc.id)}
-                      disabled={analyzing === doc.id}
-                      className="text-xs gap-1 border-blue-400/50 text-blue-300 hover:bg-blue-500/20"
-                      title="Analizar con IA (OCR)"
-                    >
-                      {analyzing === doc.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3 w-3" />
-                      )}
-                      Analizar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleApprove(doc.id, 'conductor')}
-                      disabled={loading === doc.id}
-                      className="text-xs gap-1 border-green-500/50 text-green-400 hover:bg-green-500/20"
-                    >
-                      {loading === doc.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Check className="h-3 w-3" />
-                      )}
-                      Aprobar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleRejectClick(doc.id, 'conductor')}
-                      disabled={loading === doc.id}
-                      className="text-xs gap-1 border-red-500/50 text-red-400 hover:bg-red-500/20"
-                    >
-                      <X className="h-3 w-3" />
-                      Rechazar
-                    </Button>
-                  </div>
-                </div>
-              ))}
+      {/* Conductor Documents Section */}
+      <Card className="border-blue-500/30 bg-blue-500/5">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-blue-500" />
+              <CardTitle>Documentos de Conductores</CardTitle>
             </div>
-          )}
-        </CardContent>
-      </Card>
-        )
-      })}
-
-      {/* Subcontractor Documents Section */}
-      {(() => {
-        const subFiltered = filteredDocs.filter(doc => propSubDocs.some(d => d.id === doc.id))
-        return (
-          <Card className="border-orange-500/30 bg-orange-500/5">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Truck className="h-5 w-5 text-orange-500" />
-                  <CardTitle>Documentos de Subcontratistas</CardTitle>
-                </div>
-                <Badge variant="secondary">{subFiltered.length} pendientes</Badge>
-              </div>
-              <CardDescription>F30, F30-1, contratos y documentos legales</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {subFiltered.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No hay documentos de subcontratistas pendientes
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {subFiltered.map((doc) => (
-                <div 
-                  key={doc.id} 
-                  className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700"
-                >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <FileText className="h-4 w-4 text-orange-400 flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-sm truncate">{doc.file_name}</p>
-                      <div className="flex gap-3 mt-1 flex-wrap">
-                        <p className="text-xs text-muted-foreground">
-                          {(() => {
-                            const t = Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas
-                            return t ? `${t.razon_social} - ${t.rut}` : ''
-                          })()}
+            <Badge variant="secondary">
+              {filteredDocs.filter(doc => propConductorDocs.some(d => d.id === doc.id)).length} pendientes
+            </Badge>
+          </div>
+          <CardDescription>Licencias, antecedentes y documentos personales</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {filteredDocs.filter(doc => propConductorDocs.some(d => d.id === doc.id)).length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No hay documentos de conductores pendientes
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {filteredDocs.filter(doc => propConductorDocs.some(d => d.id === doc.id)).map((doc) => {
+                const c = Array.isArray(doc.conductores) ? doc.conductores[0] : doc.conductores
+                return (
+                  <div 
+                    key={doc.id} 
+                    className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <FileText className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{doc.original_filename}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {c ? `${c.nombres} ${c.apellido_paterno} - ${c.rut}` : ''}
                         </p>
-                        {doc.docType && (
-                          <Badge variant="outline" className="text-xs bg-blue-500/10 border-blue-500/30 text-blue-300">
-                            {doc.docType.nombre}
-                          </Badge>
-                        )}
-                        {doc.ejecutiva && doc.ejecutiva !== 'Sin asignar' && (
-                          <Badge variant="outline" className="text-xs bg-purple-500/10 border-purple-500/30 text-purple-300">
-                            👤 {doc.ejecutiva}
-                          </Badge>
-                        )}
-                        {doc.uploaded_at && (
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {formatToChileTime(doc.uploaded_at, "d 'de' MMMM 'de' yyyy HH:mm")}
-                          </span>
-                        )}
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                    {doc.file_url && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setPreviewDoc(doc)}
-                        className="text-slate-400 hover:text-white"
-                      >
-                        <Eye className="h-4 w-4" />
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                      {doc.file_url && (
+                        <Button variant="ghost" size="sm" onClick={() => setPreviewDoc(doc)} className="text-slate-400 hover:text-white">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button variant="outline" size="sm" onClick={() => handleAnalyzeDocument(doc.id)} disabled={analyzing === doc.id} className="text-xs gap-1 border-blue-400/50 text-blue-300 hover:bg-blue-500/20" title="Analizar con IA (OCR)">
+                        {analyzing === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                        Analizar
                       </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleAnalyzeDocument(doc.id)}
-                      disabled={analyzing === doc.id}
-                      className="text-xs gap-1 border-blue-400/50 text-blue-300 hover:bg-blue-500/20"
-                      title="Analizar con IA (OCR)"
-                    >
-                      {analyzing === doc.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3 w-3" />
-                      )}
-                      Analizar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleApprove(doc.id, 'subcontractor')}
-                      disabled={loading === doc.id}
-                      className="text-xs gap-1 border-green-500/50 text-green-400 hover:bg-green-500/20"
-                    >
-                      {loading === doc.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Check className="h-3 w-3" />
-                      )}
-                      Aprobar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleRejectClick(doc.id, 'subcontractor')}
-                      disabled={loading === doc.id}
-                      className="text-xs gap-1 border-red-500/50 text-red-400 hover:bg-red-500/20"
-                    >
-                      <X className="h-3 w-3" />
-                      Rechazar
-                    </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleApprove(doc.id, 'conductor')} disabled={loading === doc.id} className="text-xs gap-1 border-green-500/50 text-green-400 hover:bg-green-500/20">
+                        {loading === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                        Aprobar
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleRejectClick(doc.id, 'conductor')} disabled={loading === doc.id} className="text-xs gap-1 border-red-500/50 text-red-400 hover:bg-red-500/20">
+                        <X className="h-3 w-3" />
+                        Rechazar
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </CardContent>
       </Card>
-        )
-      })}
-        </>
-      )}
+
+      {/* Subcontractor Documents Section */}
+      <Card className="border-orange-500/30 bg-orange-500/5">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Truck className="h-5 w-5 text-orange-500" />
+              <CardTitle>Documentos de Subcontratistas</CardTitle>
+            </div>
+            <Badge variant="secondary">
+              {filteredDocs.filter(doc => propSubDocs.some(d => d.id === doc.id)).length} pendientes
+            </Badge>
+          </div>
+          <CardDescription>F30, F30-1, contratos y documentos legales</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {filteredDocs.filter(doc => propSubDocs.some(d => d.id === doc.id)).length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No hay documentos de subcontratistas pendientes
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {filteredDocs.filter(doc => propSubDocs.some(d => d.id === doc.id)).map((doc) => {
+                const t = Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas
+                return (
+                  <div 
+                    key={doc.id} 
+                    className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <FileText className="h-4 w-4 text-orange-400 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm truncate">{doc.file_name}</p>
+                        <div className="flex gap-3 mt-1 flex-wrap">
+                          <p className="text-xs text-muted-foreground">
+                            {t ? `${t.razon_social} - ${t.rut}` : ''}
+                          </p>
+                          {doc.docType && (
+                            <Badge variant="outline" className="text-xs bg-blue-500/10 border-blue-500/30 text-blue-300">
+                              {doc.docType.nombre}
+                            </Badge>
+                          )}
+                          {doc.ejecutiva && doc.ejecutiva !== 'Sin asignar' && (
+                            <Badge variant="outline" className="text-xs bg-purple-500/10 border-purple-500/30 text-purple-300">
+                              {doc.ejecutiva}
+                            </Badge>
+                          )}
+                          {doc.uploaded_at && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {formatToChileTime(doc.uploaded_at, "d 'de' MMMM 'de' yyyy HH:mm")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                      {doc.file_url && (
+                        <Button variant="ghost" size="sm" onClick={() => setPreviewDoc(doc)} className="text-slate-400 hover:text-white">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button variant="outline" size="sm" onClick={() => handleAnalyzeDocument(doc.id)} disabled={analyzing === doc.id} className="text-xs gap-1 border-blue-400/50 text-blue-300 hover:bg-blue-500/20" title="Analizar con IA (OCR)">
+                        {analyzing === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                        Analizar
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleApprove(doc.id, 'subcontractor')} disabled={loading === doc.id} className="text-xs gap-1 border-green-500/50 text-green-400 hover:bg-green-500/20">
+                        {loading === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                        Aprobar
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleRejectClick(doc.id, 'subcontractor')} disabled={loading === doc.id} className="text-xs gap-1 border-red-500/50 text-red-400 hover:bg-red-500/20">
+                        <X className="h-3 w-3" />
+                        Rechazar
+                      </Button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Preview Modal */}
       <Dialog open={!!previewDoc} onOpenChange={(open) => { if (!open) setPreviewDoc(null) }}>

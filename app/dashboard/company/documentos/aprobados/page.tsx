@@ -19,12 +19,6 @@ export default function AprobadosPage() {
           cache: 'no-store'
         })
         const data = await response.json()
-        console.log('[v0] Aprobados page: API response:', {
-          total: data.total,
-          conductorDocs: data.conductorDocs?.length,
-          subDocs: data.subDocs?.length,
-          error: data.error
-        })
         setAllData(data)
       } catch (error) {
         console.error('[v0] Error fetching approved documents:', error)
@@ -42,12 +36,7 @@ export default function AprobadosPage() {
   }, [])
 
   const filteredData = useMemo(() => {
-    if (!allData) {
-      console.log('[v0] Aprobados: allData is null/empty')
-      return null
-    }
-
-    console.log('[v0] Aprobados: Processing allData with', allData.total, 'total documents')
+    if (!allData) return null
 
     // Calculate date range for filtering
     let minDate: Date | null = null
@@ -65,10 +54,6 @@ export default function AprobadosPage() {
     let filteredSubDocs = allData.subDocs || []
     let filteredConductorDocs = allData.conductorDocs || []
 
-    console.log('[v0] Aprobados: Before filter - sub:', filteredSubDocs.length, 'conductor:', filteredConductorDocs.length)
-
-    // No ejecutiva filter - show all documents to all executivas
-
     // Apply date filter
     if (minDate) {
       filteredSubDocs = filteredSubDocs.filter((doc: any) => {
@@ -80,8 +65,6 @@ export default function AprobadosPage() {
         return docDate >= minDate!
       })
     }
-
-    console.log('[v0] Aprobados: After filter - sub:', filteredSubDocs.length, 'conductor:', filteredConductorDocs.length)
 
     return {
       conductorDocs: filteredConductorDocs,
