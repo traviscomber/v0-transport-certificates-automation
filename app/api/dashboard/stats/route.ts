@@ -12,7 +12,6 @@ export async function GET() {
     const { data: conductorDocs, count: conductorCount } = await supabase
       .from('uploaded_documents')
       .select('validation_status', { count: 'exact', head: false })
-      .limit(10000)
 
     const conductorPending = (conductorDocs || []).filter(d => 
       d.validation_status === 'pending' || d.validation_status === null
@@ -20,19 +19,28 @@ export async function GET() {
     const conductorApproved = (conductorDocs || []).filter(d => d.validation_status === 'approved').length
     const conductorRejected = (conductorDocs || []).filter(d => d.validation_status === 'rejected').length
 
-    // Get subcontractor documents stats
-    const { data: subDocs, count: subCount } = await supabase
+    // Get subcontractor documents stats - MUST paginate for all 1333+ documents
+    // Page 0 (0-999)
+    const { data: subPage0 } = await supabase
       .from('subcontractor_documents')
-      .select('status', { count: 'exact', head: false })
-      .limit(10000)
+      .select('status', { head: false })
+      .range(0, 999)
 
-    const subPending = (subDocs || []).filter(d => d.status === 'pending').length
-    const subApproved = (subDocs || []).filter(d => d.status === 'approved').length
-    const subRejected = (subDocs || []).filter(d => d.status === 'rejected').length
+    // Page 1 (1000-1999)
+    const { data: subPage1 } = await supabase
+      .from('subcontractor_documents')
+      .select('status', { head: false })
+      .range(1000, 1999)
+
+    const allSubDocs = [...(subPage0 || []), ...(subPage1 || [])]
+
+    const subPending = allSubDocs.filter(d => d.status === 'pending').length
+    const subApproved = allSubDocs.filter(d => d.status === 'approved').length
+    const subRejected = allSubDocs.filter(d => d.status === 'rejected').length
 
     // Calculate totals
     const totals = {
-      total: (conductorCount || 0) + (subCount || 0),
+      total: (conductorCount || 0) + allSubDocs.length,
       pending: conductorPending + subPending,
       approved: conductorApproved + subApproved,
       rejected: conductorRejected + subRejected,
@@ -46,7 +54,7 @@ export async function GET() {
         rechazados: conductorRejected,
       },
       subcontratistas: {
-        total: subCount || 0,
+        total: allSubDocs.length,
         pendientes: subPending,
         aprobados: subApproved,
         rechazados: subRejected,

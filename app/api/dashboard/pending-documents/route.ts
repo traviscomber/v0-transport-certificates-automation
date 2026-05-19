@@ -29,8 +29,9 @@ export async function GET() {
       .limit(10000)
       .order("created_at", { ascending: false })
 
-    // Get pending subcontractor documents with ALL fields - REMOVED LIMIT to get ALL pending documents
-    const { data: subDocsAll } = await supabase
+    // Get pending subcontractor documents - MUST paginate due to Supabase 1000 record limit
+    // Page 0 (0-999)
+    const { data: subPage0 } = await supabase
       .from("subcontractor_documents")
       .select(`
         id,
@@ -45,11 +46,32 @@ export async function GET() {
         reviewed_by_ejecutiva,
         uploaded_by_ejecutiva
       `)
-      .limit(10000)
+      .eq('status', 'pending')
+      .range(0, 999)
       .order("created_at", { ascending: false })
 
-    // Filter in JavaScript to avoid Supabase .eq() bug with large datasets
-    const subDocsRaw = (subDocsAll || []).filter(d => d.status === 'pending')
+    // Page 1 (1000-1999)
+    const { data: subPage1 } = await supabase
+      .from("subcontractor_documents")
+      .select(`
+        id,
+        file_name,
+        document_type_id,
+        status,
+        file_url,
+        created_at,
+        uploaded_at,
+        subcontractor_id,
+        subcontractor_rut,
+        reviewed_by_ejecutiva,
+        uploaded_by_ejecutiva
+      `)
+      .eq('status', 'pending')
+      .range(1000, 1999)
+      .order("created_at", { ascending: false })
+
+    // Combine all pages
+    const subDocsRaw = [...(subPage0 || []), ...(subPage1 || [])]
 
     // Fetch document types
     const { data: docTypes } = await supabase
