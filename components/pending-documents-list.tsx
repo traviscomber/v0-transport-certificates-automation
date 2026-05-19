@@ -119,8 +119,6 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
 
   // Filter documents based on filter criteria
   const filteredDocs = useMemo(() => {
-    console.log('[v0] Filtering pending docs:', { allDocsLength: allDocs.length, filters })
-    
     return allDocs.filter((doc) => {
       // Search query
       if (filters.searchQuery) {
