@@ -366,7 +366,7 @@ export default function ROIMetricsPage() {
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => value.toLocaleString('es-CL')} />
+                <Tooltip formatter={(value: any) => (value || 0).toLocaleString('es-CL')} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
