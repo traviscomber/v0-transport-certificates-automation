@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, LogOut, User, ChevronDown } from 'lucide-react'
+import { Search, LogOut, User, ChevronDown, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export function CompanyHeader() {
   const router = useRouter()
@@ -91,6 +92,17 @@ export function CompanyHeader() {
                 <p className="text-xs sm:text-sm font-semibold text-foreground">Mi Cuenta</p>
                 <p className="text-xs text-gray-600 truncate">{userEmail}</p>
               </div>
+              
+              <Link href="/dashboard/company/perfil" className="block">
+                <button
+                  onClick={() => setProfileOpen(false)}
+                  className="w-full px-3 sm:px-4 py-2 text-left text-foreground hover:bg-gray-50 flex items-center gap-2 text-xs sm:text-sm font-medium border-b border-gray-100"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Mi Perfil</span>
+                </button>
+              </Link>
+              
               <button
                 onClick={handleLogout}
                 className="w-full px-3 sm:px-4 py-2 text-left text-red-600 hover:bg-red-50 flex items-center gap-2 text-xs sm:text-sm font-medium"

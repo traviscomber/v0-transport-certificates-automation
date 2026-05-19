@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Users, FileText, BarChart3, LogOut, Zap, Users2, Lock, TrendingUp, Menu, Bell, X } from 'lucide-react'
+import { LayoutDashboard, Users, FileText, BarChart3, LogOut, Zap, Users2, Lock, TrendingUp, Menu, Bell, X, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { NotificationCenter } from '@/components/notification-center'
@@ -19,6 +19,10 @@ const navItems = [
   { href: '/dashboard/company/analytics/conductores', label: 'Analytics', icon: TrendingUp },
   { href: '/dashboard/company/reportes', label: 'Reportes', icon: BarChart3 },
   { href: '/admin/metrics', label: 'Métricas de Usuarios', icon: Lock },
+]
+
+const accountItems = [
+  { href: '/dashboard/company/perfil', label: 'Mi Perfil', icon: Settings },
 ]
 
 export default function CompanyLayout({ children }: { children: React.ReactNode }) {
@@ -92,7 +96,29 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
         })}
       </nav>
 
-      <div className="p-2 sm:p-3 md:p-4 border-t border-slate-700 bg-slate-900/60">
+      <div className="p-2 sm:p-3 md:p-4 border-t border-slate-700 bg-slate-900/60 space-y-2">
+        {accountItems.map(item => {
+          const Icon = item.icon
+          const isActive = pathname === item.href
+          
+          return (
+            <Link key={item.href} href={item.href}>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className={cn(
+                  'w-full flex items-center gap-2 sm:gap-3 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-slate-700/50 text-white'
+                    : 'text-white hover:bg-slate-800/50 hover:text-white'
+                )}
+              >
+                <Icon className="h-4 w-4 flex-shrink-0" />
+                <span className="hidden sm:inline text-white">{item.label}</span>
+              </button>
+            </Link>
+          )
+        })}
+        
         <Button 
           variant="outline" 
           size="sm" 
