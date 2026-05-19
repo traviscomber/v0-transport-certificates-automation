@@ -194,10 +194,10 @@ export async function GET(request: Request) {
       // TIMESTAMP
       generatedAt: new Date().toISOString()
     })
-  } catch (error) {
-    console.error('[v0] ROI Metrics Error:', error)
+  } catch (error: any) {
+    console.error('[v0] ROI Metrics Error:', error.message || error)
     return NextResponse.json(
-      { error: 'Error calculating ROI metrics' },
+      { error: 'Error calculating ROI metrics', details: error.message || String(error) },
       { status: 500 }
     )
   }
