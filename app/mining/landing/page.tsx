@@ -217,7 +217,8 @@ export default function MiningLanding() {
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* Pricing - Hidden for now */}
+      {/* 
       <section className="max-w-7xl mx-auto px-4 py-24">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4">Planes diseñados para crecer</h2>
@@ -314,6 +315,7 @@ export default function MiningLanding() {
           ))}
         </div>
       </section>
+      */}
 
       {/* CTA Final */}
       <section className="max-w-4xl mx-auto px-4 py-24 text-center">
