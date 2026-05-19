@@ -347,11 +347,7 @@ export default function MiningLanding() {
                 </div>
                 <span className="font-bold">Segur-IA</span>
               </div>
-              <p className="text-sm text-muted-foreground">Soluciones de compliance minero. Desarrollado por Segur-IA y N3uralia</p>
-            </div>
-                <span className="font-bold">Segur-IA</span>
-              </div>
-              <p className="text-sm text-muted-foreground">Soluciones de compliance minero. Desarrollado por Segur-IA y N3uralia</p>
+              <p className="text-sm text-muted-foreground">Soluciones de compliance minero. Desarrollado por Segur-ía y N3uralia</p>
             </div>
             <div>
               <p className="font-semibold mb-3">Producto</p>
@@ -379,7 +375,7 @@ export default function MiningLanding() {
             </div>
           </div>
           <div className="border-t border-secondary/50 pt-8 flex items-center justify-between text-sm text-muted-foreground">
-            <p>&copy; 2026 Segur-IA y N3uralia. Todos los derechos reservados.</p>
+            <p>&copy; 2026 Segur-ía y N3uralia. Todos los derechos reservados.</p>
             <Link href="/">
               <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
                 Volver a Transportes
