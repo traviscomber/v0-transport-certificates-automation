@@ -73,14 +73,18 @@ export default function ROIMetricsPage() {
       })
       
       if (!response.ok) {
-        throw new Error('Error fetching metrics')
+        const errorData = await response.text()
+        console.log('[v0] ROI API Error:', response.status, errorData)
+        throw new Error(`API Error: ${response.status}`)
       }
       
       const data = await response.json()
+      console.log('[v0] ROI Metrics loaded:', data)
       setMetrics(data)
-    } catch (error) {
-      console.error('Error fetching ROI metrics:', error)
-      setError('Error al cargar las métricas')
+      setError('')
+    } catch (error: any) {
+      console.error('[v0] Error fetching ROI metrics:', error.message)
+      setError(`Error: ${error.message}`)
     } finally {
       setLoading(false)
     }
