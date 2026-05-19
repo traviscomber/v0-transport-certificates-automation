@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useDocumentSync } from '@/contexts/document-sync-context'
 import { PDFViewer } from '@/components/pdf-viewer'
 import { formatToChileTime } from '@/lib/timezone-utils'
+import { DocumentFilter, type DocumentFilters } from '@/components/document-filter'
 
 interface PendingDocument {
   id: string
@@ -60,6 +61,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [showAnalysisModal, setShowAnalysisModal] = useState(false)
   const [analysisResult, setAnalysisResult] = useState<any>(null)
+  const [filters, setFilters] = useState<DocumentFilters>({ searchQuery: '' })
   const { onSync, broadcastSync } = useDocumentSync()
   const [rejectDocId, setRejectDocId] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
@@ -75,6 +77,83 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
   const subDocs = propSubDocs.filter(doc => !removedIds.has(doc.id))
 
   const totalPendientes = conductorDocs.length + subDocs.length
+
+  // Helper to extract executive name
+  const getExecutive = (doc: PendingDocument) => {
+    return doc.ejecutiva || doc.reviewed_by_ejecutiva || doc.uploaded_by_ejecutiva || 'No especificado'
+  }
+
+  // Get all documents combined
+  const allDocs = [...conductorDocs, ...subDocs].sort(
+    (a, b) => new Date(b.uploaded_at || b.created_at || '').getTime() - new Date(a.uploaded_at || a.created_at || '').getTime()
+  )
+
+  // Get unique executives and companies for filter options
+  const executives = useMemo(() => {
+    const execs = new Map<string, string>()
+    allDocs.forEach((doc) => {
+      const exec = getExecutive(doc)
+      if (exec && exec !== 'No especificado') {
+        execs.set(exec, exec)
+      }
+    })
+    return Array.from(execs).map(([id, nombre]) => ({ id, nombre }))
+  }, [allDocs])
+
+  const companies = useMemo(() => {
+    const comps = new Map<string, { nombre: string; rut: string }>()
+    allDocs.forEach((doc) => {
+      try {
+        if (doc.transportistas) {
+          const comp = Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas
+          if (comp && comp.razon_social) {
+            comps.set(comp.id || comp.rut, { nombre: comp.razon_social, rut: comp.rut || '' })
+          }
+        }
+      } catch (e) {
+        console.log('[v0] Error extracting company:', e)
+      }
+    })
+    return Array.from(comps).map(([id, data]) => ({ id, ...data }))
+  }, [allDocs])
+
+  // Filter documents based on filter criteria
+  const filteredDocs = useMemo(() => {
+    return allDocs.filter((doc) => {
+      // Search query
+      if (filters.searchQuery) {
+        const query = filters.searchQuery.toLowerCase()
+        const filename = (doc.original_filename || doc.file_name || '').toLowerCase()
+        const company = doc.transportistas ? ((Array.isArray(doc.transportistas) ? doc.transportistas[0]?.razon_social : doc.transportistas?.razon_social) || '') : ''
+        const conductor = doc.conductores ? ((Array.isArray(doc.conductores) ? doc.conductores[0]?.nombres : doc.conductores?.nombres) || '') : ''
+        
+        if (!filename.includes(query) && !company.toLowerCase().includes(query) && !conductor.toLowerCase().includes(query)) {
+          return false
+        }
+      }
+
+      // Executive filter
+      if (filters.executiveId) {
+        if (getExecutive(doc) !== filters.executiveId) {
+          return false
+        }
+      }
+
+      // Company filter
+      if (filters.companyId) {
+        try {
+          const docCompany = doc.transportistas ? (Array.isArray(doc.transportistas) ? doc.transportistas[0]?.id : doc.transportistas?.id) : (doc as any).subcontractor_rut
+          if (docCompany !== filters.companyId) {
+            return false
+          }
+        } catch (e) {
+          return false
+        }
+      }
+
+      return true
+    })
+  }, [allDocs, filters])
 
   const handleAnalyzeDocument = async (docId: string) => {
     setAnalyzing(docId)
@@ -259,26 +338,36 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
         </div>
       </div>
 
+      {/* Filter */}
+      <DocumentFilter 
+        onFilterChange={setFilters}
+        executives={executives}
+        companies={companies}
+      />
+
       {/* Conductor Documents Section */}
-      <Card className="border-blue-500/30 bg-blue-500/5">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-blue-500" />
-              <CardTitle>Documentos de Conductores</CardTitle>
-            </div>
-            <Badge variant="secondary">{conductorDocs.length} pendientes</Badge>
-          </div>
-          <CardDescription>Licencias, antecedentes y documentos personales</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {conductorDocs.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No hay documentos de conductores pendientes
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {conductorDocs.map((doc) => (
+      {(() => {
+        const conductorFiltered = filteredDocs.filter(doc => propConductorDocs.some(d => d.id === doc.id))
+        return (
+          <Card className="border-blue-500/30 bg-blue-500/5">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-blue-500" />
+                  <CardTitle>Documentos de Conductores</CardTitle>
+                </div>
+                <Badge variant="secondary">{conductorFiltered.length} pendientes</Badge>
+              </div>
+              <CardDescription>Licencias, antecedentes y documentos personales</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {conductorFiltered.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No hay documentos de conductores pendientes
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {conductorFiltered.map((doc) => (
                 <div 
                   key={doc.id} 
                   className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700"
@@ -352,27 +441,32 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
           )}
         </CardContent>
       </Card>
+        )
+      })}
 
       {/* Subcontractor Documents Section */}
-      <Card className="border-orange-500/30 bg-orange-500/5">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Truck className="h-5 w-5 text-orange-500" />
-              <CardTitle>Documentos de Subcontratistas</CardTitle>
-            </div>
-            <Badge variant="secondary">{subDocs.length} pendientes</Badge>
-          </div>
-          <CardDescription>F30, F30-1, contratos y documentos legales</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {subDocs.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No hay documentos de subcontratistas pendientes
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {subDocs.map((doc) => (
+      {(() => {
+        const subFiltered = filteredDocs.filter(doc => propSubDocs.some(d => d.id === doc.id))
+        return (
+          <Card className="border-orange-500/30 bg-orange-500/5">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Truck className="h-5 w-5 text-orange-500" />
+                  <CardTitle>Documentos de Subcontratistas</CardTitle>
+                </div>
+                <Badge variant="secondary">{subFiltered.length} pendientes</Badge>
+              </div>
+              <CardDescription>F30, F30-1, contratos y documentos legales</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {subFiltered.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No hay documentos de subcontratistas pendientes
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {subFiltered.map((doc) => (
                 <div 
                   key={doc.id} 
                   className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700"
@@ -464,6 +558,8 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
           )}
         </CardContent>
       </Card>
+        )
+      })}
 
       {/* Preview Modal */}
       <Dialog open={!!previewDoc} onOpenChange={(open) => { if (!open) setPreviewDoc(null) }}>

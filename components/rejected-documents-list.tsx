@@ -165,6 +165,9 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
     )
   }
 
+  // Use filtered documents if any filter is applied, otherwise show all
+  const docsToDisplay = filteredDocs.length > 0 || filters.searchQuery || filters.executiveId || filters.companyId ? filteredDocs : allDocs
+
   return (
     <>
       <DocumentFilter 
@@ -173,13 +176,13 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
         companies={companies}
       />
       
-      {filteredDocs.length === 0 ? (
+      {docsToDisplay.length === 0 && (filters.searchQuery || filters.executiveId || filters.companyId) ? (
         <div className="flex flex-col items-center justify-center py-12 px-4">
           <p className="text-slate-400">No hay documentos que coincidan con los filtros seleccionados</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredDocs.map((doc) => (
+          {docsToDisplay.map((doc) => (
           <Card key={doc.id} className="bg-gradient-to-r from-slate-900/80 to-slate-800/80 border-slate-700/50 hover:border-red-500/30 transition-all hover:shadow-lg hover:shadow-red-500/10">
             <CardContent className="p-6">
               <div className="flex items-start justify-between gap-6">
