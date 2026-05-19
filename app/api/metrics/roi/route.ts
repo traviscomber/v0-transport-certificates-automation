@@ -208,56 +208,73 @@ export async function GET(request: Request) {
     const monthlyTrend = generateMonthlyTrend(allDocs || [], sixMonthsAgo)
 
     return NextResponse.json({
+      // DOCUMENTS
       totalDocumentsProcessed: totalDocuments,
       documentsWithAI: docsWithAI,
-      documentsManual: totalDocuments - docsWithAI,
-      totalTimeSavedHours: Math.round(totalTimeSavedHours),
-      averageTimePerDocumentMinutes: AVG_AI_TIME_MINUTES,
-      executivesEquivalent: Math.round(executivesEquivalent * 10) / 10,
-      totalExecutives,
-      documentsByExecutive,
+      documentsManual: docsManual,
+      documentsPending: pendingDocs,
+      documentsApproved: approvedDocs,
+      documentsRejected: rejectedDocs,
+      
+      // TIME SAVINGS
+      totalTimeSavedMinutes,
+      totalTimeSavedHours: Math.round(totalTimeSavedHours * 100) / 100,
+      totalTimeSavedDays: Math.round(totalTimeSavedDays * 100) / 100,
+      timeSavedPerDocumentMinutes,
+      averageTimePerDocumentMinutesManual: TOTAL_MANUAL_PER_DOC,
+      averageTimePerDocumentMinutesWithAI: TOTAL_WITH_AI_PER_DOC,
+      
+      // EXECUTIVE CAPACITY
+      totalExecutives: executives?.length || 5,
+      executiveNames: executives?.map(e => e.full_name) || [],
+      docsPerExecutiveMonthly: Math.round(docsPerExecutiveMonthly),
+      docsPerExecutiveYearly: Math.round(docsPerExecutiveYearly),
+      
+      // COST SAVINGS
+      executivesEquivalent: Math.round(executivesEquivalent * 100) / 100,
+      executiveMonthlysalary: EXECUTIVE_MONTHLY_SALARY,
+      executiveAnnualSalary: EXECUTIVE_ANNUAL_SALARY,
+      totalExecutivePayroll: TOTAL_EXECUTIVE_PAYROLL,
+      costSavingMonthly: Math.round(monthlySavingsFromAI),
+      costSavingAnnual: Math.round(yearlySavingsFromAI),
+      costSavingAsPercentageOfPayroll: Math.round((monthlySavingsFromAI / TOTAL_EXECUTIVE_PAYROLL) * 100),
+      
+      // PERFORMANCE METRICS
       systemAccuracy,
+      aiSuccessRate,
       rejectionRate,
       approvalRate,
-      processingSpeedDocsPerHour,
-      costSavingMonthly,
-      monthlyTrend,
+      processingSpeedAI,
+      processingSpeedManual,
+      speedMultiplier,
+      
+      // VOLUME CONTEXT
+      totalConductores,
+      totalTransportistas,
+      averageDocsPerConductor: Math.round(avgDocsPerConductor * 100) / 100,
+      averageDocsPerTransportista: Math.round(avgDocsPerTransportista * 100) / 100,
+      
+      // ROI SUMMARY
+      roi: {
+        message: `Labbe puede prescindir de ${Math.round(executivesEquivalent)} ejecutivas y ahorrar CLP $${Math.round(yearlySavingsFromAI).toLocaleString('es-CL')} anualmente.`,
+        equivalentExecutives: Math.round(executivesEquivalent * 100) / 100,
+        monthlySavingsCLP: Math.round(monthlySavingsFromAI),
+        yearlySavingsCLP: Math.round(yearlySavingsFromAI),
+        documentsProcessedPerDay: Math.round((docsWithAI / 30)),
+        hoursPerMonthSaved: Math.round(totalTimeSavedHours)
+      },
+      
+      // TIMESTAMP
+      generatedAt: new Date().toISOString()
     })
   } catch (error) {
-    console.error('Error calculating ROI metrics:', error)
-    
-    // Return default metrics if there's an error
-    return NextResponse.json({
-      totalDocumentsProcessed: 1397,
-      documentsWithAI: 1200,
-      documentsManual: 197,
-      totalTimeSavedHours: 3200,
-      averageTimePerDocumentMinutes: 2,
-      executivesEquivalent: 2.8,
-      totalExecutives: 5,
-      documentsByExecutive: 280,
-      systemAccuracy: 95,
-      rejectionRate: 5,
-      approvalRate: 90,
-      processingSpeedDocsPerHour: 30,
-      costSavingMonthly: 4200000,
-      monthlyTrend: []
-    })
+    console.error('[v0] ROI Metrics Error:', error)
+    return NextResponse.json(
+      { error: 'Error calculating ROI metrics' },
+      { status: 500 }
+    )
   }
-}
-
-function generateMonthlyTrend(docs: any[], startDate: Date) {
-  const months = []
-  const monthMap = new Map<string, number>()
-
-  // Group docs by month
-  docs.forEach(doc => {
-    const docDate = doc.ocr_processed_at ? new Date(doc.ocr_processed_at) : doc.reviewed_at ? new Date(doc.reviewed_at) : null
-    if (docDate && docDate >= startDate) {
-      const monthKey = docDate.toLocaleDateString('es-CL', { year: 'numeric', month: 'short' })
-      monthMap.set(monthKey, (monthMap.get(monthKey) || 0) + 1)
-    }
-  })
+}  })
 
   // Generate month array
   const currentDate = new Date(startDate)
