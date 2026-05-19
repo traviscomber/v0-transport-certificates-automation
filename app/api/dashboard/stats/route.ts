@@ -8,59 +8,88 @@ export async function GET() {
   try {
     const supabase = createAdminClient()
 
-    // Get ALL conductor documents (no pagination limit)
-    const { data: allConductorDocs, error: conductorError } = await supabase
+    // Get ALL conductor documents with validation_status = 'approved' using explicit filter
+    const { data: approvedConductor, error: conductorError } = await supabase
       .from('uploaded_documents')
-      .select('validation_status', { head: false })
+      .select('id')
+      .eq('validation_status', 'approved')
 
     if (conductorError) {
-      console.error('[v0] Error fetching conductor docs:', conductorError)
+      console.error('[v0] Error fetching approved conductor docs:', conductorError)
     }
 
-    const conductorPending = (allConductorDocs || []).filter(d => d.validation_status === 'pending' || !d.validation_status).length
-    const conductorApproved = (allConductorDocs || []).filter(d => d.validation_status === 'approved').length
-    const conductorRejected = (allConductorDocs || []).filter(d => d.validation_status === 'rejected').length
-
-    // Get ALL subcontractor documents (no pagination limit)
-    const { data: allSubDocs, error: subError } = await supabase
+    // Get ALL subcontractor documents with status = 'approved' using explicit filter
+    const { data: approvedSub, error: subError } = await supabase
       .from('subcontractor_documents')
-      .select('status', { head: false })
+      .select('id')
+      .eq('status', 'approved')
 
     if (subError) {
-      console.error('[v0] Error fetching subcontractor docs:', subError)
+      console.error('[v0] Error fetching approved subcontractor docs:', subError)
     }
 
-    const subPending = (allSubDocs || []).filter(d => d.status === 'pending').length
-    const subApproved = (allSubDocs || []).filter(d => d.status === 'approved').length
-    const subRejected = (allSubDocs || []).filter(d => d.status === 'rejected').length
+    // Get pending documents from uploaded_documents (no status or status='pending')
+    const { data: pendingConductor } = await supabase
+      .from('uploaded_documents')
+      .select('id')
+      .or('validation_status.eq.pending,validation_status.is.null')
 
-    // Calculate totals
+    const { data: pendingSub } = await supabase
+      .from('subcontractor_documents')
+      .select('id')
+      .eq('status', 'pending')
+
+    // Get rejected documents
+    const { data: rejectedConductor } = await supabase
+      .from('uploaded_documents')
+      .select('id')
+      .eq('validation_status', 'rejected')
+
+    const { data: rejectedSub } = await supabase
+      .from('subcontractor_documents')
+      .select('id')
+      .eq('status', 'rejected')
+
+    // Get totals
+    const { data: allConductor } = await supabase
+      .from('uploaded_documents')
+      .select('id')
+
+    const { data: allSub } = await supabase
+      .from('subcontractor_documents')
+      .select('id')
+
+    const conductorApproved = approvedConductor?.length || 0
+    const subApproved = approvedSub?.length || 0
+    const conductorPending = pendingConductor?.length || 0
+    const subPending = pendingSub?.length || 0
+    const conductorRejected = rejectedConductor?.length || 0
+    const subRejected = rejectedSub?.length || 0
+    const conductorTotal = allConductor?.length || 0
+    const subTotal = allSub?.length || 0
+
     const totals = {
-      total: (allConductorDocs?.length || 0) + (allSubDocs?.length || 0),
+      total: conductorTotal + subTotal,
       pending: conductorPending + subPending,
       approved: conductorApproved + subApproved,
       rejected: conductorRejected + subRejected,
     }
 
-    console.log('[v0] Stats API (ADMIN CLIENT) - Total docs fetched:', totals.total)
-    console.log('[v0] Stats API - Approved: conductor', conductorApproved, '+ sub', subApproved, '= total', totals.approved)
-    console.log('[v0] Stats API - Full breakdown:', {
-      allConductorDocs_count: allConductorDocs?.length,
-      allSubDocs_count: allSubDocs?.length,
+    console.log('[v0] Stats API - Approved counts:', {
       conductorApproved,
       subApproved,
-      totals
+      total: conductorApproved + subApproved
     })
 
     const stats = {
       conductores: {
-        total: allConductorDocs?.length || 0,
+        total: conductorTotal,
         pendientes: conductorPending,
         aprobados: conductorApproved,
         rechazados: conductorRejected,
       },
       subcontratistas: {
-        total: allSubDocs?.length || 0,
+        total: subTotal,
         pendientes: subPending,
         aprobados: subApproved,
         rechazados: subRejected,
