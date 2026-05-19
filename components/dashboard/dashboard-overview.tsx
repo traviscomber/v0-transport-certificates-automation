@@ -181,56 +181,57 @@ export function DashboardOverview() {
             const statsRes = await fetch(`/api/dashboard/stats`, {
               cache: "no-store",
             })
-            
-            const alertsRes = await fetch(`/api/alerts?limit=50`, {
-              cache: "default",
-            })
 
             if (statsRes.ok) {
               const statsData = await statsRes.json()
               const statsObj = statsData.stats || {}
               const conductorStats = statsObj.conductores || {}
+              const subStats = statsObj.subcontratistas || {}
+
+              // Aggregate both conductor and subcontractor documents (same logic as initial fetch)
+              const totalDocs = (conductorStats.total || 0) + (subStats.total || 0)
+              const pendingDocs = (conductorStats.pendientes || 0) + (subStats.pendientes || 0)
+              const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
+              const rejectedDocs = (conductorStats.rechazados || 0) + (subStats.rechazados || 0)
 
               setStats([
                 {
                   title: "Total de Documentos",
-                  value: conductorStats.total?.toString() || "0",
+                  value: totalDocs.toString(),
                   description: "En el sistema",
                   icon: FileText,
                   status: "active",
                   href: "/dashboard/company/documentos",
+                  color: "blue",
                 },
                 {
                   title: "Documentos Aprobados",
-                  value: conductorStats.aprobados?.toString() || "0",
+                  value: approvedDocs.toString(),
                   description: "Validados",
                   icon: CheckCircle,
                   status: "active",
                   href: "/dashboard/company/documentos/aprobados",
+                  color: "green",
                 },
                 {
                   title: "Documentos Pendientes",
-                  value: conductorStats.pendientes?.toString() || "0",
+                  value: pendingDocs.toString(),
                   description: "En revisión",
                   icon: Clock,
                   status: "active",
                   href: "/dashboard/company/documentos/pendientes",
+                  color: "orange",
                 },
                 {
                   title: "Documentos Rechazados",
-                  value: conductorStats.rechazados?.toString() || "0",
+                  value: rejectedDocs.toString(),
                   description: "No validados",
                   icon: AlertTriangle,
                   status: "warning",
                   href: "/dashboard/company/documentos/rechazados",
+                  color: "red",
                 },
               ])
-            }
-            
-            if (alertsRes.ok) {
-              const alertsData = await alertsRes.json()
-              const alertsList = Array.isArray(alertsData) ? alertsData : (alertsData.alerts || [])
-              setAlerts(alertsList)
             }
           } catch (error) {
             console.error('[v0] Error refetching stats:', error)
