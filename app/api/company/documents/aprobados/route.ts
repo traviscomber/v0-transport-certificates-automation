@@ -39,27 +39,10 @@ export async function GET() {
     console.log('[v0] Aprobados endpoint: Current ejecutiva:', currentExecutiva)
     console.log('[v0] Aprobados endpoint: Fetching ALL approved documents')
 
-    // Get approved conductor documents - NO FILTER, fetch all
+    // Get approved conductor documents - NO FILTER, fetch all with simpler select to avoid join issues
     const { data: conductorDocs, error: conductorError } = await supabase
       .from('uploaded_documents')
-      .select(`
-        id,
-        original_filename,
-        document_type_id,
-        validation_status,
-        file_url,
-        validated_at,
-        ejecutiva,
-        created_at,
-        updated_at,
-        conductor_id,
-        conductores (
-          id,
-          nombres,
-          apellido_paterno,
-          rut
-        )
-      `)
+      .select('*')
       .eq('validation_status', 'approved')
       .order('updated_at', { ascending: false })
 
@@ -69,6 +52,25 @@ export async function GET() {
     }
 
     console.log('[v0] Aprobados: Conductor docs count:', conductorDocs?.length || 0)
+
+    // Fetch conductor details manually if needed
+    let conductorMap = new Map<string, any>()
+    if (conductorDocs && conductorDocs.length > 0) {
+      const validConductorIds = conductorDocs
+        .map((doc: any) => doc.conductor_id)
+        .filter(Boolean)
+      
+      if (validConductorIds.length > 0) {
+        const { data: conductores } = await supabase
+          .from('conductores')
+          .select('id, nombres, apellido_paterno, rut')
+          .in('id', validConductorIds)
+        
+        if (conductores) {
+          conductores.forEach(c => conductorMap.set(c.id, c))
+        }
+      }
+    }
 
     // Get assigned executives for conductors
     // Workflow: conductores.rut_proveedor -> transportistas.rut -> transportistas.assigned_executive_id -> executive_staff.full_name
@@ -121,26 +123,10 @@ export async function GET() {
 
     console.log('[v0] Aprobados: Conductor executive map:', Array.from(conductorExecutiveMap.entries()))
 
-    // Get approved subcontractor documents - NO FILTER, fetch all
+    // Get approved subcontractor documents - NO FILTER, fetch all with simpler select to avoid join issues
     const { data: subDocs, error: subError } = await supabase
       .from('subcontractor_documents')
-      .select(`
-        id,
-        file_name,
-        document_type_id,
-        status,
-        file_url,
-        reviewed_by_ejecutiva,
-        created_at,
-        updated_at,
-        subcontractor_id,
-        subcontractor_rut,
-        transportistas:subcontractor_id (
-          id,
-          razon_social,
-          rut
-        )
-      `)
+      .select('*')
       .eq('status', 'approved')
       .order('updated_at', { ascending: false })
 
@@ -152,6 +138,25 @@ export async function GET() {
     console.log('[v0] Aprobados: Sub docs count:', subDocs?.length || 0)
     if (subDocs && subDocs.length > 0) {
       console.log('[v0] Aprobados: First sub doc:', JSON.stringify(subDocs[0], null, 2))
+    }
+
+    // Fetch transportistas manually to avoid join issues
+    let transportistasMap = new Map<string, any>()
+    if (subDocs && subDocs.length > 0) {
+      const validSubIds = subDocs
+        .map((doc: any) => doc.subcontractor_id)
+        .filter(Boolean)
+      
+      if (validSubIds.length > 0) {
+        const { data: transportistas } = await supabase
+          .from('transportistas')
+          .select('id, razon_social, rut')
+          .in('id', validSubIds)
+        
+        if (transportistas) {
+          transportistas.forEach(t => transportistasMap.set(t.id, t))
+        }
+      }
     }
 
     // Fetch document types
@@ -242,7 +247,7 @@ export async function GET() {
         created_at: doc.created_at,
         updated_at: doc.updated_at,
         reviewed_at: doc.validated_at || doc.updated_at,
-        conductores: doc.conductores,
+        conductores: conductorMap.get(doc.conductor_id) || null,
         docType: docTypeMap.get(doc.document_type_id),
         document_source: 'conductor'
       }
@@ -274,7 +279,7 @@ export async function GET() {
         created_at: doc.created_at,
         updated_at: doc.updated_at,
         reviewed_at: doc.approved_at || doc.updated_at,
-        transportistas: doc.transportistas || {
+        transportistas: transportistasMap.get(doc.subcontractor_id) || {
           id: doc.subcontractor_id,
           razon_social: 'Subcontratista',
           rut: doc.subcontractor_rut
