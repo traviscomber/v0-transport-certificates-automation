@@ -69,11 +69,13 @@ export async function GET() {
     const subTotal = allSub?.length || 0
 
     const totals = {
-      total: conductorTotal + subTotal,
       pending: conductorPending + subPending,
       approved: conductorApproved + subApproved,
       rejected: conductorRejected + subRejected,
     }
+
+    // Total should be sum of all three states, not raw totals which may include unclassified docs
+    totals.total = totals.pending + totals.approved + totals.rejected
 
     console.log('[v0] Stats API - Approved counts:', {
       conductorApproved,
