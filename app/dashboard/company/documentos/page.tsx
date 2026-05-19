@@ -1,11 +1,14 @@
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
+export const fetchCache = 'force-no-store'
 
 import { createClient } from "@/lib/supabase/server"
 import { DocumentManagerHub } from "@/components/document-manager-hub"
 
 async function getDocumentStats() {
   const supabase = await createClient()
+  
+  console.log("[v0] documentos/page.tsx getDocumentStats called - fetching all documents with pagination")
   
   // Get conductor documents stats - PAGINATE for all records
   const { data: conductorPage0, error: conductorError } = await supabase
@@ -49,6 +52,9 @@ async function getDocumentStats() {
     console.error("[v0] Error fetching subcontractor docs:", subError.message)
   }
   
+  console.log("[v0] Conductor stats:", allConductorDocs.length, "docs")
+  console.log("[v0] Subcontractor stats:", allSubDocs.length, "docs")
+  
   const subStats = {
     total: allSubDocs.length,
     pendientes: allSubDocs.filter(d => d.status === 'pending').length,
@@ -56,6 +62,11 @@ async function getDocumentStats() {
     rechazados: allSubDocs.filter(d => d.status === 'rejected').length,
     vencidos: 0
   }
+  
+  console.log("[v0] Document Stats calculated:", { 
+    conductor: conductorStats, 
+    subcontractor: subStats 
+  })
 
   // Get certifications stats from transportistas
   const { data: transportistas, error: transError } = await supabase
