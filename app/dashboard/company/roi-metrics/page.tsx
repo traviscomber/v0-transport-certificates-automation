@@ -11,8 +11,14 @@ interface ROIMetrics {
   totalDocumentsProcessed: number
   documentsWithAI: number
   documentsManual: number
+  documentsPending: number
+  documentsApproved: number
+  documentsRejected: number
   totalTimeSavedHours: number
   totalTimeSavedDays: number
+  timeSavedPerDocumentMinutes: number
+  averageTimePerDocumentMinutesManual: number
+  averageTimePerDocumentMinutesWithAI: number
   executivesEquivalent: number
   totalExecutives: number
   costSavingMonthly: number
@@ -26,7 +32,6 @@ interface ROIMetrics {
   processingSpeedManual: number
   speedMultiplier: number
   docsPerExecutiveMonthly: number
-  timeSavedPerDocumentMinutes: number
   roi: {
     message: string
     equivalentExecutives: number
