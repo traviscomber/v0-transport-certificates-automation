@@ -68,8 +68,7 @@ export async function getDocumentAlerts(limit = 50, offset = 0) {
       .select('*')
       .in('alert_type', ['DOCUMENT_UPLOADED', 'DOCUMENT_APPROVED', 'DOCUMENT_REJECTED', 'DOCUMENT_EXPIRING'])
       .order('created_at', { ascending: false })
-      .limit(limit)
-      .offset(offset)
+      .range(offset, offset + limit - 1)
 
     if (error) {
       console.error('[v0] Error fetching document alerts:', error)
