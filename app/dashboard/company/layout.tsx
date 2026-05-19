@@ -8,6 +8,7 @@ import { LayoutDashboard, Users, FileText, BarChart3, LogOut, Zap, Users2, Lock,
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { NotificationCenter } from '@/components/notification-center'
+import { CompanyHeader } from '@/components/layout/company-header'
 
 const navItems = [
   { href: '/dashboard/company', label: 'Dashboard', icon: LayoutDashboard },
@@ -121,26 +122,8 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Header */}
-          <div className="border-b border-slate-200 bg-white px-3 md:px-6 py-3 md:py-4 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-sm">
-            {/* Mobile menu button */}
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden text-slate-700 hover:bg-slate-100">
-                <Menu className="h-6 w-6" />
-              </Button>
-            </SheetTrigger>
-
-            {/* Brand info - shows on mobile, hidden on desktop since sidebar has it */}
-            <div className="flex-1 min-w-0">
-              <h1 className="text-sm md:text-lg font-bold text-slate-900 truncate">Transportes Labbé</h1>
-              <p className="text-xs text-slate-600 truncate">Portal de Empresa</p>
-            </div>
-
-            {/* Right side - Notifications - always in top right corner */}
-            <div className="flex items-center gap-2 md:gap-4 ml-auto">
-              <NotificationCenter />
-            </div>
-          </div>
+          {/* Header - New Naranja Header */}
+          <CompanyHeader />
           
           {/* Main content */}
           <main className="flex-1 overflow-auto p-3 md:p-6 lg:p-8">
