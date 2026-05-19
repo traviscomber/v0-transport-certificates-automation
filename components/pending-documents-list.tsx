@@ -119,6 +119,8 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
 
   // Filter documents based on filter criteria
   const filteredDocs = useMemo(() => {
+    console.log('[v0] Filtering pending docs:', { allDocsLength: allDocs.length, filters })
+    
     return allDocs.filter((doc) => {
       // Search query
       if (filters.searchQuery) {
@@ -345,7 +347,19 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
         companies={companies}
       />
 
-      {/* Conductor Documents Section */}
+      {allDocs.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 px-4">
+          <Clock className="h-12 w-12 text-amber-500 mb-4" />
+          <p className="text-lg font-medium text-slate-300">No hay documentos pendientes</p>
+          <p className="text-sm text-slate-500 mt-2">Los documentos esperando revisión aparecerán aquí</p>
+        </div>
+      ) : filteredDocs.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 px-4">
+          <p className="text-slate-400">No hay documentos que coincidan con los filtros seleccionados</p>
+        </div>
+      ) : (
+        <>
+          {/* Conductor Documents Section */}
       {(() => {
         const conductorFiltered = filteredDocs.filter(doc => propConductorDocs.some(d => d.id === doc.id))
         return (
@@ -560,6 +574,8 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
       </Card>
         )
       })}
+        </>
+      )}
 
       {/* Preview Modal */}
       <Dialog open={!!previewDoc} onOpenChange={(open) => { if (!open) setPreviewDoc(null) }}>
