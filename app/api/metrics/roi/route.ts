@@ -34,14 +34,18 @@ export async function GET(request: Request) {
 
     if (docsError) throw docsError
 
-    // Get drivers and organizations for volume analysis
-    const { data: drivers } = await supabase
+    // Get drivers and organizations for volume analysis (with error handling)
+    const { data: drivers, error: driversError } = await supabase
       .from('drivers')
       .select('id')
 
-    const { data: organizations } = await supabase
+    const { data: organizations, error: orgsError } = await supabase
       .from('organizations')
       .select('id')
+    
+    // Fallback if tables don't exist
+    const driversData = drivers || []
+    const orgsData = organizations || []
 
     // Get executives
     const { data: executives } = await supabase
@@ -119,8 +123,8 @@ export async function GET(request: Request) {
     const speedMultiplier = Math.round((processingSpeedAI / processingSpeedManual) * 10) / 10
     
     // 9. VOLUME CONTEXT
-    const totalConductores = drivers?.length || 235
-    const totalTransportistas = organizations?.length || 235
+    const totalConductores = driversData.length || 235
+    const totalTransportistas = orgsData.length || 235
     const avgDocsPerConductor = totalDocuments / totalConductores
     const avgDocsPerTransportista = totalDocuments / totalTransportistas
     
