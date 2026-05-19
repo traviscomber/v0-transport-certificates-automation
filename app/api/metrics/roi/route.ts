@@ -26,10 +26,10 @@ export async function GET(request: Request) {
 
     const supabase = getSupabaseClient()
 
-    // Get all documents with detailed info
+    // Get all documents with detailed info - using uploaded_documents table
     const { data: allDocs, error: docsError } = await supabase
-      .from('certificates')
-      .select('id, status, ocr_processed_at, reviewed_at, created_at, file_name')
+      .from('uploaded_documents')
+      .select('id, is_compliant, ai_extraction_status, manual_review_status, created_at, original_filename')
       .order('created_at', { ascending: false })
 
     if (docsError) throw docsError
@@ -57,13 +57,13 @@ export async function GET(request: Request) {
     
     // 1. DOCUMENTS ANALYSIS
     const totalDocuments = allDocs?.length || 0
-    const docsWithAI = (allDocs || []).filter(doc => doc.ocr_processed_at !== null).length
+    const docsWithAI = (allDocs || []).filter(doc => doc.ai_extraction_status === 'completed').length
     const docsManual = totalDocuments - docsWithAI
     
-    // 2. STATUS BREAKDOWN
-    const approvedDocs = (allDocs || []).filter(doc => doc.status === 'approved').length
-    const rejectedDocs = (allDocs || []).filter(doc => doc.status === 'rejected').length
-    const pendingDocs = (allDocs || []).filter(doc => doc.status === 'pending').length
+    // 2. STATUS BREAKDOWN - using is_compliant and manual_review_status
+    const approvedDocs = (allDocs || []).filter(doc => doc.is_compliant === true && doc.manual_review_status === 'approved').length
+    const rejectedDocs = (allDocs || []).filter(doc => doc.is_compliant === false || doc.manual_review_status === 'rejected').length
+    const pendingDocs = (allDocs || []).filter(doc => doc.manual_review_status === 'pending' || doc.manual_review_status === null).length
     
     // 3. TIME CALCULATIONS (REAL DATA FROM LABBE)
     // Manual review: 12-15 minutes per document (promedio 13.5 min)
