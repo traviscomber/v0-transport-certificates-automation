@@ -1,8 +1,6 @@
 "use client"
 
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertTriangle, Clock, CheckCircle, Info } from "lucide-react"
-import { Link } from "next/navigation"
+import { AlertTriangle, Clock, CheckCircle } from "lucide-react"
 
 interface DocumentStatusAlertsProps {
   stats: {
