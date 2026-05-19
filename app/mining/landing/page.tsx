@@ -12,11 +12,11 @@ export default function MiningLanding() {
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-background font-bold text-sm">LP</span>
+              <span className="text-background font-bold text-sm">SA</span>
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-lg">La Patagua</span>
-              <span className="text-xs text-muted-foreground">Soluciones Mineras</span>
+              <span className="font-bold text-lg">Segur-IA</span>
+              <span className="text-xs text-muted-foreground">Powered by N3uralia</span>
             </div>
           </div>
           <div className="flex gap-3 items-center">
@@ -321,7 +321,7 @@ export default function MiningLanding() {
         <div className="rounded-2xl border border-primary/30 bg-primary/5 p-12 space-y-6">
           <h2 className="text-4xl font-bold">Optimiza tu operación minera hoy</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Únete a los líderes de minería que ya usan La Patagua para reducir costos y mejorar cumplimiento.
+            Únete a los líderes de minería que ya usan Segur-IA para reducir costos y mejorar cumplimiento.
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
             <Button className="bg-primary hover:bg-primary/90 text-background px-8 py-6 text-lg" size="lg">
@@ -343,11 +343,15 @@ export default function MiningLanding() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-6 h-6 bg-primary rounded flex items-center justify-center">
-                  <span className="text-background font-bold text-xs">LP</span>
+                  <span className="text-background font-bold text-xs">SA</span>
                 </div>
-                <span className="font-bold">La Patagua</span>
+                <span className="font-bold">Segur-IA</span>
               </div>
-              <p className="text-sm text-muted-foreground">Soluciones de compliance para minería</p>
+              <p className="text-sm text-muted-foreground">Soluciones de compliance minero. Desarrollado por Segur-IA y N3uralia</p>
+            </div>
+                <span className="font-bold">Segur-IA</span>
+              </div>
+              <p className="text-sm text-muted-foreground">Soluciones de compliance minero. Desarrollado por Segur-IA y N3uralia</p>
             </div>
             <div>
               <p className="font-semibold mb-3">Producto</p>
@@ -375,7 +379,7 @@ export default function MiningLanding() {
             </div>
           </div>
           <div className="border-t border-secondary/50 pt-8 flex items-center justify-between text-sm text-muted-foreground">
-            <p>&copy; 2026 La Patagua. Todos los derechos reservados.</p>
+            <p>&copy; 2026 Segur-IA y N3uralia. Todos los derechos reservados.</p>
             <Link href="/">
               <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
                 Volver a Transportes
