@@ -8,7 +8,6 @@ import { FileText, Shield, Truck, AlertTriangle, CheckCircle, Clock, LucideIcon 
 import { useDocumentSync } from "@/contexts/document-sync-context"
 import { StatCard } from "./stat-card"
 import { AlertItem } from "./alert-item"
-import { DocumentStatusAlerts } from "./document-status-alerts"
 
 interface Alert {
   id: string
@@ -274,15 +273,6 @@ export function DashboardOverview() {
           />
         ))}
       </div>
-
-      {/* Document Status Alerts - Show status of pending, approved, and rejected documents */}
-      <DocumentStatusAlerts 
-        stats={{
-          pendientes: parseInt(stats[2]?.value || "0"),
-          aprobados: parseInt(stats[1]?.value || "0"),
-          rechazados: parseInt(stats[3]?.value || "0"),
-        }}
-      />
 
       {/* Recent Alerts - Organized by category */}
       {alerts.length > 0 && (
