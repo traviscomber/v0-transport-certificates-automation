@@ -38,6 +38,13 @@ export default function PendientesPage() {
   const filteredData = useMemo(() => {
     if (!allData) return null
 
+    console.log('[v0] Pendientes page - allData:', {
+      total: allData.total,
+      conductorDocs: allData.conductorDocs?.length,
+      subDocs: allData.subDocs?.length,
+      dateFilter
+    })
+
     // Calculate date range for filtering
     let minDate: Date | null = null
     if (dateFilter !== 'all') {
@@ -54,6 +61,12 @@ export default function PendientesPage() {
     let filteredSubDocs = allData.subDocs || []
     let filteredConductorDocs = allData.conductorDocs || []
 
+    console.log('[v0] Before date filter:', {
+      subDocs: filteredSubDocs.length,
+      conductorDocs: filteredConductorDocs.length,
+      minDate: minDate?.toISOString()
+    })
+
     // No ejecutiva filter - show all documents to all executivas
 
     // Apply date filter
@@ -68,7 +81,10 @@ export default function PendientesPage() {
       })
     }
 
-    console.log('[v0] Filtered result:', { subDocs: filteredSubDocs.length, conductorDocs: filteredConductorDocs.length })
+    console.log('[v0] After date filter:', {
+      subDocs: filteredSubDocs.length,
+      conductorDocs: filteredConductorDocs.length
+    })
 
     return {
       conductorDocs: filteredConductorDocs,
