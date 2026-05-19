@@ -12,6 +12,7 @@ export async function GET() {
     const { data: conductorDocs, count: conductorCount } = await supabase
       .from('uploaded_documents')
       .select('validation_status', { count: 'exact', head: false })
+      .limit(10000)
 
     const conductorPending = (conductorDocs || []).filter(d => 
       d.validation_status === 'pending' || d.validation_status === null
@@ -23,6 +24,7 @@ export async function GET() {
     const { data: subDocs, count: subCount } = await supabase
       .from('subcontractor_documents')
       .select('status', { count: 'exact', head: false })
+      .limit(10000)
 
     const subPending = (subDocs || []).filter(d => d.status === 'pending').length
     const subApproved = (subDocs || []).filter(d => d.status === 'approved').length

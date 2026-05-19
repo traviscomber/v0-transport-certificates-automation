@@ -26,6 +26,7 @@ export async function GET() {
         )
       `)
       .or('validation_status.eq.pending,validation_status.is.null')
+      .limit(10000)
       .order("created_at", { ascending: false })
 
     // Get pending subcontractor documents with ALL fields - REMOVED LIMIT to get ALL pending documents
@@ -44,6 +45,7 @@ export async function GET() {
         reviewed_by_ejecutiva,
         uploaded_by_ejecutiva
       `)
+      .limit(10000)
       .order("created_at", { ascending: false })
 
     // Filter in JavaScript to avoid Supabase .eq() bug with large datasets
