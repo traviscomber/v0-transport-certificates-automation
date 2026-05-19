@@ -29,7 +29,7 @@ export async function GET() {
       .order("created_at", { ascending: false })
 
     // Get pending subcontractor documents with ALL fields - REMOVED LIMIT to get ALL pending documents
-    const { data: subDocsRaw } = await supabase
+    const { data: subDocsAll } = await supabase
       .from("subcontractor_documents")
       .select(`
         id,
@@ -44,8 +44,10 @@ export async function GET() {
         reviewed_by_ejecutiva,
         uploaded_by_ejecutiva
       `)
-      .eq('status', 'pending')
       .order("created_at", { ascending: false })
+
+    // Filter in JavaScript to avoid Supabase .eq() bug with large datasets
+    const subDocsRaw = (subDocsAll || []).filter(d => d.status === 'pending')
 
     // Fetch document types
     const { data: docTypes } = await supabase

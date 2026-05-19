@@ -88,8 +88,11 @@ export function DashboardOverview() {
           }
         })
         
-        const statsRes = await fetch(`/api/company/documents/stats`, {
-          cache: "default",
+        const statsRes = await fetch(`/api/dashboard/stats`, {
+          cache: "no-store",
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+          }
         })
 
         if (alertsRes.ok) {
@@ -175,8 +178,8 @@ export function DashboardOverview() {
         const fetchUpdatedStats = async () => {
           try {
             // Use separate endpoints for sync updates
-            const statsRes = await fetch(`/api/company/documents/stats`, {
-              cache: "default",
+            const statsRes = await fetch(`/api/dashboard/stats`, {
+              cache: "no-store",
             })
             
             const alertsRes = await fetch(`/api/alerts?limit=50`, {
