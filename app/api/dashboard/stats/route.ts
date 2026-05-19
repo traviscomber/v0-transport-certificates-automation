@@ -8,59 +8,52 @@ export async function GET() {
   try {
     const supabase = await createClient()
 
-    // PAGE 0: Get conductor documents stats (0-999)
-    const { data: conductorPage0 } = await supabase
+    // Get ALL conductor documents (no pagination limit)
+    const { data: allConductorDocs, error: conductorError } = await supabase
       .from('uploaded_documents')
       .select('validation_status', { head: false })
-      .range(0, 999)
 
-    // PAGE 1: Get conductor documents stats (1000-1999)
-    const { data: conductorPage1 } = await supabase
-      .from('uploaded_documents')
-      .select('validation_status', { head: false })
-      .range(1000, 1999)
+    if (conductorError) {
+      console.error('[v0] Error fetching conductor docs:', conductorError)
+    }
 
-    const allConductorDocs = [...(conductorPage0 || []), ...(conductorPage1 || [])]
+    const conductorPending = (allConductorDocs || []).filter(d => d.validation_status === 'pending' || !d.validation_status).length
+    const conductorApproved = (allConductorDocs || []).filter(d => d.validation_status === 'approved').length
+    const conductorRejected = (allConductorDocs || []).filter(d => d.validation_status === 'rejected').length
 
-    const conductorPending = allConductorDocs.filter(d => d.validation_status === 'pending' || !d.validation_status).length
-    const conductorApproved = allConductorDocs.filter(d => d.validation_status === 'approved').length
-    const conductorRejected = allConductorDocs.filter(d => d.validation_status === 'rejected').length
-
-    // PAGE 0: Get subcontractor documents stats (0-999)
-    const { data: subPage0 } = await supabase
+    // Get ALL subcontractor documents (no pagination limit)
+    const { data: allSubDocs, error: subError } = await supabase
       .from('subcontractor_documents')
       .select('status', { head: false })
-      .range(0, 999)
 
-    // PAGE 1: Get subcontractor documents stats (1000-1999)
-    const { data: subPage1 } = await supabase
-      .from('subcontractor_documents')
-      .select('status', { head: false })
-      .range(1000, 1999)
+    if (subError) {
+      console.error('[v0] Error fetching subcontractor docs:', subError)
+    }
 
-    const allSubDocs = [...(subPage0 || []), ...(subPage1 || [])]
-
-    const subPending = allSubDocs.filter(d => d.status === 'pending').length
-    const subApproved = allSubDocs.filter(d => d.status === 'approved').length
-    const subRejected = allSubDocs.filter(d => d.status === 'rejected').length
+    const subPending = (allSubDocs || []).filter(d => d.status === 'pending').length
+    const subApproved = (allSubDocs || []).filter(d => d.status === 'approved').length
+    const subRejected = (allSubDocs || []).filter(d => d.status === 'rejected').length
 
     // Calculate totals
     const totals = {
-      total: allConductorDocs.length + allSubDocs.length,
+      total: (allConductorDocs?.length || 0) + (allSubDocs?.length || 0),
       pending: conductorPending + subPending,
       approved: conductorApproved + subApproved,
       rejected: conductorRejected + subRejected,
     }
 
+    console.log('[v0] Stats API - Total docs fetched:', totals.total)
+    console.log('[v0] Stats API - Approved: conductor', conductorApproved, '+ sub', subApproved, '= total', totals.approved)
+
     const stats = {
       conductores: {
-        total: allConductorDocs.length,
+        total: allConductorDocs?.length || 0,
         pendientes: conductorPending,
         aprobados: conductorApproved,
         rechazados: conductorRejected,
       },
       subcontratistas: {
-        total: allSubDocs.length,
+        total: allSubDocs?.length || 0,
         pendientes: subPending,
         aprobados: subApproved,
         rechazados: subRejected,
@@ -68,7 +61,14 @@ export async function GET() {
       totals: totals
     }
 
-    return NextResponse.json({ stats }, { status: 200 })
+    return NextResponse.json({ stats }, { 
+      status: 200,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    })
   } catch (error: any) {
     console.error('[v0] Error in /api/dashboard/stats:', error.message)
     return NextResponse.json(
