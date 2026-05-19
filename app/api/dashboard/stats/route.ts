@@ -65,17 +65,18 @@ export async function GET() {
     const subPending = pendingSub?.length || 0
     const conductorRejected = rejectedConductor?.length || 0
     const subRejected = rejectedSub?.length || 0
-    const conductorTotal = allConductor?.length || 0
-    const subTotal = allSub?.length || 0
+
+    // Calculate totals: sum of all three states (pending + approved + rejected)
+    const pendingTotal = conductorPending + subPending
+    const approvedTotal = conductorApproved + subApproved
+    const rejectedTotal = conductorRejected + subRejected
 
     const totals = {
-      pending: conductorPending + subPending,
-      approved: conductorApproved + subApproved,
-      rejected: conductorRejected + subRejected,
+      total: pendingTotal + approvedTotal + rejectedTotal,
+      pending: pendingTotal,
+      approved: approvedTotal,
+      rejected: rejectedTotal,
     }
-
-    // Total should be sum of all three states, not raw totals which may include unclassified docs
-    totals.total = totals.pending + totals.approved + totals.rejected
 
     console.log('[v0] Stats API - Approved counts:', {
       conductorApproved,
@@ -85,13 +86,13 @@ export async function GET() {
 
     const stats = {
       conductores: {
-        total: conductorTotal,
+        total: conductorApproved + conductorPending + conductorRejected,
         pendientes: conductorPending,
         aprobados: conductorApproved,
         rechazados: conductorRejected,
       },
       subcontratistas: {
-        total: subTotal,
+        total: subApproved + subPending + subRejected,
         pendientes: subPending,
         aprobados: subApproved,
         rechazados: subRejected,
