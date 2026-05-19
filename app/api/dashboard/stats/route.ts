@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export async function GET() {
   try {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Get ALL conductor documents (no pagination limit)
     const { data: allConductorDocs, error: conductorError } = await supabase
@@ -42,7 +42,7 @@ export async function GET() {
       rejected: conductorRejected + subRejected,
     }
 
-    console.log('[v0] Stats API - Total docs fetched:', totals.total)
+    console.log('[v0] Stats API (ADMIN CLIENT) - Total docs fetched:', totals.total)
     console.log('[v0] Stats API - Approved: conductor', conductorApproved, '+ sub', subApproved, '= total', totals.approved)
     console.log('[v0] Stats API - Full breakdown:', {
       allConductorDocs_count: allConductorDocs?.length,
