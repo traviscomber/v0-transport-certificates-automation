@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Users, FileText, BarChart3, LogOut, Zap, Users2, Lock, TrendingUp, Menu, Bell, X, Settings } from 'lucide-react'
+import { LayoutDashboard, Users, FileText, BarChart3, LogOut, Zap, Users2, Lock, TrendingUp, Menu, Bell, X, Settings, TrendingDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { NotificationCenter } from '@/components/notification-center'
@@ -18,6 +18,7 @@ const navItems = [
   { href: '/dashboard/company/documentos', label: 'Documentos', icon: FileText },
   { href: '/dashboard/company/analytics/conductores', label: 'Analytics', icon: TrendingUp },
   { href: '/dashboard/company/reportes', label: 'Reportes', icon: BarChart3 },
+  { href: '/dashboard/company/roi-metrics', label: 'ROI Metrics', icon: TrendingDown },
   { href: '/admin/metrics', label: 'Métricas de Usuarios', icon: Lock },
 ]
 
