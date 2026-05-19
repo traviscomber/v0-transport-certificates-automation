@@ -60,7 +60,7 @@ export default function MiningLanding() {
                 <p className="text-sm text-muted-foreground">Más rápido que manual</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-primary">$2.5M</p>
+                <p className="text-2xl font-bold text-primary">CLP $2,5M</p>
                 <p className="text-sm text-muted-foreground">Ahorro anual promedio</p>
               </div>
             </div>
@@ -231,7 +231,7 @@ export default function MiningLanding() {
           {[
             {
               name: 'Estándar',
-              price: '$2,490',
+              price: 'CLP $2.490.000',
               period: '/mes',
               desc: 'Para pequeños y medianos contratistas',
               features: [
@@ -245,7 +245,7 @@ export default function MiningLanding() {
             },
             {
               name: 'Profesional',
-              price: '$6,990',
+              price: 'CLP $6.990.000',
               period: '/mes',
               desc: 'Para operaciones mineras medianas',
               features: [
@@ -262,7 +262,7 @@ export default function MiningLanding() {
             },
             {
               name: 'Empresa',
-              price: 'Personalizado',
+              price: 'A medida',
               desc: 'Para grandes operaciones multi-sitio',
               features: [
                 'Trabajadores ilimitados',
