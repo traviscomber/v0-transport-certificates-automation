@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { ArrowRight, Briefcase, CheckCircle, Users, Shield, TrendingUp, FileText, Zap, Award, Clock, AlertCircle, Lock } from 'lucide-react'
+import { ArrowRight, Briefcase, CheckCircle, Users, Shield, TrendingUp, FileText, Zap, Award, Clock, AlertCircle, BarChart3, Lock } from 'lucide-react'
 import Link from 'next/link'
 
 export default function MiningLanding() {
