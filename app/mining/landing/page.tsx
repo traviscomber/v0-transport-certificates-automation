@@ -200,7 +200,122 @@ export default function MiningLanding() {
         </div>
       </section>
 
-      {/* Social Proof */}
+      {/* Cómo Funciona - How it Works */}
+      <section className="max-w-7xl mx-auto px-4 py-24">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold mb-4">Cómo funciona el sistema</h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Gestión completa de documentos con estados de pendientes, aprobados y rechazados
+          </p>
+        </div>
+
+        <div className="space-y-12">
+          {/* Dashboard Overview */}
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="space-y-4">
+              <h3 className="text-2xl font-bold">Panel de Control Central</h3>
+              <p className="text-muted-foreground">
+                Visualiza en tiempo real el estado de todos tus documentos: cuántos están pendientes de revisión, cuántos han sido aprobados y cuántos fueron rechazados.
+              </p>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span>1,401 documentos procesados</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span>598 documentos aprobados</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span>727 documentos pendientes de revisión</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span>76 documentos rechazados</span>
+                </li>
+              </ul>
+            </div>
+            <div className="rounded-xl overflow-hidden border border-secondary/50 shadow-lg">
+              <img 
+                src="/images/mining-dashboard-overview.jpg" 
+                alt="Dashboard de Control - Vista general de documentos"
+                className="w-full h-auto"
+              />
+            </div>
+          </div>
+
+          {/* Pending Documents */}
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="rounded-xl overflow-hidden border border-secondary/50 shadow-lg order-2 md:order-1">
+              <img 
+                src="/images/mining-pending-documents.jpg" 
+                alt="Documentos Pendientes - Lista de revisión"
+                className="w-full h-auto"
+              />
+            </div>
+            <div className="space-y-4 order-1 md:order-2">
+              <h3 className="text-2xl font-bold">Documentos Pendientes de Revisión</h3>
+              <p className="text-muted-foreground">
+                Accede a la lista completa de 727 documentos en espera de validación. Filtra por fecha, tipo de documento y ejecutiva responsable para una gestión ágil.
+              </p>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span>Filtros avanzados por fecha y empresa</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span>Vista detallada de cada documento</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span>Acciones rápidas de aprobación/rechazo</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span>Historial de cambios automático</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Document Manager */}
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="space-y-4">
+              <h3 className="text-2xl font-bold">Gestor de Documentos Completo</h3>
+              <p className="text-muted-foreground">
+                Administra diferentes tipos de documentos: licencias de conductores, contratos, antecedentes, certificaciones y más. Todo centralizado en un único lugar.
+              </p>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span>Documentos de Conductores (38 documentos)</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span>Documentos de Subcontratistas (1,363 documentos)</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span>Certificaciones (235 documentos)</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span>Desglose por estado: pendientes, aprobados, rechazados</span>
+                </li>
+              </ul>
+            </div>
+            <div className="rounded-xl overflow-hidden border border-secondary/50 shadow-lg">
+              <img 
+                src="/images/mining-document-manager.jpg" 
+                alt="Gestor de Documentos - Centro de gestión documentaria"
+                className="w-full h-auto"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
       <section className="max-w-7xl mx-auto px-4 py-16">
         <div className="grid md:grid-cols-4 gap-8 text-center">
           {[
