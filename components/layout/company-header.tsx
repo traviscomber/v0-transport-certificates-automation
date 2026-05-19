@@ -6,15 +6,17 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useUserProfile } from '@/hooks/use-user-profile'
 
 export function CompanyHeader() {
   const router = useRouter()
+  const { profile, loading } = useUserProfile()
   const [userEmail, setUserEmail] = useState<string>('')
   const [searchValue, setSearchValue] = useState('')
   const [profileOpen, setProfileOpen] = useState(false)
 
   useEffect(() => {
-    // Get user email from cookie
+    // Get user email from cookie as fallback
     const email = document.cookie
       .split('; ')
       .find(row => row.startsWith('user_email='))
@@ -80,36 +82,70 @@ export function CompanyHeader() {
           >
             <User className="h-3 sm:h-4 w-3 sm:w-4 flex-shrink-0" />
             <span className="hidden sm:inline truncate max-w-xs text-xs">
-              {userEmail ? userEmail.split('@')[0] : 'Perfil'}
+              {profile?.full_name || userEmail?.split('@')[0] || 'Perfil'}
             </span>
             <ChevronDown className="h-3 sm:h-4 w-3 sm:w-4 flex-shrink-0" />
           </Button>
 
           {/* Profile Dropdown Menu */}
           {profileOpen && (
-            <div className="absolute right-0 mt-2 w-48 sm:w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-              <div className="px-3 sm:px-4 py-2 sm:py-3 border-b border-gray-200">
-                <p className="text-xs sm:text-sm font-semibold text-foreground">Mi Cuenta</p>
-                <p className="text-xs text-gray-600 truncate">{userEmail}</p>
+            <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden">
+              {/* Profile Header Section */}
+              <div className="bg-gradient-to-r from-primary to-primary/80 px-4 py-4 text-white">
+                <div className="flex items-center gap-3">
+                  {/* Avatar */}
+                  <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 border-2 border-white/30">
+                    {profile?.avatar_url ? (
+                      <img 
+                        src={profile.avatar_url} 
+                        alt={profile.full_name || 'Avatar'}
+                        className="h-12 w-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <User className="h-6 w-6" />
+                    )}
+                  </div>
+                  
+                  {/* User Info */}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-sm truncate">
+                      {profile?.full_name || 'Usuario'}
+                    </p>
+                    <p className="text-xs text-white/80 truncate">
+                      {profile?.email || userEmail}
+                    </p>
+                  </div>
+                </div>
               </div>
               
-              <Link href="/dashboard/company/perfil" className="block">
-                <button
-                  onClick={() => setProfileOpen(false)}
-                  className="w-full px-3 sm:px-4 py-2 text-left text-foreground hover:bg-gray-50 flex items-center gap-2 text-xs sm:text-sm font-medium border-b border-gray-100"
-                >
-                  <Settings className="h-4 w-4" />
-                  <span>Mi Perfil</span>
-                </button>
-              </Link>
+              {/* Phone (if available) */}
+              {profile?.phone && (
+                <div className="px-4 py-2 border-b border-gray-100 bg-gray-50">
+                  <p className="text-xs text-gray-600">Teléfono</p>
+                  <p className="text-sm font-medium text-foreground">{profile.phone}</p>
+                </div>
+              )}
               
-              <button
-                onClick={handleLogout}
-                className="w-full px-3 sm:px-4 py-2 text-left text-red-600 hover:bg-red-50 flex items-center gap-2 text-xs sm:text-sm font-medium"
-              >
-                <LogOut className="h-3 sm:h-4 w-3 sm:w-4 flex-shrink-0" />
-                <span>Cerrar Sesión</span>
-              </button>
+              {/* Actions */}
+              <div className="py-1">
+                <Link href="/dashboard/company/perfil" className="block">
+                  <button
+                    onClick={() => setProfileOpen(false)}
+                    className="w-full px-4 py-2 text-left text-foreground hover:bg-gray-50 flex items-center gap-3 text-sm font-medium transition-colors"
+                  >
+                    <Settings className="h-4 w-4 text-primary" />
+                    <span>Mi Perfil</span>
+                  </button>
+                </Link>
+                
+                <button
+                  onClick={handleLogout}
+                  className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 flex items-center gap-3 text-sm font-medium transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Cerrar Sesión</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
