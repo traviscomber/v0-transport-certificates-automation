@@ -143,7 +143,7 @@ export async function GET(request: Request) {
       totalTimeSavedMinutes,
       totalTimeSavedHours: Math.round(totalTimeSavedHours * 100) / 100,
       totalTimeSavedDays: Math.round(totalTimeSavedDays * 100) / 100,
-      timeSavedPerDocumentMinutes,
+      timeSavedPerDocumentMinutes: timeSavedPerDocMinutes,
       averageTimePerDocumentMinutesManual: TOTAL_MANUAL_PER_DOC,
       averageTimePerDocumentMinutesWithAI: TOTAL_WITH_AI_PER_DOC,
       
