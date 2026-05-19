@@ -7,38 +7,53 @@ import { DocumentManagerHub } from "@/components/document-manager-hub"
 async function getDocumentStats() {
   const supabase = await createClient()
   
-  // Get conductor documents stats
-  const { data: conductorDocs, error: conductorError } = await supabase
+  // Get conductor documents stats - PAGINATE for all records
+  const { data: conductorPage0, error: conductorError } = await supabase
     .from("uploaded_documents")
     .select("id, validation_status")
+    .range(0, 999)
+  
+  const { data: conductorPage1 } = await supabase
+    .from("uploaded_documents")
+    .select("id, validation_status")
+    .range(1000, 1999)
+
+  const allConductorDocs = [...(conductorPage0 || []), ...(conductorPage1 || [])]
   
   if (conductorError) {
     console.error("[v0] Error fetching conductor docs:", conductorError)
   }
   
   const conductorStats = {
-    total: conductorDocs?.length || 0,
-    pendientes: conductorDocs?.filter(d => d.validation_status === 'pending' || !d.validation_status).length || 0,
-    aprobados: conductorDocs?.filter(d => d.validation_status === 'approved').length || 0,
-    rechazados: conductorDocs?.filter(d => d.validation_status === 'rejected').length || 0,
-    vencidos: 0 // Calculate based on expiry dates if available
+    total: allConductorDocs.length,
+    pendientes: allConductorDocs.filter(d => d.validation_status === 'pending' || !d.validation_status).length,
+    aprobados: allConductorDocs.filter(d => d.validation_status === 'approved').length,
+    rechazados: allConductorDocs.filter(d => d.validation_status === 'rejected').length,
+    vencidos: 0
   }
 
-  // Get subcontractor documents stats
-  const { data: subDocs, error: subError } = await supabase
+  // Get subcontractor documents stats - PAGINATE for all records
+  const { data: subPage0, error: subError } = await supabase
     .from("subcontractor_documents")
     .select("id, status")
+    .range(0, 999)
+
+  const { data: subPage1 } = await supabase
+    .from("subcontractor_documents")
+    .select("id, status")
+    .range(1000, 1999)
+
+  const allSubDocs = [...(subPage0 || []), ...(subPage1 || [])]
   
   if (subError) {
     console.error("[v0] Error fetching subcontractor docs:", subError.message)
-    // Table might not exist yet - that's ok
   }
   
   const subStats = {
-    total: subDocs?.length || 0,
-    pendientes: subDocs?.filter(d => d.status === 'pending').length || 0,
-    aprobados: subDocs?.filter(d => d.status === 'approved').length || 0,
-    rechazados: subDocs?.filter(d => d.status === 'rejected').length || 0,
+    total: allSubDocs.length,
+    pendientes: allSubDocs.filter(d => d.status === 'pending').length,
+    aprobados: allSubDocs.filter(d => d.status === 'approved').length,
+    rechazados: allSubDocs.filter(d => d.status === 'rejected').length,
     vencidos: 0
   }
 

@@ -8,25 +8,31 @@ export async function GET() {
   try {
     const supabase = await createClient()
 
-    // Get conductor documents stats
-    const { data: conductorDocs, count: conductorCount } = await supabase
+    // PAGE 0: Get conductor documents stats (0-999)
+    const { data: conductorPage0 } = await supabase
       .from('uploaded_documents')
-      .select('validation_status', { count: 'exact', head: false })
+      .select('validation_status', { head: false })
+      .range(0, 999)
 
-    const conductorPending = (conductorDocs || []).filter(d => 
-      d.validation_status === 'pending' || d.validation_status === null
-    ).length
-    const conductorApproved = (conductorDocs || []).filter(d => d.validation_status === 'approved').length
-    const conductorRejected = (conductorDocs || []).filter(d => d.validation_status === 'rejected').length
+    // PAGE 1: Get conductor documents stats (1000-1999)
+    const { data: conductorPage1 } = await supabase
+      .from('uploaded_documents')
+      .select('validation_status', { head: false })
+      .range(1000, 1999)
 
-    // Get subcontractor documents stats - MUST paginate for all 1333+ documents
-    // Page 0 (0-999)
+    const allConductorDocs = [...(conductorPage0 || []), ...(conductorPage1 || [])]
+
+    const conductorPending = allConductorDocs.filter(d => d.validation_status === 'pending' || !d.validation_status).length
+    const conductorApproved = allConductorDocs.filter(d => d.validation_status === 'approved').length
+    const conductorRejected = allConductorDocs.filter(d => d.validation_status === 'rejected').length
+
+    // PAGE 0: Get subcontractor documents stats (0-999)
     const { data: subPage0 } = await supabase
       .from('subcontractor_documents')
       .select('status', { head: false })
       .range(0, 999)
 
-    // Page 1 (1000-1999)
+    // PAGE 1: Get subcontractor documents stats (1000-1999)
     const { data: subPage1 } = await supabase
       .from('subcontractor_documents')
       .select('status', { head: false })
@@ -40,7 +46,7 @@ export async function GET() {
 
     // Calculate totals
     const totals = {
-      total: (conductorCount || 0) + allSubDocs.length,
+      total: allConductorDocs.length + allSubDocs.length,
       pending: conductorPending + subPending,
       approved: conductorApproved + subApproved,
       rejected: conductorRejected + subRejected,
@@ -48,7 +54,7 @@ export async function GET() {
 
     const stats = {
       conductores: {
-        total: conductorCount || 0,
+        total: allConductorDocs.length,
         pendientes: conductorPending,
         aprobados: conductorApproved,
         rechazados: conductorRejected,
@@ -62,18 +68,12 @@ export async function GET() {
       totals: totals
     }
 
-    return NextResponse.json({
-      stats: stats,
-      timestamp: new Date().toISOString()
-    })
-
+    return NextResponse.json({ stats }, { status: 200 })
   } catch (error: any) {
-    console.error('[v0] Dashboard stats error:', error.message)
-    return NextResponse.json({
-      error: error.message,
-      stats: {
-        totals: { total: 0, pending: 0, approved: 0, rejected: 0 }
-      }
-    }, { status: 500 })
+    console.error('[v0] Error in /api/dashboard/stats:', error.message)
+    return NextResponse.json(
+      { error: error.message || 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
