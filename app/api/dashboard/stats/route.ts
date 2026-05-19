@@ -44,6 +44,13 @@ export async function GET() {
 
     console.log('[v0] Stats API - Total docs fetched:', totals.total)
     console.log('[v0] Stats API - Approved: conductor', conductorApproved, '+ sub', subApproved, '= total', totals.approved)
+    console.log('[v0] Stats API - Full breakdown:', {
+      allConductorDocs_count: allConductorDocs?.length,
+      allSubDocs_count: allSubDocs?.length,
+      conductorApproved,
+      subApproved,
+      totals
+    })
 
     const stats = {
       conductores: {

@@ -114,6 +114,12 @@ export function DashboardOverview() {
           const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
           const rejectedDocs = (conductorStats.rechazados || 0) + (subStats.rechazados || 0)
 
+          console.log('[v0] Dashboard Stats Response:', {
+            conductorStats,
+            subStats,
+            calculated: { totalDocs, pendingDocs, approvedDocs, rejectedDocs }
+          })
+
           setStats([
             {
               title: "Total de Documentos",
