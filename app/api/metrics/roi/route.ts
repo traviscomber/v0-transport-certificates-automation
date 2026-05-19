@@ -29,18 +29,18 @@ export async function GET(request: Request) {
     // Get all documents with detailed info
     const { data: allDocs, error: docsError } = await supabase
       .from('certificates')
-      .select('id, status, ocr_processed_at, reviewed_at, uploaded_at, file_name')
-      .order('uploaded_at', { ascending: false })
+      .select('id, status, ocr_processed_at, reviewed_at, created_at, file_name')
+      .order('created_at', { ascending: false })
 
     if (docsError) throw docsError
 
-    // Get conductores and transportistas for volume analysis
-    const { data: conductores } = await supabase
-      .from('conductores')
+    // Get drivers and organizations for volume analysis
+    const { data: drivers } = await supabase
+      .from('drivers')
       .select('id')
 
-    const { data: transportistas } = await supabase
-      .from('transportistas')
+    const { data: organizations } = await supabase
+      .from('organizations')
       .select('id')
 
     // Get executives
@@ -119,8 +119,8 @@ export async function GET(request: Request) {
     const speedMultiplier = Math.round((processingSpeedAI / processingSpeedManual) * 10) / 10
     
     // 9. VOLUME CONTEXT
-    const totalConductores = conductores?.length || 235
-    const totalTransportistas = transportistas?.length || 235
+    const totalConductores = drivers?.length || 235
+    const totalTransportistas = organizations?.length || 235
     const avgDocsPerConductor = totalDocuments / totalConductores
     const avgDocsPerTransportista = totalDocuments / totalTransportistas
     
