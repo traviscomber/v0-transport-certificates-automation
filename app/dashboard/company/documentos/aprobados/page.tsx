@@ -56,13 +56,22 @@ export default function AprobadosPage() {
 
     // Apply date filter
     if (minDate) {
+      console.log('[v0] Date filter applied:', dateFilter, 'minDate:', minDate.toISOString())
       filteredSubDocs = filteredSubDocs.filter((doc: any) => {
         const docDate = new Date(doc.updated_at || doc.created_at)
-        return docDate >= minDate!
+        const isIncluded = docDate >= minDate!
+        if (!isIncluded) {
+          console.log('[v0] Filtering out sub doc:', doc.file_name, 'date:', docDate.toISOString(), 'minDate:', minDate!.toISOString())
+        }
+        return isIncluded
       })
       filteredConductorDocs = filteredConductorDocs.filter((doc: any) => {
         const docDate = new Date(doc.updated_at || doc.created_at)
-        return docDate >= minDate!
+        const isIncluded = docDate >= minDate!
+        if (!isIncluded) {
+          console.log('[v0] Filtering out conductor doc:', doc.original_filename, 'date:', docDate.toISOString(), 'minDate:', minDate!.toISOString())
+        }
+        return isIncluded
       })
     }
 

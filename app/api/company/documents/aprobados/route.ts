@@ -288,6 +288,10 @@ export async function GET() {
       .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
 
     console.log('[v0] Aprobados endpoint: Returning', allDocs.length, 'approved documents')
+    console.log('[v0] Aprobados: Sub docs from DB:', subDocs?.length || 0, '| Conductor docs from DB:', conductorDocs?.length || 0)
+    if (subDocs && subDocs.length > 0) {
+      console.log('[v0] Aprobados: Sub docs sample (first 3):', subDocs.slice(0, 3).map(d => ({ name: d.file_name, updated_at: d.updated_at })))
+    }
 
     return NextResponse.json({
       conductorDocs: normalizedConductor,
