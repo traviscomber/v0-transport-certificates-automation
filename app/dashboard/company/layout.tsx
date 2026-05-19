@@ -62,12 +62,12 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
 
   const SidebarContent = () => (
     <>
-      <div className="p-4 md:p-6 border-b bg-slate-900/80 shadow-sm">
-        <h2 className="text-lg md:text-xl font-bold text-white">Transportes Labbé</h2>
-        <p className="text-xs md:text-sm text-slate-300 mt-1">Portal de Empresa</p>
+      <div className="p-2 sm:p-3 md:p-6 border-b bg-slate-900/80 shadow-sm">
+        <h2 className="text-base sm:text-lg md:text-xl font-bold text-white">Transportes Labbé</h2>
+        <p className="text-xs text-slate-300 mt-0.5 md:mt-1">Portal de Empresa</p>
       </div>
 
-      <nav className="p-3 md:p-4 space-y-1 flex-1 overflow-y-auto bg-slate-900/60">
+      <nav className="p-2 sm:p-3 md:p-4 space-y-0.5 md:space-y-1 flex-1 overflow-y-auto bg-slate-900/60">
         {navItems.map(item => {
           const Icon = item.icon
           // Exact match only - no prefix matching to avoid Dashboard being highlighted for all /dashboard/company/* routes
@@ -78,7 +78,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
               <button
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  'w-full flex items-center gap-3 px-3 md:px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                  'w-full flex items-center gap-2 sm:gap-3 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors',
                   isActive
                     ? 'bg-orange-500 text-white'
                     : 'text-white hover:bg-slate-800/50 hover:text-white'
@@ -92,14 +92,14 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
         })}
       </nav>
 
-      <div className="p-3 md:p-4 border-t border-slate-700 bg-slate-900/60">
+      <div className="p-2 sm:p-3 md:p-4 border-t border-slate-700 bg-slate-900/60">
         <Button 
           variant="outline" 
           size="sm" 
-          className="w-full justify-start text-white border-slate-600 hover:bg-slate-800 hover:text-white"
+          className="w-full justify-start text-white border-slate-600 hover:bg-slate-800 hover:text-white text-xs sm:text-sm h-8 sm:h-9"
           onClick={handleLogout}
         >
-          <LogOut className="mr-2 h-4 w-4 flex-shrink-0" />
+          <LogOut className="mr-1 sm:mr-2 h-3 sm:h-4 w-3 sm:w-4 flex-shrink-0" />
           <span className="hidden sm:inline">Cerrar Sesión</span>
         </Button>
       </div>
@@ -115,7 +115,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
         </div>
 
         {/* Mobile Sidebar - Drawer */}
-        <SheetContent side="left" className="w-64 p-0 flex flex-col">
+        <SheetContent side="left" className="w-56 sm:w-64 p-0 flex flex-col">
           <SidebarContent />
         </SheetContent>
 
@@ -125,7 +125,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
           <CompanyHeader />
           
           {/* Main content */}
-          <main className="flex-1 overflow-auto p-3 md:p-6 lg:p-8">
+          <main className="flex-1 overflow-auto p-2 sm:p-3 md:p-6 lg:p-8">
             {children}
           </main>
         </div>

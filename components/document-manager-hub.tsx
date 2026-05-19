@@ -167,146 +167,132 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
   const totalDocumentos = stats.conductores.total + stats.subcontratistas.total
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <FolderOpen className="h-8 w-8 text-primary" />
-            Gestor de Documentos
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Centro de gestión documental para conductores, subcontratistas y certificaciones
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Badge variant="outline" className="text-sm px-3 py-1">
-            <BarChart3 className="h-4 w-4 mr-2" />
-            {totalDocumentos} documentos totales
-          </Badge>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleManualRefresh}
-            disabled={isRefreshing}
-            className="gap-2"
-          >
-            <RotateCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Actualizando...' : 'Actualizar'}
-          </Button>
+    <div className="space-y-2 sm:space-y-4">
+      {/* Header - Compact */}
+      <div className="flex flex-col gap-2 sm:gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-1 sm:gap-2">
+              <FolderOpen className="h-5 sm:h-7 w-5 sm:w-7 text-primary flex-shrink-0" />
+              <span className="truncate">Gestor de Documentos</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 line-clamp-2">
+              Centro de gestión documental para conductores, subcontratistas y certificaciones
+            </p>
+          </div>
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 w-full sm:w-auto">
+            <Badge variant="outline" className="text-xs px-2 py-1">
+              <BarChart3 className="h-3 w-3 mr-1" />
+              <span className="hidden sm:inline">{totalDocumentos} docs</span>
+              <span className="sm:hidden">{totalDocumentos}</span>
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+              className="gap-1 text-xs h-8 px-2 flex-shrink-0"
+            >
+              <RotateCw className={`h-3 w-3 flex-shrink-0 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">{isRefreshing ? 'Actualizando...' : 'Actualizar'}</span>
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Quick Stats Summary - Pendientes first as main focus */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Quick Stats - Responsive grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
         <Link href="/dashboard/company/documentos/pendientes">
-          <Card className="bg-gradient-to-br from-amber-900/50 to-amber-950/50 border-amber-700/50 hover:border-amber-500/70 transition-colors cursor-pointer group">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-amber-300/80">Pendientes</p>
-                  <p className="text-2xl font-bold text-amber-400">{totalPendientes}</p>
-                  <p className="text-xs text-amber-400/60 mt-1 group-hover:text-amber-300 transition-colors">
-                    Click para revisar
-                  </p>
-                </div>
-                <Clock className="h-8 w-8 text-amber-500/50 group-hover:text-amber-400 transition-colors" />
+          <Card className="bg-gradient-to-br from-amber-900/50 to-amber-950/50 border-amber-700/50 hover:border-amber-500/70 transition-colors cursor-pointer group h-full">
+            <CardContent className="p-2 sm:p-3">
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-amber-300/80">Pendientes</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-amber-400">{totalPendientes}</p>
+                <Clock className="h-4 sm:h-5 w-4 sm:w-5 text-amber-500/50 group-hover:text-amber-400 transition-colors mt-1" />
               </div>
             </CardContent>
           </Card>
         </Link>
         
-        <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-400">Total Documentos</p>
-                <p className="text-2xl font-bold text-white">{totalDocumentos}</p>
-              </div>
-              <FileText className="h-8 w-8 text-slate-500" />
+        <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 h-full">
+          <CardContent className="p-2 sm:p-3">
+            <div className="flex flex-col gap-1">
+              <p className="text-xs text-slate-400">Total</p>
+              <p className="text-lg sm:text-xl md:text-2xl font-bold text-white">{totalDocumentos}</p>
+              <FileText className="h-4 sm:h-5 w-4 sm:w-5 text-slate-500 mt-1" />
             </div>
           </CardContent>
         </Card>
         
         <Link href="/dashboard/company/documentos/aprobados">
-          <Card className="bg-gradient-to-br from-green-900/50 to-green-950/50 border-green-700/50 hover:border-green-500/70 transition-colors cursor-pointer group">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-green-300/80">Aprobados</p>
-                  <p className="text-2xl font-bold text-green-400">{totalAprobados}</p>
-                  <p className="text-xs text-green-400/60 mt-1 group-hover:text-green-300 transition-colors">
-                    Click para revisar
-                  </p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-green-500/50 group-hover:text-green-400 transition-colors" />
+          <Card className="bg-gradient-to-br from-green-900/50 to-green-950/50 border-green-700/50 hover:border-green-500/70 transition-colors cursor-pointer group h-full">
+            <CardContent className="p-2 sm:p-3">
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-green-300/80">Aprobados</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-400">{totalAprobados}</p>
+                <CheckCircle className="h-4 sm:h-5 w-4 sm:w-5 text-green-500/50 group-hover:text-green-400 transition-colors mt-1" />
               </div>
             </CardContent>
           </Card>
         </Link>
         
         <Link href="/dashboard/company/documentos/rechazados">
-          <Card className="bg-gradient-to-br from-red-900/50 to-red-950/50 border-red-700/50 hover:border-red-500/70 transition-colors cursor-pointer group">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-red-300/80">Rechazados</p>
-                  <p className="text-2xl font-bold text-red-400">{totalRechazados}</p>
-                  <p className="text-xs text-red-400/60 mt-1 group-hover:text-red-300 transition-colors">
-                    Click para revisar
-                  </p>
-                </div>
-                <XCircle className="h-8 w-8 text-red-500/50 group-hover:text-red-400 transition-colors" />
+          <Card className="bg-gradient-to-br from-red-900/50 to-red-950/50 border-red-700/50 hover:border-red-500/70 transition-colors cursor-pointer group h-full">
+            <CardContent className="p-2 sm:p-3">
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-red-300/80">Rechazados</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-red-400">{totalRechazados}</p>
+                <XCircle className="h-4 sm:h-5 w-4 sm:w-5 text-red-500/50 group-hover:text-red-400 transition-colors mt-1" />
               </div>
             </CardContent>
           </Card>
         </Link>
       </div>
 
-      {/* Module Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Module Cards - Responsive layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
         {modules.map((module) => {
           const Icon = module.icon
           return (
             <Card 
               key={module.id} 
-              className={`${module.bgColor} ${module.borderColor} border hover:shadow-lg transition-all duration-200`}
+              className={`${module.bgColor} ${module.borderColor} border hover:shadow-lg transition-all duration-200 flex flex-col`}
             >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className={`p-2 rounded-lg ${module.bgColor}`}>
-                    <Icon className={`h-6 w-6 ${module.color}`} />
+              <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
+                <div className="flex items-start justify-between gap-1 sm:gap-2">
+                  <div className={`p-1.5 sm:p-2 rounded-lg ${module.bgColor}`}>
+                    <Icon className={`h-4 sm:h-5 w-4 sm:w-5 ${module.color}`} />
                   </div>
-                  <Badge variant="secondary" className="text-xs">
-                    {'total' in module.stats ? module.stats.total : 0} total
+                  <Badge variant="secondary" className="text-xs flex-shrink-0">
+                    {'total' in module.stats ? module.stats.total : 0}
                   </Badge>
                 </div>
-                <CardTitle className="text-lg mt-3">{module.title}</CardTitle>
-                <CardDescription>{module.description}</CardDescription>
+                <CardTitle className="text-sm sm:text-base mt-1 sm:mt-2 truncate">{module.title}</CardTitle>
+                <CardDescription className="text-xs line-clamp-2">{module.description}</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+              <CardContent className="flex-1 flex flex-col p-2 sm:p-3 md:p-4 pt-1 sm:pt-2">
+                <div className="space-y-1 sm:space-y-2 flex-1">
                   {module.statItems.map((stat) => {
                     const StatIcon = stat.icon
                     return (
-                      <div key={stat.label} className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <StatIcon className={`h-4 w-4 ${stat.color}`} />
-                          <span className="text-slate-300">{stat.label}</span>
+                      <div key={stat.label} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <StatIcon className={`h-3 w-3 ${stat.color} flex-shrink-0`} />
+                          <span className="text-slate-300 truncate">{stat.label}</span>
                         </div>
-                        <span className={`font-semibold ${stat.color}`}>{stat.value}</span>
+                        <span className={`font-semibold ${stat.color} flex-shrink-0 ml-1`}>{stat.value}</span>
                       </div>
                     )
                   })}
                 </div>
                 
-                <Link href={module.href}>
+                <Link href={module.href} className="w-full mt-2 sm:mt-3">
                   <Button 
                     variant="outline" 
-                    className="w-full mt-4 group"
+                    className="w-full group text-xs h-7 sm:h-8"
                   >
                     Ver Detalles
-                    <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="h-3 w-3 ml-1 group-hover:translate-x-0.5 transition-transform" />
                   </Button>
                 </Link>
               </CardContent>
