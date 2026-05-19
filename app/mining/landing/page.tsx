@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { ArrowRight, Briefcase, CheckCircle, Users, Shield, TrendingUp, FileText, Zap, Award, Clock, AlertCircle, BarChart3, Lock } from 'lucide-react'
+import { ArrowRight, Briefcase, CheckCircle, Users, Shield, TrendingUp, FileText, Zap, Award, Clock, AlertCircle, Lock } from 'lucide-react'
 import Link from 'next/link'
 
 export default function MiningLanding() {
@@ -80,13 +80,12 @@ export default function MiningLanding() {
 
           {/* Hero Visual */}
           <div className="relative">
-            <div className="rounded-2xl border border-secondary/50 bg-secondary/20 p-8 backdrop-blur-sm overflow-hidden">
-              <div className="bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg h-80 flex items-center justify-center">
-                <div className="text-center space-y-4">
-                  <BarChart3 className="h-16 w-16 text-primary/50 mx-auto" />
-                  <p className="text-muted-foreground">Dashboard de control en tiempo real</p>
-                </div>
-              </div>
+            <div className="rounded-2xl border border-secondary/50 overflow-hidden shadow-2xl">
+              <img 
+                src="/images/mining-compliance-hero.jpg" 
+                alt="Mining compliance dashboard in operation"
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
         </div>
