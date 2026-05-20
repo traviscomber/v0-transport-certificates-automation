@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { ArrowRight, Briefcase, CheckCircle, Users, Shield, TrendingUp, FileText, Zap, Award, Clock, AlertCircle, BarChart3, Lock } from 'lucide-react'
+import { ArrowRight, CheckCircle, Shield, TrendingUp, FileText, Zap, Award, Clock, AlertCircle, BarChart3, Users } from 'lucide-react'
 import Link from 'next/link'
 
 export default function MiningLanding() {
@@ -39,15 +39,15 @@ export default function MiningLanding() {
           <div className="space-y-8">
             <div className="inline-flex px-4 py-2 bg-primary/10 border border-primary/20 rounded-full items-center gap-2">
               <Zap className="h-4 w-4 text-primary" />
-              <span className="text-primary text-sm font-semibold">Plataforma especializada en minería</span>
+              <span className="text-primary text-sm font-semibold">Hecho para faenas en Chile</span>
             </div>
             
             <h1 className="text-5xl md:text-6xl font-bold leading-tight">
-              Compliance integral para operaciones mineras
+              Menos papeleo. Menos multas. Más faena andando.
             </h1>
             
             <p className="text-lg text-muted-foreground max-w-xl">
-              Automatiza la gestión de documentos, seguridad laboral y cumplimiento regulatorio. Reduce multas, optimiza operaciones y garantiza auditoría 24/7.
+              Segur-IA centraliza y valida la documentación laboral y de contratistas en minería, con trazabilidad completa y alertas en tiempo real.
             </p>
 
             <div className="grid grid-cols-3 gap-6 py-6 border-y border-secondary">
@@ -67,15 +67,19 @@ export default function MiningLanding() {
 
             <div className="flex gap-4">
               <Button className="bg-primary hover:bg-primary/90 text-background px-8 py-6 text-lg" size="lg">
-                Solicitar Demo
+                Agendar demo de 15 minutos
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button variant="outline" className="border-secondary text-foreground hover:bg-secondary px-8 py-6 text-lg" size="lg">
-                Ver características
+                Ver cómo funciona
               </Button>
             </div>
 
-            <p className="text-sm text-muted-foreground">✓ Sin tarjeta de crédito • ✓ Demo en 15 minutos • ✓ Soporte inmediato</p>
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <span>✓ +235 empresas</span>
+              <span>✓ +1,2M documentos procesados</span>
+              <span>✓ Soporte local</span>
+            </div>
           </div>
 
           {/* Hero Visual */}
@@ -91,231 +95,173 @@ export default function MiningLanding() {
         </div>
       </section>
 
-      {/* Características Principales */}
-      <section className="max-w-7xl mx-auto px-4 py-24 bg-secondary/30 rounded-3xl border border-secondary/50 my-16">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4">Características que marcan la diferencia</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Diseñado específicamente para operaciones mineras complejas
-          </p>
-        </div>
-        
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {[
-            {
-              icon: Lock,
-              title: 'Documentación Centralizada',
-              desc: 'Gestiona 35+ tipos de documentos mineros en un solo lugar seguro'
-            },
-            {
-              icon: Zap,
-              title: 'Validación con IA',
-              desc: 'Análisis instantáneo con 99% de precisión, sin errores manuales'
-            },
-            {
-              icon: Shield,
-              title: 'Cumplimiento Normativo',
-              desc: 'Auditoría automática según regulaciones de minería (ChileARA, ISO, etc.)'
-            },
-            {
-              icon: Clock,
-              title: 'Procesamiento 24/7',
-              desc: 'Sistema activo permanentemente, sin interrupciones operacionales'
-            },
-            {
-              icon: BarChart3,
-              title: 'Reportes Ejecutivos',
-              desc: 'Dashboards en tiempo real para toma de decisiones inmediata'
-            },
-            {
-              icon: Award,
-              title: 'Auditoría Completa',
-              desc: 'Trazabilidad total de cambios, cumplidor de regulaciones fiscales'
-            }
-          ].map((feature, i) => (
-            <div key={i} className="rounded-xl bg-background border border-secondary/50 p-6 hover:border-primary/50 transition-all group">
-              <feature.icon className="h-10 w-10 text-primary mb-4 group-hover:scale-110 transition-transform" />
-              <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
-              <p className="text-muted-foreground text-sm">{feature.desc}</p>
-            </div>
-          ))}
+      {/* Pain -> Solution Section */}
+      <section className="max-w-7xl mx-auto px-4 py-24">
+        <div className="bg-secondary/30 rounded-3xl border border-secondary/50 p-12 space-y-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold mb-4">Si un documento falla, toda la operación se frena</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              En minería, un vencimiento o rechazo documental puede costar horas, multas y conflictos con mandantes. Segur-IA automatiza el control documental para que tu equipo deje de apagar incendios y vuelva a operar con confianza.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: AlertCircle,
+                title: 'Evita bloqueos por documentación vencida',
+                desc: 'Monitoreo automático de fechas y estados para prevenir paradas operacionales'
+              },
+              {
+                icon: Clock,
+                title: 'Reduce tiempos de habilitación de personal y empresas',
+                desc: 'Validación ágil que acelera el onboarding sin comprometer cumplimiento'
+              },
+              {
+                icon: Award,
+                title: 'Llega a auditorías con respaldo completo, en minutos',
+                desc: 'Trazabilidad total que convierte auditorías de estrés en confirmación de éxito'
+              }
+            ].map((item, i) => (
+              <div key={i} className="space-y-4">
+                <item.icon className="h-10 w-10 text-primary" />
+                <h3 className="text-lg font-bold">{item.title}</h3>
+                <p className="text-muted-foreground text-sm">{item.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Casos de Uso */}
+      {/* Diferenciadores */}
       <section className="max-w-7xl mx-auto px-4 py-24">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4">Soluciones para cada rol</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Cada usuario tiene herramientas diseñadas para su trabajo específico
-          </p>
+          <h2 className="text-4xl font-bold mb-4">No es otro software genérico. Es compliance minero en serio.</h2>
         </div>
         
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
             {
-              icon: Briefcase,
-              title: 'Para Contratistas',
-              features: ['Gestión centralizada de personal', 'Monitoreo de cumplimiento regulatorio', 'Integración con SAP/ERP']
+              icon: Zap,
+              title: 'Validación inteligente con IA',
+              desc: 'Detecta errores, vencimientos y faltantes antes de llegar a faena.'
+            },
+            {
+              icon: TrendingUp,
+              title: 'Trazabilidad total',
+              desc: 'Cada aprobación, rechazo y cambio queda registrado con evidencia.'
+            },
+            {
+              icon: BarChart3,
+              title: 'Panel operativo en tiempo real',
+              desc: 'Visualiza riesgos por contratista, sitio y estado documental.'
             },
             {
               icon: Users,
-              title: 'Para Trabajadores',
-              features: ['Carga simple de documentos', 'Seguimiento del estatus', 'Notificaciones automáticas']
-            },
-            {
-              icon: Shield,
-              title: 'Para Operadores',
-              features: ['Auditoría multi-sitio', 'Reportes de compliance', 'Control de acceso']
-            },
-            {
-              icon: FileText,
-              title: 'Para Gestores',
-              features: ['Validación en tiempo real', 'Flujos de aprobación', 'Integración con IA']
-            },
-            {
-              icon: BarChart3,
-              title: 'Para Ejecutivos',
-              features: ['Dashboards de KPI', 'ROI tracking', 'Análisis de riesgos']
-            },
-            {
-              icon: CheckCircle,
-              title: 'Para Auditores',
-              features: ['Trazabilidad completa', 'Reportes certificados', 'Compliance automático']
+              title: 'Flujos por rol',
+              desc: 'Operaciones, RRHH, prevención y contratistas trabajando coordinados.'
             }
-          ].map((use, i) => (
+          ].map((item, i) => (
             <div key={i} className="rounded-xl bg-background border border-secondary/50 p-6 hover:border-primary/50 hover:shadow-lg transition-all">
-              <use.icon className="h-10 w-10 text-primary mb-4" />
-              <h3 className="text-lg font-bold mb-4">{use.title}</h3>
-              <ul className="space-y-2">
-                {use.features.map((f, j) => (
-                  <li key={j} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <CheckCircle className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
+              <item.icon className="h-10 w-10 text-primary mb-4" />
+              <h3 className="text-lg font-bold mb-2">{item.title}</h3>
+              <p className="text-muted-foreground text-sm">{item.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Cómo Funciona - How it Works */}
+      {/* Cómo Funciona - 3 Pasos */}
       <section className="max-w-7xl mx-auto px-4 py-24">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4">Cómo funciona el sistema</h2>
+          <h2 className="text-4xl font-bold mb-4">Así de simple: 3 pasos y quedas en control</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Gestión completa de documentos con estados de pendientes, aprobados y rechazados
+            Automatización sin complicaciones
           </p>
         </div>
 
         <div className="space-y-12">
-          {/* Dashboard Overview */}
+          {/* Step 1 - Carga */}
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div className="space-y-4">
-              <h3 className="text-2xl font-bold">Panel de Control Central</h3>
+              <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-primary text-background font-bold text-lg">
+                1
+              </div>
+              <h3 className="text-2xl font-bold">Carga</h3>
               <p className="text-muted-foreground">
-                Visualiza en tiempo real el estado de todos tus documentos: cuántos están pendientes de revisión, cuántos han sido aprobados y cuántos fueron rechazados.
+                Sube documentos de trabajadores, empresas y equipos.
               </p>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                  <span>1,401 documentos procesados</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                  <span>598 documentos aprobados</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                  <span>727 documentos pendientes de revisión</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                  <span>76 documentos rechazados</span>
-                </li>
-              </ul>
             </div>
             <div className="rounded-xl overflow-hidden border border-secondary/50 shadow-lg">
               <img 
                 src="/images/mining-dashboard-overview.jpg" 
-                alt="Dashboard de Control - Vista general de documentos"
+                alt="Paso 1: Carga de documentos"
                 className="w-full h-auto"
               />
             </div>
           </div>
 
-          {/* Pending Documents */}
+          {/* Step 2 - Valida */}
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div className="rounded-xl overflow-hidden border border-secondary/50 shadow-lg order-2 md:order-1">
               <img 
-                src="/images/mining-pending-documents.jpg" 
-                alt="Documentos Pendientes - Lista de revisión"
+                src="/images/mining-document-manager.jpg" 
+                alt="Paso 2: Validación automática"
                 className="w-full h-auto"
               />
             </div>
             <div className="space-y-4 order-1 md:order-2">
-              <h3 className="text-2xl font-bold">Documentos Pendientes de Revisión</h3>
+              <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-primary text-background font-bold text-lg">
+                2
+              </div>
+              <h3 className="text-2xl font-bold">Valida</h3>
               <p className="text-muted-foreground">
-                Accede a la lista completa de 727 documentos en espera de validación. Filtra por fecha, tipo de documento y ejecutiva responsable para una gestión ágil.
+                La plataforma revisa requisitos, fechas y consistencia automáticamente.
               </p>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                  <span>Filtros avanzados por fecha y empresa</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                  <span>Vista detallada de cada documento</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                  <span>Acciones rápidas de aprobación/rechazo</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                  <span>Historial de cambios automático</span>
-                </li>
-              </ul>
             </div>
           </div>
 
-          {/* Document Manager */}
+          {/* Step 3 - Actúa */}
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div className="space-y-4">
-              <h3 className="text-2xl font-bold">Gestor de Documentos Completo</h3>
+              <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-primary text-background font-bold text-lg">
+                3
+              </div>
+              <h3 className="text-2xl font-bold">Actúa</h3>
               <p className="text-muted-foreground">
-                Administra diferentes tipos de documentos: licencias de conductores, contratos, antecedentes, certificaciones y más. Todo centralizado en un único lugar.
+                Aprueba, observa o rechaza con trazabilidad; notificación inmediata.
               </p>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                  <span>Documentos de Conductores (38 documentos)</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                  <span>Documentos de Subcontratistas (1,363 documentos)</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                  <span>Certificaciones (235 documentos)</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                  <span>Desglose por estado: pendientes, aprobados, rechazados</span>
-                </li>
-              </ul>
+              <p className="text-sm text-muted-foreground pt-4 border-t border-secondary">
+                <strong>Resultado:</strong> menos correos, menos Excel, menos urgencias de último minuto.
+              </p>
             </div>
             <div className="rounded-xl overflow-hidden border border-secondary/50 shadow-lg">
               <img 
-                src="/images/mining-document-manager.jpg" 
-                alt="Gestor de Documentos - Centro de gestión documentaria"
+                src="/images/mining-pending-documents.jpg" 
+                alt="Paso 3: Aprobación y trazabilidad"
                 className="w-full h-auto"
               />
             </div>
           </div>
         </div>
       </section>
+
+      {/* Social Proof */}
+      <section className="max-w-7xl mx-auto px-4 py-24">
+        <div className="bg-secondary/30 rounded-3xl border border-secondary/50 p-12 text-center space-y-8">
+          <h2 className="text-4xl font-bold">Equipos en Chile ya están operando con menos fricción</h2>
+          
+          <blockquote className="text-xl text-muted-foreground italic max-w-2xl mx-auto">
+            "Antes nos tomaba días preparar auditorías. Hoy en menos de una hora tenemos todo trazado."
+          </blockquote>
+          
+          <p className="text-sm text-muted-foreground font-semibold">
+            — Jefatura de Acreditación, empresa contratista en Antofagasta
+          </p>
+        </div>
+      </section>
+
+      {/* Stats */}
       <section className="max-w-7xl mx-auto px-4 py-16">
         <div className="grid md:grid-cols-4 gap-8 text-center">
           {[
@@ -332,123 +278,22 @@ export default function MiningLanding() {
         </div>
       </section>
 
-      {/* Pricing - Hidden for now */}
-      {/* 
-      <section className="max-w-7xl mx-auto px-4 py-24">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4">Planes diseñados para crecer</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Desde pequeños contratistas hasta operaciones multi-sitio
-          </p>
-        </div>
-        
-        <div className="grid md:grid-cols-3 gap-8">
-          {[
-            {
-              name: 'Estándar',
-              price: 'CLP $2.490.000',
-              period: '/mes',
-              desc: 'Para pequeños y medianos contratistas',
-              features: [
-                'Hasta 100 trabajadores',
-                'Gestión de documentos básica',
-                'Reportes automáticos',
-                'Soporte por email',
-                'Almacenamiento 100GB'
-              ],
-              cta: 'Comenzar prueba gratuita'
-            },
-            {
-              name: 'Profesional',
-              price: 'CLP $6.990.000',
-              period: '/mes',
-              desc: 'Para operaciones mineras medianas',
-              features: [
-                'Hasta 500 trabajadores',
-                'Compliance avanzado',
-                'Análisis IA incluido',
-                'Reportes ejecutivos',
-                'Almacenamiento 500GB',
-                'Soporte prioritario',
-                'Integración API'
-              ],
-              cta: 'Solicitar demo',
-              popular: true
-            },
-            {
-              name: 'Empresa',
-              price: 'A medida',
-              desc: 'Para grandes operaciones multi-sitio',
-              features: [
-                'Trabajadores ilimitados',
-                'Multi-sitio y multi-empresa',
-                'Auditoría 24/7',
-                'Integración ERP/SAP',
-                'Soporte 24/7',
-                'Almacenamiento ilimitado',
-                'Consultoría incluida'
-              ],
-              cta: 'Contactar ventas'
-            }
-          ].map((plan, i) => (
-            <div 
-              key={i} 
-              className={`rounded-2xl border p-8 space-y-6 transition-all ${plan.popular 
-                ? 'bg-primary/10 border-primary/50 ring-2 ring-primary/20 transform scale-105' 
-                : 'bg-secondary/30 border-secondary/50 hover:border-primary/50'
-              }`}
-            >
-              {plan.popular && (
-                <div className="inline-block px-4 py-2 bg-primary/20 border border-primary rounded-full text-primary text-xs font-bold">
-                  Más popular
-                </div>
-              )}
-              <div>
-                <h3 className="text-2xl font-bold">{plan.name}</h3>
-                <p className="text-muted-foreground mt-2 text-sm">{plan.desc}</p>
-              </div>
-              <div>
-                <p className="text-4xl font-bold text-primary">{plan.price}</p>
-                {plan.period && <p className="text-muted-foreground text-sm">{plan.period}</p>}
-              </div>
-              <ul className="space-y-3">
-                {plan.features.map((f, j) => (
-                  <li key={j} className="flex items-start gap-3 text-sm">
-                    <CheckCircle className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <Button 
-                className={plan.popular ? 'w-full bg-primary hover:bg-primary/90 text-background' : 'w-full border-primary/20 text-foreground hover:bg-secondary'} 
-                variant={plan.popular ? 'default' : 'outline'}
-                size="lg"
-              >
-                {plan.cta}
-              </Button>
-            </div>
-          ))}
-        </div>
-      </section>
-      */}
-
       {/* CTA Final */}
       <section className="max-w-4xl mx-auto px-4 py-24 text-center">
         <div className="rounded-2xl border border-primary/30 bg-primary/5 p-12 space-y-6">
-          <h2 className="text-4xl font-bold">Optimiza tu operación minera hoy</h2>
+          <h2 className="text-4xl font-bold">Tu operación no debería depender de planillas</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Únete a los líderes de minería que ya usan Segur-IA para reducir costos y mejorar cumplimiento.
+            Agenda una demo y te mostramos en 15 minutos cómo reducir riesgo documental en tu operación.
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
             <Button className="bg-primary hover:bg-primary/90 text-background px-8 py-6 text-lg" size="lg">
-              Solicitar Demo Gratis
+              Quiero mi demo
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            <Button variant="outline" className="border-primary/20 px-8 py-6 text-lg" size="lg">
-              Hablar con ventas
-            </Button>
           </div>
-          <p className="text-sm text-muted-foreground">Configuración en 15 minutos • Sin compromisos • Prueba gratuita de 30 días</p>
+          <p className="text-xs text-muted-foreground">
+            Sin tarjeta de crédito · Implementación guiada · Soporte en Chile
+          </p>
         </div>
       </section>
 
