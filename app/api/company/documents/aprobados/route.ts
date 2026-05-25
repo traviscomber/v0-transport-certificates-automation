@@ -127,16 +127,39 @@ export async function GET() {
 
     // Get approved subcontractor documents - NO FILTER, fetch all with simpler select to avoid join issues
     // IMPORTANT: Must handle pagination for large datasets
-    const { data: subDocs, error: subError } = await supabase
+    let { data: subDocs, error: subError } = await supabase
       .from('subcontractor_documents')
       .select('*', { count: 'exact' })
       .eq('status', 'approved')
       .order('updated_at', { ascending: false })
       .limit(5000)  // Explicitly allow up to 5000 records
 
+    console.log('[v0] Aprobados: Initial sub docs count:', subDocs?.length || 0, 'Error:', subError?.message)
+
     if (subError) {
       console.error('[v0] Aprobados endpoint: Sub error:', subError)
       // Don't throw, just log and continue
+    }
+
+    // DEBUGGING: Check if there are docs with different status values
+    if (subDocs) {
+      const { data: allSubStatus } = await supabase
+        .from('subcontractor_documents')
+        .select('status, COUNT(*) as count')
+        .groupBy('status')
+      
+      console.log('[v0] Aprobados: Status distribution in subcontractor_documents:', JSON.stringify(allSubStatus))
+      
+      // If we're missing docs, try to find them by fetching docs that might have been updated recently
+      const { data: recentSub } = await supabase
+        .from('subcontractor_documents')
+        .select('id, status, file_name, updated_at')
+        .eq('status', 'approved')
+        .order('updated_at', { ascending: false })
+        .limit(1000)
+        .offset((subDocs?.length || 0) - 100)  // Get last 100 + next 1000 to catch overlaps
+      
+      console.log('[v0] Aprobados: Recent approved sub docs (offset check):', recentSub?.length || 0)
     }
 
     console.log('[v0] Aprobados: Sub docs count:', subDocs?.length || 0)
