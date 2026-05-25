@@ -40,19 +40,23 @@ export async function GET() {
     let detailedApprovedCount = 0
     
     try {
-      // Query using exact same filters as aprobados endpoint
+      // Query using exact same filters as aprobados endpoint - with .select('*') to match exactly
       const { data: approvedConductor } = await supabase
         .from('uploaded_documents')
-        .select('id')
+        .select('*')
         .eq('validation_status', 'approved')
       
       const { data: approvedSub } = await supabase
         .from('subcontractor_documents')
-        .select('id')
+        .select('*')
         .eq('status', 'approved')
       
       detailedApprovedCount = (approvedConductor?.length || 0) + (approvedSub?.length || 0)
-      console.log('[v0] Stats API: Approved count from detailed queries:', detailedApprovedCount)
+      console.log('[v0] Stats API: Approved count from detailed queries:', {
+        conductor: approvedConductor?.length || 0,
+        sub: approvedSub?.length || 0,
+        total: detailedApprovedCount
+      })
     } catch (e) {
       console.log('[v0] Stats API: Error in detailed approved query:', e)
     }
