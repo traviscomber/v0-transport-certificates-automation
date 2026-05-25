@@ -8,20 +8,19 @@ export async function GET() {
   try {
     const supabase = createAdminClient()
 
-    // NOTE: Using admin client to get actual counts without RLS restrictions
-    // We'll use the EXACT same queries as the aprobados endpoint to ensure consistency
-    
-    // Get approved conductor documents
+    // Get approved documents - SIMPLE direct queries, no fetch
     const { data: approvedConductor } = await supabase
       .from('uploaded_documents')
       .select('id')
       .eq('validation_status', 'approved')
     
-    // Get approved subcontractor documents  
     const { data: approvedSub } = await supabase
       .from('subcontractor_documents')
       .select('id')
       .eq('status', 'approved')
+    
+    const approvedConductor_count = approvedConductor?.length || 0
+    const approvedSub_count = approvedSub?.length || 0
 
     // Get pending documents
     const { data: pendingConductor } = await supabase
@@ -45,8 +44,8 @@ export async function GET() {
       .select('id')
       .eq('status', 'rejected')
 
-    const conductorApproved = approvedConductor?.length || 0
-    const subApproved = approvedSub?.length || 0
+    const conductorApproved = approvedConductor_count
+    const subApproved = approvedSub_count
     const conductorPending = pendingConductor?.length || 0
     const subPending = pendingSub?.length || 0
     const conductorRejected = rejectedConductor?.length || 0
