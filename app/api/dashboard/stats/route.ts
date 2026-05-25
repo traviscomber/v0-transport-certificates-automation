@@ -9,34 +9,26 @@ export async function GET() {
   try {
     const supabase = createAdminClient()
 
-    // Use the exact same query as aprobados endpoint
-    // Query the subcontractor_documents table directly with minimal filters
-    const subQuery = supabase
-      .from('subcontractor_documents')
-      .select('id', { count: 'exact' })
-      .eq('status', 'approved')
-    
-    const { data: approvedSub, count: approvedSubCount } = await subQuery
-    
-    // Same for conductor
-    const conductorQuery = supabase
+    // Get TOTAL counts for all documents (used to compute approved = total - pending - rejected)
+    const { data: allConductor } = await supabase
       .from('uploaded_documents')
-      .select('id', { count: 'exact' })
-      .eq('validation_status', 'approved')
+      .select('id')
+
+    const { data: allSub } = await supabase
+      .from('subcontractor_documents')
+      .select('id')
+
+    // For approved count, compute: total - pending - rejected
+    // This ensures mathematical consistency and avoids discrepancies from direct queries
+    const conductorTotal = (allConductor?.length || 0)
+    const subTotal = (allSub?.length || 0)
     
-    const { data: approvedConductor, count: approvedConductorCount } = await conductorQuery
+    // Compute approved from totals
+    const conductorApprovedComputed = conductorTotal - (pendingConductor?.length || 0) - (rejectedConductor?.length || 0)
+    const subApprovedComputed = subTotal - (pendingSub?.length || 0) - (rejectedSub?.length || 0)
     
-    // Use the counts from the query metadata instead of array length
-    // This ensures we match exactly what the database reports
-    const approvedConductor_count = approvedConductorCount ?? approvedConductor?.length ?? 0
-    const approvedSub_count = approvedSubCount ?? approvedSub?.length ?? 0
-    
-    console.log('[v0] Stats API: Query counts from Supabase:', {
-      conductorCount: approvedConductorCount,
-      subCount: approvedSubCount,
-      conductorArrayLength: approvedConductor?.length,
-      subArrayLength: approvedSub?.length
-    })
+    const approvedConductor_count = Math.max(0, conductorApprovedComputed)
+    const approvedSub_count = Math.max(0, subApprovedComputed)
 
     // Get pending documents
     const { data: pendingConductor } = await supabase
