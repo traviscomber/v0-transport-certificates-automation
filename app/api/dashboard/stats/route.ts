@@ -3,98 +3,69 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
-// Force cache bust: Updated 2026-05-25 to align approved counts with aprobados endpoint
 
 export async function GET() {
   try {
     const supabase = createAdminClient()
 
-    // Get TOTAL counts for all documents
-    const { data: allConductor } = await supabase
-      .from('uploaded_documents')
-      .select('id')
-
-    const { data: allSub } = await supabase
-      .from('subcontractor_documents')
-      .select('id')
-
-    // Get pending documents
-    const { data: pendingConductor } = await supabase
-      .from('uploaded_documents')
-      .select('id')
-      .or('validation_status.eq.pending,validation_status.is.null')
-
-    const { data: pendingSub } = await supabase
-      .from('subcontractor_documents')
-      .select('id')
-      .eq('status', 'pending')
-
-    // Get rejected documents
-    const { data: rejectedConductor } = await supabase
-      .from('uploaded_documents')
-      .select('id')
-      .eq('validation_status', 'rejected')
-
-    const { data: rejectedSub } = await supabase
-      .from('subcontractor_documents')
-      .select('id')
-      .eq('status', 'rejected')
-
-    // NOW compute approved count: total - pending - rejected
-    const conductorTotal = (allConductor?.length || 0)
-    const subTotal = (allSub?.length || 0)
+    // Get conductor documents stats - PAGINATE for all records (same as documentos page)
+    const { data: conductorPage0 } = await supabase
+      .from("uploaded_documents")
+      .select("id, validation_status")
+      .range(0, 999)
     
-    const conductorApprovedComputed = conductorTotal - (pendingConductor?.length || 0) - (rejectedConductor?.length || 0)
-    const subApprovedComputed = subTotal - (pendingSub?.length || 0) - (rejectedSub?.length || 0)
+    const { data: conductorPage1 } = await supabase
+      .from("uploaded_documents")
+      .select("id, validation_status")
+      .range(1000, 1999)
+
+    const allConductorDocs = [...(conductorPage0 || []), ...(conductorPage1 || [])]
     
-    const approvedConductor_count = Math.max(0, conductorApprovedComputed)
-    const approvedSub_count = Math.max(0, subApprovedComputed)
-
-    const conductorApproved = approvedConductor_count
-    const subApproved = approvedSub_count
-    const conductorPending = pendingConductor?.length || 0
-    const subPending = pendingSub?.length || 0
-    const conductorRejected = rejectedConductor?.length || 0
-    const subRejected = rejectedSub?.length || 0
-
-    // Calculate totals: sum of all three states (pending + approved + rejected)
-    const pendingTotal = conductorPending + subPending
-    const approvedTotal = conductorApproved + subApproved
-    const rejectedTotal = conductorRejected + subRejected
-
-    const totals = {
-      total: pendingTotal + approvedTotal + rejectedTotal,
-      pending: pendingTotal,
-      approved: approvedTotal,
-      rejected: rejectedTotal,
+    const conductorStats = {
+      total: allConductorDocs.length,
+      pendientes: allConductorDocs.filter(d => d.validation_status === 'pending' || !d.validation_status).length,
+      aprobados: allConductorDocs.filter(d => d.validation_status === 'approved').length,
+      rechazados: allConductorDocs.filter(d => d.validation_status === 'rejected').length,
+      vencidos: 0
     }
 
-    console.log('[v0] Stats API - Document counts:', {
-      approvedConductor: approvedConductor_count,
-      approvedSub: approvedSub_count,
-      pendingConductor: pendingConductor?.length || 0,
-      pendingSub: pendingSub?.length || 0,
-      rejectedConductor: rejectedConductor?.length || 0,
-      rejectedSub: rejectedSub?.length || 0,
-    })
+    // Get subcontractor documents stats - PAGINATE for all records (same as documentos page)
+    const { data: subPage0 } = await supabase
+      .from("subcontractor_documents")
+      .select("id, status")
+      .range(0, 999)
+
+    const { data: subPage1 } = await supabase
+      .from("subcontractor_documents")
+      .select("id, status")
+      .range(1000, 1999)
+
+    const allSubDocs = [...(subPage0 || []), ...(subPage1 || [])]
+    
+    const subStats = {
+      total: allSubDocs.length,
+      pendientes: allSubDocs.filter(d => d.status === 'pending').length,
+      aprobados: allSubDocs.filter(d => d.status === 'approved').length,
+      rechazados: allSubDocs.filter(d => d.status === 'rejected').length,
+      vencidos: 0
+    }
 
     const stats = {
-      conductores: {
-        total: conductorApproved + conductorPending + conductorRejected,
-        pendientes: conductorPending,
-        aprobados: conductorApproved,
-        rechazados: conductorRejected,
-      },
-      subcontratistas: {
-        total: subApproved + subPending + subRejected,
-        pendientes: subPending,
-        aprobados: subApproved,
-        rechazados: subRejected,
-      },
-      totals: totals
+      conductores: conductorStats,
+      subcontratistas: subStats,
+      totals: {
+        total: (conductorStats.total || 0) + (subStats.total || 0),
+        pending: (conductorStats.pendientes || 0) + (subStats.pendientes || 0),
+        approved: (conductorStats.aprobados || 0) + (subStats.aprobados || 0),
+        rejected: (conductorStats.rechazados || 0) + (subStats.rechazados || 0),
+      }
     }
 
-    return NextResponse.json({ stats }, { 
+    console.log('[v0] Stats API - Computed:', {
+      conductorAprobados: conductorStats.aprobados,
+      subAprobados: subStats.aprobados,
+      totalAprobados: stats.totals.approved
+    }) 
       status: 200,
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
