@@ -207,7 +207,15 @@ export function DashboardOverview() {
         
         const fetchUpdatedStats = async () => {
           try {
-            // Use separate endpoints for sync updates with cache bust
+            // Use aprobados endpoint for approved count (source of truth)
+            const approvedRes = await fetch(`/api/company/documents/aprobados?_t=${Date.now()}`, {
+              cache: "no-store",
+              headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+              }
+            })
+
+            // Use stats API for total/pending/rejected
             const statsRes = await fetch(`/api/dashboard/stats?_t=${Date.now()}`, {
               cache: "no-store",
               headers: {
@@ -215,19 +223,25 @@ export function DashboardOverview() {
               }
             })
 
+            let totalDocs = 0
+            let pendingDocs = 0
+            let rejectedDocs = 0
+            let approvedDocs = 0
+
             if (statsRes.ok) {
               const statsData = await statsRes.json()
               const statsObj = statsData.stats || {}
-              const conductorStats = statsObj.conductores || {}
-              const subStats = statsObj.subcontratistas || {}
+              totalDocs = statsObj.totals?.total || 0
+              pendingDocs = statsObj.totals?.pending || 0
+              rejectedDocs = statsObj.totals?.rejected || 0
+            }
 
-              // Aggregate both conductor and subcontractor documents (same logic as initial fetch)
-              const totalDocs = (conductorStats.total || 0) + (subStats.total || 0)
-              const pendingDocs = (conductorStats.pendientes || 0) + (subStats.pendientes || 0)
-          const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
-          const rejectedDocs = (conductorStats.rechazados || 0) + (subStats.rechazados || 0)
+            if (approvedRes.ok) {
+              const approvedData = await approvedRes.json()
+              approvedDocs = approvedData.total || 0
+            }
 
-          setStats([
+            setStats([
                 {
                   title: "Total de Documentos",
                   value: totalDocs.toString(),

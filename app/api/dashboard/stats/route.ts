@@ -78,23 +78,36 @@ export async function GET() {
       vencidos: 0
     }
 
+    // Calculate totals using mathematical consistency:
+    // total = approved + pending + rejected
+    const totalDocs = conductorTotal + subTotal
+    const approvedDocs = conductorApproved + subApproved
+    const pendingDocs = conductorPending + subPending
+    const rejectedDocs = conductorRejected + subRejected
+    
+    // Verify math adds up
+    const calculatedTotal = approvedDocs + pendingDocs + rejectedDocs
+    const discrepancy = totalDocs - calculatedTotal
+
     const stats = {
       conductores: conductorStats,
       subcontratistas: subStats,
       totals: {
-        total: conductorTotal + subTotal,
-        pending: conductorPending + subPending,
-        approved: conductorApproved + subApproved,
-        rejected: conductorRejected + subRejected,
+        total: totalDocs,
+        pending: pendingDocs,
+        approved: approvedDocs,
+        rejected: rejectedDocs,
       }
     }
 
     console.log('[v0] Stats API - Final counts:', {
-      totalDocs: stats.totals.total,
-      pendingDocs: stats.totals.pending,
-      approvedDocs: stats.totals.approved,
-      rejectedDocs: stats.totals.rejected,
-      sum_check: stats.totals.pending + stats.totals.approved + stats.totals.rejected
+      totalDocs,
+      pendingDocs,
+      approvedDocs,
+      rejectedDocs,
+      calculatedTotal,
+      discrepancy,
+      math_check: `${approvedDocs} + ${pendingDocs} + ${rejectedDocs} = ${calculatedTotal}`
     })
 
     return NextResponse.json({ stats }, { 
