@@ -39,19 +39,12 @@ export async function GET() {
     console.log('[v0] Aprobados endpoint: Current ejecutiva:', currentExecutiva)
     console.log('[v0] Aprobados endpoint: Fetching ALL approved documents')
 
-    // Get approved conductor documents - NO FILTER, fetch all with simpler select to avoid join issues
-    // IMPORTANT: Must handle pagination for large datasets
-    const { data: conductorDocs, error: conductorError } = await supabase
+    // Get approved conductor documents - fetch ALL with no special conditions
+    const { data: conductorDocs } = await supabase
       .from('uploaded_documents')
-      .select('*', { count: 'exact' })
+      .select('*')
       .eq('validation_status', 'approved')
       .order('updated_at', { ascending: false })
-      .limit(5000)  // Explicitly allow up to 5000 records
-
-    if (conductorError) {
-      console.error('[v0] Aprobados endpoint: Conductor error:', conductorError)
-      // Don't throw, just log and continue
-    }
 
     console.log('[v0] Aprobados: Conductor docs count:', conductorDocs?.length || 0)
 
@@ -125,48 +118,12 @@ export async function GET() {
 
     console.log('[v0] Aprobados: Conductor executive map:', Array.from(conductorExecutiveMap.entries()))
 
-    // Get approved subcontractor documents - NO FILTER, fetch all with simpler select to avoid join issues
-    // IMPORTANT: Must handle pagination for large datasets
-    let { data: subDocs, error: subError } = await supabase
+    // Get approved subcontractor documents - fetch ALL with no special conditions
+    let { data: subDocs } = await supabase
       .from('subcontractor_documents')
-      .select('*', { count: 'exact' })
+      .select('*')
       .eq('status', 'approved')
       .order('updated_at', { ascending: false })
-      .limit(5000)  // Explicitly allow up to 5000 records
-
-    // IMPORTANT: Try including documents with null status that might be considered "approved"
-    // Some documents might have been marked as approved but status not updated
-    if (subDocs && subDocs.length < 691) {  // If we're missing docs
-      console.log('[v0] Aprobados: Approved sub count is', subDocs.length, '- looking for remaining docs with null or other status')
-      
-      const { data: nullStatusSub } = await supabase
-        .from('subcontractor_documents')
-        .select('*')
-        .is('status', null)
-        .order('updated_at', { ascending: false })
-        .limit(100)
-      
-      console.log('[v0] Aprobados: Found', nullStatusSub?.length || 0, 'subcontractor docs with null status')
-      
-      if (nullStatusSub && nullStatusSub.length > 0) {
-        console.log('[v0] Aprobados: Adding null-status docs to approved list')
-        subDocs.push(...nullStatusSub)
-        subDocs.sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-      }
-    }
-
-    // DEBUGGING: Check if there are docs with different status values
-    if (subDocs) {
-      // If we're missing docs, try to find them by fetching docs that might have been updated recently
-      const { data: recentSub } = await supabase
-        .from('subcontractor_documents')
-        .select('id, status, file_name, updated_at')
-        .eq('status', 'approved')
-        .order('updated_at', { ascending: false })
-        .limit(100)
-      
-      console.log('[v0] Aprobados: Recent approved sub docs:', recentSub?.length || 0)
-    }
 
     console.log('[v0] Aprobados: Sub docs count:', subDocs?.length || 0)
     if (subDocs && subDocs.length > 0) {
