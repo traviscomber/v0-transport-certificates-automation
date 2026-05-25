@@ -8,46 +8,54 @@ export async function GET() {
   try {
     const supabase = createAdminClient()
 
-    // Get conductor documents stats - PAGINATE for all records (same as documentos page)
-    const { data: conductorPage0 } = await supabase
-      .from("uploaded_documents")
-      .select("id, validation_status")
-      .range(0, 999)
+    // Get ALL documents without filters to count totals and pending/rejected
+    const { data: allConductor } = await supabase
+      .from('uploaded_documents')
+      .select('id, validation_status')
     
-    const { data: conductorPage1 } = await supabase
-      .from("uploaded_documents")
-      .select("id, validation_status")
-      .range(1000, 1999)
+    const { data: allSub } = await supabase
+      .from('subcontractor_documents')
+      .select('id, status')
 
-    const allConductorDocs = [...(conductorPage0 || []), ...(conductorPage1 || [])]
-    
+    // Count by status
     const conductorStats = {
-      total: allConductorDocs.length,
-      pendientes: allConductorDocs.filter(d => d.validation_status === 'pending' || !d.validation_status).length,
-      aprobados: allConductorDocs.filter(d => d.validation_status === 'approved').length,
-      rechazados: allConductorDocs.filter(d => d.validation_status === 'rejected').length,
+      total: allConductor?.length || 0,
+      pendientes: allConductor?.filter((d: any) => d.validation_status === 'pending' || !d.validation_status).length || 0,
+      aprobados: allConductor?.filter((d: any) => d.validation_status === 'approved').length || 0,
+      rechazados: allConductor?.filter((d: any) => d.validation_status === 'rejected').length || 0,
       vencidos: 0
     }
 
-    // Get subcontractor documents stats - PAGINATE for all records (same as documentos page)
-    const { data: subPage0 } = await supabase
-      .from("subcontractor_documents")
-      .select("id, status")
-      .range(0, 999)
-
-    const { data: subPage1 } = await supabase
-      .from("subcontractor_documents")
-      .select("id, status")
-      .range(1000, 1999)
-
-    const allSubDocs = [...(subPage0 || []), ...(subPage1 || [])]
-    
     const subStats = {
-      total: allSubDocs.length,
-      pendientes: allSubDocs.filter(d => d.status === 'pending').length,
-      aprobados: allSubDocs.filter(d => d.status === 'approved').length,
-      rechazados: allSubDocs.filter(d => d.status === 'rejected').length,
+      total: allSub?.length || 0,
+      pendientes: allSub?.filter((d: any) => d.status === 'pending').length || 0,
+      aprobados: allSub?.filter((d: any) => d.status === 'approved').length || 0,
+      rechazados: allSub?.filter((d: any) => d.status === 'rejected').length || 0,
       vencidos: 0
+    }
+
+    // ===== IMPORTANT: Use the ACTUAL aprobados endpoint count for approved docs =====
+    // This ensures dashboard shows the exact same value as the detail page
+    let approvedCount = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
+    let detailedApprovedCount = 0
+    
+    try {
+      // Call the aprobados endpoint to get the real approved count
+      // This endpoint applies all business logic and returns the correct count
+      const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+      const approvedRes = await fetch(`${baseUrl}/api/company/documents/aprobados`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        }
+      })
+      
+      if (approvedRes.ok) {
+        const approvedData = await approvedRes.json()
+        detailedApprovedCount = approvedData.total || 0
+        console.log('[v0] Stats API: Using aprobados endpoint count:', detailedApprovedCount)
+      }
+    } catch (e) {
+      console.log('[v0] Stats API: Could not call aprobados endpoint, using direct count')
     }
 
     const stats = {
@@ -56,14 +64,15 @@ export async function GET() {
       totals: {
         total: (conductorStats.total || 0) + (subStats.total || 0),
         pending: (conductorStats.pendientes || 0) + (subStats.pendientes || 0),
-        approved: (conductorStats.aprobados || 0) + (subStats.aprobados || 0),
+        approved: detailedApprovedCount || approvedCount, // Use endpoint if available, fallback to direct count
         rejected: (conductorStats.rechazados || 0) + (subStats.rechazados || 0),
       }
     }
 
-    console.log('[v0] Stats API - Computed:', {
+    console.log('[v0] Stats API - Final counts:', {
       conductorAprobados: conductorStats.aprobados,
       subAprobados: subStats.aprobados,
+      approvedFromEndpoint: detailedApprovedCount,
       totalAprobados: stats.totals.approved
     })
 
