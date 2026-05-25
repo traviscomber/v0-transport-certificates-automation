@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
+// Force cache bust: Updated 2026-05-25 to align approved counts with aprobados endpoint
 
 export async function GET() {
   try {
