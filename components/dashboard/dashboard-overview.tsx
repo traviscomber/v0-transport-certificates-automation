@@ -91,7 +91,8 @@ export function DashboardOverview() {
           }
         })
         
-        const statsRes = await fetch(`/api/dashboard/stats?_t=${timestamp}`, {
+        // Use aprobados endpoint for ACCURATE approved count (this is the source of truth)
+        const approvedRes = await fetch(`/api/company/documents/aprobados?_t=${timestamp}`, {
           cache: "no-store",
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -107,22 +108,40 @@ export function DashboardOverview() {
           setAlerts(alertsList)
         }
 
-        if (statsRes.ok) {
-          const statsData = await statsRes.json()
-          const statsObj = statsData.stats || {}
-          const conductorStats = statsObj.conductores || {}
-          const subStats = statsObj.subcontratistas || {}
-
-          // Aggregate both conductor and subcontractor documents
-          const totalDocs = (conductorStats.total || 0) + (subStats.total || 0)
-          const pendingDocs = (conductorStats.pendientes || 0) + (subStats.pendientes || 0)
-          const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
-          const rejectedDocs = (conductorStats.rechazados || 0) + (subStats.rechazados || 0)
+        if (approvedRes.ok) {
+          const approvedData = await approvedRes.json()
+          
+          // Get total/pending/rejected from stats API for non-approved stats
+          const statsRes = await fetch(`/api/dashboard/stats?_t=${timestamp}`, {
+            cache: "no-store",
+            headers: {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            }
+          })
+          
+          let totalDocs = 0
+          let pendingDocs = 0
+          let rejectedDocs = 0
+          
+          if (statsRes.ok) {
+            const statsData = await statsRes.json()
+            const statsObj = statsData.stats || {}
+            totalDocs = statsObj.totals?.total || 0
+            pendingDocs = statsObj.totals?.pending || 0
+            rejectedDocs = statsObj.totals?.rejected || 0
+          }
+          
+          // Use approved count from aprobados endpoint (source of truth = 758)
+          const approvedDocs = approvedData.total || 0
 
           console.log('[v0] Dashboard Stats Response:', {
-            conductorStats,
-            subStats,
-            calculated: { totalDocs, pendingDocs, approvedDocs, rejectedDocs }
+            totalDocs,
+            pendingDocs,
+            approvedDocs,
+            rejectedDocs,
+            fromAprobados: approvedData.total
           })
 
           setStats([
