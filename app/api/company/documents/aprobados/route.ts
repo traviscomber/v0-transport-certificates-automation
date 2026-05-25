@@ -40,11 +40,13 @@ export async function GET() {
     console.log('[v0] Aprobados endpoint: Fetching ALL approved documents')
 
     // Get approved conductor documents - NO FILTER, fetch all with simpler select to avoid join issues
+    // IMPORTANT: Must handle pagination for large datasets
     const { data: conductorDocs, error: conductorError } = await supabase
       .from('uploaded_documents')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('validation_status', 'approved')
       .order('updated_at', { ascending: false })
+      .limit(5000)  // Explicitly allow up to 5000 records
 
     if (conductorError) {
       console.error('[v0] Aprobados endpoint: Conductor error:', conductorError)
@@ -124,11 +126,13 @@ export async function GET() {
     console.log('[v0] Aprobados: Conductor executive map:', Array.from(conductorExecutiveMap.entries()))
 
     // Get approved subcontractor documents - NO FILTER, fetch all with simpler select to avoid join issues
+    // IMPORTANT: Must handle pagination for large datasets
     const { data: subDocs, error: subError } = await supabase
       .from('subcontractor_documents')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('status', 'approved')
       .order('updated_at', { ascending: false })
+      .limit(5000)  // Explicitly allow up to 5000 records
 
     if (subError) {
       console.error('[v0] Aprobados endpoint: Sub error:', subError)
