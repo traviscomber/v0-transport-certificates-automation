@@ -36,13 +36,13 @@ export async function GET() {
 
     // ===== IMPORTANT: Use the ACTUAL aprobados endpoint count for approved docs =====
     // This ensures dashboard shows the exact same value as the detail page
-    let approvedCount = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
     let detailedApprovedCount = 0
+    let approvedCount = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
     
     try {
       // Call the aprobados endpoint to get the real approved count
       // This endpoint applies all business logic and returns the correct count
-      const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+      const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'
       const approvedRes = await fetch(`${baseUrl}/api/company/documents/aprobados`, {
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -53,9 +53,11 @@ export async function GET() {
         const approvedData = await approvedRes.json()
         detailedApprovedCount = approvedData.total || 0
         console.log('[v0] Stats API: Using aprobados endpoint count:', detailedApprovedCount)
+      } else {
+        console.log('[v0] Stats API: aprobados endpoint returned error:', approvedRes.status)
       }
     } catch (e) {
-      console.log('[v0] Stats API: Could not call aprobados endpoint, using direct count')
+      console.log('[v0] Stats API: Could not call aprobados endpoint, error:', e, 'using direct count:', approvedCount)
     }
 
     const stats = {
@@ -64,7 +66,7 @@ export async function GET() {
       totals: {
         total: (conductorStats.total || 0) + (subStats.total || 0),
         pending: (conductorStats.pendientes || 0) + (subStats.pendientes || 0),
-        approved: detailedApprovedCount || approvedCount, // Use endpoint if available, fallback to direct count
+        approved: detailedApprovedCount > 0 ? detailedApprovedCount : approvedCount, // Prefer endpoint if successful
         rejected: (conductorStats.rechazados || 0) + (subStats.rechazados || 0),
       }
     }
