@@ -42,7 +42,20 @@ export async function GET() {
     try {
       // Call the aprobados endpoint to get the real approved count
       // This endpoint applies all business logic and returns the correct count
-      const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'
+      let baseUrl = process.env.NEXTAUTH_URL
+      
+      // Fallback: construct from VERCEL_URL if NEXTAUTH_URL not set
+      if (!baseUrl && process.env.VERCEL_URL) {
+        baseUrl = `https://${process.env.VERCEL_URL}`
+      }
+      
+      // Last resort
+      if (!baseUrl) {
+        baseUrl = 'http://localhost:3000'
+      }
+
+      console.log('[v0] Stats API: Calling aprobados endpoint with baseUrl:', baseUrl)
+      
       const approvedRes = await fetch(`${baseUrl}/api/company/documents/aprobados`, {
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
