@@ -9,7 +9,7 @@ export async function GET() {
   try {
     const supabase = createAdminClient()
 
-    // Get TOTAL counts for all documents (used to compute approved = total - pending - rejected)
+    // Get TOTAL counts for all documents
     const { data: allConductor } = await supabase
       .from('uploaded_documents')
       .select('id')
@@ -17,18 +17,6 @@ export async function GET() {
     const { data: allSub } = await supabase
       .from('subcontractor_documents')
       .select('id')
-
-    // For approved count, compute: total - pending - rejected
-    // This ensures mathematical consistency and avoids discrepancies from direct queries
-    const conductorTotal = (allConductor?.length || 0)
-    const subTotal = (allSub?.length || 0)
-    
-    // Compute approved from totals
-    const conductorApprovedComputed = conductorTotal - (pendingConductor?.length || 0) - (rejectedConductor?.length || 0)
-    const subApprovedComputed = subTotal - (pendingSub?.length || 0) - (rejectedSub?.length || 0)
-    
-    const approvedConductor_count = Math.max(0, conductorApprovedComputed)
-    const approvedSub_count = Math.max(0, subApprovedComputed)
 
     // Get pending documents
     const { data: pendingConductor } = await supabase
@@ -51,6 +39,16 @@ export async function GET() {
       .from('subcontractor_documents')
       .select('id')
       .eq('status', 'rejected')
+
+    // NOW compute approved count: total - pending - rejected
+    const conductorTotal = (allConductor?.length || 0)
+    const subTotal = (allSub?.length || 0)
+    
+    const conductorApprovedComputed = conductorTotal - (pendingConductor?.length || 0) - (rejectedConductor?.length || 0)
+    const subApprovedComputed = subTotal - (pendingSub?.length || 0) - (rejectedSub?.length || 0)
+    
+    const approvedConductor_count = Math.max(0, conductorApprovedComputed)
+    const approvedSub_count = Math.max(0, subApprovedComputed)
 
     const conductorApproved = approvedConductor_count
     const subApproved = approvedSub_count
