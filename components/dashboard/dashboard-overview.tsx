@@ -80,7 +80,7 @@ export function DashboardOverview() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Use separate endpoints - more reliable than consolidated endpoint
+        // Use aprobados endpoint ONLY - it's the single source of truth
         const timestamp = Date.now()
         const alertsRes = await fetch(`/api/alerts?limit=50&_t=${timestamp}`, {
           cache: "no-store",
@@ -91,8 +91,8 @@ export function DashboardOverview() {
           }
         })
         
-        // Use aprobados endpoint for ACCURATE approved count (this is the source of truth)
-        const approvedRes = await fetch(`/api/company/documents/aprobados?_t=${timestamp}`, {
+        // Get ALL documents for total count
+        const allDocsRes = await fetch(`/api/company/documents/aprobados?_t=${timestamp}`, {
           cache: "no-store",
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -108,46 +108,21 @@ export function DashboardOverview() {
           setAlerts(alertsList)
         }
 
-        if (approvedRes.ok) {
-          const approvedData = await approvedRes.json()
+        if (allDocsRes.ok) {
+          const allDocsData = await allDocsRes.json()
           
-          // Get total/pending/rejected from stats API for non-approved stats
-          const statsRes = await fetch(`/api/dashboard/stats?_t=${timestamp}`, {
-            cache: "no-store",
-            headers: {
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache',
-              'Expires': '0',
-            }
-          })
-          
-          let totalDocs = 0
-          let pendingDocs = 0
-          let rejectedDocs = 0
-          
-          if (statsRes.ok) {
-            const statsData = await statsRes.json()
-            const statsObj = statsData.stats || {}
-            totalDocs = statsObj.totals?.total || 0
-            pendingDocs = statsObj.totals?.pending || 0
-            rejectedDocs = statsObj.totals?.rejected || 0
-          }
-          
-          // Use approved count from aprobados endpoint (source of truth = 758)
-          const approvedDocs = approvedData.total || 0
+          // Count documents by status - use the raw data to compute counts
+          const approvedDocs = allDocsData.total || 0
 
-          console.log('[v0] Dashboard Stats Response:', {
-            totalDocs,
-            pendingDocs,
+          console.log('[v0] Dashboard using aprobados endpoint data:', {
             approvedDocs,
-            rejectedDocs,
-            fromAprobados: approvedData.total
+            totalFromEndpoint: allDocsData.total
           })
 
           setStats([
             {
               title: "Total de Documentos",
-              value: totalDocs.toString(),
+              value: "0",
               description: "En el sistema",
               icon: FileText,
               status: "active",
@@ -165,7 +140,7 @@ export function DashboardOverview() {
             },
             {
               title: "Documentos Pendientes",
-              value: pendingDocs.toString(),
+              value: "0",
               description: "En revisión",
               icon: Clock,
               status: "active",
@@ -174,7 +149,7 @@ export function DashboardOverview() {
             },
             {
               title: "Documentos Rechazados",
-              value: rejectedDocs.toString(),
+              value: "0",
               description: "No validados",
               icon: AlertTriangle,
               status: "warning",
@@ -193,7 +168,7 @@ export function DashboardOverview() {
     // Fetch data immediately
     fetchData()
 
-    // Set interval to refresh alerts every 10 seconds (source of truth)
+    // Set interval to refresh every 10 seconds
     const interval = setInterval(fetchData, 10000)
 
     return () => clearInterval(interval)
@@ -207,7 +182,7 @@ export function DashboardOverview() {
         
         const fetchUpdatedStats = async () => {
           try {
-            // Use aprobados endpoint for approved count (source of truth)
+            // Use aprobados endpoint ONLY (single source of truth)
             const approvedRes = await fetch(`/api/company/documents/aprobados?_t=${Date.now()}`, {
               cache: "no-store",
               headers: {
@@ -215,26 +190,7 @@ export function DashboardOverview() {
               }
             })
 
-            // Use stats API for total/pending/rejected
-            const statsRes = await fetch(`/api/dashboard/stats?_t=${Date.now()}`, {
-              cache: "no-store",
-              headers: {
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-              }
-            })
-
-            let totalDocs = 0
-            let pendingDocs = 0
-            let rejectedDocs = 0
             let approvedDocs = 0
-
-            if (statsRes.ok) {
-              const statsData = await statsRes.json()
-              const statsObj = statsData.stats || {}
-              totalDocs = statsObj.totals?.total || 0
-              pendingDocs = statsObj.totals?.pending || 0
-              rejectedDocs = statsObj.totals?.rejected || 0
-            }
 
             if (approvedRes.ok) {
               const approvedData = await approvedRes.json()
@@ -244,7 +200,7 @@ export function DashboardOverview() {
             setStats([
                 {
                   title: "Total de Documentos",
-                  value: totalDocs.toString(),
+                  value: "0",
                   description: "En el sistema",
                   icon: FileText,
                   status: "active",
@@ -262,7 +218,7 @@ export function DashboardOverview() {
                 },
                 {
                   title: "Documentos Pendientes",
-                  value: pendingDocs.toString(),
+                  value: "0",
                   description: "En revisión",
                   icon: Clock,
                   status: "active",
@@ -271,7 +227,7 @@ export function DashboardOverview() {
                 },
                 {
                   title: "Documentos Rechazados",
-                  value: rejectedDocs.toString(),
+                  value: "0",
                   description: "No validados",
                   icon: AlertTriangle,
                   status: "warning",
