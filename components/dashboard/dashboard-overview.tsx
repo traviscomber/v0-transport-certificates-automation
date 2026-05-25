@@ -81,17 +81,22 @@ export function DashboardOverview() {
     const fetchData = async () => {
       try {
         // Use separate endpoints - more reliable than consolidated endpoint
-        const alertsRes = await fetch(`/api/alerts?limit=50`, {
+        const timestamp = Date.now()
+        const alertsRes = await fetch(`/api/alerts?limit=50&_t=${timestamp}`, {
           cache: "no-store",
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           }
         })
         
-        const statsRes = await fetch(`/api/dashboard/stats`, {
+        const statsRes = await fetch(`/api/dashboard/stats?_t=${timestamp}`, {
           cache: "no-store",
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           }
         })
 
@@ -183,9 +188,12 @@ export function DashboardOverview() {
         
         const fetchUpdatedStats = async () => {
           try {
-            // Use separate endpoints for sync updates
-            const statsRes = await fetch(`/api/dashboard/stats`, {
+            // Use separate endpoints for sync updates with cache bust
+            const statsRes = await fetch(`/api/dashboard/stats?_t=${Date.now()}`, {
               cache: "no-store",
+              headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+              }
             })
 
             if (statsRes.ok) {
