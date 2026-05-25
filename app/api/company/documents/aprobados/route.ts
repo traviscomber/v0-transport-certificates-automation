@@ -39,12 +39,11 @@ export async function GET() {
     console.log('[v0] Aprobados endpoint: Current ejecutiva:', currentExecutiva)
     console.log('[v0] Aprobados endpoint: Fetching ALL approved documents')
 
-    // Get approved conductor documents - fetch ALL with no special conditions
+    // Get approved conductor documents - NO ORDER to avoid pagination issues
     const { data: conductorDocs } = await supabase
       .from('uploaded_documents')
       .select('*')
       .eq('validation_status', 'approved')
-      .order('updated_at', { ascending: false })
 
     console.log('[v0] Aprobados: Conductor docs count:', conductorDocs?.length || 0)
 
@@ -118,12 +117,11 @@ export async function GET() {
 
     console.log('[v0] Aprobados: Conductor executive map:', Array.from(conductorExecutiveMap.entries()))
 
-    // Get approved subcontractor documents - fetch ALL with no special conditions
+    // Get approved subcontractor documents - NO ORDER to avoid pagination issues
     let { data: subDocs } = await supabase
       .from('subcontractor_documents')
       .select('*')
       .eq('status', 'approved')
-      .order('updated_at', { ascending: false })
 
     console.log('[v0] Aprobados: Sub docs count:', subDocs?.length || 0)
     if (subDocs && subDocs.length > 0) {
