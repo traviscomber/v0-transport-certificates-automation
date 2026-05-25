@@ -51,11 +51,25 @@ export async function GET() {
         .select('*')
         .eq('status', 'approved')
       
+      // ALSO query ALL subcontractor docs to understand the data
+      const { data: allSubForComparison } = await supabase
+        .from('subcontractor_documents')
+        .select('id, status')
+      
       detailedApprovedCount = (approvedConductor?.length || 0) + (approvedSub?.length || 0)
-      console.log('[v0] Stats API: Approved count from detailed queries:', {
-        conductor: approvedConductor?.length || 0,
-        sub: approvedSub?.length || 0,
-        total: detailedApprovedCount
+      
+      console.log('[v0] Stats API: Debug - Full comparison:', {
+        conductor_approved: approvedConductor?.length || 0,
+        sub_approved: approvedSub?.length || 0,
+        sub_all_count: allSubForComparison?.length || 0,
+        sub_approved_by_status: approvedSub?.filter((d: any) => d.status === 'approved').length || 0,
+        total_detailed: detailedApprovedCount,
+        all_sub_statuses: allSubForComparison ? {
+          approved: allSubForComparison.filter(d => d.status === 'approved').length,
+          pending: allSubForComparison.filter(d => d.status === 'pending').length,
+          rejected: allSubForComparison.filter(d => d.status === 'rejected').length,
+          null: allSubForComparison.filter(d => !d.status).length
+        } : 'N/A'
       })
     } catch (e) {
       console.log('[v0] Stats API: Error in detailed approved query:', e)
