@@ -29,10 +29,12 @@ export default function AprobadosPage() {
 
     fetchData()
     
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(fetchData, 30000)
+    // Auto-refresh every 30 seconds - DISABLED to prevent closing preview
+    // const interval = setInterval(fetchData, 30000)
     
-    return () => clearInterval(interval)
+    return () => {
+      // Cleanup if we ever add back the interval
+    }
   }, [])
 
   const filteredData = useMemo(() => {
