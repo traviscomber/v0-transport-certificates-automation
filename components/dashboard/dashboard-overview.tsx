@@ -279,7 +279,6 @@ export function DashboardOverview() {
                   color: "red",
                 },
               ])
-            }
           } catch (error) {
             console.error('[v0] Error refetching stats:', error)
           }
