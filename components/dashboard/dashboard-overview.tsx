@@ -80,7 +80,8 @@ export function DashboardOverview() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Use aprobados endpoint ONLY - it's the single source of truth
+        // Use the SAME endpoint as DocumentManagerHub - /api/company/documents/stats
+        // This ensures Control Operacional shows EXACT same numbers as Gestor de Documentos
         const timestamp = Date.now()
         const alertsRes = await fetch(`/api/alerts?limit=50&_t=${timestamp}`, {
           cache: "no-store",
@@ -91,8 +92,8 @@ export function DashboardOverview() {
           }
         })
         
-        // Get ALL documents for total count
-        const allDocsRes = await fetch(`/api/company/documents/aprobados?_t=${timestamp}`, {
+        // Use the SAME stats endpoint as the Gestor de Documentos
+        const statsRes = await fetch(`/api/company/documents/stats?_t=${timestamp}`, {
           cache: "no-store",
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -103,26 +104,34 @@ export function DashboardOverview() {
 
         if (alertsRes.ok) {
           const alertsData = await alertsRes.json()
-          console.log('[v0] Fetched alerts:', alertsData)
           const alertsList = Array.isArray(alertsData) ? alertsData : (alertsData.alerts || [])
           setAlerts(alertsList)
         }
 
-        if (allDocsRes.ok) {
-          const allDocsData = await allDocsRes.json()
+        if (statsRes.ok) {
+          const statsData = await statsRes.json()
+          const stats = statsData.stats || {}
           
-          // Count documents by status - use the raw data to compute counts
-          const approvedDocs = allDocsData.total || 0
+          // Calculate totals from conductor + subcontractor stats (same logic as Gestor)
+          const conductorStats = stats.conductores || {}
+          const subStats = stats.subcontratistas || {}
+          
+          const totalDocs = (conductorStats.total || 0) + (subStats.total || 0)
+          const pendingDocs = (conductorStats.pendientes || 0) + (subStats.pendientes || 0)
+          const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
+          const rejectedDocs = (conductorStats.rechazados || 0) + (subStats.rechazados || 0)
 
-          console.log('[v0] Dashboard using aprobados endpoint data:', {
-            approvedDocs,
-            totalFromEndpoint: allDocsData.total
+          console.log('[v0] Dashboard Stats from /api/company/documents/stats:', {
+            total: totalDocs,
+            pending: pendingDocs,
+            approved: approvedDocs,
+            rejected: rejectedDocs
           })
 
           setStats([
             {
               title: "Total de Documentos",
-              value: "0",
+              value: totalDocs.toString(),
               description: "En el sistema",
               icon: FileText,
               status: "active",
@@ -140,7 +149,7 @@ export function DashboardOverview() {
             },
             {
               title: "Documentos Pendientes",
-              value: "0",
+              value: pendingDocs.toString(),
               description: "En revisión",
               icon: Clock,
               status: "active",
@@ -149,7 +158,7 @@ export function DashboardOverview() {
             },
             {
               title: "Documentos Rechazados",
-              value: "0",
+              value: rejectedDocs.toString(),
               description: "No validados",
               icon: AlertTriangle,
               status: "warning",
@@ -182,59 +191,65 @@ export function DashboardOverview() {
         
         const fetchUpdatedStats = async () => {
           try {
-            // Use aprobados endpoint ONLY (single source of truth)
-            const approvedRes = await fetch(`/api/company/documents/aprobados?_t=${Date.now()}`, {
+            // Use the SAME stats endpoint as initial fetch
+            const statsRes = await fetch(`/api/company/documents/stats?_t=${Date.now()}`, {
               cache: "no-store",
               headers: {
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
               }
             })
 
-            let approvedDocs = 0
+            if (statsRes.ok) {
+              const statsData = await statsRes.json()
+              const stats = statsData.stats || {}
+              
+              const conductorStats = stats.conductores || {}
+              const subStats = stats.subcontratistas || {}
+              
+              const totalDocs = (conductorStats.total || 0) + (subStats.total || 0)
+              const pendingDocs = (conductorStats.pendientes || 0) + (subStats.pendientes || 0)
+              const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
+              const rejectedDocs = (conductorStats.rechazados || 0) + (subStats.rechazados || 0)
 
-            if (approvedRes.ok) {
-              const approvedData = await approvedRes.json()
-              approvedDocs = approvedData.total || 0
+              setStats([
+                  {
+                    title: "Total de Documentos",
+                    value: totalDocs.toString(),
+                    description: "En el sistema",
+                    icon: FileText,
+                    status: "active",
+                    href: "/dashboard/company/documentos",
+                    color: "blue",
+                  },
+                  {
+                    title: "Documentos Aprobados",
+                    value: approvedDocs.toString(),
+                    description: "Validados",
+                    icon: CheckCircle,
+                    status: "active",
+                    href: "/dashboard/company/documentos/aprobados",
+                    color: "green",
+                  },
+                  {
+                    title: "Documentos Pendientes",
+                    value: pendingDocs.toString(),
+                    description: "En revisión",
+                    icon: Clock,
+                    status: "active",
+                    href: "/dashboard/company/documentos/pendientes",
+                    color: "orange",
+                  },
+                  {
+                    title: "Documentos Rechazados",
+                    value: rejectedDocs.toString(),
+                    description: "No validados",
+                    icon: AlertTriangle,
+                    status: "warning",
+                    href: "/dashboard/company/documentos/rechazados",
+                    color: "red",
+                  },
+                ])
             }
-
-            setStats([
-                {
-                  title: "Total de Documentos",
-                  value: "0",
-                  description: "En el sistema",
-                  icon: FileText,
-                  status: "active",
-                  href: "/dashboard/company/documentos",
-                  color: "blue",
-                },
-                {
-                  title: "Documentos Aprobados",
-                  value: approvedDocs.toString(),
-                  description: "Validados",
-                  icon: CheckCircle,
-                  status: "active",
-                  href: "/dashboard/company/documentos/aprobados",
-                  color: "green",
-                },
-                {
-                  title: "Documentos Pendientes",
-                  value: "0",
-                  description: "En revisión",
-                  icon: Clock,
-                  status: "active",
-                  href: "/dashboard/company/documentos/pendientes",
-                  color: "orange",
-                },
-                {
-                  title: "Documentos Rechazados",
-                  value: "0",
-                  description: "No validados",
-                  icon: AlertTriangle,
-                  status: "warning",
-                  href: "/dashboard/company/documentos/rechazados",
-                  color: "red",
-                },
-              ])
           } catch (error) {
             console.error('[v0] Error refetching stats:', error)
           }
