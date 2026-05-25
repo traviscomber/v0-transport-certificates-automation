@@ -157,23 +157,15 @@ export async function GET() {
 
     // DEBUGGING: Check if there are docs with different status values
     if (subDocs) {
-      const { data: allSubStatus } = await supabase
-        .from('subcontractor_documents')
-        .select('status, COUNT(*) as count')
-        .groupBy('status')
-      
-      console.log('[v0] Aprobados: Status distribution in subcontractor_documents:', JSON.stringify(allSubStatus))
-      
       // If we're missing docs, try to find them by fetching docs that might have been updated recently
       const { data: recentSub } = await supabase
         .from('subcontractor_documents')
         .select('id, status, file_name, updated_at')
         .eq('status', 'approved')
         .order('updated_at', { ascending: false })
-        .limit(1000)
-        .offset((subDocs?.length || 0) - 100)  // Get last 100 + next 1000 to catch overlaps
+        .limit(100)
       
-      console.log('[v0] Aprobados: Recent approved sub docs (offset check):', recentSub?.length || 0)
+      console.log('[v0] Aprobados: Recent approved sub docs:', recentSub?.length || 0)
     }
 
     console.log('[v0] Aprobados: Sub docs count:', subDocs?.length || 0)
