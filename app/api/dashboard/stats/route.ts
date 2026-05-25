@@ -65,7 +65,9 @@ export async function GET() {
       conductorAprobados: conductorStats.aprobados,
       subAprobados: subStats.aprobados,
       totalAprobados: stats.totals.approved
-    }) 
+    })
+
+    return NextResponse.json({ stats }, { 
       status: 200,
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
