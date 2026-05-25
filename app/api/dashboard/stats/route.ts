@@ -8,33 +8,22 @@ export async function GET() {
   try {
     const supabase = createAdminClient()
 
-    // Get ALL conductor documents with validation_status = 'approved'
-    // Use full select like the endpoint to ensure consistency
-    const { data: approvedConductor, error: conductorError } = await supabase
+    // NOTE: Using admin client to get actual counts without RLS restrictions
+    // We'll use the EXACT same queries as the aprobados endpoint to ensure consistency
+    
+    // Get approved conductor documents
+    const { data: approvedConductor } = await supabase
       .from('uploaded_documents')
-      .select('*', { count: 'exact' })
+      .select('id')
       .eq('validation_status', 'approved')
-      .order('updated_at', { ascending: false })
-      .limit(5000)
-
-    if (conductorError) {
-      console.error('[v0] Error fetching approved conductor docs:', conductorError)
-    }
-
-    // Get ALL subcontractor documents with status = 'approved'
-    // Use full select like the endpoint to ensure consistency
-    const { data: approvedSub, error: subError } = await supabase
+    
+    // Get approved subcontractor documents  
+    const { data: approvedSub } = await supabase
       .from('subcontractor_documents')
-      .select('*', { count: 'exact' })
+      .select('id')
       .eq('status', 'approved')
-      .order('updated_at', { ascending: false })
-      .limit(5000)
 
-    if (subError) {
-      console.error('[v0] Error fetching approved subcontractor docs:', subError)
-    }
-
-    // Get pending documents from uploaded_documents (no status or status='pending')
+    // Get pending documents
     const { data: pendingConductor } = await supabase
       .from('uploaded_documents')
       .select('id')
@@ -56,15 +45,6 @@ export async function GET() {
       .select('id')
       .eq('status', 'rejected')
 
-    // Get totals
-    const { data: allConductor } = await supabase
-      .from('uploaded_documents')
-      .select('id')
-
-    const { data: allSub } = await supabase
-      .from('subcontractor_documents')
-      .select('id')
-
     const conductorApproved = approvedConductor?.length || 0
     const subApproved = approvedSub?.length || 0
     const conductorPending = pendingConductor?.length || 0
@@ -84,9 +64,13 @@ export async function GET() {
       rejected: rejectedTotal,
     }
 
-    console.log('[v0] Stats API - Raw approved counts:', {
-      conductorDocs: approvedConductor?.length || 0,
-      subDocs: approvedSub?.length || 0,
+    console.log('[v0] Stats API - Document counts:', {
+      approvedConductor: approvedConductor?.length || 0,
+      approvedSub: approvedSub?.length || 0,
+      pendingConductor: pendingConductor?.length || 0,
+      pendingSub: pendingSub?.length || 0,
+      rejectedConductor: rejectedConductor?.length || 0,
+      rejectedSub: rejectedSub?.length || 0,
     })
 
     const stats = {
