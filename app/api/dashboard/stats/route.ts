@@ -70,8 +70,8 @@ export async function GET() {
     }
 
     console.log('[v0] Stats API - Document counts:', {
-      approvedConductor: approvedConductor?.length || 0,
-      approvedSub: approvedSub?.length || 0,
+      approvedConductor: approvedConductor_count,
+      approvedSub: approvedSub_count,
       pendingConductor: pendingConductor?.length || 0,
       pendingSub: pendingSub?.length || 0,
       rejectedConductor: rejectedConductor?.length || 0,
