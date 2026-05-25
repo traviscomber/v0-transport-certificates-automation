@@ -9,20 +9,24 @@ export async function GET() {
     const supabase = createAdminClient()
 
     // Get ALL conductor documents with validation_status = 'approved' using explicit filter
+    // IMPORTANT: Add .limit(5000) to ensure we get all records
     const { data: approvedConductor, error: conductorError } = await supabase
       .from('uploaded_documents')
-      .select('id')
+      .select('id', { count: 'exact' })
       .eq('validation_status', 'approved')
+      .limit(5000)
 
     if (conductorError) {
       console.error('[v0] Error fetching approved conductor docs:', conductorError)
     }
 
     // Get ALL subcontractor documents with status = 'approved' using explicit filter
+    // IMPORTANT: Add .limit(5000) to ensure we get all records
     const { data: approvedSub, error: subError } = await supabase
       .from('subcontractor_documents')
-      .select('id')
+      .select('id', { count: 'exact' })
       .eq('status', 'approved')
+      .limit(5000)
 
     if (subError) {
       console.error('[v0] Error fetching approved subcontractor docs:', subError)
