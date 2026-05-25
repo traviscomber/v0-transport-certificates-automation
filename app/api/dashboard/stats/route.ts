@@ -8,24 +8,26 @@ export async function GET() {
   try {
     const supabase = createAdminClient()
 
-    // Get ALL conductor documents with validation_status = 'approved' using explicit filter
-    // IMPORTANT: Add .limit(5000) to ensure we get all records
+    // Get ALL conductor documents with validation_status = 'approved'
+    // Use full select like the endpoint to ensure consistency
     const { data: approvedConductor, error: conductorError } = await supabase
       .from('uploaded_documents')
-      .select('id', { count: 'exact' })
+      .select('*', { count: 'exact' })
       .eq('validation_status', 'approved')
+      .order('updated_at', { ascending: false })
       .limit(5000)
 
     if (conductorError) {
       console.error('[v0] Error fetching approved conductor docs:', conductorError)
     }
 
-    // Get ALL subcontractor documents with status = 'approved' using explicit filter
-    // IMPORTANT: Add .limit(5000) to ensure we get all records
+    // Get ALL subcontractor documents with status = 'approved'
+    // Use full select like the endpoint to ensure consistency
     const { data: approvedSub, error: subError } = await supabase
       .from('subcontractor_documents')
-      .select('id', { count: 'exact' })
+      .select('*', { count: 'exact' })
       .eq('status', 'approved')
+      .order('updated_at', { ascending: false })
       .limit(5000)
 
     if (subError) {
@@ -82,10 +84,9 @@ export async function GET() {
       rejected: rejectedTotal,
     }
 
-    console.log('[v0] Stats API - Approved counts before totals:', {
-      approvedConductor: approvedConductor?.length || 0,
-      approvedSub: approvedSub?.length || 0,
-      total: (approvedConductor?.length || 0) + (approvedSub?.length || 0)
+    console.log('[v0] Stats API - Raw approved counts:', {
+      conductorDocs: approvedConductor?.length || 0,
+      subDocs: approvedSub?.length || 0,
     })
 
     const stats = {
