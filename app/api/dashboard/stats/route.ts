@@ -78,10 +78,10 @@ export async function GET() {
       rejected: rejectedTotal,
     }
 
-    console.log('[v0] Stats API - Approved counts:', {
-      conductorApproved,
-      subApproved,
-      total: conductorApproved + subApproved
+    console.log('[v0] Stats API - Approved counts before totals:', {
+      approvedConductor: approvedConductor?.length || 0,
+      approvedSub: approvedSub?.length || 0,
+      total: (approvedConductor?.length || 0) + (approvedSub?.length || 0)
     })
 
     const stats = {

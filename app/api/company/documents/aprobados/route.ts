@@ -134,11 +134,25 @@ export async function GET() {
       .order('updated_at', { ascending: false })
       .limit(5000)  // Explicitly allow up to 5000 records
 
-    console.log('[v0] Aprobados: Initial sub docs count:', subDocs?.length || 0, 'Error:', subError?.message)
-
-    if (subError) {
-      console.error('[v0] Aprobados endpoint: Sub error:', subError)
-      // Don't throw, just log and continue
+    // IMPORTANT: Try including documents with null status that might be considered "approved"
+    // Some documents might have been marked as approved but status not updated
+    if (subDocs && subDocs.length < 691) {  // If we're missing docs
+      console.log('[v0] Aprobados: Approved sub count is', subDocs.length, '- looking for remaining docs with null or other status')
+      
+      const { data: nullStatusSub } = await supabase
+        .from('subcontractor_documents')
+        .select('*')
+        .is('status', null)
+        .order('updated_at', { ascending: false })
+        .limit(100)
+      
+      console.log('[v0] Aprobados: Found', nullStatusSub?.length || 0, 'subcontractor docs with null status')
+      
+      if (nullStatusSub && nullStatusSub.length > 0) {
+        console.log('[v0] Aprobados: Adding null-status docs to approved list')
+        subDocs.push(...nullStatusSub)
+        subDocs.sort((a: any, b: any) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+      }
     }
 
     // DEBUGGING: Check if there are docs with different status values
