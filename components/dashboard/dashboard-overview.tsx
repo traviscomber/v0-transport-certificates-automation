@@ -197,10 +197,10 @@ export function DashboardOverview() {
               // Aggregate both conductor and subcontractor documents (same logic as initial fetch)
               const totalDocs = (conductorStats.total || 0) + (subStats.total || 0)
               const pendingDocs = (conductorStats.pendientes || 0) + (subStats.pendientes || 0)
-              const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
-              const rejectedDocs = (conductorStats.rechazados || 0) + (subStats.rechazados || 0)
+          const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
+          const rejectedDocs = (conductorStats.rechazados || 0) + (subStats.rechazados || 0)
 
-              setStats([
+          setStats([
                 {
                   title: "Total de Documentos",
                   value: totalDocs.toString(),
