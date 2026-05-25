@@ -9,19 +9,34 @@ export async function GET() {
   try {
     const supabase = createAdminClient()
 
-    // Get approved documents - SIMPLE direct queries, no fetch
-    const { data: approvedConductor } = await supabase
-      .from('uploaded_documents')
-      .select('id')
-      .eq('validation_status', 'approved')
-    
-    const { data: approvedSub } = await supabase
+    // Use the exact same query as aprobados endpoint
+    // Query the subcontractor_documents table directly with minimal filters
+    const subQuery = supabase
       .from('subcontractor_documents')
-      .select('id')
+      .select('id', { count: 'exact' })
       .eq('status', 'approved')
     
-    const approvedConductor_count = approvedConductor?.length || 0
-    const approvedSub_count = approvedSub?.length || 0
+    const { data: approvedSub, count: approvedSubCount } = await subQuery
+    
+    // Same for conductor
+    const conductorQuery = supabase
+      .from('uploaded_documents')
+      .select('id', { count: 'exact' })
+      .eq('validation_status', 'approved')
+    
+    const { data: approvedConductor, count: approvedConductorCount } = await conductorQuery
+    
+    // Use the counts from the query metadata instead of array length
+    // This ensures we match exactly what the database reports
+    const approvedConductor_count = approvedConductorCount ?? approvedConductor?.length ?? 0
+    const approvedSub_count = approvedSubCount ?? approvedSub?.length ?? 0
+    
+    console.log('[v0] Stats API: Query counts from Supabase:', {
+      conductorCount: approvedConductorCount,
+      subCount: approvedSubCount,
+      conductorArrayLength: approvedConductor?.length,
+      subArrayLength: approvedSub?.length
+    })
 
     // Get pending documents
     const { data: pendingConductor } = await supabase
