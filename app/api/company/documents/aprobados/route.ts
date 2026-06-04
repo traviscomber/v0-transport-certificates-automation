@@ -117,13 +117,39 @@ export async function GET() {
 
     console.log('[v0] Aprobados: Conductor executive map:', Array.from(conductorExecutiveMap.entries()))
 
-    // Get approved subcontractor documents - NO ORDER to avoid pagination issues
-    let { data: subDocs } = await supabase
-      .from('subcontractor_documents')
-      .select('*')
-      .eq('status', 'approved')
+    // Get approved subcontractor documents - WITH PAGINATION to handle > 1000 records
+    let allSubDocs: any[] = []
+    let page = 0
+    let hasMore = true
+    const pageSize = 1000
+    
+    while (hasMore) {
+      const start = page * pageSize
+      const end = start + pageSize - 1
+      
+      const { data: subDocsPage, error: pageError } = await supabase
+        .from('subcontractor_documents')
+        .select('*')
+        .eq('status', 'approved')
+        .range(start, end)
+      
+      if (pageError) {
+        console.error('[v0] Aprobados: Error fetching page', page, ':', pageError)
+        hasMore = false
+      } else if (!subDocsPage || subDocsPage.length === 0) {
+        hasMore = false
+      } else {
+        allSubDocs.push(...subDocsPage)
+        if (subDocsPage.length < pageSize) {
+          hasMore = false
+        }
+        page++
+      }
+    }
+    
+    let subDocs = allSubDocs
 
-    console.log('[v0] Aprobados: Sub docs count:', subDocs?.length || 0)
+    console.log('[v0] Aprobados: Sub docs count (total):', subDocs?.length || 0, '(fetched in', page, 'pages)')
     if (subDocs && subDocs.length > 0) {
       console.log('[v0] Aprobados: First sub doc:', JSON.stringify(subDocs[0], null, 2))
     }
