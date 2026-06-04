@@ -29,49 +29,51 @@ export async function GET() {
       .limit(10000)
       .order("created_at", { ascending: false })
 
-    // Get pending subcontractor documents - MUST paginate due to Supabase 1000 record limit
-    // Page 0 (0-999)
-    const { data: subPage0 } = await supabase
-      .from("subcontractor_documents")
-      .select(`
-        id,
-        file_name,
-        document_type_id,
-        status,
-        file_url,
-        created_at,
-        uploaded_at,
-        subcontractor_id,
-        subcontractor_rut,
-        reviewed_by_ejecutiva,
-        uploaded_by_ejecutiva
-      `)
-      .eq('status', 'pending')
-      .range(0, 999)
-      .order("created_at", { ascending: false })
-
-    // Page 1 (1000-1999)
-    const { data: subPage1 } = await supabase
-      .from("subcontractor_documents")
-      .select(`
-        id,
-        file_name,
-        document_type_id,
-        status,
-        file_url,
-        created_at,
-        uploaded_at,
-        subcontractor_id,
-        subcontractor_rut,
-        reviewed_by_ejecutiva,
-        uploaded_by_ejecutiva
-      `)
-      .eq('status', 'pending')
-      .range(1000, 1999)
-      .order("created_at", { ascending: false })
-
-    // Combine all pages
-    const subDocsRaw = [...(subPage0 || []), ...(subPage1 || [])]
+    // Get pending subcontractor documents - WITH PAGINATION to handle > 1000 records
+    let allSubDocs: any[] = []
+    let page = 0
+    let hasMore = true
+    const pageSize = 1000
+    
+    while (hasMore) {
+      const start = page * pageSize
+      const end = start + pageSize - 1
+      
+      const { data: subDocsPage, error: pageError } = await supabase
+        .from("subcontractor_documents")
+        .select(`
+          id,
+          file_name,
+          document_type_id,
+          status,
+          file_url,
+          created_at,
+          uploaded_at,
+          subcontractor_id,
+          subcontractor_rut,
+          reviewed_by_ejecutiva,
+          uploaded_by_ejecutiva
+        `)
+        .eq('status', 'pending')
+        .range(start, end)
+        .order("created_at", { ascending: false })
+      
+      if (pageError) {
+        console.error('[v0] Pending: Error fetching page', page, ':', pageError)
+        hasMore = false
+      } else if (!subDocsPage || subDocsPage.length === 0) {
+        hasMore = false
+      } else {
+        allSubDocs.push(...subDocsPage)
+        if (subDocsPage.length < pageSize) {
+          hasMore = false
+        }
+        page++
+      }
+    }
+    
+    const subDocsRaw = allSubDocs
+    console.log('[v0] Pending: Sub docs count (total):', subDocsRaw?.length || 0, '(fetched in', page, 'pages)')
 
     // Fetch document types
     const { data: docTypes } = await supabase
