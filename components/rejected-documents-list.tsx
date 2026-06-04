@@ -70,7 +70,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
       const dateA = new Date(a.updated_at || a.reviewed_at || a.created_at || 0).getTime()
       return dateB - dateA
     } catch (e) {
-      console.error('[v0] Error sorting rejected docs:', e)
+      console.error('[v0] Error sorting docs:', e, 'docA:', (a as any).document_name || a.original_filename, 'docB:', (b as any).document_name || b.original_filename)
       return 0
     }
   })
