@@ -132,6 +132,24 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
         }
       }
 
+      // Date range filter (month filter)
+      if (filters.dateFrom || filters.dateTo) {
+        const docDate = new Date(doc.uploaded_at || doc.created_at || '')
+        if (filters.dateFrom) {
+          const dateFrom = new Date(filters.dateFrom)
+          if (docDate < dateFrom) {
+            return false
+          }
+        }
+        if (filters.dateTo) {
+          const dateTo = new Date(filters.dateTo)
+          dateTo.setHours(23, 59, 59, 999)
+          if (docDate > dateTo) {
+            return false
+          }
+        }
+      }
+
       // Executive filter
       if (filters.executiveId) {
         if (getExecutive(doc) !== filters.executiveId) {

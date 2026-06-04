@@ -28,9 +28,34 @@ export interface DocumentFilters {
 }
 
 export function DocumentFilter({ onFilterChange, executives = [], companies = [] }: DocumentFilterProps) {
+  // Get current month (June 2026)
+  const currentDate = new Date()
+  const currentYear = currentDate.getFullYear()
+  const currentMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0')
+  const defaultMonth = `${currentYear}-${currentMonth}`
+
   const [filters, setFilters] = useState<DocumentFilters>({
     searchQuery: '',
+    dateFrom: new Date(currentYear, currentDate.getMonth(), 1).toISOString().split('T')[0],
+    dateTo: new Date(currentYear, currentDate.getMonth() + 1, 0).toISOString().split('T')[0],
   })
+
+  // Generate list of months for the last 12 months
+  const getMonthOptions = () => {
+    const months = []
+    for (let i = 0; i < 12; i++) {
+      const date = new Date()
+      date.setMonth(date.getMonth() - i)
+      const year = date.getFullYear()
+      const month = (date.getMonth() + 1).toString().padStart(2, '0')
+      const monthName = date.toLocaleString('es-CL', { month: 'long', year: 'numeric' })
+      months.push({
+        value: `${year}-${month}`,
+        label: monthName.charAt(0).toUpperCase() + monthName.slice(1)
+      })
+    }
+    return months
+  }
 
   const handleFilterChange = (newFilters: Partial<DocumentFilters>) => {
     const updated = { ...filters, ...newFilters }
@@ -65,7 +90,7 @@ export function DocumentFilter({ onFilterChange, executives = [], companies = []
         </div>
 
         {/* Filter Controls */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
@@ -76,6 +101,36 @@ export function DocumentFilter({ onFilterChange, executives = [], companies = []
               className="pl-8 bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500"
             />
           </div>
+
+          {/* Month Filter */}
+          <Select value={filters.dateFrom ? `${filters.dateFrom.substring(0, 7)}` : ''} onValueChange={(value) => {
+            if (value === '') {
+              handleFilterChange({ dateFrom: undefined, dateTo: undefined })
+            } else {
+              // Parse YYYY-MM format and set dateFrom and dateTo for the entire month
+              const [year, month] = value.split('-')
+              const monthDate = new Date(parseInt(year), parseInt(month) - 1, 1)
+              const nextMonth = new Date(monthDate)
+              nextMonth.setMonth(nextMonth.getMonth() + 1)
+              
+              const dateFrom = monthDate.toISOString().split('T')[0]
+              const dateTo = new Date(nextMonth.getTime() - 1).toISOString().split('T')[0]
+              
+              handleFilterChange({ dateFrom, dateTo })
+            }
+          }}>
+            <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-100">
+              <SelectValue placeholder="Mes" />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-800 border-slate-600">
+              <SelectItem value="">Todos los meses</SelectItem>
+              {getMonthOptions().map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {/* Company/Transportista */}
           {companies.length > 0 && (
