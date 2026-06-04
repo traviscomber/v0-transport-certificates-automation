@@ -191,7 +191,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
   }
 
   // Use filtered documents if any filter is applied, otherwise show all
-  const docsToDisplay = filteredDocs.length > 0 || filters.searchQuery || filters.executiveId || filters.companyId ? filteredDocs : allDocs
+  const docsToDisplay = filteredDocs.length > 0 || filters.searchQuery || filters.executiveId || filters.companyId || filters.dateFrom || filters.dateTo ? filteredDocs : allDocs
 
   return (
     <>

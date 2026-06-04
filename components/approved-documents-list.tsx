@@ -197,9 +197,9 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
     )
   }
 
-  // If we have documents, use filtered documents (respects search query, executive, company filters)
+  // If we have documents, use filtered documents (respects search query, executive, company, and date filters)
   // Show all documents only if no filters are applied
-  const docsToDisplay = filteredDocs.length > 0 || filters.searchQuery || filters.executiveId || filters.companyId ? filteredDocs : allDocs
+  const docsToDisplay = filteredDocs.length > 0 || filters.searchQuery || filters.executiveId || filters.companyId || filters.dateFrom || filters.dateTo ? filteredDocs : allDocs
 
   return (
     <>
