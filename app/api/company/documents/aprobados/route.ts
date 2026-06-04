@@ -284,7 +284,7 @@ export async function GET() {
           const dateA = new Date(a.updated_at || a.created_at || 0).getTime()
           return dateB - dateA
         } catch (e) {
-          console.error('[v0] Error sorting docs:', e, 'docA:', a.document_name || a.original_filename, 'docB:', b.document_name || b.original_filename)
+          console.error('[v0] Error sorting docs:', e)
           return 0
         }
       })
