@@ -28,16 +28,11 @@ export interface DocumentFilters {
 }
 
 export function DocumentFilter({ onFilterChange, executives = [], companies = [] }: DocumentFilterProps) {
-  // Get current month (June 2026)
-  const currentDate = new Date()
-  const currentYear = currentDate.getFullYear()
-  const currentMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0')
-  const defaultMonth = `${currentYear}-${currentMonth}`
-
   const [filters, setFilters] = useState<DocumentFilters>({
     searchQuery: '',
-    dateFrom: new Date(currentYear, currentDate.getMonth(), 1).toISOString().split('T')[0],
-    dateTo: new Date(currentYear, currentDate.getMonth() + 1, 0).toISOString().split('T')[0],
+    // NO default month filter - show all documents by default
+    dateFrom: undefined,
+    dateTo: undefined,
   })
 
   // Generate list of months for the last 12 months
