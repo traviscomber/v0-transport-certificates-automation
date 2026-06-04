@@ -73,31 +73,59 @@ export async function GET() {
       // Don't throw, just log and continue
     }
 
-    // Get rejected subcontractor documents - NO FILTER, fetch all
-    const { data: subDocs, error: subError } = await supabase
-      .from('subcontractor_documents')
-      .select(`
-        id,
-        file_name,
-        document_type_id,
-        status,
-        file_url,
-        rejection_reason,
-        reviewed_by_ejecutiva,
-        created_at,
-        updated_at,
-        subcontractor_id,
-        subcontractor_rut,
-        transportistas:subcontractor_id (
+    // Get rejected subcontractor documents - WITH PAGINATION (Supabase 1000 record limit)
+    let allSubDocs: any[] = []
+    let pageDex = 0
+    let hasMoreSub = true
+    let subError = null
+    
+    while (hasMoreSub) {
+      const pageSize = 1000
+      const start = pageDex * pageSize
+      const end = start + pageSize - 1
+      
+      const { data: pageData, error: pageError } = await supabase
+        .from('subcontractor_documents')
+        .select(`
           id,
-          razon_social,
-          rut
-        )
-      `)
-      .eq('status', 'rejected')
-      .order('updated_at', { ascending: false })
-
-    console.log('[v0] Rechazados: Sub docs result -', subDocs?.length || 0, 'docs,', subError ? 'ERROR' : 'OK')
+          file_name,
+          document_type_id,
+          status,
+          file_url,
+          rejection_reason,
+          reviewed_by_ejecutiva,
+          created_at,
+          updated_at,
+          subcontractor_id,
+          subcontractor_rut,
+          transportistas:subcontractor_id (
+            id,
+            razon_social,
+            rut
+          )
+        `)
+        .eq('status', 'rejected')
+        .range(start, end)
+        .order('updated_at', { ascending: false })
+      
+      if (pageError) {
+        console.error(`[v0] Rechazados: Error fetching page ${pageDex}:`, pageError.message)
+        subError = pageError
+        break
+      }
+      
+      if (!pageData || pageData.length === 0) {
+        hasMoreSub = false
+      } else {
+        allSubDocs = [...allSubDocs, ...pageData]
+        console.log(`[v0] Rechazados: Page ${pageDex} fetched ${pageData.length} documents, total so far: ${allSubDocs.length}`)
+        hasMoreSub = pageData.length === pageSize
+        pageDex++
+      }
+    }
+    
+    const subDocs = allSubDocs
+    console.log('[v0] Rechazados: Sub docs total count (all pages):', subDocs?.length || 0)
     
     if (subError) {
       console.error('[v0] Rechazados endpoint: Sub error:', subError)
