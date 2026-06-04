@@ -278,7 +278,16 @@ export async function GET() {
     })
 
     const allDocs = [...normalizedConductor, ...normalizedSub]
-      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+      .sort((a, b) => {
+        try {
+          const dateB = new Date(b.updated_at || b.created_at || 0).getTime()
+          const dateA = new Date(a.updated_at || a.created_at || 0).getTime()
+          return dateB - dateA
+        } catch (e) {
+          console.error('[v0] Error sorting docs:', e, 'docA:', a.document_name || a.original_filename, 'docB:', b.document_name || b.original_filename)
+          return 0
+        }
+      })
 
     console.log('[v0] Aprobados endpoint: Returning', allDocs.length, 'approved documents')
     console.log('[v0] Aprobados: Sub docs from DB:', subDocs?.length || 0, '| Conductor docs from DB:', conductorDocs?.length || 0)

@@ -84,9 +84,16 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
   }
 
   // Get all documents combined
-  const allDocs = [...conductorDocs, ...subDocs].sort(
-    (a, b) => new Date(b.uploaded_at || b.created_at || '').getTime() - new Date(a.uploaded_at || a.created_at || '').getTime()
-  )
+  const allDocs = [...conductorDocs, ...subDocs].sort((a, b) => {
+    try {
+      const dateB = new Date(b.uploaded_at || b.created_at || 0).getTime()
+      const dateA = new Date(a.uploaded_at || a.created_at || 0).getTime()
+      return dateB - dateA
+    } catch (e) {
+      console.error('[v0] Error sorting pending docs:', e)
+      return 0
+    }
+  })
 
   // Get unique executives and companies for filter options
   const executives = useMemo(() => {

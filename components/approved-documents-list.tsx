@@ -70,9 +70,16 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
     return unsubscribe
   }, [onSync])
 
-  const allDocs = [...conductorDocs, ...subDocs].sort(
-    (a, b) => new Date(b.updated_at || b.reviewed_at || b.created_at).getTime() - new Date(a.updated_at || a.reviewed_at || a.created_at).getTime()
-  )
+  const allDocs = [...conductorDocs, ...subDocs].sort((a, b) => {
+    try {
+      const dateB = new Date(b.updated_at || b.reviewed_at || b.created_at || 0).getTime()
+      const dateA = new Date(a.updated_at || a.reviewed_at || a.created_at || 0).getTime()
+      return dateB - dateA
+    } catch (e) {
+      console.error('[v0] Error sorting approved docs:', e)
+      return 0
+    }
+  })
 
   const getExecutive = (doc: ApprovedDocument) => {
     // Return assigned executive name (now populated from transportistas.assigned_executive_id)
