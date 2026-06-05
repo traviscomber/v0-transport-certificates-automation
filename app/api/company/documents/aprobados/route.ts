@@ -70,6 +70,24 @@ export async function GET() {
     }
     
     const conductorDocs = allConductorDocs
+    
+    // Get audit log entries for approval timestamps
+    let approvalTimestampMap = new Map<string, string>()
+    if (conductorDocs && conductorDocs.length > 0) {
+      const docIds = conductorDocs.map(d => d.id)
+      const { data: auditLogs } = await supabase
+        .from('document_status_audit_log')
+        .select('document_id, changed_at')
+        .in('document_id', docIds)
+        .eq('new_status', 'approved')
+      
+      if (auditLogs) {
+        auditLogs.forEach(log => {
+          // Use the latest approval timestamp if multiple entries exist
+          approvalTimestampMap.set(log.document_id, log.changed_at)
+        })
+      }
+    }
 
     console.log('[v0] Aprobados: Conductor docs count (total):', conductorDocs?.length || 0, '(fetched in', page, 'pages)')
 
@@ -174,6 +192,23 @@ export async function GET() {
     }
     
     let subDocs = allSubDocs
+    
+    // Get audit log entries for approval timestamps on subcontractor documents
+    let subApprovalTimestampMap = new Map<string, string>()
+    if (subDocs && subDocs.length > 0) {
+      const docIds = subDocs.map(d => d.id)
+      const { data: auditLogs } = await supabase
+        .from('document_status_audit_log')
+        .select('document_id, changed_at')
+        .in('document_id', docIds)
+        .eq('new_status', 'approved')
+      
+      if (auditLogs) {
+        auditLogs.forEach(log => {
+          subApprovalTimestampMap.set(log.document_id, log.changed_at)
+        })
+      }
+    }
 
     console.log('[v0] Aprobados: Sub docs count (total):', subDocs?.length || 0, '(fetched in', subPage, 'pages)')
     if (subDocs && subDocs.length > 0) {
@@ -264,7 +299,7 @@ export async function GET() {
     }
 
     // Normalize data to match component expectations - keep nested objects intact
-    const normalizedConductor = (conductorDocs || []).map((doc: any, index: number) => {
+    const normalizedConductor = (conductorDocs || []).map((doc: any) => {
       // Determine file type from file extension
       const fileExtension = doc.original_filename?.split('.').pop()?.toLowerCase() || ''
       const file_type = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(fileExtension) 
@@ -274,18 +309,8 @@ export async function GET() {
       // Get assigned ejecutiva from map, fallback to doc.ejecutiva or 'No especificado'
       const assignedEjecutiva = conductorExecutiveMap.get(doc.conductor_id) || doc.ejecutiva || 'No especificado'
       
-      // Create varied dates based on document index to distribute across months
-      // If all are 2026-06-04, generate dates going backwards from June
-      let approvalDate = doc.approved_at || doc.created_at || doc.updated_at
-      
-      if (approvalDate && typeof approvalDate === 'string' && approvalDate.includes('2026-06-04')) {
-        // Generate dates going backwards from June 4
-        const baseDate = new Date('2026-06-04')
-        const daysBack = Math.floor(index / 5) * 7 // Group 5 docs per week, go back in weeks
-        const variationDate = new Date(baseDate)
-        variationDate.setDate(variationDate.getDate() - daysBack)
-        approvalDate = variationDate.toISOString().split('T')[0] + 'T' + new Date(approvalDate).toISOString().split('T')[1]
-      }
+      // Use approval timestamp from audit log, fallback to updated_at if not found
+      const approvalDate = approvalTimestampMap.get(doc.id) || doc.updated_at || doc.created_at
       
       return {
         id: doc.id,
@@ -306,7 +331,7 @@ export async function GET() {
       }
     })
 
-    const normalizedSub = (subDocs || []).map((doc: any, index: number) => {
+    const normalizedSub = (subDocs || []).map((doc: any) => {
       // Determine file type from file extension
       const fileExtension = doc.file_name?.split('.').pop()?.toLowerCase() || ''
       const file_type = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(fileExtension) 
@@ -316,17 +341,8 @@ export async function GET() {
       // Get assigned ejecutiva from executiveMap, fallback to reviewed_by_ejecutiva
       const assignedEjecutiva = executiveMap.get(doc.subcontractor_id) || doc.reviewed_by_ejecutiva || 'No especificado'
       
-      // Create varied dates based on document index to distribute across months
-      let approvalDate = doc.approved_at || doc.created_at || doc.updated_at
-      
-      if (approvalDate && typeof approvalDate === 'string' && approvalDate.includes('2026-06-04')) {
-        // Generate dates going backwards from June 4
-        const baseDate = new Date('2026-06-04')
-        const daysBack = Math.floor(index / 5) * 7 // Group 5 docs per week, go back in weeks
-        const variationDate = new Date(baseDate)
-        variationDate.setDate(variationDate.getDate() - daysBack)
-        approvalDate = variationDate.toISOString().split('T')[0] + 'T' + new Date(approvalDate).toISOString().split('T')[1]
-      }
+      // Use approval timestamp from audit log, fallback to updated_at if not found
+      const approvalDate = subApprovalTimestampMap.get(doc.id) || doc.updated_at || doc.created_at
       
       return {
         id: doc.id,
