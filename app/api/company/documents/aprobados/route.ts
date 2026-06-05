@@ -39,13 +39,39 @@ export async function GET() {
     console.log('[v0] Aprobados endpoint: Current ejecutiva:', currentExecutiva)
     console.log('[v0] Aprobados endpoint: Fetching ALL approved documents')
 
-    // Get approved conductor documents - NO ORDER to avoid pagination issues
-    const { data: conductorDocs } = await supabase
-      .from('uploaded_documents')
-      .select('*')
-      .eq('validation_status', 'approved')
+    // Get approved conductor documents - WITH PAGINATION to handle > 1000 records
+    let allConductorDocs: any[] = []
+    let page = 0
+    let hasMore = true
+    const pageSize = 1000
+    
+    while (hasMore) {
+      const start = page * pageSize
+      const end = start + pageSize - 1
+      
+      const { data: conductorPage, error: pageError } = await supabase
+        .from('uploaded_documents')
+        .select('*')
+        .eq('validation_status', 'approved')
+        .range(start, end)
+      
+      if (pageError) {
+        console.error('[v0] Aprobados: Error fetching conductor page', page, ':', pageError)
+        hasMore = false
+      } else if (!conductorPage || conductorPage.length === 0) {
+        hasMore = false
+      } else {
+        allConductorDocs.push(...conductorPage)
+        if (conductorPage.length < pageSize) {
+          hasMore = false
+        }
+        page++
+      }
+    }
+    
+    const conductorDocs = allConductorDocs
 
-    console.log('[v0] Aprobados: Conductor docs count:', conductorDocs?.length || 0)
+    console.log('[v0] Aprobados: Conductor docs count (total):', conductorDocs?.length || 0, '(fetched in', page, 'pages)')
 
     // Fetch conductor details manually if needed
     let conductorMap = new Map<string, any>()
