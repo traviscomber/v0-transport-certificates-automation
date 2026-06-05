@@ -80,6 +80,7 @@ export async function GET() {
         hasMore = false
       } else {
         allConductorDocs.push(...conductorPage)
+        console.log(`[v0] Aprobados: Page ${page} fetched ${conductorPage.length} documents, total so far: ${allConductorDocs.length}`)
         if (conductorPage.length < pageSize) {
           hasMore = false
         }
@@ -207,7 +208,8 @@ export async function GET() {
     
     let subDocs = allSubDocs
     
-    console.log('[v0] Aprobados: Sub docs count (total):', subDocs?.length || 0, '(fetched in', subPage, 'pages)')
+    console.log('[v0] Aprobados: Sub docs total count (all pages):', subDocs?.length || 0)
+    console.log('[v0] Aprobados: TOTAL - Conductors:', conductorDocs?.length || 0, '+ Subcontractors:', subDocs?.length || 0, '= TOTAL:', (conductorDocs?.length || 0) + (subDocs?.length || 0))
 
     // Fetch transportistas manually to avoid join issues
     let transportistasMap = new Map<string, any>()
