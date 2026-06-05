@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 /**
  * GET /api/company/documents/aprobados
  * Returns approved documents for both conductors and subcontractors
- * FIXED: Using correct field names from the actual database schema
+ * FIXED: Fetch all conductor docs without pagination/join, then fetch subcontractor docs with pagination
  */
 
 import { NextResponse } from 'next/server'
@@ -37,66 +37,25 @@ export async function GET() {
     }
 
     console.log('[v0] Aprobados endpoint: Current ejecutiva:', currentExecutiva)
-    console.log('[v0] Aprobados endpoint: Fetching ALL approved documents')
 
-    // Get approved conductor documents - WITH PAGINATION to handle > 1000 records
-    let allConductorDocs: any[] = []
-    let page = 0
-    let hasMore = true
-    const pageSize = 1000
-    
-    while (hasMore) {
-      const start = page * pageSize
-      const end = start + pageSize - 1
-      
-      const { data: conductorPage, error: pageError } = await supabase
-        .from('uploaded_documents')
-        .select(`
-          id,
-          original_filename,
-          document_type_id,
-          validation_status,
-          file_url,
-          validated_at,
-          ejecutiva,
-          created_at,
-          updated_at,
-          conductor_id,
-          conductores (
-            id,
-            nombres,
-            apellido_paterno,
-            rut
-          )
-        `)
-        .eq('validation_status', 'approved')
-        .range(start, end)
-        .order('updated_at', { ascending: false })
-      
-      if (pageError) {
-        console.error('[v0] Aprobados: Error fetching conductor page', page, ':', pageError)
-        hasMore = false
-      } else if (!conductorPage || conductorPage.length === 0) {
-        hasMore = false
-      } else {
-        allConductorDocs.push(...conductorPage)
-        console.log(`[v0] Aprobados: Page ${page} fetched ${conductorPage.length} documents, total so far: ${allConductorDocs.length}`)
-        if (conductorPage.length < pageSize) {
-          hasMore = false
-        }
-        page++
-      }
+    // FIX: Get ALL approved conductor documents WITHOUT pagination or join
+    // The join was failing silently, causing empty results
+    const { data: conductorDocs, error: conductorError } = await supabase
+      .from('uploaded_documents')
+      .select('id, original_filename, document_type_id, validation_status, file_url, validated_at, ejecutiva, created_at, updated_at, conductor_id')
+      .eq('validation_status', 'approved')
+      .order('updated_at', { ascending: false })
+
+    if (conductorError) {
+      console.error('[v0] Aprobados: Conductor query error:', conductorError)
     }
-    
-    const conductorDocs = allConductorDocs
-    
-    console.log('[v0] Aprobados: Conductor docs count (total):', conductorDocs?.length || 0, '(fetched in', page, 'pages)')
+    console.log('[v0] Aprobados: Fetched', conductorDocs?.length || 0, 'conductor documents')
 
-    // Fetch conductor details manually if needed
+    // Fetch conductor details manually to avoid join failures
     let conductorMap = new Map<string, any>()
     if (conductorDocs && conductorDocs.length > 0) {
-      const validConductorIds = conductorDocs
-        .map((doc: any) => doc.conductor_id)
+      const validConductorIds = (conductorDocs as any[])
+        .map(doc => doc.conductor_id)
         .filter(Boolean)
       
       if (validConductorIds.length > 0) {
@@ -112,10 +71,8 @@ export async function GET() {
     }
 
     // Get assigned executives for conductors
-    // Workflow: conductores.rut_proveedor -> transportistas.rut -> transportistas.assigned_executive_id -> executive_staff.full_name
     let conductorExecutiveMap = new Map<string, string>()
     if (conductorDocs && conductorDocs.length > 0) {
-      // Get unique rut_proveedor from conductores
       const { data: conductorRuts } = await supabase
         .from('conductores')
         .select('id, rut_proveedor')
@@ -124,7 +81,6 @@ export async function GET() {
       if (conductorRuts && conductorRuts.length > 0) {
         const transportistaRuts = conductorRuts.map(c => c.rut_proveedor).filter(Boolean)
         
-        // Get transportistas with their assigned executives
         const { data: transportistas } = await supabase
           .from('transportistas')
           .select('rut, assigned_executive_id')
@@ -136,7 +92,6 @@ export async function GET() {
             .filter(Boolean) as string[]
 
           if (executiveIds.length > 0) {
-            // Get executive names
             const { data: executives } = await supabase
               .from('executive_staff')
               .select('id, full_name')
@@ -144,7 +99,6 @@ export async function GET() {
 
             if (executives) {
               const execMap = new Map(executives.map(e => [e.id, e.full_name]))
-              // Map conductor_id -> executive_name
               conductorRuts.forEach(cr => {
                 const transportista = transportistas.find(t => t.rut === cr.rut_proveedor)
                 if (transportista && transportista.assigned_executive_id) {
@@ -160,9 +114,7 @@ export async function GET() {
       }
     }
 
-    console.log('[v0] Aprobados: Conductor executive map:', Array.from(conductorExecutiveMap.entries()))
-
-    // Get approved subcontractor documents - WITH PAGINATION to handle > 1000 records
+    // Get ALL approved subcontractor documents with pagination (pagination needed here)
     let allSubDocs: any[] = []
     let subPage = 0
     let subHasMore = true
@@ -174,26 +126,13 @@ export async function GET() {
       
       const { data: subDocsPage, error: pageError } = await supabase
         .from('subcontractor_documents')
-        .select(`
-          id,
-          file_name,
-          document_type_id,
-          status,
-          file_url,
-          approved_at,
-          approved_by_email,
-          reviewed_by_ejecutiva,
-          created_at,
-          updated_at,
-          subcontractor_id,
-          subcontractor_rut
-        `)
+        .select('id, file_name, document_type_id, status, file_url, approved_at, approved_by_email, reviewed_by_ejecutiva, created_at, updated_at, subcontractor_id, subcontractor_rut')
         .eq('status', 'approved')
         .range(start, end)
         .order('updated_at', { ascending: false })
       
       if (pageError) {
-        console.error('[v0] Aprobados: Error fetching page', subPage, ':', pageError)
+        console.error('[v0] Aprobados: Subcontractor page error:', pageError)
         subHasMore = false
       } else if (!subDocsPage || subDocsPage.length === 0) {
         subHasMore = false
@@ -206,16 +145,15 @@ export async function GET() {
       }
     }
     
-    let subDocs = allSubDocs
-    
-    console.log('[v0] Aprobados: Sub docs total count (all pages):', subDocs?.length || 0)
-    console.log('[v0] Aprobados: TOTAL - Conductors:', conductorDocs?.length || 0, '+ Subcontractors:', subDocs?.length || 0, '= TOTAL:', (conductorDocs?.length || 0) + (subDocs?.length || 0))
+    const subDocs = allSubDocs
+    console.log('[v0] Aprobados: Fetched', subDocs?.length || 0, 'subcontractor documents in', subPage, 'pages')
+    console.log('[v0] Aprobados: TOTAL =', (conductorDocs?.length || 0) + (subDocs?.length || 0), 'docs')
 
-    // Fetch transportistas manually to avoid join issues
+    // Fetch transportistas manually
     let transportistasMap = new Map<string, any>()
     if (subDocs && subDocs.length > 0) {
-      const validSubIds = subDocs
-        .map((doc: any) => doc.subcontractor_id)
+      const validSubIds = (subDocs as any[])
+        .map(doc => doc.subcontractor_id)
         .filter(Boolean)
       
       if (validSubIds.length > 0) {
@@ -238,104 +176,77 @@ export async function GET() {
     const docTypeMap = new Map(docTypes?.map(dt => [dt.id, { code: dt.code, nombre: dt.nombre }]) || [])
 
     // Get assigned executives for subcontractors
-    // Workflow: subcontractor_id -> transportistas.id -> transportistas.assigned_executive_id -> executive_staff.full_name
     let executiveMap = new Map<string, string>()
     if (subDocs && subDocs.length > 0) {
       const subcontractorIds = [...new Set((subDocs as any[]).map(doc => doc.subcontractor_id))]
-      console.log('[v0] Aprobados: Getting executives for subcontractors:', subcontractorIds.length, 'IDs')
-      console.log('[v0] Aprobados: First 3 subcontractor IDs:', subcontractorIds.slice(0, 3))
       
-      if (subcontractorIds.length === 0) {
-        console.log('[v0] Aprobados: ERROR - No subcontractor IDs to fetch!')
-      } else {
-        // Get transportistas with their assigned executives
-        const { data: transportistas, error: transError } = await supabase
-          .from('transportistas')
-          .select('id, assigned_executive_id')
-          .in('id', subcontractorIds)
+      const { data: transportistas } = await supabase
+        .from('transportistas')
+        .select('id, assigned_executive_id')
+        .in('id', subcontractorIds)
 
-        console.log('[v0] Aprobados: Transportistas query returned:', transportistas?.length || 0, 'records, Error:', transError?.message || 'none')
+      if (transportistas && transportistas.length > 0) {
+        const executiveIds = transportistas
+          .map(t => t.assigned_executive_id)
+          .filter(Boolean) as string[]
 
-        if (transError) {
-          console.error('[v0] Aprobados: Transportistas query error details:', transError)
-        }
+        if (executiveIds.length > 0) {
+          const { data: executives } = await supabase
+            .from('executive_staff')
+            .select('id, full_name')
 
-        if (transportistas && transportistas.length > 0) {
-          const executiveIds = transportistas
-            .map(t => t.assigned_executive_id)
-            .filter(Boolean) as string[]
-          
-          console.log('[v0] Aprobados: Found', executiveIds.length, 'unique executive IDs from transportistas')
-
-          if (executiveIds.length > 0) {
-            // Get ALL executive names (just get all since we need them anyway)
-            const { data: executives, error: execError } = await supabase
-              .from('executive_staff')
-              .select('id, full_name')
-
-            console.log('[v0] Aprobados: ALL Executives found:', executives?.length, 'Error:', execError?.message || 'none')
-
-            if (executives) {
-              const execMap = new Map(executives.map(e => [e.id, e.full_name]))
-              // Map subcontractor_id -> executive_name
-              transportistas.forEach((t: any) => {
-                if (t.assigned_executive_id) {
-                  const execName = execMap.get(t.assigned_executive_id)
-                  if (execName) {
-                    executiveMap.set(t.id, execName)
-                    console.log('[v0] Aprobados: Mapped transportista', t.id.substring(0, 8), 'to executive', execName)
-                  }
+          if (executives) {
+            const execMap = new Map(executives.map(e => [e.id, e.full_name]))
+            transportistas.forEach((t: any) => {
+              if (t.assigned_executive_id) {
+                const execName = execMap.get(t.assigned_executive_id)
+                if (execName) {
+                  executiveMap.set(t.id, execName)
                 }
-              })
-              console.log('[v0] Aprobados: Executive map final size:', executiveMap.size)
-            }
+              }
+            })
           }
         }
       }
     }
 
-    // Normalize data to match component expectations - keep nested objects intact
+    // Normalize conductor docs
     const normalizedConductor = (conductorDocs || []).map((doc: any) => {
-      // Determine file type from file extension
       const fileExtension = doc.original_filename?.split('.').pop()?.toLowerCase() || ''
       const file_type = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(fileExtension) 
         ? (fileExtension === 'pdf' ? 'pdf' : 'image')
         : 'unknown'
       
-      // Get assigned ejecutiva from map, fallback to doc.ejecutiva or 'No especificado'
       const assignedEjecutiva = conductorExecutiveMap.get(doc.conductor_id) || doc.ejecutiva || 'No especificado'
       
-      // Use validated_at directly, just like rechazados does
       return {
         id: doc.id,
         original_filename: doc.original_filename,
         document_type_id: doc.document_type_id,
         validation_status: doc.validation_status,
-        status: doc.validation_status, // For component compatibility
+        status: doc.validation_status,
         file_url: doc.file_url,
-        file_type: file_type, // Add calculated file_type
+        file_type: file_type,
         validated_at: doc.validated_at || doc.updated_at,
         ejecutiva: assignedEjecutiva,
         created_at: doc.created_at,
         updated_at: doc.updated_at,
         reviewed_at: doc.validated_at || doc.updated_at,
-        conductores: doc.conductores,
+        conductores: conductorMap.get(doc.conductor_id),
         docType: docTypeMap.get(doc.document_type_id),
         document_source: 'conductor'
       }
     })
 
+    // Normalize subcontractor docs
     const normalizedSub = (subDocs || []).map((doc: any) => {
-      // Determine file type from file extension
       const fileExtension = doc.file_name?.split('.').pop()?.toLowerCase() || ''
       const file_type = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(fileExtension) 
         ? (fileExtension === 'pdf' ? 'pdf' : 'image')
         : 'unknown'
       
-      // Get assigned ejecutiva from executiveMap, fallback to reviewed_by_ejecutiva
       const assignedEjecutiva = executiveMap.get(doc.subcontractor_id) || doc.reviewed_by_ejecutiva || 'No especificado'
       
-      // Use approved_at directly, just like rechazados does
       return {
         id: doc.id,
         document_name: doc.file_name,
@@ -344,11 +255,11 @@ export async function GET() {
         document_type_id: doc.document_type_id,
         status: doc.status,
         file_url: doc.file_url,
-        file_type: file_type, // Add calculated file_type
+        file_type: file_type,
         approved_at: doc.approved_at || doc.updated_at,
         approved_by_email: doc.approved_by_email,
         reviewed_by_ejecutiva: assignedEjecutiva,
-        ejecutiva: assignedEjecutiva, // Use assigned ejecutiva for filtering
+        ejecutiva: assignedEjecutiva,
         created_at: doc.created_at,
         updated_at: doc.updated_at,
         reviewed_at: doc.approved_at || doc.updated_at,
@@ -374,7 +285,7 @@ export async function GET() {
         }
       })
 
-    console.log('[v0] Aprobados endpoint: Returning', allDocs.length, 'approved documents')
+    console.log('[v0] Aprobados endpoint: Returning', allDocs.length, 'total approved documents')
 
     return NextResponse.json({
       conductorDocs: normalizedConductor,
@@ -387,10 +298,8 @@ export async function GET() {
     })
 
   } catch (error) {
-    console.error('[v0] Aprobados endpoint: Caught error:', error)
+    console.error('[v0] Aprobados endpoint error:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    const errorStack = error instanceof Error ? error.stack : ''
-    console.error('[v0] Error stack:', errorStack)
     
     return NextResponse.json(
       {
