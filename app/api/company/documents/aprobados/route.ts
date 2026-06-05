@@ -52,8 +52,8 @@ export async function GET() {
         .from('uploaded_documents')
         .select('id, original_filename, document_type_id, validation_status, file_url, validated_at, ejecutiva, created_at, updated_at, conductor_id')
         .eq('validation_status', 'approved')
-        .range(start, end)
         .order('updated_at', { ascending: false })
+        .range(start, end)
       
       if (pageError) {
         console.error('[v0] Aprobados: Conductor page error:', pageError)
