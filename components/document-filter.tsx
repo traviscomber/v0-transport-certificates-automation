@@ -98,8 +98,8 @@ export function DocumentFilter({ onFilterChange, executives = [], companies = []
           </div>
 
           {/* Month Filter */}
-          <Select value={filters.dateFrom ? `${filters.dateFrom.substring(0, 7)}` : ''} onValueChange={(value) => {
-            if (value === '') {
+          <Select value={filters.dateFrom ? `${filters.dateFrom.substring(0, 7)}` : 'all'} onValueChange={(value) => {
+            if (value === 'all') {
               handleFilterChange({ dateFrom: undefined, dateTo: undefined })
             } else {
               // Parse YYYY-MM format and set dateFrom and dateTo for the entire month
@@ -118,7 +118,7 @@ export function DocumentFilter({ onFilterChange, executives = [], companies = []
               <SelectValue placeholder="Mes" />
             </SelectTrigger>
             <SelectContent className="bg-slate-800 border-slate-600">
-              <SelectItem value="">Todos los meses</SelectItem>
+              <SelectItem value="all">Todos los meses</SelectItem>
               {getMonthOptions().map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
@@ -129,12 +129,12 @@ export function DocumentFilter({ onFilterChange, executives = [], companies = []
 
           {/* Company/Transportista */}
           {companies.length > 0 && (
-            <Select value={filters.companyId || ''} onValueChange={(value) => handleFilterChange({ companyId: value === '' ? undefined : value })}>
+            <Select value={filters.companyId || 'all'} onValueChange={(value) => handleFilterChange({ companyId: value === 'all' ? undefined : value })}>
               <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-100">
                 <SelectValue placeholder="Empresa" />
               </SelectTrigger>
               <SelectContent className="bg-slate-800 border-slate-600">
-                <SelectItem value="">Todas las empresas</SelectItem>
+                <SelectItem value="all">Todas las empresas</SelectItem>
                 {companies.map((company) => (
                   <SelectItem key={company.id} value={company.id}>
                     {company.nombre} ({company.rut})
@@ -146,12 +146,12 @@ export function DocumentFilter({ onFilterChange, executives = [], companies = []
 
           {/* Executive */}
           {executives.length > 0 && (
-            <Select value={filters.executiveId || ''} onValueChange={(value) => handleFilterChange({ executiveId: value === '' ? undefined : value })}>
+            <Select value={filters.executiveId || 'all'} onValueChange={(value) => handleFilterChange({ executiveId: value === 'all' ? undefined : value })}>
               <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-100">
                 <SelectValue placeholder="Ejecutiva" />
               </SelectTrigger>
               <SelectContent className="bg-slate-800 border-slate-600">
-                <SelectItem value="">Todas las ejecutivas</SelectItem>
+                <SelectItem value="all">Todas las ejecutivas</SelectItem>
                 {executives.map((exec) => (
                   <SelectItem key={exec.id} value={exec.id}>
                     {exec.nombre}
@@ -162,12 +162,12 @@ export function DocumentFilter({ onFilterChange, executives = [], companies = []
           )}
 
           {/* Document Type */}
-          <Select value={filters.documentType || ''} onValueChange={(value) => handleFilterChange({ documentType: value === '' ? undefined : value })}>
+          <Select value={filters.documentType || 'all'} onValueChange={(value) => handleFilterChange({ documentType: value === 'all' ? undefined : value })}>
             <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-100">
               <SelectValue placeholder="Tipo de documento" />
             </SelectTrigger>
             <SelectContent className="bg-slate-800 border-slate-600">
-              <SelectItem value="">Todos los tipos</SelectItem>
+              <SelectItem value="all">Todos los tipos</SelectItem>
               <SelectItem value="license">Licencia</SelectItem>
               <SelectItem value="insurance">Seguro</SelectItem>
               <SelectItem value="id">Identificación</SelectItem>

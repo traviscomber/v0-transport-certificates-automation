@@ -44,7 +44,7 @@ export function AlertFilters({
             <SelectValue placeholder="Tipo de alerta" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos los tipos</SelectItem>
+            <SelectItem value="all">Todos los tipos</SelectItem>
             <SelectItem value="warning">Advertencias</SelectItem>
             <SelectItem value="error">Errores</SelectItem>
             <SelectItem value="success">Éxitos</SelectItem>
@@ -57,7 +57,7 @@ export function AlertFilters({
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos los estados</SelectItem>
+            <SelectItem value="all">Todos los estados</SelectItem>
             <SelectItem value="unread">No leído</SelectItem>
             <SelectItem value="read">Leído</SelectItem>
           </SelectContent>
