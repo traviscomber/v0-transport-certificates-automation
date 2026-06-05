@@ -51,9 +51,27 @@ export async function GET() {
       
       const { data: conductorPage, error: pageError } = await supabase
         .from('uploaded_documents')
-        .select('*')
+        .select(`
+          id,
+          original_filename,
+          document_type_id,
+          validation_status,
+          file_url,
+          validated_at,
+          ejecutiva,
+          created_at,
+          updated_at,
+          conductor_id,
+          conductores (
+            id,
+            nombres,
+            apellido_paterno,
+            rut
+          )
+        `)
         .eq('validation_status', 'approved')
         .range(start, end)
+        .order('updated_at', { ascending: false })
       
       if (pageError) {
         console.error('[v0] Aprobados: Error fetching conductor page', page, ':', pageError)
@@ -71,24 +89,6 @@ export async function GET() {
     
     const conductorDocs = allConductorDocs
     
-    // Get audit log entries for approval timestamps
-    let approvalTimestampMap = new Map<string, string>()
-    if (conductorDocs && conductorDocs.length > 0) {
-      const docIds = conductorDocs.map(d => d.id)
-      const { data: auditLogs } = await supabase
-        .from('document_status_audit_log')
-        .select('document_id, changed_at')
-        .in('document_id', docIds)
-        .eq('new_status', 'approved')
-      
-      if (auditLogs) {
-        auditLogs.forEach(log => {
-          // Use the latest approval timestamp if multiple entries exist
-          approvalTimestampMap.set(log.document_id, log.changed_at)
-        })
-      }
-    }
-
     console.log('[v0] Aprobados: Conductor docs count (total):', conductorDocs?.length || 0, '(fetched in', page, 'pages)')
 
     // Fetch conductor details manually if needed
@@ -173,9 +173,23 @@ export async function GET() {
       
       const { data: subDocsPage, error: pageError } = await supabase
         .from('subcontractor_documents')
-        .select('*')
+        .select(`
+          id,
+          file_name,
+          document_type_id,
+          status,
+          file_url,
+          approved_at,
+          approved_by_email,
+          reviewed_by_ejecutiva,
+          created_at,
+          updated_at,
+          subcontractor_id,
+          subcontractor_rut
+        `)
         .eq('status', 'approved')
         .range(start, end)
+        .order('updated_at', { ascending: false })
       
       if (pageError) {
         console.error('[v0] Aprobados: Error fetching page', subPage, ':', pageError)
@@ -193,27 +207,7 @@ export async function GET() {
     
     let subDocs = allSubDocs
     
-    // Get audit log entries for approval timestamps on subcontractor documents
-    let subApprovalTimestampMap = new Map<string, string>()
-    if (subDocs && subDocs.length > 0) {
-      const docIds = subDocs.map(d => d.id)
-      const { data: auditLogs } = await supabase
-        .from('document_status_audit_log')
-        .select('document_id, changed_at')
-        .in('document_id', docIds)
-        .eq('new_status', 'approved')
-      
-      if (auditLogs) {
-        auditLogs.forEach(log => {
-          subApprovalTimestampMap.set(log.document_id, log.changed_at)
-        })
-      }
-    }
-
     console.log('[v0] Aprobados: Sub docs count (total):', subDocs?.length || 0, '(fetched in', subPage, 'pages)')
-    if (subDocs && subDocs.length > 0) {
-      console.log('[v0] Aprobados: First sub doc:', JSON.stringify(subDocs[0], null, 2))
-    }
 
     // Fetch transportistas manually to avoid join issues
     let transportistasMap = new Map<string, any>()
@@ -309,9 +303,7 @@ export async function GET() {
       // Get assigned ejecutiva from map, fallback to doc.ejecutiva or 'No especificado'
       const assignedEjecutiva = conductorExecutiveMap.get(doc.conductor_id) || doc.ejecutiva || 'No especificado'
       
-      // Use approval timestamp from audit log, fallback to updated_at if not found
-      const approvalDate = approvalTimestampMap.get(doc.id) || doc.updated_at || doc.created_at
-      
+      // Use validated_at directly, just like rechazados does
       return {
         id: doc.id,
         original_filename: doc.original_filename,
@@ -320,12 +312,12 @@ export async function GET() {
         status: doc.validation_status, // For component compatibility
         file_url: doc.file_url,
         file_type: file_type, // Add calculated file_type
-        validated_at: approvalDate,
+        validated_at: doc.validated_at || doc.updated_at,
         ejecutiva: assignedEjecutiva,
         created_at: doc.created_at,
         updated_at: doc.updated_at,
-        reviewed_at: approvalDate,
-        conductores: conductorMap.get(doc.conductor_id) || null,
+        reviewed_at: doc.validated_at || doc.updated_at,
+        conductores: doc.conductores,
         docType: docTypeMap.get(doc.document_type_id),
         document_source: 'conductor'
       }
@@ -341,9 +333,7 @@ export async function GET() {
       // Get assigned ejecutiva from executiveMap, fallback to reviewed_by_ejecutiva
       const assignedEjecutiva = executiveMap.get(doc.subcontractor_id) || doc.reviewed_by_ejecutiva || 'No especificado'
       
-      // Use approval timestamp from audit log, fallback to updated_at if not found
-      const approvalDate = subApprovalTimestampMap.get(doc.id) || doc.updated_at || doc.created_at
-      
+      // Use approved_at directly, just like rechazados does
       return {
         id: doc.id,
         document_name: doc.file_name,
@@ -353,13 +343,13 @@ export async function GET() {
         status: doc.status,
         file_url: doc.file_url,
         file_type: file_type, // Add calculated file_type
-        approved_at: approvalDate,
+        approved_at: doc.approved_at || doc.updated_at,
         approved_by_email: doc.approved_by_email,
         reviewed_by_ejecutiva: assignedEjecutiva,
         ejecutiva: assignedEjecutiva, // Use assigned ejecutiva for filtering
         created_at: doc.created_at,
         updated_at: doc.updated_at,
-        reviewed_at: approvalDate,
+        reviewed_at: doc.approved_at || doc.updated_at,
         transportistas: transportistasMap.get(doc.subcontractor_id) || {
           id: doc.subcontractor_id,
           razon_social: 'Subcontratista',
