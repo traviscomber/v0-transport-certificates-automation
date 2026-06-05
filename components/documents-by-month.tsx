@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { DocumentByMonth } from '@/lib/document-grouping'
 
@@ -20,15 +20,17 @@ export function DocumentsByMonth({
     new Set(monthsData.map(m => m.monthKey))
   )
 
-  const toggleMonth = (monthKey: string) => {
-    const newExpanded = new Set(expandedMonths)
-    if (newExpanded.has(monthKey)) {
-      newExpanded.delete(monthKey)
-    } else {
-      newExpanded.add(monthKey)
-    }
-    setExpandedMonths(newExpanded)
-  }
+  const toggleMonth = useCallback((monthKey: string) => {
+    setExpandedMonths(prev => {
+      const newExpanded = new Set(prev)
+      if (newExpanded.has(monthKey)) {
+        newExpanded.delete(monthKey)
+      } else {
+        newExpanded.add(monthKey)
+      }
+      return newExpanded
+    })
+  }, [])
 
   if (!monthsData || monthsData.length === 0) {
     return (
@@ -38,8 +40,18 @@ export function DocumentsByMonth({
     )
   }
 
+  // Calculate total documents for statistics
+  const totalDocs = monthsData.reduce((sum, m) => sum + m.count, 0)
+
   return (
     <div className="space-y-1">
+      {/* Summary stats */}
+      <div className="px-4 py-3 bg-muted/50 rounded-lg mb-4">
+        <p className="text-sm text-muted-foreground">
+          Total: <span className="font-semibold text-foreground">{totalDocs}</span> documento{totalDocs !== 1 ? 's' : ''}
+        </p>
+      </div>
+
       {monthsData.map((monthData) => {
         const isExpanded = expandedMonths.has(monthData.monthKey)
         
@@ -63,11 +75,13 @@ export function DocumentsByMonth({
               )}
             </button>
 
-            {/* Documents List */}
+            {/* Documents List - Rendered lazily only when expanded */}
             {isExpanded && (
-              <div className="bg-muted/30 px-4 py-2 space-y-1">
+              <div className="bg-muted/30 px-4 py-3 space-y-3">
                 {monthData.documents.map((doc, idx) => (
-                  <div key={`${doc.id || idx}`}>{renderDocument(doc)}</div>
+                  <div key={`${doc.id || idx}`} className="lazy-rendered">
+                    {renderDocument(doc)}
+                  </div>
                 ))}
               </div>
             )}
