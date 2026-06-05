@@ -145,13 +145,13 @@ export async function GET() {
 
     // Get approved subcontractor documents - WITH PAGINATION to handle > 1000 records
     let allSubDocs: any[] = []
-    let page = 0
-    let hasMore = true
-    const pageSize = 1000
+    let subPage = 0
+    let subHasMore = true
+    const subPageSize = 1000
     
-    while (hasMore) {
-      const start = page * pageSize
-      const end = start + pageSize - 1
+    while (subHasMore) {
+      const start = subPage * subPageSize
+      const end = start + subPageSize - 1
       
       const { data: subDocsPage, error: pageError } = await supabase
         .from('subcontractor_documents')
@@ -160,22 +160,22 @@ export async function GET() {
         .range(start, end)
       
       if (pageError) {
-        console.error('[v0] Aprobados: Error fetching page', page, ':', pageError)
-        hasMore = false
+        console.error('[v0] Aprobados: Error fetching page', subPage, ':', pageError)
+        subHasMore = false
       } else if (!subDocsPage || subDocsPage.length === 0) {
-        hasMore = false
+        subHasMore = false
       } else {
         allSubDocs.push(...subDocsPage)
-        if (subDocsPage.length < pageSize) {
-          hasMore = false
+        if (subDocsPage.length < subPageSize) {
+          subHasMore = false
         }
-        page++
+        subPage++
       }
     }
     
     let subDocs = allSubDocs
 
-    console.log('[v0] Aprobados: Sub docs count (total):', subDocs?.length || 0, '(fetched in', page, 'pages)')
+    console.log('[v0] Aprobados: Sub docs count (total):', subDocs?.length || 0, '(fetched in', subPage, 'pages)')
     if (subDocs && subDocs.length > 0) {
       console.log('[v0] Aprobados: First sub doc:', JSON.stringify(subDocs[0], null, 2))
     }
