@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { CheckCircle2, FileText, Calendar, User, Building2, Eye, Download } from 'lucide-react'
+import { CheckCircle2, FileText, Calendar, User, Building2, Eye, Download, ChevronDown } from 'lucide-react'
 import { PDFViewer } from '@/components/pdf-viewer'
 import { useDocumentSync } from '@/contexts/document-sync-context'
 import { getChileDate, getChileTime } from '@/lib/timezone-utils'
@@ -45,7 +45,10 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   const [subDocs, setSubDocs] = useState(initialSubDocs)
   const [previewDoc, setPreviewDoc] = useState<ApprovedDocument | null>(null)
   const [filters, setFilters] = useState<DocumentFilters>({ searchQuery: '' })
+  const [displayCount, setDisplayCount] = useState(350) // Start with 350 documents to avoid overload
   const { onSync } = useDocumentSync()
+  
+  const LOAD_MORE_INCREMENT = 300 // Load 300 more documents at a time
 
   useEffect(() => {
     const unsubscribe = onSync((event) => {
@@ -203,6 +206,11 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   // If we have documents, use filtered documents (respects search query, executive, company, and date filters)
   // Show all documents only if no filters are applied
   const docsToDisplay = filteredDocs.length > 0 || filters.searchQuery || filters.executiveId || filters.companyId || filters.dateFrom || filters.dateTo ? filteredDocs : allDocs
+  
+  // Apply pagination - only show displayCount documents
+  const paginatedDocs = docsToDisplay.slice(0, displayCount)
+  const hasMore = docsToDisplay.length > displayCount
+  const remainingCount = docsToDisplay.length - displayCount
 
   return (
     <>
@@ -218,18 +226,38 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
           <p className="text-slate-400">No hay documentos que coincidan con los filtros seleccionados</p>
         </div>
       ) : (
-        <DocumentsByMonth
-          monthsData={groupDocumentsByMonth(docsToDisplay, 'created_at', 'es')}
-          renderDocument={(doc) => (
-            <ApprovedDocumentCard
-              key={doc.id}
-              doc={doc}
-              onPreview={setPreviewDoc}
-              getExecutive={getExecutive}
-            />
+        <>
+          <DocumentsByMonth
+            monthsData={groupDocumentsByMonth(paginatedDocs, 'created_at', 'es')}
+            renderDocument={(doc) => (
+              <ApprovedDocumentCard
+                key={doc.id}
+                doc={doc}
+                onPreview={setPreviewDoc}
+                getExecutive={getExecutive}
+              />
+            )}
+            emptyMessage="No hay documentos aprobados"
+          />
+          
+          {/* Load More Button */}
+          {hasMore && (
+            <div className="flex flex-col items-center gap-3 py-6 px-4">
+              <p className="text-sm text-slate-400">
+                Mostrando {paginatedDocs.length} de {docsToDisplay.length} documentos
+                {remainingCount > 0 && ` (+${remainingCount} más)`}
+              </p>
+              <Button
+                onClick={() => setDisplayCount(prev => prev + LOAD_MORE_INCREMENT)}
+                variant="outline"
+                className="gap-2 border-slate-600 text-slate-300 hover:bg-slate-800/50"
+              >
+                <ChevronDown className="w-4 h-4" />
+                Cargar {Math.min(LOAD_MORE_INCREMENT, remainingCount)} más documentos
+              </Button>
+            </div>
           )}
-          emptyMessage="No hay documentos aprobados"
-        />
+        </>
       )}
 
       {/* Preview Modal - No se cierra por click fuera, solo por X o Escape */}
