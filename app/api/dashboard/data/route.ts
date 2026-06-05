@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
               email: sub?.email || t.email || '',
               telefono: sub?.telefono || t.telefono || '',
               correo: sub?.email || t.correo || '',
-              ejecutivo_nombre: sub?.ejecutiva || t.ejecutivo_nombre || 'Sin asignar',
+              ejecutivo_nombre: t.ejecutivo_nombre || sub?.ejecutiva || 'Sin asignar',
               direccion: sub?.direccion || t.direccion || '',
               // Keep transportistas comune (no overwrite with subcontratistas if null)
               comuna: t.comuna || sub?.comuna || '',
@@ -103,21 +103,47 @@ export async function GET(request: NextRequest) {
         : []
     }
 
+    // Fetch executives to resolve assigned_executive_id -> name
+    const executivesUrl = `${supabaseUrl}/rest/v1/executive_staff?select=id,full_name&is_active=eq.true`
     // Fetch conductores data - NO filter, get all drivers
-    // They will be linked to subcontractors via rut_proveedor match in the UI
-    // Add limit=1000 to fetch all records
     const conductoesUrl = `${supabaseUrl}/rest/v1/conductores?limit=1000`
 
-    const conductoesResponse = await fetch(conductoesUrl, {
-      headers: {
-        'Authorization': `Bearer ${supabaseServiceKey}`,
-        'apikey': supabaseServiceKey,
-        'Content-Type': 'application/json',
-        'Prefer': 'count=exact',
-      },
-    })
+    const [executivesResponse, conductoesResponse] = await Promise.all([
+      fetch(executivesUrl, {
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'apikey': supabaseServiceKey,
+          'Content-Type': 'application/json',
+        },
+      }),
+      fetch(conductoesUrl, {
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'apikey': supabaseServiceKey,
+          'Content-Type': 'application/json',
+          'Prefer': 'count=exact',
+        },
+      }),
+    ])
 
+    const executivesData = await executivesResponse.json()
     const conductores = await conductoesResponse.json()
+
+    // Build executive ID -> name map
+    const execMap = new Map<string, string>()
+    if (Array.isArray(executivesData)) {
+      executivesData.forEach((e: any) => execMap.set(e.id, e.full_name))
+    }
+
+    // Resolve assigned_executive_id to real name on each transportista
+    if (Array.isArray(transportistas)) {
+      transportistas = transportistas.map((t: any) => {
+        if (t.assigned_executive_id && execMap.has(t.assigned_executive_id)) {
+          return { ...t, ejecutivo_nombre: execMap.get(t.assigned_executive_id) }
+        }
+        return t
+      })
+    }
 
     // Create a map of subcontratistas by RUT to get ejecutivo info
     const subMap = new Map()
@@ -168,7 +194,7 @@ export async function GET(request: NextRequest) {
             ...conductor,
             conductor_id: conductor.id,  // Ensure UUID is available as conductor_id for documents page
             nombre: fullName,
-            ejecutivo_nombre: subcontractor?.ejecutiva || subcontractor?.ejecutivo_nombre || 'Sin asignar',
+            ejecutivo_nombre: subcontractor?.ejecutivo_nombre || subcontractor?.ejecutiva || 'Sin asignar',
             nombre_subcontratista: subcontractor?.razon_social || subcontractor?.nombre_fantasia || conductor.rut_proveedor || 'N/A',
           }
         })

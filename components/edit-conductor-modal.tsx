@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertCircle, Loader, Trash2 } from 'lucide-react'
+import { createClient } from '@supabase/supabase-js'
 
 interface Driver {
   id: string
@@ -23,7 +24,7 @@ interface EditConductorModalProps {
   onClose: () => void
   onSuccess: () => void
   driver: Driver | null
-  transportistas: Array<{ rut: string; nombre: string }>
+  transportistas: Array<{ rut: string; nombre: string; ejecutivo_nombre?: string }>
 }
 
 export function EditConductorModal({
@@ -37,6 +38,8 @@ export function EditConductorModal({
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState<string>('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [selectedEjecutiva, setSelectedEjecutiva] = useState<string>('')
+  const [ejecutivas, setEjecutivas] = useState<Array<{ id: string; full_name: string }>>([])
   const [formData, setFormData] = useState({
     rut: '',
     nombres: '',
@@ -46,6 +49,36 @@ export function EditConductorModal({
     clase_licencia: 'B',
     is_active: true
   })
+  
+  const supabaseClient = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  )
+
+  // Load ejecutivas from executive_staff table
+  useEffect(() => {
+    const loadEjecutivas = async () => {
+      try {
+        const { data, error } = await supabaseClient
+          .from('executive_staff')
+          .select('id, full_name')
+          .eq('is_active', true)
+          .order('full_name')
+        
+        if (error) {
+          console.error('Error loading ejecutivas:', error)
+        } else {
+          setEjecutivas(data || [])
+        }
+      } catch (err) {
+        console.error('Error loading ejecutivas:', err)
+      }
+    }
+    
+    if (isOpen) {
+      loadEjecutivas()
+    }
+  }, [isOpen])
 
   useEffect(() => {
     if (driver && isOpen) {
@@ -61,6 +94,41 @@ export function EditConductorModal({
       setError('')
     }
   }, [driver, isOpen])
+
+  useEffect(() => {
+    if (driver && isOpen && transportistas.length > 0) {
+      // Find transportista and get ejecutiva full name from executive_staff
+      const selectedTransportista = transportistas.find(t => t.rut === driver.rut_proveedor)
+      const ejecutivoNombre = selectedTransportista?.ejecutivo_nombre
+      
+      if (ejecutivoNombre && ejecutivas.length > 0) {
+        // Find ejecutiva by matching name
+        const matchedEjecutiva = ejecutivas.find(e => 
+          e.full_name.toLowerCase().includes(ejecutivoNombre.toLowerCase())
+        )
+        setSelectedEjecutiva(matchedEjecutiva?.full_name || 'Sin asignar')
+      } else {
+        setSelectedEjecutiva('Sin asignar')
+      }
+    }
+  }, [driver?.rut_proveedor, transportistas, ejecutivas])
+
+  // When user selects a different transportista in the form
+  useEffect(() => {
+    if (formData.rut_proveedor && transportistas.length > 0 && ejecutivas.length > 0) {
+      const selectedTransportista = transportistas.find(t => t.rut === formData.rut_proveedor)
+      const ejecutivoNombre = selectedTransportista?.ejecutivo_nombre
+      
+      if (ejecutivoNombre) {
+        const matchedEjecutiva = ejecutivas.find(e => 
+          e.full_name.toLowerCase().includes(ejecutivoNombre.toLowerCase())
+        )
+        setSelectedEjecutiva(matchedEjecutiva?.full_name || 'Sin asignar')
+      } else {
+        setSelectedEjecutiva('Sin asignar')
+      }
+    }
+  }, [formData.rut_proveedor, transportistas, ejecutivas])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -208,7 +276,14 @@ export function EditConductorModal({
 
               <div>
                 <Label className="text-sm font-semibold">Transportista/Subcontratista *</Label>
-                <Select value={formData.rut_proveedor} onValueChange={(value) => setFormData({...formData, rut_proveedor: value})}>
+                <Select 
+                  value={formData.rut_proveedor} 
+                  onValueChange={(value) => {
+                    setFormData({...formData, rut_proveedor: value})
+                    const selectedTransportista = transportistas.find(t => t.rut === value)
+                    setSelectedEjecutiva(selectedTransportista?.ejecutivo_nombre || 'Sin asignar')
+                  }}
+                >
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Selecciona un transportista" />
                   </SelectTrigger>
@@ -216,6 +291,26 @@ export function EditConductorModal({
                     {transportistas.map(t => (
                       <SelectItem key={t.rut} value={t.rut}>
                         {t.nombre} ({t.rut})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-sm font-semibold">Ejecutiva Asignada</Label>
+                <Select 
+                  value={selectedEjecutiva} 
+                  onValueChange={(value) => setSelectedEjecutiva(value)}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Selecciona ejecutiva" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Sin asignar">Sin asignar</SelectItem>
+                    {ejecutivas.map(ejecutiva => (
+                      <SelectItem key={ejecutiva.id} value={ejecutiva.full_name}>
+                        {ejecutiva.full_name}
                       </SelectItem>
                     ))}
                   </SelectContent>

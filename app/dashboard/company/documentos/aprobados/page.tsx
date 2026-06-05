@@ -8,10 +8,9 @@ import { ApprovedDocumentsList } from '@/components/approved-documents-list'
 
 export default function AprobadosPage() {
   const [allData, setAllData] = useState<any>(null)
-  const [selectedEjecutiva, setSelectedEjecutiva] = useState<string>('all')
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [ejecutivas, setEjecutivas] = useState<{ name: string; count: number }[]>([])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -21,32 +20,6 @@ export default function AprobadosPage() {
         })
         const data = await response.json()
         setAllData(data)
-
-        // Extract unique ejecutivas from BOTH conductor and subcontractor documents
-        const ejecutivasMap = new Map<string, number>()
-        
-        // Count from subcontractor documents
-        data.subDocs?.forEach((doc: any) => {
-          const ejecutiva = doc.reviewed_by_ejecutiva || 'Sin asignar'
-          ejecutivasMap.set(ejecutiva, (ejecutivasMap.get(ejecutiva) || 0) + 1)
-        })
-        
-        // Count from conductor documents
-        data.conductorDocs?.forEach((doc: any) => {
-          const ejecutiva = doc.ejecutiva || 'Sin asignar'
-          ejecutivasMap.set(ejecutiva, (ejecutivasMap.get(ejecutiva) || 0) + 1)
-        })
-
-        // Sort: "Sin asignar" last, others by count descending
-        const sorted = Array.from(ejecutivasMap.entries())
-          .map(([name, count]) => ({ name, count }))
-          .sort((a, b) => {
-            if (a.name === 'Sin asignar') return 1
-            if (b.name === 'Sin asignar') return -1
-            return b.count - a.count
-          })
-
-        setEjecutivas(sorted)
       } catch (error) {
         console.error('[v0] Error fetching approved documents:', error)
       } finally {
@@ -56,34 +29,59 @@ export default function AprobadosPage() {
 
     fetchData()
     
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(fetchData, 30000)
+    // Auto-refresh every 30 seconds - DISABLED to prevent closing preview
+    // const interval = setInterval(fetchData, 30000)
     
-    return () => clearInterval(interval)
+    return () => {
+      // Cleanup if we ever add back the interval
+    }
   }, [])
 
   const filteredData = useMemo(() => {
     if (!allData) return null
 
-    if (selectedEjecutiva === 'all') {
-      return allData
+    // Calculate date range for filtering
+    let minDate: Date | null = null
+    if (dateFilter !== 'all') {
+      const now = new Date()
+      if (dateFilter === 'today') {
+        minDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      } else if (dateFilter === 'week') {
+        minDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      } else if (dateFilter === 'month') {
+        minDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      }
     }
 
-    const filteredSubDocs = allData.subDocs?.filter((doc: any) => {
-      const docEjecutiva = doc.reviewed_by_ejecutiva || 'Sin asignar'
-      return docEjecutiva === selectedEjecutiva
-    }) || []
+    let filteredSubDocs = allData.subDocs || []
+    let filteredConductorDocs = allData.conductorDocs || []
 
-    const filteredConductorDocs = allData.conductorDocs?.filter((doc: any) => {
-      const docEjecutiva = doc.ejecutiva || 'Sin asignar'
-      return docEjecutiva === selectedEjecutiva
-    }) || []
+    // Apply date filter
+    if (minDate) {
+      console.log('[v0] Date filter applied:', dateFilter, 'minDate:', minDate.toISOString())
+      filteredSubDocs = filteredSubDocs.filter((doc: any) => {
+        const docDate = new Date(doc.updated_at || doc.created_at)
+        const isIncluded = docDate >= minDate!
+        if (!isIncluded) {
+          console.log('[v0] Filtering out sub doc:', doc.file_name, 'date:', docDate.toISOString(), 'minDate:', minDate!.toISOString())
+        }
+        return isIncluded
+      })
+      filteredConductorDocs = filteredConductorDocs.filter((doc: any) => {
+        const docDate = new Date(doc.updated_at || doc.created_at)
+        const isIncluded = docDate >= minDate!
+        if (!isIncluded) {
+          console.log('[v0] Filtering out conductor doc:', doc.original_filename, 'date:', docDate.toISOString(), 'minDate:', minDate!.toISOString())
+        }
+        return isIncluded
+      })
+    }
 
     return {
       conductorDocs: filteredConductorDocs,
       subDocs: filteredSubDocs
     }
-  }, [allData, selectedEjecutiva])
+  }, [allData, dateFilter])
 
   const handleRefresh = async () => {
     setRefreshing(true)
@@ -144,55 +142,69 @@ export default function AprobadosPage() {
         </Button>
       </div>
 
-      {/* Ejecutiva Filter - Enhanced */}
-      <div className="rounded-lg bg-gradient-to-r from-slate-800/70 to-slate-800/40 border border-green-500/30 p-4 shadow-lg">
+      {/* Ejecutiva Filter - REMOVED: All executivas see all documents */}
+
+      {/* Date Filter */}
+      <div className="rounded-lg bg-gradient-to-r from-slate-800/70 to-slate-800/40 border border-blue-500/30 p-4 shadow-lg">
         <div className="flex items-center gap-3 mb-4">
-          <Filter className="h-5 w-5 text-green-400" />
-          <span className="text-sm font-semibold text-slate-100">Filtrar por Ejecutiva:</span>
-          <span className="ml-auto text-xs text-slate-400 bg-slate-700/50 px-2 py-1 rounded">
-            {ejecutivas.length} ejecutivas
-          </span>
+          <Filter className="h-5 w-5 text-blue-400" />
+          <span className="text-sm font-semibold text-slate-100">Filtrar por Fecha:</span>
         </div>
 
-        {ejecutivas.length === 0 ? (
-          <p className="text-sm text-slate-400 italic">
-            Todos los documentos están sin asignar a una ejecutiva específica
-          </p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedEjecutiva('all')}
-              className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
-                selectedEjecutiva === 'all'
-                  ? 'bg-green-600 text-white border border-green-700'
-                  : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
-              }`}
-            >
-              Todas ({totalApproved})
-            </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setDateFilter('all')}
+            className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
+              dateFilter === 'all'
+                ? 'bg-blue-500 text-white border border-blue-600'
+                : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
+            }`}
+          >
+            Todos
+          </button>
 
-            {ejecutivas.map(({ name, count }) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => setSelectedEjecutiva(name)}
-                className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
-                  selectedEjecutiva === name
-                    ? 'bg-green-600 text-white border border-green-700'
-                    : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
-                }`}
-              >
-                {name === 'Sin asignar' ? '📋' : '👤'} {name} ({count})
-              </button>
-            ))}
-          </div>
-        )}
+          <button
+            type="button"
+            onClick={() => setDateFilter('today')}
+            className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
+              dateFilter === 'today'
+                ? 'bg-blue-500 text-white border border-blue-600'
+                : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
+            }`}
+          >
+            Hoy
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setDateFilter('week')}
+            className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
+              dateFilter === 'week'
+                ? 'bg-blue-500 text-white border border-blue-600'
+                : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
+            }`}
+          >
+            Última semana
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setDateFilter('month')}
+            className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
+              dateFilter === 'month'
+                ? 'bg-blue-500 text-white border border-blue-600'
+                : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
+            }`}
+          >
+            Último mes
+          </button>
+        </div>
       </div>
 
       {/* Documents List - key forces re-render when filter changes */}
       <ApprovedDocumentsList
-        key={`${selectedEjecutiva}-${filteredData?.subDocs?.length || 0}`}
+        key={`approved-${dateFilter}-${filteredData?.subDocs?.length || 0}`}
         conductorDocs={filteredData?.conductorDocs || []}
         subDocs={filteredData?.subDocs || []}
       />

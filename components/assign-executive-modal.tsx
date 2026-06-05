@@ -43,12 +43,17 @@ export function AssignExecutiveModal({
     setLoading(true)
     setError('')
     try {
-      const response = await fetch('/api/admin/executive-staff?is_active=true')
+      const response = await fetch('/api/admin/executive-staff')
       if (!response.ok) throw new Error('Failed to fetch executives')
       const data = await response.json()
-      // Handle both direct array and { executives: [] } response format
       const executivesList = Array.isArray(data) ? data : data.executives || []
-      setExecutives(executivesList)
+      // Map nombre/apellido to full_name if needed
+      const mapped = executivesList.map((e: any) => ({
+        id: e.id,
+        full_name: e.full_name || `${e.nombre} ${e.apellido}`.trim(),
+        email: e.email,
+      }))
+      setExecutives(mapped)
       setSelectedExecutive('')
     } catch (err) {
       setError('Error loading executives')

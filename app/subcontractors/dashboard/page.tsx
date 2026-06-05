@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { AlertCircle, CheckCircle, Clock, LogOut, Upload, FileText } from 'lucide-react'
+import { AlertCircle, CheckCircle, Clock, LogOut, Upload, FileText, HelpCircle } from 'lucide-react'
 
 interface DocumentType {
   id: string
@@ -267,6 +267,16 @@ export default function SubcontractorDashboardPage() {
                 <div className="flex gap-3 rounded-lg bg-green-500/10 border border-green-500/30 p-3">
                   <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
                   <p className="text-sm text-green-300">{uploadSuccess}</p>
+                </div>
+              )}
+
+              {/* Test Data Notice */}
+              {documents.some(d => d.rejection_reason === 'test') && (
+                <div className="flex gap-3 rounded-lg bg-blue-500/10 border border-blue-500/30 p-3">
+                  <HelpCircle className="h-5 w-5 text-blue-400 flex-shrink-0" />
+                  <p className="text-sm text-blue-300">
+                    <strong>Nota:</strong> Algunos documentos con motivo de rechazo "test" son documentos de prueba del sistema y pueden ser ignorados.
+                  </p>
                 </div>
               )}
 

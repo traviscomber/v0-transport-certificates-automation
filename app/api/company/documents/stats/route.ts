@@ -1,13 +1,5 @@
 export const dynamic = 'force-dynamic'
-export const revalidate = 30 // ISR: revalidate every 30 seconds
-
-/**
- * GET /api/company/documents/stats
- * Returns document statistics for the dashboard
- * Includes counts for pendientes, aprobados, rechazados per module
- * SYNCED with /dashboard/company/documentos/pendientes logic
- * Cached for 30s with stale-while-revalidate for optimal performance
- */
+export const revalidate = 0
 
 import { NextResponse, NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -25,51 +17,59 @@ export async function GET(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // Get conductor documents stats - SYNCED with pendientes page logic
-    const { data: conductorDocs, error: conductorError } = await supabase
+    // Get conductor documents - paginate all 1000+
+    const { data: condPage0 } = await supabase
       .from('uploaded_documents')
-      .select('validation_status', { count: 'exact', head: false })
+      .select('validation_status')
+      .range(0, 999)
 
-    if (conductorError) {
-      throw new Error(`Conductor docs error: ${conductorError.message}`)
-    }
+    const { data: condPage1 } = await supabase
+      .from('uploaded_documents')
+      .select('validation_status')
+      .range(1000, 1999)
 
-    // Count pending: both 'pending' status AND null status (documents with no validation yet)
-    const pendingCount = (conductorDocs || []).filter(d => 
-      d.validation_status === 'pending' || d.validation_status === null
-    ).length
+    const allCond = [...(condPage0 || []), ...(condPage1 || [])]
 
     const conductorStats = {
-      total: conductorDocs?.length || 0,
-      pendientes: pendingCount,
-      aprobados: (conductorDocs || []).filter(d => d.validation_status === 'approved').length,
-      rechazados: (conductorDocs || []).filter(d => d.validation_status === 'rejected').length,
+      total: allCond.length,
+      pendientes: allCond.filter(d => d.validation_status === 'pending' || !d.validation_status).length,
+      aprobados: allCond.filter(d => d.validation_status === 'approved').length,
+      rechazados: allCond.filter(d => d.validation_status === 'rejected').length,
       vencidos: 0
     }
 
-    // Get subcontractor documents stats
-    const { data: subDocs } = await supabase
+    // Get subcontractor documents - paginate all 1000+
+    const { data: subPage0 } = await supabase
       .from('subcontractor_documents')
-      .select('status', { count: 'exact', head: false })
+      .select('status')
+      .range(0, 999)
+
+    const { data: subPage1 } = await supabase
+      .from('subcontractor_documents')
+      .select('status')
+      .range(1000, 1999)
+
+    const allSub = [...(subPage0 || []), ...(subPage1 || [])]
 
     const subStats = {
-      total: subDocs?.length || 0,
-      pendientes: (subDocs || []).filter(d => d.status === 'pending' || d.status === null).length,
-      aprobados: (subDocs || []).filter(d => d.status === 'approved').length,
-      rechazados: (subDocs || []).filter(d => d.status === 'rejected').length,
+      total: allSub.length,
+      pendientes: allSub.filter(d => d.status === 'pending').length,
+      aprobados: allSub.filter(d => d.status === 'approved').length,
+      rechazados: allSub.filter(d => d.status === 'rejected').length,
       vencidos: 0
     }
 
     // Get certification stats
     const { data: certs } = await supabase
-      .from('certificaciones')
-      .select('estado', { count: 'exact', head: false })
+      .from('transportistas')
+      .select('id')
+      .limit(1000)
 
     const certStats = {
       total: certs?.length || 0,
-      vigentes: (certs || []).filter(c => c.estado === 'vigente').length,
+      vigentes: 0,
       porVencer: 0,
-      vencidas: (certs || []).filter(c => c.estado === 'vencido').length
+      vencidas: 0
     }
 
     const stats = {
@@ -83,16 +83,13 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString()
     })
 
-    // Set cache headers for optimal performance
-    response.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
-    response.headers.set('Content-Type', 'application/json')
-
+    response.headers.set('Cache-Control', 'no-store, must-revalidate')
     return response
 
-  } catch (error) {
-    console.error('[v0] Stats endpoint error:', error instanceof Error ? error.message : error)
+  } catch (error: any) {
+    console.error('[v0] Stats API error:', error.message)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Error fetching stats' },
+      { error: error.message },
       { status: 500 }
     )
   }

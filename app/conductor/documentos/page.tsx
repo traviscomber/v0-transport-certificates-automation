@@ -324,6 +324,16 @@ export default function ConductorDocumentosPage() {
         </Alert>
       )}
 
+      {/* Test Data Notice */}
+      {documents.some(d => d.rejection_reason === 'test') && (
+        <Alert className="bg-blue-950/30 border-blue-900/50">
+          <HelpCircle className="h-4 w-4 text-blue-400" />
+          <AlertDescription className="text-blue-300">
+            <strong>Nota:</strong> Algunos documentos en tu historial tienen motivo de rechazo "test". Estos son documentos de prueba del sistema y pueden ser ignorados o eliminados. No afectan tu cumplimiento real.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Upload Section */}
       <Card className="border-slate-700 bg-gradient-to-r from-slate-800/50 to-slate-800/30 shadow-lg">
         <CardHeader>

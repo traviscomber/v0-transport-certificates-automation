@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useDocumentSync } from '@/contexts/document-sync-context'
 import { PDFViewer } from '@/components/pdf-viewer'
 import { formatToChileTime } from '@/lib/timezone-utils'
+import { DocumentFilter, type DocumentFilters } from '@/components/document-filter'
 
 interface PendingDocument {
   id: string
@@ -60,6 +61,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [showAnalysisModal, setShowAnalysisModal] = useState(false)
   const [analysisResult, setAnalysisResult] = useState<any>(null)
+  const [filters, setFilters] = useState<DocumentFilters>({ searchQuery: '' })
   const { onSync, broadcastSync } = useDocumentSync()
   const [rejectDocId, setRejectDocId] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
@@ -75,6 +77,108 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
   const subDocs = propSubDocs.filter(doc => !removedIds.has(doc.id))
 
   const totalPendientes = conductorDocs.length + subDocs.length
+
+  // Helper to extract executive name
+  const getExecutive = (doc: PendingDocument) => {
+    return doc.ejecutiva || doc.reviewed_by_ejecutiva || doc.uploaded_by_ejecutiva || 'No especificado'
+  }
+
+  // Get all documents combined
+  const allDocs = [...conductorDocs, ...subDocs].sort((a, b) => {
+    try {
+      const dateB = new Date(b.uploaded_at || b.created_at || 0).getTime()
+      const dateA = new Date(a.uploaded_at || a.created_at || 0).getTime()
+      return dateB - dateA
+    } catch (e) {
+      console.error('[v0] Error sorting pending docs:', e)
+      return 0
+    }
+  })
+
+  // Get unique executives and companies for filter options
+  const executives = useMemo(() => {
+    const execs = new Map<string, string>()
+    allDocs.forEach((doc) => {
+      const exec = getExecutive(doc)
+      if (exec && exec !== 'No especificado') {
+        execs.set(exec, exec)
+      }
+    })
+    return Array.from(execs).map(([id, nombre]) => ({ id, nombre }))
+  }, [allDocs])
+
+  const companies = useMemo(() => {
+    const comps = new Map<string, { nombre: string; rut: string }>()
+    allDocs.forEach((doc) => {
+      try {
+        if (doc.transportistas) {
+          const comp = Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas
+          if (comp && comp.razon_social) {
+            comps.set(comp.id || comp.rut, { nombre: comp.razon_social, rut: comp.rut || '' })
+          }
+        }
+      } catch (e) {
+        console.log('[v0] Error extracting company:', e)
+      }
+    })
+    return Array.from(comps).map(([id, data]) => ({ id, ...data }))
+  }, [allDocs])
+
+  // Filter documents based on filter criteria
+  const filteredDocs = useMemo(() => {
+    return allDocs.filter((doc) => {
+      // Search query
+      if (filters.searchQuery) {
+        const query = filters.searchQuery.toLowerCase()
+        const filename = (doc.original_filename || doc.file_name || '').toLowerCase()
+        const company = doc.transportistas ? ((Array.isArray(doc.transportistas) ? doc.transportistas[0]?.razon_social : doc.transportistas?.razon_social) || '') : ''
+        const conductor = doc.conductores ? ((Array.isArray(doc.conductores) ? doc.conductores[0]?.nombres : doc.conductores?.nombres) || '') : ''
+        
+        if (!filename.includes(query) && !company.toLowerCase().includes(query) && !conductor.toLowerCase().includes(query)) {
+          return false
+        }
+      }
+
+      // Date range filter (month filter)
+      if (filters.dateFrom || filters.dateTo) {
+        const docDate = new Date(doc.uploaded_at || doc.created_at || '')
+        if (filters.dateFrom) {
+          const dateFrom = new Date(filters.dateFrom)
+          if (docDate < dateFrom) {
+            return false
+          }
+        }
+        if (filters.dateTo) {
+          const dateTo = new Date(filters.dateTo)
+          dateTo.setHours(23, 59, 59, 999)
+          if (docDate > dateTo) {
+            return false
+          }
+        }
+      }
+
+      // Executive filter
+      if (filters.executiveId) {
+        if (getExecutive(doc) !== filters.executiveId) {
+          return false
+        }
+      }
+
+      // Company filter
+      if (filters.companyId) {
+        try {
+          const docCompany = doc.transportistas ? (Array.isArray(doc.transportistas) ? doc.transportistas[0]?.id : doc.transportistas?.id) : (doc as any).subcontractor_rut
+          if (docCompany !== filters.companyId) {
+            return false
+          }
+        } catch (e) {
+          return false
+        }
+      }
+
+      return true
+    })
+  }, [allDocs, filters])
 
   const handleAnalyzeDocument = async (docId: string) => {
     setAnalyzing(docId)
@@ -259,6 +363,13 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
         </div>
       </div>
 
+      {/* Filter */}
+      <DocumentFilter 
+        onFilterChange={setFilters}
+        executives={executives}
+        companies={companies}
+      />
+
       {/* Conductor Documents Section */}
       <Card className="border-blue-500/30 bg-blue-500/5">
         <CardHeader>
@@ -267,87 +378,57 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
               <Users className="h-5 w-5 text-blue-500" />
               <CardTitle>Documentos de Conductores</CardTitle>
             </div>
-            <Badge variant="secondary">{conductorDocs.length} pendientes</Badge>
+            <Badge variant="secondary">
+              {filteredDocs.filter(doc => propConductorDocs.some(d => d.id === doc.id)).length} pendientes
+            </Badge>
           </div>
           <CardDescription>Licencias, antecedentes y documentos personales</CardDescription>
         </CardHeader>
         <CardContent>
-          {conductorDocs.length === 0 ? (
+          {filteredDocs.filter(doc => propConductorDocs.some(d => d.id === doc.id)).length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
               No hay documentos de conductores pendientes
             </p>
           ) : (
             <div className="space-y-2">
-              {conductorDocs.map((doc) => (
-                <div 
-                  key={doc.id} 
-                  className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700"
-                >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <FileText className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm truncate">{doc.original_filename}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {(() => {
-                          const c = Array.isArray(doc.conductores) ? doc.conductores[0] : doc.conductores
-                          return c ? `${c.nombres} ${c.apellido_paterno} - ${c.rut}` : ''
-                        })()}
-                      </p>
+              {filteredDocs.filter(doc => propConductorDocs.some(d => d.id === doc.id)).map((doc) => {
+                const c = Array.isArray(doc.conductores) ? doc.conductores[0] : doc.conductores
+                return (
+                  <div 
+                    key={doc.id} 
+                    className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <FileText className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{doc.original_filename}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {c ? `${c.nombres} ${c.apellido_paterno} - ${c.rut}` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                      {doc.file_url && (
+                        <Button variant="ghost" size="sm" onClick={() => setPreviewDoc(doc)} className="text-slate-400 hover:text-white">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button variant="outline" size="sm" onClick={() => handleAnalyzeDocument(doc.id)} disabled={analyzing === doc.id} className="text-xs gap-1 border-blue-400/50 text-blue-300 hover:bg-blue-500/20" title="Analizar con IA (OCR)">
+                        {analyzing === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                        Analizar
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleApprove(doc.id, 'conductor')} disabled={loading === doc.id} className="text-xs gap-1 border-green-500/50 text-green-400 hover:bg-green-500/20">
+                        {loading === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                        Aprobar
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleRejectClick(doc.id, 'conductor')} disabled={loading === doc.id} className="text-xs gap-1 border-red-500/50 text-red-400 hover:bg-red-500/20">
+                        <X className="h-3 w-3" />
+                        Rechazar
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                    {doc.file_url && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setPreviewDoc(doc)}
-                        className="text-slate-400 hover:text-white"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleAnalyzeDocument(doc.id)}
-                      disabled={analyzing === doc.id}
-                      className="text-xs gap-1 border-blue-400/50 text-blue-300 hover:bg-blue-500/20"
-                      title="Analizar con IA (OCR)"
-                    >
-                      {analyzing === doc.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3 w-3" />
-                      )}
-                      Analizar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleApprove(doc.id, 'conductor')}
-                      disabled={loading === doc.id}
-                      className="text-xs gap-1 border-green-500/50 text-green-400 hover:bg-green-500/20"
-                    >
-                      {loading === doc.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Check className="h-3 w-3" />
-                      )}
-                      Aprobar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleRejectClick(doc.id, 'conductor')}
-                      disabled={loading === doc.id}
-                      className="text-xs gap-1 border-red-500/50 text-red-400 hover:bg-red-500/20"
-                    >
-                      <X className="h-3 w-3" />
-                      Rechazar
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </CardContent>
@@ -361,105 +442,75 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
               <Truck className="h-5 w-5 text-orange-500" />
               <CardTitle>Documentos de Subcontratistas</CardTitle>
             </div>
-            <Badge variant="secondary">{subDocs.length} pendientes</Badge>
+            <Badge variant="secondary">
+              {filteredDocs.filter(doc => propSubDocs.some(d => d.id === doc.id)).length} pendientes
+            </Badge>
           </div>
           <CardDescription>F30, F30-1, contratos y documentos legales</CardDescription>
         </CardHeader>
         <CardContent>
-          {subDocs.length === 0 ? (
+          {filteredDocs.filter(doc => propSubDocs.some(d => d.id === doc.id)).length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
               No hay documentos de subcontratistas pendientes
             </p>
           ) : (
             <div className="space-y-2">
-              {subDocs.map((doc) => (
-                <div 
-                  key={doc.id} 
-                  className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700"
-                >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <FileText className="h-4 w-4 text-orange-400 flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-sm truncate">{doc.file_name}</p>
-                      <div className="flex gap-3 mt-1 flex-wrap">
-                        <p className="text-xs text-muted-foreground">
-                          {(() => {
-                            const t = Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas
-                            return t ? `${t.razon_social} - ${t.rut}` : ''
-                          })()}
-                        </p>
-                        {doc.docType && (
-                          <Badge variant="outline" className="text-xs bg-blue-500/10 border-blue-500/30 text-blue-300">
-                            {doc.docType.nombre}
-                          </Badge>
-                        )}
-                        {doc.ejecutiva && doc.ejecutiva !== 'Sin asignar' && (
-                          <Badge variant="outline" className="text-xs bg-purple-500/10 border-purple-500/30 text-purple-300">
-                            👤 {doc.ejecutiva}
-                          </Badge>
-                        )}
-                        {doc.uploaded_at && (
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {formatToChileTime(doc.uploaded_at, "d 'de' MMMM 'de' yyyy HH:mm")}
-                          </span>
-                        )}
+              {filteredDocs.filter(doc => propSubDocs.some(d => d.id === doc.id)).map((doc) => {
+                const t = Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas
+                return (
+                  <div 
+                    key={doc.id} 
+                    className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <FileText className="h-4 w-4 text-orange-400 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm truncate">{doc.file_name}</p>
+                        <div className="flex gap-3 mt-1 flex-wrap">
+                          <p className="text-xs text-muted-foreground">
+                            {t ? `${t.razon_social} - ${t.rut}` : ''}
+                          </p>
+                          {doc.docType && (
+                            <Badge variant="outline" className="text-xs bg-blue-500/10 border-blue-500/30 text-blue-300">
+                              {doc.docType.nombre}
+                            </Badge>
+                          )}
+                          {doc.ejecutiva && doc.ejecutiva !== 'Sin asignar' && (
+                            <Badge variant="outline" className="text-xs bg-purple-500/10 border-purple-500/30 text-purple-300">
+                              {doc.ejecutiva}
+                            </Badge>
+                          )}
+                          {doc.uploaded_at && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {formatToChileTime(doc.uploaded_at, "d 'de' MMMM 'de' yyyy HH:mm")}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                    {doc.file_url && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setPreviewDoc(doc)}
-                        className="text-slate-400 hover:text-white"
-                      >
-                        <Eye className="h-4 w-4" />
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                      {doc.file_url && (
+                        <Button variant="ghost" size="sm" onClick={() => setPreviewDoc(doc)} className="text-slate-400 hover:text-white">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button variant="outline" size="sm" onClick={() => handleAnalyzeDocument(doc.id)} disabled={analyzing === doc.id} className="text-xs gap-1 border-blue-400/50 text-blue-300 hover:bg-blue-500/20" title="Analizar con IA (OCR)">
+                        {analyzing === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                        Analizar
                       </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleAnalyzeDocument(doc.id)}
-                      disabled={analyzing === doc.id}
-                      className="text-xs gap-1 border-blue-400/50 text-blue-300 hover:bg-blue-500/20"
-                      title="Analizar con IA (OCR)"
-                    >
-                      {analyzing === doc.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3 w-3" />
-                      )}
-                      Analizar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleApprove(doc.id, 'subcontractor')}
-                      disabled={loading === doc.id}
-                      className="text-xs gap-1 border-green-500/50 text-green-400 hover:bg-green-500/20"
-                    >
-                      {loading === doc.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Check className="h-3 w-3" />
-                      )}
-                      Aprobar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleRejectClick(doc.id, 'subcontractor')}
-                      disabled={loading === doc.id}
-                      className="text-xs gap-1 border-red-500/50 text-red-400 hover:bg-red-500/20"
-                    >
-                      <X className="h-3 w-3" />
-                      Rechazar
-                    </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleApprove(doc.id, 'subcontractor')} disabled={loading === doc.id} className="text-xs gap-1 border-green-500/50 text-green-400 hover:bg-green-500/20">
+                        {loading === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                        Aprobar
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleRejectClick(doc.id, 'subcontractor')} disabled={loading === doc.id} className="text-xs gap-1 border-red-500/50 text-red-400 hover:bg-red-500/20">
+                        <X className="h-3 w-3" />
+                        Rechazar
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </CardContent>

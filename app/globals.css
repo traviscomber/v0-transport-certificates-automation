@@ -43,10 +43,13 @@
     color: var(--color-foreground);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    display: block;
+    min-height: 100vh;
   }
 
   html {
     scroll-behavior: smooth;
+    display: block;
   }
 }
 

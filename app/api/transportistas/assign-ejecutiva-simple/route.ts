@@ -184,7 +184,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Ejecutiva ${ejecutiva.nombre} assigned successfully to ${transportista.razon_social}`,
+      message: `Ejecutiva ${ejecutiva.full_name} assigned successfully to ${transportista.razon_social}`,
       data,
     }, { status: 200 })
   } catch (error: any) {

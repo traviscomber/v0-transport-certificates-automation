@@ -64,9 +64,16 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
     return unsubscribe
   }, [onSync])
 
-  const allDocs = [...conductorDocs, ...subDocs].sort(
-    (a, b) => new Date(b.updated_at || b.reviewed_at || b.created_at).getTime() - new Date(a.updated_at || a.reviewed_at || a.created_at).getTime()
-  )
+  const allDocs = [...conductorDocs, ...subDocs].sort((a, b) => {
+    try {
+      const dateB = new Date(b.updated_at || b.reviewed_at || b.created_at || 0).getTime()
+      const dateA = new Date(a.updated_at || a.reviewed_at || a.created_at || 0).getTime()
+      return dateB - dateA
+    } catch (e) {
+      console.error('[v0] Error sorting docs:', e, 'docA:', (a as any).document_name || a.original_filename, 'docB:', (b as any).document_name || b.original_filename)
+      return 0
+    }
+  })
 
   const getExecutive = (doc: RejectedDocument) => {
     return doc.ejecutiva || doc.reviewed_by_ejecutiva || 'No especificado'
@@ -130,6 +137,24 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
         }
       }
 
+      // Date range filter (month filter)
+      if (filters.dateFrom || filters.dateTo) {
+        const docDate = new Date(doc.created_at)
+        if (filters.dateFrom) {
+          const dateFrom = new Date(filters.dateFrom)
+          if (docDate < dateFrom) {
+            return false
+          }
+        }
+        if (filters.dateTo) {
+          const dateTo = new Date(filters.dateTo)
+          dateTo.setHours(23, 59, 59, 999)
+          if (docDate > dateTo) {
+            return false
+          }
+        }
+      }
+
       // Executive filter
       if (filters.executiveId) {
         if (getExecutive(doc) !== filters.executiveId) {
@@ -165,6 +190,9 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
     )
   }
 
+  // Use filtered documents if any filter is applied, otherwise show all
+  const docsToDisplay = filteredDocs.length > 0 || filters.searchQuery || filters.executiveId || filters.companyId || filters.dateFrom || filters.dateTo ? filteredDocs : allDocs
+
   return (
     <>
       <DocumentFilter 
@@ -173,13 +201,13 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
         companies={companies}
       />
       
-      {filteredDocs.length === 0 ? (
+      {docsToDisplay.length === 0 && (filters.searchQuery || filters.executiveId || filters.companyId) ? (
         <div className="flex flex-col items-center justify-center py-12 px-4">
           <p className="text-slate-400">No hay documentos que coincidan con los filtros seleccionados</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredDocs.map((doc) => (
+          {docsToDisplay.map((doc) => (
           <Card key={doc.id} className="bg-gradient-to-r from-slate-900/80 to-slate-800/80 border-slate-700/50 hover:border-red-500/30 transition-all hover:shadow-lg hover:shadow-red-500/10">
             <CardContent className="p-6">
               <div className="flex items-start justify-between gap-6">

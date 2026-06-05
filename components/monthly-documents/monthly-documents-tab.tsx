@@ -115,12 +115,12 @@ export function MonthlyDocumentsTab() {
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Conductor</label>
-              <Select value={selectedDriver} onValueChange={setSelectedDriver}>
+              <Select value={selectedDriver || 'all'} onValueChange={(value) => setSelectedDriver(value === 'all' ? '' : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   {drivers.map((driver) => (
                     <SelectItem key={driver.id} value={driver.id}>
                       {driver.nombre}

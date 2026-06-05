@@ -80,36 +80,53 @@ export function DashboardOverview() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Use separate endpoints - more reliable than consolidated endpoint
-        const alertsRes = await fetch(`/api/alerts?limit=50`, {
+        // Use the SAME endpoint as DocumentManagerHub - /api/company/documents/stats
+        // This ensures Control Operacional shows EXACT same numbers as Gestor de Documentos
+        const timestamp = Date.now()
+        const alertsRes = await fetch(`/api/alerts?limit=50&_t=${timestamp}`, {
           cache: "no-store",
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           }
         })
         
-        const statsRes = await fetch(`/api/company/documents/stats`, {
-          cache: "default",
+        // Use the SAME stats endpoint as the Gestor de Documentos
+        const statsRes = await fetch(`/api/company/documents/stats?_t=${timestamp}`, {
+          cache: "no-store",
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          }
         })
 
         if (alertsRes.ok) {
           const alertsData = await alertsRes.json()
-          console.log('[v0] Fetched alerts:', alertsData)
           const alertsList = Array.isArray(alertsData) ? alertsData : (alertsData.alerts || [])
           setAlerts(alertsList)
         }
 
         if (statsRes.ok) {
           const statsData = await statsRes.json()
-          const statsObj = statsData.stats || {}
-          const conductorStats = statsObj.conductores || {}
-          const subStats = statsObj.subcontratistas || {}
-
-          // Aggregate both conductor and subcontractor documents
+          const stats = statsData.stats || {}
+          
+          // Calculate totals from conductor + subcontractor stats (same logic as Gestor)
+          const conductorStats = stats.conductores || {}
+          const subStats = stats.subcontratistas || {}
+          
           const totalDocs = (conductorStats.total || 0) + (subStats.total || 0)
           const pendingDocs = (conductorStats.pendientes || 0) + (subStats.pendientes || 0)
           const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
           const rejectedDocs = (conductorStats.rechazados || 0) + (subStats.rechazados || 0)
+
+          console.log('[v0] Dashboard Stats from /api/company/documents/stats:', {
+            total: totalDocs,
+            pending: pendingDocs,
+            approved: approvedDocs,
+            rejected: rejectedDocs
+          })
 
           setStats([
             {
@@ -160,7 +177,7 @@ export function DashboardOverview() {
     // Fetch data immediately
     fetchData()
 
-    // Set interval to refresh alerts every 10 seconds (source of truth)
+    // Set interval to refresh every 10 seconds
     const interval = setInterval(fetchData, 10000)
 
     return () => clearInterval(interval)
@@ -174,60 +191,64 @@ export function DashboardOverview() {
         
         const fetchUpdatedStats = async () => {
           try {
-            // Use separate endpoints for sync updates
-            const statsRes = await fetch(`/api/company/documents/stats`, {
-              cache: "default",
-            })
-            
-            const alertsRes = await fetch(`/api/alerts?limit=50`, {
-              cache: "default",
+            // Use the SAME stats endpoint as initial fetch
+            const statsRes = await fetch(`/api/company/documents/stats?_t=${Date.now()}`, {
+              cache: "no-store",
+              headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+              }
             })
 
             if (statsRes.ok) {
               const statsData = await statsRes.json()
-              const statsObj = statsData.stats || {}
-              const conductorStats = statsObj.conductores || {}
+              const stats = statsData.stats || {}
+              
+              const conductorStats = stats.conductores || {}
+              const subStats = stats.subcontratistas || {}
+              
+              const totalDocs = (conductorStats.total || 0) + (subStats.total || 0)
+              const pendingDocs = (conductorStats.pendientes || 0) + (subStats.pendientes || 0)
+              const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
+              const rejectedDocs = (conductorStats.rechazados || 0) + (subStats.rechazados || 0)
 
               setStats([
-                {
-                  title: "Total de Documentos",
-                  value: conductorStats.total?.toString() || "0",
-                  description: "En el sistema",
-                  icon: FileText,
-                  status: "active",
-                  href: "/dashboard/company/documentos",
-                },
-                {
-                  title: "Documentos Aprobados",
-                  value: conductorStats.aprobados?.toString() || "0",
-                  description: "Validados",
-                  icon: CheckCircle,
-                  status: "active",
-                  href: "/dashboard/company/documentos/aprobados",
-                },
-                {
-                  title: "Documentos Pendientes",
-                  value: conductorStats.pendientes?.toString() || "0",
-                  description: "En revisión",
-                  icon: Clock,
-                  status: "active",
-                  href: "/dashboard/company/documentos/pendientes",
-                },
-                {
-                  title: "Documentos Rechazados",
-                  value: conductorStats.rechazados?.toString() || "0",
-                  description: "No validados",
-                  icon: AlertTriangle,
-                  status: "warning",
-                  href: "/dashboard/company/documentos/rechazados",
-                },
-              ])
-            }
-            
-            if (alertsRes.ok) {
-              const alertsData = await alertsRes.json()
-              const alertsList = Array.isArray(alertsData) ? alertsData : (alertsData.alerts || [])
-              setAlerts(alertsList)
+                  {
+                    title: "Total de Documentos",
+                    value: totalDocs.toString(),
+                    description: "En el sistema",
+                    icon: FileText,
+                    status: "active",
+                    href: "/dashboard/company/documentos",
+                    color: "blue",
+                  },
+                  {
+                    title: "Documentos Aprobados",
+                    value: approvedDocs.toString(),
+                    description: "Validados",
+                    icon: CheckCircle,
+                    status: "active",
+                    href: "/dashboard/company/documentos/aprobados",
+                    color: "green",
+                  },
+                  {
+                    title: "Documentos Pendientes",
+                    value: pendingDocs.toString(),
+                    description: "En revisión",
+                    icon: Clock,
+                    status: "active",
+                    href: "/dashboard/company/documentos/pendientes",
+                    color: "orange",
+                  },
+                  {
+                    title: "Documentos Rechazados",
+                    value: rejectedDocs.toString(),
+                    description: "No validados",
+                    icon: AlertTriangle,
+                    status: "warning",
+                    href: "/dashboard/company/documentos/rechazados",
+                    color: "red",
+                  },
+                ])
             }
           } catch (error) {
             console.error('[v0] Error refetching stats:', error)

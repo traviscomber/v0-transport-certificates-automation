@@ -26,26 +26,54 @@ export async function GET() {
         )
       `)
       .or('validation_status.eq.pending,validation_status.is.null')
+      .limit(10000)
       .order("created_at", { ascending: false })
 
-    // Get pending subcontractor documents with ALL fields - REMOVED LIMIT to get ALL pending documents
-    const { data: subDocsRaw } = await supabase
-      .from("subcontractor_documents")
-      .select(`
-        id,
-        file_name,
-        document_type_id,
-        status,
-        file_url,
-        created_at,
-        uploaded_at,
-        subcontractor_id,
-        subcontractor_rut,
-        reviewed_by_ejecutiva,
-        uploaded_by_ejecutiva
-      `)
-      .eq('status', 'pending')
-      .order("created_at", { ascending: false })
+    // Get pending subcontractor documents - WITH PAGINATION to handle > 1000 records
+    let allSubDocs: any[] = []
+    let page = 0
+    let hasMore = true
+    const pageSize = 1000
+    
+    while (hasMore) {
+      const start = page * pageSize
+      const end = start + pageSize - 1
+      
+      const { data: subDocsPage, error: pageError } = await supabase
+        .from("subcontractor_documents")
+        .select(`
+          id,
+          file_name,
+          document_type_id,
+          status,
+          file_url,
+          created_at,
+          uploaded_at,
+          subcontractor_id,
+          subcontractor_rut,
+          reviewed_by_ejecutiva,
+          uploaded_by_ejecutiva
+        `)
+        .eq('status', 'pending')
+        .range(start, end)
+        .order("created_at", { ascending: false })
+      
+      if (pageError) {
+        console.error('[v0] Pending: Error fetching page', page, ':', pageError)
+        hasMore = false
+      } else if (!subDocsPage || subDocsPage.length === 0) {
+        hasMore = false
+      } else {
+        allSubDocs.push(...subDocsPage)
+        if (subDocsPage.length < pageSize) {
+          hasMore = false
+        }
+        page++
+      }
+    }
+    
+    const subDocsRaw = allSubDocs
+    console.log('[v0] Pending: Sub docs count (total):', subDocsRaw?.length || 0, '(fetched in', page, 'pages)')
 
     // Fetch document types
     const { data: docTypes } = await supabase
