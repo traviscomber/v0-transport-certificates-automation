@@ -119,7 +119,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
       ) : (
         <>
           <DocumentsByMonth
-            monthsData={groupDocumentsByMonth(paginatedDocs, 'created_at', 'es')}
+            monthsData={groupDocumentsByMonth(paginatedDocs, 'validated_at', 'es')}
             renderDocument={(doc) => (
               <ApprovedDocumentCard
                 key={doc.id}

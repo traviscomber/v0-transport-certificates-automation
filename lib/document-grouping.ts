@@ -67,7 +67,14 @@ export function groupDocumentsByMonth(
   const grouped = new Map<string, { monthKey: string; documents: any[] }>()
   
   documents.forEach((doc) => {
-    const dateValue = doc[dateField]
+    // For validated_at, use fallback chain for null values
+    let dateValue = doc[dateField]
+    
+    // Smart fallback for approved documents: validated_at -> approved_at -> updated_at -> created_at
+    if (!dateValue && dateField === 'validated_at') {
+      dateValue = doc.approved_at || doc.updated_at || doc.created_at
+    }
+    
     const monthKey = getMonthKey(dateValue)
     const monthYear = getMonthYear(dateValue, locale)
     
