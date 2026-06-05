@@ -274,6 +274,9 @@ export async function GET() {
       // Get assigned ejecutiva from map, fallback to doc.ejecutiva or 'No especificado'
       const assignedEjecutiva = conductorExecutiveMap.get(doc.conductor_id) || doc.ejecutiva || 'No especificado'
       
+      // Use validated_at as the primary approval date for conductor docs
+      const approvalDate = doc.validated_at || doc.updated_at
+      
       return {
         id: doc.id,
         original_filename: doc.original_filename,
@@ -282,11 +285,11 @@ export async function GET() {
         status: doc.validation_status, // For component compatibility
         file_url: doc.file_url,
         file_type: file_type, // Add calculated file_type
-        validated_at: doc.validated_at || doc.updated_at,
+        validated_at: approvalDate,
         ejecutiva: assignedEjecutiva,
         created_at: doc.created_at,
         updated_at: doc.updated_at,
-        reviewed_at: doc.validated_at || doc.updated_at,
+        reviewed_at: approvalDate,
         conductores: conductorMap.get(doc.conductor_id) || null,
         docType: docTypeMap.get(doc.document_type_id),
         document_source: 'conductor'
@@ -303,6 +306,9 @@ export async function GET() {
       // Get assigned ejecutiva from executiveMap, fallback to reviewed_by_ejecutiva
       const assignedEjecutiva = executiveMap.get(doc.subcontractor_id) || doc.reviewed_by_ejecutiva || 'No especificado'
       
+      // Use approved_at as the primary approval date for subcontractor docs
+      const approvalDate = doc.approved_at || doc.updated_at
+      
       return {
         id: doc.id,
         document_name: doc.file_name,
@@ -312,13 +318,13 @@ export async function GET() {
         status: doc.status,
         file_url: doc.file_url,
         file_type: file_type, // Add calculated file_type
-        approved_at: doc.approved_at || doc.updated_at,
+        approved_at: approvalDate,
         approved_by_email: doc.approved_by_email,
         reviewed_by_ejecutiva: assignedEjecutiva,
         ejecutiva: assignedEjecutiva, // Use assigned ejecutiva for filtering
         created_at: doc.created_at,
         updated_at: doc.updated_at,
-        reviewed_at: doc.approved_at || doc.updated_at,
+        reviewed_at: approvalDate,
         transportistas: transportistasMap.get(doc.subcontractor_id) || {
           id: doc.subcontractor_id,
           razon_social: 'Subcontratista',
