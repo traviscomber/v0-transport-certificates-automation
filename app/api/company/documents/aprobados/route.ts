@@ -38,18 +38,39 @@ export async function GET() {
 
     console.log('[v0] Aprobados endpoint: Current ejecutiva:', currentExecutiva)
 
-    // FIX: Get ALL approved conductor documents WITHOUT pagination or join
-    // The join was failing silently, causing empty results
-    const { data: conductorDocs, error: conductorError } = await supabase
-      .from('uploaded_documents')
-      .select('id, original_filename, document_type_id, validation_status, file_url, validated_at, ejecutiva, created_at, updated_at, conductor_id')
-      .eq('validation_status', 'approved')
-      .order('updated_at', { ascending: false })
-
-    if (conductorError) {
-      console.error('[v0] Aprobados: Conductor query error:', conductorError)
+    // Get ALL approved conductor documents with pagination (Supabase 1000 record limit)
+    let allConductorDocs: any[] = []
+    let conductorPageNum = 0
+    let conductorHasMore = true
+    const conductorPageSize = 1000
+    
+    while (conductorHasMore) {
+      const start = conductorPageNum * conductorPageSize
+      const end = start + conductorPageSize - 1
+      
+      const { data: conductorPageData, error: pageError } = await supabase
+        .from('uploaded_documents')
+        .select('id, original_filename, document_type_id, validation_status, file_url, validated_at, ejecutiva, created_at, updated_at, conductor_id')
+        .eq('validation_status', 'approved')
+        .range(start, end)
+        .order('updated_at', { ascending: false })
+      
+      if (pageError) {
+        console.error('[v0] Aprobados: Conductor page error:', pageError)
+        conductorHasMore = false
+      } else if (!conductorPageData || conductorPageData.length === 0) {
+        conductorHasMore = false
+      } else {
+        allConductorDocs.push(...conductorPageData)
+        if (conductorPageData.length < conductorPageSize) {
+          conductorHasMore = false
+        }
+        conductorPageNum++
+      }
     }
-    console.log('[v0] Aprobados: Fetched', conductorDocs?.length || 0, 'conductor documents')
+    
+    const conductorDocs = allConductorDocs
+    console.log('[v0] Aprobados: Total conductor documents:', conductorDocs?.length || 0)
 
     // Fetch conductor details manually to avoid join failures
     let conductorMap = new Map<string, any>()
