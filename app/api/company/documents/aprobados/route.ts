@@ -277,6 +277,18 @@ export async function GET() {
       // Use validated_at as the primary approval date for conductor docs
       const approvalDate = doc.validated_at || doc.updated_at
       
+      // DEBUG: Log first doc to see actual data structure
+      if (conductorDocs.indexOf(doc) === 0) {
+        console.log('[v0] First conductor doc:', {
+          id: doc.id,
+          validated_at: doc.validated_at,
+          updated_at: doc.updated_at,
+          created_at: doc.created_at,
+          validation_status: doc.validation_status,
+          approvalDate
+        })
+      }
+      
       return {
         id: doc.id,
         original_filename: doc.original_filename,
@@ -308,6 +320,18 @@ export async function GET() {
       
       // Use approved_at as the primary approval date for subcontractor docs
       const approvalDate = doc.approved_at || doc.updated_at
+      
+      // DEBUG: Log first subcontractor doc
+      if ((subDocs || []).indexOf(doc) === 0) {
+        console.log('[v0] First subcontractor doc:', {
+          id: doc.id,
+          approved_at: doc.approved_at,
+          updated_at: doc.updated_at,
+          created_at: doc.created_at,
+          status: doc.status,
+          approvalDate
+        })
+      }
       
       return {
         id: doc.id,
@@ -350,7 +374,19 @@ export async function GET() {
     console.log('[v0] Aprobados endpoint: Returning', allDocs.length, 'approved documents')
     console.log('[v0] Aprobados: Sub docs from DB:', subDocs?.length || 0, '| Conductor docs from DB:', conductorDocs?.length || 0)
     if (subDocs && subDocs.length > 0) {
-      console.log('[v0] Aprobados: Sub docs sample (first 3):', subDocs.slice(0, 3).map(d => ({ name: d.file_name, updated_at: d.updated_at })))
+      console.log('[v0] Aprobados: Sub docs sample (first 3):', subDocs.slice(0, 3).map(d => ({ name: d.file_name, updated_at: d.updated_at, approved_at: d.approved_at })))
+    }
+    if (conductorDocs && conductorDocs.length > 0) {
+      console.log('[v0] Aprobados: Conductor docs sample (first 3):', conductorDocs.slice(0, 3).map(d => ({ name: d.original_filename, updated_at: d.updated_at, validated_at: d.validated_at })))
+    }
+    if (allDocs.length > 0) {
+      console.log('[v0] Aprobados: Normalized docs sample (first 3):', allDocs.slice(0, 3).map(d => ({ 
+        id: d.id, 
+        reviewed_at: d.reviewed_at, 
+        source: d.document_source,
+        validated_at: (d as any).validated_at,
+        approved_at: (d as any).approved_at 
+      })))
     }
 
     return NextResponse.json({
