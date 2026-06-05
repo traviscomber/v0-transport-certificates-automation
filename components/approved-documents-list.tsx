@@ -9,7 +9,6 @@ import { CheckCircle2, FileText, Calendar, User, Building2, Eye, Download, Chevr
 import { PDFViewer } from '@/components/pdf-viewer'
 import { useDocumentSync } from '@/contexts/document-sync-context'
 import { getChileDate, getChileTime } from '@/lib/timezone-utils'
-import { DocumentFilter, type DocumentFilters } from '@/components/document-filter'
 import { DocumentsByMonth } from '@/components/documents-by-month'
 import { groupDocumentsByMonth } from '@/lib/document-grouping'
 import { ApprovedDocumentCard } from '@/components/approved-document-card'
@@ -44,7 +43,6 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   const [conductorDocs, setConductorDocs] = useState(initialConductorDocs)
   const [subDocs, setSubDocs] = useState(initialSubDocs)
   const [previewDoc, setPreviewDoc] = useState<ApprovedDocument | null>(null)
-  const [filters, setFilters] = useState<DocumentFilters>({ searchQuery: '' })
   const [displayCount, setDisplayCount] = useState(350) // Start with 350 documents to avoid overload
   const { onSync } = useDocumentSync()
   
@@ -87,13 +85,13 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
     }
   })
 
+  // Get unique executives for display only (not for filtering)
   const getExecutive = (doc: ApprovedDocument) => {
-    // Return assigned executive name (now populated from transportistas.assigned_executive_id)
-    return doc.ejecutiva || doc.reviewed_by_ejecutiva || 'No especificado'
+    return doc.approved_by_email?.split('@')[0] || doc.reviewed_by_ejecutiva || doc.ejecutiva || 'No especificado'
   }
 
   const getApprovalDate = (doc: ApprovedDocument) => {
-    const dateStr = doc.updated_at || doc.reviewed_at || doc.created_at
+    const dateStr = doc.validated_at || doc.approved_at || doc.updated_at || doc.reviewed_at || doc.created_at
     return getChileDate(dateStr)
   }
 
@@ -102,110 +100,8 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
     return getChileTime(dateStr)
   }
 
-  // Get unique executives and companies for filter options
-  const executives = useMemo(() => {
-    const execs = new Map<string, string>()
-    allDocs.forEach((doc) => {
-      const exec = getExecutive(doc)
-      if (exec && exec !== 'No especificado') {
-        execs.set(exec, exec)
-      }
-    })
-    return Array.from(execs).map(([id, nombre]) => ({ id, nombre }))
-  }, [allDocs])
-
-  const companies = useMemo(() => {
-    const comps = new Map<string, { nombre: string; rut: string }>()
-    allDocs.forEach((doc) => {
-      try {
-        if (doc.transportistas) {
-          const comp = Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas
-          if (comp && comp.razon_social) {
-            comps.set(comp.id || comp.rut, { nombre: comp.razon_social, rut: comp.rut || '' })
-          }
-        }
-        // For subcontractor docs, try to get company from subcontractor_rut
-        if ((doc as any).subcontractor_rut && !doc.transportistas) {
-          comps.set((doc as any).subcontractor_rut, { nombre: 'Empresa', rut: (doc as any).subcontractor_rut })
-        }
-      } catch (e) {
-        console.log('[v0] Error extracting company:', e)
-      }
-    })
-    return Array.from(comps).map(([id, data]) => ({ id, ...data }))
-  }, [allDocs])
-
-  // Filter documents based on filter criteria
-  const filteredDocs = useMemo(() => {
-    return allDocs.filter((doc) => {
-      // Search query
-      if (filters.searchQuery) {
-        const query = filters.searchQuery.toLowerCase()
-        const filename = (doc.original_filename || doc.document_name || '').toLowerCase()
-        const company = doc.transportistas ? ((Array.isArray(doc.transportistas) ? doc.transportistas[0]?.razon_social : doc.transportistas?.razon_social) || '') : ''
-        const conductor = doc.conductores ? ((Array.isArray(doc.conductores) ? doc.conductores[0]?.nombres : doc.conductores?.nombres) || '') : ''
-        
-        if (!filename.includes(query) && !company.toLowerCase().includes(query) && !conductor.toLowerCase().includes(query)) {
-          return false
-        }
-      }
-
-      // Date range filter (month filter)
-      if (filters.dateFrom || filters.dateTo) {
-        const docDate = new Date(doc.created_at)
-        if (filters.dateFrom) {
-          const dateFrom = new Date(filters.dateFrom)
-          if (docDate < dateFrom) {
-            return false
-          }
-        }
-        if (filters.dateTo) {
-          const dateTo = new Date(filters.dateTo)
-          dateTo.setHours(23, 59, 59, 999) // Include entire day
-          if (docDate > dateTo) {
-            return false
-          }
-        }
-      }
-
-      // Executive filter
-      if (filters.executiveId) {
-        if (getExecutive(doc) !== filters.executiveId) {
-          return false
-        }
-      }
-
-      // Company filter
-      if (filters.companyId) {
-        try {
-          const docCompany = doc.transportistas ? (Array.isArray(doc.transportistas) ? doc.transportistas[0]?.id : doc.transportistas?.id) : (doc as any).subcontractor_rut
-          if (docCompany !== filters.companyId) {
-            return false
-          }
-        } catch (e) {
-          return false
-        }
-      }
-
-      return true
-    })
-  }, [allDocs, filters])
-
-  if (allDocs.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 px-4">
-        <div className="rounded-full bg-green-500/10 p-3 mb-4">
-          <CheckCircle2 className="h-12 w-12 text-green-500" />
-        </div>
-        <p className="text-lg font-medium text-slate-300">No hay documentos aprobados aún</p>
-        <p className="text-sm text-slate-500 mt-2">Los documentos aprobados aparecerán aquí</p>
-      </div>
-    )
-  }
-
-  // If we have documents, use filtered documents (respects search query, executive, company, and date filters)
-  // Show all documents only if no filters are applied
-  const docsToDisplay = filteredDocs.length > 0 || filters.searchQuery || filters.executiveId || filters.companyId || filters.dateFrom || filters.dateTo ? filteredDocs : allDocs
+  // Simplified: Just show all documents (date filtering is done in parent page component)
+  const docsToDisplay = allDocs
   
   // Apply pagination - only show displayCount documents
   const paginatedDocs = docsToDisplay.slice(0, displayCount)
@@ -214,16 +110,11 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
 
   return (
     <>
-      {/* Always show filter */}
-      <DocumentFilter 
-        onFilterChange={setFilters}
-        executives={executives}
-        companies={companies}
-      />
+      {/* DocumentFilter removed - using date filter in page instead */}
       
-      {docsToDisplay.length === 0 && (filters.searchQuery || filters.executiveId || filters.companyId || filters.dateFrom || filters.dateTo) ? (
+      {docsToDisplay.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 px-4">
-          <p className="text-slate-400">No hay documentos que coincidan con los filtros seleccionados</p>
+          <p className="text-slate-400">No hay documentos aprobados</p>
         </div>
       ) : (
         <>
