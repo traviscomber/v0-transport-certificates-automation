@@ -71,6 +71,15 @@ export async function GET() {
     
     const conductorDocs = allConductorDocs
     console.log('[v0] Aprobados: Total conductor documents:', conductorDocs?.length || 0)
+    
+    // DEBUG: Get all unique status values in subcontractor_documents
+    const { data: substatusCheck } = await supabase
+      .from('subcontractor_documents')
+      .select('status')
+      .limit(5000)
+    
+    const uniqueSubStatuses = new Set(substatusCheck?.map((d: any) => d.status) || [])
+    console.log('[v0] DEBUG: Unique subcontractor status values:', Array.from(uniqueSubStatuses))
 
     // Fetch conductor details manually to avoid join failures
     let conductorMap = new Map<string, any>()
