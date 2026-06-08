@@ -168,7 +168,14 @@ export async function GET() {
     
     const subDocs = allSubDocs
     console.log('[v0] Aprobados: Fetched', subDocs?.length || 0, 'subcontractor documents in', subPage, 'pages')
-    console.log('[v0] Aprobados: TOTAL =', (conductorDocs?.length || 0) + (subDocs?.length || 0), 'docs')
+    console.log('[v0] Aprobados: Conductor docs:', conductorDocs?.length || 0)
+    console.log('[v0] Aprobados: TOTAL =', (conductorDocs?.length || 0) + (subDocs?.length || 0), 'docs (expected: 29 + 1870 = 1899)')
+    
+    // DEBUG: Check if any subcontractor docs don't have subcontractor_id
+    const docsWithoutSubId = (subDocs as any[]).filter(d => !d.subcontractor_id)
+    if (docsWithoutSubId.length > 0) {
+      console.log('[v0] WARNING: Found', docsWithoutSubId.length, 'subcontractor docs without subcontractor_id')
+    }
 
     // Fetch transportistas manually
     let transportistasMap = new Map<string, any>()
