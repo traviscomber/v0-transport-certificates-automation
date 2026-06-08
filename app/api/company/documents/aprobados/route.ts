@@ -238,7 +238,7 @@ export async function GET() {
       }
     }
 
-    // Normalize conductor docs
+    // Normalize conductor docs - keep only serializable fields
     const normalizedConductor = (conductorDocs || []).map((doc: any) => {
       const fileExtension = doc.original_filename?.split('.').pop()?.toLowerCase() || ''
       const file_type = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(fileExtension) 
@@ -260,13 +260,12 @@ export async function GET() {
         created_at: doc.created_at,
         updated_at: doc.updated_at,
         reviewed_at: doc.validated_at || doc.updated_at,
-        conductores: conductorMap.get(doc.conductor_id),
-        docType: docTypeMap.get(doc.document_type_id),
         document_source: 'conductor'
+        // Remove: conductores, docType - these cause circular references and increase payload
       }
     })
 
-    // Normalize subcontractor docs
+    // Normalize subcontractor docs - keep only serializable fields
     const normalizedSub = (subDocs || []).map((doc: any) => {
       const fileExtension = doc.file_name?.split('.').pop()?.toLowerCase() || ''
       const file_type = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(fileExtension) 
@@ -291,13 +290,10 @@ export async function GET() {
         created_at: doc.created_at,
         updated_at: doc.updated_at,
         reviewed_at: doc.approved_at || doc.updated_at,
-        transportistas: transportistasMap.get(doc.subcontractor_id) || {
-          id: doc.subcontractor_id,
-          razon_social: 'Subcontratista',
-          rut: doc.subcontractor_rut
-        },
-        docType: docTypeMap.get(doc.document_type_id),
+        subcontractor_id: doc.subcontractor_id,
+        subcontractor_rut: doc.subcontractor_rut,
         document_source: 'subcontractor'
+        // Remove: transportistas, docType - these cause circular references
       }
     })
 
