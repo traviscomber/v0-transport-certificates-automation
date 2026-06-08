@@ -147,7 +147,7 @@ export async function GET() {
       
       const { data: subDocsPage, error: pageError } = await supabase
         .from('subcontractor_documents')
-        .select('id, file_name, document_type_id, status, file_url, approved_at, approved_by_email, reviewed_by_ejecutiva, created_at, updated_at, subcontractor_id, subcontractor_rut')
+        .select('id, file_name, document_type_id, status, file_url, approved_at, reviewed_by_ejecutiva, reviewed_at, created_at, updated_at, subcontractor_id, subcontractor_rut')
         .eq('status', 'approved')
         .order('updated_at', { ascending: false })
         .range(start, end)
@@ -168,14 +168,6 @@ export async function GET() {
     
     const subDocs = allSubDocs
     console.log('[v0] Aprobados: Fetched', subDocs?.length || 0, 'subcontractor documents in', subPage, 'pages')
-    console.log('[v0] Aprobados: Conductor docs:', conductorDocs?.length || 0)
-    console.log('[v0] Aprobados: TOTAL =', (conductorDocs?.length || 0) + (subDocs?.length || 0), 'docs (expected: 29 + 1870 = 1899)')
-    
-    // DEBUG: Check if any subcontractor docs don't have subcontractor_id
-    const docsWithoutSubId = (subDocs as any[]).filter(d => !d.subcontractor_id)
-    if (docsWithoutSubId.length > 0) {
-      console.log('[v0] WARNING: Found', docsWithoutSubId.length, 'subcontractor docs without subcontractor_id')
-    }
 
     // Fetch transportistas manually
     let transportistasMap = new Map<string, any>()
@@ -284,12 +276,11 @@ export async function GET() {
         file_url: doc.file_url,
         file_type: file_type,
         approved_at: doc.approved_at || doc.updated_at,
-        approved_by_email: doc.approved_by_email,
         reviewed_by_ejecutiva: assignedEjecutiva,
         ejecutiva: assignedEjecutiva,
         created_at: doc.created_at,
         updated_at: doc.updated_at,
-        reviewed_at: doc.approved_at || doc.updated_at,
+        reviewed_at: doc.reviewed_at || doc.approved_at || doc.updated_at,
         subcontractor_id: doc.subcontractor_id,
         subcontractor_rut: doc.subcontractor_rut,
         document_source: 'subcontractor'
