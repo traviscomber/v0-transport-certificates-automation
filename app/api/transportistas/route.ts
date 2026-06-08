@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { generateDefaultPassword } from '@/lib/password-utils'
 import bcrypt from 'bcryptjs'
 
 export async function GET(request: NextRequest) {
@@ -158,9 +159,8 @@ export async function POST(request: NextRequest) {
       throw error
     }
 
-    // Calculate password early (needed for auth creation and response)
-    const last4Digits = rut.slice(-4).replace(/[^0-9]/g, '')
-    const password = `labbe${last4Digits}`
+    // Calculate password using standard formula
+    const password = generateDefaultPassword(rut)
 
     // CRITICAL: Create auth record automatically for new transportista
     // Without this, the new user cannot login

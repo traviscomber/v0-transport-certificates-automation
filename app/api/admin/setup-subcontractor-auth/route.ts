@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { generateDefaultPassword } from '@/lib/password-utils'
 import bcrypt from 'bcryptjs'
 
 /**
@@ -41,8 +42,7 @@ export async function POST(request: NextRequest) {
 
       const authRecords = await Promise.all(
         batch.map(async (sub) => {
-          const last4Digits = sub.rut.slice(-4).replace(/[^0-9]/g, '')
-          const password = `labbe${last4Digits}`
+          const password = generateDefaultPassword(sub.rut)
           const passwordHash = await bcrypt.hash(password, 10)
 
           return {
