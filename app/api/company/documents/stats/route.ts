@@ -17,47 +17,58 @@ export async function GET(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // Get conductor documents - paginate all 1000+
-    const { data: condPage0 } = await supabase
-      .from('uploaded_documents')
-      .select('validation_status')
-      .range(0, 999)
+    // Use exact count queries (head: true) - avoids 1000-row limit and ordering issues
+    const countByStatus = async (table: string, statusCol: string, status: string) => {
+      const { count } = await supabase
+        .from(table)
+        .select('id', { count: 'exact', head: true })
+        .eq(statusCol, status)
+      return count || 0
+    }
 
-    const { data: condPage1 } = await supabase
-      .from('uploaded_documents')
-      .select('validation_status')
-      .range(1000, 1999)
+    const countTotal = async (table: string) => {
+      const { count } = await supabase
+        .from(table)
+        .select('id', { count: 'exact', head: true })
+      return count || 0
+    }
 
-    const allCond = [...(condPage0 || []), ...(condPage1 || [])]
+    // Conductor document counts
+    const [condTotal, condApproved, condRejected] = await Promise.all([
+      countTotal('uploaded_documents'),
+      countByStatus('uploaded_documents', 'validation_status', 'approved'),
+      countByStatus('uploaded_documents', 'validation_status', 'rejected'),
+    ])
 
     const conductorStats = {
-      total: allCond.length,
-      pendientes: allCond.filter(d => d.validation_status === 'pending' || !d.validation_status).length,
-      aprobados: allCond.filter(d => d.validation_status === 'approved').length,
-      rechazados: allCond.filter(d => d.validation_status === 'rejected').length,
+      total: condTotal,
+      pendientes: condTotal - condApproved - condRejected,
+      aprobados: condApproved,
+      rechazados: condRejected,
       vencidos: 0
     }
 
-    // Get subcontractor documents - paginate all 1000+
-    const { data: subPage0 } = await supabase
-      .from('subcontractor_documents')
-      .select('status')
-      .range(0, 999)
-
-    const { data: subPage1 } = await supabase
-      .from('subcontractor_documents')
-      .select('status')
-      .range(1000, 1999)
-
-    const allSub = [...(subPage0 || []), ...(subPage1 || [])]
+    // Subcontractor document counts
+    const [subTotal, subApproved, subRejected, subPending] = await Promise.all([
+      countTotal('subcontractor_documents'),
+      countByStatus('subcontractor_documents', 'status', 'approved'),
+      countByStatus('subcontractor_documents', 'status', 'rejected'),
+      countByStatus('subcontractor_documents', 'status', 'pending'),
+    ])
 
     const subStats = {
-      total: allSub.length,
-      pendientes: allSub.filter(d => d.status === 'pending').length,
-      aprobados: allSub.filter(d => d.status === 'approved').length,
-      rechazados: allSub.filter(d => d.status === 'rejected').length,
+      total: subTotal,
+      pendientes: subPending,
+      aprobados: subApproved,
+      rechazados: subRejected,
       vencidos: 0
     }
+
+    console.log('[v0] Stats counts:', {
+      conductorApproved: condApproved,
+      subApproved: subApproved,
+      totalApproved: condApproved + subApproved
+    })
 
     // Get certification stats
     const { data: certs } = await supabase
