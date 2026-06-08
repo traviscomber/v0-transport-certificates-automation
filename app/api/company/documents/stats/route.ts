@@ -70,14 +70,13 @@ export async function GET(request: NextRequest) {
       totalApproved: condApproved + subApproved
     })
 
-    // Get certification stats
-    const { data: certs } = await supabase
+    // Get certification stats - use exact count to avoid 1000-row limit
+    const { count: certsCount } = await supabase
       .from('transportistas')
-      .select('id')
-      .limit(1000)
+      .select('id', { count: 'exact', head: true })
 
     const certStats = {
-      total: certs?.length || 0,
+      total: certsCount || 0,
       vigentes: 0,
       porVencer: 0,
       vencidas: 0

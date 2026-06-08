@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import bcrypt from 'bcryptjs'
 
 export async function GET(request: NextRequest) {
   try {
@@ -157,11 +158,47 @@ export async function POST(request: NextRequest) {
       throw error
     }
 
+    // Calculate password early (needed for auth creation and response)
+    const last4Digits = rut.slice(-4).replace(/[^0-9]/g, '')
+    const password = `labbe${last4Digits}`
+
+    // CRITICAL: Create auth record automatically for new transportista
+    // Without this, the new user cannot login
+    const newTransportista = data?.[0]
+    if (newTransportista) {
+      const passwordHash = await bcrypt.hash(password, 10)
+
+      const { error: authError } = await supabase
+        .from('transportista_auth')
+        .insert({
+          transportista_id: newTransportista.id,
+          rut: rut,
+          password_hash: passwordHash,
+          is_active: true,
+          created_at: new Date().toISOString(),
+        })
+
+      if (authError) {
+        console.error('[v0] Warning: Auth record creation failed:', authError)
+        // Don't fail the entire operation, but log the warning
+        return NextResponse.json({
+          success: true,
+          transportista: newTransportista,
+          assigned_executive: selectedExecutive,
+          auth_warning: 'Subcontratista creado pero la cuenta de acceso falló. Intente de nuevo.',
+          message: `Subcontratista creado y asignado a ${selectedExecutive.full_name}`
+        })
+      }
+
+      console.log(`[v0] Auth record created for RUT ${rut}: password format ${password}`)
+    }
+
     return NextResponse.json({
       success: true,
-      transportista: data?.[0],
+      transportista: newTransportista,
       assigned_executive: selectedExecutive,
-      message: `Subcontratista creado y asignado a ${selectedExecutive.full_name}`
+      default_password: password,
+      message: `Subcontratista creado y asignado a ${selectedExecutive.full_name}. Puede hacer login inmediatamente.`
     })
   } catch (error) {
     return NextResponse.json(
