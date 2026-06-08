@@ -71,15 +71,6 @@ export async function GET() {
     
     const conductorDocs = allConductorDocs
     console.log('[v0] Aprobados: Total conductor documents:', conductorDocs?.length || 0)
-    
-    // DEBUG: Get all unique status values in subcontractor_documents
-    const { data: substatusCheck } = await supabase
-      .from('subcontractor_documents')
-      .select('status')
-      .limit(5000)
-    
-    const uniqueSubStatuses = new Set(substatusCheck?.map((d: any) => d.status) || [])
-    console.log('[v0] DEBUG: Unique subcontractor status values:', Array.from(uniqueSubStatuses))
 
     // Fetch conductor details manually to avoid join failures
     let conductorMap = new Map<string, any>()
@@ -158,8 +149,8 @@ export async function GET() {
         .from('subcontractor_documents')
         .select('id, file_name, document_type_id, status, file_url, approved_at, approved_by_email, reviewed_by_ejecutiva, created_at, updated_at, subcontractor_id, subcontractor_rut')
         .eq('status', 'approved')
-        .range(start, end)
         .order('updated_at', { ascending: false })
+        .range(start, end)
       
       if (pageError) {
         console.error('[v0] Aprobados: Subcontractor page error:', pageError)
