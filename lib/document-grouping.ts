@@ -67,9 +67,24 @@ export function groupDocumentsByMonth(
   const grouped = new Map<string, { monthKey: string; documents: any[] }>()
   
   documents.forEach((doc) => {
-    const dateValue = doc[dateField]
+    // For each document, use the best available approval date
+    let dateValue = doc[dateField]
+    
+    // Smart fallback chain for approval documents:
+    // 1. Use the specified field (validated_at or approved_at)
+    // 2. If empty, try the other approval field
+    // 3. Then fall back to updated_at, then created_at
+    if (!dateValue) {
+      if (dateField === 'validated_at') {
+        dateValue = doc.approved_at || doc.updated_at || doc.created_at
+      } else if (dateField === 'approved_at') {
+        dateValue = doc.validated_at || doc.updated_at || doc.created_at
+      } else {
+        dateValue = doc.validated_at || doc.approved_at || doc.updated_at || doc.created_at
+      }
+    }
+    
     const monthKey = getMonthKey(dateValue)
-    const monthYear = getMonthYear(dateValue, locale)
     
     if (!grouped.has(monthKey)) {
       grouped.set(monthKey, { monthKey, documents: [] })
@@ -80,12 +95,27 @@ export function groupDocumentsByMonth(
   // Sort by month (newest first)
   const sorted = Array.from(grouped.entries())
     .sort((a, b) => b[0].localeCompare(a[0]))
-    .map(([monthKey, { documents: docs }]) => ({
-      month: getMonthYear(docs[0]?.[dateField], locale),
-      monthKey,
-      documents: docs,
-      count: docs.length
-    }))
+    .map(([monthKey, { documents: docs }]) => {
+      // Get the best date from first doc for display - use same fallback chain
+      const firstDoc = docs[0]
+      let displayDate = firstDoc[dateField]
+      if (!displayDate) {
+        if (dateField === 'validated_at') {
+          displayDate = firstDoc.approved_at || firstDoc.updated_at || firstDoc.created_at
+        } else if (dateField === 'approved_at') {
+          displayDate = firstDoc.validated_at || firstDoc.updated_at || firstDoc.created_at
+        } else {
+          displayDate = firstDoc.validated_at || firstDoc.approved_at || firstDoc.updated_at || firstDoc.created_at
+        }
+      }
+      
+      return {
+        month: getMonthYear(displayDate, locale),
+        monthKey,
+        documents: docs,
+        count: docs.length
+      }
+    })
   
   return sorted
 }
