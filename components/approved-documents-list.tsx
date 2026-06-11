@@ -23,6 +23,7 @@ import { ApprovedDocumentCard } from '@/components/approved-document-card'
 // Sentinel constants — Radix UI SelectItem crashes on value=""
 const ALL_EXEC = '__all_exec__'
 const ALL_TYPE = '__all_type__'
+const ALL_EMPRESA = '__all_empresa__'
 
 interface ApprovedDocument {
   id: string
@@ -41,6 +42,7 @@ interface ApprovedDocument {
   approved_by_email?: string
   reviewed_by_ejecutiva?: string
   docType?: { code: string; nombre: string }
+  empresa_nombre?: string | null
   conductores?: { id: string; nombres: string; apellido_paterno: string; rut: string }
   transportistas?: { id: string; razon_social: string; rut: string }
 }
@@ -60,6 +62,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   const [searchText, setSearchText] = useState('')
   const [selectedExecutive, setSelectedExecutive] = useState(ALL_EXEC)
   const [selectedDocType, setSelectedDocType] = useState(ALL_TYPE)
+  const [selectedEmpresa, setSelectedEmpresa] = useState(ALL_EMPRESA)
   const [selectedPeriod, setSelectedPeriod] = useState('all')
   const [showFilters, setShowFilters] = useState(true)
 
@@ -115,6 +118,14 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
     return Array.from(set).sort()
   }, [allDocs])
 
+  const empresas = useMemo(() => {
+    const set = new Set<string>()
+    allDocs.forEach(doc => {
+      if (doc.empresa_nombre) set.add(doc.empresa_nombre)
+    })
+    return Array.from(set).sort()
+  }, [allDocs])
+
   // Apply all filters in a single useMemo — pure computation, no side effects
   const filteredDocs = useMemo(() => {
     let result = allDocs
@@ -137,6 +148,10 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
       result = result.filter(doc => doc.docType?.nombre === selectedDocType)
     }
 
+    if (selectedEmpresa !== ALL_EMPRESA) {
+      result = result.filter(doc => doc.empresa_nombre === selectedEmpresa)
+    }
+
     if (selectedPeriod !== 'all') {
       const now = new Date()
       const cutoffs: Record<string, number> = {
@@ -154,18 +169,20 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
     }
 
     return result
-  }, [allDocs, searchText, selectedExecutive, selectedDocType, selectedPeriod])
+  }, [allDocs, searchText, selectedExecutive, selectedDocType, selectedEmpresa, selectedPeriod])
 
   const hasActiveFilters =
     searchText.trim() !== '' ||
     selectedExecutive !== ALL_EXEC ||
     selectedDocType !== ALL_TYPE ||
+    selectedEmpresa !== ALL_EMPRESA ||
     selectedPeriod !== 'all'
 
   const handleClearFilters = () => {
     setSearchText('')
     setSelectedExecutive(ALL_EXEC)
     setSelectedDocType(ALL_TYPE)
+    setSelectedEmpresa(ALL_EMPRESA)
     setSelectedPeriod('all')
   }
 
@@ -213,7 +230,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               {/* Period */}
               <div>
                 <label className="text-xs font-medium text-slate-400 block mb-2">Período</label>
@@ -227,6 +244,22 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
                     <SelectItem value="week">Última semana</SelectItem>
                     <SelectItem value="month">Último mes</SelectItem>
                     <SelectItem value="quarter">Último trimestre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Empresa */}
+              <div>
+                <label className="text-xs font-medium text-slate-400 block mb-2">Empresa</label>
+                <Select value={selectedEmpresa} onValueChange={setSelectedEmpresa}>
+                  <SelectTrigger className="bg-slate-900 border-slate-700 text-slate-100">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-700">
+                    <SelectItem value={ALL_EMPRESA}>Todas las empresas</SelectItem>
+                    {empresas.map(emp => (
+                      <SelectItem key={emp} value={emp}>{emp}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
