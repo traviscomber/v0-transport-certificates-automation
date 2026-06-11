@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -115,9 +115,14 @@ export function ApprovedDocumentsFilters({ docs, onFiltersChange }: ApprovedDocu
       }
     }
 
-    onFiltersChangeRef.current(result)
     return result
   }, [docs, searchText, selectedExecutive, selectedDocType, selectedPeriod])
+
+  // Notify parent after render — useRef prevents onFiltersChange from being a dep
+  useEffect(() => {
+    onFiltersChangeRef.current(filteredDocs)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredDocs])
 
   const hasActiveFilters = searchText.trim() !== '' || selectedExecutive !== '__all_exec__' || selectedDocType !== '__all_type__' || selectedPeriod !== 'all'
 
