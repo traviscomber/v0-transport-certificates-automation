@@ -111,11 +111,17 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   }, [allDocs])
 
   const docTypes = useMemo(() => {
-    const set = new Set<string>()
+    // Key by code to deduplicate entries that have the same code but different nombre
+    // (e.g. "Licencia de Conducir" vs "Licencia de Conducir Profesional" both map to LIC*)
+    const map = new Map<string, string>() // code -> nombre (display label)
     allDocs.forEach(doc => {
-      if (doc.docType?.nombre) set.add(doc.docType.nombre)
+      if (doc.docType?.code && doc.docType?.nombre && !map.has(doc.docType.code)) {
+        map.set(doc.docType.code, doc.docType.nombre)
+      }
     })
-    return Array.from(set).sort()
+    return Array.from(map.entries())
+      .map(([code, nombre]) => ({ code, nombre }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre))
   }, [allDocs])
 
   const empresas = useMemo(() => {
@@ -145,7 +151,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
     }
 
     if (selectedDocType !== ALL_TYPE) {
-      result = result.filter(doc => doc.docType?.nombre === selectedDocType)
+      result = result.filter(doc => doc.docType?.code === selectedDocType)
     }
 
     if (selectedEmpresa !== ALL_EMPRESA) {
@@ -289,8 +295,8 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
                   </SelectTrigger>
                   <SelectContent className="bg-slate-900 border-slate-700">
                     <SelectItem value={ALL_TYPE}>Todos los tipos</SelectItem>
-                    {docTypes.map(type => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    {docTypes.map(({ code, nombre }) => (
+                      <SelectItem key={code} value={code}>{nombre}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

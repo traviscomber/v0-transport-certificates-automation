@@ -3,8 +3,9 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { FileText, Calendar, User, Building2, Eye, Download } from 'lucide-react'
+import { Calendar, User, Building2, Eye, Download } from 'lucide-react'
 import { getChileDate, getChileTime } from '@/lib/timezone-utils'
+import { getDocTypeIcon } from '@/lib/document-type-icons'
 
 interface ApprovedDocumentCardProps {
   doc: any
@@ -13,6 +14,9 @@ interface ApprovedDocumentCardProps {
 }
 
 export function ApprovedDocumentCard({ doc, onPreview, getExecutive }: ApprovedDocumentCardProps) {
+  const iconConfig = getDocTypeIcon(doc.docType)
+  const IconComponent = iconConfig.icon
+
   const getApprovalDate = (doc: any) => {
     const dateStr = doc.updated_at || doc.reviewed_at || doc.created_at
     return getChileDate(dateStr)
@@ -30,8 +34,8 @@ export function ApprovedDocumentCard({ doc, onPreview, getExecutive }: ApprovedD
           {/* Left section with icon and details */}
           <div className="flex items-start gap-4 flex-1 min-w-0">
             <div className="flex-shrink-0">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-500/10 border border-green-500/20">
-                <FileText className="h-6 w-6 text-green-500" />
+              <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${iconConfig.bg} border ${iconConfig.border}`}>
+                <IconComponent className={`h-5 w-5 ${iconConfig.color}`} strokeWidth={1.5} />
               </div>
             </div>
             
@@ -85,7 +89,8 @@ export function ApprovedDocumentCard({ doc, onPreview, getExecutive }: ApprovedD
               ✓ Aprobado
             </Badge>
             {doc.docType && (
-              <Badge variant="outline" className="text-xs bg-blue-500/10 border-blue-500/30 text-blue-300 whitespace-nowrap">
+              <Badge variant="outline" className={`text-xs font-medium ${iconConfig.bg} ${iconConfig.border} ${iconConfig.color} whitespace-nowrap flex items-center gap-1 px-2 py-0.5`}>
+                <IconComponent className="h-3 w-3 flex-shrink-0" strokeWidth={1.5} />
                 {doc.docType.nombre}
               </Badge>
             )}
