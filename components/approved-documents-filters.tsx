@@ -34,8 +34,8 @@ interface ApprovedDocumentsFiltersProps {
 
 export function ApprovedDocumentsFilters({ docs, onFiltersChange }: ApprovedDocumentsFiltersProps) {
   const [searchText, setSearchText] = useState('')
-  const [selectedExecutive, setSelectedExecutive] = useState<string | null>(null)
-  const [selectedDocType, setSelectedDocType] = useState<string | null>(null)
+  const [selectedExecutive, setSelectedExecutive] = useState<string>('__all_exec__')
+  const [selectedDocType, setSelectedDocType] = useState<string>('__all_type__')
   const [selectedPeriod, setSelectedPeriod] = useState<string>('all')
   const [showFilters, setShowFilters] = useState(true)
 
@@ -76,7 +76,7 @@ export function ApprovedDocumentsFilters({ docs, onFiltersChange }: ApprovedDocu
     }
 
     // Executive filter
-    if (selectedExecutive) {
+    if (selectedExecutive !== '__all_exec__') {
       result = result.filter(doc => {
         const exec = doc.approved_by_email?.split('@')[0] || doc.reviewed_by_ejecutiva || doc.ejecutiva
         return exec === selectedExecutive
@@ -84,7 +84,7 @@ export function ApprovedDocumentsFilters({ docs, onFiltersChange }: ApprovedDocu
     }
 
     // Document type filter
-    if (selectedDocType) {
+    if (selectedDocType !== '__all_type__') {
       result = result.filter(doc => doc.docType?.nombre === selectedDocType)
     }
 
@@ -115,12 +115,12 @@ export function ApprovedDocumentsFilters({ docs, onFiltersChange }: ApprovedDocu
     return result
   }, [docs, searchText, selectedExecutive, selectedDocType, selectedPeriod, onFiltersChange])
 
-  const hasActiveFilters = searchText.trim() || selectedExecutive || selectedDocType || selectedPeriod !== 'all'
+  const hasActiveFilters = searchText.trim() !== '' || selectedExecutive !== '__all_exec__' || selectedDocType !== '__all_type__' || selectedPeriod !== 'all'
 
   const handleClearFilters = () => {
     setSearchText('')
-    setSelectedExecutive(null)
-    setSelectedDocType(null)
+    setSelectedExecutive('__all_exec__')
+    setSelectedDocType('__all_type__')
     setSelectedPeriod('all')
   }
 
@@ -186,12 +186,12 @@ export function ApprovedDocumentsFilters({ docs, onFiltersChange }: ApprovedDocu
               <label className="text-xs font-medium text-slate-400 block mb-2">
                 Ejecutiva
               </label>
-              <Select value={selectedExecutive || ''} onValueChange={(val) => setSelectedExecutive(val || null)}>
+              <Select value={selectedExecutive} onValueChange={setSelectedExecutive}>
                 <SelectTrigger className="bg-slate-900 border-slate-700 text-slate-100">
                   <SelectValue placeholder="Todas las ejecutivas" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-900 border-slate-700">
-                  <SelectItem value="">Todas las ejecutivas</SelectItem>
+                  <SelectItem value="__all_exec__">Todas las ejecutivas</SelectItem>
                   {executives.map(exec => (
                     <SelectItem key={exec} value={exec}>
                       {exec}
@@ -206,12 +206,12 @@ export function ApprovedDocumentsFilters({ docs, onFiltersChange }: ApprovedDocu
               <label className="text-xs font-medium text-slate-400 block mb-2">
                 Tipo de documento
               </label>
-              <Select value={selectedDocType || ''} onValueChange={(val) => setSelectedDocType(val || null)}>
+              <Select value={selectedDocType} onValueChange={setSelectedDocType}>
                 <SelectTrigger className="bg-slate-900 border-slate-700 text-slate-100">
                   <SelectValue placeholder="Todos los tipos" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-900 border-slate-700">
-                  <SelectItem value="">Todos los tipos</SelectItem>
+                  <SelectItem value="__all_type__">Todos los tipos</SelectItem>
                   {docTypes.map(type => (
                     <SelectItem key={type} value={type}>
                       {type}
