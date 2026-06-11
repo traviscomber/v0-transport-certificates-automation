@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -33,6 +33,10 @@ interface ApprovedDocumentsFiltersProps {
 }
 
 export function ApprovedDocumentsFilters({ docs, onFiltersChange }: ApprovedDocumentsFiltersProps) {
+  // Stable ref to avoid adding onFiltersChange to useMemo deps (causes infinite loop)
+  const onFiltersChangeRef = useRef(onFiltersChange)
+  onFiltersChangeRef.current = onFiltersChange
+
   const [searchText, setSearchText] = useState('')
   const [selectedExecutive, setSelectedExecutive] = useState<string>('__all_exec__')
   const [selectedDocType, setSelectedDocType] = useState<string>('__all_type__')
@@ -111,9 +115,9 @@ export function ApprovedDocumentsFilters({ docs, onFiltersChange }: ApprovedDocu
       }
     }
 
-    onFiltersChange(result)
+    onFiltersChangeRef.current(result)
     return result
-  }, [docs, searchText, selectedExecutive, selectedDocType, selectedPeriod, onFiltersChange])
+  }, [docs, searchText, selectedExecutive, selectedDocType, selectedPeriod])
 
   const hasActiveFilters = searchText.trim() !== '' || selectedExecutive !== '__all_exec__' || selectedDocType !== '__all_type__' || selectedPeriod !== 'all'
 
