@@ -162,18 +162,26 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
     }
 
     if (selectedPeriod !== 'all') {
-      const now = new Date()
+      const now = Date.now()
+      const MS_DAY = 86400000
+      // 'today' uses start-of-day in local time
+      const todayStart = new Date()
+      todayStart.setHours(0, 0, 0, 0)
+
       const cutoffs: Record<string, number> = {
-        today: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(),
-        week:  now.getTime() - 7  * 86400000,
-        month: now.getTime() - 30 * 86400000,
-        quarter: now.getTime() - 90 * 86400000,
+        today:   todayStart.getTime(),
+        week:    now - 7  * MS_DAY,
+        month:   now - 30 * MS_DAY,
+        quarter: now - 90 * MS_DAY,
+        half:    now - 180 * MS_DAY,
       }
       const minTime = cutoffs[selectedPeriod]
-      if (minTime) {
-        result = result.filter(doc =>
-          new Date(doc.updated_at || doc.created_at).getTime() >= minTime
-        )
+      if (minTime !== undefined) {
+        result = result.filter(doc => {
+          const raw = doc.updated_at || doc.reviewed_at || doc.created_at
+          if (!raw) return false
+          return new Date(raw).getTime() >= minTime
+        })
       }
     }
 
@@ -253,6 +261,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
                     <SelectItem value="week">Última semana</SelectItem>
                     <SelectItem value="month">Último mes</SelectItem>
                     <SelectItem value="quarter">Último trimestre</SelectItem>
+                    <SelectItem value="half">Últimos 6 meses</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
