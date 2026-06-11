@@ -20,7 +20,16 @@ import { DocumentsByMonth } from '@/components/documents-by-month'
 import { groupDocumentsByMonth } from '@/lib/document-grouping'
 import { ApprovedDocumentCard } from '@/components/approved-document-card'
 
-// Sentinel constants — Radix UI SelectItem crashes on value=""
+// Safely parse a date string from Supabase.
+// Supabase timestamps come WITHOUT a 'Z' suffix (e.g. "2026-06-11T20:30:07.631").
+// Without 'Z', new Date() treats the string as LOCAL time instead of UTC,
+// which shifts the timestamp by the local UTC offset (Chile = UTC-4 → +4 hrs).
+// Appending 'Z' forces correct UTC interpretation in all browsers.
+function parseSupabaseDate(raw: string | null | undefined): number {
+  if (!raw) return 0
+  const normalized = raw.endsWith('Z') ? raw : raw + 'Z'
+  return new Date(normalized).getTime()
+}
 const ALL_EXEC = '__all_exec__'
 const ALL_TYPE = '__all_type__'
 const ALL_EMPRESA = '__all_empresa__'
@@ -94,18 +103,20 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   // Merge and sort all docs once
   const allDocs = useMemo(() => {
     return [...conductorDocs, ...subDocs].sort((a, b) => {
-      const dateB = new Date(b.updated_at || b.reviewed_at || b.created_at || 0).getTime()
-      const dateA = new Date(a.updated_at || a.reviewed_at || a.created_at || 0).getTime()
+      const dateB = parseSupabaseDate(b.updated_at || b.reviewed_at || b.created_at)
+      const dateA = parseSupabaseDate(a.updated_at || a.reviewed_at || a.created_at)
       return dateB - dateA
     })
   }, [conductorDocs, subDocs])
 
-  // Derive unique filter options from allDocs
+  // Derive unique executives from the canonical 'ejecutiva' field
+  // The API always normalizes this to executive_staff.full_name
   const executives = useMemo(() => {
     const set = new Set<string>()
     allDocs.forEach(doc => {
-      const exec = doc.approved_by_email?.split('@')[0] || doc.reviewed_by_ejecutiva || doc.ejecutiva
-      if (exec) set.add(exec)
+      // 'ejecutiva' is always the canonical full_name set by the API
+      const exec = doc.ejecutiva || doc.reviewed_by_ejecutiva
+      if (exec && exec !== 'No especificado') set.add(exec)
     })
     return Array.from(set).sort()
   }, [allDocs])
@@ -145,7 +156,8 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
 
     if (selectedExecutive !== ALL_EXEC) {
       result = result.filter(doc => {
-        const exec = doc.approved_by_email?.split('@')[0] || doc.reviewed_by_ejecutiva || doc.ejecutiva
+        // Match against the same canonical field used to build the dropdown
+        const exec = doc.ejecutiva || doc.reviewed_by_ejecutiva
         return exec === selectedExecutive
       })
     }
@@ -159,18 +171,25 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
     }
 
     if (selectedPeriod !== 'all') {
-      const now = new Date()
+      const now = Date.now()
+      const MS_DAY = 86400000
+      // 'today' uses start-of-day in local time
+      const todayStart = new Date()
+      todayStart.setHours(0, 0, 0, 0)
+
       const cutoffs: Record<string, number> = {
-        today: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(),
-        week:  now.getTime() - 7  * 86400000,
-        month: now.getTime() - 30 * 86400000,
-        quarter: now.getTime() - 90 * 86400000,
+        today:   todayStart.getTime(),
+        week:    now - 7  * MS_DAY,
+        month:   now - 30 * MS_DAY,
+        quarter: now - 90 * MS_DAY,
+        half:    now - 180 * MS_DAY,
       }
       const minTime = cutoffs[selectedPeriod]
-      if (minTime) {
-        result = result.filter(doc =>
-          new Date(doc.updated_at || doc.created_at).getTime() >= minTime
-        )
+      if (minTime !== undefined) {
+        result = result.filter(doc => {
+          const raw = doc.updated_at || doc.reviewed_at || doc.created_at
+          return parseSupabaseDate(raw) >= minTime
+        })
       }
     }
 
@@ -193,7 +212,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   }
 
   const getExecutive = (doc: ApprovedDocument) =>
-    doc.approved_by_email?.split('@')[0] || doc.reviewed_by_ejecutiva || doc.ejecutiva || 'No especificado'
+    doc.ejecutiva || doc.reviewed_by_ejecutiva || 'No especificado'
 
   // Pagination applied after filtering
   const paginatedDocs = filteredDocs.slice(0, displayCount)
@@ -250,6 +269,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
                     <SelectItem value="week">Última semana</SelectItem>
                     <SelectItem value="month">Último mes</SelectItem>
                     <SelectItem value="quarter">Último trimestre</SelectItem>
+                    <SelectItem value="half">Últimos 6 meses</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -349,7 +369,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
             <div className="flex flex-col items-center gap-3 py-6 px-4">
               <p className="text-sm text-slate-400">
                 Mostrando {paginatedDocs.length} de {filteredDocs.length} documentos
-                {remainingCount > 0 && ` (+${remainingCount} más)`}
+                {remainingCount > 0 && ` (+${remainingCount} m��s)`}
               </p>
               <Button
                 onClick={() => setDisplayCount(prev => prev + LOAD_MORE_INCREMENT)}

@@ -211,7 +211,8 @@ export async function GET() {
     const conductorDocTypeMap = new Map(conductorDocTypes?.map(dt => [dt.id, { code: dt.code, nombre: dt.name }]) || [])
 
     // Get assigned executives for subcontractors
-    let executiveMap = new Map<string, string>()
+    let executiveMap = new Map<string, string>()    // transportista.id -> full_name
+    let emailToNameMap = new Map<string, string>()  // any email variant -> full_name
     if (subDocs && subDocs.length > 0) {
       const subcontractorIds = [...new Set((subDocs as any[]).map(doc => doc.subcontractor_id))]
       
@@ -220,27 +221,59 @@ export async function GET() {
         .select('id, assigned_executive_id')
         .in('id', subcontractorIds)
 
-      if (transportistas && transportistas.length > 0) {
-        const executiveIds = transportistas
-          .map(t => t.assigned_executive_id)
-          .filter(Boolean) as string[]
+      // Always fetch ALL executive_staff to build a complete email resolution map
+      const { data: allExecutives } = await supabase
+        .from('executive_staff')
+        .select('id, full_name, email')
 
-        if (executiveIds.length > 0) {
-          const { data: executives } = await supabase
-            .from('executive_staff')
-            .select('id, full_name')
-
-          if (executives) {
-            const execMap = new Map(executives.map(e => [e.id, e.full_name]))
-            transportistas.forEach((t: any) => {
-              if (t.assigned_executive_id) {
-                const execName = execMap.get(t.assigned_executive_id)
-                if (execName) {
-                  executiveMap.set(t.id, execName)
-                }
-              }
-            })
+      if (allExecutives) {
+        allExecutives.forEach((e: any) => {
+          if (e.email) {
+            // Map exact email
+            emailToNameMap.set(e.email.toLowerCase(), e.full_name)
+            // Map username prefix (before @) to handle mismatched email formats
+            // e.g. "olga.carrasco@labbe.cl" -> "ocarrasco@labbe.cl" won't match
+            // but we also try last-name prefix: "ocarrasco" -> find exec with apellido match
           }
+        })
+
+        // Build a smarter map: for each reviewed_by_ejecutiva email in the docs,
+        // try to match against executive_staff by comparing the part before "@"
+        // "ocarrasco" → find "Olga ... Carrasco" (surname starts with "Carrasc")
+        // "csepulveda" → find "Carolina ... Sepulveda"
+        const distinctReviewerEmails = [...new Set(
+          (subDocs as any[]).map(d => d.reviewed_by_ejecutiva).filter(Boolean)
+        )] as string[]
+
+        for (const reviewerEmail of distinctReviewerEmails) {
+          if (emailToNameMap.has(reviewerEmail.toLowerCase())) continue // already resolved
+
+          const username = reviewerEmail.split('@')[0].toLowerCase() // "ocarrasco", "csepulveda"
+          // Username format: first_initial + last_name (e.g. "o" + "carrasco", "c" + "sepulveda")
+          const firstInitial = username[0]
+          const lastNamePart = username.slice(1) // "carrasco", "sepulveda", "ayala", "silva"
+
+          const matched = allExecutives.find((e: any) => {
+            if (!e.full_name) return false
+            const nameLower = e.full_name.toLowerCase()
+            const firstNameMatch = nameLower.startsWith(firstInitial)
+            const lastNameMatch = nameLower.includes(lastNamePart)
+            return firstNameMatch && lastNameMatch
+          })
+
+          if (matched) {
+            emailToNameMap.set(reviewerEmail.toLowerCase(), matched.full_name)
+          }
+        }
+
+        if (transportistas) {
+          const execMapById = new Map(allExecutives.map((e: any) => [e.id, e.full_name]))
+          transportistas.forEach((t: any) => {
+            if (t.assigned_executive_id) {
+              const execName = execMapById.get(t.assigned_executive_id)
+              if (execName) executiveMap.set(t.id, execName)
+            }
+          })
         }
       }
     }
@@ -281,7 +314,12 @@ export async function GET() {
         ? (fileExtension === 'pdf' ? 'pdf' : 'image')
         : 'unknown'
       
-      const assignedEjecutiva = executiveMap.get(doc.subcontractor_id) || doc.reviewed_by_ejecutiva || 'No especificado'
+      // Resolve ejecutiva: prefer executiveMap (full_name via assigned_executive_id),
+      // then convert email fallback to full_name via emailToNameMap,
+      // then raw reviewed_by_ejecutiva as last resort
+      const rawFallback = doc.reviewed_by_ejecutiva || null
+      const resolvedFallback = rawFallback ? (emailToNameMap.get(rawFallback) || rawFallback) : 'No especificado'
+      const assignedEjecutiva = executiveMap.get(doc.subcontractor_id) || resolvedFallback
       const empresa_nombre = transportistasMap.get(doc.subcontractor_id)?.razon_social || null
       
       return {
