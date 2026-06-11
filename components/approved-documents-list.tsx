@@ -100,12 +100,14 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
     })
   }, [conductorDocs, subDocs])
 
-  // Derive unique filter options from allDocs
+  // Derive unique executives from the canonical 'ejecutiva' field
+  // The API always normalizes this to executive_staff.full_name
   const executives = useMemo(() => {
     const set = new Set<string>()
     allDocs.forEach(doc => {
-      const exec = doc.approved_by_email?.split('@')[0] || doc.reviewed_by_ejecutiva || doc.ejecutiva
-      if (exec) set.add(exec)
+      // 'ejecutiva' is always the canonical full_name set by the API
+      const exec = doc.ejecutiva || doc.reviewed_by_ejecutiva
+      if (exec && exec !== 'No especificado') set.add(exec)
     })
     return Array.from(set).sort()
   }, [allDocs])
@@ -145,7 +147,8 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
 
     if (selectedExecutive !== ALL_EXEC) {
       result = result.filter(doc => {
-        const exec = doc.approved_by_email?.split('@')[0] || doc.reviewed_by_ejecutiva || doc.ejecutiva
+        // Match against the same canonical field used to build the dropdown
+        const exec = doc.ejecutiva || doc.reviewed_by_ejecutiva
         return exec === selectedExecutive
       })
     }
@@ -193,7 +196,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   }
 
   const getExecutive = (doc: ApprovedDocument) =>
-    doc.approved_by_email?.split('@')[0] || doc.reviewed_by_ejecutiva || doc.ejecutiva || 'No especificado'
+    doc.ejecutiva || doc.reviewed_by_ejecutiva || 'No especificado'
 
   // Pagination applied after filtering
   const paginatedDocs = filteredDocs.slice(0, displayCount)

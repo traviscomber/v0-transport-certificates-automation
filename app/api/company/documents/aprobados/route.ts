@@ -212,6 +212,7 @@ export async function GET() {
 
     // Get assigned executives for subcontractors
     let executiveMap = new Map<string, string>()
+    let emailToNameMap = new Map<string, string>() // email -> full_name fallback
     if (subDocs && subDocs.length > 0) {
       const subcontractorIds = [...new Set((subDocs as any[]).map(doc => doc.subcontractor_id))]
       
@@ -228,10 +229,14 @@ export async function GET() {
         if (executiveIds.length > 0) {
           const { data: executives } = await supabase
             .from('executive_staff')
-            .select('id, full_name')
+            .select('id, full_name, email')
 
           if (executives) {
-            const execMap = new Map(executives.map(e => [e.id, e.full_name]))
+            const execMap = new Map(executives.map((e: any) => [e.id, e.full_name]))
+            // Build email -> full_name map so we can resolve reviewed_by_ejecutiva emails to names
+            executives.forEach((e: any) => {
+              if (e.email) emailToNameMap.set(e.email, e.full_name)
+            })
             transportistas.forEach((t: any) => {
               if (t.assigned_executive_id) {
                 const execName = execMap.get(t.assigned_executive_id)
@@ -281,7 +286,12 @@ export async function GET() {
         ? (fileExtension === 'pdf' ? 'pdf' : 'image')
         : 'unknown'
       
-      const assignedEjecutiva = executiveMap.get(doc.subcontractor_id) || doc.reviewed_by_ejecutiva || 'No especificado'
+      // Resolve ejecutiva: prefer executiveMap (full_name via assigned_executive_id),
+      // then convert email fallback to full_name via emailToNameMap,
+      // then raw reviewed_by_ejecutiva as last resort
+      const rawFallback = doc.reviewed_by_ejecutiva || null
+      const resolvedFallback = rawFallback ? (emailToNameMap.get(rawFallback) || rawFallback) : 'No especificado'
+      const assignedEjecutiva = executiveMap.get(doc.subcontractor_id) || resolvedFallback
       const empresa_nombre = transportistasMap.get(doc.subcontractor_id)?.razon_social || null
       
       return {
