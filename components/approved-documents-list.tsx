@@ -12,6 +12,7 @@ import { getChileDate, getChileTime } from '@/lib/timezone-utils'
 import { DocumentsByMonth } from '@/components/documents-by-month'
 import { groupDocumentsByMonth } from '@/lib/document-grouping'
 import { ApprovedDocumentCard } from '@/components/approved-document-card'
+import { ApprovedDocumentsFilters } from '@/components/approved-documents-filters'
 
 interface ApprovedDocument {
   id: string
@@ -44,6 +45,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   const [subDocs, setSubDocs] = useState(initialSubDocs)
   const [previewDoc, setPreviewDoc] = useState<ApprovedDocument | null>(null)
   const [displayCount, setDisplayCount] = useState(350) // Start with 350 documents to avoid overload
+  const [filteredDocs, setFilteredDocs] = useState<ApprovedDocument[]>([])
   const { onSync } = useDocumentSync()
   
   const LOAD_MORE_INCREMENT = 300 // Load 300 more documents at a time
@@ -101,7 +103,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   }
 
   // Simplified: Just show all documents (date filtering is done in parent page component)
-  const docsToDisplay = allDocs
+  const docsToDisplay = filteredDocs.length > 0 ? filteredDocs : allDocs
   
   // Apply pagination - only show displayCount documents
   const paginatedDocs = docsToDisplay.slice(0, displayCount)
@@ -110,7 +112,11 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
 
   return (
     <>
-      {/* DocumentFilter removed - using date filter in page instead */}
+      {/* Filters Component */}
+      <ApprovedDocumentsFilters 
+        docs={allDocs}
+        onFiltersChange={setFilteredDocs}
+      />
       
       {docsToDisplay.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 px-4">
