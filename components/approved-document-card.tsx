@@ -91,7 +91,7 @@ export function ApprovedDocumentCard({ doc, onPreview, getExecutive }: ApprovedD
             {doc.docType && (
               <Badge variant="outline" className={`text-xs font-medium ${iconConfig.bg} ${iconConfig.border} ${iconConfig.color} whitespace-nowrap flex items-center gap-1 px-2 py-0.5`}>
                 <IconComponent className="h-3 w-3 flex-shrink-0" strokeWidth={1.5} />
-                {iconConfig.label}
+                {doc.docType.nombre}
               </Badge>
             )}
             {doc.file_url && (
