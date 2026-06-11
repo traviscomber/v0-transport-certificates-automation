@@ -188,12 +188,19 @@ export async function GET() {
       }
     }
 
-    // Fetch document types
+    // Fetch document types for subcontractors (subcontractor_document_types uses 'nombre')
     const { data: docTypes } = await supabase
       .from("subcontractor_document_types")
       .select("id, code, nombre")
 
     const docTypeMap = new Map(docTypes?.map(dt => [dt.id, { code: dt.code, nombre: dt.nombre }]) || [])
+
+    // Fetch document types for conductors (document_types uses 'name')
+    const { data: conductorDocTypes } = await supabase
+      .from("document_types")
+      .select("id, code, name")
+
+    const conductorDocTypeMap = new Map(conductorDocTypes?.map(dt => [dt.id, { code: dt.code, nombre: dt.name }]) || [])
 
     // Get assigned executives for subcontractors
     let executiveMap = new Map<string, string>()
@@ -243,6 +250,7 @@ export async function GET() {
         id: doc.id,
         original_filename: doc.original_filename,
         document_type_id: doc.document_type_id,
+        docType: conductorDocTypeMap.get(doc.document_type_id) || null,
         validation_status: doc.validation_status,
         status: doc.validation_status,
         file_url: doc.file_url,
@@ -253,7 +261,6 @@ export async function GET() {
         updated_at: doc.updated_at,
         reviewed_at: doc.validated_at || doc.updated_at,
         document_source: 'conductor'
-        // Remove: conductores, docType - these cause circular references and increase payload
       }
     })
 
@@ -272,6 +279,7 @@ export async function GET() {
         file_name: doc.file_name,
         original_filename: doc.file_name,
         document_type_id: doc.document_type_id,
+        docType: docTypeMap.get(doc.document_type_id) || null,
         status: doc.status,
         file_url: doc.file_url,
         file_type: file_type,
@@ -284,7 +292,6 @@ export async function GET() {
         subcontractor_id: doc.subcontractor_id,
         subcontractor_rut: doc.subcontractor_rut,
         document_source: 'subcontractor'
-        // Remove: transportistas, docType - these cause circular references
       }
     })
 
