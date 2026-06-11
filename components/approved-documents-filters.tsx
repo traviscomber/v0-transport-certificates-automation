@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,6 +13,10 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { X, Filter } from 'lucide-react'
 
+// Sentinel values — Radix UI SelectItem throws when value is empty string
+const ALL_EXEC = '__all_exec__'
+const ALL_TYPE = '__all_type__'
+
 interface ApprovedDocument {
   id: string
   original_filename?: string
@@ -24,121 +28,122 @@ interface ApprovedDocument {
   docType?: { code: string; nombre: string }
   created_at: string
   updated_at?: string
-  document_source?: string
 }
 
 interface ApprovedDocumentsFiltersProps {
-  docs: ApprovedDocument[]
-  onFiltersChange: (filteredDocs: ApprovedDocument[]) => void
+  allDocs: ApprovedDocument[]
+  // null means "clear filters, show everything"
+  onFiltersChange: (filteredDocs: ApprovedDocument[] | null) => void
 }
 
-export function ApprovedDocumentsFilters({ docs, onFiltersChange }: ApprovedDocumentsFiltersProps) {
-  // Stable ref to avoid adding onFiltersChange to useMemo deps (causes infinite loop)
-  const onFiltersChangeRef = useRef(onFiltersChange)
-  onFiltersChangeRef.current = onFiltersChange
-
+export function ApprovedDocumentsFilters({ allDocs, onFiltersChange }: ApprovedDocumentsFiltersProps) {
   const [searchText, setSearchText] = useState('')
-  const [selectedExecutive, setSelectedExecutive] = useState<string>('__all_exec__')
-  const [selectedDocType, setSelectedDocType] = useState<string>('__all_type__')
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('all')
+  const [selectedExecutive, setSelectedExecutive] = useState(ALL_EXEC)
+  const [selectedDocType, setSelectedDocType] = useState(ALL_TYPE)
+  const [selectedPeriod, setSelectedPeriod] = useState('all')
   const [showFilters, setShowFilters] = useState(true)
 
-  // Get unique executives
   const executives = useMemo(() => {
-    const execs = new Set<string>()
-    docs.forEach(doc => {
+    const seen = new Set<string>()
+    allDocs.forEach(doc => {
       const exec = doc.approved_by_email?.split('@')[0] || doc.reviewed_by_ejecutiva || doc.ejecutiva
-      if (exec && exec !== 'No especificado') {
-        execs.add(exec)
-      }
+      if (exec) seen.add(exec)
     })
-    return Array.from(execs).sort()
-  }, [docs])
+    return Array.from(seen).sort()
+  }, [allDocs])
 
-  // Get unique document types
   const docTypes = useMemo(() => {
-    const types = new Set<string>()
-    docs.forEach(doc => {
-      if (doc.docType?.nombre) {
-        types.add(doc.docType.nombre)
-      }
-    })
-    return Array.from(types).sort()
-  }, [docs])
+    const seen = new Set<string>()
+    allDocs.forEach(doc => { if (doc.docType?.nombre) seen.add(doc.docType.nombre) })
+    return Array.from(seen).sort()
+  }, [allDocs])
 
-  // Apply all filters
-  const filteredDocs = useMemo(() => {
-    let result = docs
+  const hasActiveFilters =
+    searchText.trim() !== '' ||
+    selectedExecutive !== ALL_EXEC ||
+    selectedDocType !== ALL_TYPE ||
+    selectedPeriod !== 'all'
 
-    // Search filter
-    if (searchText.trim()) {
-      const search = searchText.toLowerCase()
-      result = result.filter(doc => {
-        const filename = (doc.original_filename || doc.document_name || doc.file_name || '').toLowerCase()
-        return filename.includes(search)
+  // Pure filter function — no side effects, called directly from handlers
+  const compute = useCallback((
+    search: string,
+    exec: string,
+    type: string,
+    period: string,
+  ): ApprovedDocument[] | null => {
+    const noFilters =
+      search.trim() === '' &&
+      exec === ALL_EXEC &&
+      type === ALL_TYPE &&
+      period === 'all'
+
+    if (noFilters) return null
+
+    let result = allDocs
+
+    if (search.trim()) {
+      const s = search.toLowerCase()
+      result = result.filter(d =>
+        (d.original_filename || d.document_name || d.file_name || '').toLowerCase().includes(s)
+      )
+    }
+
+    if (exec !== ALL_EXEC) {
+      result = result.filter(d => {
+        const e = d.approved_by_email?.split('@')[0] || d.reviewed_by_ejecutiva || d.ejecutiva
+        return e === exec
       })
     }
 
-    // Executive filter
-    if (selectedExecutive !== '__all_exec__') {
-      result = result.filter(doc => {
-        const exec = doc.approved_by_email?.split('@')[0] || doc.reviewed_by_ejecutiva || doc.ejecutiva
-        return exec === selectedExecutive
-      })
+    if (type !== ALL_TYPE) {
+      result = result.filter(d => d.docType?.nombre === type)
     }
 
-    // Document type filter
-    if (selectedDocType !== '__all_type__') {
-      result = result.filter(doc => doc.docType?.nombre === selectedDocType)
-    }
-
-    // Period filter
-    if (selectedPeriod !== 'all') {
-      const now = new Date()
-      let minDate: Date | null = null
-      
-      if (selectedPeriod === 'today') {
-        minDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-      } else if (selectedPeriod === 'week') {
-        minDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-      } else if (selectedPeriod === 'month') {
-        minDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-      } else if (selectedPeriod === 'quarter') {
-        minDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
+    if (period !== 'all') {
+      const now = Date.now()
+      const minTs: Record<string, number> = {
+        today: new Date().setHours(0, 0, 0, 0),
+        week:    now - 7  * 86400000,
+        month:   now - 30 * 86400000,
+        quarter: now - 90 * 86400000,
       }
-
-      if (minDate) {
-        result = result.filter(doc => {
-          const docDate = new Date(doc.updated_at || doc.created_at)
-          return docDate >= minDate!
-        })
-      }
+      const min = minTs[period] ?? 0
+      result = result.filter(d => new Date(d.updated_at || d.created_at).getTime() >= min)
     }
 
     return result
-  }, [docs, searchText, selectedExecutive, selectedDocType, selectedPeriod])
+  }, [allDocs])
 
-  // Notify parent after render — useRef prevents onFiltersChange from being a dep
-  useEffect(() => {
-    onFiltersChangeRef.current(filteredDocs)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredDocs])
-
-  const hasActiveFilters = searchText.trim() !== '' || selectedExecutive !== '__all_exec__' || selectedDocType !== '__all_type__' || selectedPeriod !== 'all'
-
-  const handleClearFilters = () => {
+  // Handlers call compute() then onFiltersChange() directly — no reactive loops
+  const handleSearch = (val: string) => {
+    setSearchText(val)
+    onFiltersChange(compute(val, selectedExecutive, selectedDocType, selectedPeriod))
+  }
+  const handleExec = (val: string) => {
+    setSelectedExecutive(val)
+    onFiltersChange(compute(searchText, val, selectedDocType, selectedPeriod))
+  }
+  const handleType = (val: string) => {
+    setSelectedDocType(val)
+    onFiltersChange(compute(searchText, selectedExecutive, val, selectedPeriod))
+  }
+  const handlePeriod = (val: string) => {
+    setSelectedPeriod(val)
+    onFiltersChange(compute(searchText, selectedExecutive, selectedDocType, val))
+  }
+  const handleClear = () => {
     setSearchText('')
-    setSelectedExecutive('__all_exec__')
-    setSelectedDocType('__all_type__')
+    setSelectedExecutive(ALL_EXEC)
+    setSelectedDocType(ALL_TYPE)
     setSelectedPeriod('all')
+    onFiltersChange(null)
   }
 
   return (
     <div className="space-y-3 mb-4">
-      {/* Toggle Filters Button */}
       <div className="flex items-center justify-between">
         <Button
-          onClick={() => setShowFilters(!showFilters)}
+          onClick={() => setShowFilters(p => !p)}
           variant="outline"
           size="sm"
           className="gap-2 border-slate-600 text-slate-300 hover:bg-slate-800/50"
@@ -148,15 +153,13 @@ export function ApprovedDocumentsFilters({ docs, onFiltersChange }: ApprovedDocu
         </Button>
         {hasActiveFilters && (
           <Badge variant="secondary" className="bg-orange-500/20 text-orange-300">
-            {filteredDocs.length} / {docs.length} documentos
+            Filtros activos
           </Badge>
         )}
       </div>
 
-      {/* Filters */}
       {showFilters && (
         <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 space-y-3">
-          {/* Search */}
           <div>
             <label className="text-xs font-medium text-slate-400 block mb-2">
               Buscar por nombre de documento
@@ -164,83 +167,68 @@ export function ApprovedDocumentsFilters({ docs, onFiltersChange }: ApprovedDocu
             <Input
               placeholder="Ej: certificado, licencia..."
               value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
+              onChange={e => handleSearch(e.target.value)}
               className="bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-500"
             />
           </div>
 
-          {/* Filters Row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {/* Period Filter */}
             <div>
-              <label className="text-xs font-medium text-slate-400 block mb-2">
-                Período
-              </label>
-              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+              <label className="text-xs font-medium text-slate-400 block mb-2">Periodo</label>
+              <Select value={selectedPeriod} onValueChange={handlePeriod}>
                 <SelectTrigger className="bg-slate-900 border-slate-700 text-slate-100">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-900 border-slate-700">
-                  <SelectItem value="all">Todos (Sin filtro)</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="today">Hoy</SelectItem>
-                  <SelectItem value="week">Última semana</SelectItem>
-                  <SelectItem value="month">Último mes</SelectItem>
-                  <SelectItem value="quarter">Último trimestre</SelectItem>
+                  <SelectItem value="week">Ultima semana</SelectItem>
+                  <SelectItem value="month">Ultimo mes</SelectItem>
+                  <SelectItem value="quarter">Ultimo trimestre</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Executive Filter */}
             <div>
-              <label className="text-xs font-medium text-slate-400 block mb-2">
-                Ejecutiva
-              </label>
-              <Select value={selectedExecutive} onValueChange={setSelectedExecutive}>
+              <label className="text-xs font-medium text-slate-400 block mb-2">Ejecutiva</label>
+              <Select value={selectedExecutive} onValueChange={handleExec}>
                 <SelectTrigger className="bg-slate-900 border-slate-700 text-slate-100">
-                  <SelectValue placeholder="Todas las ejecutivas" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-900 border-slate-700">
-                  <SelectItem value="__all_exec__">Todas las ejecutivas</SelectItem>
-                  {executives.map(exec => (
-                    <SelectItem key={exec} value={exec}>
-                      {exec}
-                    </SelectItem>
+                  <SelectItem value={ALL_EXEC}>Todas las ejecutivas</SelectItem>
+                  {executives.map(e => (
+                    <SelectItem key={e} value={e}>{e}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Document Type Filter */}
             <div>
-              <label className="text-xs font-medium text-slate-400 block mb-2">
-                Tipo de documento
-              </label>
-              <Select value={selectedDocType} onValueChange={setSelectedDocType}>
+              <label className="text-xs font-medium text-slate-400 block mb-2">Tipo de documento</label>
+              <Select value={selectedDocType} onValueChange={handleType}>
                 <SelectTrigger className="bg-slate-900 border-slate-700 text-slate-100">
-                  <SelectValue placeholder="Todos los tipos" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-900 border-slate-700">
-                  <SelectItem value="__all_type__">Todos los tipos</SelectItem>
-                  {docTypes.map(type => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
+                  <SelectItem value={ALL_TYPE}>Todos los tipos</SelectItem>
+                  {docTypes.map(t => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          {/* Clear Filters Button */}
           {hasActiveFilters && (
             <Button
-              onClick={handleClearFilters}
+              onClick={handleClear}
               variant="ghost"
               size="sm"
               className="gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 w-full"
             >
               <X className="w-4 h-4" />
-              Limpiar todos los filtros
+              Limpiar filtros
             </Button>
           )}
         </div>

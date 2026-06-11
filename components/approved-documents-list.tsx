@@ -1,18 +1,28 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { CheckCircle2, FileText, Calendar, User, Building2, Eye, Download, ChevronDown } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { ChevronDown, Filter, X } from 'lucide-react'
 import { PDFViewer } from '@/components/pdf-viewer'
 import { useDocumentSync } from '@/contexts/document-sync-context'
 import { getChileDate, getChileTime } from '@/lib/timezone-utils'
 import { DocumentsByMonth } from '@/components/documents-by-month'
 import { groupDocumentsByMonth } from '@/lib/document-grouping'
 import { ApprovedDocumentCard } from '@/components/approved-document-card'
-import { ApprovedDocumentsFilters } from '@/components/approved-documents-filters'
+
+// Sentinel constants — Radix UI SelectItem crashes on value=""
+const ALL_EXEC = '__all_exec__'
+const ALL_TYPE = '__all_type__'
 
 interface ApprovedDocument {
   id: string
@@ -44,83 +54,242 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   const [conductorDocs, setConductorDocs] = useState(initialConductorDocs)
   const [subDocs, setSubDocs] = useState(initialSubDocs)
   const [previewDoc, setPreviewDoc] = useState<ApprovedDocument | null>(null)
-  const [displayCount, setDisplayCount] = useState(350) // Start with 350 documents to avoid overload
-  const [filteredDocs, setFilteredDocs] = useState<ApprovedDocument[]>([])
+  const [displayCount, setDisplayCount] = useState(350)
+
+  // Filter state — all local, no callbacks to parent, no render loops
+  const [searchText, setSearchText] = useState('')
+  const [selectedExecutive, setSelectedExecutive] = useState(ALL_EXEC)
+  const [selectedDocType, setSelectedDocType] = useState(ALL_TYPE)
+  const [selectedPeriod, setSelectedPeriod] = useState('all')
+  const [showFilters, setShowFilters] = useState(true)
+
+  const LOAD_MORE_INCREMENT = 300
+
   const { onSync } = useDocumentSync()
-  
-  const LOAD_MORE_INCREMENT = 300 // Load 300 more documents at a time
 
   useEffect(() => {
     const unsubscribe = onSync((event) => {
       if (event.type === 'document_status_changed') {
-        console.log('[v0] ApprovedDocumentsList: Received document_status_changed event, refetching...')
-        // Add small delay to ensure database write is committed
         const timer = setTimeout(async () => {
           try {
             const response = await fetch('/api/company/documents/aprobados')
             if (response.ok) {
               const data = await response.json()
-              console.log('[v0] ApprovedDocumentsList: Refetch successful, conductorDocs:', data.conductorDocs?.length, 'subDocs:', data.subDocs?.length)
               setConductorDocs(data.conductorDocs || [])
               setSubDocs(data.subDocs || [])
-            } else {
-              console.error('[v0] ApprovedDocumentsList: Refetch failed with status:', response.status)
             }
           } catch (error) {
-            console.error('[v0] ApprovedDocumentsList: Error refetching approved docs:', error)
+            console.error('[v0] Error refetching approved docs:', error)
           }
-        }, 500) // 500ms delay to ensure DB write
+        }, 500)
         return () => clearTimeout(timer)
       }
     })
     return unsubscribe
   }, [onSync])
 
-  const allDocs = [...conductorDocs, ...subDocs].sort((a, b) => {
-    try {
+  // Merge and sort all docs once
+  const allDocs = useMemo(() => {
+    return [...conductorDocs, ...subDocs].sort((a, b) => {
       const dateB = new Date(b.updated_at || b.reviewed_at || b.created_at || 0).getTime()
       const dateA = new Date(a.updated_at || a.reviewed_at || a.created_at || 0).getTime()
       return dateB - dateA
-    } catch (e) {
-      console.error('[v0] Error sorting approved docs:', e)
-      return 0
+    })
+  }, [conductorDocs, subDocs])
+
+  // Derive unique filter options from allDocs
+  const executives = useMemo(() => {
+    const set = new Set<string>()
+    allDocs.forEach(doc => {
+      const exec = doc.approved_by_email?.split('@')[0] || doc.reviewed_by_ejecutiva || doc.ejecutiva
+      if (exec) set.add(exec)
+    })
+    return Array.from(set).sort()
+  }, [allDocs])
+
+  const docTypes = useMemo(() => {
+    const set = new Set<string>()
+    allDocs.forEach(doc => {
+      if (doc.docType?.nombre) set.add(doc.docType.nombre)
+    })
+    return Array.from(set).sort()
+  }, [allDocs])
+
+  // Apply all filters in a single useMemo — pure computation, no side effects
+  const filteredDocs = useMemo(() => {
+    let result = allDocs
+
+    if (searchText.trim()) {
+      const q = searchText.toLowerCase()
+      result = result.filter(doc =>
+        (doc.original_filename || doc.document_name || '').toLowerCase().includes(q)
+      )
     }
-  })
 
-  // Get unique executives for display only (not for filtering)
-  const getExecutive = (doc: ApprovedDocument) => {
-    return doc.approved_by_email?.split('@')[0] || doc.reviewed_by_ejecutiva || doc.ejecutiva || 'No especificado'
+    if (selectedExecutive !== ALL_EXEC) {
+      result = result.filter(doc => {
+        const exec = doc.approved_by_email?.split('@')[0] || doc.reviewed_by_ejecutiva || doc.ejecutiva
+        return exec === selectedExecutive
+      })
+    }
+
+    if (selectedDocType !== ALL_TYPE) {
+      result = result.filter(doc => doc.docType?.nombre === selectedDocType)
+    }
+
+    if (selectedPeriod !== 'all') {
+      const now = new Date()
+      const cutoffs: Record<string, number> = {
+        today: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(),
+        week:  now.getTime() - 7  * 86400000,
+        month: now.getTime() - 30 * 86400000,
+        quarter: now.getTime() - 90 * 86400000,
+      }
+      const minTime = cutoffs[selectedPeriod]
+      if (minTime) {
+        result = result.filter(doc =>
+          new Date(doc.updated_at || doc.created_at).getTime() >= minTime
+        )
+      }
+    }
+
+    return result
+  }, [allDocs, searchText, selectedExecutive, selectedDocType, selectedPeriod])
+
+  const hasActiveFilters =
+    searchText.trim() !== '' ||
+    selectedExecutive !== ALL_EXEC ||
+    selectedDocType !== ALL_TYPE ||
+    selectedPeriod !== 'all'
+
+  const handleClearFilters = () => {
+    setSearchText('')
+    setSelectedExecutive(ALL_EXEC)
+    setSelectedDocType(ALL_TYPE)
+    setSelectedPeriod('all')
   }
 
-  const getApprovalDate = (doc: ApprovedDocument) => {
-    const dateStr = doc.validated_at || doc.approved_at || doc.updated_at || doc.reviewed_at || doc.created_at
-    return getChileDate(dateStr)
-  }
+  const getExecutive = (doc: ApprovedDocument) =>
+    doc.approved_by_email?.split('@')[0] || doc.reviewed_by_ejecutiva || doc.ejecutiva || 'No especificado'
 
-  const getApprovalTime = (doc: ApprovedDocument) => {
-    const dateStr = doc.validated_at || doc.approved_at || doc.updated_at || doc.reviewed_at || doc.created_at
-    return getChileTime(dateStr)
-  }
-
-  // Simplified: Just show all documents (date filtering is done in parent page component)
-  const docsToDisplay = filteredDocs.length > 0 ? filteredDocs : allDocs
-  
-  // Apply pagination - only show displayCount documents
-  const paginatedDocs = docsToDisplay.slice(0, displayCount)
-  const hasMore = docsToDisplay.length > displayCount
-  const remainingCount = docsToDisplay.length - displayCount
+  // Pagination applied after filtering
+  const paginatedDocs = filteredDocs.slice(0, displayCount)
+  const hasMore = filteredDocs.length > displayCount
+  const remainingCount = filteredDocs.length - displayCount
 
   return (
     <>
-      {/* Filters Component */}
-      <ApprovedDocumentsFilters 
-        docs={allDocs}
-        onFiltersChange={setFilteredDocs}
-      />
-      
-      {docsToDisplay.length === 0 ? (
+      {/* ── Filter Panel ─────────────────────────────── */}
+      <div className="space-y-3 mb-4">
+        <div className="flex items-center justify-between">
+          <Button
+            onClick={() => setShowFilters(!showFilters)}
+            variant="outline"
+            size="sm"
+            className="gap-2 border-slate-600 text-slate-300 hover:bg-slate-800/50"
+          >
+            <Filter className="w-4 h-4" />
+            {showFilters ? 'Ocultar' : 'Mostrar'} Filtros
+          </Button>
+          {hasActiveFilters && (
+            <Badge variant="secondary" className="bg-orange-500/20 text-orange-300">
+              {filteredDocs.length} / {allDocs.length} documentos
+            </Badge>
+          )}
+        </div>
+
+        {showFilters && (
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 space-y-3">
+            {/* Search */}
+            <div>
+              <label className="text-xs font-medium text-slate-400 block mb-2">
+                Buscar por nombre de documento
+              </label>
+              <Input
+                placeholder="Ej: certificado, licencia..."
+                value={searchText}
+                onChange={e => setSearchText(e.target.value)}
+                className="bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Period */}
+              <div>
+                <label className="text-xs font-medium text-slate-400 block mb-2">Período</label>
+                <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+                  <SelectTrigger className="bg-slate-900 border-slate-700 text-slate-100">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-700">
+                    <SelectItem value="all">Todos los períodos</SelectItem>
+                    <SelectItem value="today">Hoy</SelectItem>
+                    <SelectItem value="week">Última semana</SelectItem>
+                    <SelectItem value="month">Último mes</SelectItem>
+                    <SelectItem value="quarter">Último trimestre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Executive */}
+              <div>
+                <label className="text-xs font-medium text-slate-400 block mb-2">Ejecutiva</label>
+                <Select value={selectedExecutive} onValueChange={setSelectedExecutive}>
+                  <SelectTrigger className="bg-slate-900 border-slate-700 text-slate-100">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-700">
+                    <SelectItem value={ALL_EXEC}>Todas las ejecutivas</SelectItem>
+                    {executives.map(exec => (
+                      <SelectItem key={exec} value={exec}>{exec}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Doc Type */}
+              <div>
+                <label className="text-xs font-medium text-slate-400 block mb-2">Tipo de documento</label>
+                <Select value={selectedDocType} onValueChange={setSelectedDocType}>
+                  <SelectTrigger className="bg-slate-900 border-slate-700 text-slate-100">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-700">
+                    <SelectItem value={ALL_TYPE}>Todos los tipos</SelectItem>
+                    {docTypes.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {hasActiveFilters && (
+              <Button
+                onClick={handleClearFilters}
+                variant="ghost"
+                size="sm"
+                className="gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 w-full"
+              >
+                <X className="w-4 h-4" />
+                Limpiar todos los filtros
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Document List ─────────────────────────────── */}
+      {filteredDocs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 px-4">
-          <p className="text-slate-400">No hay documentos aprobados</p>
+          <p className="text-slate-400">
+            {hasActiveFilters ? 'No hay documentos que coincidan con los filtros' : 'No hay documentos aprobados'}
+          </p>
+          {hasActiveFilters && (
+            <Button onClick={handleClearFilters} variant="ghost" size="sm" className="mt-2 text-slate-400">
+              Limpiar filtros
+            </Button>
+          )}
         </div>
       ) : (
         <>
@@ -136,12 +305,11 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
             )}
             emptyMessage="No hay documentos aprobados"
           />
-          
-          {/* Load More Button */}
+
           {hasMore && (
             <div className="flex flex-col items-center gap-3 py-6 px-4">
               <p className="text-sm text-slate-400">
-                Mostrando {paginatedDocs.length} de {docsToDisplay.length} documentos
+                Mostrando {paginatedDocs.length} de {filteredDocs.length} documentos
                 {remainingCount > 0 && ` (+${remainingCount} más)`}
               </p>
               <Button
@@ -157,16 +325,16 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
         </>
       )}
 
-      {/* Preview Modal - No se cierra por click fuera, solo por X o Escape */}
+      {/* ── Preview Modal ─────────────────────────────── */}
       <Dialog open={!!previewDoc} onOpenChange={(open) => { if (!open) setPreviewDoc(null) }}>
-        <DialogContent 
+        <DialogContent
           className="max-w-4xl bg-slate-900 border-slate-700"
           onPointerDownOutside={(e) => e.preventDefault()}
         >
           <DialogHeader>
             <DialogTitle>{previewDoc?.original_filename || previewDoc?.document_name}</DialogTitle>
           </DialogHeader>
-          
+
           {previewDoc?.file_url && (
             <div className="w-full">
               {previewDoc.file_url.toLowerCase().endsWith('.pdf') ? (
@@ -175,7 +343,6 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
                   filename={previewDoc.original_filename || previewDoc?.document_name || 'document.pdf'}
                 />
               ) : (
-                // Fallback for non-PDF files (images, etc)
                 <div className="flex justify-center items-center bg-slate-900 rounded-lg p-4 max-h-[60vh] overflow-auto">
                   <img
                     src={previewDoc.file_url}
