@@ -10,14 +10,31 @@ export interface DocumentByMonth {
 }
 
 /**
+ * Normalize a Supabase timestamp to a proper Date.
+ * Supabase returns timestamps WITHOUT a trailing 'Z', e.g. "2026-06-11T20:30:07.631".
+ * Without 'Z', browsers treat the string as LOCAL time instead of UTC, which can
+ * shift the date by the local UTC offset. Adding 'Z' forces correct UTC parsing.
+ */
+function parseDate(dateString: string | null | undefined): Date | null {
+  if (!dateString) return null
+  try {
+    const normalized = dateString.endsWith('Z') ? dateString : dateString + 'Z'
+    const date = new Date(normalized)
+    return isNaN(date.getTime()) ? null : date
+  } catch {
+    return null
+  }
+}
+
+/**
  * Get month and year from a date string
  */
 export function getMonthYear(dateString: string | null | undefined, locale: 'es' | 'en' = 'es'): string {
   if (!dateString) return locale === 'es' ? 'Sin fecha' : 'No date'
   
   try {
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return locale === 'es' ? 'Fecha inválida' : 'Invalid date'
+    const date = parseDate(dateString)
+    if (!date) return locale === 'es' ? 'Fecha inválida' : 'Invalid date'
     
     const months_es = [
       'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
@@ -44,8 +61,8 @@ export function getMonthKey(dateString: string | null | undefined): string {
   if (!dateString) return '0000-00'
   
   try {
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return '0000-00'
+    const date = parseDate(dateString)
+    if (!date) return '0000-00'
     
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -127,8 +144,8 @@ export function formatDate(dateString: string | null | undefined, locale: 'es' |
   if (!dateString) return locale === 'es' ? 'Sin fecha' : 'No date'
   
   try {
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return locale === 'es' ? 'Fecha inválida' : 'Invalid date'
+    const date = parseDate(dateString)
+    if (!date) return locale === 'es' ? 'Fecha inválida' : 'Invalid date'
     
     const options: Intl.DateTimeFormatOptions = {
       year: 'numeric',

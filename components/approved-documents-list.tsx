@@ -20,7 +20,16 @@ import { DocumentsByMonth } from '@/components/documents-by-month'
 import { groupDocumentsByMonth } from '@/lib/document-grouping'
 import { ApprovedDocumentCard } from '@/components/approved-document-card'
 
-// Sentinel constants — Radix UI SelectItem crashes on value=""
+// Safely parse a date string from Supabase.
+// Supabase timestamps come WITHOUT a 'Z' suffix (e.g. "2026-06-11T20:30:07.631").
+// Without 'Z', new Date() treats the string as LOCAL time instead of UTC,
+// which shifts the timestamp by the local UTC offset (Chile = UTC-4 → +4 hrs).
+// Appending 'Z' forces correct UTC interpretation in all browsers.
+function parseSupabaseDate(raw: string | null | undefined): number {
+  if (!raw) return 0
+  const normalized = raw.endsWith('Z') ? raw : raw + 'Z'
+  return new Date(normalized).getTime()
+}
 const ALL_EXEC = '__all_exec__'
 const ALL_TYPE = '__all_type__'
 const ALL_EMPRESA = '__all_empresa__'
@@ -94,8 +103,8 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   // Merge and sort all docs once
   const allDocs = useMemo(() => {
     return [...conductorDocs, ...subDocs].sort((a, b) => {
-      const dateB = new Date(b.updated_at || b.reviewed_at || b.created_at || 0).getTime()
-      const dateA = new Date(a.updated_at || a.reviewed_at || a.created_at || 0).getTime()
+      const dateB = parseSupabaseDate(b.updated_at || b.reviewed_at || b.created_at)
+      const dateA = parseSupabaseDate(a.updated_at || a.reviewed_at || a.created_at)
       return dateB - dateA
     })
   }, [conductorDocs, subDocs])
@@ -179,8 +188,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
       if (minTime !== undefined) {
         result = result.filter(doc => {
           const raw = doc.updated_at || doc.reviewed_at || doc.created_at
-          if (!raw) return false
-          return new Date(raw).getTime() >= minTime
+          return parseSupabaseDate(raw) >= minTime
         })
       }
     }
@@ -361,7 +369,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
             <div className="flex flex-col items-center gap-3 py-6 px-4">
               <p className="text-sm text-slate-400">
                 Mostrando {paginatedDocs.length} de {filteredDocs.length} documentos
-                {remainingCount > 0 && ` (+${remainingCount} más)`}
+                {remainingCount > 0 && ` (+${remainingCount} m��s)`}
               </p>
               <Button
                 onClick={() => setDisplayCount(prev => prev + LOAD_MORE_INCREMENT)}
