@@ -34,8 +34,8 @@ export function ApprovedDocumentCard({ doc, onPreview, getExecutive }: ApprovedD
           {/* Left section with icon and details */}
           <div className="flex items-start gap-4 flex-1 min-w-0">
             <div className="flex-shrink-0">
-              <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${iconConfig.bg} border ${iconConfig.border}`}>
-                <IconComponent className={`h-6 w-6 ${iconConfig.color}`} />
+              <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${iconConfig.bg} border ${iconConfig.border}`}>
+                <IconComponent className={`h-5 w-5 ${iconConfig.color}`} strokeWidth={1.5} />
               </div>
             </div>
             
@@ -89,9 +89,9 @@ export function ApprovedDocumentCard({ doc, onPreview, getExecutive }: ApprovedD
               ✓ Aprobado
             </Badge>
             {doc.docType && (
-              <Badge variant="outline" className={`text-xs ${iconConfig.bg} ${iconConfig.border} ${iconConfig.color} whitespace-nowrap gap-1`}>
-                <IconComponent className="h-3 w-3" />
-                {doc.docType.nombre}
+              <Badge variant="outline" className={`text-xs font-medium ${iconConfig.bg} ${iconConfig.border} ${iconConfig.color} whitespace-nowrap flex items-center gap-1 px-2 py-0.5`}>
+                <IconComponent className="h-3 w-3 flex-shrink-0" strokeWidth={1.5} />
+                {iconConfig.label}
               </Badge>
             )}
             {doc.file_url && (
