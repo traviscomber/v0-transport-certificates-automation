@@ -91,8 +91,9 @@ export async function GET() {
       }
     }
 
-    // Get assigned executives for conductors
+    // Get assigned executives AND empresa razon_social for conductors
     let conductorExecutiveMap = new Map<string, string>()
+    let conductorEmpresaMap = new Map<string, string>() // conductor_id -> razon_social
     if (conductorDocs && conductorDocs.length > 0) {
       const { data: conductorRuts } = await supabase
         .from('conductores')
@@ -104,7 +105,7 @@ export async function GET() {
         
         const { data: transportistas } = await supabase
           .from('transportistas')
-          .select('rut, assigned_executive_id')
+          .select('rut, assigned_executive_id, razon_social')
           .in('rut', transportistaRuts)
 
         if (transportistas && transportistas.length > 0) {
@@ -122,10 +123,17 @@ export async function GET() {
               const execMap = new Map(executives.map(e => [e.id, e.full_name]))
               conductorRuts.forEach(cr => {
                 const transportista = transportistas.find(t => t.rut === cr.rut_proveedor)
-                if (transportista && transportista.assigned_executive_id) {
-                  const execName = execMap.get(transportista.assigned_executive_id)
-                  if (execName) {
-                    conductorExecutiveMap.set(cr.id, execName)
+                if (transportista) {
+                  // Map empresa name
+                  if (transportista.razon_social) {
+                    conductorEmpresaMap.set(cr.id, transportista.razon_social)
+                  }
+                  // Map executive name
+                  if (transportista.assigned_executive_id) {
+                    const execName = execMap.get(transportista.assigned_executive_id)
+                    if (execName) {
+                      conductorExecutiveMap.set(cr.id, execName)
+                    }
                   }
                 }
               })
@@ -245,6 +253,7 @@ export async function GET() {
         : 'unknown'
       
       const assignedEjecutiva = conductorExecutiveMap.get(doc.conductor_id) || doc.ejecutiva || 'No especificado'
+      const empresa_nombre = conductorEmpresaMap.get(doc.conductor_id) || null
       
       return {
         id: doc.id,
@@ -257,6 +266,7 @@ export async function GET() {
         file_type: file_type,
         validated_at: doc.validated_at || doc.updated_at,
         ejecutiva: assignedEjecutiva,
+        empresa_nombre,
         created_at: doc.created_at,
         updated_at: doc.updated_at,
         reviewed_at: doc.validated_at || doc.updated_at,
@@ -272,6 +282,7 @@ export async function GET() {
         : 'unknown'
       
       const assignedEjecutiva = executiveMap.get(doc.subcontractor_id) || doc.reviewed_by_ejecutiva || 'No especificado'
+      const empresa_nombre = transportistasMap.get(doc.subcontractor_id)?.razon_social || null
       
       return {
         id: doc.id,
@@ -286,6 +297,7 @@ export async function GET() {
         approved_at: doc.approved_at || doc.updated_at,
         reviewed_by_ejecutiva: assignedEjecutiva,
         ejecutiva: assignedEjecutiva,
+        empresa_nombre,
         created_at: doc.created_at,
         updated_at: doc.updated_at,
         reviewed_at: doc.reviewed_at || doc.approved_at || doc.updated_at,
