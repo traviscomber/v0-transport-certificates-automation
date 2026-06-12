@@ -9,10 +9,16 @@ import { join } from 'path'
  * 
  * Mapping: Cecilia (original) -> Javiera Ayala (replacement)
  * 
- * GET /api/admin/auto-assign-transportistas
+ * IMPORTANT: This route only assigns transportistas that have NO executive yet
+ * (assigned_executive_id IS NULL). It never overwrites manual assignments.
+ * 
+ * POST /api/admin/auto-assign-transportistas
+ * Query param: ?force=true  — to overwrite ALL (admin use only, requires confirmation)
  */
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const force = searchParams.get('force') === 'true'
     const supabase = createAdminClient()
 
     // 1. Read the original CSV file
@@ -64,9 +70,17 @@ export async function GET(request: NextRequest) {
     }
 
     // 5. Get all transportistas from DB
-    const { data: allTransportistas, error: tError } = await supabase
+    // If NOT force mode, only fetch transportistas without an assigned executive
+    // This protects manual assignments from being overwritten
+    let query = supabase
       .from('transportistas')
       .select('id, rut, razon_social, assigned_executive_id')
+
+    if (!force) {
+      query = query.is('assigned_executive_id', null)
+    }
+
+    const { data: allTransportistas, error: tError } = await query
 
     if (tError) throw tError
 
@@ -181,8 +195,11 @@ export async function GET(request: NextRequest) {
       csv_rows: csvData.length,
       not_in_csv: notInCsv.length,
       distribution,
+      mode: force ? 'FORCE (overwrites all)' : 'SAFE (only unassigned)',
       errors: errors.length > 0 ? errors : undefined,
-      message: `Asignados ${assignments.length} transportistas usando datos originales del CSV`,
+      message: force
+        ? `Asignados ${assignments.length} transportistas (MODO FORZADO - sobreescribio asignaciones manuales)`
+        : `Asignados ${assignments.length} transportistas sin ejecutiva asignada (las asignaciones manuales no fueron modificadas)`,
     })
   } catch (error) {
     console.error('[v0] Error in CSV-based auto-assign:', error)

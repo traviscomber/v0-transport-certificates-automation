@@ -50,7 +50,15 @@ export async function POST() {
       }
     }
 
-    // 4. Update transportistas with assigned_executive_id
+    // 4. Fetch transportistas that already have a manual assignment so we can skip them
+    const { data: alreadyAssigned } = await supabase
+      .from('transportistas')
+      .select('id')
+      .not('assigned_executive_id', 'is', null)
+
+    const alreadyAssignedIds = new Set(alreadyAssigned?.map(t => t.id) || [])
+
+    // 5. Update transportistas with assigned_executive_id
     let updatedCount = 0
     const updateResults: any[] = []
     const notFoundResults: any[] = []
@@ -79,11 +87,22 @@ export async function POST() {
         continue
       }
 
-      // Update the transportista with assigned_executive_id
+      // Only update if no executive is assigned yet — never overwrite manual assignments
+      const existingAssignment = alreadyAssignedIds.has(transportistaId)
+      if (existingAssignment) {
+        notFoundResults.push({
+          transportista_id: transportistaId,
+          rut_proveedor: rutProveedor,
+          reason: 'Skipped — already has manual assignment',
+        })
+        continue
+      }
+
       const { error } = await supabase
         .from('transportistas')
         .update({ assigned_executive_id: executiveId })
         .eq('id', transportistaId)
+        .is('assigned_executive_id', null) // DB-level guard
 
       if (!error) {
         updatedCount++
