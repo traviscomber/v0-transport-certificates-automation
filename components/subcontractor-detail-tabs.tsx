@@ -257,6 +257,20 @@ export function SubcontractorDetailTabs({
                     </div>
                   ) : (
                     <div className="space-y-3">
+                      {/* Summary Stats */}
+                      {requirements.length > 0 && (
+                        <div className="grid grid-cols-2 gap-2 p-3 bg-slate-800/50 rounded border border-slate-700">
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-green-400">{summary.totalDocumentsUploaded}</p>
+                            <p className="text-xs text-slate-400">Documentos Subidos</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-slate-400">{requirements.length - summary.totalDocumentsUploaded}</p>
+                            <p className="text-xs text-slate-400">Por Subir</p>
+                          </div>
+                        </div>
+                      )}
+                      
                       {requirements.length > 0 ? (
                         requirements.map((req) => {
                           const statusColors: Record<string, string> = {
@@ -276,24 +290,44 @@ export function SubcontractorDetailTabs({
                           }
                           
                           const uploadedDoc = documents.find((d) => d.nombre?.includes(req.code ?? ''));
+                          const isUploaded = uploadedDoc && uploadedDoc.archivo_url;
                           
                           return (
                             <div
                               key={req.id}
-                              className={`p-3 rounded border flex items-center justify-between ${statusColor}`}
+                              className={`p-4 rounded border flex items-center justify-between transition-all hover:shadow-md ${statusColor}`}
                             >
-                              <div className="flex-1">
-                                <p className="font-mono text-xs font-bold">{req.code}</p>
-                                <p className="text-xs">{req.nombre || 'Documento requerido'}</p>
+                              <div className="flex-1 flex items-start gap-3">
+                                {/* Status Icon */}
+                                <div className="mt-1">
+                                  {isUploaded ? (
+                                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                                  ) : (
+                                    <AlertCircle className="w-5 h-5 text-slate-500 flex-shrink-0" />
+                                  )}
+                                </div>
+                                
+                                {/* Document Info */}
+                                <div className="flex-1">
+                                  <p className="font-mono text-xs font-bold">{req.code}</p>
+                                  <p className="text-xs">{req.nombre || 'Documento requerido'}</p>
+                                  {isUploaded && (
+                                    <p className="text-xs text-slate-300 mt-1 font-semibold">
+                                      📄 {uploadedDoc.nombre}
+                                    </p>
+                                  )}
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2 ml-4">
-                                <span className="text-xs font-semibold">{statusLabel[req.status]}</span>
-                                {uploadedDoc && uploadedDoc.archivo_url && (
+                              
+                              {/* Status and Actions */}
+                              <div className="flex items-center gap-3 ml-4">
+                                <span className="text-xs font-semibold whitespace-nowrap">{statusLabel[req.status]}</span>
+                                {isUploaded && (
                                   <div className="flex gap-2">
                                     <a
                                       href={`/api/documents/preview?path=${encodeURIComponent(uploadedDoc.archivo_url)}`}
                                       target="_blank"
-                                      className="hover:opacity-75 transition-opacity"
+                                      className="hover:opacity-75 transition-opacity text-blue-400 hover:text-blue-300"
                                       title="Ver documento"
                                     >
                                       <Eye className="w-4 h-4" />
@@ -301,7 +335,7 @@ export function SubcontractorDetailTabs({
                                     <a
                                       href={`/api/documents/download?path=${encodeURIComponent(uploadedDoc.archivo_url)}`}
                                       download
-                                      className="hover:opacity-75 transition-opacity"
+                                      className="hover:opacity-75 transition-opacity text-blue-400 hover:text-blue-300"
                                       title="Descargar"
                                     >
                                       <Download className="w-4 h-4" />
