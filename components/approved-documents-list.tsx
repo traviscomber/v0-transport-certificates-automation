@@ -72,7 +72,6 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   const [selectedExecutive, setSelectedExecutive] = useState(ALL_EXEC)
   const [selectedDocType, setSelectedDocType] = useState(ALL_TYPE)
   const [selectedEmpresa, setSelectedEmpresa] = useState(ALL_EMPRESA)
-  const [selectedPeriod, setSelectedPeriod] = useState('all')
   const [showFilters, setShowFilters] = useState(true)
 
   const LOAD_MORE_INCREMENT = 300
@@ -170,45 +169,20 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
       result = result.filter(doc => doc.empresa_nombre === selectedEmpresa)
     }
 
-    if (selectedPeriod !== 'all') {
-      const now = Date.now()
-      const MS_DAY = 86400000
-      // 'today' uses start-of-day in local time
-      const todayStart = new Date()
-      todayStart.setHours(0, 0, 0, 0)
-
-      const cutoffs: Record<string, number> = {
-        today:   todayStart.getTime(),
-        week:    now - 7  * MS_DAY,
-        month:   now - 30 * MS_DAY,
-        quarter: now - 90 * MS_DAY,
-        half:    now - 180 * MS_DAY,
-      }
-      const minTime = cutoffs[selectedPeriod]
-      if (minTime !== undefined) {
-        result = result.filter(doc => {
-          const raw = doc.updated_at || doc.reviewed_at || doc.created_at
-          return parseSupabaseDate(raw) >= minTime
-        })
-      }
-    }
-
     return result
-  }, [allDocs, searchText, selectedExecutive, selectedDocType, selectedEmpresa, selectedPeriod])
+  }, [allDocs, searchText, selectedExecutive, selectedDocType, selectedEmpresa])
 
   const hasActiveFilters =
     searchText.trim() !== '' ||
     selectedExecutive !== ALL_EXEC ||
     selectedDocType !== ALL_TYPE ||
-    selectedEmpresa !== ALL_EMPRESA ||
-    selectedPeriod !== 'all'
+    selectedEmpresa !== ALL_EMPRESA
 
   const handleClearFilters = () => {
     setSearchText('')
     setSelectedExecutive(ALL_EXEC)
     setSelectedDocType(ALL_TYPE)
     setSelectedEmpresa(ALL_EMPRESA)
-    setSelectedPeriod('all')
   }
 
   const getExecutive = (doc: ApprovedDocument) =>
@@ -255,25 +229,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              {/* Period */}
-              <div>
-                <label className="text-xs font-medium text-slate-400 block mb-2">Período</label>
-                <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                  <SelectTrigger className="bg-slate-900 border-slate-700 text-slate-100">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-700">
-                    <SelectItem value="all">Todos los períodos</SelectItem>
-                    <SelectItem value="today">Hoy</SelectItem>
-                    <SelectItem value="week">Última semana</SelectItem>
-                    <SelectItem value="month">Último mes</SelectItem>
-                    <SelectItem value="quarter">Último trimestre</SelectItem>
-                    <SelectItem value="half">Últimos 6 meses</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {/* Empresa */}
               <div>
                 <label className="text-xs font-medium text-slate-400 block mb-2">Empresa</label>
