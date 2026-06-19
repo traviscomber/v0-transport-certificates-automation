@@ -44,7 +44,9 @@ export default function SubcontractorDashboardPage() {
   const [uploadError, setUploadError] = useState('')
   const [uploadSuccess, setUploadSuccess] = useState('')
   const [loading, setLoading] = useState(true)
-  const [selectedPeriod, setSelectedPeriod] = useState('current')
+  const today = new Date()
+  const [selectedMonth, setSelectedMonth] = useState(String(today.getMonth() + 1).padStart(2, '0'))
+  const [selectedYear, setSelectedYear] = useState(String(today.getFullYear()))
   const [documentDate, setDocumentDate] = useState(new Date().toISOString().split('T')[0])
 
   useEffect(() => {
@@ -201,41 +203,20 @@ export default function SubcontractorDashboardPage() {
     router.push('/subcontractors/login')
   }
 
-  // Get date range for selected period
-  const getDateRangeForPeriod = (period: string) => {
-    const today = new Date()
-    let startDate = new Date(today)
-    
-    switch (period) {
-      case 'current':
-        startDate.setDate(1) // First day of current month
-        break
-      case 'month1':
-        startDate.setMonth(startDate.getMonth() - 1)
-        startDate.setDate(1)
-        break
-      case 'month2':
-        startDate.setMonth(startDate.getMonth() - 2)
-        startDate.setDate(1)
-        break
-      case 'month3':
-        startDate.setMonth(startDate.getMonth() - 3)
-        startDate.setDate(1)
-        break
-      case 'month4':
-        startDate.setMonth(startDate.getMonth() - 4)
-        startDate.setDate(1)
-        break
-    }
-    
-    return startDate
+  // Get date range for selected month/year
+  const getDateRangeForPeriod = (month: string, year: string) => {
+    const monthNum = parseInt(month, 10)
+    const yearNum = parseInt(year, 10)
+    const startDate = new Date(yearNum, monthNum - 1, 1) // First day of selected month
+    const endDate = new Date(yearNum, monthNum, 0) // Last day of selected month
+    return { start: startDate, end: endDate }
   }
 
   // Filter documents by selected period
   const filteredDocuments = documents.filter((doc) => {
     const docDate = new Date(doc.uploaded_at)
-    const periodStart = getDateRangeForPeriod(selectedPeriod)
-    return docDate >= periodStart
+    const { start, end } = getDateRangeForPeriod(selectedMonth, selectedYear)
+    return docDate >= start && docDate <= end
   })
 
   // Get min date for document date picker (4 months ago)
@@ -307,22 +288,46 @@ export default function SubcontractorDashboardPage() {
         {/* Period Selector */}
         <Card className="border-slate-700 bg-slate-800/30">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <Calendar className="w-5 h-5 text-slate-400" />
               <label className="text-sm font-medium text-slate-300">
                 Selecciona Período:
               </label>
-              <select
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="rounded-md border border-slate-600 bg-slate-700/50 px-3 py-2 text-sm text-white appearance-none cursor-pointer"
-              >
-                <option value="current">Período Actual</option>
-                <option value="month1">Último Mes</option>
-                <option value="month2">Hace 2 Meses</option>
-                <option value="month3">Hace 3 Meses</option>
-                <option value="month4">Hace 4 Meses</option>
-              </select>
+              <div className="flex gap-2 items-end">
+                <div className="flex-1">
+                  <label className="text-xs font-semibold text-slate-400 mb-1 block">Mes</label>
+                  <select 
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="w-full rounded-md border border-slate-600 bg-slate-700/50 px-3 py-2 text-sm text-white"
+                  >
+                    <option value="01">Enero</option>
+                    <option value="02">Febrero</option>
+                    <option value="03">Marzo</option>
+                    <option value="04">Abril</option>
+                    <option value="05">Mayo</option>
+                    <option value="06">Junio</option>
+                    <option value="07">Julio</option>
+                    <option value="08">Agosto</option>
+                    <option value="09">Septiembre</option>
+                    <option value="10">Octubre</option>
+                    <option value="11">Noviembre</option>
+                    <option value="12">Diciembre</option>
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs font-semibold text-slate-400 mb-1 block">Año</label>
+                  <select 
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="w-full rounded-md border border-slate-600 bg-slate-700/50 px-3 py-2 text-sm text-white"
+                  >
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

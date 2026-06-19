@@ -21,7 +21,9 @@ export function TransportistasClientWrapper({
   transportistas: initialTransportistas,
 }: TransportistasClientWrapperProps) {
   const [searchInput, setSearchInput] = useState('')
-  const [selectedPeriod, setSelectedPeriod] = useState('current')
+  const today = new Date()
+  const [selectedMonth, setSelectedMonth] = useState(String(today.getMonth() + 1).padStart(2, '0'))
+  const [selectedYear, setSelectedYear] = useState(String(today.getFullYear()))
   const [selectedEjecutiva, setSelectedEjecutiva] = useState<string | null>(null)
 
   // Get unique ejecutivas for filter dropdown
@@ -125,19 +127,40 @@ export function TransportistasClientWrapper({
                 className="w-full rounded-md border bg-background pl-10 pr-4 py-2 text-sm"
               />
             </div>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-              <select 
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="w-full rounded-md border bg-background pl-10 pr-4 py-2 text-sm appearance-none cursor-pointer"
-              >
-                <option value="current">Período Actual</option>
-                <option value="month1">Último Mes</option>
-                <option value="month2">Hace 2 Meses</option>
-                <option value="month3">Hace 3 Meses</option>
-                <option value="month4">Hace 4 Meses</option>
-              </select>
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">Mes</label>
+                <select 
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                >
+                  <option value="01">Enero</option>
+                  <option value="02">Febrero</option>
+                  <option value="03">Marzo</option>
+                  <option value="04">Abril</option>
+                  <option value="05">Mayo</option>
+                  <option value="06">Junio</option>
+                  <option value="07">Julio</option>
+                  <option value="08">Agosto</option>
+                  <option value="09">Septiembre</option>
+                  <option value="10">Octubre</option>
+                  <option value="11">Noviembre</option>
+                  <option value="12">Diciembre</option>
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">Año</label>
+                <select 
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                >
+                  <option value="2024">2024</option>
+                  <option value="2025">2025</option>
+                  <option value="2026">2026</option>
+                </select>
+              </div>
             </div>
           </div>
 
