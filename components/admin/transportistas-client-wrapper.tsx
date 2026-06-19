@@ -97,15 +97,23 @@ export function TransportistasClientWrapper({
     })
   }, [searchInput, selectedEjecutiva, initialTransportistas])
 
-  const getPeriodLabel = (period: string) => {
-    const labels: Record<string, string> = {
-      current: 'Período Actual',
-      month1: 'Último Mes',
-      month2: 'Hace 2 Meses',
-      month3: 'Hace 3 Meses',
-      month4: 'Hace 4 Meses',
+  // Get month name for display
+  const getMonthName = (month: string) => {
+    const monthNames: Record<string, string> = {
+      '01': 'Enero',
+      '02': 'Febrero',
+      '03': 'Marzo',
+      '04': 'Abril',
+      '05': 'Mayo',
+      '06': 'Junio',
+      '07': 'Julio',
+      '08': 'Agosto',
+      '09': 'Septiembre',
+      '10': 'Octubre',
+      '11': 'Noviembre',
+      '12': 'Diciembre',
     }
-    return labels[period] || labels.current
+    return monthNames[month] || ''
   }
 
   return (
@@ -229,7 +237,7 @@ export function TransportistasClientWrapper({
               <div>
                 <CardTitle>Lista de Transportistas</CardTitle>
                 <CardDescription>
-                  {filteredTransportistas.length} de {initialTransportistas.length} transportistas · {getPeriodLabel(selectedPeriod)}
+                  {filteredTransportistas.length} de {initialTransportistas.length} transportistas · {getMonthName(selectedMonth)} {selectedYear}
                 </CardDescription>
               </div>
               <div className="text-xs text-muted-foreground">
