@@ -274,23 +274,24 @@ export function SubcontractorDetailTabs({
                       {requirements.length > 0 ? (
                         requirements.map((req) => {
                           const statusColors: Record<string, string> = {
-                            aprobado: 'bg-green-900/20 border-green-800 text-green-400',
-                            pendiente: 'bg-yellow-900/20 border-yellow-800 text-yellow-400',
-                            rechazado: 'bg-red-900/20 border-red-800 text-red-400',
-                            vencido: 'bg-orange-900/20 border-orange-800 text-orange-400',
-                            no_subido: 'bg-slate-800 text-slate-400',
+                            approved: 'bg-green-900/20 border-green-800 text-green-400',
+                            pending: 'bg-yellow-900/20 border-yellow-800 text-yellow-400',
+                            rejected: 'bg-red-900/20 border-red-800 text-red-400',
+                            expired: 'bg-orange-900/20 border-orange-800 text-orange-400',
                           }
-                          const statusColor = statusColors[req.status] || statusColors.no_subido
+                          const statusColor = statusColors[req.status] || 'bg-slate-800 text-slate-400'
                           const statusLabel: Record<string, string> = {
-                            aprobado: 'Aprobado',
-                            pendiente: 'Pendiente',
-                            rechazado: 'Rechazado',
-                            vencido: 'Vencido',
-                            no_subido: 'No subido',
+                            approved: 'Aprobado',
+                            pending: 'Pendiente',
+                            rejected: 'Rechazado',
+                            expired: 'Vencido',
                           }
                           
-                          const uploadedDoc = documents.find((d) => d.nombre?.includes(req.code ?? ''));
-                          const isUploaded = uploadedDoc && uploadedDoc.archivo_url;
+                          // Match documents by document_type_id (not by name)
+                          const uploadedDoc = documents.find((d) => d.document_type_id === req.id);
+                          const isUploaded = !!uploadedDoc && !!uploadedDoc.file_url;
+                          const docStatus = uploadedDoc?.status || 'not_uploaded';
+                          const displayStatus = docStatus === 'not_uploaded' ? 'No subido' : statusLabel[docStatus as keyof typeof statusLabel] || docStatus;
                           
                           return (
                             <div
@@ -310,10 +311,10 @@ export function SubcontractorDetailTabs({
                                 {/* Document Info */}
                                 <div className="flex-1">
                                   <p className="font-mono text-xs font-bold">{req.code}</p>
-                                  <p className="text-xs">{req.nombre || 'Documento requerido'}</p>
-                                  {isUploaded && (
-                                    <p className="text-xs text-slate-300 mt-1 font-semibold">
-                                      📄 {uploadedDoc.nombre}
+                                  <p className="text-sm">{req.nombre || 'Documento requerido'}</p>
+                                  {isUploaded && uploadedDoc && (
+                                    <p className="text-xs text-slate-300 mt-1">
+                                      📄 {uploadedDoc.file_name || 'Documento subido'}
                                     </p>
                                   )}
                                 </div>
@@ -321,20 +322,21 @@ export function SubcontractorDetailTabs({
                               
                               {/* Status and Actions */}
                               <div className="flex items-center gap-3 ml-4">
-                                <span className="text-xs font-semibold whitespace-nowrap">{statusLabel[req.status]}</span>
-                                {isUploaded && (
+                                <span className="text-xs font-semibold whitespace-nowrap">{displayStatus}</span>
+                                {isUploaded && uploadedDoc?.file_url && (
                                   <div className="flex gap-2">
                                     <a
-                                      href={`/api/documents/preview?path=${encodeURIComponent(uploadedDoc.archivo_url)}`}
+                                      href={uploadedDoc.file_url}
                                       target="_blank"
+                                      rel="noopener noreferrer"
                                       className="hover:opacity-75 transition-opacity text-blue-400 hover:text-blue-300"
                                       title="Ver documento"
                                     >
                                       <Eye className="w-4 h-4" />
                                     </a>
                                     <a
-                                      href={`/api/documents/download?path=${encodeURIComponent(uploadedDoc.archivo_url)}`}
-                                      download
+                                      href={uploadedDoc.file_url}
+                                      download={uploadedDoc.file_name || 'documento'}
                                       className="hover:opacity-75 transition-opacity text-blue-400 hover:text-blue-300"
                                       title="Descargar"
                                     >
