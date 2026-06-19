@@ -347,7 +347,7 @@ export function ReportsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-orange-600">{stats.expiring}</div>
-            <p className="text-xs text-[#71717A] mt-1">Próximos 30 días</p>
+            <p className="text-xs text-[#71717A] mt-1">Vencimientos cercanos</p>
           </CardContent>
         </Card>
         <Card className="border-[#E4E4E7]">
