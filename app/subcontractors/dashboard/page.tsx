@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertCircle, CheckCircle, Clock, LogOut, Upload, FileText, HelpCircle } from 'lucide-react'
+import { HelpBox } from '@/components/ui/help-box'
 
 interface DocumentType {
   id: string
@@ -227,6 +228,21 @@ export default function SubcontractorDashboardPage() {
   return (
     <div className="min-h-screen bg-slate-900 p-4 md:p-6">
       <div className="max-w-4xl mx-auto space-y-6">
+        {/* Onboarding Help Box */}
+        <HelpBox
+          variant="info"
+          title="Portal de Subcontratistas - Gestión de Documentos"
+          description="Sistema para subir, gestionar y monitorear el estado de documentos requeridos por la empresa de transporte."
+          tips={[
+            "Selecciona el tipo de documento en el dropdown y adjunta el archivo (PDF, JPG o PNG máximo 50MB).",
+            "VERDE 'Aprobado' = documento validado y activo. AZUL 'Bajo revisión' = tu documento fue recibido y está siendo validado.",
+            "ROJO 'Rechazado' = revisa el motivo del rechazo y sube nuevamente. ROJO 'Vencido' = renueva el documento antes de la fecha indicada.",
+            "Los documentos expiran según su período de validez. Recibe notificaciones cuando próximas renovaciones se acerquen.",
+            "Mantén todos los documentos actualizados para mantener tu estado activo en la plataforma.",
+            "Si tienes dudas, contacta con tu ejecutiva asignada en la empresa de transporte."
+          ]}
+        />
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
