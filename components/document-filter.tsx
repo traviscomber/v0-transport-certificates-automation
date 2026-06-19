@@ -11,6 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { DatePeriodFilter } from '@/components/date-period-filter'
+import { ALL_VALUE, type DateFilterValue } from '@/lib/date-filters'
 
 interface DocumentFilterProps {
   onFilterChange: (filters: DocumentFilters) => void
@@ -23,34 +25,16 @@ export interface DocumentFilters {
   executiveId?: string
   companyId?: string
   documentType?: string
-  dateFrom?: string
-  dateTo?: string
+  month: string
+  year: string
 }
 
 export function DocumentFilter({ onFilterChange, executives = [], companies = [] }: DocumentFilterProps) {
   const [filters, setFilters] = useState<DocumentFilters>({
     searchQuery: '',
-    // NO default month filter - show all documents by default
-    dateFrom: undefined,
-    dateTo: undefined,
+    month: ALL_VALUE,
+    year: ALL_VALUE,
   })
-
-  // Generate list of months for the last 12 months
-  const getMonthOptions = () => {
-    const months = []
-    for (let i = 0; i < 12; i++) {
-      const date = new Date()
-      date.setMonth(date.getMonth() - i)
-      const year = date.getFullYear()
-      const month = (date.getMonth() + 1).toString().padStart(2, '0')
-      const monthName = date.toLocaleString('es-CL', { month: 'long', year: 'numeric' })
-      months.push({
-        value: `${year}-${month}`,
-        label: monthName.charAt(0).toUpperCase() + monthName.slice(1)
-      })
-    }
-    return months
-  }
 
   const handleFilterChange = (newFilters: Partial<DocumentFilters>) => {
     const updated = { ...filters, ...newFilters }
@@ -59,21 +43,29 @@ export function DocumentFilter({ onFilterChange, executives = [], companies = []
   }
 
   const handleReset = () => {
-    const resetFilters: DocumentFilters = { searchQuery: '' }
+    const resetFilters: DocumentFilters = {
+      searchQuery: '',
+      month: ALL_VALUE,
+      year: ALL_VALUE,
+    }
     setFilters(resetFilters)
     onFilterChange(resetFilters)
+  }
+
+  const temporalFilters: DateFilterValue = {
+    month: filters.month,
+    year: filters.year,
   }
 
   return (
     <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4 mb-6">
       <div className="flex flex-col gap-4">
-        {/* Title and Reset */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-slate-400" />
             <h3 className="text-sm font-medium text-slate-200">Filtrar Documentos</h3>
           </div>
-          {(filters.searchQuery || filters.executiveId || filters.companyId || filters.documentType) && (
+          {(filters.searchQuery || filters.executiveId || filters.companyId || filters.documentType || filters.month !== ALL_VALUE || filters.year !== ALL_VALUE) && (
             <button
               onClick={handleReset}
               className="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1"
@@ -84,9 +76,7 @@ export function DocumentFilter({ onFilterChange, executives = [], companies = []
           )}
         </div>
 
-        {/* Filter Controls */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-          {/* Search */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="relative">
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
             <Input
@@ -97,39 +87,11 @@ export function DocumentFilter({ onFilterChange, executives = [], companies = []
             />
           </div>
 
-          {/* Month Filter */}
-          <Select value={filters.dateFrom ? `${filters.dateFrom.substring(0, 7)}` : 'all'} onValueChange={(value) => {
-            if (value === 'all') {
-              handleFilterChange({ dateFrom: undefined, dateTo: undefined })
-            } else {
-              // Parse YYYY-MM format and set dateFrom and dateTo for the entire month
-              const [year, month] = value.split('-')
-              const monthDate = new Date(parseInt(year), parseInt(month) - 1, 1)
-              const nextMonth = new Date(monthDate)
-              nextMonth.setMonth(nextMonth.getMonth() + 1)
-              
-              const dateFrom = monthDate.toISOString().split('T')[0]
-              const dateTo = new Date(nextMonth.getTime() - 1).toISOString().split('T')[0]
-              
-              handleFilterChange({ dateFrom, dateTo })
-            }
-          }}>
-            <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-100">
-              <SelectValue placeholder="Mes" />
-            </SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-600">
-              <SelectItem value="all">Todos los meses</SelectItem>
-              {getMonthOptions().map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Company/Transportista */}
           {companies.length > 0 && (
-            <Select value={filters.companyId || 'all'} onValueChange={(value) => handleFilterChange({ companyId: value === 'all' ? undefined : value })}>
+            <Select
+              value={filters.companyId || 'all'}
+              onValueChange={(value) => handleFilterChange({ companyId: value === 'all' ? undefined : value })}
+            >
               <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-100">
                 <SelectValue placeholder="Empresa" />
               </SelectTrigger>
@@ -144,9 +106,11 @@ export function DocumentFilter({ onFilterChange, executives = [], companies = []
             </Select>
           )}
 
-          {/* Executive */}
           {executives.length > 0 && (
-            <Select value={filters.executiveId || 'all'} onValueChange={(value) => handleFilterChange({ executiveId: value === 'all' ? undefined : value })}>
+            <Select
+              value={filters.executiveId || 'all'}
+              onValueChange={(value) => handleFilterChange({ executiveId: value === 'all' ? undefined : value })}
+            >
               <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-100">
                 <SelectValue placeholder="Ejecutiva" />
               </SelectTrigger>
@@ -161,8 +125,10 @@ export function DocumentFilter({ onFilterChange, executives = [], companies = []
             </Select>
           )}
 
-          {/* Document Type */}
-          <Select value={filters.documentType || 'all'} onValueChange={(value) => handleFilterChange({ documentType: value === 'all' ? undefined : value })}>
+          <Select
+            value={filters.documentType || 'all'}
+            onValueChange={(value) => handleFilterChange({ documentType: value === 'all' ? undefined : value })}
+          >
             <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-100">
               <SelectValue placeholder="Tipo de documento" />
             </SelectTrigger>
@@ -175,6 +141,24 @@ export function DocumentFilter({ onFilterChange, executives = [], companies = []
             </SelectContent>
           </Select>
         </div>
+
+        <DatePeriodFilter
+          value={temporalFilters}
+          onChange={(value) => handleFilterChange(value)}
+          onClear={() => handleFilterChange({ month: ALL_VALUE, year: ALL_VALUE })}
+        />
+
+        {(filters.searchQuery || filters.executiveId || filters.companyId || filters.documentType || filters.month !== ALL_VALUE || filters.year !== ALL_VALUE) && (
+          <Button
+            onClick={handleReset}
+            variant="ghost"
+            size="sm"
+            className="gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 w-full"
+          >
+            <X className="w-4 h-4" />
+            Limpiar todos los filtros
+          </Button>
+        )}
       </div>
     </div>
   )

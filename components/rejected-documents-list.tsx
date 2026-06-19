@@ -10,6 +10,7 @@ import { useDocumentSync } from '@/contexts/document-sync-context'
 import { getChileDate, getChileTime } from '@/lib/timezone-utils'
 import { PDFViewer } from '@/components/pdf-viewer'
 import { DocumentFilter, type DocumentFilters } from '@/components/document-filter'
+import { ALL_VALUE, filterByMonthYear } from '@/lib/date-filters'
 
 interface RejectedDocument {
   id: string
@@ -40,7 +41,11 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
   const [conductorDocs, setConductorDocs] = useState(initialConductorDocs)
   const [subDocs, setSubDocs] = useState(initialSubDocs)
   const [previewDoc, setPreviewDoc] = useState<RejectedDocument | null>(null)
-  const [filters, setFilters] = useState<DocumentFilters>({ searchQuery: '' })
+  const [filters, setFilters] = useState<DocumentFilters>({
+    searchQuery: '',
+    month: ALL_VALUE,
+    year: ALL_VALUE,
+  })
   const { onSync } = useDocumentSync()
 
   useEffect(() => {
@@ -124,7 +129,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
 
   // Filter documents based on filter criteria
   const filteredDocs = useMemo(() => {
-    return allDocs.filter((doc) => {
+    const result = allDocs.filter((doc) => {
       // Search query
       if (filters.searchQuery) {
         const query = filters.searchQuery.toLowerCase()
@@ -134,24 +139,6 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
         
         if (!filename.includes(query) && !company.toLowerCase().includes(query) && !conductor.toLowerCase().includes(query)) {
           return false
-        }
-      }
-
-      // Date range filter (month filter)
-      if (filters.dateFrom || filters.dateTo) {
-        const docDate = new Date(doc.created_at)
-        if (filters.dateFrom) {
-          const dateFrom = new Date(filters.dateFrom)
-          if (docDate < dateFrom) {
-            return false
-          }
-        }
-        if (filters.dateTo) {
-          const dateTo = new Date(filters.dateTo)
-          dateTo.setHours(23, 59, 59, 999)
-          if (docDate > dateTo) {
-            return false
-          }
         }
       }
 
@@ -176,6 +163,13 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
 
       return true
     })
+
+    return filterByMonthYear(
+      result,
+      (doc) => doc.updated_at || doc.reviewed_at || doc.created_at,
+      filters.month,
+      filters.year
+    )
   }, [allDocs, filters])
 
   if (allDocs.length === 0) {
@@ -190,8 +184,16 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
     )
   }
 
-  // Use filtered documents if any filter is applied, otherwise show all
-  const docsToDisplay = filteredDocs.length > 0 || filters.searchQuery || filters.executiveId || filters.companyId || filters.dateFrom || filters.dateTo ? filteredDocs : allDocs
+  // Use filtered documents whenever any filter is active, including month/year
+  const hasActiveFilters =
+    filters.searchQuery ||
+    filters.executiveId ||
+    filters.companyId ||
+    filters.documentType ||
+    filters.month !== ALL_VALUE ||
+    filters.year !== ALL_VALUE
+
+  const docsToDisplay = hasActiveFilters ? filteredDocs : allDocs
 
   return (
     <>
@@ -201,7 +203,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
         companies={companies}
       />
       
-      {docsToDisplay.length === 0 && (filters.searchQuery || filters.executiveId || filters.companyId) ? (
+      {docsToDisplay.length === 0 && hasActiveFilters ? (
         <div className="flex flex-col items-center justify-center py-12 px-4">
           <p className="text-slate-400">No hay documentos que coincidan con los filtros seleccionados</p>
         </div>

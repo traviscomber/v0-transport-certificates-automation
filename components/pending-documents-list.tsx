@@ -12,6 +12,7 @@ import { useDocumentSync } from '@/contexts/document-sync-context'
 import { PDFViewer } from '@/components/pdf-viewer'
 import { formatToChileTime } from '@/lib/timezone-utils'
 import { DocumentFilter, type DocumentFilters } from '@/components/document-filter'
+import { ALL_VALUE, filterByMonthYear } from '@/lib/date-filters'
 
 interface PendingDocument {
   id: string
@@ -61,7 +62,11 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [showAnalysisModal, setShowAnalysisModal] = useState(false)
   const [analysisResult, setAnalysisResult] = useState<any>(null)
-  const [filters, setFilters] = useState<DocumentFilters>({ searchQuery: '' })
+  const [filters, setFilters] = useState<DocumentFilters>({
+    searchQuery: '',
+    month: ALL_VALUE,
+    year: ALL_VALUE,
+  })
   const { onSync, broadcastSync } = useDocumentSync()
   const [rejectDocId, setRejectDocId] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
@@ -126,7 +131,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
 
   // Filter documents based on filter criteria
   const filteredDocs = useMemo(() => {
-    return allDocs.filter((doc) => {
+    const result = allDocs.filter((doc) => {
       // Search query
       if (filters.searchQuery) {
         const query = filters.searchQuery.toLowerCase()
@@ -136,24 +141,6 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
         
         if (!filename.includes(query) && !company.toLowerCase().includes(query) && !conductor.toLowerCase().includes(query)) {
           return false
-        }
-      }
-
-      // Date range filter (month filter)
-      if (filters.dateFrom || filters.dateTo) {
-        const docDate = new Date(doc.uploaded_at || doc.created_at || '')
-        if (filters.dateFrom) {
-          const dateFrom = new Date(filters.dateFrom)
-          if (docDate < dateFrom) {
-            return false
-          }
-        }
-        if (filters.dateTo) {
-          const dateTo = new Date(filters.dateTo)
-          dateTo.setHours(23, 59, 59, 999)
-          if (docDate > dateTo) {
-            return false
-          }
         }
       }
 
@@ -178,6 +165,12 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
 
       return true
     })
+    return filterByMonthYear(
+      result,
+      (doc) => doc.uploaded_at || doc.created_at,
+      filters.month,
+      filters.year
+    )
   }, [allDocs, filters])
 
   const handleAnalyzeDocument = async (docId: string) => {
