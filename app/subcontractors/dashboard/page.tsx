@@ -45,6 +45,7 @@ export default function SubcontractorDashboardPage() {
   const [uploadSuccess, setUploadSuccess] = useState('')
   const [loading, setLoading] = useState(true)
   const [selectedPeriod, setSelectedPeriod] = useState('current')
+  const [documentDate, setDocumentDate] = useState(new Date().toISOString().split('T')[0])
 
   useEffect(() => {
     // Get transportista info from cookies/session
@@ -144,6 +145,7 @@ export default function SubcontractorDashboardPage() {
       formData.append('file', selectedFile)
       formData.append('documentTypeId', selectedDocType)
       formData.append('subcontractorRut', transportista.rut)
+      formData.append('documentDate', documentDate)
 
       console.log('[v0] Uploading file:', {
         name: selectedFile.name,
@@ -198,6 +200,48 @@ export default function SubcontractorDashboardPage() {
     fetch('/api/auth/subcontractors/logout', { method: 'POST' })
     router.push('/subcontractors/login')
   }
+
+  // Get date range for selected period
+  const getDateRangeForPeriod = (period: string) => {
+    const today = new Date()
+    let startDate = new Date(today)
+    
+    switch (period) {
+      case 'current':
+        startDate.setDate(1) // First day of current month
+        break
+      case 'month1':
+        startDate.setMonth(startDate.getMonth() - 1)
+        startDate.setDate(1)
+        break
+      case 'month2':
+        startDate.setMonth(startDate.getMonth() - 2)
+        startDate.setDate(1)
+        break
+      case 'month3':
+        startDate.setMonth(startDate.getMonth() - 3)
+        startDate.setDate(1)
+        break
+      case 'month4':
+        startDate.setMonth(startDate.getMonth() - 4)
+        startDate.setDate(1)
+        break
+    }
+    
+    return startDate
+  }
+
+  // Filter documents by selected period
+  const filteredDocuments = documents.filter((doc) => {
+    const docDate = new Date(doc.uploaded_at)
+    const periodStart = getDateRangeForPeriod(selectedPeriod)
+    return docDate >= periodStart
+  })
+
+  // Get min date for document date picker (4 months ago)
+  const minDate = new Date()
+  minDate.setMonth(minDate.getMonth() - 4)
+  const minDateString = minDate.toISOString().split('T')[0]
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -320,7 +364,7 @@ export default function SubcontractorDashboardPage() {
                 </div>
               )}
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="doctype" className="text-slate-200">
                     Tipo de Documento
@@ -337,6 +381,24 @@ export default function SubcontractorDashboardPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="docdate" className="text-slate-200">
+                    Fecha del Documento
+                  </Label>
+                  <Input
+                    id="docdate"
+                    type="date"
+                    value={documentDate}
+                    onChange={(e) => setDocumentDate(e.target.value)}
+                    min={minDateString}
+                    max={new Date().toISOString().split('T')[0]}
+                    className="bg-slate-700/50 border-slate-600 text-slate-300"
+                  />
+                  <p className="text-xs text-slate-400">
+                    Hasta 4 meses atrás
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -374,15 +436,19 @@ export default function SubcontractorDashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5" />
-              Documentos Subidos ({documents.length})
+              Documentos Subidos ({filteredDocuments.length} de {documents.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {documents.length === 0 ? (
-              <p className="text-slate-400 text-center py-8">Aún no has subido documentos</p>
+            {filteredDocuments.length === 0 ? (
+              <p className="text-slate-400 text-center py-8">
+                {documents.length === 0 
+                  ? 'Aún no has subido documentos' 
+                  : 'No hay documentos en este período'}
+              </p>
             ) : (
               <div className="space-y-2">
-                {documents.map((doc) => (
+                {filteredDocuments.map((doc) => (
                   <div
                     key={doc.id}
                     className="flex items-center justify-between p-3 rounded-lg bg-slate-700/30 border border-slate-600"
