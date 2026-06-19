@@ -275,7 +275,7 @@ export function SubcontractorDetailTabs({
                             no_subido: 'No subido',
                           }
                           
-                          const uploadedDoc = documents.find((d) => d.nombre?.includes(req.code ?? ''))
+                          const uploadedDoc = documents.find((d) => d.nombre?.includes(req.code ?? ''));
                           
                           return (
                             <div
@@ -323,8 +323,8 @@ export function SubcontractorDetailTabs({
                 <TabsContent value="certificaciones" className="space-y-4 mt-0">
                   <div className="grid grid-cols-2 gap-3">
                     {certifications.map((cert) => {
-                      const hasCert = subcontractor[cert.key]
-                      const certDoc = documents.find((d) => d.nombre?.includes(cert.name ?? ''))
+                      const hasCert = subcontractor[cert.key];
+                      const certDoc = documents.find((d) => d.nombre?.includes(cert.name ?? ''));
                       
                       return (
                         <div key={cert.key} className="space-y-2">
