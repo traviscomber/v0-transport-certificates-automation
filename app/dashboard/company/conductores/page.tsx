@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useState, useEffect, useMemo } from 'react'
+import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import { DriversList } from '@/components/drivers-list'
 import { HelpBox } from '@/components/ui/help-box'
@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { AddConductorModal } from '@/components/add-conductor-modal'
+import { DatePeriodFilter } from '@/components/date-period-filter'
+import { ALL_VALUE, filterByMonthYear, type DateFilterValue } from '@/lib/date-filters'
 
 const fetcher = (url: string) => 
   fetch(url, {
@@ -40,10 +42,16 @@ const fetcher = (url: string) =>
 
 export default function ConductoresPage() {
   const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const router = useRouter()
   const rutParam = searchParams.get('rut')
   const [selectedEjecutiva, setSelectedEjecutiva] = useState<string | null>(null)
   const [highlightedRut, setHighlightedRut] = useState<string | null>(rutParam)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [dateFilters, setDateFilters] = useState<DateFilterValue>({
+    month: searchParams.get('month') || ALL_VALUE,
+    year: searchParams.get('year') || ALL_VALUE,
+  })
   
   const { data, error, isLoading, mutate } = useSWR(
     '/api/dashboard/data',
@@ -59,16 +67,43 @@ export default function ConductoresPage() {
 
   const drivers = data?.dashboard?.conductores || []
   const transportistas = data?.subcontractors || []
+
+  useEffect(() => {
+    setDateFilters({
+      month: searchParams.get('month') || ALL_VALUE,
+      year: searchParams.get('year') || ALL_VALUE,
+    })
+  }, [searchParams])
+
+  const updateDateFilters = (next: DateFilterValue) => {
+    setDateFilters(next)
+    const params = new URLSearchParams(searchParams.toString())
+    if (next.month === ALL_VALUE) params.delete('month')
+    else params.set('month', next.month)
+    if (next.year === ALL_VALUE) params.delete('year')
+    else params.set('year', next.year)
+    const query = params.toString()
+    router.replace(query ? `${pathname}?${query}` : pathname)
+  }
   
   // Get unique ejecutivas from drivers
   const ejecutivas = Array.from(
     new Set(drivers.map((d: any) => d.ejecutivo_nombre).filter(Boolean))
   ).sort() as string[]
 
+  const driversByDate = useMemo(() => {
+    return filterByMonthYear(
+      drivers,
+      (d: any) => d.updated_at || d.created_at,
+      dateFilters.month,
+      dateFilters.year
+    )
+  }, [drivers, dateFilters.month, dateFilters.year])
+
   // Filter drivers by selected ejecutiva
   const filteredDrivers = selectedEjecutiva
-    ? drivers.filter((d: any) => d.ejecutivo_nombre === selectedEjecutiva)
-    : drivers
+    ? driversByDate.filter((d: any) => d.ejecutivo_nombre === selectedEjecutiva)
+    : driversByDate
 
   return (
     <div className="space-y-6">
@@ -97,6 +132,12 @@ export default function ConductoresPage() {
         ]}
       />
 
+      <DatePeriodFilter
+        value={dateFilters}
+        onChange={updateDateFilters}
+        onClear={() => updateDateFilters({ month: ALL_VALUE, year: ALL_VALUE })}
+      />
+
       {/* Ejecutiva Filter Tags */}
       {ejecutivas.length > 0 && (
         <div className="space-y-3">
@@ -107,10 +148,10 @@ export default function ConductoresPage() {
               className="cursor-pointer hover:bg-primary/80 transition"
               onClick={() => setSelectedEjecutiva(null)}
             >
-              Todos ({drivers.length})
+              Todos ({driversByDate.length})
             </Badge>
             {ejecutivas.map((ejecutiva) => {
-              const count = drivers.filter((d: any) => d.ejecutivo_nombre === ejecutiva).length
+              const count = driversByDate.filter((d: any) => d.ejecutivo_nombre === ejecutiva).length
               return (
                 <Badge
                   key={ejecutiva}

@@ -5,6 +5,7 @@ interface AnalysisRequest {
   stats: any
   reportType: 'compliance' | 'risk' | 'summary' | 'alerts'
   language?: 'es' | 'en'
+  periodLabel?: string
 }
 
 const SYSTEM_PROMPT = `Eres un analista senior de cumplimiento normativo especializado en transporte y logística. 
@@ -12,16 +13,18 @@ Tu rol es proporcionar análisis profundos, accionables y basados en datos.
 Comunica de forma clara, profesional y en español.
 Estructura tus respuestas de manera que sea fácil para ejecutivos tomar decisiones.`
 
+const percent = (part: number, total: number) => total > 0 ? ((part / total) * 100).toFixed(1) : '0.0'
+
 const REPORT_TEMPLATES = {
-  compliance: (stats: any, data: any[]) => `
+  compliance: (stats: any, data: any[], periodLabel: string) => `
 ANÁLISIS DE CUMPLIMIENTO NORMATIVO
-Período: Último reporte disponible
+Período: ${periodLabel}
 
 DATOS GENERALES:
 - Total de registros: ${stats.total}
-- Registros activos: ${stats.activos} (${((stats.activos/stats.total)*100).toFixed(1)}%)
-- Documentación completa: ${stats.conDocumentos} (${((stats.conDocumentos/stats.total)*100).toFixed(1)}%)
-- Registros sin documentación: ${stats.sinDocumentos} (${((stats.sinDocumentos/stats.total)*100).toFixed(1)}%)
+- Registros activos: ${stats.activos} (${percent(stats.activos, stats.total)}%)
+- Documentación completa: ${stats.conDocumentos} (${percent(stats.conDocumentos, stats.total)}%)
+- Registros sin documentación: ${stats.sinDocumentos} (${percent(stats.sinDocumentos, stats.total)}%)
 - Conductores: ${data.filter(d => d.type === 'driver').length}
 - Subcontratistas: ${data.filter(d => d.type === 'subcontractor').length}
 
@@ -32,12 +35,13 @@ Proporciona un análisis que incluya:
 4. **Recomendaciones Prioritarias**: Acciones inmediatas para mejorar cumplimiento
 5. **Cronograma Sugerido**: Timeline para implementación de mejoras`,
 
-  risk: (stats: any, data: any[]) => `
+  risk: (stats: any, data: any[], periodLabel: string) => `
 ANÁLISIS DE RIESGOS DE CUMPLIMIENTO
-Nivel de Riesgo General: ${((stats.sinDocumentos/stats.total)*100 > 30 ? 'ALTO' : (stats.sinDocumentos/stats.total)*100 > 10 ? 'MEDIO' : 'BAJO')}
+Período: ${periodLabel}
+Nivel de Riesgo General: ${(stats.total > 0 && (stats.sinDocumentos / stats.total) * 100 > 30 ? 'ALTO' : stats.total > 0 && (stats.sinDocumentos / stats.total) * 100 > 10 ? 'MEDIO' : 'BAJO')}
 
 INDICADORES DE RIESGO:
-- Tasa de documentación incompleta: ${((stats.sinDocumentos/stats.total)*100).toFixed(1)}%
+- Tasa de documentación incompleta: ${percent(stats.sinDocumentos, stats.total)}%
 - Registros inactivos con documentación pendiente: ${stats.inactivos}
 - Proporción documentos rechazados: ${stats.rejected || 0}
 
@@ -59,12 +63,13 @@ Análisis solicitado:
    - Responsables sugeridos
    - Cronograma de implementación`,
 
-  alerts: (stats: any, data: any[]) => `
+  alerts: (stats: any, data: any[], periodLabel: string) => `
 ALERTAS OPERACIONALES CRÍTICAS
 Generado: ${new Date().toLocaleDateString('es-ES')}
+Período: ${periodLabel}
 
 SITUACIÓN ACTUAL:
-- Registros sin documentación: ${stats.sinDocumentos} (${((stats.sinDocumentos/stats.total)*100).toFixed(1)}%)
+- Registros sin documentación: ${stats.sinDocumentos} (${percent(stats.sinDocumentos, stats.total)}%)
 - Documentos pendientes de revisión: ${stats.pending || 0}
 - Registros rechazados requiriendo acción: ${stats.rejected || 0}
 - Documentos próximos a vencer: ${stats.expiring || 0}
@@ -81,17 +86,18 @@ Para cada alerta incluye:
 - Acción recomendada
 - Propietario/responsable sugerido`,
 
-  summary: (stats: any, data: any[]) => `
+  summary: (stats: any, data: any[], periodLabel: string) => `
 RESUMEN EJECUTIVO DE CUMPLIMIENTO
 Fecha de Reporte: ${new Date().toLocaleDateString('es-ES')}
+Período: ${periodLabel}
 
 MÉTRICAS PRINCIPALES:
 - Total de registros en sistema: ${stats.total}
-- Tasa de cumplimiento: ${((stats.conDocumentos/stats.total)*100).toFixed(1)}%
+- Tasa de cumplimiento: ${percent(stats.conDocumentos, stats.total)}%
 - Documentos aprobados: ${stats.approved || 0}
 - Documentos en revisión: ${stats.pending || 0}
 - Documentos rechazados: ${stats.rejected || 0}
-- Tasa de actividad: ${((stats.activos/stats.total)*100).toFixed(1)}%
+- Tasa de actividad: ${percent(stats.activos, stats.total)}%
 
 Por favor proporciona:
 1. **Situación Actual** (2-3 párrafos)
@@ -120,7 +126,7 @@ Por favor proporciona:
 export async function POST(request: NextRequest) {
   try {
     const body: AnalysisRequest = await request.json()
-    const { data, stats, reportType = 'summary', language = 'es' } = body
+    const { data, stats, reportType = 'summary', language = 'es', periodLabel = 'Período seleccionado' } = body
 
     if (!reportType || !REPORT_TEMPLATES[reportType]) {
       return NextResponse.json(
@@ -140,8 +146,8 @@ export async function POST(request: NextRequest) {
 
     console.log('[v0] Analyzing report:', { type: reportType, dataPoints: data?.length || 0 })
 
-    const template = REPORT_TEMPLATES[reportType] as (s: any, d: any[]) => string
-    const prompt = template(stats, data || [])
+    const template = REPORT_TEMPLATES[reportType] as (s: any, d: any[], p: string) => string
+    const prompt = template(stats, data || [], periodLabel)
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',

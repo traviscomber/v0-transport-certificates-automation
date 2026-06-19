@@ -1,12 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { SubcontractorsList } from '@/components/subcontractors-list'
 import { HelpBox } from '@/components/ui/help-box'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { AddSubcontractorModal } from '@/components/add-subcontractor-modal'
+import { DatePeriodFilter } from '@/components/date-period-filter'
+import { ALL_VALUE, filterByMonthYear, type DateFilterValue } from '@/lib/date-filters'
 
 interface Document {
   id: string
@@ -57,10 +60,17 @@ interface Driver {
 }
 
 export default function SubcontratistasPage() {
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const router = useRouter()
   const [subcontractors, setSubcontractors] = useState<Subcontractor[]>([])
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [dateFilters, setDateFilters] = useState<DateFilterValue>({
+    month: searchParams.get('month') || ALL_VALUE,
+    year: searchParams.get('year') || ALL_VALUE,
+  })
 
   const refetchData = async () => {
     try {
@@ -141,11 +151,55 @@ export default function SubcontratistasPage() {
     loadData()
   }, [])
 
+  useEffect(() => {
+    setDateFilters({
+      month: searchParams.get('month') || ALL_VALUE,
+      year: searchParams.get('year') || ALL_VALUE,
+    })
+  }, [searchParams])
+
+  const updateDateFilters = (next: DateFilterValue) => {
+    setDateFilters(next)
+    const params = new URLSearchParams(searchParams.toString())
+    if (next.month === ALL_VALUE) params.delete('month')
+    else params.set('month', next.month)
+    if (next.year === ALL_VALUE) params.delete('year')
+    else params.set('year', next.year)
+    const query = params.toString()
+    router.replace(query ? `${pathname}?${query}` : pathname)
+  }
+
+  const filteredSubcontractors = useMemo(() => {
+    return filterByMonthYear(
+      subcontractors,
+      (s: any) => s.updated_at || s.created_at,
+      dateFilters.month,
+      dateFilters.year
+    )
+  }, [subcontractors, dateFilters.month, dateFilters.year])
+
+  const filteredDrivers = useMemo(() => {
+    return filterByMonthYear(
+      drivers,
+      (d: any) => d.updated_at || d.created_at,
+      dateFilters.month,
+      dateFilters.year
+    )
+  }, [drivers, dateFilters.month, dateFilters.year])
+
+  const datePeriodFilter = (
+    <DatePeriodFilter
+      value={dateFilters}
+      onChange={updateDateFilters}
+      onClear={() => updateDateFilters({ month: ALL_VALUE, year: ALL_VALUE })}
+    />
+  )
+
   if (isLoading) {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestión de Subcontratistas</h1>
+          <h1 className="text-3xl font-bold tracking-tight">GestiÃ³n de Subcontratistas</h1>
           <p className="text-muted-foreground">
             Administra y visualiza los subcontratistas asociados a LABBE
           </p>
@@ -153,10 +207,10 @@ export default function SubcontratistasPage() {
         <Card className="p-8 text-center">
           <p className="text-muted-foreground">Cargando datos...</p>
         </Card>
+        {datePeriodFilter}
       </div>
     )
   }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -184,7 +238,9 @@ export default function SubcontratistasPage() {
         ]}
       />
 
-      <SubcontractorsList subcontractors={subcontractors as any} drivers={drivers as any} />
+      {datePeriodFilter}
+
+      <SubcontractorsList subcontractors={filteredSubcontractors as any} drivers={filteredDrivers as any} />
 
       <AddSubcontractorModal
         isOpen={isAddModalOpen}

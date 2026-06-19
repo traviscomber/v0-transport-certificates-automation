@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -8,6 +9,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Upload, FileText, CheckCircle2, AlertCircle, Loader, Download, Eye, X, Clock, HelpCircle, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useDocumentSync } from '@/contexts/document-sync-context'
+import { DatePeriodFilter } from '@/components/date-period-filter'
+import { ALL_VALUE, filterByMonthYear, type DateFilterValue } from '@/lib/date-filters'
 
 interface UploadedDocument {
   id: string
@@ -103,6 +106,13 @@ export default function ConductorDocumentosPage() {
   const { broadcastSync } = useDocumentSync()
   const [compliancePercentage, setCompliancePercentage] = useState(0)
   const [selectedDocumentType, setSelectedDocumentType] = useState('LIC_CONDUCIR')
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+  const [archiveFilters, setArchiveFilters] = useState<DateFilterValue>({
+    month: searchParams.get('month') || ALL_VALUE,
+    year: searchParams.get('year') || ALL_VALUE,
+  })
 
   useEffect(() => {
     fetchDocuments()
@@ -119,6 +129,26 @@ export default function ConductorDocumentosPage() {
     const percentage = Math.round((approvedCount / REQUIRED_DOCUMENTS.length) * 100)
     setCompliancePercentage(percentage)
   }, [documents])
+
+  useEffect(() => {
+    const month = searchParams.get('month') || ALL_VALUE
+    const year = searchParams.get('year') || ALL_VALUE
+    setArchiveFilters({ month, year })
+  }, [searchParams])
+
+  const updateArchiveFilters = (next: DateFilterValue) => {
+    setArchiveFilters(next)
+    const params = new URLSearchParams(searchParams.toString())
+
+    if (next.month === ALL_VALUE) params.delete('month')
+    else params.set('month', next.month)
+
+    if (next.year === ALL_VALUE) params.delete('year')
+    else params.set('year', next.year)
+
+    const query = params.toString()
+    router.replace(query ? `${pathname}?${query}` : pathname)
+  }
 
   const fetchDocuments = async () => {
     try {
@@ -288,6 +318,11 @@ export default function ConductorDocumentosPage() {
       (d.document_type_id && d.document_type_id.toUpperCase() === type.toUpperCase())
     )
   }
+
+  const historicalDocuments = useMemo(() => {
+    return filterByMonthYear(documents, (doc) => doc.created_at, archiveFilters.month, archiveFilters.year)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  }, [documents, archiveFilters.month, archiveFilters.year])
 
   return (
       <div className="space-y-8">
@@ -485,6 +520,52 @@ export default function ConductorDocumentosPage() {
           <p>• Recibirás notificaciones por email y WhatsApp</p>
           <p>• Puedes subir nuevas versiones si un documento es rechazado</p>
           <p>• Contacta con soporte@labbe.cl si tienes preguntas</p>
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-700 bg-slate-800/30 shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-white">Historial documental</CardTitle>
+          <CardDescription className="text-slate-400">
+            Archivo histórico filtrado por mes y año de subida
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <DatePeriodFilter
+            value={archiveFilters}
+            onChange={updateArchiveFilters}
+            onClear={() => updateArchiveFilters({ month: ALL_VALUE, year: ALL_VALUE })}
+          />
+
+          {historicalDocuments.length === 0 ? (
+            <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-6 text-center text-slate-400">
+              No hay documentos en el período seleccionado.
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {historicalDocuments.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between gap-4 rounded-lg border border-slate-700 bg-slate-900/50 p-4">
+                  <div className="min-w-0">
+                    <p className="font-medium text-white truncate">
+                      {doc.file_name || doc.document_type_name || doc.document_type || 'Documento'}
+                    </p>
+                    <p className="text-sm text-slate-400">
+                      Subido: {new Date(doc.created_at).toLocaleDateString('es-CL')}
+                      {doc.expiration_date ? ` • Vence: ${new Date(doc.expiration_date).toLocaleDateString('es-CL')}` : ''}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {getStatusBadge(doc.validation_status, doc.expiration_date)}
+                    <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white" asChild>
+                      <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
+                        <Download className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

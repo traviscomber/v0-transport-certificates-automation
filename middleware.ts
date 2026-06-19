@@ -2,8 +2,49 @@ import { updateSession } from "@/lib/supabase/middleware"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
+const uuidSegment = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
+
+const destructiveApiPatterns = [
+  /^\/api\/admin\/clean-all-users$/,
+  /^\/api\/admin\/cleanup-documents$/,
+  /^\/api\/admin\/cleanup-profiles$/,
+  /^\/api\/admin\/delete-dandus$/,
+  /^\/api\/admin\/assign-company-exec$/,
+  /^\/api\/admin\/migrate-conductores$/,
+  /^\/api\/admin\/migrate-transportistas$/,
+  /^\/api\/admin\/remove-cert-afiliaciones$/,
+  /^\/api\/admin\/sync-drivers$/,
+  /^\/api\/admin\/update-document-list$/,
+  new RegExp(`^/api/admin/users/${uuidSegment}$`),
+  new RegExp(`^/api/alerts-log/${uuidSegment}$`),
+  new RegExp(`^/api/alerts/${uuidSegment}$`),
+  new RegExp(`^/api/company/documents/${uuidSegment}$`),
+  new RegExp(`^/api/company/documents/${uuidSegment}/delete$`),
+  /^\/api\/company\/monthly-documents$/,
+  new RegExp(`^/api/company/users/${uuidSegment}$`),
+  new RegExp(`^/api/conductores/${uuidSegment}$`),
+  new RegExp(`^/api/conductor/documents/${uuidSegment}$`),
+  new RegExp(`^/api/documents/${uuidSegment}$`),
+  /^\/api\/transportistas\/update-executive$/,
+  new RegExp(`^/api/transportistas/${uuidSegment}$`),
+]
+
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
+  const method = request.method.toUpperCase()
+
+  if (
+    process.env.NODE_ENV === 'production' &&
+    ['POST', 'DELETE'].includes(method) &&
+    destructiveApiPatterns.some((pattern) => pattern.test(path))
+  ) {
+    return NextResponse.json(
+      {
+        error: 'Destructive API actions are disabled in production to protect live data.',
+      },
+      { status: 403 }
+    )
+  }
 
   // Skip auth and API auth routes entirely
   if (
