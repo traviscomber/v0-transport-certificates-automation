@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { Download, CheckCircle2, TrendingUp } from 'lucide-react'
+import { Download, CheckCircle2, TrendingUp, ArrowRight, ShieldAlert } from 'lucide-react'
 import { DatePeriodFilter } from '@/components/date-period-filter'
 import { ALL_VALUE, filterByMonthYear, getMonthLabel, type DateFilterValue } from '@/lib/date-filters'
 
@@ -102,6 +103,9 @@ export function ReportsDashboard() {
       const diff = Math.ceil((exp.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
       return diff >= 0 && diff <= 30
     }).length
+    const oldestPending = filteredDocuments
+      .filter((doc) => doc.validation_status === 'pending')
+      .sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime())[0]
 
     return {
       total,
@@ -111,8 +115,12 @@ export function ReportsDashboard() {
       activeEntities,
       inactiveEntities,
       expiring,
+      oldestPending,
     }
   }, [filteredDocuments, filteredEntities])
+
+  const complianceRate = stats.total > 0 ? Math.round((stats.approved / stats.total) * 100) : 0
+  const riskRate = stats.total > 0 ? Math.round(((stats.pending + stats.rejected + stats.expiring) / stats.total) * 100) : 0
 
   const chartData = [
     { name: 'Aprobados', value: stats.approved, fill: '#22c55e' },
@@ -133,16 +141,67 @@ export function ReportsDashboard() {
         onClear={() => setPeriod({ month: ALL_VALUE, year: ALL_VALUE })}
       />
 
-      <Card className="border-[#E4E4E7] bg-white/80">
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <div>
-            <CardTitle>Período activo</CardTitle>
-            <CardDescription>{monthLabel}</CardDescription>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card className="border-[#E4E4E7] bg-white/90">
+          <CardContent className="p-4">
+            <p className="text-xs font-medium text-[#71717A]">PERÍODO ACTIVO</p>
+            <p className="text-xl font-bold text-[#18181B] mt-1">{monthLabel}</p>
+            <p className="text-sm text-[#71717A] mt-2">Resumen listo para auditoría y seguimiento.</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-emerald-200 bg-emerald-50">
+          <CardContent className="p-4">
+            <p className="text-xs font-medium text-emerald-700">CUMPLIMIENTO</p>
+            <p className="text-3xl font-bold text-emerald-700 mt-1">{complianceRate}%</p>
+            <p className="text-sm text-emerald-700/80 mt-2">{stats.approved} validados de {stats.total} documentos.</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="p-4">
+            <p className="text-xs font-medium text-orange-700">RIESGO ACTIVO</p>
+            <p className="text-3xl font-bold text-orange-700 mt-1">{riskRate}%</p>
+            <p className="text-sm text-orange-700/80 mt-2">{stats.pending + stats.rejected + stats.expiring} puntos de atención.</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="border-[#E4E4E7] bg-white/90">
+        <CardHeader className="flex flex-row items-start justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-orange-500" />
+              <CardTitle>Próxima acción recomendada</CardTitle>
+            </div>
+            <CardDescription>
+              {stats.expiring > 0
+                ? `Hay ${stats.expiring} documentos por vencer y ${stats.pending} pendientes para este período.`
+                : `No hay vencimientos inmediatos; revisa pendientes y auditoría del período.`}
+            </CardDescription>
           </div>
-          <Badge variant="secondary" className="px-3 py-1">
-            {filteredDocuments.length} documentos
-          </Badge>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/dashboard/company/documentos/vencidos">
+              <Button variant="outline" size="sm" className="gap-2 border-red-200 text-red-700 hover:bg-red-50">
+                Vencidos
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+            <Link href="/dashboard/company/documentos/renovar">
+              <Button variant="outline" size="sm" className="gap-2 border-amber-200 text-amber-700 hover:bg-amber-50">
+                Renovar
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
         </CardHeader>
+        {stats.oldestPending && (
+          <CardContent className="pt-0">
+            <Badge variant="secondary" className="px-3 py-1">
+              Más antiguo pendiente: {stats.oldestPending.original_filename || stats.oldestPending.document_type || 'Documento'}
+            </Badge>
+          </CardContent>
+        )}
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -183,6 +242,27 @@ export function ReportsDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="border-[#E4E4E7] bg-white/90">
+        <CardHeader>
+          <CardTitle>Resumen rápido</CardTitle>
+          <CardDescription>Lectura corta para gerencia y control operativo.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="rounded-lg border border-slate-200 p-4">
+            <p className="text-xs text-[#71717A]">Pendientes</p>
+            <p className="text-2xl font-bold text-blue-600 mt-1">{stats.pending}</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 p-4">
+            <p className="text-xs text-[#71717A]">Rechazados</p>
+            <p className="text-2xl font-bold text-red-600 mt-1">{stats.rejected}</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 p-4">
+            <p className="text-xs text-[#71717A]">Por vencer</p>
+            <p className="text-2xl font-bold text-orange-600 mt-1">{stats.expiring}</p>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="border-[#E4E4E7]">
         <CardHeader>

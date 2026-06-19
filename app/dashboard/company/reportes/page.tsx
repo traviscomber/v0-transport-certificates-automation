@@ -1,12 +1,14 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { HelpBox } from '@/components/ui/help-box'
 import { DatePeriodFilter } from '@/components/date-period-filter'
 import { AIAnalysisPanel } from '@/components/reports/ai-analysis-panel'
-import { Download, FileText, BarChart3, TrendingUp, AlertCircle, CheckCircle2, Users } from 'lucide-react'
+import { Download, FileText, BarChart3, TrendingUp, AlertCircle, CheckCircle2, Users, ArrowRight, ShieldAlert, RefreshCw } from 'lucide-react'
 import { ALL_VALUE, filterByMonthYear, getMonthLabel, type DateFilterValue } from '@/lib/date-filters'
 
 type EntityRecord = {
@@ -24,6 +26,8 @@ type DocumentRecord = {
   created_at?: string
   expiration_date?: string
   validation_status?: string
+  original_filename?: string
+  document_type?: string
   type?: 'driver_document' | 'subcontractor_document'
 }
 
@@ -104,6 +108,9 @@ export default function ReportesPage() {
       const days = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
       return days >= 0 && days <= 30
     }).length
+    const oldestPending = filteredDocuments
+      .filter((doc) => doc.validation_status === 'pending')
+      .sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime())[0]
 
     return {
       total: filteredDocuments.length,
@@ -115,8 +122,12 @@ export default function ReportesPage() {
       pending: pendingDocuments,
       rejected: rejectedDocuments,
       expiring: expiringSoon,
+      oldestPending,
     }
   }, [filteredEntities, filteredDocuments])
+
+  const completionRate = stats.total > 0 ? Math.round((stats.approved / stats.total) * 100) : 0
+  const riskRate = stats.total > 0 ? Math.round(((stats.sinDocumentos + stats.expiring) / stats.total) * 100) : 0
 
   const handleAnalysisRequest = async (type: string) => {
     setLoading(true)
@@ -200,18 +211,25 @@ export default function ReportesPage() {
 
       <DatePeriodFilter value={period} onChange={setPeriod} onClear={() => setPeriod({ month: ALL_VALUE, year: ALL_VALUE })} />
 
-      <Card className="p-4 bg-slate-900/80 border-slate-700/50">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs text-slate-400 font-medium">PERÍODO ACTIVO</p>
-            <p className="text-xl font-bold text-white mt-1">{periodLabel}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-slate-400 font-medium">DOCUMENTOS FILTRADOS</p>
-            <p className="text-2xl font-bold text-orange-400 mt-1">{filteredDocuments.length}</p>
-          </div>
-        </div>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card className="p-4 bg-gradient-to-br from-slate-900/90 to-slate-800/40 border-slate-700/50">
+          <p className="text-xs text-slate-400 font-medium">PERÍODO ACTIVO</p>
+          <p className="text-xl font-bold text-white mt-1">{periodLabel}</p>
+          <p className="text-sm text-slate-300 mt-2">Resumen preparado para revisión ejecutiva.</p>
+        </Card>
+
+        <Card className="p-4 bg-gradient-to-br from-emerald-900/20 to-slate-800/40 border-emerald-500/30">
+          <p className="text-xs text-emerald-300/80 font-medium">CUMPLIMIENTO</p>
+          <p className="text-3xl font-bold text-emerald-300 mt-1">{completionRate}%</p>
+          <p className="text-sm text-slate-300 mt-2">{stats.approved} aprobados de {stats.total} documentos filtrados.</p>
+        </Card>
+
+        <Card className="p-4 bg-gradient-to-br from-orange-900/20 to-slate-800/40 border-orange-500/30">
+          <p className="text-xs text-orange-300/80 font-medium">RIESGO ACTIVO</p>
+          <p className="text-3xl font-bold text-orange-300 mt-1">{riskRate}%</p>
+          <p className="text-sm text-slate-300 mt-2">{stats.sinDocumentos + stats.expiring} elementos requieren atención hoy.</p>
+        </Card>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="p-4 bg-gradient-to-br from-slate-900/80 to-slate-800/40 border-slate-700/50 hover:border-orange-500/30 transition-colors">
@@ -259,6 +277,47 @@ export default function ReportesPage() {
         </Card>
       </div>
 
+      <Card className="p-5 bg-slate-900/80 border-slate-700/50">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-orange-400" />
+              <p className="text-sm font-semibold text-white">Siguiente mejor acción</p>
+            </div>
+            <p className="text-sm text-slate-300">
+              {stats.expiring > 0
+                ? `Hay ${stats.expiring} documentos por vencer y ${stats.pending} pendientes de revisión.`
+                : `No hay vencimientos inmediatos; revisa los pendientes y el historial del período.`}
+            </p>
+            {stats.oldestPending && (
+              <Badge variant="outline" className="w-fit border-orange-500/30 text-orange-300 bg-orange-500/10">
+                Más antiguo pendiente: {stats.oldestPending.original_filename || stats.oldestPending.document_type || 'Documento'}
+              </Badge>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/dashboard/company/documentos/vencidos">
+              <Button variant="outline" className="gap-2 border-red-500/30 text-red-300 hover:bg-red-500/10">
+                Ver vencidos
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+            <Link href="/dashboard/company/documentos/renovar">
+              <Button variant="outline" className="gap-2 border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/10">
+                Planificar renovaciones
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+            <Link href="/dashboard/company/documentos/pendientes">
+              <Button variant="outline" className="gap-2 border-blue-500/30 text-blue-300 hover:bg-blue-500/10">
+                Revisar pendientes
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         {reportTypes.map((type) => {
           const Icon = type.icon
@@ -296,31 +355,31 @@ export default function ReportesPage() {
         <Card className="p-6 bg-gradient-to-br from-slate-900/80 via-slate-900/50 to-slate-800/30 border-slate-700/50">
           <h3 className="font-bold text-white mb-4 flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-orange-500" />
-            Estadísticas Detalladas
+            Tareas sugeridas
           </h3>
           <div className="space-y-3">
             <div className="p-3 rounded-lg bg-slate-800/50 border border-slate-700/30">
-              <p className="text-xs text-slate-400">Documentos Aprobados</p>
-              <p className="text-xl font-bold text-green-400 mt-1">{stats.approved}</p>
+              <p className="text-xs text-slate-400">Revisar vencidos</p>
+              <p className="text-xl font-bold text-red-400 mt-1">{stats.expiring}</p>
             </div>
             <div className="p-3 rounded-lg bg-slate-800/50 border border-slate-700/30">
-              <p className="text-xs text-slate-400">En Revisión</p>
+              <p className="text-xs text-slate-400">Pendientes críticos</p>
               <p className="text-xl font-bold text-blue-400 mt-1">{stats.pending}</p>
             </div>
             <div className="p-3 rounded-lg bg-slate-800/50 border border-slate-700/30">
-              <p className="text-xs text-slate-400">Rechazados</p>
-              <p className="text-xl font-bold text-red-400 mt-1">{stats.rejected}</p>
+              <p className="text-xs text-slate-400">Documentos aprobados</p>
+              <p className="text-xl font-bold text-green-400 mt-1">{stats.approved}</p>
             </div>
             <div className="p-3 rounded-lg bg-slate-800/50 border border-slate-700/30">
-              <p className="text-xs text-slate-400">Activos</p>
-              <p className="text-xl font-bold text-slate-300 mt-1">{stats.activos}</p>
+              <p className="text-xs text-slate-400">Ver historial</p>
+              <p className="text-xl font-bold text-slate-300 mt-1">{periodLabel}</p>
             </div>
           </div>
 
           <Button
             variant="outline"
             size="sm"
-            className="w-full mt-4 border-orange-500/30 hover:border-orange-500/60 hover:bg-orange-500/10 text-slate-300"
+            className="w-full mt-4 border-orange-500/30 hover:border-orange-500/60 hover:bg-orange-500/10 text-slate-300 gap-2"
           >
             <Download className="w-3 h-3 mr-2" />
             Descargar PDF
