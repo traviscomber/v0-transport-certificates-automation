@@ -48,15 +48,23 @@ export default function PendientesPage() {
     const startDate = new Date(yearNum, monthNum - 1, 1)
     const endDate = new Date(yearNum, monthNum, 0)
 
-    let filteredDocs = allData.documents || []
+    let filteredConductorDocs = allData.conductorDocs || []
+    let filteredSubDocs = allData.subDocs || []
 
     // Apply month/year filter
-    filteredDocs = filteredDocs.filter((doc: any) => {
+    filteredConductorDocs = filteredConductorDocs.filter((doc: any) => {
+      const docDate = new Date(doc.created_at)
+      return docDate >= startDate && docDate <= endDate
+    })
+    filteredSubDocs = filteredSubDocs.filter((doc: any) => {
       const docDate = new Date(doc.created_at)
       return docDate >= startDate && docDate <= endDate
     })
 
-    return filteredDocs
+    return {
+      conductorDocs: filteredConductorDocs,
+      subDocs: filteredSubDocs
+    }
   }, [allData, selectedMonth, selectedYear])
 
   const handleRefresh = async () => {
@@ -161,55 +169,6 @@ export default function PendientesPage() {
               <option value="2026">2026</option>
             </select>
           </div>
-        </div>
-      </div>
-
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setDateFilter('all')}
-            className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
-              dateFilter === 'all'
-                ? 'bg-blue-500 text-white border border-blue-600'
-                : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
-            }`}
-          >
-            Todos
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setDateFilter('today')}
-            className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
-              dateFilter === 'today'
-                ? 'bg-blue-500 text-white border border-blue-600'
-                : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
-            }`}
-          >
-            Hoy
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setDateFilter('week')}
-            className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
-              dateFilter === 'week'
-                ? 'bg-blue-500 text-white border border-blue-600'
-                : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
-            }`}
-          >
-            Última semana
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setDateFilter('month')}
-            className={`px-3 py-2 text-sm font-medium rounded-full transition-all hover:scale-105 cursor-pointer ${
-              dateFilter === 'month'
-                ? 'bg-blue-500 text-white border border-blue-600'
-                : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
-            }`}
-          >
         </div>
       </div>
 
