@@ -5,21 +5,21 @@ export const dynamic = 'force-dynamic'
 
 /**
  * GET /api/company/documents/renovar
- * Returns documents expiring in 7-30 days (próximos a vencer)
+ * Returns documents expiring soon for the renewal workflow
  * Used for preventive renewal workflow
  */
 export async function GET() {
   try {
     const adminClient = await createAdminClient()
 
-    console.log('[v0] Fetching documents expiring in 7-30 days')
+    console.log('[v0] Fetching documents expiring soon')
 
-    // Calculate date range: 7-30 days from now
+    // Calculate renewal window ahead of the expiration date
     const today = new Date()
     const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
     const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
 
-    // STEP: Query documents with expiration_date in 7-30 day range
+    // STEP: Query documents within the renewal window
     const { data: documents, error: dbError } = await adminClient
       .from('uploaded_documents')
       .select(`
@@ -77,7 +77,7 @@ export async function GET() {
       }
     })
 
-    console.log('[v0] Returned', mappedDocs.length, 'documents expiring in 7-30 days')
+    console.log('[v0] Returned', mappedDocs.length, 'documents expiring soon')
 
     return NextResponse.json({ success: true, documents: mappedDocs }, {
       headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }

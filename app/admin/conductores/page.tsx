@@ -72,7 +72,7 @@ export default async function ConductoresPage() {
         tips={[
           "Usa los filtros para encontrar conductores por empresa, RUT proveedor, licencia, vehículo o estado operativo.",
           "ROJO 'Licencia Vencida' = conductor NO puede operar hasta renovar su licencia inmediatamente.",
-          "AMARILLO 'Por Vencer' = licencia vence en menos de 30 días, requiere renovación próxima.",
+          "AMARILLO 'Por Vencer' = licencia vence pronto y requiere renovación próxima.",
           "VERDE 'Licencia Activa' = conductor habilitado para operar con licencia vigente.",
           "Los períodos permiten analizar historial operativo, licencias y cumplimiento en los últimos 4 meses.",
           "Verifica certificaciones profesionales (ADR, Defensivo, Seguridad) en la sección de detalles de cada conductor."

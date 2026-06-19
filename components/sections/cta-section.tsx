@@ -11,7 +11,7 @@ export function CTASection() {
             <span className="text-primary block">Hoy Mismo</span>
           </h2>
           <p className="text-xl text-muted-foreground text-balance mb-12 leading-relaxed">
-            Demo gratuita en 15 minutos. Implementación en 30 días. Garantía de resultados o te devolvemos tu dinero.
+            Demo gratuita en 15 minutos. Implementación rápida y acompañamiento completo. Garantía de resultados o te devolvemos tu dinero.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">

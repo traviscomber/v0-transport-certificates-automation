@@ -65,7 +65,7 @@ export function ComplianceDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Por Vencer (30 días)</p>
+                <p className="text-sm font-medium text-muted-foreground">Por Vencer</p>
                 <p className="text-2xl font-bold text-yellow-600">23</p>
               </div>
               <Clock className="h-8 w-8 text-yellow-600" />
@@ -177,7 +177,7 @@ export function ComplianceDashboard() {
                 <Clock className="h-5 w-5 text-yellow-600" />
                 <div>
                   <h4 className="font-semibold text-yellow-800">Riesgo Medio</h4>
-                  <p className="text-sm text-yellow-600">23 documentos vencen en los próximos 30 días</p>
+                  <p className="text-sm text-yellow-600">23 documentos están próximos a vencer</p>
                 </div>
               </div>
               <Badge className="bg-yellow-100 text-yellow-800">Atención</Badge>

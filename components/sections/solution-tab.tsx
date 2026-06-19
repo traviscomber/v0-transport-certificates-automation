@@ -114,7 +114,7 @@ export function SolutionTab() {
           </span>
           <span className="flex items-center gap-2 text-primary">
             <CheckCircleIcon />
-            Implementación 30 días
+            Implementación rápida
           </span>
         </div>
       </div>
@@ -171,7 +171,7 @@ export function SolutionTab() {
               <ul className="text-sm text-muted-foreground space-y-2">
                 <li className="flex items-center gap-2">
                   <ArrowRightIcon />
-                  Renovación automática 30 días antes del vencimiento
+                  Renovación automática con anticipación previa al vencimiento
                 </li>
                 <li className="flex items-center gap-2">
                   <ArrowRightIcon />
@@ -292,7 +292,7 @@ export function SolutionTab() {
               <ul className="text-sm text-muted-foreground space-y-2">
                 <li className="flex items-center gap-2">
                   <ArrowRightIcon />
-                  Implementación en 30 días garantizada
+                  Implementación rápida garantizada
                 </li>
                 <li className="flex items-center gap-2">
                   <ArrowRightIcon />

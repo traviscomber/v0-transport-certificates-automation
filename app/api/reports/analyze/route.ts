@@ -119,7 +119,7 @@ Por favor proporciona:
    - Impacto esperado
 
 5. **Próximos Pasos**
-   - Plan de acción de 30 días
+   - Plan de acción de corto plazo
    - Métricas a monitorear`
 }
 

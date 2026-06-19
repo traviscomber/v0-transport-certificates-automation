@@ -228,7 +228,7 @@ export function TorreControl({ drivers, subcontractors, vehicles = [] }: Control
               <CardTitle className="text-yellow-900">En Riesgo ({riskList.length})</CardTitle>
             </div>
             <CardDescription className="text-yellow-700">
-              Documentos próximos a vencer - requieren atención en los próximos 30 días
+              Documentos próximos a vencer - requieren atención prioritaria
             </CardDescription>
           </CardHeader>
           <CardContent>

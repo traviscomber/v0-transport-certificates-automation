@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const driverRut = searchParams.get('driver_rut')
-    const daysThreshold = parseInt(searchParams.get('days') || '30') // Por defecto alertar 30 días antes
+    const daysThreshold = parseInt(searchParams.get('days') || '30') // Por defecto alertar con anticipación estándar
 
     console.log('[v0] Checking document expiration alerts:', { driverRut, daysThreshold })
 

@@ -213,7 +213,7 @@ export function AdminAlertsSystem({ adminId }: AdminAlertsProps) {
         <p className="font-medium mb-2">Información del Sistema de Alertas</p>
         <ul className="list-disc list-inside space-y-1 text-xs">
           <li>Las alertas se generan automáticamente diariamente</li>
-          <li>Los documentos próximos a vencer generan alertas con 30 días de anticipación</li>
+          <li>Los documentos próximos a vencer generan alertas con anticipación configurable</li>
           <li>Las alertas críticas aparecen cuando quedan menos de 7 días</li>
           <li>Puedes reconocer o resolver alertas manualmente</li>
         </ul>

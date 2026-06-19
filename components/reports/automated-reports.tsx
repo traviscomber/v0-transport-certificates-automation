@@ -4,14 +4,13 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar, Download, Mail, FileText, TrendingUp, AlertTriangle, CheckCircle, Clock, Zap } from "lucide-react"
 
 interface Report {
   id: string
   name: string
   type: "compliance" | "expiry" | "audit" | "performance"
-  frequency: "daily" | "weekly" | "monthly" | "quarterly"
+  frequency: "monthly"
   lastGenerated: Date
   nextScheduled: Date
   recipients: string[]
@@ -22,11 +21,11 @@ export function AutomatedReports() {
   const [reports] = useState<Report[]>([
     {
       id: "1",
-      name: "Reporte de Cumplimiento Semanal",
+      name: "Reporte de Cumplimiento Mensual",
       type: "compliance",
-      frequency: "weekly",
+      frequency: "monthly",
       lastGenerated: new Date("2024-01-15"),
-      nextScheduled: new Date("2024-01-22"),
+      nextScheduled: new Date("2024-02-15"),
       recipients: ["admin@cleaner.cl", "compliance@cleaner.cl"],
       status: "active",
     },
@@ -42,17 +41,16 @@ export function AutomatedReports() {
     },
     {
       id: "3",
-      name: "Auditoría Trimestral",
+      name: "Auditoría Mensual",
       type: "audit",
-      frequency: "quarterly",
+      frequency: "monthly",
       lastGenerated: new Date("2023-10-01"),
-      nextScheduled: new Date("2024-01-01"),
+      nextScheduled: new Date("2024-02-01"),
       recipients: ["audit@cleaner.cl", "legal@cleaner.cl"],
       status: "paused",
     },
   ])
 
-  const [selectedPeriod, setSelectedPeriod] = useState("monthly")
   const [isGenerating, setIsGenerating] = useState(false)
 
   const generateInstantReport = async () => {
@@ -93,18 +91,7 @@ export function AutomatedReports() {
   }
 
   const getFrequencyText = (frequency: string) => {
-    switch (frequency) {
-      case "daily":
-        return "Diario"
-      case "weekly":
-        return "Semanal"
-      case "monthly":
-        return "Mensual"
-      case "quarterly":
-        return "Trimestral"
-      default:
-        return frequency
-    }
+    return "Mensual"
   }
 
   return (
@@ -122,17 +109,9 @@ export function AutomatedReports() {
           <div className="flex gap-4 items-end">
             <div className="flex-1">
               <label className="text-sm font-medium mb-2 block">Período del Reporte</label>
-              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="weekly">Última Semana</SelectItem>
-                  <SelectItem value="monthly">Último Mes</SelectItem>
-                  <SelectItem value="quarterly">Último Trimestre</SelectItem>
-                  <SelectItem value="yearly">Último Año</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                Vista mensual
+              </div>
             </div>
 
             <Button
@@ -174,7 +153,7 @@ export function AutomatedReports() {
             <Calendar className="h-5 w-5 text-blue-600" />
             Reportes Programados
           </CardTitle>
-          <CardDescription>Reportes automáticos enviados por email según programación</CardDescription>
+          <CardDescription>Reportes automáticos enviados por email según programación mensual</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

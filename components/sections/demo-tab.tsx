@@ -165,7 +165,7 @@ export function DemoTab() {
               3
             </div>
             <h4 className="text-xl font-bold mb-2">Go Live</h4>
-            <p className="text-muted-foreground">Lanzamiento en 30 días con capacitación completa de tu equipo.</p>
+            <p className="text-muted-foreground">Lanzamiento rápido con capacitación completa de tu equipo.</p>
           </div>
         </div>
       </div>
