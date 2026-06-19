@@ -2,13 +2,15 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Filter, Loader2, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Filter, Loader2, RefreshCw, Calendar } from 'lucide-react'
 import Link from 'next/link'
 import { RejectedDocumentsList } from '@/components/rejected-documents-list'
 
 export default function RechazadosPage() {
   const [allData, setAllData] = useState<any>(null)
-  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
+  const today = new Date()
+  const [selectedMonth, setSelectedMonth] = useState(String(today.getMonth() + 1).padStart(2, '0'))
+  const [selectedYear, setSelectedYear] = useState(String(today.getFullYear()))
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -40,41 +42,20 @@ export default function RechazadosPage() {
   const filteredData = useMemo(() => {
     if (!allData) return null
 
-    // Calculate date range for filtering
-    let minDate: Date | null = null
-    if (dateFilter !== 'all') {
-      const now = new Date()
-      if (dateFilter === 'today') {
-        minDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-      } else if (dateFilter === 'week') {
-        minDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-      } else if (dateFilter === 'month') {
-        minDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-      }
-    }
+    const monthNum = parseInt(selectedMonth, 10)
+    const yearNum = parseInt(selectedYear, 10)
+    const startDate = new Date(yearNum, monthNum - 1, 1)
+    const endDate = new Date(yearNum, monthNum, 0)
 
-    let filteredSubDocs = allData.subDocs || []
-    let filteredConductorDocs = allData.conductorDocs || []
+    let filteredDocs = allData.documents || []
 
-    // No ejecutiva filter - show all documents to all executivas
+    filteredDocs = filteredDocs.filter((doc: any) => {
+      const docDate = new Date(doc.created_at)
+      return docDate >= startDate && docDate <= endDate
+    })
 
-    // Apply date filter
-    if (minDate) {
-      filteredSubDocs = filteredSubDocs.filter((doc: any) => {
-        const docDate = new Date(doc.updated_at || doc.created_at)
-        return docDate >= minDate!
-      })
-      filteredConductorDocs = filteredConductorDocs.filter((doc: any) => {
-        const docDate = new Date(doc.updated_at || doc.created_at)
-        return docDate >= minDate!
-      })
-    }
-
-    return {
-      conductorDocs: filteredConductorDocs,
-      subDocs: filteredSubDocs
-    }
-  }, [allData, dateFilter])
+    return filteredDocs
+  }, [allData, selectedMonth, selectedYear])
 
   const handleRefresh = async () => {
     setRefreshing(true)
@@ -138,11 +119,48 @@ export default function RechazadosPage() {
       {/* Ejecutiva Filter - REMOVED: All executivas see all documents */}
 
       {/* Date Filter */}
-      <div className="rounded-lg bg-gradient-to-r from-slate-800/70 to-slate-800/40 border border-blue-500/30 p-4 shadow-lg">
+      <div className="rounded-lg bg-gradient-to-r from-slate-800/70 to-slate-800/40 border border-red-500/30 p-4 shadow-lg">
         <div className="flex items-center gap-3 mb-4">
-          <Filter className="h-5 w-5 text-blue-400" />
-          <span className="text-sm font-semibold text-slate-100">Filtrar por Fecha:</span>
+          <Calendar className="h-5 w-5 text-red-400" />
+          <span className="text-sm font-semibold text-slate-100">Selecciona Período:</span>
         </div>
+
+        <div className="flex gap-3 items-end">
+          <div className="flex-1">
+            <label className="text-xs font-semibold text-slate-300 mb-2 block">Mes</label>
+            <select 
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="w-full rounded-md border border-slate-600 bg-slate-700/50 px-3 py-2 text-sm text-white"
+            >
+              <option value="01">Enero</option>
+              <option value="02">Febrero</option>
+              <option value="03">Marzo</option>
+              <option value="04">Abril</option>
+              <option value="05">Mayo</option>
+              <option value="06">Junio</option>
+              <option value="07">Julio</option>
+              <option value="08">Agosto</option>
+              <option value="09">Septiembre</option>
+              <option value="10">Octubre</option>
+              <option value="11">Noviembre</option>
+              <option value="12">Diciembre</option>
+            </select>
+          </div>
+          <div className="flex-1">
+            <label className="text-xs font-semibold text-slate-300 mb-2 block">Año</label>
+            <select 
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="w-full rounded-md border border-slate-600 bg-slate-700/50 px-3 py-2 text-sm text-white"
+            >
+              <option value="2024">2024</option>
+              <option value="2025">2025</option>
+              <option value="2026">2026</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
         <div className="flex flex-wrap gap-2">
           <button
