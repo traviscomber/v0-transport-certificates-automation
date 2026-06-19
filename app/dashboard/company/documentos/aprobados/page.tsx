@@ -171,14 +171,10 @@ export default function AprobadosPage() {
           </div>
         </div>
       </div>
-            Último mes
-          </button>
-        </div>
-      </div>
 
       {/* Documents List - key forces re-render when filter changes */}
       <ApprovedDocumentsList
-        key={`approved-${dateFilter}-${filteredData?.subDocs?.length || 0}`}
+        key={`approved-${selectedMonth}-${selectedYear}-${filteredData?.subDocs?.length || 0}`}
         conductorDocs={filteredData?.conductorDocs || []}
         subDocs={filteredData?.subDocs || []}
       />

@@ -208,14 +208,12 @@ export default function RechazadosPage() {
                 : 'bg-slate-700 text-slate-200 border border-slate-600 hover:bg-slate-600'
             }`}
           >
-            Último mes
-          </button>
         </div>
       </div>
 
       {/* Documents List - key forces re-render when filter changes */}
       <RejectedDocumentsList
-        key={`rejected-${dateFilter}-${filteredData?.subDocs?.length || 0}`}
+        key={`rejected-${selectedMonth}-${selectedYear}-${filteredData?.subDocs?.length || 0}`}
         conductorDocs={filteredData?.conductorDocs || []}
         subDocs={filteredData?.subDocs || []}
       />
