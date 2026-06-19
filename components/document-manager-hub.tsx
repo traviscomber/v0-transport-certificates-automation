@@ -118,7 +118,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       color: 'text-blue-500',
       bgColor: 'bg-blue-500/10',
       borderColor: 'border-blue-500/30',
-      href: '/dashboard/company/conductores',
+      href: '/dashboard/company/documentos/aprobados',
       stats: stats.conductores,
       statItems: [
         { label: 'Pendientes', value: stats.conductores.pendientes, icon: Clock, color: 'text-amber-500' },
@@ -134,7 +134,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       color: 'text-orange-500',
       bgColor: 'bg-orange-500/10',
       borderColor: 'border-orange-500/30',
-      href: '/dashboard/company/subcontratistas',
+      href: '/dashboard/company/documentos/aprobados',
       stats: stats.subcontratistas,
       statItems: [
         { label: 'Pendientes', value: stats.subcontratistas.pendientes, icon: Clock, color: 'text-amber-500' },
@@ -150,7 +150,7 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       color: 'text-purple-500',
       bgColor: 'bg-purple-500/10',
       borderColor: 'border-purple-500/30',
-      href: '/dashboard/company/subcontratistas',
+      href: '/dashboard/company/documentos',
       stats: stats.certificaciones,
       statItems: [
         { label: 'Vigentes', value: stats.certificaciones.vigentes, icon: CheckCircle, color: 'text-green-500' },

@@ -64,17 +64,18 @@ export default async function ConductoresPage() {
         </Link>
       </div>
 
-      {/* Ayuda Educativa */}
+      {/* Ayuda Educativa - Onboarding */}
       <HelpBox
         variant="info"
-        title="Gestión Operativa de Conductores"
-        description="Sistema centralizado para gestionar conductores, licencias (A2/A5), certificaciones profesionales, subcontratistas y estado de liquidaciones."
+        title="Gestión Integral de Conductores"
+        description="Sistema centralizado para gestionar conductores, licencias profesionales (A2/A5), certificaciones de seguridad, vehículos asignados y estado operativo."
         tips={[
-          "Usa los filtros para encontrar conductores por empresa, RUT proveedor, tipo de vehículo y estado de licencia.",
-          "ROJO 'Licencia Vencida' = conductor NO puede operar hasta renovar licencia.",
-          "AMARILLO 'Por Vencer' = licencia vence en menos de 30 días.",
-          "VERDE 'Activo' = conductor habilitado para trabajar.",
-          "Verifica certificaciones profesionales (ADR, Defensivo, Seguridad)."
+          "Usa los filtros para encontrar conductores por empresa, RUT proveedor, licencia, vehículo o estado operativo.",
+          "ROJO 'Licencia Vencida' = conductor NO puede operar hasta renovar su licencia inmediatamente.",
+          "AMARILLO 'Por Vencer' = licencia vence en menos de 30 días, requiere renovación próxima.",
+          "VERDE 'Licencia Activa' = conductor habilitado para operar con licencia vigente.",
+          "Los períodos permiten analizar historial operativo, licencias y cumplimiento en los últimos 4 meses.",
+          "Verifica certificaciones profesionales (ADR, Defensivo, Seguridad) en la sección de detalles de cada conductor."
         ]}
       />
 

@@ -257,51 +257,87 @@ export function SubcontractorDetailTabs({
                     </div>
                   ) : (
                     <div className="space-y-3">
+                      {/* Summary Stats */}
+                      {requirements.length > 0 && (
+                        <div className="grid grid-cols-2 gap-2 p-3 bg-slate-800/50 rounded border border-slate-700">
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-green-400">{summary.totalDocumentsUploaded}</p>
+                            <p className="text-xs text-slate-400">Documentos Subidos</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-slate-400">{requirements.length - summary.totalDocumentsUploaded}</p>
+                            <p className="text-xs text-slate-400">Por Subir</p>
+                          </div>
+                        </div>
+                      )}
+                      
                       {requirements.length > 0 ? (
                         requirements.map((req) => {
                           const statusColors: Record<string, string> = {
-                            aprobado: 'bg-green-900/20 border-green-800 text-green-400',
-                            pendiente: 'bg-yellow-900/20 border-yellow-800 text-yellow-400',
-                            rechazado: 'bg-red-900/20 border-red-800 text-red-400',
-                            vencido: 'bg-orange-900/20 border-orange-800 text-orange-400',
-                            no_subido: 'bg-slate-800 text-slate-400',
+                            approved: 'bg-green-900/20 border-green-800 text-green-400',
+                            pending: 'bg-yellow-900/20 border-yellow-800 text-yellow-400',
+                            rejected: 'bg-red-900/20 border-red-800 text-red-400',
+                            expired: 'bg-orange-900/20 border-orange-800 text-orange-400',
                           }
-                          const statusColor = statusColors[req.status] || statusColors.no_subido
+                          const statusColor = statusColors[req.status] || 'bg-slate-800 text-slate-400'
                           const statusLabel: Record<string, string> = {
-                            aprobado: 'Aprobado',
-                            pendiente: 'Pendiente',
-                            rechazado: 'Rechazado',
-                            vencido: 'Vencido',
-                            no_subido: 'No subido',
+                            approved: 'Aprobado',
+                            pending: 'Pendiente',
+                            rejected: 'Rechazado',
+                            expired: 'Vencido',
                           }
                           
-                          const uploadedDoc = documents.find((d) => d.nombre.includes(req.code))
+                          // Match documents by document_type_id (not by name)
+                          const uploadedDoc = documents.find((d) => d.document_type_id === req.id);
+                          const isUploaded = !!uploadedDoc && !!uploadedDoc.file_url;
+                          const docStatus = uploadedDoc?.status || 'not_uploaded';
+                          const displayStatus = docStatus === 'not_uploaded' ? 'No subido' : statusLabel[docStatus as keyof typeof statusLabel] || docStatus;
                           
                           return (
                             <div
                               key={req.id}
-                              className={`p-3 rounded border flex items-center justify-between ${statusColor}`}
+                              className={`p-4 rounded border flex items-center justify-between transition-all hover:shadow-md ${statusColor}`}
                             >
-                              <div className="flex-1">
-                                <p className="font-mono text-xs font-bold">{req.code}</p>
-                                <p className="text-xs">{req.nombre || 'Documento requerido'}</p>
+                              <div className="flex-1 flex items-start gap-3">
+                                {/* Status Icon */}
+                                <div className="mt-1">
+                                  {isUploaded ? (
+                                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                                  ) : (
+                                    <AlertCircle className="w-5 h-5 text-slate-500 flex-shrink-0" />
+                                  )}
+                                </div>
+                                
+                                {/* Document Info */}
+                                <div className="flex-1">
+                                  <p className="font-mono text-xs font-bold">{req.code}</p>
+                                  <p className="text-sm">{req.nombre || 'Documento requerido'}</p>
+                                  {isUploaded && uploadedDoc && (
+                                    <p className="text-xs text-slate-300 mt-1">
+                                      📄 {uploadedDoc.file_name || 'Documento subido'}
+                                    </p>
+                                  )}
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2 ml-4">
-                                <span className="text-xs font-semibold">{statusLabel[req.status]}</span>
-                                {uploadedDoc && uploadedDoc.archivo_url && (
+                              
+                              {/* Status and Actions */}
+                              <div className="flex items-center gap-3 ml-4">
+                                <span className="text-xs font-semibold whitespace-nowrap">{displayStatus}</span>
+                                {isUploaded && uploadedDoc?.file_url && (
                                   <div className="flex gap-2">
                                     <a
-                                      href={`/api/documents/preview?path=${encodeURIComponent(uploadedDoc.archivo_url)}`}
+                                      href={uploadedDoc.file_url}
                                       target="_blank"
-                                      className="hover:opacity-75 transition-opacity"
+                                      rel="noopener noreferrer"
+                                      className="hover:opacity-75 transition-opacity text-blue-400 hover:text-blue-300"
                                       title="Ver documento"
                                     >
                                       <Eye className="w-4 h-4" />
                                     </a>
                                     <a
-                                      href={`/api/documents/download?path=${encodeURIComponent(uploadedDoc.archivo_url)}`}
-                                      download
-                                      className="hover:opacity-75 transition-opacity"
+                                      href={uploadedDoc.file_url}
+                                      download={uploadedDoc.file_name || 'documento'}
+                                      className="hover:opacity-75 transition-opacity text-blue-400 hover:text-blue-300"
                                       title="Descargar"
                                     >
                                       <Download className="w-4 h-4" />
@@ -323,8 +359,8 @@ export function SubcontractorDetailTabs({
                 <TabsContent value="certificaciones" className="space-y-4 mt-0">
                   <div className="grid grid-cols-2 gap-3">
                     {certifications.map((cert) => {
-                      const hasCert = subcontractor[cert.key]
-                      const certDoc = documents.find((d) => d.nombre.includes(cert.name))
+                      const hasCert = subcontractor[cert.key];
+                      const certDoc = documents.find((d) => d.nombre?.includes(cert.name ?? ''));
                       
                       return (
                         <div key={cert.key} className="space-y-2">

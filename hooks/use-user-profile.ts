@@ -19,8 +19,18 @@ export function useUserProfile() {
         setLoading(true)
         const response = await fetch('/api/profile')
         
+        // 401 means the user is authenticated via user_email cookie (not auth_token).
+        // Treat it as "no Supabase profile available" — not a crash-worthy error.
+        if (response.status === 401 || response.status === 403) {
+          setProfile(null)
+          setError(null)
+          return
+        }
+
         if (!response.ok) {
-          throw new Error('Failed to fetch profile')
+          // Non-auth errors: log but don't crash — header has cookie fallback
+          setError('Failed to fetch profile')
+          return
         }
         
         const data = await response.json()

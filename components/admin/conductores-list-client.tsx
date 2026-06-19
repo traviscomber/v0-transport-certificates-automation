@@ -4,9 +4,10 @@ import { useState, useMemo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { Users, AlertTriangle, Calendar, Building2 } from 'lucide-react'
+import { Users, AlertTriangle, Calendar, Building2, Search } from 'lucide-react'
 import { DriverFilters, type DriverFilters as DriverFiltersType } from './driver-filters'
 import { LicenseAndCertifications } from './license-certifications'
+import { QuickHelp } from '@/components/ui/help-box'
 
 interface ConductoresListClientProps {
   conductores: any[]
@@ -37,6 +38,9 @@ export function ConductoresListClient({
   companies,
 }: ConductoresListClientProps) {
   const [searchInput, setSearchInput] = useState('')
+  const today = new Date()
+  const [selectedMonth, setSelectedMonth] = useState(String(today.getMonth() + 1).padStart(2, '0'))
+  const [selectedYear, setSelectedYear] = useState(String(today.getFullYear()))
   const [filters, setFilters] = useState<DriverFiltersType>({
     searchQuery: '',
     licenseStatus: 'all',
@@ -137,28 +141,75 @@ export function ConductoresListClient({
     })
   }, [searchInput, filters.searchQuery, initialConductores])
 
+  // Get period label for display
+  const periodLabels: Record<string, string> = {
+    current: 'Período Actual',
+    month1: 'Último Mes',
+    month2: 'Hace 2 Meses',
+    month3: 'Hace 3 Meses',
+    month4: 'Hace 4 Meses',
+  }
+
   return (
     <div className="space-y-6">
-      {/* Search Input */}
+      {/* Search and Period Selector */}
       <Card>
-        <CardContent className="pt-6">
-          <label className="text-sm font-medium mb-2 block">Buscar Conductores</label>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="RUT, Nombre, Proveedor, RUT Proveedor, Licencia o Patente..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full rounded-md border bg-background px-4 py-2 text-sm placeholder:text-muted-foreground"
-            />
-            {searchInput && (
-              <button
-                onClick={() => setSearchInput('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                ✕
-              </button>
-            )}
+        <CardContent className="pt-6 space-y-3">
+          <QuickHelp text="Busca conductores por RUT, nombre, empresa o licencia. Selecciona un período para analizar datos históricos de los últimos 4 meses." />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="relative md:col-span-2">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="RUT, Nombre, Proveedor, RUT Proveedor, Licencia o Patente..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="w-full rounded-md border bg-background pl-10 pr-4 py-2 text-sm placeholder:text-muted-foreground"
+              />
+              {searchInput && (
+                <button
+                  onClick={() => setSearchInput('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2 items-end">
+              <div className="relative flex-1">
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">Mes</label>
+                <select 
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                >
+                  <option value="01">Enero</option>
+                  <option value="02">Febrero</option>
+                  <option value="03">Marzo</option>
+                  <option value="04">Abril</option>
+                  <option value="05">Mayo</option>
+                  <option value="06">Junio</option>
+                  <option value="07">Julio</option>
+                  <option value="08">Agosto</option>
+                  <option value="09">Septiembre</option>
+                  <option value="10">Octubre</option>
+                  <option value="11">Noviembre</option>
+                  <option value="12">Diciembre</option>
+                </select>
+              </div>
+              <div className="relative flex-1">
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">Año</label>
+                <select 
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                >
+                  <option value="2024">2024</option>
+                  <option value="2025">2025</option>
+                  <option value="2026">2026</option>
+                </select>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

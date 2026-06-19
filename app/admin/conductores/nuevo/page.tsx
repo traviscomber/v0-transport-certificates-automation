@@ -16,6 +16,8 @@ export default function NuevoConductorPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [transportistas, setTransportistas] = useState<any[]>([])
+  const [step, setStep] = useState<'pensionado' | 'form'>('pensionado')
+  const [isPensionado, setIsPensionado] = useState<boolean | null>(null)
 
   useEffect(() => {
     async function loadTransportistas() {
@@ -55,6 +57,12 @@ export default function NuevoConductorPage() {
       clase_licencia: formData.get("clase_licencia") as string || null,
       numero_licencia: formData.get("numero_licencia") as string || null,
       vencimiento_licencia: formData.get("vencimiento_licencia") as string || null,
+      es_pensionado: isPensionado,
+      numero_afp: isPensionado ? null : (formData.get("numero_afp") as string || null),
+      numero_isapre: isPensionado ? null : (formData.get("numero_isapre") as string || null),
+      tipo_contratacion: formData.get("tipo_contratacion") as string || null,
+      numero_pension: isPensionado ? (formData.get("numero_pension") as string || null) : null,
+      institucion_pension: isPensionado ? (formData.get("institucion_pension") as string || null) : null,
     }
 
     const supabase = createClient()
@@ -78,18 +86,91 @@ export default function NuevoConductorPage() {
     router.refresh()
   }
 
+  // Step 1: Pensionado Selection
+  if (step === 'pensionado') {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="flex items-center gap-4">
+          <Link href="/admin/conductores">
+            <Button variant="ghost" size="icon" title="Volver a la lista de conductores">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Nuevo Conductor</h1>
+            <p className="text-muted-foreground">
+              Paso 1: Determinar situación previsional
+            </p>
+          </div>
+        </div>
+
+        <HelpBox
+          variant="info"
+          title="¿Cuál es la situación previsional?"
+          description="Es fundamental determinar si el conductor es pensionado o no pensionado, ya que esto afecta el tratamiento de impuestos y descuentos legales."
+          tips={[
+            "PENSIONADO: Recibe pensión de AFP, INP u otra institución previsional.",
+            "NO PENSIONADO: Está activo en el sistema previsional y aporta a AFP o similar.",
+            "Esta clasificación determina los campos de documentación e impuestos requeridos."
+          ]}
+        />
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card className="cursor-pointer hover:border-blue-500 transition-colors"
+                onClick={() => { setIsPensionado(true); setStep('form'); }}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span className="text-2xl">👴</span> Pensionado
+              </CardTitle>
+              <CardDescription>Recibe pensión previsional</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-sm">El conductor está jubilado y recibe pensión de:</p>
+              <ul className="text-sm space-y-1 text-muted-foreground">
+                <li>• AFP (Administradora de Fondos de Pensiones)</li>
+                <li>• INP (Instituto Nacional de Pensiones)</li>
+                <li>• Otros fondos de pensión</li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:border-green-500 transition-colors"
+                onClick={() => { setIsPensionado(false); setStep('form'); }}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span className="text-2xl">👨</span> No Pensionado
+              </CardTitle>
+              <CardDescription>Activo en el sistema previsional</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-sm">El conductor aporta al sistema de pensiones:</p>
+              <ul className="text-sm space-y-1 text-muted-foreground">
+                <li>• Aporta a AFP o sistema previsional</li>
+                <li>• Tiene derecho a descuentos legales</li>
+                <li>• Requiere documentación de impuestos</li>
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/admin/conductores">
-          <Button variant="ghost" size="icon" title="Volver a la lista de conductores">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setStep('pensionado')}
+          title="Volver a seleccionar situación previsional"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Nuevo Conductor</h1>
           <p className="text-muted-foreground">
-            Registra un nuevo conductor (chofer) en el sistema
+            Paso 2: Registro de datos {isPensionado ? '(Pensionado)' : '(No Pensionado)'}
           </p>
         </div>
       </div>
@@ -242,6 +323,91 @@ export default function NuevoConductorPage() {
                   type="date"
                 />
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Impuestos y Previsión */}
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle>
+                {isPensionado ? 'Información de Pensión' : 'Información de Impuestos y Previsión'}
+              </CardTitle>
+              <CardDescription>
+                {isPensionado 
+                  ? 'Datos del sistema previsional de pensión'
+                  : 'Datos de impuestos y aportes previsionales'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isPensionado ? (
+                // Campos para PENSIONADO
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="institucion_pension">Institución de Pensión</Label>
+                    <Input 
+                      id="institucion_pension" 
+                      name="institucion_pension" 
+                      placeholder="ej: AFP Profesional, INP"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="numero_pension">Número de Pensión</Label>
+                    <Input 
+                      id="numero_pension" 
+                      name="numero_pension" 
+                      placeholder="Número de afiliación o cuenta"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tipo_contratacion">Tipo de Contratación</Label>
+                    <select 
+                      id="tipo_contratacion" 
+                      name="tipo_contratacion"
+                      className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="">Seleccionar...</option>
+                      <option value="honorarios">Honorarios</option>
+                      <option value="plazo_fijo">Plazo Fijo</option>
+                      <option value="indefinido">Indefinido</option>
+                      <option value="obra">Por Obra</option>
+                    </select>
+                  </div>
+                </div>
+              ) : (
+                // Campos para NO PENSIONADO
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="numero_afp">Número de AFP</Label>
+                    <Input 
+                      id="numero_afp" 
+                      name="numero_afp" 
+                      placeholder="Número de afiliación AFP"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="numero_isapre">Número de ISAPRE/Fonasa</Label>
+                    <Input 
+                      id="numero_isapre" 
+                      name="numero_isapre" 
+                      placeholder="Número de afiliación de salud"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tipo_contratacion">Tipo de Contratación</Label>
+                    <select 
+                      id="tipo_contratacion" 
+                      name="tipo_contratacion"
+                      className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="">Seleccionar...</option>
+                      <option value="honorarios">Honorarios</option>
+                      <option value="plazo_fijo">Plazo Fijo</option>
+                      <option value="indefinido">Indefinido</option>
+                      <option value="obra">Por Obra</option>
+                    </select>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 

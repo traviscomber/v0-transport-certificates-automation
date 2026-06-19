@@ -36,8 +36,8 @@ export default function SubcontratistasLoginPage() {
         return
       }
 
-      // Login successful, redirect to dashboard
-      window.location.href = '/subcontractors/dashboard'
+      // Login successful, redirect to onboarding first
+      window.location.href = '/subcontractors/onboarding'
 
     } catch (err) {
       setError('Error de conexión. Intenta nuevamente.')

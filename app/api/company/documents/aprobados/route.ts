@@ -287,6 +287,7 @@ export async function GET() {
       
       const assignedEjecutiva = conductorExecutiveMap.get(doc.conductor_id) || doc.ejecutiva || 'No especificado'
       const empresa_nombre = conductorEmpresaMap.get(doc.conductor_id) || null
+      const conductor = conductorMap.get(doc.conductor_id) || null
       
       return {
         id: doc.id,
@@ -300,6 +301,12 @@ export async function GET() {
         validated_at: doc.validated_at || doc.updated_at,
         ejecutiva: assignedEjecutiva,
         empresa_nombre,
+        conductores: conductor ? {
+          id: conductor.id,
+          nombres: conductor.nombres,
+          apellido_paterno: conductor.apellido_paterno,
+          rut: conductor.rut
+        } : null,
         created_at: doc.created_at,
         updated_at: doc.updated_at,
         reviewed_at: doc.validated_at || doc.updated_at,
@@ -320,7 +327,8 @@ export async function GET() {
       const rawFallback = doc.reviewed_by_ejecutiva || null
       const resolvedFallback = rawFallback ? (emailToNameMap.get(rawFallback) || rawFallback) : 'No especificado'
       const assignedEjecutiva = executiveMap.get(doc.subcontractor_id) || resolvedFallback
-      const empresa_nombre = transportistasMap.get(doc.subcontractor_id)?.razon_social || null
+      const transportista = transportistasMap.get(doc.subcontractor_id)
+      const empresa_nombre = transportista?.razon_social || null
       
       return {
         id: doc.id,
@@ -336,6 +344,11 @@ export async function GET() {
         reviewed_by_ejecutiva: assignedEjecutiva,
         ejecutiva: assignedEjecutiva,
         empresa_nombre,
+        transportistas: transportista ? {
+          id: transportista.id,
+          razon_social: transportista.razon_social,
+          rut: transportista.rut
+        } : null,
         created_at: doc.created_at,
         updated_at: doc.updated_at,
         reviewed_at: doc.reviewed_at || doc.approved_at || doc.updated_at,

@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { AlertCircle, CheckCircle, Clock, LogOut, Upload, FileText, HelpCircle } from 'lucide-react'
+import { AlertCircle, CheckCircle, Clock, LogOut, Upload, FileText, HelpCircle, Calendar } from 'lucide-react'
+import { HelpBox } from '@/components/ui/help-box'
 
 interface DocumentType {
   id: string
@@ -43,6 +44,10 @@ export default function SubcontractorDashboardPage() {
   const [uploadError, setUploadError] = useState('')
   const [uploadSuccess, setUploadSuccess] = useState('')
   const [loading, setLoading] = useState(true)
+  const today = new Date()
+  const [selectedMonth, setSelectedMonth] = useState(String(today.getMonth() + 1).padStart(2, '0'))
+  const [selectedYear, setSelectedYear] = useState(String(today.getFullYear()))
+  const [documentDate, setDocumentDate] = useState(new Date().toISOString().split('T')[0])
 
   useEffect(() => {
     // Get transportista info from cookies/session
@@ -142,6 +147,7 @@ export default function SubcontractorDashboardPage() {
       formData.append('file', selectedFile)
       formData.append('documentTypeId', selectedDocType)
       formData.append('subcontractorRut', transportista.rut)
+      formData.append('documentDate', documentDate)
 
       console.log('[v0] Uploading file:', {
         name: selectedFile.name,
@@ -197,6 +203,27 @@ export default function SubcontractorDashboardPage() {
     router.push('/subcontractors/login')
   }
 
+  // Get date range for selected month/year
+  const getDateRangeForPeriod = (month: string, year: string) => {
+    const monthNum = parseInt(month, 10)
+    const yearNum = parseInt(year, 10)
+    const startDate = new Date(yearNum, monthNum - 1, 1) // First day of selected month
+    const endDate = new Date(yearNum, monthNum, 0) // Last day of selected month
+    return { start: startDate, end: endDate }
+  }
+
+  // Filter documents by selected period
+  const filteredDocuments = documents.filter((doc) => {
+    const docDate = new Date(doc.uploaded_at)
+    const { start, end } = getDateRangeForPeriod(selectedMonth, selectedYear)
+    return docDate >= start && docDate <= end
+  })
+
+  // Get min date for document date picker (4 months ago)
+  const minDate = new Date()
+  minDate.setMonth(minDate.getMonth() - 4)
+  const minDateString = minDate.toISOString().split('T')[0]
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
@@ -227,6 +254,21 @@ export default function SubcontractorDashboardPage() {
   return (
     <div className="min-h-screen bg-slate-900 p-4 md:p-6">
       <div className="max-w-4xl mx-auto space-y-6">
+        {/* Onboarding Help Box */}
+        <HelpBox
+          variant="info"
+          title="Portal de Subcontratistas - Gestión de Documentos"
+          description="Sistema para subir, gestionar y monitorear el estado de documentos requeridos por la empresa de transporte."
+          tips={[
+            "Selecciona el tipo de documento en el dropdown y adjunta el archivo (PDF, JPG o PNG máximo 50MB).",
+            "VERDE 'Aprobado' = documento validado y activo. AZUL 'Bajo revisión' = tu documento fue recibido y está siendo validado.",
+            "ROJO 'Rechazado' = revisa el motivo del rechazo y sube nuevamente. ROJO 'Vencido' = renueva el documento antes de la fecha indicada.",
+            "Los documentos expiran según su período de validez. Recibe notificaciones cuando próximas renovaciones se acerquen.",
+            "Mantén todos los documentos actualizados para mantener tu estado activo en la plataforma.",
+            "Si tienes dudas, contacta con tu ejecutiva asignada en la empresa de transporte."
+          ]}
+        />
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -242,6 +284,53 @@ export default function SubcontractorDashboardPage() {
             Cerrar sesión
           </Button>
         </div>
+
+        {/* Period Selector */}
+        <Card className="border-slate-700 bg-slate-800/30">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <Calendar className="w-5 h-5 text-slate-400" />
+              <label className="text-sm font-medium text-slate-300">
+                Selecciona Período:
+              </label>
+              <div className="flex gap-2 items-end">
+                <div className="flex-1">
+                  <label className="text-xs font-semibold text-slate-400 mb-1 block">Mes</label>
+                  <select 
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="w-full rounded-md border border-slate-600 bg-slate-700/50 px-3 py-2 text-sm text-white"
+                  >
+                    <option value="01">Enero</option>
+                    <option value="02">Febrero</option>
+                    <option value="03">Marzo</option>
+                    <option value="04">Abril</option>
+                    <option value="05">Mayo</option>
+                    <option value="06">Junio</option>
+                    <option value="07">Julio</option>
+                    <option value="08">Agosto</option>
+                    <option value="09">Septiembre</option>
+                    <option value="10">Octubre</option>
+                    <option value="11">Noviembre</option>
+                    <option value="12">Diciembre</option>
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs font-semibold text-slate-400 mb-1 block">Año</label>
+                  <select 
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="w-full rounded-md border border-slate-600 bg-slate-700/50 px-3 py-2 text-sm text-white"
+                  >
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Upload Section */}
         <Card className="border-slate-700 bg-slate-800/50">
@@ -280,7 +369,7 @@ export default function SubcontractorDashboardPage() {
                 </div>
               )}
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="doctype" className="text-slate-200">
                     Tipo de Documento
@@ -297,6 +386,24 @@ export default function SubcontractorDashboardPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="docdate" className="text-slate-200">
+                    Fecha del Documento
+                  </Label>
+                  <Input
+                    id="docdate"
+                    type="date"
+                    value={documentDate}
+                    onChange={(e) => setDocumentDate(e.target.value)}
+                    min={minDateString}
+                    max={new Date().toISOString().split('T')[0]}
+                    className="bg-slate-700/50 border-slate-600 text-slate-300"
+                  />
+                  <p className="text-xs text-slate-400">
+                    Hasta 4 meses atrás
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -334,15 +441,19 @@ export default function SubcontractorDashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5" />
-              Documentos Subidos ({documents.length})
+              Documentos Subidos ({filteredDocuments.length} de {documents.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {documents.length === 0 ? (
-              <p className="text-slate-400 text-center py-8">Aún no has subido documentos</p>
+            {filteredDocuments.length === 0 ? (
+              <p className="text-slate-400 text-center py-8">
+                {documents.length === 0 
+                  ? 'Aún no has subido documentos' 
+                  : 'No hay documentos en este período'}
+              </p>
             ) : (
               <div className="space-y-2">
-                {documents.map((doc) => (
+                {filteredDocuments.map((doc) => (
                   <div
                     key={doc.id}
                     className="flex items-center justify-between p-3 rounded-lg bg-slate-700/30 border border-slate-600"
