@@ -1,34 +1,33 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { FileText, Shield, Truck, User, AlertTriangle, CheckCircle, Clock, Download, RefreshCw } from "lucide-react"
-
-interface DocumentSummary {
-  total: number
-  approved: number
-  pending: number
-  rejected: number
-}
+import { DatePeriodFilter } from "@/components/date-period-filter"
+import { ALL_VALUE, getMonthLabel, type DateFilterValue } from "@/lib/date-filters"
+import { FileText, AlertTriangle, CheckCircle, Clock, RefreshCw } from "lucide-react"
 
 interface ExecutiveMetric {
-  ejecutiva: string
-  documentos_procesados: number
-  documentos_validados: number
-  documentos_rechazados: number
-  documentos_pendientes: number
+  executive_id: string
+  executive_name: string
+  documents_processed: number
+  validated_count: number
+  rejected_count: number
+  pending_count: number
   conductores_activos: number
-  tasa_validacion: string
+  approval_rate: number
+  avg_validation_time: number
   performance_score: number
+  tasa_validacion: string
 }
 
 interface MetricsSummary {
-  total_documentos: number
+  total_documents: number
   total_validados: number
   total_conductores: number
   total_subcontratistas: number
+  total_rechazados: number
+  total_pendientes: number
 }
 
 export function ComplianceDashboard() {
@@ -37,16 +36,20 @@ export function ComplianceDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<string>("all")
-  const [range, setRange] = useState<"day" | "week" | "month">("week")
+  const [period, setPeriod] = useState<DateFilterValue>({
+    month: ALL_VALUE,
+    year: ALL_VALUE,
+  })
 
   const fetchMetrics = async () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/company/metrics?range=${range}&_t=${Date.now()}`, {
+      const params = new URLSearchParams({ month: period.month, year: period.year })
+      const res = await fetch(`/api/company/metrics?${params.toString()}&_t=${Date.now()}`, {
         cache: "no-store",
       })
-      if (!res.ok) throw new Error("Error al cargar métricas")
+      if (!res.ok) throw new Error("Error al cargar metricas")
       const data = await res.json()
       setMetrics(data.executives || [])
       setSummary(data.summary || null)
@@ -59,7 +62,32 @@ export function ComplianceDashboard() {
 
   useEffect(() => {
     fetchMetrics()
-  }, [range])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period.month, period.year])
+
+  const monthLabel = getMonthLabel(period.month, period.year)
+
+  const filteredMetrics = useMemo(() => {
+    return metrics.filter((metric) => {
+      if (filterStatus === "all") return true
+      if (filterStatus === "ok") return metric.performance_score >= 75
+      if (filterStatus === "warning") return metric.performance_score >= 50 && metric.performance_score < 75
+      if (filterStatus === "critical") return metric.performance_score < 50
+      return true
+    })
+  }, [filterStatus, metrics])
+
+  const criticalCount = metrics.filter((metric) => metric.performance_score < 50).length
+  const warningCount = metrics.filter((metric) => metric.performance_score >= 50 && metric.performance_score < 75).length
+  const okCount = metrics.filter((metric) => metric.performance_score >= 75).length
+
+  const complianceRate = summary && summary.total_documents > 0
+    ? Math.round((summary.total_validados / summary.total_documents) * 100)
+    : 0
+
+  const riskRate = summary && summary.total_documents > 0
+    ? Math.round(((summary.total_pendientes + summary.total_rechazados) / summary.total_documents) * 100)
+    : 0
 
   const getScoreColor = (score: number) => {
     if (score >= 75) return "text-green-400"
@@ -79,43 +107,14 @@ export function ComplianceDashboard() {
     return <AlertTriangle className="w-4 h-4 text-red-400" />
   }
 
-  const filteredMetrics = metrics.filter(m => {
-    if (filterStatus === "all") return true
-    if (filterStatus === "ok") return m.performance_score >= 75
-    if (filterStatus === "warning") return m.performance_score >= 50 && m.performance_score < 75
-    if (filterStatus === "critical") return m.performance_score < 50
-    return true
-  })
-
-  const criticalCount = metrics.filter(m => m.performance_score < 50).length
-  const warningCount = metrics.filter(m => m.performance_score >= 50 && m.performance_score < 75).length
-  const okCount = metrics.filter(m => m.performance_score >= 75).length
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h2 className="text-xl font-bold text-white">Panel de Cumplimiento Documental</h2>
-          <p className="text-sm text-slate-400 mt-1">Compliance en tiempo real por ejecutiva y conductor</p>
+          <p className="text-sm text-slate-400 mt-1">Lectura mensual basada en documentos reales y ejecutivas activas</p>
         </div>
         <div className="flex items-center gap-2">
-          {/* Range selector */}
-          <div className="flex gap-1 bg-slate-800 rounded-lg p-1">
-            {(["day", "week", "month"] as const).map(r => (
-              <button
-                key={r}
-                onClick={() => setRange(r)}
-                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                  range === r
-                    ? "bg-orange-500 text-white"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                {r === "day" ? "Hoy" : r === "week" ? "Semana" : "Mes"}
-              </button>
-            ))}
-          </div>
           <Button
             variant="outline"
             size="sm"
@@ -129,12 +128,17 @@ export function ComplianceDashboard() {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      <DatePeriodFilter
+        value={period}
+        onChange={setPeriod}
+        onClear={() => setPeriod({ month: ALL_VALUE, year: ALL_VALUE })}
+      />
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="bg-slate-900/80 border-slate-700">
           <CardContent className="pt-4 pb-4">
             <p className="text-xs text-slate-400 mb-1">Total Documentos</p>
-            <p className="text-2xl font-bold text-white">{summary?.total_documentos ?? "—"}</p>
+            <p className="text-2xl font-bold text-white">{summary?.total_documents ?? "—"}</p>
           </CardContent>
         </Card>
         <Card className="bg-slate-900/80 border-green-500/30">
@@ -157,20 +161,49 @@ export function ComplianceDashboard() {
         </Card>
       </div>
 
-      {/* Compliance Matrix by Executive */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card className="bg-slate-900/80 border-slate-700">
+          <CardContent className="pt-4 pb-4">
+            <p className="text-xs text-slate-400 font-medium">PERIODO ACTIVO</p>
+            <p className="text-xl font-bold text-white mt-1">{monthLabel}</p>
+            <p className="text-sm text-slate-300 mt-2">Resumen listo para revisión ejecutiva.</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-slate-900/80 border-emerald-500/30">
+          <CardContent className="pt-4 pb-4">
+            <p className="text-xs text-emerald-300/80 font-medium">CUMPLIMIENTO</p>
+            <p className="text-3xl font-bold text-emerald-300 mt-1">{complianceRate}%</p>
+            <p className="text-sm text-slate-300 mt-2">
+              {summary?.total_validados ?? 0} validados de {summary?.total_documents ?? 0} documentos.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-slate-900/80 border-orange-500/30">
+          <CardContent className="pt-4 pb-4">
+            <p className="text-xs text-orange-300/80 font-medium">RIESGO ACTIVO</p>
+            <p className="text-3xl font-bold text-orange-300 mt-1">{riskRate}%</p>
+            <p className="text-sm text-slate-300 mt-2">
+              {(summary?.total_pendientes ?? 0) + (summary?.total_rechazados ?? 0)} puntos de atención.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card className="bg-slate-900/80 border-slate-700">
         <CardHeader className="flex flex-row items-center justify-between pb-4">
           <div>
             <CardTitle className="text-white">Rendimiento por Ejecutiva</CardTitle>
-            <CardDescription>Tasa de validacion y documentos gestionados en el periodo</CardDescription>
+            <CardDescription>Tasa de validación y documentos gestionados en el período mensual</CardDescription>
           </div>
           <div className="flex gap-2 flex-wrap justify-end">
             {[
               { key: "all", label: "Todos" },
               { key: "ok", label: `OK (${okCount})`, color: "text-green-400" },
-              { key: "warning", label: `Atencion (${warningCount})`, color: "text-yellow-400" },
-              { key: "critical", label: `Critico (${criticalCount})`, color: "text-red-400" },
-            ].map(f => (
+              { key: "warning", label: `Atención (${warningCount})`, color: "text-yellow-400" },
+              { key: "critical", label: `Crítico (${criticalCount})`, color: "text-red-400" },
+            ].map((f) => (
               <Button
                 key={f.key}
                 variant={filterStatus === f.key ? "default" : "outline"}
@@ -205,16 +238,16 @@ export function ComplianceDashboard() {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredMetrics.map((exec, idx) => (
+              {filteredMetrics.map((exec) => (
                 <div
-                  key={idx}
+                  key={exec.executive_id}
                   className={`rounded-lg border p-4 ${getScoreBg(exec.performance_score)}`}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       {getStatusIcon(exec.performance_score)}
                       <div>
-                        <p className="font-semibold text-white">{exec.ejecutiva}</p>
+                        <p className="font-semibold text-white">{exec.executive_name}</p>
                         <p className="text-xs text-slate-400">{exec.conductores_activos} conductores activos</p>
                       </div>
                     </div>
@@ -229,26 +262,25 @@ export function ComplianceDashboard() {
                   <div className="grid grid-cols-4 gap-3 text-center">
                     <div>
                       <p className="text-xs text-slate-400">Procesados</p>
-                      <p className="text-lg font-semibold text-white">{exec.documentos_procesados}</p>
+                      <p className="text-lg font-semibold text-white">{exec.documents_processed}</p>
                     </div>
                     <div>
                       <p className="text-xs text-green-400">Validados</p>
-                      <p className="text-lg font-semibold text-green-400">{exec.documentos_validados}</p>
+                      <p className="text-lg font-semibold text-green-400">{exec.validated_count}</p>
                     </div>
                     <div>
                       <p className="text-xs text-yellow-400">Pendientes</p>
-                      <p className="text-lg font-semibold text-yellow-400">{exec.documentos_pendientes}</p>
+                      <p className="text-lg font-semibold text-yellow-400">{exec.pending_count}</p>
                     </div>
                     <div>
                       <p className="text-xs text-red-400">Rechazados</p>
-                      <p className="text-lg font-semibold text-red-400">{exec.documentos_rechazados}</p>
+                      <p className="text-lg font-semibold text-red-400">{exec.rejected_count}</p>
                     </div>
                   </div>
 
-                  {/* Progress bar */}
                   <div className="mt-3">
                     <div className="flex justify-between text-xs text-slate-400 mb-1">
-                      <span>Tasa de validacion</span>
+                      <span>Tasa de validación</span>
                       <span>{exec.tasa_validacion}</span>
                     </div>
                     <div className="w-full bg-slate-700 rounded-full h-1.5">
@@ -271,17 +303,16 @@ export function ComplianceDashboard() {
         </CardContent>
       </Card>
 
-      {/* Critical alert banner */}
       {criticalCount > 0 && !loading && (
         <Card className="border-red-500/40 bg-red-500/5">
           <CardContent className="py-4 flex items-center gap-4">
             <AlertTriangle className="w-6 h-6 text-red-400 flex-shrink-0" />
             <div>
               <p className="font-semibold text-red-300">
-                {criticalCount} ejecutiva{criticalCount > 1 ? "s" : ""} con rendimiento critico
+                {criticalCount} ejecutiva{criticalCount > 1 ? "s" : ""} con rendimiento crítico
               </p>
               <p className="text-sm text-slate-400">
-                Tasa de validacion por debajo del 50%. Revisar documentos rechazados y pendientes.
+                Tasa de validación por debajo del 50%. Revisar documentos rechazados y pendientes.
               </p>
             </div>
           </CardContent>
