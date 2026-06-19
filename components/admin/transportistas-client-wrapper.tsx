@@ -22,6 +22,18 @@ export function TransportistasClientWrapper({
 }: TransportistasClientWrapperProps) {
   const [searchInput, setSearchInput] = useState('')
   const [selectedPeriod, setSelectedPeriod] = useState('current')
+  const [selectedEjecutiva, setSelectedEjecutiva] = useState<string | null>(null)
+
+  // Get unique ejecutivas for filter dropdown
+  const ejecutivas = useMemo(() => {
+    const uniqueEjecutivas = new Set<string>()
+    initialTransportistas.forEach((t) => {
+      if (t.ejecutivo) {
+        uniqueEjecutivas.add(t.ejecutivo)
+      }
+    })
+    return Array.from(uniqueEjecutivas).sort()
+  }, [initialTransportistas])
 
   // Calculate period dates for filtering
   const getPeriodDates = (period: string) => {
@@ -55,7 +67,12 @@ export function TransportistasClientWrapper({
     const normalizedQuery = normalizeRut(query)
 
     return initialTransportistas.filter((t) => {
-      // Search filter
+      // 1. FILTER BY EJECUTIVA
+      if (selectedEjecutiva && t.ejecutivo !== selectedEjecutiva) {
+        return false
+      }
+
+      // 2. SEARCH FILTER
       if (query) {
         const searchFields = [
           normalizeRut(t.rut),
@@ -64,6 +81,7 @@ export function TransportistasClientWrapper({
           t.nombre_fantasia?.toLowerCase(),
           t.representante_legal?.toLowerCase(),
           t.correo?.toLowerCase(),
+          t.ejecutivo?.toLowerCase(),
         ]
 
         const matches = searchFields.some(
@@ -75,7 +93,7 @@ export function TransportistasClientWrapper({
 
       return true
     })
-  }, [searchInput, initialTransportistas])
+  }, [searchInput, selectedEjecutiva, initialTransportistas])
 
   const getPeriodLabel = (period: string) => {
     const labels: Record<string, string> = {
@@ -92,14 +110,16 @@ export function TransportistasClientWrapper({
     <div className="space-y-4">
       {/* Search and filters */}
       <Card>
-        <CardContent className="pt-6 space-y-3">
-          <QuickHelp text="Escribe el RUT o el nombre de la empresa para buscarla. Selecciona un período para analizar datos históricos de los últimos 4 meses." />
+        <CardContent className="pt-6 space-y-4">
+          <QuickHelp text="Busca transportistas por RUT, empresa o ejecutiva asignada. Selecciona período para datos históricos de los últimos 4 meses." />
+          
+          {/* Search and Period Row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative md:col-span-2">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Buscar por RUT o nombre de empresa..."
+                placeholder="Buscar por RUT, razón social, representante, email..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="w-full rounded-md border bg-background pl-10 pr-4 py-2 text-sm"
@@ -120,6 +140,38 @@ export function TransportistasClientWrapper({
               </select>
             </div>
           </div>
+
+          {/* Ejecutiva Filter */}
+          {ejecutivas.length > 0 && (
+            <div className="space-y-2 border-t pt-4">
+              <label className="text-xs font-semibold text-muted-foreground">
+                Filtrar por Ejecutiva Asignada
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={!selectedEjecutiva ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedEjecutiva(null)}
+                >
+                  Todas
+                </Button>
+                {ejecutivas.map((ejecutiva) => {
+                  const count = initialTransportistas.filter(t => t.ejecutivo === ejecutiva).length
+                  return (
+                    <Button
+                      key={ejecutiva}
+                      variant={selectedEjecutiva === ejecutiva ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedEjecutiva(ejecutiva)}
+                    >
+                      {ejecutiva}
+                      <span className="ml-1 text-xs opacity-70">({count})</span>
+                    </Button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
