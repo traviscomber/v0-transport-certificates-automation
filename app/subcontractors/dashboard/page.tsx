@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { AlertCircle, CheckCircle, Clock, LogOut, Upload, FileText, HelpCircle } from 'lucide-react'
+import { AlertCircle, CheckCircle, Clock, LogOut, Upload, FileText, HelpCircle, Calendar } from 'lucide-react'
 import { HelpBox } from '@/components/ui/help-box'
 
 interface DocumentType {
@@ -44,6 +44,7 @@ export default function SubcontractorDashboardPage() {
   const [uploadError, setUploadError] = useState('')
   const [uploadSuccess, setUploadSuccess] = useState('')
   const [loading, setLoading] = useState(true)
+  const [selectedPeriod, setSelectedPeriod] = useState('current')
 
   useEffect(() => {
     // Get transportista info from cookies/session
@@ -258,6 +259,29 @@ export default function SubcontractorDashboardPage() {
             Cerrar sesión
           </Button>
         </div>
+
+        {/* Period Selector */}
+        <Card className="border-slate-700 bg-slate-800/30">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Calendar className="w-5 h-5 text-slate-400" />
+              <label className="text-sm font-medium text-slate-300">
+                Selecciona Período:
+              </label>
+              <select
+                value={selectedPeriod}
+                onChange={(e) => setSelectedPeriod(e.target.value)}
+                className="rounded-md border border-slate-600 bg-slate-700/50 px-3 py-2 text-sm text-white appearance-none cursor-pointer"
+              >
+                <option value="current">Período Actual</option>
+                <option value="month1">Último Mes</option>
+                <option value="month2">Hace 2 Meses</option>
+                <option value="month3">Hace 3 Meses</option>
+                <option value="month4">Hace 4 Meses</option>
+              </select>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Upload Section */}
         <Card className="border-slate-700 bg-slate-800/50">
