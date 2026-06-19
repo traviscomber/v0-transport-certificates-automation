@@ -4,9 +4,10 @@ import { useState, useMemo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { Users, AlertTriangle, Calendar, Building2 } from 'lucide-react'
+import { Users, AlertTriangle, Calendar, Building2, Search } from 'lucide-react'
 import { DriverFilters, type DriverFilters as DriverFiltersType } from './driver-filters'
 import { LicenseAndCertifications } from './license-certifications'
+import { QuickHelp } from '@/components/ui/help-box'
 
 interface ConductoresListClientProps {
   conductores: any[]
@@ -37,6 +38,7 @@ export function ConductoresListClient({
   companies,
 }: ConductoresListClientProps) {
   const [searchInput, setSearchInput] = useState('')
+  const [selectedPeriod, setSelectedPeriod] = useState('current')
   const [filters, setFilters] = useState<DriverFiltersType>({
     searchQuery: '',
     licenseStatus: 'all',
@@ -137,28 +139,54 @@ export function ConductoresListClient({
     })
   }, [searchInput, filters.searchQuery, initialConductores])
 
+  // Get period label for display
+  const periodLabels: Record<string, string> = {
+    current: 'Período Actual',
+    month1: 'Último Mes',
+    month2: 'Hace 2 Meses',
+    month3: 'Hace 3 Meses',
+    month4: 'Hace 4 Meses',
+  }
+
   return (
     <div className="space-y-6">
-      {/* Search Input */}
+      {/* Search and Period Selector */}
       <Card>
-        <CardContent className="pt-6">
-          <label className="text-sm font-medium mb-2 block">Buscar Conductores</label>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="RUT, Nombre, Proveedor, RUT Proveedor, Licencia o Patente..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full rounded-md border bg-background px-4 py-2 text-sm placeholder:text-muted-foreground"
-            />
-            {searchInput && (
-              <button
-                onClick={() => setSearchInput('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+        <CardContent className="pt-6 space-y-3">
+          <QuickHelp text="Busca conductores por RUT, nombre, empresa o licencia. Selecciona un período para analizar datos históricos de los últimos 4 meses." />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="relative md:col-span-2">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="RUT, Nombre, Proveedor, RUT Proveedor, Licencia o Patente..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="w-full rounded-md border bg-background pl-10 pr-4 py-2 text-sm placeholder:text-muted-foreground"
+              />
+              {searchInput && (
+                <button
+                  onClick={() => setSearchInput('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <select 
+                value={selectedPeriod}
+                onChange={(e) => setSelectedPeriod(e.target.value)}
+                className="w-full rounded-md border bg-background pl-10 pr-4 py-2 text-sm appearance-none cursor-pointer"
               >
-                ✕
-              </button>
-            )}
+                <option value="current">Período Actual</option>
+                <option value="month1">Último Mes</option>
+                <option value="month2">Hace 2 Meses</option>
+                <option value="month3">Hace 3 Meses</option>
+                <option value="month4">Hace 4 Meses</option>
+              </select>
+            </div>
           </div>
         </CardContent>
       </Card>
