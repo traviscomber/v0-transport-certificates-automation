@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { ALL_VALUE, getMonthYearRange } from '@/lib/date-filters'
 
 // This route uses request.url to parse query parameters, so it must be dynamic
 export const dynamic = 'force-dynamic'
@@ -7,21 +8,27 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const range = searchParams.get('range') || 'week'
+    const month = searchParams.get('month') || ALL_VALUE
+    const year = searchParams.get('year') || ALL_VALUE
+    const range = searchParams.get('range') || 'month'
 
-    // Calculate date range
-    let daysBack = 7
-    if (range === 'day') daysBack = 1
-    if (range === 'month') daysBack = 30
+    const monthYearRange = getMonthYearRange(month, year)
+    const fallbackRange = (() => {
+      const start = new Date()
+      if (range === 'day') start.setDate(start.getDate() - 1)
+      else if (range === 'week') start.setDate(start.getDate() - 7)
+      else start.setDate(start.getDate() - 30)
+      start.setHours(0, 0, 0, 0)
 
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - daysBack)
-    startDate.setHours(0, 0, 0, 0)
+      const end = new Date()
+      end.setHours(23, 59, 59, 999)
+      return { start, end }
+    })()
 
-    const endDate = new Date()
-    endDate.setHours(23, 59, 59, 999)
+    const startDate = monthYearRange?.start || fallbackRange.start
+    const endDate = monthYearRange?.end || fallbackRange.end
 
-    console.log('[v0] Fetching metrics for range:', range, 'from:', startDate.toISOString(), 'to:', endDate.toISOString())
+    console.log('[v0] Fetching metrics for period:', { month, year, range, from: startDate.toISOString(), to: endDate.toISOString() })
 
     // Get Supabase client for queries
     const supabase = await createClient()

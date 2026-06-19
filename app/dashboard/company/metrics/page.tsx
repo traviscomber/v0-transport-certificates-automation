@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ArrowUp, ArrowDown, Users, FileCheck, TrendingUp, Clock, BarChart3 } from 'lucide-react'
+import { DatePeriodFilter } from '@/components/date-period-filter'
+import { ALL_VALUE, getMonthLabel, type DateFilterValue } from '@/lib/date-filters'
 
 interface ExecutiveMetrics {
   executive_id: string
@@ -18,16 +20,20 @@ interface ExecutiveMetrics {
 }
 
 export default function MetricsPage() {
-  const [timeRange, setTimeRange] = useState('week') // day, week, month
+  const [period, setPeriod] = useState<DateFilterValue>({
+    month: ALL_VALUE,
+    year: ALL_VALUE,
+  })
   const [selectedExecutive, setSelectedExecutive] = useState<string | null>(null)
 
   const { data: metricsData, isLoading } = useSWR(
-    `/api/company/metrics?range=${timeRange}`,
+    `/api/company/metrics?month=${period.month}&year=${period.year}`,
     (url) => fetch(url).then(r => r.json())
   )
 
   const executives = metricsData?.executives || []
   const summary = metricsData?.summary || {}
+  const periodLabel = getMonthLabel(period.month, period.year)
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-8">
@@ -43,26 +49,25 @@ export default function MetricsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Métricas de Ejecutivas</h1>
-            <p className="text-slate-400 mt-1">Desempeño en validación de documentos</p>
-          </div>
-          
-          {/* Time Range Selector */}
-          <div className="flex gap-2">
-            {['day', 'week', 'month'].map((range) => (
-              <button
-                key={range}
-                onClick={() => setTimeRange(range)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  timeRange === range
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                }`}
-              >
-                {range === 'day' ? 'Hoy' : range === 'week' ? 'Esta Semana' : 'Este Mes'}
-              </button>
-            ))}
+            <p className="text-slate-400 mt-1">Desempeño mensual en validación de documentos</p>
           </div>
         </div>
+
+        <DatePeriodFilter
+          value={period}
+          onChange={setPeriod}
+          onClear={() => setPeriod({ month: ALL_VALUE, year: ALL_VALUE })}
+        />
+
+        <Card className="border-slate-700 bg-slate-900">
+          <CardContent className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-slate-500">Período activo</p>
+              <p className="text-lg font-semibold text-white">{periodLabel}</p>
+            </div>
+            <p className="text-sm text-slate-400">La vista se actualiza por mes y año para mantener la lectura simple para ejecutivas.</p>
+          </CardContent>
+        </Card>
 
         {/* KPI Cards */}
         <div className="grid gap-4 md:grid-cols-4">
@@ -118,7 +123,7 @@ export default function MetricsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{executives.length}</div>
-              <p className="text-xs text-slate-500 mt-1">En {timeRange === 'day' ? 'hoy' : timeRange === 'week' ? 'esta semana' : 'este mes'}</p>
+              <p className="text-xs text-slate-500 mt-1">En {periodLabel.toLowerCase()}</p>
             </CardContent>
           </Card>
         </div>

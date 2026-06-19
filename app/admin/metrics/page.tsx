@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Lock, Eye, EyeOff, FileCheck, TrendingUp, Users, Building2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { DatePeriodFilter } from '@/components/date-period-filter'
+import { ALL_VALUE, getMonthLabel, type DateFilterValue } from '@/lib/date-filters'
 
 interface ExecutiveMetrics {
   ejecutiva: string
@@ -45,7 +47,10 @@ export default function MetricsPage() {
     total_subcontratistas: 0,
   })
   const [loading, setLoading] = useState(false)
-  const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month'>('week')
+  const [period, setPeriod] = useState<DateFilterValue>({
+    month: ALL_VALUE,
+    year: ALL_VALUE,
+  })
   const CORRECT_PASSWORD = 'mono2026'
   const supabase = createClient()
 
@@ -62,7 +67,7 @@ export default function MetricsPage() {
     setLoading(true)
     try {
       // Get document metrics which now includes all executives
-      const metricsResponse = await fetch(`/api/company/metrics?range=${timeRange}`)
+      const metricsResponse = await fetch(`/api/company/metrics?month=${period.month}&year=${period.year}`)
       const metricsData = await metricsResponse.json()
 
       // Fetch from /api/dashboard/data for counts
@@ -97,7 +102,9 @@ export default function MetricsPage() {
     if (isAuthenticated) {
       fetchMetrics()
     }
-  }, [timeRange, isAuthenticated])
+  }, [period.month, period.year, isAuthenticated])
+
+  const periodLabel = getMonthLabel(period.month, period.year)
 
   if (!isAuthenticated) {
     return (
@@ -165,24 +172,21 @@ export default function MetricsPage() {
           </Button>
         </div>
 
-        {/* Time Range Selector */}
-        <div className="flex gap-3">
-          {(['day', 'week', 'month'] as const).map((range) => (
-            <Button
-              key={range}
-              onClick={() => setTimeRange(range)}
-              className={`px-6 py-2 rounded-lg font-medium transition ${
-                timeRange === range
-                  ? 'bg-orange-500 hover:bg-orange-600 text-white'
-                  : 'bg-slate-700/50 hover:bg-slate-700 text-slate-300 border border-slate-600'
-              }`}
-            >
-              {range === 'day' && 'Hoy'}
-              {range === 'week' && 'Esta Semana'}
-              {range === 'month' && 'Este Mes'}
-            </Button>
-          ))}
-        </div>
+        <DatePeriodFilter
+          value={period}
+          onChange={setPeriod}
+          onClear={() => setPeriod({ month: ALL_VALUE, year: ALL_VALUE })}
+        />
+
+        <Card className="bg-slate-800/60 border-slate-700">
+          <CardContent className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-slate-500">Período activo</p>
+              <p className="text-lg font-semibold text-white">{periodLabel}</p>
+            </div>
+            <p className="text-sm text-slate-400">La lectura ejecutiva queda centrada en un período mensual para evitar ruido.</p>
+          </CardContent>
+        </Card>
 
         {/* KPI Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

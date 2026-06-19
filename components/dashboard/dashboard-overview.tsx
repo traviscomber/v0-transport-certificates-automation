@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -272,9 +273,36 @@ export function DashboardOverview() {
           </h1>
         </div>
         <p className="text-sm md:text-base text-muted-foreground">
-          Documentos, conductores, subcontratistas y alertas en tiempo real.
+          Vista ejecutiva mensual para priorizar documentos, alertas y seguimiento operativo.
         </p>
       </div>
+
+      <Card className="bg-gradient-to-br from-slate-900/60 to-slate-800/40 border-slate-700">
+        <CardContent className="p-4 md:p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="space-y-1">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Acceso rápido</p>
+            <p className="text-base font-semibold text-white">Lo más útil para la gestión diaria</p>
+            <p className="text-sm text-slate-400">Revisa reportes, vencimientos y documentos pendientes sin navegar de más.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/dashboard/company/reportes">
+              <Button variant="outline" size="sm" className="border-slate-600 text-slate-200 hover:bg-slate-800">
+                Ver reportes
+              </Button>
+            </Link>
+            <Link href="/dashboard/company/documentos/vencidos">
+              <Button variant="outline" size="sm" className="border-red-500/30 text-red-300 hover:bg-red-500/10">
+                Vencidos
+              </Button>
+            </Link>
+            <Link href="/dashboard/company/documentos/renovar">
+              <Button variant="outline" size="sm" className="border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/10">
+                Renovar
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stats Grid - Using memoized StatCard components */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
@@ -298,9 +326,9 @@ export function DashboardOverview() {
           <CardHeader className="pb-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <CardTitle className="text-xl">Alertas Recientes</CardTitle>
+                <CardTitle className="text-xl">Alertas Prioritarias</CardTitle>
                 <CardDescription className="text-muted-foreground">
-                  Actividad del sistema - {alerts.length} alertas
+                  Lo más importante del período - {alerts.length} alertas
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -363,7 +391,7 @@ export function DashboardOverview() {
             </div>
             {alerts.length > 20 && (
               <p className="text-xs text-muted-foreground text-center mt-4 py-2 border-t border-slate-700">
-                + {alerts.length - 20} alertas más - <button onClick={() => router.push('/dashboard/company/alertas')} className="text-orange-400 hover:underline">Ver todas</button>
+                + {alerts.length - 20} alertas más - <button onClick={() => router.push('/dashboard/company/alertas')} className="text-orange-400 hover:underline">Abrir panel completo</button>
               </p>
             )}
           </CardContent>
