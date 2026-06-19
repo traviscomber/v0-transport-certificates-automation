@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { ALL_VALUE, getMonthYearRange } from '@/lib/date-filters'
 
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -25,12 +26,24 @@ export async function GET(request: Request) {
     }
 
     const supabase = getSupabaseClient()
+    const url = new URL(request.url)
+    const month = url.searchParams.get('month') || ALL_VALUE
+    const year = url.searchParams.get('year') || ALL_VALUE
+    const range = getMonthYearRange(month, year)
 
     // Get all documents with detailed info - using uploaded_documents table with CORRECT columns
-    const { data: allDocs, error: docsError } = await supabase
+    let docsQuery = supabase
       .from('uploaded_documents')
       .select('id, validation_status, ai_processing_status, created_at, processed_at, ai_processed_at, validated_at, original_filename')
       .order('created_at', { ascending: false })
+
+    if (range) {
+      docsQuery = docsQuery
+        .gte('created_at', range.start.toISOString())
+        .lte('created_at', range.end.toISOString())
+    }
+
+    const { data: allDocs, error: docsError } = await docsQuery
 
     if (docsError) throw docsError
 
@@ -194,7 +207,9 @@ export async function GET(request: Request) {
       },
       
       // TIMESTAMP
-      generatedAt: new Date().toISOString()
+      generatedAt: new Date().toISOString(),
+      periodMonth: month,
+      periodYear: year
     })
   } catch (error: any) {
     console.error('[v0] ROI Metrics Error:', error.message || error)
