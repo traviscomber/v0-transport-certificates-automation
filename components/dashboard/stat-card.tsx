@@ -2,6 +2,7 @@
 
 import React from "react"
 import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { LucideIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -75,9 +76,22 @@ const StatCard = React.memo<StatCardProps>(({
                 <Icon className="h-4 w-4" />
               </span>
               <p className="text-sm font-medium text-muted-foreground">{title}</p>
+              <Badge
+                variant="secondary"
+                className={`ml-auto text-[10px] uppercase tracking-[0.2em] ${
+                  status === "warning"
+                    ? "bg-red-500/15 text-red-300 border-red-500/20"
+                    : "bg-emerald-500/15 text-emerald-300 border-emerald-500/20"
+                }`}
+              >
+                {status === "warning" ? "Atención" : "Activo"}
+              </Badge>
             </div>
             <p className={`text-4xl font-bold tracking-tight ${currentColor.value}`}>{value}</p>
             <p className="text-xs text-muted-foreground max-w-[16rem]">{description}</p>
+            <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500 group-hover:text-slate-300 transition-colors">
+              Abrir módulo
+            </p>
           </div>
           <div className="ml-2 flex-shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
             <Icon className={`h-8 w-8 ${currentColor.icon}`} />
