@@ -42,14 +42,26 @@ export function SubcontractorDetailTabs({
       try {
         // If documentsData is provided as prop, use it (pre-fetched from parent)
         if (documentsData) {
+          console.log('[v0] Using documentsData from prop:', {
+            subcontractorId: subcontractor.id,
+            documentCount: documentsData.documents?.length,
+            requirementCount: documentsData.requirements?.length,
+            documents: documentsData.documents,
+            requirements: documentsData.requirements
+          })
           setDocuments(documentsData.documents || [])
           setRequirements(documentsData.requirements || [])
           setSummary(documentsData.summary || summary)
         } else {
           // Otherwise fetch from API (fallback)
+          console.log('[v0] No documentsData prop, fetching from API for subcontractor:', subcontractor.id)
           const docResponse = await fetch(`/api/subcontractors/${subcontractor.id}/documents`)
           if (docResponse.ok) {
             const data = await docResponse.json()
+            console.log('[v0] API returned:', {
+              documentCount: data.documents?.length,
+              requirementCount: data.requirements?.length
+            })
             setDocuments(data.documents || [])
             setRequirements(data.requirements || [])
             setSummary(data.summary || summary)
