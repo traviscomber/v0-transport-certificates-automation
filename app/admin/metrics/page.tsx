@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Lock, Eye, EyeOff, FileCheck, TrendingUp, Users, Building2 } from 'lucide-react'
+import { Lock, Eye, EyeOff, FileCheck, TrendingUp, Users, Building2, RefreshCw } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { DatePeriodFilter } from '@/components/date-period-filter'
 import { ALL_VALUE, getMonthLabel, type DateFilterValue } from '@/lib/date-filters'
@@ -121,6 +121,9 @@ export default function MetricsPage() {
           </CardHeader>
           <CardContent className="pt-6">
             <div className="space-y-4">
+              <div className="rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-3 text-sm text-slate-300">
+                Lectura mensual de métricas ejecutivas con datos reales de documentos, conductores y subcontratistas.
+              </div>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -155,22 +158,60 @@ export default function MetricsPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-6 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-white mb-1">Métricas Ejecutivas</h1>
-            <p className="text-slate-400">Panel de desempeño de validación</p>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setIsAuthenticated(false)
-              setPassword('')
-            }}
-            className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
-          >
-            Salir
-          </Button>
-        </div>
+        <Card className="overflow-hidden border-slate-700/60 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+          <CardContent className="p-5 md:p-6 flex flex-col gap-5">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+              <div className="space-y-3 max-w-3xl">
+                <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-300">
+                  Panel ejecutivo administrativo
+                </div>
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Métricas Ejecutivas</h1>
+                  <p className="text-slate-300">
+                    Lectura mensual de desempeño para ver documentos procesados, validación y tamaño real de la operación.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => fetchMetrics()}
+                  disabled={loading}
+                  className="gap-2 border-slate-600 text-slate-200 hover:bg-slate-800"
+                >
+                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                  Actualizar
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsAuthenticated(false)
+                    setPassword('')
+                  }}
+                  className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
+                >
+                  Salir
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Período</p>
+                <p className="text-sm font-semibold text-white mt-1">{periodLabel}</p>
+              </div>
+              <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Cobertura</p>
+                <p className="text-sm font-semibold text-white mt-1">Documentos + ejecutivas</p>
+              </div>
+              <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Uso</p>
+                <p className="text-sm font-semibold text-white mt-1">Seguimiento mensual</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <DatePeriodFilter
           value={period}
@@ -184,7 +225,7 @@ export default function MetricsPage() {
               <p className="text-xs uppercase tracking-wider text-slate-500">Período activo</p>
               <p className="text-lg font-semibold text-white">{periodLabel}</p>
             </div>
-            <p className="text-sm text-slate-400">La lectura ejecutiva queda centrada en un período mensual para evitar ruido.</p>
+            <p className="text-sm text-slate-400 max-w-2xl">La lectura ejecutiva queda centrada en un período mensual para evitar ruido y facilitar comparaciones reales.</p>
           </CardContent>
         </Card>
 
@@ -261,6 +302,9 @@ export default function MetricsPage() {
         <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader className="pb-4">
             <CardTitle className="text-white text-xl">Desempeño por Ejecutiva</CardTitle>
+            <CardDescription className="text-slate-400">
+              Ordenado por score para identificar primero a quién apoyar, escalar o reconocer.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -270,7 +314,13 @@ export default function MetricsPage() {
               </div>
             ) : metrics.length === 0 ? (
               <div className="py-12 text-center">
-                <p className="text-slate-400">Sin datos disponibles</p>
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-700/80 mb-4">
+                  <FileCheck className="h-5 w-5 text-slate-300" />
+                </div>
+                <p className="text-slate-200 font-medium">Sin datos disponibles para este período</p>
+                <p className="text-slate-400 text-sm mt-2">
+                  Prueba cambiar mes o año para encontrar actividad registrada en otro tramo.
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">

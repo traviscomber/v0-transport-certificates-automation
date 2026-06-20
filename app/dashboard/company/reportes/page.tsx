@@ -203,6 +203,39 @@ export default function ReportesPage() {
 
   return (
     <div className="space-y-6">
+      <Card className="overflow-hidden border-slate-700/60 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+        <CardContent className="p-5 md:p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+          <div className="space-y-3 max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-300">
+              Reportes ejecutivos mensuales
+            </div>
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-white">Filtra por mes y año para ver la foto real del negocio</h2>
+              <p className="text-sm md:text-base text-slate-300 mt-2">
+                Usa un período puntual para comparar cumplimiento, riesgos y actividad operativa sin ruido de rangos fijos.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 w-full lg:w-auto">
+            <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Datos</p>
+              <p className="text-sm font-semibold text-white mt-1">Documentos y ejecutivas reales</p>
+            </div>
+            <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Enfoque</p>
+              <p className="text-sm font-semibold text-white mt-1">Acciones priorizadas</p>
+            </div>
+            <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Lectura</p>
+              <p className="text-sm font-semibold text-white mt-1">Cumplimiento y riesgo</p>
+            </div>
+            <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Filtro</p>
+              <p className="text-sm font-semibold text-white mt-1">Mes / año</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       <HelpBox
         title="Reportes y Análisis"
         description="Genera reportes profesionales impulsados por IA. Obtén insights sobre cumplimiento, riesgos y alertas críticas."
@@ -229,6 +262,10 @@ export default function ReportesPage() {
           <p className="text-3xl font-bold text-orange-300 mt-1">{riskRate}%</p>
           <p className="text-sm text-slate-300 mt-2">{stats.sinDocumentos + stats.expiring} elementos requieren atención hoy.</p>
         </Card>
+      </div>
+
+      <div className="rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-3 text-sm text-slate-300">
+        <span className="font-semibold text-white">Consejo rápido:</span> cambia el mes o el año para refrescar la lectura sin perder contexto histórico.
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

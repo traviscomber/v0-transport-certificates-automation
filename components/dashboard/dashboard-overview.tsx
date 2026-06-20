@@ -283,21 +283,35 @@ export function DashboardOverview() {
             <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Acceso rápido</p>
             <p className="text-base font-semibold text-white">Lo más útil para la gestión diaria</p>
             <p className="text-sm text-slate-400">Revisa reportes, vencimientos y documentos pendientes sin navegar de más.</p>
+            <div className="flex flex-wrap gap-2 pt-1">
+              <span className="px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-300 text-xs font-medium">
+                Vista ejecutiva mensual
+              </span>
+              <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-medium">
+                Datos reales sincronizados
+              </span>
+              <span className="px-2.5 py-1 rounded-full bg-orange-500/15 text-orange-300 text-xs font-medium">
+                Prioridad operativa
+              </span>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full lg:w-auto">
             <Link href="/dashboard/company/reportes">
-              <Button variant="outline" size="sm" className="border-slate-600 text-slate-200 hover:bg-slate-800">
+              <Button variant="outline" size="sm" className="w-full justify-between border-slate-600 text-slate-200 hover:bg-slate-800">
                 Ver reportes
+                <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
             <Link href="/dashboard/company/documentos/vencidos">
-              <Button variant="outline" size="sm" className="border-red-500/30 text-red-300 hover:bg-red-500/10">
-                Vencidos
+              <Button variant="outline" size="sm" className="w-full justify-between border-red-500/30 text-red-300 hover:bg-red-500/10">
+                Ver vencidos
+                <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
             <Link href="/dashboard/company/documentos/renovar">
-              <Button variant="outline" size="sm" className="border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/10">
-                Renovar
+              <Button variant="outline" size="sm" className="w-full justify-between border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/10">
+                Planificar
+                <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
           </div>

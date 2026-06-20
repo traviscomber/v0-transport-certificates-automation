@@ -141,6 +141,41 @@ export function ReportsDashboard() {
         onClear={() => setPeriod({ month: ALL_VALUE, year: ALL_VALUE })}
       />
 
+      <Card className="overflow-hidden border-[#E4E4E7] bg-gradient-to-br from-white via-slate-50 to-slate-100">
+        <CardContent className="p-5 md:p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+          <div className="space-y-3 max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
+              Reportes admin mensuales
+            </div>
+            <p className="text-[#71717A] max-w-xl">
+              Análisis por mes y año para revisar cumplimiento, riesgo y documentos con una lectura clara para operación.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 w-full lg:w-auto">
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Filtro</p>
+              <p className="text-sm font-semibold text-[#18181B] mt-1">Mes / año</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Enfoque</p>
+              <p className="text-sm font-semibold text-[#18181B] mt-1">Datos reales</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Uso</p>
+              <p className="text-sm font-semibold text-[#18181B] mt-1">Seguimiento</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Salida</p>
+              <p className="text-sm font-semibold text-[#18181B] mt-1">Auditoría</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-[#71717A]">
+        <span className="font-semibold text-[#18181B]">Consejo rápido:</span> cambia el mes o el año para revisar tendencias y abrir los vencimientos o renovaciones asociados.
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="border-[#E4E4E7] bg-white/90">
           <CardContent className="p-4">
@@ -183,13 +218,13 @@ export function ReportsDashboard() {
           <div className="flex flex-wrap gap-2">
             <Link href="/dashboard/company/documentos/vencidos">
               <Button variant="outline" size="sm" className="gap-2 border-red-200 text-red-700 hover:bg-red-50">
-                Vencidos
+                Ver vencidos
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
             <Link href="/dashboard/company/documentos/renovar">
               <Button variant="outline" size="sm" className="gap-2 border-amber-200 text-amber-700 hover:bg-amber-50">
-                Renovar
+                Planificar
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>

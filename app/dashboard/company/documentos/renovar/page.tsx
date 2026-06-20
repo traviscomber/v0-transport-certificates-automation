@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, Calendar, AlertTriangle, Clock3 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Calendar, AlertTriangle, Clock3 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -119,6 +119,8 @@ export default function RenovarPage() {
 
   const filterLabel = getMonthLabel(filters.month, filters.year)
   const dueSoon = renewalDocuments.filter((doc) => (doc.days_until_expiration || 999) <= 30).length
+  const nextToExpire = renewalDocuments[0]
+  const furthestToExpire = renewalDocuments[renewalDocuments.length - 1]
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -149,6 +151,44 @@ export default function RenovarPage() {
         </div>
 
         <div className="p-6 space-y-6">
+          <Card className="overflow-hidden border-slate-700/60 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+            <CardContent className="p-5 md:p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+              <div className="space-y-3 max-w-2xl">
+                <div className="inline-flex items-center gap-2 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-3 py-1 text-xs font-medium text-yellow-300">
+                  Renovaciones por planificar
+                </div>
+                <div>
+                  <h2 className="text-2xl md:text-3xl font-bold text-white">Anticípate antes del vencimiento y ordena la agenda</h2>
+                  <p className="text-sm md:text-base text-slate-300 mt-2">
+                    Usa el período seleccionado para priorizar los documentos más cercanos a vencer y distribuir el trabajo con tiempo.
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 w-full lg:w-auto">
+                <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Próximo</p>
+                  <p className="text-sm font-semibold text-white mt-1">
+                    {nextToExpire?.days_until_expiration != null ? `${nextToExpire.days_until_expiration} días` : 'Sin datos'}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Más lejano</p>
+                  <p className="text-sm font-semibold text-white mt-1">
+                    {furthestToExpire?.days_until_expiration != null ? `${furthestToExpire.days_until_expiration} días` : 'Sin datos'}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Filtro</p>
+                  <p className="text-sm font-semibold text-white mt-1">Mes / año</p>
+                </div>
+                <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Acción</p>
+                  <p className="text-sm font-semibold text-white mt-1">Planificar renovación</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <DatePeriodFilter
             value={filters}
             onChange={update}
@@ -195,6 +235,20 @@ export default function RenovarPage() {
                     <p className="text-slate-400 mt-2">
                       No hay documentos futuros para el período seleccionado.
                     </p>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-2 pt-2">
+                    <Link href="/dashboard/company/documentos/vencidos">
+                      <Button variant="outline" size="sm" className="gap-2 border-red-500/30 text-red-300 hover:bg-red-500/10">
+                        Ver vencidos
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                    <Link href="/dashboard/company/reportes">
+                      <Button variant="outline" size="sm" className="gap-2 border-slate-600 text-slate-200 hover:bg-slate-800">
+                        Ver reportes
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </CardContent>

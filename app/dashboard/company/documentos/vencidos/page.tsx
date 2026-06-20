@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, AlertTriangle, CalendarDays, ShieldAlert } from 'lucide-react'
+import { ArrowLeft, ArrowRight, AlertTriangle, CalendarDays, ShieldAlert } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -118,6 +118,8 @@ export default function VencidosPage() {
   }, [documents, filters.month, filters.year, todayStart])
 
   const filterLabel = getMonthLabel(filters.month, filters.year)
+  const oldestOverdue = expiredDocuments[0]
+  const newestOverdue = expiredDocuments[expiredDocuments.length - 1]
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -148,6 +150,44 @@ export default function VencidosPage() {
         </div>
 
         <div className="p-6 space-y-6">
+          <Card className="overflow-hidden border-slate-700/60 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+            <CardContent className="p-5 md:p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+              <div className="space-y-3 max-w-2xl">
+                <div className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-300">
+                  Historial de vencimientos
+                </div>
+                <div>
+                  <h2 className="text-2xl md:text-3xl font-bold text-white">Detecta lo vencido y prioriza la recuperación</h2>
+                  <p className="text-sm md:text-base text-slate-300 mt-2">
+                    Revisa el período seleccionado para ver qué caducó, cuánto atraso acumula y qué requiere acción inmediata.
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 w-full lg:w-auto">
+                <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Más crítico</p>
+                  <p className="text-sm font-semibold text-white mt-1">
+                    {oldestOverdue?.days_overdue ? `${oldestOverdue.days_overdue} días` : 'Sin datos'}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Más reciente</p>
+                  <p className="text-sm font-semibold text-white mt-1">
+                    {newestOverdue?.days_overdue ? `${newestOverdue.days_overdue} días` : 'Sin datos'}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Filtro</p>
+                  <p className="text-sm font-semibold text-white mt-1">Mes / año</p>
+                </div>
+                <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Acción</p>
+                  <p className="text-sm font-semibold text-white mt-1">Revisar y escalar</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <DatePeriodFilter
             value={filters}
             onChange={update}
@@ -194,6 +234,20 @@ export default function VencidosPage() {
                     <p className="text-slate-400 mt-2">
                       No hay vencimientos para el período seleccionado.
                     </p>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-2 pt-2">
+                    <Link href="/dashboard/company/documentos/renovar">
+                      <Button variant="outline" size="sm" className="gap-2 border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/10">
+                        Ir a renovar
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                    <Link href="/dashboard/company/reportes">
+                      <Button variant="outline" size="sm" className="gap-2 border-slate-600 text-slate-200 hover:bg-slate-800">
+                        Ver reportes
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </CardContent>
