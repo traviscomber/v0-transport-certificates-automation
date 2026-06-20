@@ -23,7 +23,7 @@
  * This ensures single source of truth and prevents data mismatches.
  */
 
-import { X, FileText, Award, AlertCircle, CheckCircle, Loader, Download, Eye, Users, CheckSquare, Mail, Phone } from 'lucide-react'
+import { X, FileText, Award, AlertCircle, CheckCircle, Loader, Download, Eye, Users, CheckSquare, Mail, Phone, ChevronDown } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
@@ -47,11 +47,12 @@ export function SubcontractorDetailTabs({
   onClose,
 }: SubcontractorDetailTabsProps) {
   const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [selectedTab, setSelectedTab] = useState<'resumen' | 'documentos' | 'conductores' | 'certificaciones' | 'onboarding'>('resumen')
   const [documents, setDocuments] = useState<any[]>([])
   const [requirements, setRequirements] = useState<any[]>([])
-  const [conductors, setConductors] = useState<any[]>(conductoresData)
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState(initialTab)
+  const [conductores, setConductores] = useState<any[]>(conductoresData)
+  const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set(['current']))
   const [summary, setSummary] = useState({
     totalDocumentsUploaded: 0,
     totalRequirements: 0,
@@ -59,6 +60,42 @@ export function SubcontractorDetailTabs({
     pendingDocuments: 0,
     expiredDocuments: 0,
   })
+
+  // Group documents by month (YYYY-MM format) for easier navigation
+  const groupDocumentsByMonth = (docs: any[]) => {
+    const grouped: { [key: string]: any[] } = {}
+    
+    docs.forEach((doc) => {
+      if (doc.created_at) {
+        const date = new Date(doc.created_at)
+        const monthKey = date.toISOString().slice(0, 7) // YYYY-MM
+        if (!grouped[monthKey]) {
+          grouped[monthKey] = []
+        }
+        grouped[monthKey].push(doc)
+      }
+    })
+    
+    // Sort by month descending (newest first)
+    return Object.entries(grouped)
+      .sort(([keyA], [keyB]) => keyB.localeCompare(keyA))
+      .map(([month, docs]) => ({
+        month,
+        monthLabel: new Date(month + '-01').toLocaleDateString('es-CL', { year: 'numeric', month: 'long' }),
+        documentCount: docs.length,
+        docs: docs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+      }))
+  }
+
+  const toggleMonth = (month: string) => {
+    const newExpanded = new Set(expandedMonths)
+    if (newExpanded.has(month)) {
+      newExpanded.delete(month)
+    } else {
+      newExpanded.add(month)
+    }
+    setExpandedMonths(newExpanded)
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -164,7 +201,7 @@ export function SubcontractorDetailTabs({
           </CardHeader>
 
           {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)} className="flex-1 overflow-hidden flex flex-col">
+          <Tabs value={selectedTab} onValueChange={(value: any) => setSelectedTab(value)} className="flex-1 overflow-hidden flex flex-col">
             <TabsList className="border-b border-slate-700 rounded-none bg-slate-800/50 w-full justify-start px-6 py-0 h-auto">
               <TabsTrigger value="resumen" className="rounded-none">
                 Resumen
@@ -176,7 +213,7 @@ export function SubcontractorDetailTabs({
                 Certificaciones
               </TabsTrigger>
               <TabsTrigger value="conductores" className="rounded-none">
-                Conductores ({conductors.length})
+                Conductores ({conductores.length})
               </TabsTrigger>
               <TabsTrigger value="onboarding" className="rounded-none">
                 Onboarding
@@ -316,82 +353,125 @@ export function SubcontractorDetailTabs({
                       )}
                       
                       {requirements.length > 0 ? (
-                        requirements.map((req) => {
-                          const statusColors: Record<string, string> = {
-                            approved: 'bg-green-900/20 border-green-800 text-green-400',
-                            pending: 'bg-yellow-900/20 border-yellow-800 text-yellow-400',
-                            rejected: 'bg-red-900/20 border-red-800 text-red-400',
-                            expired: 'bg-orange-900/20 border-orange-800 text-orange-400',
-                          }
-                          const statusColor = statusColors[req.status] || 'bg-slate-800 text-slate-400'
-                          const statusLabel: Record<string, string> = {
-                            approved: 'Aprobado',
-                            pending: 'Pendiente',
-                            rejected: 'Rechazado',
-                            expired: 'Vencido',
-                          }
-                          
-                          // Match documents by document_type_id (not by name)
-                          const uploadedDoc = documents.find((d) => d.document_type_id === req.id);
-                          const isUploaded = !!uploadedDoc && !!uploadedDoc.file_url;
-                          const docStatus = uploadedDoc?.status || 'not_uploaded';
-                          const displayStatus = docStatus === 'not_uploaded' ? 'No subido' : statusLabel[docStatus as keyof typeof statusLabel] || docStatus;
-                          
-                          return (
-                            <div
-                              key={req.id}
-                              className={`p-4 rounded border flex items-center justify-between transition-all hover:shadow-md ${statusColor}`}
-                            >
-                              <div className="flex-1 flex items-start gap-3">
-                                {/* Status Icon */}
-                                <div className="mt-1">
-                                  {isUploaded ? (
-                                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
-                                  ) : (
-                                    <AlertCircle className="w-5 h-5 text-slate-500 flex-shrink-0" />
-                                  )}
-                                </div>
-                                
-                                {/* Document Info */}
-                                <div className="flex-1">
-                                  <p className="font-mono text-xs font-bold">{req.code}</p>
-                                  <p className="text-sm">{req.nombre || 'Documento requerido'}</p>
-                                  {isUploaded && uploadedDoc && (
-                                    <p className="text-xs text-slate-300 mt-1">
-                                      📄 {uploadedDoc.file_name || 'Documento subido'}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              {/* Status and Actions */}
-                              <div className="flex items-center gap-3 ml-4">
-                                <span className="text-xs font-semibold whitespace-nowrap">{displayStatus}</span>
-                                {isUploaded && uploadedDoc?.file_url && (
-                                  <div className="flex gap-2">
-                                    <a
-                                      href={uploadedDoc.file_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="hover:opacity-75 transition-opacity text-blue-400 hover:text-blue-300"
-                                      title="Ver documento"
-                                    >
-                                      <Eye className="w-4 h-4" />
-                                    </a>
-                                    <a
-                                      href={uploadedDoc.file_url}
-                                      download={uploadedDoc.file_name || 'documento'}
-                                      className="hover:opacity-75 transition-opacity text-blue-400 hover:text-blue-300"
-                                      title="Descargar"
-                                    >
-                                      <Download className="w-4 h-4" />
-                                    </a>
-                                  </div>
+                        <div className="space-y-4">
+                          {/* Group documents by month for easier navigation */}
+                          {(() => {
+                            const monthGroups = groupDocumentsByMonth(documents)
+                            const statusColors: Record<string, string> = {
+                              approved: 'bg-green-900/20 border-green-800 text-green-400',
+                              pending: 'bg-yellow-900/20 border-yellow-800 text-yellow-400',
+                              rejected: 'bg-red-900/20 border-red-800 text-red-400',
+                              expired: 'bg-orange-900/20 border-orange-800 text-orange-400',
+                            }
+                            const statusLabel: Record<string, string> = {
+                              approved: 'Aprobado',
+                              pending: 'Pendiente',
+                              rejected: 'Rechazado',
+                              expired: 'Vencido',
+                            }
+                            
+                            return (
+                              <>
+                                {/* Show all requirements organized by month uploaded */}
+                                {monthGroups.length > 0 ? (
+                                  monthGroups.map((monthGroup) => {
+                                    const isExpanded = expandedMonths.has(monthGroup.month)
+                                    const docsInMonth = monthGroup.docs.length
+                                    
+                                    return (
+                                      <div key={monthGroup.month} className="border border-slate-700 rounded overflow-hidden">
+                                        {/* Month Header */}
+                                        <button
+                                          onClick={() => toggleMonth(monthGroup.month)}
+                                          className="w-full px-4 py-3 bg-slate-800/50 hover:bg-slate-800 transition-colors flex items-center justify-between"
+                                        >
+                                          <div className="flex items-center gap-3">
+                                            <ChevronDown 
+                                              className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                                            />
+                                            <span className="text-sm font-semibold text-slate-200">{monthGroup.monthLabel}</span>
+                                            <Badge variant="outline" className="text-xs">{docsInMonth} documentos</Badge>
+                                          </div>
+                                        </button>
+                                        
+                                        {/* Month Content */}
+                                        {isExpanded && (
+                                          <div className="px-4 py-3 bg-slate-900/30 border-t border-slate-700 space-y-3">
+                                            {monthGroup.docs.map((doc) => {
+                                              const req = requirements.find(r => r.id === doc.document_type_id)
+                                              if (!req) return null
+                                              
+                                              const docStatus = doc.status || 'not_uploaded'
+                                              const statusColor = statusColors[docStatus] || 'bg-slate-800 text-slate-400'
+                                              const displayStatus = statusLabel[docStatus as keyof typeof statusLabel] || docStatus
+                                              
+                                              return (
+                                                <div
+                                                  key={doc.id}
+                                                  className={`p-4 rounded border flex items-center justify-between transition-all hover:shadow-md ${statusColor}`}
+                                                >
+                                                  <div className="flex-1 flex items-start gap-3">
+                                                    <div className="mt-1">
+                                                      {doc.file_url ? (
+                                                        <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                                                      ) : (
+                                                        <AlertCircle className="w-5 h-5 text-slate-500 flex-shrink-0" />
+                                                      )}
+                                                    </div>
+                                                    
+                                                    <div className="flex-1">
+                                                      <p className="font-mono text-xs font-bold">{req.code}</p>
+                                                      <p className="text-sm">{req.nombre || 'Documento'}</p>
+                                                      {doc.file_name && (
+                                                        <p className="text-xs text-slate-300 mt-1">
+                                                          📄 {doc.file_name}
+                                                        </p>
+                                                      )}
+                                                      <p className="text-xs text-slate-500 mt-1">
+                                                        {new Date(doc.created_at).toLocaleDateString('es-CL')}
+                                                      </p>
+                                                    </div>
+                                                  </div>
+                                                  
+                                                  <div className="flex items-center gap-3 ml-4">
+                                                    <span className="text-xs font-semibold whitespace-nowrap">{displayStatus}</span>
+                                                    {doc.file_url && (
+                                                      <div className="flex gap-2">
+                                                        <a
+                                                          href={doc.file_url}
+                                                          target="_blank"
+                                                          rel="noopener noreferrer"
+                                                          className="hover:opacity-75 transition-opacity text-blue-400 hover:text-blue-300"
+                                                          title="Ver documento"
+                                                        >
+                                                          <Eye className="w-4 h-4" />
+                                                        </a>
+                                                        <a
+                                                          href={doc.file_url}
+                                                          download={doc.file_name || 'documento'}
+                                                          className="hover:opacity-75 transition-opacity text-blue-400 hover:text-blue-300"
+                                                          title="Descargar"
+                                                        >
+                                                          <Download className="w-4 h-4" />
+                                                        </a>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              )
+                                            })}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )
+                                  })
+                                ) : (
+                                  <p className="text-sm text-slate-400 text-center py-8">No hay documentos subidos</p>
                                 )}
-                              </div>
-                            </div>
-                          )
-                        })
+                              </>
+                            )
+                          })()}
+                        </div>
                       ) : (
                         <p className="text-sm text-slate-400 text-center py-8">No hay requisitos disponibles</p>
                       )}
@@ -449,9 +529,9 @@ export function SubcontractorDetailTabs({
 
                 {/* CONDUCTORES TAB */}
                 <TabsContent value="conductores" className="space-y-4 mt-0">
-                  {conductors.length > 0 ? (
+                  {conductores.length > 0 ? (
                     <div className="space-y-3">
-                      {conductors.map((conductor) => (
+                      {conductores.map((conductor) => (
                         <div key={conductor.id} className="p-4 rounded border border-slate-700 bg-slate-800/30">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
@@ -495,7 +575,7 @@ export function SubcontractorDetailTabs({
                         { label: 'Documentos EMPRESA completados', status: requirements.filter(r => r.category === 'Empresa').some(r => r.status === 'aprobado') },
                         { label: 'Documentos SUBCONTRATACIÓN completados', status: requirements.filter(r => r.category === 'Subcontratación').some(r => r.status === 'aprobado') },
                         { label: 'Certificaciones registradas', status: certifications.some(c => subcontractor[c.key]) },
-                        { label: 'Conductores asignados', status: conductors.length > 0 },
+                        { label: 'Conductores asignados', status: conductores.length > 0 },
                         { label: 'Contacto verificado', status: !!subcontractor.telefono && !!subcontractor.email },
                       ].map((item, idx) => (
                         <div key={idx} className="flex items-center gap-3 p-2 rounded border border-slate-700">
