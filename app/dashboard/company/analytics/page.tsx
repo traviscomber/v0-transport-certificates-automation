@@ -183,66 +183,45 @@ export default function OperationalDashboard() {
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Activity Trend */}
-            <Card className="border-slate-700 bg-slate-800/30">
-              <CardHeader>
-                <CardTitle className="text-slate-100">Actividad de Procesamiento</CardTitle>
-                <CardDescription>Documentos procesados por día de la semana</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <TrendLineChart
-                  data={dailyData}
-                  lines={[
-                    { key: 'processed', name: 'Procesados', color: '#3b82f6', strokeWidth: 2 },
-                    { key: 'approved', name: 'Aprobados', color: '#10b981', strokeWidth: 2 },
-                  ]}
-                  xAxisKey="day"
-                  height={250}
-                />
-              </CardContent>
-            </Card>
+            <TrendLineChart
+              title="Actividad de Procesamiento"
+              description="Documentos procesados por día de la semana"
+              data={dailyData.map(d => ({ name: d.day, ...d }))}
+              lines={[
+                { key: 'processed', name: 'Procesados', color: '#3b82f6' },
+                { key: 'approved', name: 'Aprobados', color: '#10b981' },
+              ]}
+              height={250}
+            />
 
             {/* Weekly Comparison */}
-            <Card className="border-slate-700 bg-slate-800/30">
-              <CardHeader>
-                <CardTitle className="text-slate-100">Rendimiento Semanal</CardTitle>
-                <CardDescription>Documentos completados vs pendientes</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <BarComparisonChart
-                  data={weeklyComparison}
-                  bars={[
-                    { key: 'completed', name: 'Completados', color: '#10b981' },
-                    { key: 'pending', name: 'Pendientes', color: '#f59e0b' },
-                  ]}
-                  xAxisKey="week"
-                  height={250}
-                />
-              </CardContent>
-            </Card>
+            <BarComparisonChart
+              title="Rendimiento Semanal"
+              description="Documentos completados vs pendientes"
+              data={weeklyComparison.map(d => ({ name: d.week, ...d }))}
+              bars={[
+                { key: 'completed', name: 'Completados', color: '#10b981' },
+                { key: 'pending', name: 'Pendientes', color: '#f59e0b' },
+              ]}
+              height={250}
+            />
           </div>
         </TabsContent>
 
         {/* Daily Tab */}
         <TabsContent value="daily" className="space-y-6">
-          <Card className="border-slate-700 bg-slate-800/30">
-            <CardHeader>
-              <CardTitle className="text-slate-100">Desglose Diario Detallado</CardTitle>
-              <CardDescription>Evolución de documentos procesados hoy</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TrendLineChart
-                data={dailyData}
-                lines={[
-                  { key: 'processed', name: 'Total Procesados', color: '#3b82f6', strokeWidth: 2 },
-                  { key: 'approved', name: 'Aprobados', color: '#10b981', strokeWidth: 2 },
-                  { key: 'pending', name: 'Pendientes', color: '#f59e0b', strokeWidth: 2 },
-                  { key: 'rejected', name: 'Rechazados', color: '#ef4444', strokeWidth: 2 },
-                ]}
-                xAxisKey="day"
-                height={300}
-              />
-            </CardContent>
-          </Card>
+          <TrendLineChart
+            title="Desglose Diario Detallado"
+            description="Evolución de documentos procesados hoy"
+            data={dailyData.map(d => ({ name: d.day, ...d }))}
+            lines={[
+              { key: 'processed', name: 'Total Procesados', color: '#3b82f6' },
+              { key: 'approved', name: 'Aprobados', color: '#10b981' },
+              { key: 'pending', name: 'Pendientes', color: '#f59e0b' },
+              { key: 'rejected', name: 'Rechazados', color: '#ef4444' },
+            ]}
+            height={300}
+          />
         </TabsContent>
 
         {/* Composition Tab */}

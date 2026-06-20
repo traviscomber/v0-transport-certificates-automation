@@ -172,24 +172,17 @@ export default function AnalyticsDashboard() {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Trend Chart */}
-        <Card className="border-slate-700 bg-slate-800/30">
-          <CardHeader>
-            <CardTitle className="text-slate-100">Evolución de Documentos</CardTitle>
-            <CardDescription>Tendencia de aprobaciones, rechazos y pendientes por mes</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <TrendLineChart
-              data={trendData}
-              lines={[
-                { key: 'approved', name: 'Aprobados', color: '#10b981', strokeWidth: 2 },
-                { key: 'pending', name: 'Pendientes', color: '#f59e0b', strokeWidth: 2 },
-                { key: 'rejected', name: 'Rechazados', color: '#ef4444', strokeWidth: 2 },
-              ]}
-              xAxisKey="month"
-              height={300}
-            />
-          </CardContent>
-        </Card>
+        <TrendLineChart
+          title="Evolución de Documentos"
+          description="Tendencia de aprobaciones, rechazos y pendientes por mes"
+          data={trendData.map(d => ({ name: d.month, ...d }))}
+          lines={[
+            { key: 'approved', name: 'Aprobados', color: '#10b981' },
+            { key: 'pending', name: 'Pendientes', color: '#f59e0b' },
+            { key: 'rejected', name: 'Rechazados', color: '#ef4444' },
+          ]}
+          height={300}
+        />
 
         {/* Distribution Pie Chart */}
         <Card className="border-slate-700 bg-slate-800/30">
@@ -207,23 +200,16 @@ export default function AnalyticsDashboard() {
       </div>
 
       {/* Comparison Chart */}
-      <Card className="border-slate-700 bg-slate-800/30">
-        <CardHeader>
-          <CardTitle className="text-slate-100">Comparación Mes a Mes</CardTitle>
-          <CardDescription>Análisis de documentos aprobados: mes actual vs mes anterior</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <BarComparisonChart
-            data={comparisonData}
-            bars={[
-              { key: 'thisMonth', name: 'Este Mes', color: '#3b82f6' },
-              { key: 'lastMonth', name: 'Mes Anterior', color: '#8b5cf6' },
-            ]}
-            xAxisKey="category"
-            height={300}
-          />
-        </CardContent>
-      </Card>
+      <BarComparisonChart
+        title="Comparación Mes a Mes"
+        description="Análisis de documentos aprobados: mes actual vs mes anterior"
+        data={comparisonData.map(d => ({ name: d.category, ...d }))}
+        bars={[
+          { key: 'thisMonth', name: 'Este Mes', color: '#3b82f6' },
+          { key: 'lastMonth', name: 'Mes Anterior', color: '#8b5cf6' },
+        ]}
+        height={300}
+      />
 
       {/* Detailed metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
