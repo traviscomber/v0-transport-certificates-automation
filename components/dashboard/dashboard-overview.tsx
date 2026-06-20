@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
@@ -57,7 +57,7 @@ export function DashboardOverview() {
     {
       title: "Documentos Pendientes",
       value: "0",
-      description: "En revisión",
+      description: "En revisiÃ³n",
       icon: Clock,
       status: "active",
       href: "/dashboard/company/documentos/pendientes",
@@ -158,7 +158,7 @@ export function DashboardOverview() {
             {
               title: "Documentos Pendientes",
               value: pendingDocs.toString(),
-              description: "En revisión",
+              description: "En revisiÃ³n",
               icon: Clock,
               status: "active",
               href: "/dashboard/company/documentos/pendientes",
@@ -241,7 +241,7 @@ export function DashboardOverview() {
                   {
                     title: "Documentos Pendientes",
                     value: pendingDocs.toString(),
-                    description: "En revisión",
+                    description: "En revisiÃ³n",
                     icon: Clock,
                     status: "active",
                     href: "/dashboard/company/documentos/pendientes",
@@ -284,7 +284,7 @@ export function DashboardOverview() {
                   Control Operacional
                 </h1>
                 <p className="max-w-2xl text-sm md:text-base text-slate-300">
-                  Vista ejecutiva mensual para priorizar documentos, alertas y seguimiento operativo con foco en decisiones rápidas.
+                  Vista ejecutiva mensual para priorizar documentos, alertas y seguimiento operativo con foco en decisiones rÃ¡pidas.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -340,7 +340,7 @@ export function DashboardOverview() {
               <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-4">
                 <p className="text-[10px] uppercase tracking-[0.25em] text-amber-300/80">Pendientes</p>
                 <p className="mt-2 text-3xl md:text-4xl font-bold text-amber-200">{pendingDocuments.toLocaleString('es-CL')}</p>
-                <p className="mt-1 text-xs text-amber-200/70">Revisión activa</p>
+                <p className="mt-1 text-xs text-amber-200/70">RevisiÃ³n activa</p>
               </div>
               <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-4">
                 <p className="text-[10px] uppercase tracking-[0.25em] text-red-300/80">Alertas</p>
@@ -353,52 +353,65 @@ export function DashboardOverview() {
       </Card>
 
       <Card className="bg-gradient-to-br from-slate-900/60 to-slate-800/40 border-slate-700">
-        <CardContent className="p-4 md:p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="space-y-1">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Acceso rápido</p>
-            <p className="text-base font-semibold text-white">Lo más útil para la gestión diaria</p>
-            <p className="text-sm text-slate-400">Revisa reportes, vencimientos y documentos pendientes sin navegar de más.</p>
-            <div className="flex flex-wrap gap-2 pt-1">
-              <span className="px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-300 text-xs font-medium">
-                Vista ejecutiva mensual
-              </span>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-medium">
-                Datos reales sincronizados
-              </span>
-              <span className="px-2.5 py-1 rounded-full bg-orange-500/15 text-orange-300 text-xs font-medium">
-                Prioridad operativa
-              </span>
+        <CardContent className="p-4 md:p-5 space-y-4">
+          <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+            <div className="space-y-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Acceso rapido</p>
+              <p className="text-base font-semibold text-white">Lo mas util para la gestion diaria</p>
+              <p className="text-sm text-slate-400">
+                Revisa cumplimiento, riesgos y pendientes criticos con una sola lectura.
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <span className="px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-300 text-xs font-medium">
+                  Vista ejecutiva mensual
+                </span>
+                <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-medium">
+                  Datos reales sincronizados
+                </span>
+                <span className="px-2.5 py-1 rounded-full bg-orange-500/15 text-orange-300 text-xs font-medium">
+                  Prioridad operativa
+                </span>
+              </div>
+              <div className="rounded-2xl border border-slate-700/70 bg-slate-950/40 p-4">
+                <div className="flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.24em] text-slate-400">
+                  <span>Ritmo mensual</span>
+                  <span>{completionRate}% de cumplimiento</span>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-800">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-emerald-300 to-cyan-300"
+                    style={{ width: `${completionRate}%` }}
+                  />
+                </div>
+                <p className="mt-3 text-sm text-slate-300">
+                  {openRiskItems > 0
+                    ? `Hay ${openRiskItems} documentos en riesgo abierto que conviene cerrar primero.`
+                    : 'No hay riesgos abiertos en el periodo actual.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
+              <div className="rounded-xl border border-slate-700/80 bg-slate-950/50 px-3 py-3">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Documentos</p>
+                <p className="text-2xl font-semibold text-white mt-1">{stats[0]?.value || '0'}</p>
+              </div>
+              <div className="rounded-xl border border-slate-700/80 bg-slate-950/50 px-3 py-3">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Riesgo abierto</p>
+                <p className="text-2xl font-semibold text-orange-300 mt-1">{openRiskItems}</p>
+              </div>
+              <div className="rounded-xl border border-slate-700/80 bg-slate-950/50 px-3 py-3">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Alertas</p>
+                <p className="text-2xl font-semibold text-red-300 mt-1">{alerts.length}</p>
+              </div>
+              <div className="rounded-xl border border-slate-700/80 bg-slate-950/40 px-3 py-3 xl:col-span-1">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Aprobados</p>
+                <p className="text-2xl font-semibold text-emerald-300 mt-1">{approvedDocuments}</p>
+              </div>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-2 w-full max-w-sm lg:max-w-none lg:w-auto">
-            <div className="rounded-xl border border-slate-700/80 bg-slate-950/50 px-3 py-2">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Documentos</p>
-              <p className="text-lg font-semibold text-white">{stats[0]?.value || '0'}</p>
-            </div>
-            <div className="rounded-xl border border-slate-700/80 bg-slate-950/50 px-3 py-2">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Cumplimiento</p>
-              <p className="text-lg font-semibold text-emerald-300">{completionRate}%</p>
-            </div>
-            <div className="rounded-xl border border-slate-700/80 bg-slate-950/50 px-3 py-2">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Alertas</p>
-              <p className="text-lg font-semibold text-red-300">{alerts.length}</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full lg:w-auto">
-            <div className="rounded-xl border border-slate-700/80 bg-slate-950/40 px-3 py-3">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Pendientes + rechazados</p>
-              <p className="text-2xl font-semibold text-orange-300 mt-1">{openRiskItems}</p>
-            </div>
-            <div className="rounded-xl border border-slate-700/80 bg-slate-950/40 px-3 py-3">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Aprobados</p>
-              <p className="text-2xl font-semibold text-emerald-300 mt-1">{approvedDocuments}</p>
-            </div>
-            <div className="rounded-xl border border-slate-700/80 bg-slate-950/40 px-3 py-3">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Alertas activas</p>
-              <p className="text-2xl font-semibold text-red-300 mt-1">{activeAlerts}</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full lg:w-auto">
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
             <Link href="/dashboard/company/reportes">
               <Button variant="outline" size="sm" className="w-full justify-between border-slate-600 text-slate-200 hover:bg-slate-800">
                 Ver reportes
@@ -413,7 +426,7 @@ export function DashboardOverview() {
             </Link>
             <Link href="/dashboard/company/documentos/renovar">
               <Button variant="outline" size="sm" className="w-full justify-between border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/10">
-                Planificar
+                Planificar renovaciones
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
@@ -445,7 +458,7 @@ export function DashboardOverview() {
               <div>
                 <CardTitle className="text-xl">Alertas Prioritarias</CardTitle>
                 <CardDescription className="text-muted-foreground">
-                  Lo más importante del período - {alerts.length} alertas
+                  Lo mÃ¡s importante del perÃ­odo - {alerts.length} alertas
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -508,7 +521,7 @@ export function DashboardOverview() {
             </div>
             {alerts.length > 20 && (
               <p className="text-xs text-muted-foreground text-center mt-4 py-2 border-t border-slate-700">
-                + {alerts.length - 20} alertas más - <button onClick={() => router.push('/dashboard/company/alertas')} className="text-orange-400 hover:underline">Abrir panel completo</button>
+                + {alerts.length - 20} alertas mÃ¡s - <button onClick={() => router.push('/dashboard/company/alertas')} className="text-orange-400 hover:underline">Abrir panel completo</button>
               </p>
             )}
           </CardContent>
