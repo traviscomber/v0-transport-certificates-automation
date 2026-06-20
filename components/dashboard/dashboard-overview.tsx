@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
@@ -310,43 +310,64 @@ export function DashboardOverview() {
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <div className="rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2">
+                  <button
+                    onClick={() => router.push("/dashboard/company/documentos")}
+                    className="rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2 hover:bg-slate-900/80 hover:border-slate-600 transition-all cursor-pointer text-left"
+                  >
                     <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Total</p>
                     <p className="text-lg font-semibold text-white">{totalDocuments.toLocaleString('es-CL')}</p>
-                  </div>
-                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2">
+                  </button>
+                  <button
+                    onClick={() => router.push("/dashboard/company/documentos/aprobados")}
+                    className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-all cursor-pointer text-left"
+                  >
                     <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-300/80">Aprobados</p>
                     <p className="text-lg font-semibold text-emerald-200">{approvedDocuments.toLocaleString('es-CL')}</p>
-                  </div>
-                  <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2">
+                  </button>
+                  <button
+                    onClick={() => router.push("/dashboard/company/documentos/rechazados")}
+                    className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 hover:bg-red-500/20 hover:border-red-500/40 transition-all cursor-pointer text-left"
+                  >
                     <p className="text-[10px] uppercase tracking-[0.2em] text-red-300/80">Riesgo</p>
                     <p className="text-lg font-semibold text-red-200">{openRiskItems.toLocaleString('es-CL')}</p>
-                  </div>
+                  </button>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 w-full max-w-xl">
-              <div className="rounded-2xl border border-slate-700/80 bg-slate-950/50 px-4 py-4">
+              <button
+                onClick={() => router.push("/dashboard/company/documentos")}
+                className="rounded-2xl border border-slate-700/80 bg-slate-950/50 px-4 py-4 hover:bg-slate-900/60 hover:border-slate-600 transition-all cursor-pointer text-left"
+              >
                 <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500">Documentos</p>
                 <p className="mt-2 text-3xl md:text-4xl font-bold text-white">{totalDocuments.toLocaleString('es-CL')}</p>
                 <p className="mt-1 text-xs text-slate-400">Volumen total en seguimiento</p>
-              </div>
-              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-4">
+              </button>
+              <button
+                onClick={() => router.push("/dashboard/company/documentos/aprobados")}
+                className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-4 hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-all cursor-pointer text-left"
+              >
                 <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-300/80">Aprobados</p>
                 <p className="mt-2 text-3xl md:text-4xl font-bold text-emerald-200">{approvedDocuments.toLocaleString('es-CL')}</p>
                 <p className="mt-1 text-xs text-emerald-200/70">Validados y listos</p>
-              </div>
-              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-4">
+              </button>
+              <button
+                onClick={() => router.push("/dashboard/company/documentos/pendientes")}
+                className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-4 hover:bg-amber-500/20 hover:border-amber-500/40 transition-all cursor-pointer text-left"
+              >
                 <p className="text-[10px] uppercase tracking-[0.25em] text-amber-300/80">Pendientes</p>
                 <p className="mt-2 text-3xl md:text-4xl font-bold text-amber-200">{pendingDocuments.toLocaleString('es-CL')}</p>
-                <p className="mt-1 text-xs text-amber-200/70">RevisiÃ³n activa</p>
-              </div>
-              <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-4">
+                <p className="mt-1 text-xs text-amber-200/70">Revisión activa</p>
+              </button>
+              <button
+                onClick={() => router.push("/dashboard/company/documentos/rechazados")}
+                className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-4 hover:bg-red-500/20 hover:border-red-500/40 transition-all cursor-pointer text-left"
+              >
                 <p className="text-[10px] uppercase tracking-[0.25em] text-red-300/80">Alertas</p>
                 <p className="mt-2 text-3xl md:text-4xl font-bold text-red-200">{activeAlerts.toLocaleString('es-CL')}</p>
                 <p className="mt-1 text-xs text-red-200/70">{rejectedDocuments.toLocaleString('es-CL')} rechazados</p>
-              </div>
+              </button>
             </div>
           </div>
         </CardContent>
