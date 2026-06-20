@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Lock, Eye, EyeOff, FileCheck, TrendingUp, Users, Building2, RefreshCw } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { FileCheck, TrendingUp, Users, Building2, RefreshCw } from 'lucide-react'
 import { DatePeriodFilter } from '@/components/date-period-filter'
 import { ALL_VALUE, getMonthLabel, type DateFilterValue } from '@/lib/date-filters'
 
@@ -32,13 +31,17 @@ interface MetricsResponse {
     executive_name: string
     documents_processed: number
     validated_count: number
+    rejected_count?: number
+    pending_count?: number
+    conductores_activos?: number
+    tasa_validacion?: string
+    tasa_rechazo?: string
+    tiempo_promedio?: string
+    performance_score?: number
   }>
 }
 
 export default function MetricsPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [metrics, setMetrics] = useState<ExecutiveMetrics[]>([])
   const [summary, setSummary] = useState({
     total_documentos: 0,
@@ -47,42 +50,33 @@ export default function MetricsPage() {
     total_subcontratistas: 0,
   })
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [period, setPeriod] = useState<DateFilterValue>({
     month: ALL_VALUE,
     year: ALL_VALUE,
   })
-  const CORRECT_PASSWORD = 'mono2026'
-  const supabase = createClient()
-
-  const handleAuth = () => {
-    if (password === CORRECT_PASSWORD) {
-      setIsAuthenticated(true)
-      setPassword('')
-    } else {
-      alert('Contraseña incorrecta')
-    }
-  }
 
   const fetchMetrics = async () => {
     setLoading(true)
-    try {
-      // Get document metrics which now includes all executives
-      const metricsResponse = await fetch(`/api/company/metrics?month=${period.month}&year=${period.year}`)
-      const metricsData = await metricsResponse.json()
+    setError('')
 
-      // Fetch from /api/dashboard/data for counts
+    try {
+      const metricsResponse = await fetch(`/api/company/metrics?month=${period.month}&year=${period.year}`)
+      if (!metricsResponse.ok) {
+        throw new Error(`No se pudieron cargar las métricas (${metricsResponse.status})`)
+      }
+
+      const metricsData = (await metricsResponse.json()) as MetricsResponse
+
       const dashboardResponse = await fetch('/api/dashboard/data', {
         cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
       })
+
       const dashboardData = await dashboardResponse.json()
       const conductores = dashboardData.dashboard?.conductores || []
       const transportistas = dashboardData.dashboard?.transportistas || []
 
-      // Use metrics data directly - API already has all executives with proper formatting
-      const executivesMetrics: ExecutiveMetrics[] = metricsData.executives || []
-
-      // Update summary with real counts
       setSummary({
         total_documentos: metricsData.summary?.total_documentos || 0,
         total_validados: metricsData.summary?.total_validados || 0,
@@ -90,64 +84,52 @@ export default function MetricsPage() {
         total_subcontratistas: metricsData.summary?.total_subcontratistas || transportistas.length || 0,
       })
 
+      const executivesMetrics: ExecutiveMetrics[] = (metricsData.executives || []).map((executive) => ({
+        ejecutiva: executive.executive_name,
+        documentos_procesados: executive.documents_processed,
+        documentos_validados: executive.validated_count,
+        documentos_rechazados: executive.rejected_count || 0,
+        documentos_pendientes: executive.pending_count || 0,
+        conductores_activos: executive.conductores_activos || 0,
+        tasa_validacion: executive.tasa_validacion || '0%',
+        tasa_rechazo: executive.tasa_rechazo || '0%',
+        tiempo_promedio: executive.tiempo_promedio || '0m',
+        performance_score: executive.performance_score || 0,
+      }))
+
       setMetrics(executivesMetrics)
-    } catch (error) {
-      // Error handling for metrics fetch
+    } catch (fetchError: any) {
+      setMetrics([])
+      setSummary({
+        total_documentos: 0,
+        total_validados: 0,
+        total_conductores: 0,
+        total_subcontratistas: 0,
+      })
+      setError(fetchError?.message || 'No se pudieron cargar las métricas')
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchMetrics()
-    }
-  }, [period.month, period.year, isAuthenticated])
+    void fetchMetrics()
+    // Refresh on initial load and whenever the selected month/year changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period.month, period.year])
 
   const periodLabel = getMonthLabel(period.month, period.year)
 
-  if (!isAuthenticated) {
+  if (loading && metrics.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center p-4">
         <Card className="bg-slate-800/80 border-slate-700 w-full max-w-md backdrop-blur">
-          <CardHeader className="text-center pb-2">
-            <div className="flex justify-center mb-4">
-              <div className="bg-orange-500/20 p-3 rounded-full">
-                <Lock className="w-6 h-6 text-orange-500" />
-              </div>
+          <CardContent className="py-10 text-center space-y-3">
+            <div className="inline-flex items-center justify-center rounded-full bg-orange-500/20 p-3">
+              <RefreshCw className="h-6 w-6 animate-spin text-orange-500" />
             </div>
-            <CardTitle className="text-white text-2xl">Ejecutivo</CardTitle>
-            <p className="text-slate-400 text-sm mt-1">Dashboard de métricas</p>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              <div className="rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-3 text-sm text-slate-300">
-                Lectura mensual de métricas ejecutivas con datos reales de documentos, conductores y subcontratistas.
-              </div>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAuth()}
-                  placeholder="Contraseña"
-                  className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:bg-slate-900 transition"
-                  autoFocus
-                />
-                <button
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-300 transition"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              <Button
-                onClick={handleAuth}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-lg transition"
-              >
-                Acceder
-              </Button>
-            </div>
+            <p className="text-white text-lg font-semibold">Cargando metricas ejecutivas</p>
+            <p className="text-slate-400 text-sm">Estamos preparando la vista mensual con datos reales.</p>
           </CardContent>
         </Card>
       </div>
@@ -157,7 +139,6 @@ export default function MetricsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-6 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
         <Card className="overflow-hidden border-slate-700/60 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
           <CardContent className="p-5 md:p-6 flex flex-col gap-5">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
@@ -166,9 +147,9 @@ export default function MetricsPage() {
                   Panel ejecutivo administrativo
                 </div>
                 <div>
-                  <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Métricas Ejecutivas</h1>
+                  <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Metricas Ejecutivas</h1>
                   <p className="text-slate-300">
-                    Lectura mensual de desempeño para ver documentos procesados, validación y tamaño real de la operación.
+                    Lectura mensual de desempeno para ver documentos procesados, validacion y tamano real de la operacion.
                   </p>
                 </div>
               </div>
@@ -183,22 +164,12 @@ export default function MetricsPage() {
                   <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                   Actualizar
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsAuthenticated(false)
-                    setPassword('')
-                  }}
-                  className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
-                >
-                  Salir
-                </Button>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Período</p>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Periodo</p>
                 <p className="text-sm font-semibold text-white mt-1">{periodLabel}</p>
               </div>
               <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
@@ -222,16 +193,27 @@ export default function MetricsPage() {
         <Card className="bg-slate-800/60 border-slate-700">
           <CardContent className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-wider text-slate-500">Período activo</p>
+              <p className="text-xs uppercase tracking-wider text-slate-500">Periodo activo</p>
               <p className="text-lg font-semibold text-white">{periodLabel}</p>
             </div>
-            <p className="text-sm text-slate-400 max-w-2xl">La lectura ejecutiva queda centrada en un período mensual para evitar ruido y facilitar comparaciones reales.</p>
+            <p className="text-sm text-slate-400 max-w-2xl">
+              La lectura ejecutiva queda centrada en un periodo mensual para evitar ruido y facilitar comparaciones reales.
+            </p>
           </CardContent>
         </Card>
 
-        {/* KPI Cards Grid */}
+        {error ? (
+          <Card className="border border-red-900/50 bg-red-950/30">
+            <CardContent className="p-4">
+              <p className="text-sm font-medium text-red-300">{error}</p>
+              <p className="text-xs text-red-200/80 mt-1">
+                Si el mensaje persiste, revisa la sesion activa o vuelve a cargar la pagina.
+              </p>
+            </CardContent>
+          </Card>
+        ) : null}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Documentos Card */}
           <Card className="bg-gradient-to-br from-slate-800 to-slate-800/50 border-slate-700 hover:border-slate-600 transition">
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
@@ -249,7 +231,6 @@ export default function MetricsPage() {
             </CardContent>
           </Card>
 
-          {/* Validados Card */}
           <Card className="bg-gradient-to-br from-slate-800 to-slate-800/50 border-slate-700 hover:border-slate-600 transition">
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
@@ -267,7 +248,6 @@ export default function MetricsPage() {
             </CardContent>
           </Card>
 
-          {/* Conductores Card */}
           <Card className="bg-gradient-to-br from-slate-800 to-slate-800/50 border-slate-700 hover:border-slate-600 transition">
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
@@ -282,7 +262,6 @@ export default function MetricsPage() {
             </CardContent>
           </Card>
 
-          {/* Subcontratistas Card */}
           <Card className="bg-gradient-to-br from-slate-800 to-slate-800/50 border-slate-700 hover:border-slate-600 transition">
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
@@ -298,12 +277,11 @@ export default function MetricsPage() {
           </Card>
         </div>
 
-        {/* Executives Performance Table */}
         <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader className="pb-4">
-            <CardTitle className="text-white text-xl">Desempeño por Ejecutiva</CardTitle>
+            <CardTitle className="text-white text-xl">Desempeno por Ejecutiva</CardTitle>
             <CardDescription className="text-slate-400">
-              Ordenado por score para identificar primero a quién apoyar, escalar o reconocer.
+              Ordenado por score para identificar primero a quien apoyar, escalar o reconocer.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -317,7 +295,7 @@ export default function MetricsPage() {
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-700/80 mb-4">
                   <FileCheck className="h-5 w-5 text-slate-300" />
                 </div>
-                <p className="text-slate-200 font-medium">Sin datos disponibles para este período</p>
+                <p className="text-slate-200 font-medium">Sin datos disponibles para este periodo</p>
                 <p className="text-slate-400 text-sm mt-2">
                   Prueba cambiar mes o año para encontrar actividad registrada en otro tramo.
                 </p>
@@ -333,7 +311,7 @@ export default function MetricsPage() {
                       <th className="text-right py-4 px-4 text-slate-300 font-semibold text-xs uppercase tracking-wider">Rechazados</th>
                       <th className="text-right py-4 px-4 text-slate-300 font-semibold text-xs uppercase tracking-wider">Pendientes</th>
                       <th className="text-right py-4 px-4 text-slate-300 font-semibold text-xs uppercase tracking-wider">Conductores</th>
-                      <th className="text-right py-4 px-4 text-slate-300 font-semibold text-xs uppercase tracking-wider">% Validación</th>
+                      <th className="text-right py-4 px-4 text-slate-300 font-semibold text-xs uppercase tracking-wider">% Validacion</th>
                       <th className="text-right py-4 px-4 text-slate-300 font-semibold text-xs uppercase tracking-wider">% Rechazo</th>
                       <th className="text-right py-4 px-4 text-slate-300 font-semibold text-xs uppercase tracking-wider">Tiempo Prom.</th>
                       <th className="text-center py-4 px-4 text-slate-300 font-semibold text-xs uppercase tracking-wider">Score</th>
@@ -356,11 +334,15 @@ export default function MetricsPage() {
                           <td className="py-4 px-4 text-center">
                             <div className="flex items-center justify-center">
                               <div className="relative w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center">
-                                <span className={`text-sm font-bold ${
-                                  m.performance_score >= 75 ? 'text-green-400' :
-                                  m.performance_score >= 50 ? 'text-yellow-400' :
-                                  'text-red-400'
-                                }`}>
+                                <span
+                                  className={`text-sm font-bold ${
+                                    m.performance_score >= 75
+                                      ? 'text-green-400'
+                                      : m.performance_score >= 50
+                                        ? 'text-yellow-400'
+                                        : 'text-red-400'
+                                  }`}
+                                >
                                   {m.performance_score}
                                 </span>
                               </div>

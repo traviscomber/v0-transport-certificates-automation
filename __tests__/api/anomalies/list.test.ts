@@ -24,8 +24,8 @@ describe('GET /api/anomalies/list', () => {
   })
 
   it('should return paginated anomalies', async () => {
-    const mockUser = { id: 'user-123', email: 'test@example.com' }
-    mockVerifyAuth.mockResolvedValue({ user: mockUser, error: null })
+    const mockUser = { id: 'user-123', email: 'test@example.com', role: 'admin' as const }
+    mockVerifyAuth.mockResolvedValue({ user: mockUser })
 
     const mockAnomalies = [
       {
@@ -62,8 +62,8 @@ describe('GET /api/anomalies/list', () => {
   })
 
   it('should filter by severity', async () => {
-    const mockUser = { id: 'user-123' }
-    mockVerifyAuth.mockResolvedValue({ user: mockUser, error: null })
+    const mockUser = { id: 'user-123', email: 'test@example.com', role: 'admin' as const }
+    mockVerifyAuth.mockResolvedValue({ user: mockUser })
 
     const mockSupabaseClient = {
       from: jest.fn().mockReturnThis(),
@@ -86,8 +86,8 @@ describe('GET /api/anomalies/list', () => {
   })
 
   it('should handle pagination correctly', async () => {
-    const mockUser = { id: 'user-123' }
-    mockVerifyAuth.mockResolvedValue({ user: mockUser, error: null })
+    const mockUser = { id: 'user-123', email: 'test@example.com', role: 'admin' as const }
+    mockVerifyAuth.mockResolvedValue({ user: mockUser })
 
     const mockSupabaseClient = {
       from: jest.fn().mockReturnThis(),
@@ -114,8 +114,8 @@ describe('GET /api/anomalies/list', () => {
   })
 
   it('should return 500 on database error', async () => {
-    const mockUser = { id: 'user-123' }
-    mockVerifyAuth.mockResolvedValue({ user: mockUser, error: null })
+    const mockUser = { id: 'user-123', email: 'test@example.com', role: 'admin' as const }
+    mockVerifyAuth.mockResolvedValue({ user: mockUser })
 
     const mockSupabaseClient = {
       from: jest.fn().mockReturnThis(),

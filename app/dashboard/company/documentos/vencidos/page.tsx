@@ -119,7 +119,6 @@ export default function VencidosPage() {
 
   const filterLabel = getMonthLabel(filters.month, filters.year)
   const oldestOverdue = expiredDocuments[0]
-  const newestOverdue = expiredDocuments[expiredDocuments.length - 1]
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -163,30 +162,44 @@ export default function VencidosPage() {
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3 w-full lg:w-auto">
-                <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Más crítico</p>
-                  <p className="text-sm font-semibold text-white mt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto lg:min-w-[34rem]">
+                <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-4">
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-red-300/80">Vencidos</p>
+                  <p className="mt-2 text-3xl font-bold text-red-200">{expiredDocuments.length}</p>
+                  <p className="mt-1 text-xs text-red-200/70">Requieren intervención</p>
+                </div>
+                <div className="rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-4">
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-slate-400">Más crítico</p>
+                  <p className="mt-2 text-3xl font-bold text-white">
                     {oldestOverdue?.days_overdue ? `${oldestOverdue.days_overdue} días` : 'Sin datos'}
                   </p>
+                  <p className="mt-1 text-xs text-slate-400">Mayor atraso acumulado</p>
                 </div>
-                <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Más reciente</p>
-                  <p className="text-sm font-semibold text-white mt-1">
-                    {newestOverdue?.days_overdue ? `${newestOverdue.days_overdue} días` : 'Sin datos'}
-                  </p>
-                </div>
-                <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Filtro</p>
-                  <p className="text-sm font-semibold text-white mt-1">Mes / año</p>
-                </div>
-                <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Acción</p>
-                  <p className="text-sm font-semibold text-white mt-1">Revisar y escalar</p>
+                <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-4">
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-amber-300/80">Acción</p>
+                  <p className="mt-2 text-3xl font-bold text-amber-200">Revisar y escalar</p>
+                  <p className="mt-1 text-xs text-amber-200/70">Prioridad inmediata</p>
                 </div>
               </div>
             </CardContent>
           </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 rounded-2xl border border-slate-700 bg-slate-900/70 p-4">
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-3">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-red-300/80">Riesgo</p>
+              <p className="text-lg font-semibold text-red-200 mt-1">{expiredDocuments.length}</p>
+            </div>
+            <div className="rounded-xl border border-slate-700/80 bg-slate-950/50 px-3 py-3">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Más crítico</p>
+              <p className="text-lg font-semibold text-white mt-1">
+                {oldestOverdue?.days_overdue ? `${oldestOverdue.days_overdue} días` : 'Sin datos'}
+              </p>
+            </div>
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-3">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-amber-300/80">Acción</p>
+              <p className="text-lg font-semibold text-amber-200 mt-1">Revisar y escalar</p>
+            </div>
+          </div>
 
           <DatePeriodFilter
             value={filters}

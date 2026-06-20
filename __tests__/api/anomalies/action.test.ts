@@ -30,9 +30,12 @@ describe('POST /api/anomalies/action', () => {
   })
 
   it('should reject invalid request body', async () => {
-    const mockUser = { id: 'user-123' }
-    mockVerifyAuth.mockResolvedValue({ user: mockUser, error: null })
-    mockValidate.mockReturnValue({ valid: false, errors: ['Missing required fields'] })
+    const mockUser = { id: 'user-123', email: 'test@example.com', role: 'admin' as const }
+    mockVerifyAuth.mockResolvedValue({ user: mockUser })
+    mockValidate.mockReturnValue({
+      valid: false,
+      errors: [{ field: 'action', message: 'Action is required' }],
+    })
 
     const request = new NextRequest('http://localhost:3000/api/anomalies/action', {
       method: 'POST',
@@ -44,8 +47,8 @@ describe('POST /api/anomalies/action', () => {
   })
 
   it('should update anomaly with action', async () => {
-    const mockUser = { id: 'user-123' }
-    mockVerifyAuth.mockResolvedValue({ user: mockUser, error: null })
+    const mockUser = { id: 'user-123', email: 'test@example.com', role: 'admin' as const }
+    mockVerifyAuth.mockResolvedValue({ user: mockUser })
     mockValidate.mockReturnValue({ valid: true, errors: [] })
 
     const mockSupabaseClient = {
@@ -58,7 +61,7 @@ describe('POST /api/anomalies/action', () => {
 
     const payload = {
       anomaly_id: '123',
-      action: 'approved',
+      action: 'resolve',
       notes: 'Verified',
     }
 
@@ -75,8 +78,8 @@ describe('POST /api/anomalies/action', () => {
   })
 
   it('should handle different action types', async () => {
-    const mockUser = { id: 'user-123' }
-    mockVerifyAuth.mockResolvedValue({ user: mockUser, error: null })
+    const mockUser = { id: 'user-123', email: 'test@example.com', role: 'admin' as const }
+    mockVerifyAuth.mockResolvedValue({ user: mockUser })
     mockValidate.mockReturnValue({ valid: true, errors: [] })
 
     const mockSupabaseClient = {
@@ -87,7 +90,7 @@ describe('POST /api/anomalies/action', () => {
 
     mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
 
-    const actions = ['approved', 'rejected', 'investigated']
+    const actions = ['investigate', 'resolve', 'dismiss', 'escalate']
 
     for (const action of actions) {
       const payload = { anomaly_id: '123', action }
@@ -102,8 +105,8 @@ describe('POST /api/anomalies/action', () => {
   })
 
   it('should return 500 on database error', async () => {
-    const mockUser = { id: 'user-123' }
-    mockVerifyAuth.mockResolvedValue({ user: mockUser, error: null })
+    const mockUser = { id: 'user-123', email: 'test@example.com', role: 'admin' as const }
+    mockVerifyAuth.mockResolvedValue({ user: mockUser })
     mockValidate.mockReturnValue({ valid: true, errors: [] })
 
     const mockSupabaseClient = {
@@ -116,7 +119,7 @@ describe('POST /api/anomalies/action', () => {
 
     const request = new NextRequest('http://localhost:3000/api/anomalies/action', {
       method: 'POST',
-      body: JSON.stringify({ anomaly_id: '123', action: 'approved' }),
+      body: JSON.stringify({ anomaly_id: '123', action: 'resolve' }),
     })
 
     const response = await POST(request)

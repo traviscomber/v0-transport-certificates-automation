@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { FileText, Shield, Truck, AlertTriangle, CheckCircle, Clock, LucideIcon } from "lucide-react"
+import { FileText, Shield, Truck, AlertTriangle, CheckCircle, Clock, LucideIcon, ArrowRight } from "lucide-react"
 import { useDocumentSync } from "@/contexts/document-sync-context"
 import { StatCard } from "./stat-card"
 import { AlertItem } from "./alert-item"
@@ -77,6 +77,13 @@ export function DashboardOverview() {
   const [loading, setLoading] = useState(true)
   const { onSync } = useDocumentSync()
   const router = useRouter()
+  const totalDocuments = Number(stats[0]?.value || 0)
+  const approvedDocuments = Number(stats[1]?.value || 0)
+  const pendingDocuments = Number(stats[2]?.value || 0)
+  const rejectedDocuments = Number(stats[3]?.value || 0)
+  const activeAlerts = alerts.length
+  const openRiskItems = pendingDocuments + rejectedDocuments
+  const completionRate = totalDocuments > 0 ? Math.round((approvedDocuments / totalDocuments) * 100) : 0
 
   useEffect(() => {
     const fetchData = async () => {
@@ -277,6 +284,60 @@ export function DashboardOverview() {
         </p>
       </div>
 
+      <Card className="overflow-hidden border-slate-700/60 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 shadow-2xl shadow-slate-950/20">
+        <CardContent className="p-6 md:p-8">
+          <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-6">
+            <div className="space-y-4 max-w-3xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-300">
+                Panel ejecutivo premium
+              </div>
+              <div className="space-y-2">
+                <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-white leading-tight">
+                  Control Operacional
+                </h1>
+                <p className="max-w-2xl text-sm md:text-base text-slate-300">
+                  Vista ejecutiva mensual para priorizar documentos, alertas y seguimiento operativo con foco en decisiones rápidas.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <span className="px-3 py-1.5 rounded-full bg-blue-500/15 text-blue-300 text-xs font-medium">
+                  Vista ejecutiva mensual
+                </span>
+                <span className="px-3 py-1.5 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-medium">
+                  Datos reales sincronizados
+                </span>
+                <span className="px-3 py-1.5 rounded-full bg-orange-500/15 text-orange-300 text-xs font-medium">
+                  Prioridad operativa
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 w-full max-w-xl">
+              <div className="rounded-2xl border border-slate-700/80 bg-slate-950/50 px-4 py-4">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500">Documentos</p>
+                <p className="mt-2 text-3xl md:text-4xl font-bold text-white">{totalDocuments.toLocaleString('es-CL')}</p>
+                <p className="mt-1 text-xs text-slate-400">Volumen total en seguimiento</p>
+              </div>
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-4">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-300/80">Aprobados</p>
+                <p className="mt-2 text-3xl md:text-4xl font-bold text-emerald-200">{approvedDocuments.toLocaleString('es-CL')}</p>
+                <p className="mt-1 text-xs text-emerald-200/70">Validados y listos</p>
+              </div>
+              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-4">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-amber-300/80">Pendientes</p>
+                <p className="mt-2 text-3xl md:text-4xl font-bold text-amber-200">{pendingDocuments.toLocaleString('es-CL')}</p>
+                <p className="mt-1 text-xs text-amber-200/70">Revisión activa</p>
+              </div>
+              <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-4">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-red-300/80">Alertas</p>
+                <p className="mt-2 text-3xl md:text-4xl font-bold text-red-200">{activeAlerts.toLocaleString('es-CL')}</p>
+                <p className="mt-1 text-xs text-red-200/70">{rejectedDocuments.toLocaleString('es-CL')} rechazados</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card className="bg-gradient-to-br from-slate-900/60 to-slate-800/40 border-slate-700">
         <CardContent className="p-4 md:p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="space-y-1">
@@ -293,6 +354,34 @@ export function DashboardOverview() {
               <span className="px-2.5 py-1 rounded-full bg-orange-500/15 text-orange-300 text-xs font-medium">
                 Prioridad operativa
               </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2 w-full max-w-sm lg:max-w-none lg:w-auto">
+            <div className="rounded-xl border border-slate-700/80 bg-slate-950/50 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Documentos</p>
+              <p className="text-lg font-semibold text-white">{stats[0]?.value || '0'}</p>
+            </div>
+            <div className="rounded-xl border border-slate-700/80 bg-slate-950/50 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Cumplimiento</p>
+              <p className="text-lg font-semibold text-emerald-300">{completionRate}%</p>
+            </div>
+            <div className="rounded-xl border border-slate-700/80 bg-slate-950/50 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Alertas</p>
+              <p className="text-lg font-semibold text-red-300">{alerts.length}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full lg:w-auto">
+            <div className="rounded-xl border border-slate-700/80 bg-slate-950/40 px-3 py-3">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Pendientes + rechazados</p>
+              <p className="text-2xl font-semibold text-orange-300 mt-1">{openRiskItems}</p>
+            </div>
+            <div className="rounded-xl border border-slate-700/80 bg-slate-950/40 px-3 py-3">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Aprobados</p>
+              <p className="text-2xl font-semibold text-emerald-300 mt-1">{approvedDocuments}</p>
+            </div>
+            <div className="rounded-xl border border-slate-700/80 bg-slate-950/40 px-3 py-3">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Alertas activas</p>
+              <p className="text-2xl font-semibold text-red-300 mt-1">{activeAlerts}</p>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full lg:w-auto">

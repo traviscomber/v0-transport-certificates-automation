@@ -120,7 +120,6 @@ export default function RenovarPage() {
   const filterLabel = getMonthLabel(filters.month, filters.year)
   const dueSoon = renewalDocuments.filter((doc) => (doc.days_until_expiration || 999) <= 30).length
   const nextToExpire = renewalDocuments[0]
-  const furthestToExpire = renewalDocuments[renewalDocuments.length - 1]
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -164,30 +163,44 @@ export default function RenovarPage() {
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3 w-full lg:w-auto">
-                <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Próximo</p>
-                  <p className="text-sm font-semibold text-white mt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto lg:min-w-[34rem]">
+                <div className="rounded-2xl border border-yellow-500/20 bg-yellow-500/10 px-4 py-4">
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-yellow-300/80">Próximos 30 días</p>
+                  <p className="mt-2 text-3xl font-bold text-yellow-200">{dueSoon}</p>
+                  <p className="mt-1 text-xs text-yellow-200/70">Lista prioritaria</p>
+                </div>
+                <div className="rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-4">
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-slate-400">Más cercano</p>
+                  <p className="mt-2 text-3xl font-bold text-white">
                     {nextToExpire?.days_until_expiration != null ? `${nextToExpire.days_until_expiration} días` : 'Sin datos'}
                   </p>
+                  <p className="mt-1 text-xs text-slate-400">Próxima ventana de trabajo</p>
                 </div>
-                <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Más lejano</p>
-                  <p className="text-sm font-semibold text-white mt-1">
-                    {furthestToExpire?.days_until_expiration != null ? `${furthestToExpire.days_until_expiration} días` : 'Sin datos'}
-                  </p>
-                </div>
-                <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Filtro</p>
-                  <p className="text-sm font-semibold text-white mt-1">Mes / año</p>
-                </div>
-                <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Acción</p>
-                  <p className="text-sm font-semibold text-white mt-1">Planificar renovación</p>
+                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-4">
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-300/80">Acción</p>
+                  <p className="mt-2 text-3xl font-bold text-emerald-200">Planificar renovaciones</p>
+                  <p className="mt-1 text-xs text-emerald-200/70">Sin perder plazo</p>
                 </div>
               </div>
             </CardContent>
           </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 rounded-2xl border border-slate-700 bg-slate-900/70 p-4">
+            <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 px-3 py-3">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-yellow-300/80">Próximos 30 días</p>
+              <p className="text-lg font-semibold text-yellow-200 mt-1">{dueSoon}</p>
+            </div>
+            <div className="rounded-xl border border-slate-700/80 bg-slate-950/50 px-3 py-3">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Más cercano</p>
+              <p className="text-lg font-semibold text-white mt-1">
+                {nextToExpire?.days_until_expiration != null ? `${nextToExpire.days_until_expiration} días` : 'Sin datos'}
+              </p>
+            </div>
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-3">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-300/80">Acción</p>
+              <p className="text-lg font-semibold text-emerald-200 mt-1">Planificar renovaciones</p>
+            </div>
+          </div>
 
           <DatePeriodFilter
             value={filters}

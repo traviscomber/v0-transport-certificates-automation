@@ -64,16 +64,22 @@ const StatCard = React.memo<StatCardProps>(({
   return (
     <Card 
       onClick={() => router.push(href)}
-      className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${currentColor.bg} ${currentColor.border} ${currentColor.accent} hover:scale-105`}
+      className={`group relative overflow-hidden cursor-pointer border transition-all duration-300 hover:shadow-xl ${currentColor.bg} ${currentColor.border} ${currentColor.accent} hover:-translate-y-1`}
     >
-      <CardContent className="pt-6">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className={`text-3xl font-bold mt-2 ${currentColor.value}`}>{value}</p>
-            <p className="text-xs text-muted-foreground mt-1">{description}</p>
+      <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${color === 'green' ? 'from-emerald-400 to-emerald-200' : color === 'orange' ? 'from-orange-400 to-amber-200' : color === 'red' ? 'from-red-400 to-rose-200' : 'from-blue-400 to-cyan-200'}`} />
+      <CardContent className="pt-6 pb-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg bg-black/20 ${currentColor.icon}`}>
+                <Icon className="h-4 w-4" />
+              </span>
+              <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            </div>
+            <p className={`text-4xl font-bold tracking-tight ${currentColor.value}`}>{value}</p>
+            <p className="text-xs text-muted-foreground max-w-[16rem]">{description}</p>
           </div>
-          <div className="ml-4 flex-shrink-0">
+          <div className="ml-2 flex-shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
             <Icon className={`h-8 w-8 ${currentColor.icon}`} />
           </div>
         </div>

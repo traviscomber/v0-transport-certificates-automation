@@ -92,6 +92,11 @@ function withinPeriod(dateValue: string | null | undefined, startDate?: Date, en
 
 export async function GET(request: NextRequest) {
   try {
+    const userEmail = request.cookies.get('user_email')?.value
+    if (!userEmail) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const month = searchParams.get('month') || ALL_VALUE
     const year = searchParams.get('year') || ALL_VALUE

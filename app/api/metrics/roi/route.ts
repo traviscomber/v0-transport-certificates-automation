@@ -1,8 +1,10 @@
 export const dynamic = 'force-dynamic'
 
 import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { ALL_VALUE, getMonthYearRange } from '@/lib/date-filters'
+
+const ACCESS_ROLES = new Set(['admin', 'executive', 'ejecutiva', 'superadmin'])
 
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -15,13 +17,27 @@ function getSupabaseClient() {
   return createClient(url, key)
 }
 
-export async function GET(request: Request) {
+function hasAccess(request: NextRequest) {
+  const userEmail = request.cookies.get('user_email')?.value
+  const userRole = request.cookies.get('user_role')?.value?.toLowerCase()
+
+  if (userEmail && userRole && ACCESS_ROLES.has(userRole)) {
+    return true
+  }
+
+  const bearerToken = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+  const accessKey = process.env.ROI_METRICS_ACCESS_KEY
+
+  if (accessKey && bearerToken === accessKey) {
+    return true
+  }
+
+  return false
+}
+
+export async function GET(request: NextRequest) {
   try {
-    // Check authorization
-    const authHeader = request.headers.get('authorization')
-    const key = authHeader?.replace('Bearer ', '')
-    
-    if (key !== 'mono2026') {
+    if (!hasAccess(request)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

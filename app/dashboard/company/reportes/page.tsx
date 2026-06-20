@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { HelpBox } from '@/components/ui/help-box'
@@ -38,40 +38,44 @@ export default function ReportesPage() {
   })
   const [analysis, setAnalysis] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [entities, setEntities] = useState<EntityRecord[]>([])
   const [documents, setDocuments] = useState<DocumentRecord[]>([])
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [dashboardRes, documentsRes] = await Promise.all([
-          fetch('/api/dashboard/data', { cache: 'no-store' }),
-          fetch('/api/company/documents/all', { cache: 'no-store' }),
-        ])
+  const loadData = async () => {
+    setRefreshing(true)
+    try {
+      const [dashboardRes, documentsRes] = await Promise.all([
+        fetch('/api/dashboard/data', { cache: 'no-store' }),
+        fetch('/api/company/documents/all', { cache: 'no-store' }),
+      ])
 
-        if (dashboardRes.ok) {
-          const dashboardData = await dashboardRes.json()
-          const drivers = (dashboardData.dashboard?.conductores || []).map((driver: any) => ({
-            ...driver,
-            type: 'driver' as const,
-          }))
-          const subcontractors = (dashboardData.dashboard?.transportistas || []).map((sub: any) => ({
-            ...sub,
-            type: 'subcontractor' as const,
-          }))
-          setEntities([...drivers, ...subcontractors])
-        }
-
-        if (documentsRes.ok) {
-          const documentsData = await documentsRes.json()
-          setDocuments(Array.isArray(documentsData.documents) ? documentsData.documents : [])
-        }
-      } catch (error) {
-        console.error('[v0] Error loading report data:', error)
+      if (dashboardRes.ok) {
+        const dashboardData = await dashboardRes.json()
+        const drivers = (dashboardData.dashboard?.conductores || []).map((driver: any) => ({
+          ...driver,
+          type: 'driver' as const,
+        }))
+        const subcontractors = (dashboardData.dashboard?.transportistas || []).map((sub: any) => ({
+          ...sub,
+          type: 'subcontractor' as const,
+        }))
+        setEntities([...drivers, ...subcontractors])
       }
-    }
 
-    loadData()
+      if (documentsRes.ok) {
+        const documentsData = await documentsRes.json()
+        setDocuments(Array.isArray(documentsData.documents) ? documentsData.documents : [])
+      }
+    } catch (error) {
+      console.error('[v0] Error loading report data:', error)
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  useEffect(() => {
+    void loadData()
   }, [])
 
   const filteredEntities = useMemo(() => {
@@ -128,6 +132,10 @@ export default function ReportesPage() {
 
   const completionRate = stats.total > 0 ? Math.round((stats.approved / stats.total) * 100) : 0
   const riskRate = stats.total > 0 ? Math.round(((stats.sinDocumentos + stats.expiring) / stats.total) * 100) : 0
+  const expiredCount = filteredDocuments.filter((doc) => {
+    if (!doc.expiration_date) return false
+    return new Date(doc.expiration_date).getTime() < Date.now()
+  }).length
 
   const handleAnalysisRequest = async (type: string) => {
     setLoading(true)
@@ -204,8 +212,8 @@ export default function ReportesPage() {
   return (
     <div className="space-y-6">
       <Card className="overflow-hidden border-slate-700/60 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
-        <CardContent className="p-5 md:p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-          <div className="space-y-3 max-w-2xl">
+        <CardContent className="p-6 md:p-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div className="space-y-4 max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-300">
               Reportes ejecutivos mensuales
             </div>
@@ -215,21 +223,38 @@ export default function ReportesPage() {
                 Usa un período puntual para comparar cumplimiento, riesgos y actividad operativa sin ruido de rangos fijos.
               </p>
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl">
+              <div className="min-h-[98px] rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-4">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500">Total filtrado</p>
+                <p className="mt-2 text-3xl font-bold text-white">{stats.total}</p>
+                <p className="mt-1 text-xs text-slate-400">Registros dentro del período</p>
+              </div>
+              <div className="min-h-[98px] rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-4">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-300/80">Cumplimiento</p>
+                <p className="mt-2 text-3xl font-bold text-emerald-200">{completionRate}%</p>
+                <p className="mt-1 text-xs text-emerald-200/70">{stats.approved} aprobados</p>
+              </div>
+              <div className="min-h-[98px] rounded-2xl border border-orange-500/20 bg-orange-500/10 px-4 py-4">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-orange-300/80">Riesgo activo</p>
+                <p className="mt-2 text-3xl font-bold text-orange-200">{riskRate}%</p>
+                <p className="mt-1 text-xs text-orange-200/70">{stats.sinDocumentos + stats.expiring} requieren atención</p>
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-3 w-full lg:w-auto">
-            <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
+          <div className="grid grid-cols-2 gap-3 w-full max-w-xl lg:max-w-none lg:w-auto">
+            <div className="min-h-[96px] rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-4">
               <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Datos</p>
               <p className="text-sm font-semibold text-white mt-1">Documentos y ejecutivas reales</p>
             </div>
-            <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
+            <div className="min-h-[96px] rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-4">
               <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Enfoque</p>
               <p className="text-sm font-semibold text-white mt-1">Acciones priorizadas</p>
             </div>
-            <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
+            <div className="min-h-[96px] rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-4">
               <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Lectura</p>
               <p className="text-sm font-semibold text-white mt-1">Cumplimiento y riesgo</p>
             </div>
-            <div className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3">
+            <div className="min-h-[96px] rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-4">
               <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Filtro</p>
               <p className="text-sm font-semibold text-white mt-1">Mes / año</p>
             </div>
@@ -241,6 +266,56 @@ export default function ReportesPage() {
         description="Genera reportes profesionales impulsados por IA. Obtén insights sobre cumplimiento, riesgos y alertas críticas."
         variant="info"
       />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 rounded-2xl border border-slate-700 bg-slate-900/70 p-4">
+        <div className="rounded-xl border border-slate-700/80 bg-slate-950/50 px-3 py-3">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Periodo activo</p>
+          <p className="text-lg font-semibold text-white mt-1">{periodLabel}</p>
+        </div>
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-3">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-300/80">Cumplimiento</p>
+          <p className="text-lg font-semibold text-emerald-200 mt-1">{completionRate}%</p>
+        </div>
+        <div className="rounded-xl border border-orange-500/20 bg-orange-500/10 px-3 py-3">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-orange-300/80">Riesgo</p>
+          <p className="text-lg font-semibold text-orange-200 mt-1">{riskRate}%</p>
+        </div>
+      </div>
+
+      <Card className="border-slate-700/60 bg-slate-900/70 shadow-lg shadow-slate-950/10">
+        <CardContent className="p-4 md:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Estado actual</p>
+            <p className="text-lg font-semibold text-white">{periodLabel}</p>
+            <p className="text-sm text-slate-400">
+              {stats.total} documentos filtrados, {stats.expiring} por vencer y {stats.pending} pendientes.
+            </p>
+            <div className="mt-4 grid grid-cols-3 gap-3">
+              <div className="rounded-xl border border-slate-700 bg-slate-950/50 px-3 py-3">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Total</p>
+                <p className="text-2xl font-semibold text-white mt-1">{stats.total}</p>
+              </div>
+              <div className="rounded-xl border border-orange-500/20 bg-orange-500/10 px-3 py-3">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-orange-300/80">Por vencer</p>
+                <p className="text-2xl font-semibold text-orange-200 mt-1">{stats.expiring}</p>
+              </div>
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-3">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-amber-300/80">Pendientes</p>
+                <p className="text-2xl font-semibold text-amber-200 mt-1">{stats.pending}</p>
+              </div>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => void loadData()}
+            disabled={refreshing || loading}
+            className="gap-2 border-slate-600 text-slate-200 hover:bg-slate-800"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Actualizar datos
+          </Button>
+        </CardContent>
+      </Card>
 
       <DatePeriodFilter value={period} onChange={setPeriod} onClear={() => setPeriod({ month: ALL_VALUE, year: ALL_VALUE })} />
 

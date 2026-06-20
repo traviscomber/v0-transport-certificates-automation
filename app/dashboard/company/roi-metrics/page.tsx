@@ -3,11 +3,10 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { DatePeriodFilter } from '@/components/date-period-filter'
 import { ALL_VALUE, getMonthLabel, type DateFilterValue } from '@/lib/date-filters'
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { TrendingUp, Clock, Users, Zap, DollarSign, Lock, Eye, EyeOff } from 'lucide-react'
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { TrendingUp, Clock, Users, Zap, DollarSign, RefreshCw } from 'lucide-react'
 
 interface ROIMetrics {
   totalDocumentsProcessed: number
@@ -49,9 +48,6 @@ const COLORS = ['#FF7A35', '#27AB9C', '#E74C3C', '#F39C12', '#3498DB']
 export default function ROIMetricsPage() {
   const [metrics, setMetrics] = useState<ROIMetrics | null>(null)
   const [loading, setLoading] = useState(false)
-  const [authenticated, setAuthenticated] = useState(false)
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [period, setPeriod] = useState<DateFilterValue>({
     month: ALL_VALUE,
@@ -60,13 +56,11 @@ export default function ROIMetricsPage() {
 
   const fetchMetrics = async () => {
     setLoading(true)
+    setError('')
+
     try {
       const params = new URLSearchParams({ month: period.month, year: period.year })
-      const response = await fetch(`/api/metrics/roi?${params.toString()}`, {
-        headers: {
-          Authorization: 'Bearer mono2026',
-        },
-      })
+      const response = await fetch(`/api/metrics/roi?${params.toString()}`)
 
       if (!response.ok) {
         const errorData = await response.text()
@@ -77,84 +71,28 @@ export default function ROIMetricsPage() {
       const data = await response.json()
       console.log('[v0] ROI Metrics loaded:', data)
       setMetrics(data)
-      setError('')
     } catch (err: any) {
       console.error('[v0] Error fetching ROI metrics:', err.message)
+      setMetrics(null)
       setError(`Error: ${err.message}`)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleAuth = async () => {
-    if (password === 'mono2026') {
-      setAuthenticated(true)
-      setError('')
-    } else {
-      setError('Contraseña incorrecta')
-      setPassword('')
-    }
-  }
-
   useEffect(() => {
-    if (authenticated) {
-      fetchMetrics()
-    }
+    void fetchMetrics()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authenticated, period.month, period.year])
+  }, [period.month, period.year])
 
-  if (!authenticated) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5">
-        <Card className="w-full max-w-md shadow-xl">
-          <CardHeader className="bg-gradient-to-r from-primary to-primary/80 text-white rounded-t-lg">
-            <CardTitle className="flex items-center gap-2">
-              <Lock className="h-5 w-5" />
-              Acceso a ROI Metrics
-            </CardTitle>
-            <CardDescription className="text-white/80">
-              Ingresa la contraseña para ver métricas de eficiencia
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-4">
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Contraseña</label>
-              <div className="relative">
-                <Input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAuth()}
-                  placeholder="Ingresa la clave"
-                  className="pr-10"
-                  autoFocus
-                />
-                <button
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-            {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
-            <Button onClick={handleAuth} className="w-full bg-primary hover:bg-primary/90">
-              Desbloquear
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  if (loading) {
+  if (loading && !metrics) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center space-y-3">
           <div className="animate-spin">
             <Zap className="h-8 w-8 text-primary mx-auto" />
           </div>
-          <p className="text-gray-600 font-medium">Calculando métricas en tiempo real...</p>
+          <p className="text-gray-600 font-medium">Calculando metricas en tiempo real...</p>
         </div>
       </div>
     )
@@ -162,10 +100,22 @@ export default function ROIMetricsPage() {
 
   if (!metrics) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <p className="text-red-600 font-medium">Error al cargar las métricas</p>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 p-4">
+        <Card className="w-full max-w-md shadow-xl">
+          <CardHeader className="bg-gradient-to-r from-primary to-primary/80 text-white rounded-t-lg">
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              ROI & Eficiencia del Sistema
+            </CardTitle>
+            <CardDescription className="text-white/80">
+              El panel se actualiza por mes y año segun la sesion activa.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-4">
+            {error ? <p className="text-sm text-red-600 font-medium">{error}</p> : null}
+            <Button onClick={fetchMetrics} className="w-full bg-primary hover:bg-primary/90" disabled={loading}>
+              {loading ? 'Actualizando...' : 'Reintentar'}
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -195,8 +145,17 @@ export default function ROIMetricsPage() {
             <TrendingUp className="h-8 w-8 text-primary" />
             ROI & Eficiencia del Sistema
           </h1>
-          <p className="text-gray-600 mt-1">Análisis completo de ahorro y productividad basado en datos reales de Labbe</p>
+          <p className="text-gray-600 mt-1">Analisis completo de ahorro y productividad basado en datos reales de Labbe</p>
         </div>
+        <Button
+          variant="outline"
+          onClick={fetchMetrics}
+          disabled={loading}
+          className="gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          Actualizar
+        </Button>
       </div>
 
       <DatePeriodFilter
@@ -212,19 +171,25 @@ export default function ROIMetricsPage() {
             <p className="text-lg font-semibold text-foreground">{periodLabel}</p>
           </div>
           <p className="text-sm text-gray-600">
-            El cálculo financiero sigue el mismo mes/año que documentos y reportes.
+            El calculo financiero sigue el mismo mes/anio que documentos y reportes.
           </p>
         </CardContent>
       </Card>
 
+      {error ? (
+        <Card className="border border-red-200 bg-red-50">
+          <CardContent className="p-4 text-sm text-red-700">{error}</CardContent>
+        </Card>
+      ) : null}
+
       <Card className="border-l-4 border-l-primary bg-gradient-to-r from-primary/5 to-transparent">
         <CardHeader>
-          <CardTitle className="text-xl">Conclusión Ejecutiva</CardTitle>
+          <CardTitle className="text-xl">Conclusion Ejecutiva</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-lg font-semibold text-primary mb-2">{metrics.roi.message}</p>
           <p className="text-gray-600">
-            El sistema automatizado ha permitido procesar {metrics.totalDocumentsProcessed.toLocaleString('es-CL')} documentos con una velocidad {Math.round(metrics.speedMultiplier)}x superior a la revisión manual.
+            El sistema automatizado ha permitido procesar {metrics.totalDocumentsProcessed.toLocaleString('es-CL')} documentos con una velocidad {Math.round(metrics.speedMultiplier)}x superior a la revision manual.
           </p>
         </CardContent>
       </Card>
@@ -252,7 +217,7 @@ export default function ROIMetricsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-foreground">{Math.round(metrics.roi.hoursPerMonthSaved).toLocaleString('es-CL')}</div>
-            <p className="text-xs text-gray-500 mt-1">{Math.round(metrics.totalTimeSavedDays)} días de trabajo</p>
+            <p className="text-xs text-gray-500 mt-1">{Math.round(metrics.totalTimeSavedDays)} dias de trabajo</p>
           </CardContent>
         </Card>
 
@@ -286,16 +251,16 @@ export default function ROIMetricsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Análisis de Tiempo por Documento</CardTitle>
+            <CardTitle>Analisis de Tiempo por Documento</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
               <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">Revisión Manual (Sin IA)</span>
+                <span className="text-sm font-medium text-gray-700">Revision Manual (Sin IA)</span>
                 <span className="text-lg font-bold text-foreground">{metrics.averageTimePerDocumentMinutesManual} min</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-secondary/10 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">IA + Validación</span>
+                <span className="text-sm font-medium text-gray-700">IA + Validacion</span>
                 <span className="text-lg font-bold text-foreground">{metrics.averageTimePerDocumentMinutesWithAI} min</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-primary/10 rounded-lg border-l-2 border-l-primary">
@@ -324,14 +289,14 @@ export default function ROIMetricsPage() {
               </BarChart>
             </ResponsiveContainer>
             <div className="mt-4 p-3 bg-primary/5 rounded-lg text-center">
-              <p className="text-sm text-gray-700">El sistema IA es <strong className="text-primary text-lg">{Math.round(metrics.speedMultiplier)}x</strong> más rápido</p>
+              <p className="text-sm text-gray-700">El sistema IA es <strong className="text-primary text-lg">{Math.round(metrics.speedMultiplier)}x</strong> mas rapido</p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Distribución de Documentos</CardTitle>
+            <CardTitle>Distribucion de Documentos</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
@@ -347,7 +312,7 @@ export default function ROIMetricsPage() {
                   dataKey="value"
                 >
                   {documentDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                    <Cell key={`doc-cell-${index}`} fill={entry.fill} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(value: any) => (value || 0).toLocaleString('es-CL')} />
@@ -358,20 +323,20 @@ export default function ROIMetricsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Precisión del Sistema</CardTitle>
+            <CardTitle>Precision del Sistema</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
               <div className="flex justify-between items-center p-3 bg-secondary/10 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">Tasa de Éxito IA</span>
+                <span className="text-sm font-medium text-gray-700">Tasa de Exito IA</span>
                 <span className="text-lg font-bold text-secondary">{metrics.aiSuccessRate}%</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-primary/10 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">Precisión del Sistema</span>
+                <span className="text-sm font-medium text-gray-700">Precision del Sistema</span>
                 <span className="text-lg font-bold text-primary">{metrics.systemAccuracy}%</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-secondary/10 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">Tasa de Aprobación</span>
+                <span className="text-sm font-medium text-gray-700">Tasa de Aprobacion</span>
                 <span className="text-lg font-bold text-secondary">{metrics.approvalRate}%</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
@@ -379,6 +344,33 @@ export default function ROIMetricsPage() {
                 <span className="text-lg font-bold text-red-600">{metrics.rejectionRate}%</span>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Estado de Documentos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={statusDistribution}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, value, percent }) => `${name}: ${value} (${((percent || 0) * 100).toFixed(0)}%)`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {statusDistribution.map((entry, index) => (
+                    <Cell key={`status-cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value: any) => (value || 0).toLocaleString('es-CL')} />
+              </PieChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
@@ -403,7 +395,7 @@ export default function ROIMetricsPage() {
             <div className="p-4 bg-secondary/10 rounded-lg">
               <p className="text-sm text-gray-600 mb-1">Incremento de Capacidad</p>
               <p className="text-3xl font-bold text-secondary">+{Math.round(((metrics.totalDocumentsProcessed / metrics.totalExecutives) / (metrics.docsPerExecutiveMonthly / 12) - 1) * 100)}%</p>
-              <p className="text-xs text-gray-500 mt-2">más documentos procesados</p>
+              <p className="text-xs text-gray-500 mt-2">mas documentos procesados</p>
             </div>
           </div>
         </CardContent>
