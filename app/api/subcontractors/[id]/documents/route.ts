@@ -255,19 +255,29 @@ export async function GET(
     }
 
     // Calculate summary
+    // Count unique documents by document_type_id (keep only most recent per type)
+    const uniqueDocuments = new Map()
+    documents?.forEach((doc) => {
+      const existing = uniqueDocuments.get(doc.document_type_id)
+      if (!existing || new Date(doc.created_at) > new Date(existing.created_at)) {
+        uniqueDocuments.set(doc.document_type_id, doc)
+      }
+    })
+    const uniqueDocsArray = Array.from(uniqueDocuments.values())
+    
     const summary = {
-      totalDocumentsUploaded: documents?.length || 0,
+      totalDocumentsUploaded: uniqueDocsArray.length,
       totalRequirements: documentTypes?.length || 0,
-      approvedDocuments: documents?.filter((d) => d.status === 'approved').length || 0,
-      pendingDocuments: documents?.filter((d) => d.status === 'pending').length || 0,
-      expiredDocuments: documents?.filter((d) => d.status === 'expired').length || 0,
-      rejectedDocuments: documents?.filter((d) => d.status === 'rejected').length || 0,
+      approvedDocuments: uniqueDocsArray.filter((d) => d.status === 'approved').length,
+      pendingDocuments: uniqueDocsArray.filter((d) => d.status === 'pending').length,
+      expiredDocuments: uniqueDocsArray.filter((d) => d.status === 'expired').length,
+      rejectedDocuments: uniqueDocsArray.filter((d) => d.status === 'rejected').length,
     }
 
     return NextResponse.json({
       success: true,
       subcontractorId: id,
-      documents: documents || [],
+      documents: uniqueDocsArray || [],  // Return only unique documents (one per document_type_id)
       requirements: documentTypes || [],
       summary,
     })
