@@ -365,7 +365,7 @@ export function DashboardOverview() {
                 className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-4 hover:bg-red-500/20 hover:border-red-500/40 transition-all cursor-pointer text-left"
               >
                 <p className="text-[10px] uppercase tracking-[0.25em] text-red-300/80">Rechazados</p>
-                <p className="mt-2 text-3xl md:text-4xl font-bold text-red-200">{activeAlerts.toLocaleString('es-CL')}</p>
+                <p className="mt-2 text-3xl md:text-4xl font-bold text-red-200">{rejectedDocuments.toLocaleString('es-CL')}</p>
                 <p className="mt-1 text-xs text-red-200/70">{rejectedDocuments.toLocaleString('es-CL')} rechazados</p>
               </button>
             </div>
