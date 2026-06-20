@@ -57,7 +57,7 @@ export function DashboardOverview() {
     {
       title: "Documentos Pendientes",
       value: "0",
-      description: "En revisiÃ³n",
+      description: "En revisión",
       icon: Clock,
       status: "active",
       href: "/dashboard/company/documentos/pendientes",
@@ -158,7 +158,7 @@ export function DashboardOverview() {
             {
               title: "Documentos Pendientes",
               value: pendingDocs.toString(),
-              description: "En revisiÃ³n",
+              description: "En revisión",
               icon: Clock,
               status: "active",
               href: "/dashboard/company/documentos/pendientes",
@@ -241,7 +241,7 @@ export function DashboardOverview() {
                   {
                     title: "Documentos Pendientes",
                     value: pendingDocs.toString(),
-                    description: "En revisiÃ³n",
+                    description: "En revisión",
                     icon: Clock,
                     status: "active",
                     href: "/dashboard/company/documentos/pendientes",
@@ -271,205 +271,107 @@ export function DashboardOverview() {
   }, [onSync])
 
   return (
-    <div className="space-y-6">
-      <Card className="overflow-hidden border-slate-700/60 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 shadow-2xl shadow-slate-950/20">
+    <div className="space-y-5">
+      {/* Hero ejecutivo - KPIs + barra de cumplimiento */}
+      <Card className="overflow-hidden border-slate-700/60 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 shadow-2xl">
         <CardContent className="p-6 md:p-8">
-          <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-6">
-            <div className="space-y-4 max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-300">
-                Panel ejecutivo premium
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-300 mb-2">
+                Panel ejecutivo
               </div>
-              <div className="space-y-2">
-                <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-white leading-tight">
-                  Control Operacional
-                </h1>
-                <p className="max-w-2xl text-sm md:text-base text-slate-300">
-                  Vista ejecutiva mensual para priorizar documentos, alertas y seguimiento operativo con foco en decisiones rÃ¡pidas.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <span className="px-3 py-1.5 rounded-full bg-blue-500/15 text-blue-300 text-xs font-medium">
-                  Vista ejecutiva mensual
-                </span>
-                <span className="px-3 py-1.5 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-medium">
-                  Datos reales sincronizados
-                </span>
-                <span className="px-3 py-1.5 rounded-full bg-orange-500/15 text-orange-300 text-xs font-medium">
-                  Prioridad operativa
-                </span>
-              </div>
-              <div className="space-y-3 rounded-2xl border border-slate-700/70 bg-slate-950/40 p-4">
-                <div className="flex items-center justify-between gap-4 text-[10px] uppercase tracking-[0.25em] text-slate-400">
-                  <span>Lectura ejecutiva</span>
-                  <span>{completionRate}% de cumplimiento</span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-slate-800">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-emerald-300 to-cyan-300"
-                    style={{ width: `${completionRate}%` }}
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <button
-                    onClick={() => router.push("/dashboard/company/documentos")}
-                    className="rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2 hover:bg-slate-900/80 hover:border-slate-600 transition-all cursor-pointer text-left"
-                  >
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Total</p>
-                    <p className="text-lg font-semibold text-white">{totalDocuments.toLocaleString('es-CL')}</p>
-                  </button>
-                  <button
-                    onClick={() => router.push("/dashboard/company/documentos/aprobados")}
-                    className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-all cursor-pointer text-left"
-                  >
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-300/80">Aprobados</p>
-                    <p className="text-lg font-semibold text-emerald-200">{approvedDocuments.toLocaleString('es-CL')}</p>
-                  </button>
-                  <button
-                    onClick={() => router.push("/dashboard/company/documentos/rechazados")}
-                    className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 hover:bg-red-500/20 hover:border-red-500/40 transition-all cursor-pointer text-left"
-                  >
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-red-300/80">Riesgo</p>
-                    <p className="text-lg font-semibold text-red-200">{openRiskItems.toLocaleString('es-CL')}</p>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 w-full max-w-xl">
-              <button
-                onClick={() => router.push("/dashboard/company/documentos")}
-                className="rounded-2xl border border-slate-700/80 bg-slate-950/50 px-4 py-4 hover:bg-slate-900/60 hover:border-slate-600 transition-all cursor-pointer text-left"
-              >
-                <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500">Documentos</p>
-                <p className="mt-2 text-3xl md:text-4xl font-bold text-white">{totalDocuments.toLocaleString('es-CL')}</p>
-                <p className="mt-1 text-xs text-slate-400">Volumen total en seguimiento</p>
-              </button>
-              <button
-                onClick={() => router.push("/dashboard/company/documentos/aprobados")}
-                className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-4 hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-all cursor-pointer text-left"
-              >
-                <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-300/80">Aprobados</p>
-                <p className="mt-2 text-3xl md:text-4xl font-bold text-emerald-200">{approvedDocuments.toLocaleString('es-CL')}</p>
-                <p className="mt-1 text-xs text-emerald-200/70">Validados y listos</p>
-              </button>
-              <button
-                onClick={() => router.push("/dashboard/company/documentos/pendientes")}
-                className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-4 hover:bg-amber-500/20 hover:border-amber-500/40 transition-all cursor-pointer text-left"
-              >
-                <p className="text-[10px] uppercase tracking-[0.25em] text-amber-300/80">Pendientes</p>
-                <p className="mt-2 text-3xl md:text-4xl font-bold text-amber-200">{pendingDocuments.toLocaleString('es-CL')}</p>
-                <p className="mt-1 text-xs text-amber-200/70">Revisión activa</p>
-              </button>
-              <button
-                onClick={() => router.push("/dashboard/company/documentos/rechazados")}
-                className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-4 hover:bg-red-500/20 hover:border-red-500/40 transition-all cursor-pointer text-left"
-              >
-                <p className="text-[10px] uppercase tracking-[0.25em] text-red-300/80">Rechazados</p>
-                <p className="mt-2 text-3xl md:text-4xl font-bold text-red-200">{rejectedDocuments.toLocaleString('es-CL')}</p>
-                <p className="mt-1 text-xs text-red-200/70">{rejectedDocuments.toLocaleString('es-CL')} rechazados</p>
-              </button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-gradient-to-br from-slate-900/60 to-slate-800/40 border-slate-700">
-        <CardContent className="p-4 md:p-5 space-y-4">
-          <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-            <div className="space-y-3">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Acceso rapido</p>
-              <p className="text-base font-semibold text-white">Lo mas util para la gestion diaria</p>
-              <p className="text-sm text-slate-400">
-                Revisa cumplimiento, riesgos y pendientes criticos con una sola lectura.
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white leading-tight">
+                Control Operacional
+              </h1>
+              <p className="text-sm text-slate-400 max-w-xl">
+                Vista ejecutiva para priorizar documentos, alertas y seguimiento operativo con foco en decisiones rápidas.
               </p>
-              <div className="flex flex-wrap gap-2 pt-1">
-                <span className="px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-300 text-xs font-medium">
-                  Vista ejecutiva mensual
-                </span>
-                <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-medium">
-                  Datos reales sincronizados
-                </span>
-                <span className="px-2.5 py-1 rounded-full bg-orange-500/15 text-orange-300 text-xs font-medium">
-                  Prioridad operativa
-                </span>
-              </div>
-              <div className="rounded-2xl border border-slate-700/70 bg-slate-950/40 p-4">
-                <div className="flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.24em] text-slate-400">
-                  <span>Ritmo mensual</span>
-                  <span>{completionRate}% de cumplimiento</span>
-                </div>
-                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-800">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-emerald-300 to-cyan-300"
-                    style={{ width: `${completionRate}%` }}
-                  />
-                </div>
-                <p className="mt-3 text-sm text-slate-300">
-                  {openRiskItems > 0
-                    ? `Hay ${openRiskItems} documentos en riesgo (${rejectedDocuments} rechazados + ${pendingDocuments} pendientes) que conviene cerrar primero.`
-                    : 'No hay riesgos abiertos en el periodo actual.'}
-                </p>
-              </div>
             </div>
-
-            <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
-              <div className="rounded-xl border border-slate-700/80 bg-slate-950/50 px-3 py-3">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Documentos</p>
-                <p className="text-2xl font-semibold text-white mt-1">{stats[0]?.value || '0'}</p>
-              </div>
-              <div className="rounded-xl border border-slate-700/80 bg-slate-950/50 px-3 py-3">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Riesgo abierto</p>
-                <p className="text-2xl font-semibold text-orange-300 mt-1">{openRiskItems}</p>
-              </div>
-              <div className="rounded-xl border border-slate-700/80 bg-slate-950/50 px-3 py-3">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Alertas</p>
-                <p className="text-2xl font-semibold text-red-300 mt-1">{alerts.length}</p>
-              </div>
-              <div className="rounded-xl border border-slate-700/80 bg-slate-950/40 px-3 py-3 xl:col-span-1">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Aprobados</p>
-                <p className="text-2xl font-semibold text-emerald-300 mt-1">{approvedDocuments}</p>
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              <span className="text-3xl font-bold text-white">{completionRate}%</span>
+              <span className="text-xs uppercase tracking-widest text-slate-400">cumplimiento</span>
+              <div className="w-32 h-2 rounded-full bg-slate-800 mt-1">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-300 transition-all duration-700"
+                  style={{ width: `${completionRate}%` }}
+                />
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
-            <Link href="/dashboard/company/reportes">
-              <Button variant="outline" size="sm" className="w-full justify-between border-slate-600 text-slate-200 hover:bg-slate-800">
-                Ver reportes
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
-            <Link href="/dashboard/company/documentos/vencidos">
-              <Button variant="outline" size="sm" className="w-full justify-between border-red-500/30 text-red-300 hover:bg-red-500/10">
-                Ver vencidos
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
-            <Link href="/dashboard/company/documentos/renovar">
-              <Button variant="outline" size="sm" className="w-full justify-between border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/10">
-                Planificar renovaciones
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
+          {/* KPI cards - una sola vez, 4 métricas */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <button
+              onClick={() => router.push("/dashboard/company/documentos")}
+              className="rounded-2xl border border-slate-700/80 bg-slate-950/50 px-4 py-5 hover:bg-slate-900/70 hover:border-slate-500 transition-all text-left group"
+            >
+              <FileText className="h-4 w-4 text-slate-500 mb-3 group-hover:text-slate-300 transition-colors" />
+              <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500">Total</p>
+              <p className="mt-1 text-3xl font-bold text-white">{totalDocuments.toLocaleString('es-CL')}</p>
+              <p className="mt-1 text-xs text-slate-500">Todos los documentos</p>
+            </button>
+            <button
+              onClick={() => router.push("/dashboard/company/documentos/aprobados")}
+              className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-5 hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-all text-left group"
+            >
+              <CheckCircle className="h-4 w-4 text-emerald-500/60 mb-3 group-hover:text-emerald-400 transition-colors" />
+              <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-300/70">Aprobados</p>
+              <p className="mt-1 text-3xl font-bold text-emerald-200">{approvedDocuments.toLocaleString('es-CL')}</p>
+              <p className="mt-1 text-xs text-emerald-300/50">Validados y listos</p>
+            </button>
+            <button
+              onClick={() => router.push("/dashboard/company/documentos/pendientes")}
+              className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-5 hover:bg-amber-500/20 hover:border-amber-500/40 transition-all text-left group"
+            >
+              <Clock className="h-4 w-4 text-amber-500/60 mb-3 group-hover:text-amber-400 transition-colors" />
+              <p className="text-[10px] uppercase tracking-[0.25em] text-amber-300/70">Pendientes</p>
+              <p className="mt-1 text-3xl font-bold text-amber-200">{pendingDocuments.toLocaleString('es-CL')}</p>
+              <p className="mt-1 text-xs text-amber-300/50">En revisión activa</p>
+            </button>
+            <button
+              onClick={() => router.push("/dashboard/company/documentos/rechazados")}
+              className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-5 hover:bg-red-500/20 hover:border-red-500/40 transition-all text-left group"
+            >
+              <AlertTriangle className="h-4 w-4 text-red-500/60 mb-3 group-hover:text-red-400 transition-colors" />
+              <p className="text-[10px] uppercase tracking-[0.25em] text-red-300/70">Rechazados</p>
+              <p className="mt-1 text-3xl font-bold text-red-200">{rejectedDocuments.toLocaleString('es-CL')}</p>
+              <p className="mt-1 text-xs text-red-300/50">No validados</p>
+            </button>
+          </div>
+
+          {/* Riesgo total y acciones rápidas */}
+          <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-slate-700/50 bg-slate-950/40 px-5 py-4">
+            <p className="text-sm text-slate-300">
+              {openRiskItems > 0 ? (
+                <>
+                  <span className="font-semibold text-orange-300">{openRiskItems.toLocaleString('es-CL')} documentos en riesgo</span>
+                  <span className="text-slate-400"> — {rejectedDocuments} rechazados + {pendingDocuments} pendientes</span>
+                </>
+              ) : (
+                <span className="text-emerald-400 font-medium">Sin riesgos abiertos en el periodo actual.</span>
+              )}
+            </p>
+            <div className="flex gap-2 flex-wrap shrink-0">
+              <Link href="/dashboard/company/documentos/vencidos">
+                <Button variant="outline" size="sm" className="border-red-500/30 text-red-300 hover:bg-red-500/10 h-8 text-xs">
+                  Ver vencidos <ArrowRight className="w-3 h-3 ml-1.5" />
+                </Button>
+              </Link>
+              <Link href="/dashboard/company/documentos/renovar">
+                <Button variant="outline" size="sm" className="border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/10 h-8 text-xs">
+                  Renovaciones <ArrowRight className="w-3 h-3 ml-1.5" />
+                </Button>
+              </Link>
+              <Link href="/dashboard/company/reportes">
+                <Button variant="outline" size="sm" className="border-slate-600 text-slate-200 hover:bg-slate-800 h-8 text-xs">
+                  Reportes <ArrowRight className="w-3 h-3 ml-1.5" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </CardContent>
       </Card>
-
-      {/* Stats Grid - Using memoized StatCard components */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <StatCard 
-            key={stat.title}
-            title={stat.title}
-            value={stat.value}
-            description={stat.description}
-            icon={stat.icon}
-            status={stat.status}
-            href={stat.href}
-            color={stat.color}
-          />
-        ))}
-      </div>
 
       {/* Recent Alerts - Organized by category */}
       {alerts.length > 0 && (
@@ -479,7 +381,7 @@ export function DashboardOverview() {
               <div>
                 <CardTitle className="text-xl">Alertas Prioritarias</CardTitle>
                 <CardDescription className="text-muted-foreground">
-                  Lo mÃ¡s importante del perÃ­odo - {alerts.length} alertas
+                  Lo más importante del período - {alerts.length} alertas
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -542,7 +444,7 @@ export function DashboardOverview() {
             </div>
             {alerts.length > 20 && (
               <p className="text-xs text-muted-foreground text-center mt-4 py-2 border-t border-slate-700">
-                + {alerts.length - 20} alertas mÃ¡s - <button onClick={() => router.push('/dashboard/company/alertas')} className="text-orange-400 hover:underline">Abrir panel completo</button>
+                + {alerts.length - 20} alertas más - <button onClick={() => router.push('/dashboard/company/alertas')} className="text-orange-400 hover:underline">Abrir panel completo</button>
               </p>
             )}
           </CardContent>
