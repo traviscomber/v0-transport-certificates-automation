@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { TrendLineChart } from '@/components/charts/trend-line-chart'
 import { DistributionPieChart } from '@/components/charts/distribution-pie-chart'
