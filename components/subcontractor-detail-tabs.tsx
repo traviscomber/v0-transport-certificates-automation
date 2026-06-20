@@ -12,6 +12,7 @@ interface SubcontractorDetailTabsProps {
   subcontractor: any
   initialTab?: 'resumen' | 'documentos' | 'conductores' | 'certificaciones' | 'onboarding'
   conductoresData?: any[]
+  documentsData?: { documents: any[], requirements: any[], summary: any }
   onClose: () => void
 }
 
@@ -19,6 +20,7 @@ export function SubcontractorDetailTabs({
   subcontractor,
   initialTab = 'resumen',
   conductoresData = [],
+  documentsData,
   onClose,
 }: SubcontractorDetailTabsProps) {
   const router = useRouter()
@@ -38,13 +40,20 @@ export function SubcontractorDetailTabs({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch documents and requirements
-        const docResponse = await fetch(`/api/subcontractors/${subcontractor.id}/documents`)
-        if (docResponse.ok) {
-          const data = await docResponse.json()
-          setDocuments(data.documents || [])
-          setRequirements(data.requirements || [])
-          setSummary(data.summary || summary)
+        // If documentsData is provided as prop, use it (pre-fetched from parent)
+        if (documentsData) {
+          setDocuments(documentsData.documents || [])
+          setRequirements(documentsData.requirements || [])
+          setSummary(documentsData.summary || summary)
+        } else {
+          // Otherwise fetch from API (fallback)
+          const docResponse = await fetch(`/api/subcontractors/${subcontractor.id}/documents`)
+          if (docResponse.ok) {
+            const data = await docResponse.json()
+            setDocuments(data.documents || [])
+            setRequirements(data.requirements || [])
+            setSummary(data.summary || summary)
+          }
         }
 
         // Conductors are passed as a prop from subcontractors-list, no need to fetch
@@ -59,7 +68,7 @@ export function SubcontractorDetailTabs({
     if (subcontractor.id) {
       fetchData()
     }
-  }, [subcontractor.id])
+  }, [subcontractor.id, documentsData])
 
   const handleRefreshData = async () => {
     const docResponse = await fetch(`/api/subcontractors/${subcontractor.id}/documents`)

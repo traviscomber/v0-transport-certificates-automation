@@ -87,6 +87,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
   const [expandedDocuments, setExpandedDocuments] = useState<Set<string>>(new Set())
   const [selectedDetailSubcontractor, setSelectedDetailSubcontractor] = useState<any>(null)
   const [detailTabToOpen, setDetailTabToOpen] = useState<'resumen' | 'documentos' | 'conductores' | 'certificaciones' | 'onboarding'>('resumen')
+  const [documentsData, setDocumentsData] = useState<{ documents: any[], requirements: any[], summary: any } | null>(null)
   const [editingSubcontractor, setEditingSubcontractor] = useState<Subcontractor | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [assigningSubcontractor, setAssigningSubcontractor] = useState<Subcontractor | null>(null)
@@ -131,6 +132,25 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
 
     fetchData()
   }, [initialSubcontractors])
+
+  // Fetch documents when a subcontractor is selected for detail view
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      if (!selectedDetailSubcontractor?.id) return
+      
+      try {
+        const response = await fetch(`/api/subcontractors/${selectedDetailSubcontractor.id}/documents`)
+        if (response.ok) {
+          const data = await response.json()
+          setDocumentsData(data)
+        }
+      } catch (error) {
+        console.error('[v0] Error fetching documents for subcontractor:', error)
+      }
+    }
+
+    fetchDocuments()
+  }, [selectedDetailSubcontractor?.id])
 
   // Function to refresh a single subcontractor after update
   const refreshSubcontractor = async (subcontractorId: string) => {
@@ -560,9 +580,11 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
             const normalizedSubRut = normalizeRut(selectedDetailSubcontractor.rut)
             return normalizedDriverRut === normalizedSubRut && d.is_active
           }) : []}
+          documentsData={documentsData || undefined}
           onClose={() => {
             setSelectedDetailSubcontractor(null)
             setDetailTabToOpen('resumen')
+            setDocumentsData(null)
           }}
         />
       )}
