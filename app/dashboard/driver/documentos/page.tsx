@@ -38,27 +38,27 @@ export default function DriverDocumentPortal() {
   const [uploading, setUploading] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
   const [searchError, setSearchError] = useState<string>('')
-  const [sampleDrivers, setSampleDrivers] = useState<Array<{rut: string; nombre: string}>>([])
+  const [recentDrivers, setRecentDrivers] = useState<Array<{rut: string; nombre: string}>>([])
 
   useEffect(() => {
     // Get current driver ID from auth or URL
     const getDriverInfo = async () => {
       try {
-        // Load sample drivers for examples
+        // Load recent drivers for quick lookup
         try {
-          console.log('[v0] Fetching sample drivers...')
-          const sampleResponse = await fetch('/api/company/documents/sample-drivers')
-          console.log('[v0] Sample drivers response status:', sampleResponse.status)
+          console.log('[v0] Fetching recent drivers...')
+          const recentResponse = await fetch('/api/company/documents/recent-drivers')
+          console.log('[v0] Recent drivers response status:', recentResponse.status)
           
-          if (sampleResponse.ok) {
-            const sampleData = await sampleResponse.json()
-            console.log('[v0] Sample drivers loaded:', sampleData)
-            setSampleDrivers(sampleData.drivers || [])
+          if (recentResponse.ok) {
+            const recentData = await recentResponse.json()
+            console.log('[v0] Recent drivers loaded:', recentData)
+            setRecentDrivers(recentData.drivers || [])
           } else {
-            console.warn('[v0] Sample drivers request failed:', sampleResponse.status)
+            console.warn('[v0] Recent drivers request failed:', recentResponse.status)
           }
         } catch (fetchError) {
-          console.error('[v0] Error fetching sample drivers:', fetchError)
+          console.error('[v0] Error fetching recent drivers:', fetchError)
         }
 
         // Check if there's a driver ID in URL params
@@ -191,7 +191,7 @@ export default function DriverDocumentPortal() {
         ]}
       />
 
-      {/* Driver ID Input (for demo) */}
+      {/* Driver ID Input */}
       {!driverId ? (
         <Card className="border-orange-500/50 bg-orange-50/50">
           <CardHeader>
@@ -236,8 +236,8 @@ export default function DriverDocumentPortal() {
                 <strong>💡 Tip:</strong> Algunos conductores en el sistema:
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
-                {sampleDrivers && sampleDrivers.length > 0 ? (
-                  sampleDrivers.map((driver) => (
+                {recentDrivers && recentDrivers.length > 0 ? (
+                  recentDrivers.map((driver) => (
                     <button
                       key={driver.rut}
                       onClick={() => {

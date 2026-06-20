@@ -181,12 +181,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     // Only after component is mounted to avoid hydration mismatch
     if (!isMounted) return "Usuario"
 
-    // Check if it's a demo account
-    const demoEmails = ["conductor@demo.cl", "despachador@demo.cl", "admin@demo.cl"]
-    if (user?.email && demoEmails.includes(user.email)) {
-      return "Demo"
-    }
-
     // First, try to use the full_name from profiles table
     if (userProfile?.full_name && userProfile.full_name.trim()) {
       return userProfile.full_name

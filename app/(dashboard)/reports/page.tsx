@@ -55,6 +55,21 @@ export default function ReportsPage() {
     }
   }
 
+  const reportCounts = reports.reduce(
+    (acc, report) => {
+      acc.total += 1
+      acc[report.report_type] += 1
+      return acc
+    },
+    {
+      total: 0,
+      compliance: 0,
+      certificates: 0,
+      activity: 0,
+      custom: 0,
+    }
+  )
+
   return (
     <div className='min-h-screen bg-gradient-dark p-4 sm:p-6 lg:p-8'>
       <div className='space-y-8'>
@@ -78,7 +93,7 @@ export default function ReportsPage() {
               <CardTitle className='text-foreground'>Compliance</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className='text-2xl font-bold text-white'>0</div>
+              <div className='text-2xl font-bold text-white'>{reportCounts.compliance}</div>
               <p className='text-xs text-muted-foreground'>Reportes generados</p>
             </CardContent>
           </Card>
@@ -89,7 +104,7 @@ export default function ReportsPage() {
               <CardTitle className='text-foreground'>Certificados</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className='text-2xl font-bold text-white'>0</div>
+              <div className='text-2xl font-bold text-white'>{reportCounts.certificates}</div>
               <p className='text-xs text-muted-foreground'>Reportes generados</p>
             </CardContent>
           </Card>
@@ -100,7 +115,7 @@ export default function ReportsPage() {
               <CardTitle className='text-foreground'>Actividad</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className='text-2xl font-bold text-white'>0</div>
+              <div className='text-2xl font-bold text-white'>{reportCounts.activity}</div>
               <p className='text-xs text-muted-foreground'>Reportes generados</p>
             </CardContent>
           </Card>
@@ -111,7 +126,7 @@ export default function ReportsPage() {
               <CardTitle className='text-foreground'>Custom</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className='text-2xl font-bold text-white'>0</div>
+              <div className='text-2xl font-bold text-white'>{reportCounts.custom}</div>
               <p className='text-xs text-muted-foreground'>Reportes generados</p>
             </CardContent>
           </Card>

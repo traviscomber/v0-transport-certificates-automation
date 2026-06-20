@@ -76,12 +76,6 @@ export default function DriverDashboard({ profile, certificates = [], notificati
   }
 
   const getDisplayName = () => {
-    // Check if it's a demo account
-    const demoEmails = ["conductor@demo.cl", "despachador@demo.cl", "admin@demo.cl"]
-    if (defaultProfile?.email && demoEmails.includes(defaultProfile.email)) {
-      return "Demo"
-    }
-
     // First try full_name from profile
     if (defaultProfile?.full_name && defaultProfile.full_name.trim()) {
       return defaultProfile.full_name
