@@ -29,16 +29,16 @@ export default function OperationalDashboard() {
 
   // Status breakdown
   const statusBreakdown = [
-    { name: 'Aprobados', value: 3, percentage: '60' },
-    { name: 'Pendientes', value: 1, percentage: '20' },
-    { name: 'Rechazados', value: 1, percentage: '20' },
+    { name: 'Aprobados', value: 3, percentage: '60', color: '#10b981' },
+    { name: 'Pendientes', value: 1, percentage: '20', color: '#f59e0b' },
+    { name: 'Rechazados', value: 1, percentage: '20', color: '#ef4444' },
   ]
 
   // Type breakdown
   const typeBreakdown = [
-    { name: 'Licencias', value: 2, percentage: '40' },
-    { name: 'Seguros', value: 2, percentage: '40' },
-    { name: 'Certificados', value: 1, percentage: '20' },
+    { name: 'Licencias', value: 2, percentage: '40', color: '#3b82f6' },
+    { name: 'Seguros', value: 2, percentage: '40', color: '#8b5cf6' },
+    { name: 'Certificados', value: 1, percentage: '20', color: '#06b6d4' },
   ]
 
   // Daily metrics

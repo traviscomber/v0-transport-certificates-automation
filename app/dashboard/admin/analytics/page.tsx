@@ -80,9 +80,9 @@ export default function AnalyticsDashboard() {
 
   // Distribution data
   const distributionData = [
-    { name: 'Aprobados', value: kpiMetrics.approvedCount, percentage: ((kpiMetrics.approvedCount / kpiMetrics.totalDocuments) * 100).toFixed(1) },
-    { name: 'Pendientes', value: kpiMetrics.pendingCount, percentage: ((kpiMetrics.pendingCount / kpiMetrics.totalDocuments) * 100).toFixed(1) },
-    { name: 'Rechazados', value: kpiMetrics.rejectedCount, percentage: ((kpiMetrics.rejectedCount / kpiMetrics.totalDocuments) * 100).toFixed(1) },
+    { name: 'Aprobados', value: kpiMetrics.approvedCount, percentage: ((kpiMetrics.approvedCount / kpiMetrics.totalDocuments) * 100).toFixed(1), color: '#10b981' },
+    { name: 'Pendientes', value: kpiMetrics.pendingCount, percentage: ((kpiMetrics.pendingCount / kpiMetrics.totalDocuments) * 100).toFixed(1), color: '#f59e0b' },
+    { name: 'Rechazados', value: kpiMetrics.rejectedCount, percentage: ((kpiMetrics.rejectedCount / kpiMetrics.totalDocuments) * 100).toFixed(1), color: '#ef4444' },
   ]
 
   // Comparison data
