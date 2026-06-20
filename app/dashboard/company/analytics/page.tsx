@@ -9,7 +9,7 @@ import { BarComparisonChart } from '@/components/charts/bar-comparison-chart'
 import { KPICardSparkline } from '@/components/charts/kpi-card-sparkline'
 import { AlertManagementPanel } from '@/components/dashboard/alert-management-panel'
 import { AdvancedFilters, FilterState } from '@/components/dashboard/advanced-filters'
-import { Clock, AlertCircle, CheckCircle, Users, FileText } from 'lucide-react'
+
 
 export default function OperationalDashboard() {
   const [filters, setFilters] = useState<FilterState>({})

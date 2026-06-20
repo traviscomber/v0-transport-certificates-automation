@@ -8,7 +8,7 @@ import { BarComparisonChart } from '@/components/charts/bar-comparison-chart'
 import { KPICardSparkline } from '@/components/charts/kpi-card-sparkline'
 import { AlertManagementPanel } from '@/components/dashboard/alert-management-panel'
 import { AdvancedFilters, FilterState } from '@/components/dashboard/advanced-filters'
-import { ArrowUpRight, ArrowDownRight, TrendingUp, Users, FileText, CheckCircle2 } from 'lucide-react'
+
 
 export default function AnalyticsDashboard() {
   const [filters, setFilters] = useState<FilterState>({})
@@ -129,34 +129,34 @@ export default function AnalyticsDashboard() {
         <KPICardSparkline
           title="Total Documentos"
           value={kpiMetrics.totalDocuments}
-          change="+12%"
-          icon={<FileText className="h-5 w-5 text-blue-400" />}
+          unit="docs"
+          color="blue"
           sparklineData={sparklineData}
-          trend="up"
+          trendPercent={12}
         />
         <KPICardSparkline
           title="Aprobados"
           value={kpiMetrics.approvedCount}
-          change="+8%"
-          icon={<CheckCircle2 className="h-5 w-5 text-green-400" />}
+          unit="docs"
+          color="green"
           sparklineData={sparklineData}
-          trend="up"
+          trendPercent={8}
         />
         <KPICardSparkline
           title="Pendientes"
           value={kpiMetrics.pendingCount}
-          change="-4%"
-          icon={<TrendingUp className="h-5 w-5 text-yellow-400" />}
+          unit="docs"
+          color="yellow"
           sparklineData={sparklineData}
-          trend="down"
+          trendPercent={-4}
         />
         <KPICardSparkline
           title="Tasa Cumplimiento"
           value={`${kpiMetrics.complianceRate}%`}
-          change="+3%"
-          icon={<ArrowUpRight className="h-5 w-5 text-purple-400" />}
+          unit=""
+          color="purple"
           sparklineData={sparklineData}
-          trend="up"
+          trendPercent={3}
         />
       </div>
 
