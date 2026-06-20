@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { FileText, Shield, Truck, AlertTriangle, CheckCircle, Clock, LucideIcon, ArrowRight } from "lucide-react"
+import { FileText, AlertTriangle, CheckCircle, Clock, LucideIcon, ArrowRight } from "lucide-react"
 import { useDocumentSync } from "@/contexts/document-sync-context"
 import { StatCard } from "./stat-card"
 import { AlertItem } from "./alert-item"
@@ -272,18 +272,6 @@ export function DashboardOverview() {
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
-      <div className="space-y-3">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">
-            Control Operacional
-          </h1>
-        </div>
-        <p className="text-sm md:text-base text-muted-foreground">
-          Vista ejecutiva mensual para priorizar documentos, alertas y seguimiento operativo.
-        </p>
-      </div>
-
       <Card className="overflow-hidden border-slate-700/60 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 shadow-2xl shadow-slate-950/20">
         <CardContent className="p-6 md:p-8">
           <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-6">
@@ -309,6 +297,32 @@ export function DashboardOverview() {
                 <span className="px-3 py-1.5 rounded-full bg-orange-500/15 text-orange-300 text-xs font-medium">
                   Prioridad operativa
                 </span>
+              </div>
+              <div className="space-y-3 rounded-2xl border border-slate-700/70 bg-slate-950/40 p-4">
+                <div className="flex items-center justify-between gap-4 text-[10px] uppercase tracking-[0.25em] text-slate-400">
+                  <span>Lectura ejecutiva</span>
+                  <span>{completionRate}% de cumplimiento</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-emerald-300 to-cyan-300"
+                    style={{ width: `${completionRate}%` }}
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Total</p>
+                    <p className="text-lg font-semibold text-white">{totalDocuments.toLocaleString('es-CL')}</p>
+                  </div>
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-300/80">Aprobados</p>
+                    <p className="text-lg font-semibold text-emerald-200">{approvedDocuments.toLocaleString('es-CL')}</p>
+                  </div>
+                  <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-red-300/80">Riesgo</p>
+                    <p className="text-lg font-semibold text-red-200">{openRiskItems.toLocaleString('es-CL')}</p>
+                  </div>
+                </div>
               </div>
             </div>
 
