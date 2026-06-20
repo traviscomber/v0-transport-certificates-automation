@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -44,37 +44,6 @@ export function DocumentUpload() {
     expiryDate: "",
     notes: "",
   })
-
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const sampleData = urlParams.get("sampleData")
-
-    if (sampleData) {
-      try {
-        const extractedData = JSON.parse(sampleData)
-        setFormData({
-          documentType: urlParams.get("documentType") || "",
-          transporterName: urlParams.get("transporterName") || "",
-          transporterRut: urlParams.get("transporterRut") || "",
-          vehiclePlate: urlParams.get("vehiclePlate") || "",
-          expiryDate: urlParams.get("expiryDate") || "",
-          notes: "Documento de muestra - Datos extraídos automáticamente por OCR",
-        })
-
-        // Show sample OCR results
-        const sampleFile: UploadedFile = {
-          file: new File(["sample"], "documento-muestra.pdf", { type: "application/pdf" }),
-          id: "sample-doc",
-          progress: 100,
-          status: "completed",
-          ocrResults: extractedData,
-        }
-        setFiles([sampleFile])
-      } catch (error) {
-        console.error("Error parsing sample data:", error)
-      }
-    }
-  }, [])
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {

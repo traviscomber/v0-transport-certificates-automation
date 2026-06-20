@@ -11,12 +11,12 @@ export function CTASection() {
             <span className="text-primary block">Hoy Mismo</span>
           </h2>
           <p className="text-xl text-muted-foreground text-balance mb-12 leading-relaxed">
-            Demo gratuita en 15 minutos. Implementación rápida y acompañamiento completo. Garantía de resultados o te devolvemos tu dinero.
+            Evaluación gratuita en 15 minutos. Implementación rápida y acompañamiento completo. Garantía de resultados o te devolvemos tu dinero.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg px-8 py-4">
-              Demo Gratuita Ahora
+              Solicitar Evaluación Ahora
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
             <Button variant="outline" size="lg" className="text-lg px-8 py-4 bg-transparent">

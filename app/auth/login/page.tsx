@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
-import { DEMO_ACCOUNTS } from '@/lib/demo-login'
+import { ACCESS_ACCOUNTS } from '@/lib/access-accounts'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -75,7 +75,7 @@ export default function LoginPage() {
     }
   }
 
-  const handleDemoLogin = (account: typeof DEMO_ACCOUNTS[0]) => {
+  const handleQuickLogin = (account: typeof ACCESS_ACCOUNTS[0]) => {
     // Fill fields and submit immediately
     setEmail(account.email)
     setPassword(account.password)
@@ -193,22 +193,22 @@ export default function LoginPage() {
                 <div className="w-full border-t border-border"></div>
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="px-2 bg-card text-muted-foreground">O prueba con una cuenta demo</span>
+                <span className="px-2 bg-card text-muted-foreground">O accede con una cuenta habilitada</span>
               </div>
             </div>
 
-            {/* Demo Buttons */}
+            {/* Access Buttons */}
             <div className="space-y-2">
-              {DEMO_ACCOUNTS.map((account) => (
+              {ACCESS_ACCOUNTS.map((account) => (
                 <Button
                   key={account.role}
-                  onClick={() => handleDemoLogin(account)}
+                  onClick={() => handleQuickLogin(account)}
                   disabled={isLoading}
                   variant="outline"
                   className="w-full border-border hover:bg-primary/10 text-foreground font-medium"
                 >
                   <span className="text-primary mr-2">●</span>
-                  {`Demo: ${account.name}`}
+                  {`Acceso: ${account.name}`}
                 </Button>
               ))}
             </div>

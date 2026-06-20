@@ -53,7 +53,7 @@ const navigationGroups = [
     name: "Documentos Vehiculares",
     items: [
       { name: "Documentos de Máquinas", href: "/dashboard/machines", icon: Truck },
-      { name: "Documentos de Muestra", href: "/dashboard/samples", icon: FolderOpen },
+      { name: "Documentos Vencidos", href: "/dashboard/company/documentos/vencidos", icon: FolderOpen },
     ],
   },
   {

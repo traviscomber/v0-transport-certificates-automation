@@ -1,7 +1,7 @@
 'use client'
 
-// Single source of truth for demo accounts - Real ejecutivas
-export const DEMO_ACCOUNTS = [
+// Single source of truth for access accounts used in the login screen
+export const ACCESS_ACCOUNTS = [
   {
     role: 'ejecutiva',
     title: 'Ejecutiva',
@@ -33,15 +33,15 @@ export const DEMO_ACCOUNTS = [
 ]
 
 /**
- * Get demo account by email
+ * Get access account by email
  */
-export function getDemoAccountByEmail(email: string) {
-  return DEMO_ACCOUNTS.find(acc => acc.email === email)
+export function getAccessAccountByEmail(email: string) {
+  return ACCESS_ACCOUNTS.find((acc) => acc.email === email)
 }
 
 /**
- * Get demo account by role
+ * Get access account by role
  */
-export function getDemoAccountByRole(role: string) {
-  return DEMO_ACCOUNTS.find(acc => acc.role === role)
+export function getAccessAccountByRole(role: string) {
+  return ACCESS_ACCOUNTS.find((acc) => acc.role === role)
 }

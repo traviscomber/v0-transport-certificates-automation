@@ -48,9 +48,11 @@ export default function LandingPage() {
                 Comenzar ahora <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline">
-              Ver demo
-            </Button>
+            <Link href="#features">
+              <Button size="lg" variant="outline">
+                Ver solución
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -312,7 +314,7 @@ export default function LandingPage() {
             ¿Listo para tomar control?
           </h2>
           <p className="text-xl text-slate-300">
-            Agendar una demo gratuita o comenzar con DocuFleet hoy
+            Solicitar una presentación guiada o comenzar con DocuFleet hoy
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/auth/login">
@@ -321,7 +323,7 @@ export default function LandingPage() {
               </Button>
             </Link>
             <Button size="lg" variant="outline">
-              Agendar Demo
+              Solicitar presentación
             </Button>
           </div>
         </div>
@@ -343,7 +345,7 @@ export default function LandingPage() {
               <ul className="space-y-2 text-slate-400 text-sm">
                 <li><a href="#" className="hover:text-white transition">Características</a></li>
                 <li><a href="#" className="hover:text-white transition">Precios</a></li>
-                <li><a href="#" className="hover:text-white transition">Demo</a></li>
+                <li><a href="#features" className="hover:text-white transition">Recorrido</a></li>
               </ul>
             </div>
             <div>

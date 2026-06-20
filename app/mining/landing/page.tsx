@@ -27,7 +27,7 @@ export default function MiningLanding() {
               Precios
             </Button>
             <Button className="bg-primary hover:bg-primary/90 text-background">
-              Solicitar Demo
+              Solicitar presentación
             </Button>
           </div>
         </div>
@@ -67,7 +67,7 @@ export default function MiningLanding() {
 
             <div className="flex gap-4">
               <Button className="bg-primary hover:bg-primary/90 text-background px-8 py-6 text-lg" size="lg">
-                Agendar demo de 15 minutos
+                Agendar presentación de 15 minutos
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button variant="outline" className="border-secondary text-foreground hover:bg-secondary px-8 py-6 text-lg" size="lg">
@@ -283,11 +283,11 @@ export default function MiningLanding() {
         <div className="rounded-2xl border border-primary/30 bg-primary/5 p-12 space-y-6">
           <h2 className="text-4xl font-bold">Tu operación no debería depender de planillas</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Agenda una demo y te mostramos en 15 minutos cómo reducir riesgo documental en tu operación.
+            Agenda una presentación y te mostramos en 15 minutos cómo reducir riesgo documental en tu operación.
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
             <Button className="bg-primary hover:bg-primary/90 text-background px-8 py-6 text-lg" size="lg">
-              Quiero mi demo
+              Quiero mi presentación
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>

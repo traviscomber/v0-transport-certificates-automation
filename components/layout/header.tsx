@@ -53,8 +53,8 @@ export function Header() {
             <a href="#solucion" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               La Solución
             </a>
-            <a href="#demo" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Ver Demo
+            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Ver Solución
             </a>
             <a href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Dashboard
@@ -100,11 +100,11 @@ export function Header() {
                 La Solución
               </a>
               <a
-                href="#demo"
+                href="#features"
                 onClick={() => setIsMenuOpen(false)}
                 className="text-left px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-slate-800/50 rounded-lg transition-colors"
               >
-                Ver Demo
+                Ver Solución
               </a>
               <a 
                 href="/dashboard" 

@@ -1,8 +1,7 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Label } from "@/components/ui/label"
-
-import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,20 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-  Search,
-  Filter,
-  Download,
-  Eye,
-  Edit,
-  Trash2,
-  CheckCircle,
-  XCircle,
-  Clock,
-  AlertTriangle,
-  FileText,
-  Calendar,
-} from "lucide-react"
+import { Search, Filter, Eye, CheckCircle, XCircle, Clock, AlertTriangle, FileText, Calendar } from "lucide-react"
 
 interface Certificate {
   id: string
@@ -64,138 +50,133 @@ interface CertificateManagementProps {
   certificateType: "f30" | "f30-1" | "machines"
 }
 
-// Mock data - in real app this would come from API
-const mockCertificates: Record<string, Certificate[]> = {
-  f30: [
-    {
-      id: "1",
-      documentType: "F-30",
-      transporterName: "Transportes González Ltda.",
-      transporterRut: "76.123.456-7",
-      vehiclePlate: "ABCD-12",
-      uploadDate: "2024-01-15",
-      expiryDate: "2024-07-15",
-      status: "approved",
-      fileName: "f30_gonzalez_2024.pdf",
-      fileSize: "2.3 MB",
-      notes: "Certificado renovado correctamente",
-    },
-    {
-      id: "2",
-      documentType: "F-30",
-      transporterName: "Logística del Sur S.A.",
-      transporterRut: "96.789.123-4",
-      vehiclePlate: "EFGH-34",
-      uploadDate: "2024-01-14",
-      expiryDate: "2024-06-14",
-      status: "pending",
-      fileName: "f30_sur_2024.pdf",
-      fileSize: "1.8 MB",
-    },
-    {
-      id: "3",
-      documentType: "F-30",
-      transporterName: "Transportes Rápidos Chile",
-      transporterRut: "77.456.789-1",
-      vehiclePlate: "IJKL-56",
-      uploadDate: "2023-12-01",
-      expiryDate: "2024-01-01",
-      status: "expired",
-      fileName: "f30_rapidos_2023.pdf",
-      fileSize: "2.1 MB",
-      notes: "Documento vencido - requiere renovación urgente",
-    },
-  ],
-  "f30-1": [
-    {
-      id: "4",
-      documentType: "F-30-1",
-      transporterName: "Distribuidora Norte",
-      transporterRut: "78.321.654-9",
-      vehiclePlate: "MNOP-78",
-      uploadDate: "2024-01-10",
-      expiryDate: "2025-01-10",
-      status: "approved",
-      fileName: "f30-1_norte_2024.pdf",
-      fileSize: "1.9 MB",
-    },
-    {
-      id: "5",
-      documentType: "F-30-1",
-      transporterName: "Carga Pesada Ltda.",
-      transporterRut: "79.987.654-3",
-      vehiclePlate: "QRST-90",
-      uploadDate: "2024-01-12",
-      expiryDate: "2024-08-12",
-      status: "rejected",
-      fileName: "f30-1_pesada_2024.pdf",
-      fileSize: "2.7 MB",
-      notes: "Documento rechazado - información incompleta",
-    },
-  ],
-  machines: [
-    {
-      id: "6",
-      documentType: "Permiso de Circulación",
-      transporterName: "Transportes González Ltda.",
-      transporterRut: "76.123.456-7",
-      vehiclePlate: "ABCD-12",
-      uploadDate: "2024-01-08",
-      expiryDate: "2025-01-08",
-      status: "approved",
-      fileName: "permiso_circulacion_abcd12.pdf",
-      fileSize: "1.2 MB",
-    },
-    {
-      id: "7",
-      documentType: "Revisión Técnica",
-      transporterName: "Logística del Sur S.A.",
-      transporterRut: "96.789.123-4",
-      vehiclePlate: "EFGH-34",
-      uploadDate: "2024-01-05",
-      expiryDate: "2024-07-05",
-      status: "pending",
-      fileName: "revision_tecnica_efgh34.pdf",
-      fileSize: "1.5 MB",
-    },
-  ],
+const normalizeStatus = (status: unknown): Certificate["status"] => {
+  const value = String(status || "").toLowerCase()
+  if (value === "approved" || value === "aprobado") return "approved"
+  if (value === "rejected" || value === "rechazado") return "rejected"
+  if (value === "expired" || value === "vencido") return "expired"
+  return "pending"
+}
+
+const matchesCertificateType = (
+  record: Record<string, unknown>,
+  certificateType: CertificateManagementProps["certificateType"],
+) => {
+  const rawType = [
+    record.certificate_type,
+    record.document_type,
+    record.documentType,
+    record.file_name,
+    record.fileName,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+
+  if (certificateType === "f30") {
+    return rawType.includes("f30") && !rawType.includes("f30-1")
+  }
+
+  if (certificateType === "f30-1") {
+    return rawType.includes("f30-1")
+  }
+
+  return ["permiso", "revision", "revisión", "licencia", "seguro", "patente", "vehiculo", "vehículo"].some((keyword) =>
+    rawType.includes(keyword),
+  )
+}
+
+const mapCertificateRecord = (record: Record<string, any>): Certificate => {
+  const documentType =
+    record.certificate_type === "f30"
+      ? "F-30"
+      : record.certificate_type === "f30-1"
+        ? "F-30-1"
+        : record.document_type || record.documentType || "Documento"
+
+  return {
+    id: String(record.id ?? record.file_name ?? record.fileName ?? crypto.randomUUID()),
+    documentType,
+    transporterName:
+      record.transporter_name ||
+      record.company_name ||
+      record.owner_name ||
+      record.full_name ||
+      record.name ||
+      "Información no disponible",
+    transporterRut: record.transporter_rut || record.rut || record.document_rut || "No disponible",
+    vehiclePlate: record.vehicle_plate || record.patente || record.plate || undefined,
+    uploadDate: record.upload_date || record.uploaded_at || record.created_at || "",
+    expiryDate: record.expiry_date || record.expires_at || record.valid_until || "No disponible",
+    status: normalizeStatus(record.status || record.validation_status),
+    fileName: record.file_name || record.original_filename || record.fileName || "Archivo",
+    fileSize: record.file_size || record.size || "-",
+    notes: record.notes || record.observations || record.comment || undefined,
+  }
 }
 
 export function CertificateManagement({ title, description, certificateType }: CertificateManagementProps) {
-  const [certificates, setCertificates] = useState<Certificate[]>(mockCertificates[certificateType] || [])
+  const [certificates, setCertificates] = useState<Certificate[]>([])
   const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null)
 
   useEffect(() => {
+    const loadCertificates = async () => {
+      try {
+        const response = await fetch("/api/certificates", { cache: "no-store" })
+        if (!response.ok) return
+
+        const payload = await response.json()
+        const records: Record<string, any>[] = Array.isArray(payload?.data) ? payload.data : []
+        const mappedCertificates = records
+          .filter((record: Record<string, any>) => matchesCertificateType(record, certificateType))
+          .map((record: Record<string, any>) => mapCertificateRecord(record))
+
+        setCertificates(mappedCertificates)
+      } catch (error) {
+        console.error("Error loading certificates:", error)
+      }
+    }
+
     const loadUploadedDocuments = () => {
       try {
         const stored = localStorage.getItem("uploadedDocuments")
-        if (stored) {
-          const documents = JSON.parse(stored)
-          const filteredDocs = documents.filter((doc: UploadedDocument) => {
-            if (certificateType === "machines") {
-              return [
-                "Licencia de Conducir",
-                "Permiso de Circulación",
-                "Revisión Técnica",
-                "Seguro Obligatorio",
-              ].includes(doc.documentType)
-            } else if (certificateType === "f30") {
-              return doc.documentType === "Certificado F-30"
-            } else if (certificateType === "f30-1") {
-              return doc.documentType === "Certificado F-30-1"
-            }
-            return false
-          })
-          setUploadedDocuments(filteredDocs)
+        if (!stored) {
+          setUploadedDocuments([])
+          return
         }
+
+        const documents = JSON.parse(stored)
+        const filteredDocs = documents.filter((doc: UploadedDocument) => {
+          if (certificateType === "machines") {
+            return [
+              "Licencia de Conducir",
+              "Permiso de Circulación",
+              "Revisión Técnica",
+              "Seguro Obligatorio",
+            ].includes(doc.documentType)
+          }
+
+          if (certificateType === "f30") {
+            return doc.documentType === "Certificado F-30"
+          }
+
+          if (certificateType === "f30-1") {
+            return doc.documentType === "Certificado F-30-1"
+          }
+
+          return false
+        })
+
+        setUploadedDocuments(filteredDocs)
       } catch (error) {
         console.error("Error loading uploaded documents:", error)
       }
     }
 
+    loadCertificates()
     loadUploadedDocuments()
 
     const handleStorageChange = () => {
@@ -210,37 +191,32 @@ export function CertificateManagement({ title, description, certificateType }: C
     return docs.map((doc) => {
       const ocrData = doc.ocrData || {}
 
-      // Map transporter/owner/driver names with priority order
-      let transporterName: string = "Información no disponible"
-      if (ocrData.nombreConductor && typeof ocrData.nombreConductor === 'string') transporterName = ocrData.nombreConductor
-      else if (ocrData.nombreTransportista && typeof ocrData.nombreTransportista === 'string') transporterName = ocrData.nombreTransportista
-      else if (ocrData.nombrePropietario && typeof ocrData.nombrePropietario === 'string') transporterName = ocrData.nombrePropietario
-      else if (ocrData.nombreContratante && typeof ocrData.nombreContratante === 'string') transporterName = ocrData.nombreContratante
-      else if (doc.formData?.transporterName && typeof doc.formData.transporterName === 'string') transporterName = doc.formData.transporterName
+      let transporterName = "Información no disponible"
+      if (ocrData.nombreConductor && typeof ocrData.nombreConductor === "string") transporterName = ocrData.nombreConductor
+      else if (ocrData.nombreTransportista && typeof ocrData.nombreTransportista === "string") transporterName = ocrData.nombreTransportista
+      else if (ocrData.nombrePropietario && typeof ocrData.nombrePropietario === "string") transporterName = ocrData.nombrePropietario
+      else if (ocrData.nombreContratante && typeof ocrData.nombreContratante === "string") transporterName = ocrData.nombreContratante
+      else if (doc.formData?.transporterName && typeof doc.formData.transporterName === "string") transporterName = doc.formData.transporterName
 
-      // Map RUTs with priority order
-      let transporterRut: string = "No disponible"
-      if (ocrData.rutConductor && typeof ocrData.rutConductor === 'string') transporterRut = ocrData.rutConductor
-      else if (ocrData.rutTransportista && typeof ocrData.rutTransportista === 'string') transporterRut = ocrData.rutTransportista
-      else if (ocrData.rutPropietario && typeof ocrData.rutPropietario === 'string') transporterRut = ocrData.rutPropietario
-      else if (ocrData.rutContratante && typeof ocrData.rutContratante === 'string') transporterRut = ocrData.rutContratante
-      else if (doc.formData?.transporterRut && typeof doc.formData.transporterRut === 'string') transporterRut = doc.formData.transporterRut
+      let transporterRut = "No disponible"
+      if (ocrData.rutConductor && typeof ocrData.rutConductor === "string") transporterRut = ocrData.rutConductor
+      else if (ocrData.rutTransportista && typeof ocrData.rutTransportista === "string") transporterRut = ocrData.rutTransportista
+      else if (ocrData.rutPropietario && typeof ocrData.rutPropietario === "string") transporterRut = ocrData.rutPropietario
+      else if (ocrData.rutContratante && typeof ocrData.rutContratante === "string") transporterRut = ocrData.rutContratante
+      else if (doc.formData?.transporterRut && typeof doc.formData.transporterRut === "string") transporterRut = doc.formData.transporterRut
 
-      // Map vehicle plates
       let vehiclePlate: string | undefined = undefined
-      if (ocrData.patenteVehiculo && typeof ocrData.patenteVehiculo === 'string') vehiclePlate = ocrData.patenteVehiculo
-      else if (ocrData.patente && typeof ocrData.patente === 'string') vehiclePlate = ocrData.patente
-      else if (doc.formData?.vehiclePlate && typeof doc.formData.vehiclePlate === 'string') vehiclePlate = doc.formData.vehiclePlate
+      if (ocrData.patenteVehiculo && typeof ocrData.patenteVehiculo === "string") vehiclePlate = ocrData.patenteVehiculo
+      else if (ocrData.patente && typeof ocrData.patente === "string") vehiclePlate = ocrData.patente
+      else if (doc.formData?.vehiclePlate && typeof doc.formData.vehiclePlate === "string") vehiclePlate = doc.formData.vehiclePlate
 
-      // Map expiry dates
-      let expiryDate: string = "No disponible"
-      if (ocrData.fechaVencimiento && typeof ocrData.fechaVencimiento === 'string') expiryDate = ocrData.fechaVencimiento
-      else if (ocrData.fechaExpiracion && typeof ocrData.fechaExpiracion === 'string') expiryDate = ocrData.fechaExpiracion
-      else if (doc.formData?.expiryDate && typeof doc.formData.expiryDate === 'string') expiryDate = doc.formData.expiryDate
+      let expiryDate = "No disponible"
+      if (ocrData.fechaVencimiento && typeof ocrData.fechaVencimiento === "string") expiryDate = ocrData.fechaVencimiento
+      else if (ocrData.fechaExpiracion && typeof ocrData.fechaExpiracion === "string") expiryDate = ocrData.fechaExpiracion
+      else if (doc.formData?.expiryDate && typeof doc.formData.expiryDate === "string") expiryDate = doc.formData.expiryDate
 
-      // Generate notes based on confidence and warnings
       let notes: string | undefined = undefined
-      if (doc.formData?.notes && typeof doc.formData.notes === 'string') {
+      if (doc.formData?.notes && typeof doc.formData.notes === "string") {
         notes = doc.formData.notes
       }
       if (doc.confidence === "low") {
@@ -456,97 +432,67 @@ export function CertificateManagement({ title, description, certificateType }: C
                     </TableCell>
                     <TableCell>{getStatusBadge(cert.status)}</TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="sm" onClick={() => setSelectedCertificate(cert)}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>Detalles del Documento</DialogTitle>
-                              <DialogDescription>Información completa del certificado</DialogDescription>
-                            </DialogHeader>
-                            {selectedCertificate && (
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label className="text-sm font-medium">Transportista</Label>
-                                    <p className="text-sm text-muted-foreground">
-                                      {selectedCertificate.transporterName}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-medium">RUT</Label>
-                                    <p className="text-sm text-muted-foreground">
-                                      {selectedCertificate.transporterRut}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-medium">Tipo de Documento</Label>
-                                    <p className="text-sm text-muted-foreground">{selectedCertificate.documentType}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-medium">Patente</Label>
-                                    <p className="text-sm text-muted-foreground">
-                                      {selectedCertificate.vehiclePlate || "N/A"}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-medium">Fecha de Subida</Label>
-                                    <p className="text-sm text-muted-foreground">{selectedCertificate.uploadDate}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-medium">Fecha de Vencimiento</Label>
-                                    <p className="text-sm text-muted-foreground">{selectedCertificate.expiryDate}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-medium">Archivo</Label>
-                                    <p className="text-sm text-muted-foreground">
-                                      {selectedCertificate.fileName} ({selectedCertificate.fileSize})
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-medium">Estado</Label>
-                                    <div className="mt-1">{getStatusBadge(selectedCertificate.status)}</div>
-                                  </div>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="sm" onClick={() => setSelectedCertificate(cert)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl">
+                          <DialogHeader>
+                            <DialogTitle>Detalles del Documento</DialogTitle>
+                            <DialogDescription>Información completa del certificado</DialogDescription>
+                          </DialogHeader>
+                          {selectedCertificate && (
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <Label className="text-sm font-medium">Transportista</Label>
+                                  <p className="text-sm text-muted-foreground">{selectedCertificate.transporterName}</p>
                                 </div>
-                                {selectedCertificate.notes && (
-                                  <div>
-                                    <Label className="text-sm font-medium">Notas</Label>
-                                    <p className="text-sm text-muted-foreground mt-1">{selectedCertificate.notes}</p>
-                                  </div>
-                                )}
-                                <div className="flex justify-end space-x-2 pt-4">
-                                  <Button variant="outline" size="sm">
-                                    <Download className="h-4 w-4 mr-2" />
-                                    Descargar
-                                  </Button>
-                                  {selectedCertificate.status === "pending" && (
-                                    <>
-                                      <Button variant="default" size="sm" className="bg-green-600 hover:bg-green-700">
-                                        <CheckCircle className="h-4 w-4 mr-1" />
-                                        Aprobar
-                                      </Button>
-                                      <Button variant="destructive" size="sm">
-                                        <XCircle className="h-4 w-4 mr-2" />
-                                        Rechazar
-                                      </Button>
-                                    </>
-                                  )}
+                                <div>
+                                  <Label className="text-sm font-medium">RUT</Label>
+                                  <p className="text-sm text-muted-foreground">{selectedCertificate.transporterRut}</p>
+                                </div>
+                                <div>
+                                  <Label className="text-sm font-medium">Tipo de Documento</Label>
+                                  <p className="text-sm text-muted-foreground">{selectedCertificate.documentType}</p>
+                                </div>
+                                <div>
+                                  <Label className="text-sm font-medium">Patente</Label>
+                                  <p className="text-sm text-muted-foreground">
+                                    {selectedCertificate.vehiclePlate || "N/A"}
+                                  </p>
+                                </div>
+                                <div>
+                                  <Label className="text-sm font-medium">Fecha de Subida</Label>
+                                  <p className="text-sm text-muted-foreground">{selectedCertificate.uploadDate}</p>
+                                </div>
+                                <div>
+                                  <Label className="text-sm font-medium">Fecha de Vencimiento</Label>
+                                  <p className="text-sm text-muted-foreground">{selectedCertificate.expiryDate}</p>
+                                </div>
+                                <div>
+                                  <Label className="text-sm font-medium">Archivo</Label>
+                                  <p className="text-sm text-muted-foreground">
+                                    {selectedCertificate.fileName} ({selectedCertificate.fileSize})
+                                  </p>
+                                </div>
+                                <div>
+                                  <Label className="text-sm font-medium">Estado</Label>
+                                  <div className="mt-1">{getStatusBadge(selectedCertificate.status)}</div>
                                 </div>
                               </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                              {selectedCertificate.notes && (
+                                <div>
+                                  <Label className="text-sm font-medium">Notas</Label>
+                                  <p className="text-sm text-muted-foreground mt-1">{selectedCertificate.notes}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </DialogContent>
+                      </Dialog>
                     </TableCell>
                   </TableRow>
                 ))}

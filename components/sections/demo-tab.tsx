@@ -43,16 +43,16 @@ const PhoneSmallIcon = () => (
   </svg>
 )
 
-export function DemoTab() {
+export function AccessTab() {
   return (
     <div className="space-y-12">
-      {/* Demo Overview */}
+      {/* Access Overview */}
       <div className="text-center max-w-4xl mx-auto">
         <h2 className="text-4xl md:text-5xl font-bold text-balance mb-6">
           Prueba el <span className="text-primary">Sistema en Vivo</span>
         </h2>
         <p className="text-xl text-muted-foreground text-balance leading-relaxed">
-          Accede inmediatamente al sistema con cuentas de demostración o agenda una presentación personalizada.
+          Accede inmediatamente al sistema con cuentas habilitadas o agenda una presentación personalizada.
         </p>
       </div>
 
@@ -60,9 +60,9 @@ export function DemoTab() {
         <Card className="bg-primary/10 border-primary/30 hover:border-primary/50 transition-all duration-300">
           <CardContent className="p-8 text-center">
             <PlayIcon />
-            <h3 className="text-2xl font-bold mb-4">Demo Interactivo</h3>
+            <h3 className="text-2xl font-bold mb-4">Acceso Interactivo</h3>
             <p className="text-muted-foreground mb-6">
-              Prueba el sistema inmediatamente con cuentas de demostración. Explora todas las funcionalidades sin
+              Prueba el sistema inmediatamente con cuentas habilitadas. Explora todas las funcionalidades sin
               compromiso.
             </p>
             <Link href="/auth/login">
@@ -76,13 +76,13 @@ export function DemoTab() {
         <Card className="bg-primary/5 border-primary/20 hover:border-primary/40 transition-all duration-300">
           <CardContent className="p-8 text-center">
             <CalendarIcon />
-            <h3 className="text-2xl font-bold mb-4">Demo Personalizada</h3>
+            <h3 className="text-2xl font-bold mb-4">Presentación Personalizada</h3>
             <p className="text-muted-foreground mb-6">
               30 minutos con nuestro equipo especializado. Verás tu operación automatizada con datos reales de tu
               empresa.
             </p>
             <Button size="lg" className="w-full bg-transparent" variant="outline">
-              Agendar Demo <ArrowRightIcon />
+              Agendar Presentación <ArrowRightIcon />
             </Button>
           </CardContent>
         </Card>
@@ -102,7 +102,7 @@ export function DemoTab() {
       </div>
 
       <div className="bg-muted/30 rounded-2xl p-8 max-w-4xl mx-auto">
-        <h3 className="text-2xl font-bold text-center mb-6">Cuentas de Demostración Disponibles</h3>
+        <h3 className="text-2xl font-bold text-center mb-6">Cuentas Habilitadas</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
             <div className="w-3 h-3 bg-blue-500 rounded-full mx-auto mb-2"></div>
