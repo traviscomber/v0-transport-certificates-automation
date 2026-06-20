@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
@@ -130,9 +130,78 @@ export function ReportsDashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-[#18181B]">Reportes y Auditoría</h1>
-        <p className="text-[#71717A]">Análisis por mes y año del período seleccionado</p>
+
+
+      <Card className="overflow-hidden border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100 shadow-xl shadow-slate-200/40">
+        <CardContent className="p-6 md:p-8 flex flex-col xl:flex-row xl:items-end xl:justify-between gap-6">
+          <div className="space-y-4 max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
+              Reportes admin mensuales
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-[#18181B] leading-tight">
+                Reportes y Auditoría
+              </h1>
+              <p className="text-[#71717A] max-w-2xl">
+                Análisis por mes y año para revisar cumplimiento, riesgo y documentos con una lectura clara para operación.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl">
+              <div className="min-h-[98px] rounded-2xl border border-slate-200 bg-white px-4 py-4">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500">Periodo activo</p>
+                <p className="mt-2 text-2xl font-bold text-[#18181B]">{monthLabel}</p>
+                <p className="mt-1 text-xs text-slate-500">Filtro mensual / anual</p>
+              </div>
+              <div className="min-h-[98px] rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-700">Cumplimiento</p>
+                <p className="mt-2 text-3xl font-bold text-emerald-700">{complianceRate}%</p>
+                <p className="mt-1 text-xs text-emerald-700/80">{stats.approved} validados</p>
+              </div>
+              <div className="min-h-[98px] rounded-2xl border border-orange-200 bg-orange-50 px-4 py-4">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-orange-700">Riesgo activo</p>
+                <p className="mt-2 text-3xl font-bold text-orange-700">{riskRate}%</p>
+                <p className="mt-1 text-xs text-orange-700/80">{stats.pending + stats.rejected + stats.expiring} puntos de atención</p>
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 w-full max-w-xl xl:max-w-none xl:w-auto">
+            <div className="min-h-[96px] rounded-2xl border border-slate-200 bg-white px-4 py-4">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Documentos</p>
+              <p className="text-3xl font-bold text-[#18181B] mt-1">{stats.total}</p>
+            </div>
+            <div className="min-h-[96px] rounded-2xl border border-slate-200 bg-white px-4 py-4">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Pendientes</p>
+              <p className="text-3xl font-bold text-[#18181B] mt-1">{stats.pending}</p>
+            </div>
+            <div className="min-h-[96px] rounded-2xl border border-slate-200 bg-white px-4 py-4">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Rechazados</p>
+              <p className="text-3xl font-bold text-[#18181B] mt-1">{stats.rejected}</p>
+            </div>
+            <div className="min-h-[96px] rounded-2xl border border-slate-200 bg-slate-900 px-4 py-4">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Acción</p>
+              <p className="text-lg font-semibold text-white mt-1">Auditoría y seguimiento</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Filtro</p>
+          <p className="text-sm font-semibold text-[#18181B] mt-1">Mes / año</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Enfoque</p>
+          <p className="text-sm font-semibold text-[#18181B] mt-1">Datos reales</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Uso</p>
+          <p className="text-sm font-semibold text-[#18181B] mt-1">Seguimiento</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Salida</p>
+          <p className="text-sm font-semibold text-[#18181B] mt-1">Auditoría</p>
+        </div>
       </div>
 
       <DatePeriodFilter
