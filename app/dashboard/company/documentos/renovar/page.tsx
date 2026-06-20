@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
@@ -185,21 +185,25 @@ export default function RenovarPage() {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 rounded-2xl border border-slate-700 bg-slate-900/70 p-4">
-            <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 px-3 py-3">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-yellow-300/80">Próximos 30 días</p>
-              <p className="text-lg font-semibold text-yellow-200 mt-1">{dueSoon}</p>
-            </div>
-            <div className="rounded-xl border border-slate-700/80 bg-slate-950/50 px-3 py-3">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Más cercano</p>
-              <p className="text-lg font-semibold text-white mt-1">
-                {nextToExpire?.days_until_expiration != null ? `${nextToExpire.days_until_expiration} días` : 'Sin datos'}
-              </p>
-            </div>
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-3">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-300/80">Acción</p>
-              <p className="text-lg font-semibold text-emerald-200 mt-1">Planificar renovaciones</p>
-            </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/dashboard/company/documentos/vencidos">
+              <Button variant="outline" size="sm" className="gap-2 border-red-500/30 text-red-300 hover:bg-red-500/10">
+                Ver vencidos
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link href="/dashboard/company/reportes">
+              <Button variant="outline" size="sm" className="gap-2 border-slate-600 text-slate-200 hover:bg-slate-800">
+                Ver reportes
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link href="/dashboard/company/documentos">
+              <Button variant="outline" size="sm" className="gap-2 border-slate-600 text-slate-200 hover:bg-slate-800">
+                Volver a documentos
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
           </div>
 
           <DatePeriodFilter

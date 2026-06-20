@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { HelpBox } from '@/components/ui/help-box'
 import { DatePeriodFilter } from '@/components/date-period-filter'
 import { AIAnalysisPanel } from '@/components/reports/ai-analysis-panel'
-import { Download, FileText, BarChart3, TrendingUp, AlertCircle, CheckCircle2, Users, ArrowRight, ShieldAlert, RefreshCw } from 'lucide-react'
+import { Download, FileText, BarChart3, TrendingUp, AlertCircle, CheckCircle2, ArrowRight, ShieldAlert, RefreshCw } from 'lucide-react'
 import { ALL_VALUE, filterByMonthYear, getMonthLabel, type DateFilterValue } from '@/lib/date-filters'
 
 type EntityRecord = {
@@ -261,6 +261,28 @@ export default function ReportesPage() {
           </div>
         </CardContent>
       </Card>
+
+      <div className="flex flex-wrap gap-2">
+        <Link href="/dashboard/company/documentos/vencidos">
+          <Button variant="outline" size="sm" className="gap-2 border-red-500/30 text-red-300 hover:bg-red-500/10">
+            Ver vencidos
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </Link>
+        <Link href="/dashboard/company/documentos/renovar">
+          <Button variant="outline" size="sm" className="gap-2 border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/10">
+            Planificar renovaciones
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </Link>
+        <Link href="/dashboard/company/documentos/pendientes">
+          <Button variant="outline" size="sm" className="gap-2 border-blue-500/30 text-blue-300 hover:bg-blue-500/10">
+            Revisar pendientes
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </Link>
+      </div>
+
       <HelpBox
         title="Reportes y Análisis"
         description="Genera reportes profesionales impulsados por IA. Obtén insights sobre cumplimiento, riesgos y alertas críticas."
@@ -318,77 +340,6 @@ export default function ReportesPage() {
       </Card>
 
       <DatePeriodFilter value={period} onChange={setPeriod} onClear={() => setPeriod({ month: ALL_VALUE, year: ALL_VALUE })} />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="p-4 bg-gradient-to-br from-slate-900/90 to-slate-800/40 border-slate-700/50">
-          <p className="text-xs text-slate-400 font-medium">PERÍODO ACTIVO</p>
-          <p className="text-xl font-bold text-white mt-1">{periodLabel}</p>
-          <p className="text-sm text-slate-300 mt-2">Resumen preparado para revisión ejecutiva.</p>
-        </Card>
-
-        <Card className="p-4 bg-gradient-to-br from-emerald-900/20 to-slate-800/40 border-emerald-500/30">
-          <p className="text-xs text-emerald-300/80 font-medium">CUMPLIMIENTO</p>
-          <p className="text-3xl font-bold text-emerald-300 mt-1">{completionRate}%</p>
-          <p className="text-sm text-slate-300 mt-2">{stats.approved} aprobados de {stats.total} documentos filtrados.</p>
-        </Card>
-
-        <Card className="p-4 bg-gradient-to-br from-orange-900/20 to-slate-800/40 border-orange-500/30">
-          <p className="text-xs text-orange-300/80 font-medium">RIESGO ACTIVO</p>
-          <p className="text-3xl font-bold text-orange-300 mt-1">{riskRate}%</p>
-          <p className="text-sm text-slate-300 mt-2">{stats.sinDocumentos + stats.expiring} elementos requieren atención hoy.</p>
-        </Card>
-      </div>
-
-      <div className="rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-3 text-sm text-slate-300">
-        <span className="font-semibold text-white">Consejo rápido:</span> cambia el mes o el año para refrescar la lectura sin perder contexto histórico.
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-4 bg-gradient-to-br from-slate-900/80 to-slate-800/40 border-slate-700/50 hover:border-orange-500/30 transition-colors">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-slate-400 font-medium">TOTAL REGISTROS</p>
-              <p className="text-2xl font-bold text-white mt-1">{stats.total}</p>
-            </div>
-            <Users className="w-8 h-8 text-orange-500/50" />
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-gradient-to-br from-slate-900/80 to-slate-800/40 border-slate-700/50 hover:border-green-500/30 transition-colors">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-slate-400 font-medium">CUMPLIMIENTO</p>
-              <p className="text-2xl font-bold text-green-400 mt-1">
-                {stats.total > 0 ? ((stats.conDocumentos / stats.total) * 100).toFixed(0) : '0'}%
-              </p>
-            </div>
-            <CheckCircle2 className="w-8 h-8 text-green-500/50" />
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-gradient-to-br from-slate-900/80 to-slate-800/40 border-slate-700/50 hover:border-orange-500/30 transition-colors">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-slate-400 font-medium">EN RIESGO</p>
-              <p className="text-2xl font-bold text-orange-400 mt-1">{stats.sinDocumentos + stats.expiring}</p>
-            </div>
-            <AlertCircle className="w-8 h-8 text-orange-500/50" />
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-gradient-to-br from-slate-900/80 to-slate-800/40 border-slate-700/50 hover:border-blue-500/30 transition-colors">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-slate-400 font-medium">TASA ACTIVOS</p>
-              <p className="text-2xl font-bold text-blue-400 mt-1">
-                {stats.activos + stats.inactivos > 0 ? ((stats.activos / (stats.activos + stats.inactivos)) * 100).toFixed(0) : '0'}%
-              </p>
-            </div>
-            <TrendingUp className="w-8 h-8 text-blue-500/50" />
-          </div>
-        </Card>
-      </div>
-
       <Card className="p-5 bg-slate-900/80 border-slate-700/50">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="space-y-2">
