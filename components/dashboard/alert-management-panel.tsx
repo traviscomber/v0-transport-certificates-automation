@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import AlertBanner from '../charts/alert-banner'
+import { AlertBanner } from '../charts/alert-banner'
 import { Alert, AlertSeverity, detectDocumentAnomalies, getAlertRecommendations } from '@/lib/anomaly-detection'
 import { AlertCircle, AlertTriangle, Info, CheckCircle2, ChevronDown, ChevronUp, Filter } from 'lucide-react'
 
