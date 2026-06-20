@@ -406,7 +406,7 @@ export function DashboardOverview() {
                 </div>
                 <p className="mt-3 text-sm text-slate-300">
                   {openRiskItems > 0
-                    ? `Hay ${openRiskItems} documentos en riesgo abierto que conviene cerrar primero.`
+                    ? `Hay ${openRiskItems} documentos en riesgo (${rejectedDocuments} rechazados + ${pendingDocuments} pendientes) que conviene cerrar primero.`
                     : 'No hay riesgos abiertos en el periodo actual.'}
                 </p>
               </div>
