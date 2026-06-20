@@ -136,13 +136,20 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
   // Fetch documents when a subcontractor is selected for detail view
   useEffect(() => {
     const fetchDocuments = async () => {
-      if (!selectedDetailSubcontractor?.id) return
+      if (!selectedDetailSubcontractor?.id) {
+        console.log('[v0] No subcontractor ID, skipping fetch')
+        return
+      }
       
+      console.log('[v0] Fetching documents for subcontractor:', selectedDetailSubcontractor.id)
       try {
         const response = await fetch(`/api/subcontractors/${selectedDetailSubcontractor.id}/documents`)
         if (response.ok) {
           const data = await response.json()
+          console.log('[v0] Documents fetched successfully:', data)
           setDocumentsData(data)
+        } else {
+          console.error('[v0] Failed to fetch documents:', response.status)
         }
       } catch (error) {
         console.error('[v0] Error fetching documents for subcontractor:', error)
