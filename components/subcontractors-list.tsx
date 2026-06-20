@@ -1,5 +1,29 @@
 'use client'
 
+/**
+ * ARCHITECTURE PATTERN - SubcontractorsList (Parent Component)
+ * 
+ * This component manages the data fetching strategy for the detail modal.
+ * 
+ * DATA FETCHING RULES:
+ * 1. When modal opens for a subcontractor, useEffect triggers
+ * 2. Fetch BOTH conductoresData AND documentsData from APIs
+ * 3. Pass BOTH as props to SubcontractorDetailTabs child component
+ * 4. Child component NEVER re-fetches - it uses props data
+ * 
+ * BENEFITS:
+ * - Single source of truth (parent controls all data)
+ * - Consistent data across all tabs
+ * - Prevents race conditions from multiple API calls
+ * - Easy to cache and synchronize
+ * 
+ * PATTERN TO FOLLOW FOR NEW TABS:
+ * - If new tab needs data: add to parent useEffect
+ * - Fetch from API in parent
+ * - Pass as prop to SubcontractorDetailTabs
+ * - Child uses prop, never fetches
+ */
+
 import { useState, useMemo, useEffect } from 'react'
 import { Search, MapPin, Phone, Mail, CheckCircle, AlertCircle, X, Filter, Users, Edit, UserPlus } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -133,7 +157,35 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
     fetchData()
   }, [initialSubcontractors])
 
-  // Fetch documents when a subcontractor is selected for detail view
+  /**
+   * DOCUMENTS DATA FETCHING - Critical Pattern
+   * 
+   * When modal opens (selectedDetailSubcontractor changes):
+   * 1. Fetch from /api/subcontractors/[id]/documents
+   * 2. API returns: { documents[], requirements[], summary{} }
+   * 3. API deduplicates: keeps only unique documents per document_type_id
+   * 4. Store in documentsData state
+   * 5. Pass to SubcontractorDetailTabs as prop
+   * 
+   * DATA STRUCTURE RETURNED FROM API:
+   * {
+   *   documents: [{ id, document_type_id, status, created_at, ... }],  // Unique per type
+   *   requirements: [{ id, name, description, ... }],                  // All 16 types
+   *   summary: {
+   *     totalDocumentsUploaded: 5,    // Unique count
+   *     totalRequirements: 16,        // Required types
+   *     approvedDocuments: 3,
+   *     pendingDocuments: 2,
+   *     expiredDocuments: 0,
+   *     rejectedDocuments: 0
+   *   }
+   * }
+   * 
+   * USED BY TABS:
+   * - Resumen: summary stats
+   * - Documentos: requirements loop with documents lookup
+   * - Onboarding: summary + requirements to calculate checklist
+   */
   useEffect(() => {
     const fetchDocuments = async () => {
       if (!selectedDetailSubcontractor?.id) {

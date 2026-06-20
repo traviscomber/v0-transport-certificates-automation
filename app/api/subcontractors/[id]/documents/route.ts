@@ -254,8 +254,25 @@ export async function GET(
       )
     }
 
-    // Calculate summary
-    // Count unique documents by document_type_id (keep only most recent per type)
+    /**
+     * DEDUPLICATION RULE - Keep only unique documents per document_type_id
+     * 
+     * PROBLEM SOLVED:
+     * - Database can have multiple versions/duplicates of same document type
+     * - UI should show: "Documentos (5/16)" not "Documentos (27/16)"
+     * - "Por Subir" was showing negative numbers when duplicates existed
+     * 
+     * SOLUTION:
+     * - Create Map of document_type_id → most recent document
+     * - For each document type, keep only the newest version (by created_at)
+     * - Return unique array: one document per type maximum
+     * 
+     * RESULT:
+     * - Tab shows correct count (actual unique types uploaded vs 16 required)
+     * - "Por Subir" always positive or zero
+     * - Onboarding checklist accurate
+     * - Resumen stats consistent
+     */
     const uniqueDocuments = new Map()
     documents?.forEach((doc) => {
       const existing = uniqueDocuments.get(doc.document_type_id)

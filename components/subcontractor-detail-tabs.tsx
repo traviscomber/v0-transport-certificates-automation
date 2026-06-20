@@ -1,5 +1,28 @@
 'use client'
 
+/**
+ * ARCHITECTURE PATTERN - SubcontractorDetailTabs
+ * 
+ * This component displays 5 tabs with real data about a subcontractor.
+ * Data flow follows a PARENT → CHILD pattern to ensure consistency:
+ * 
+ * 1. PARENT (SubcontractorsList) fetches:
+ *    - conductoresData: drivers filtered by subcontractor RUT
+ *    - documentsData: documents/requirements/summary from API
+ * 
+ * 2. PARENT passes data as PROPS to this component
+ * 
+ * 3. TABS use the REAL DATA:
+ *    - Resumen: shows summary stats (totalDocumentsUploaded, approvedDocuments, etc.)
+ *    - Documentos: maps requirements and shows which have documents uploaded
+ *    - Conductores: displays driver list from conductoresData prop
+ *    - Onboarding: checklist based on actual requirements/certifications/drivers
+ *    - Certificaciones: shows certificates status
+ * 
+ * RULE: Never fetch data in the child component if parent can provide it.
+ * This ensures single source of truth and prevents data mismatches.
+ */
+
 import { X, FileText, Award, AlertCircle, CheckCircle, Loader, Download, Eye, Users, CheckSquare, Mail, Phone } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
