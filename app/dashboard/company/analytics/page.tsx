@@ -96,34 +96,70 @@ export default function OperationalDashboard() {
         <KPICardSparkline
           title="Documentos Procesados Hoy"
           value={kpis.totalProcessed}
-          change="+2"
-          icon={<FileText className="h-5 w-5 text-blue-400" />}
-          sparklineData={[2, 3, 4, 5, 7, 6, 5, 5]}
-          trend="up"
+          unit="documentos"
+          color="blue"
+          sparklineData={[
+            { value: 2 },
+            { value: 3 },
+            { value: 4 },
+            { value: 5 },
+            { value: 7 },
+            { value: 6 },
+            { value: 5 },
+            { value: 5 },
+          ]}
+          trendPercent={2}
         />
         <KPICardSparkline
           title="Tiempo Promedio"
-          value={`${kpis.averageTime}h`}
-          change="-0.3h"
-          icon={<Clock className="h-5 w-5 text-green-400" />}
-          sparklineData={[2.5, 2.4, 2.3, 2.2, 2.1, 2.1, 2.1, 2.1]}
-          trend="down"
+          value={`${kpis.averageTime}`}
+          unit="horas"
+          color="green"
+          sparklineData={[
+            { value: 2.5 },
+            { value: 2.4 },
+            { value: 2.3 },
+            { value: 2.2 },
+            { value: 2.1 },
+            { value: 2.1 },
+            { value: 2.1 },
+            { value: 2.1 },
+          ]}
+          trendPercent={-0.3}
         />
         <KPICardSparkline
           title="Tasa de Aprobación"
-          value={`${kpis.approvalRate}%`}
-          change="+5%"
-          icon={<CheckCircle className="h-5 w-5 text-purple-400" />}
-          sparklineData={[55, 57, 58, 59, 60, 60, 60, 60]}
-          trend="up"
+          value={`${kpis.approvalRate}`}
+          unit="%"
+          color="purple"
+          sparklineData={[
+            { value: 55 },
+            { value: 57 },
+            { value: 58 },
+            { value: 59 },
+            { value: 60 },
+            { value: 60 },
+            { value: 60 },
+            { value: 60 },
+          ]}
+          trendPercent={5}
         />
         <KPICardSparkline
           title="Pendientes de Revisión"
           value={kpis.pendingReview}
-          change="+1"
-          icon={<AlertCircle className="h-5 w-5 text-yellow-400" />}
-          sparklineData={[0, 1, 1, 2, 1, 1, 1, 1]}
-          trend="up"
+          unit="documentos"
+          color="yellow"
+          sparklineData={[
+            { value: 0 },
+            { value: 1 },
+            { value: 1 },
+            { value: 2 },
+            { value: 1 },
+            { value: 1 },
+            { value: 1 },
+            { value: 1 },
+          ]}
+          trendPercent={1}
         />
       </div>
 

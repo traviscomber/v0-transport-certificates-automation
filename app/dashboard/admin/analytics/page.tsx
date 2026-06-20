@@ -93,7 +93,16 @@ export default function AnalyticsDashboard() {
   ]
 
   // Sparkline data for KPIs
-  const sparklineData = [12, 15, 18, 22, 25, 28, 26, 29]
+  const sparklineData = [
+    { value: 12 },
+    { value: 15 },
+    { value: 18 },
+    { value: 22 },
+    { value: 25 },
+    { value: 28 },
+    { value: 26 },
+    { value: 29 },
+  ]
 
   return (
     <div className="space-y-6 p-6">
