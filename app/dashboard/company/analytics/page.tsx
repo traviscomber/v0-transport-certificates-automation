@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card' // Used in Recent Activity section
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TrendLineChart } from '@/components/charts/trend-line-chart'
 import { DistributionPieChart } from '@/components/charts/distribution-pie-chart'
@@ -228,32 +228,20 @@ export default function OperationalDashboard() {
         <TabsContent value="composition" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Status Distribution */}
-            <Card className="border-slate-700 bg-slate-800/30">
-              <CardHeader>
-                <CardTitle className="text-slate-100">Distribución por Estado</CardTitle>
-                <CardDescription>Estado actual de documentos en sistema</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DistributionPieChart
-                  data={statusBreakdown}
-                  height={300}
-                />
-              </CardContent>
-            </Card>
+            <DistributionPieChart
+              title="Distribución por Estado"
+              description="Estado actual de documentos en sistema"
+              data={statusBreakdown}
+              height={300}
+            />
 
             {/* Type Distribution */}
-            <Card className="border-slate-700 bg-slate-800/30">
-              <CardHeader>
-                <CardTitle className="text-slate-100">Distribución por Tipo</CardTitle>
-                <CardDescription>Clasificación de documentos por categoría</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DistributionPieChart
-                  data={typeBreakdown}
-                  height={300}
-                />
-              </CardContent>
-            </Card>
+            <DistributionPieChart
+              title="Distribución por Tipo"
+              description="Clasificación de documentos por categoría"
+              data={typeBreakdown}
+              height={300}
+            />
           </div>
         </TabsContent>
       </Tabs>
