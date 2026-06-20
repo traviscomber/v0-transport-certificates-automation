@@ -185,18 +185,12 @@ export default function AnalyticsDashboard() {
         />
 
         {/* Distribution Pie Chart */}
-        <Card className="border-slate-700 bg-slate-800/30">
-          <CardHeader>
-            <CardTitle className="text-slate-100">Distribución de Estados</CardTitle>
-            <CardDescription>Composición actual de documentos por estatus</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DistributionPieChart
-              data={distributionData}
-              height={300}
-            />
-          </CardContent>
-        </Card>
+        <DistributionPieChart
+          title="Distribución de Estados"
+          description="Composición actual de documentos por estatus"
+          data={distributionData}
+          height={300}
+        />
       </div>
 
       {/* Comparison Chart */}
