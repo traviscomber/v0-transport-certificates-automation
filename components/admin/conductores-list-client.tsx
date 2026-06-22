@@ -217,11 +217,27 @@ export function ConductoresListClient({
       <DriverFilters companies={companies} onFiltersChange={handleFiltersChange} />
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="text-sm text-muted-foreground">Total de Conductores</div>
+            <div className="text-sm text-muted-foreground">Total</div>
             <div className="text-2xl font-bold">{initialConductores.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-sm text-muted-foreground">Pensionados</div>
+            <div className="text-2xl font-bold text-purple-600">
+              {initialConductores.filter((c) => c.es_pensionado === true).length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-sm text-muted-foreground">No Pensionados</div>
+            <div className="text-2xl font-bold text-orange-600">
+              {initialConductores.filter((c) => c.es_pensionado === false).length}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -234,15 +250,7 @@ export function ConductoresListClient({
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-sm text-muted-foreground">Inactivos</div>
-            <div className="text-2xl font-bold text-red-600">
-              {initialConductores.filter((c) => !c.is_active).length}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-sm text-muted-foreground">Resultados de búsqueda</div>
+            <div className="text-sm text-muted-foreground">Búsqueda</div>
             <div className="text-2xl font-bold">{filteredConductores.length}</div>
           </CardContent>
         </Card>
@@ -319,6 +327,15 @@ export function ConductoresListClient({
                       {!expired && !expiringSoon && (
                         <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700 font-semibold">
                           Licencia Activa
+                        </span>
+                      )}
+                      {c.es_pensionado !== undefined && (
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                          c.es_pensionado
+                            ? "bg-purple-100 text-purple-700" 
+                            : "bg-orange-100 text-orange-700"
+                        }`}>
+                          {c.es_pensionado ? "Pensionado" : "No Pensionado"}
                         </span>
                       )}
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
