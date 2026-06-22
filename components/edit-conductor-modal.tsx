@@ -326,26 +326,26 @@ export function EditConductorModal({
                   <button
                     type="button"
                     onClick={() => setFormData({...formData, es_pensionado: true})}
-                    className={`p-3 rounded-lg border-2 transition-all ${
+                    className={`p-3 rounded-lg border-2 transition-all font-semibold ${
                       formData.es_pensionado === true
-                        ? 'border-purple-500 bg-purple-50 text-purple-900'
-                        : 'border-gray-300 bg-white hover:border-gray-400'
+                        ? 'border-purple-600 bg-purple-600 text-white'
+                        : 'border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    <div className="font-semibold text-sm">Pensionado</div>
-                    <div className="text-xs opacity-75">Jubilado</div>
+                    <div className="text-sm">Pensionado</div>
+                    <div className="text-xs opacity-90">Jubilado</div>
                   </button>
                   <button
                     type="button"
                     onClick={() => setFormData({...formData, es_pensionado: false})}
-                    className={`p-3 rounded-lg border-2 transition-all ${
+                    className={`p-3 rounded-lg border-2 transition-all font-semibold ${
                       formData.es_pensionado === false
-                        ? 'border-orange-500 bg-orange-50 text-orange-900'
-                        : 'border-gray-300 bg-white hover:border-gray-400'
+                        ? 'border-orange-600 bg-orange-600 text-white'
+                        : 'border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    <div className="font-semibold text-sm">No Pensionado</div>
-                    <div className="text-xs opacity-75">Activo</div>
+                    <div className="text-sm">No Pensionado</div>
+                    <div className="text-xs opacity-90">Activo</div>
                   </button>
                 </div>
               </div>
