@@ -46,8 +46,14 @@ export default function EditarConductorPage() {
 
         setConductor(conductorData)
         const data = conductorData as any
+        console.log("[v0] Conductor loaded:", data)
+        console.log("[v0] es_pensionado value:", data.es_pensionado, "type:", typeof data.es_pensionado)
+        // Set pensionado with default to false if not set
         if (data.es_pensionado !== undefined && data.es_pensionado !== null) {
-          setIsPensionado(data.es_pensionado)
+          setIsPensionado(Boolean(data.es_pensionado))
+        } else {
+          // Default to false for conductors without this field set
+          setIsPensionado(false)
         }
       } catch (err: any) {
         setError(err.message)
