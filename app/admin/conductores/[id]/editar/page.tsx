@@ -45,8 +45,9 @@ export default function EditarConductorPage() {
         }
 
         setConductor(conductorData)
-        if (conductorData.es_pensionado !== undefined && conductorData.es_pensionado !== null) {
-          setIsPensionado(conductorData.es_pensionado)
+        const data = conductorData as any
+        if (data.es_pensionado !== undefined && data.es_pensionado !== null) {
+          setIsPensionado(data.es_pensionado)
         }
       } catch (err: any) {
         setError(err.message)
