@@ -4,7 +4,31 @@ import { createAdminClient } from '@/lib/supabase/admin'
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json()
-    const { id, rut, nombres, apellido_paterno, apellido_materno, rut_proveedor, clase_licencia, is_active } = body
+    const {
+      id,
+      rut,
+      nombres,
+      apellido_paterno,
+      apellido_materno,
+      transportista_id,
+      rut_proveedor,
+      clase_licencia,
+      is_active,
+      fecha_nacimiento,
+      direccion,
+      comuna,
+      ciudad,
+      telefono,
+      email,
+      numero_licencia,
+      vencimiento_licencia,
+      es_pensionado,
+      numero_afp,
+      numero_isapre,
+      tipo_contratacion,
+      numero_pension,
+      institucion_pension,
+    } = body
 
     if (!id || !rut) {
       return NextResponse.json(
@@ -23,9 +47,24 @@ export async function PATCH(request: NextRequest) {
         ...(nombres && { nombres }),
         ...(apellido_paterno !== undefined && { apellido_paterno }),
         ...(apellido_materno !== undefined && { apellido_materno }),
+        ...(transportista_id && { transportista_id }),
         ...(rut_proveedor && { rut_proveedor }),
         ...(clase_licencia && { clase_licencia }),
         ...(is_active !== undefined && { is_active }),
+        ...(fecha_nacimiento !== undefined && { fecha_nacimiento: fecha_nacimiento || null }),
+        ...(direccion !== undefined && { direccion: direccion || null }),
+        ...(comuna !== undefined && { comuna: comuna || null }),
+        ...(ciudad !== undefined && { ciudad: ciudad || null }),
+        ...(telefono !== undefined && { telefono: telefono || null }),
+        ...(email !== undefined && { email: email || null }),
+        ...(numero_licencia !== undefined && { numero_licencia: numero_licencia || null }),
+        ...(vencimiento_licencia !== undefined && { vencimiento_licencia: vencimiento_licencia || null }),
+        ...(es_pensionado !== undefined && { es_pensionado }),
+        ...(numero_afp !== undefined && { numero_afp: numero_afp || null }),
+        ...(numero_isapre !== undefined && { numero_isapre: numero_isapre || null }),
+        ...(tipo_contratacion !== undefined && { tipo_contratacion: tipo_contratacion || null }),
+        ...(numero_pension !== undefined && { numero_pension: numero_pension || null }),
+        ...(institucion_pension !== undefined && { institucion_pension: institucion_pension || null }),
       })
       .eq('id', id)
       .select()

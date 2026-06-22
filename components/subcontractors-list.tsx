@@ -83,6 +83,30 @@ interface Subcontractor {
   }
 }
 
+function getCompletion(sub: Subcontractor) {
+  const checks = [
+    Boolean(sub.id),
+    Boolean(sub.rut),
+    Boolean(sub.nombre || sub.razon_social),
+    Boolean(sub.representante_legal),
+    Boolean(sub.telefono || sub.email || sub.correo),
+    Boolean(sub.direccion || sub.comuna || sub.region),
+    Boolean(sub.ejecutivo_nombre),
+    Boolean(sub.ariztia || sub.lts || sub.rendic || sub.interpolar),
+  ]
+
+  const completed = checks.filter(Boolean).length
+  const total = checks.length
+  const percent = Math.round((completed / total) * 100)
+
+  return {
+    completed,
+    total,
+    percent,
+    label: percent >= 90 ? 'Completo' : percent >= 60 ? 'Parcial' : 'Pendiente',
+  }
+}
+
 interface Driver {
   id: string
   rut: string
@@ -462,6 +486,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
             }
             
             const isExpanded = expandedSubcontractor === sub.id
+            const completion = getCompletion(sub)
 
             return (
             <Card key={sub.id} className="hover:border-slate-500 transition-colors">
@@ -503,6 +528,30 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
                         <span className="font-semibold text-amber-400">{driverCount}</span> conductores
                       </span>
                     </div>
+                    <Badge
+                      variant="outline"
+                      className={
+                        completion.label === 'Completo'
+                          ? 'border-emerald-200/40 bg-emerald-500/10 text-emerald-200'
+                          : completion.label === 'Parcial'
+                            ? 'border-amber-200/40 bg-amber-500/10 text-amber-200'
+                            : 'border-rose-200/40 bg-rose-500/10 text-rose-200'
+                      }
+                    >
+                      Perfil {completion.percent}%
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className={
+                        completion.label === 'Completo'
+                          ? 'border-emerald-200/40 bg-emerald-500/10 text-emerald-200'
+                          : completion.label === 'Parcial'
+                            ? 'border-amber-200/40 bg-amber-500/10 text-amber-200'
+                            : 'border-rose-200/40 bg-rose-500/10 text-rose-200'
+                      }
+                    >
+                      {completion.label}
+                    </Badge>
                     
                     {/* Edit Button */}
                     <button

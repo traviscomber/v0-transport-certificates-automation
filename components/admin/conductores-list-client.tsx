@@ -3,11 +3,61 @@
 import { useState, useMemo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { Users, AlertTriangle, Calendar, Building2, Search } from 'lucide-react'
 import { DriverFilters, type DriverFilters as DriverFiltersType } from './driver-filters'
 import { LicenseAndCertifications } from './license-certifications'
 import { QuickHelp } from '@/components/ui/help-box'
+
+function getPrevisionalBadge(esPensionado: boolean | null | undefined) {
+  if (esPensionado === true) {
+    return {
+      label: 'Pensionado',
+      className: 'bg-amber-100 text-amber-800',
+    }
+  }
+
+  if (esPensionado === false) {
+    return {
+      label: 'No pensionado',
+      className: 'bg-sky-100 text-sky-800',
+    }
+  }
+
+  return null
+}
+
+function getProfileCompletion(conductor: any) {
+  const checks = [
+    Boolean(conductor?.transportista_id || conductor?.rut_proveedor),
+    Boolean(conductor?.rut),
+    Boolean(conductor?.nombres),
+    Boolean(conductor?.apellido_paterno),
+    Boolean(conductor?.clase_licencia),
+    Boolean(conductor?.numero_licencia),
+    Boolean(conductor?.vencimiento_licencia),
+    Boolean(conductor?.telefono || conductor?.email),
+    Boolean(conductor?.direccion || conductor?.comuna || conductor?.ciudad),
+    conductor?.es_pensionado === true
+      ? Boolean(conductor?.numero_pension && conductor?.institucion_pension)
+      : conductor?.es_pensionado === false
+        ? Boolean(conductor?.numero_afp && conductor?.numero_isapre)
+        : false,
+    Boolean(conductor?.tipo_contratacion),
+  ]
+
+  const completed = checks.filter(Boolean).length
+  const total = checks.length
+  const percent = Math.round((completed / total) * 100)
+
+  return {
+    completed,
+    total,
+    percent,
+    label: percent >= 90 ? 'Completo' : percent >= 60 ? 'Parcial' : 'Pendiente',
+  }
+}
 
 interface ConductoresListClientProps {
   conductores: any[]
@@ -272,6 +322,8 @@ export function ConductoresListClient({
           {filteredConductores.map((c: any) => {
             const expired = isLicenseExpired(c.vencimiento_licencia)
             const expiringSoon = isLicenseExpiringSoon(c.vencimiento_licencia)
+            const previsionalBadge = getPrevisionalBadge(c.es_pensionado)
+            const profileCompletion = getProfileCompletion(c)
 
             return (
               <Card key={c.id} className="hover:shadow-md transition-shadow">
@@ -289,11 +341,16 @@ export function ConductoresListClient({
                         <p className="text-sm font-mono text-muted-foreground">
                           RUT: {c.rut}
                         </p>
-                        <div className="flex flex-wrap gap-4 mt-2">
+                        <div className="flex flex-wrap gap-2 mt-2">
                           <span className="flex items-center gap-1 text-sm text-muted-foreground">
                             <Building2 className="h-4 w-4" />
                             {c.transportistas?.razon_social || "Sin asignar"}
                           </span>
+                          {previsionalBadge && (
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${previsionalBadge.className}`}>
+                              {previsionalBadge.label}
+                            </span>
+                          )}
                           {c.clase_licencia && (
                             <span className="text-sm text-muted-foreground font-semibold">
                               Licencia: {c.clase_licencia}
@@ -314,6 +371,21 @@ export function ConductoresListClient({
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap justify-end">
+                      <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
+                        Perfil {profileCompletion.percent}%
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className={
+                          profileCompletion.label === 'Completo'
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                            : profileCompletion.label === 'Parcial'
+                              ? 'border-amber-200 bg-amber-50 text-amber-700'
+                              : 'border-rose-200 bg-rose-50 text-rose-700'
+                        }
+                      >
+                        {profileCompletion.label}
+                      </Badge>
                       {expired && (
                         <span className="px-2 py-1 rounded-full text-xs bg-red-100 text-red-700 font-semibold">
                           Licencia Vencida

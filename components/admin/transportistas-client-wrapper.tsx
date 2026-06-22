@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { Building2, MoreHorizontal, CheckCircle2, Search, Calendar } from 'lucide-react'
 import { QuickHelp } from '@/components/ui/help-box'
@@ -15,6 +16,27 @@ interface TransportistasClientWrapperProps {
 function normalizeRut(rut: string | null | undefined): string {
   if (!rut) return ''
   return rut.toLowerCase().trim().replace(/[\s\-\.]/g, '')
+}
+
+function getCompletion(transportista: any) {
+  const checks = [
+    Boolean(transportista?.rut),
+    Boolean(transportista?.razon_social),
+    Boolean(transportista?.representante_legal),
+    Boolean(transportista?.telefono || transportista?.email),
+    Boolean(transportista?.direccion || transportista?.comuna || transportista?.ciudad),
+    Boolean(transportista?.giro),
+    Boolean(transportista?.assigned_executive_id || transportista?.ejecutivo_nombre),
+  ]
+
+  const completed = checks.filter(Boolean).length
+  const total = checks.length
+  const percent = Math.round((completed / total) * 100)
+
+  return {
+    percent,
+    label: percent >= 90 ? 'Completo' : percent >= 60 ? 'Parcial' : 'Pendiente',
+  }
 }
 
 export function TransportistasClientWrapper({
@@ -263,7 +285,9 @@ export function TransportistasClientWrapper({
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredTransportistas.map((t: any) => (
+                  {filteredTransportistas.map((t: any) => {
+                      const completion = getCompletion(t)
+                      return (
                     <tr key={t.id} className="border-b hover:bg-muted/50 transition-colors">
                       <td className="py-3 px-4 font-mono text-xs">{t.rut}</td>
                       <td className="py-3 px-4">
@@ -272,6 +296,32 @@ export function TransportistasClientWrapper({
                           {t.nombre_fantasia && (
                             <p className="text-xs text-muted-foreground">{t.nombre_fantasia}</p>
                           )}
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <Badge
+                              variant="outline"
+                              className={
+                                completion.label === 'Completo'
+                                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                  : completion.label === 'Parcial'
+                                    ? 'border-amber-200 bg-amber-50 text-amber-700'
+                                    : 'border-rose-200 bg-rose-50 text-rose-700'
+                              }
+                            >
+                              Perfil {completion.percent}%
+                            </Badge>
+                            <Badge
+                              variant="outline"
+                              className={
+                                completion.label === 'Completo'
+                                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                  : completion.label === 'Parcial'
+                                    ? 'border-amber-200 bg-amber-50 text-amber-700'
+                                    : 'border-rose-200 bg-rose-50 text-rose-700'
+                              }
+                            >
+                              {completion.label}
+                            </Badge>
+                          </div>
                         </div>
                       </td>
                       <td className="py-3 px-4 text-sm">{t.representante_legal || '-'}</td>
@@ -315,7 +365,8 @@ export function TransportistasClientWrapper({
                         </Link>
                       </td>
                     </tr>
-                  ))}
+                      )
+                  })}
                 </tbody>
               </table>
             </div>

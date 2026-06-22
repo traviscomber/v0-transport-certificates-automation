@@ -61,6 +61,29 @@ export function SubcontractorDetailTabs({
     expiredDocuments: 0,
   })
 
+  const completion = (() => {
+    const checks = [
+      Boolean(subcontractor?.rut),
+      Boolean(subcontractor?.nombre || subcontractor?.razon_social),
+      Boolean(subcontractor?.representante_legal),
+      Boolean(subcontractor?.telefono || subcontractor?.email || subcontractor?.correo),
+      Boolean(subcontractor?.direccion || subcontractor?.comuna || subcontractor?.region),
+      Boolean(subcontractor?.ejecutivo_nombre),
+      Boolean(subcontractor?.ariztia || subcontractor?.lts || subcontractor?.rendic || subcontractor?.interpolar),
+    ]
+
+    const completed = checks.filter(Boolean).length
+    const total = checks.length
+    const percent = Math.round((completed / total) * 100)
+
+    return {
+      completed,
+      total,
+      percent,
+      label: percent >= 90 ? 'Completo' : percent >= 60 ? 'Parcial' : 'Pendiente',
+    }
+  })()
+
   // Group documents by month (YYYY-MM format) for easier navigation
   const groupDocumentsByMonth = (docs: any[]) => {
     const grouped: { [key: string]: any[] } = {}
@@ -166,10 +189,13 @@ export function SubcontractorDetailTabs({
 
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-slate-900 border-slate-700">
+        <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border-slate-800/80 bg-slate-950/95 shadow-2xl shadow-slate-950/20">
           {/* Header */}
-          <CardHeader className="flex flex-row items-start justify-between border-b border-slate-700 sticky top-0 bg-slate-900 z-10">
+          <CardHeader className="sticky top-0 z-10 flex flex-col gap-4 border-b border-white/5 bg-gradient-to-r from-slate-950/95 via-slate-950/90 to-slate-900/95 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2 flex-1">
+              <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-200">
+                Detalle ejecutivo
+              </div>
               <CardTitle className="text-2xl text-white">
                 {subcontractor.nombre}
               </CardTitle>
@@ -190,6 +216,30 @@ export function SubcontractorDetailTabs({
                     <Badge className="bg-red-500/20 text-red-300">Inactivo</Badge>
                   </>
                 )}
+                <Badge
+                  variant="outline"
+                  className={
+                    completion.label === 'Completo'
+                      ? 'border-emerald-200/40 bg-emerald-500/10 text-emerald-200'
+                      : completion.label === 'Parcial'
+                        ? 'border-amber-200/40 bg-amber-500/10 text-amber-200'
+                        : 'border-rose-200/40 bg-rose-500/10 text-rose-200'
+                  }
+                >
+                  Perfil {completion.percent}%
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className={
+                    completion.label === 'Completo'
+                      ? 'border-emerald-200/40 bg-emerald-500/10 text-emerald-200'
+                      : completion.label === 'Parcial'
+                        ? 'border-amber-200/40 bg-amber-500/10 text-amber-200'
+                        : 'border-rose-200/40 bg-rose-500/10 text-rose-200'
+                  }
+                >
+                  {completion.label}
+                </Badge>
               </div>
             </div>
             <button
@@ -202,20 +252,20 @@ export function SubcontractorDetailTabs({
 
           {/* Tabs */}
           <Tabs value={selectedTab} onValueChange={(value: any) => setSelectedTab(value)} className="flex-1 overflow-hidden flex flex-col">
-            <TabsList className="border-b border-slate-700 rounded-none bg-slate-800/50 w-full justify-start px-6 py-0 h-auto">
-              <TabsTrigger value="resumen" className="rounded-none">
+            <TabsList className="w-full justify-start gap-2 rounded-none border-b border-slate-700 bg-slate-900/70 px-6 py-2 h-auto">
+              <TabsTrigger value="resumen" className="rounded-xl px-4 py-2 data-[state=active]:bg-slate-800 data-[state=active]:text-white">
                 Resumen
               </TabsTrigger>
-              <TabsTrigger value="documentos" className="rounded-none">
+              <TabsTrigger value="documentos" className="rounded-xl px-4 py-2 data-[state=active]:bg-slate-800 data-[state=active]:text-white">
                 Documentos ({summary.totalDocumentsUploaded}/{summary.totalRequirements})
               </TabsTrigger>
-              <TabsTrigger value="certificaciones" className="rounded-none">
+              <TabsTrigger value="certificaciones" className="rounded-xl px-4 py-2 data-[state=active]:bg-slate-800 data-[state=active]:text-white">
                 Certificaciones
               </TabsTrigger>
-              <TabsTrigger value="conductores" className="rounded-none">
+              <TabsTrigger value="conductores" className="rounded-xl px-4 py-2 data-[state=active]:bg-slate-800 data-[state=active]:text-white">
                 Conductores ({conductores.length})
               </TabsTrigger>
-              <TabsTrigger value="onboarding" className="rounded-none">
+              <TabsTrigger value="onboarding" className="rounded-xl px-4 py-2 data-[state=active]:bg-slate-800 data-[state=active]:text-white">
                 Onboarding
               </TabsTrigger>
             </TabsList>
@@ -226,7 +276,7 @@ export function SubcontractorDetailTabs({
                 {/* RESUMEN TAB */}
                 <TabsContent value="resumen" className="space-y-6 mt-0">
                   {/* Company Info Grid */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                       <p className="text-xs text-slate-400 font-semibold mb-1">RUT</p>
                       <p className="font-mono text-amber-400 font-bold">{subcontractor.rut}</p>
@@ -244,6 +294,10 @@ export function SubcontractorDetailTabs({
                       <p className="text-white">{subcontractor.representante_legal || 'N/A'}</p>
                     </div>
                     <div>
+                      <p className="text-xs text-slate-400 font-semibold mb-1">COMPLETITUD</p>
+                      <p className="text-white">{completion.completed}/{completion.total}</p>
+                    </div>
+                    <div>
                       <p className="text-xs text-slate-400 font-semibold mb-1">EJECUTIVA ASIGNADA</p>
                       <p className="text-white">{subcontractor.ejecutivo_nombre || 'Sin asignar'}</p>
                     </div>
@@ -255,7 +309,7 @@ export function SubcontractorDetailTabs({
                       <Mail className="w-4 h-4 text-blue-400" />
                       Contacto Directo
                     </h3>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div>
                         <p className="text-xs text-slate-400 font-semibold mb-1">TELÉFONO</p>
                         {subcontractor.telefono ? (
@@ -286,24 +340,24 @@ export function SubcontractorDetailTabs({
                       <CheckSquare className="w-4 h-4 text-purple-400" />
                       Estado de Cumplimiento
                     </h3>
-                    <div className="grid grid-cols-5 gap-2">
-                      <div className="p-3 rounded bg-slate-800 text-center">
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+                      <div className="rounded-2xl border border-slate-700 bg-slate-900/80 p-3 text-center">
                         <p className="text-lg font-bold text-white">{summary.totalRequirements}</p>
                         <p className="text-xs text-slate-400">Requeridos</p>
                       </div>
-                      <div className="p-3 rounded bg-blue-900/20 border border-blue-800 text-center">
+                      <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-3 text-center">
                         <p className="text-lg font-bold text-blue-300">{summary.totalDocumentsUploaded}</p>
                         <p className="text-xs text-blue-400">Subidos</p>
                       </div>
-                      <div className="p-3 rounded bg-green-900/20 border border-green-800 text-center">
+                      <div className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-center">
                         <p className="text-lg font-bold text-green-300">{summary.approvedDocuments}</p>
                         <p className="text-xs text-green-400">Aprobados</p>
                       </div>
-                      <div className="p-3 rounded bg-yellow-900/20 border border-yellow-800 text-center">
+                      <div className="rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-3 text-center">
                         <p className="text-lg font-bold text-yellow-300">{summary.pendingDocuments}</p>
                         <p className="text-xs text-yellow-400">Pendientes</p>
                       </div>
-                      <div className="p-3 rounded bg-red-900/20 border border-red-800 text-center">
+                      <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-center">
                         <p className="text-lg font-bold text-red-300">{summary.expiredDocuments}</p>
                         <p className="text-xs text-red-400">Vencidos</p>
                       </div>
@@ -340,7 +394,7 @@ export function SubcontractorDetailTabs({
                     <div className="space-y-3">
                       {/* Summary Stats */}
                       {requirements.length > 0 && (
-                        <div className="grid grid-cols-2 gap-2 p-3 bg-slate-800/50 rounded border border-slate-700">
+                      <div className="grid grid-cols-1 gap-3 rounded-2xl border border-slate-700/70 bg-slate-950/70 p-3 shadow-inner shadow-slate-950/20 sm:grid-cols-2">
                           <div className="text-center">
                             <p className="text-2xl font-bold text-green-400">{summary.totalDocumentsUploaded}</p>
                             <p className="text-xs text-slate-400">Documentos Subidos</p>
@@ -383,7 +437,7 @@ export function SubcontractorDetailTabs({
                                         {/* Month Header */}
                                         <button
                                           onClick={() => toggleMonth(monthGroup.month)}
-                                          className="w-full px-4 py-3 bg-slate-800/50 hover:bg-slate-800 transition-colors flex items-center justify-between"
+                                          className="flex w-full items-center justify-between bg-slate-800/50 px-4 py-3 transition-colors hover:bg-slate-800"
                                         >
                                           <div className="flex items-center gap-3">
                                             <ChevronDown 
@@ -396,7 +450,7 @@ export function SubcontractorDetailTabs({
                                         
                                         {/* Month Content */}
                                         {isExpanded && (
-                                          <div className="px-4 py-3 bg-slate-900/30 border-t border-slate-700 space-y-3">
+                                          <div className="space-y-3 border-t border-slate-700 bg-slate-900/30 px-4 py-3">
                                             {monthGroup.docs.map((doc) => {
                                               const req = requirements.find(r => r.id === doc.document_type_id)
                                               if (!req) return null
@@ -408,7 +462,7 @@ export function SubcontractorDetailTabs({
                                               return (
                                                 <div
                                                   key={doc.id}
-                                                  className={`p-4 rounded border flex items-center justify-between transition-all hover:shadow-md ${statusColor}`}
+                                                  className={`flex items-center justify-between rounded-2xl border p-4 transition-all hover:shadow-md ${statusColor}`}
                                                 >
                                                   <div className="flex-1 flex items-start gap-3">
                                                     <div className="mt-1">
@@ -481,14 +535,14 @@ export function SubcontractorDetailTabs({
 
                 {/* CERTIFICACIONES TAB */}
                 <TabsContent value="certificaciones" className="space-y-4 mt-0">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {certifications.map((cert) => {
                       const hasCert = subcontractor[cert.key];
                       const certDoc = documents.find((d) => d.nombre?.includes(cert.name ?? ''));
                       
                       return (
                         <div key={cert.key} className="space-y-2">
-                          <div className={`p-4 rounded border-2 transition-all ${
+                          <div className={`rounded-2xl border-2 p-4 transition-all ${
                             hasCert
                               ? certDoc 
                                 ? 'bg-green-900/30 border-green-600'

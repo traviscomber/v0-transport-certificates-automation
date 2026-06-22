@@ -18,17 +18,52 @@ function generateConductorPassword(rut: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { rut, nombres, apellido_paterno, apellido_materno, rut_proveedor, clase_licencia, is_active } = await request.json()
+    const {
+      rut,
+      nombres,
+      apellido_paterno,
+      apellido_materno,
+      transportista_id,
+      rut_proveedor,
+      clase_licencia,
+      is_active,
+      fecha_nacimiento,
+      direccion,
+      comuna,
+      ciudad,
+      telefono,
+      email,
+      numero_licencia,
+      vencimiento_licencia,
+      es_pensionado,
+      numero_afp,
+      numero_isapre,
+      tipo_contratacion,
+      numero_pension,
+      institucion_pension,
+    } = await request.json()
 
     // Validate required fields
-    if (!rut || !nombres || !rut_proveedor) {
+    const supabase = createAdminClient()
+    const resolvedTransportistaId = transportista_id || null
+    let resolvedRutProveedor = rut_proveedor || null
+
+    if (!resolvedRutProveedor && resolvedTransportistaId) {
+      const { data: transportista } = await supabase
+        .from('transportistas')
+        .select('rut')
+        .eq('id', resolvedTransportistaId)
+        .single()
+
+      resolvedRutProveedor = transportista?.rut || null
+    }
+
+    if (!rut || !nombres || (!resolvedTransportistaId && !resolvedRutProveedor)) {
       return NextResponse.json(
-        { error: 'RUT, nombres, y rut_proveedor son requeridos' },
+        { error: 'RUT, nombres, y transportista_id o rut_proveedor son requeridos' },
         { status: 400 }
       )
     }
-
-    const supabase = createAdminClient()
 
     // Check if conductor already exists
     const { data: existingConductor } = await supabase
@@ -52,9 +87,24 @@ export async function POST(request: NextRequest) {
         nombres,
         apellido_paterno: apellido_paterno || '',
         apellido_materno: apellido_materno || '',
-        rut_proveedor,
+        transportista_id: resolvedTransportistaId,
+        rut_proveedor: resolvedRutProveedor,
         clase_licencia: clase_licencia || 'B',
         is_active: is_active !== false,
+        fecha_nacimiento: fecha_nacimiento || null,
+        direccion: direccion || null,
+        comuna: comuna || null,
+        ciudad: ciudad || null,
+        telefono: telefono || null,
+        email: email || null,
+        numero_licencia: numero_licencia || null,
+        vencimiento_licencia: vencimiento_licencia || null,
+        es_pensionado: es_pensionado ?? null,
+        numero_afp: numero_afp || null,
+        numero_isapre: numero_isapre || null,
+        tipo_contratacion: tipo_contratacion || null,
+        numero_pension: numero_pension || null,
+        institucion_pension: institucion_pension || null,
         created_at: new Date().toISOString(),
       })
       .select()

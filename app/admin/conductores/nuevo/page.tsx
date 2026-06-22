@@ -18,6 +18,21 @@ export default function NuevoConductorPage() {
   const [transportistas, setTransportistas] = useState<any[]>([])
   const [step, setStep] = useState<'pensionado' | 'form'>('pensionado')
   const [isPensionado, setIsPensionado] = useState<boolean | null>(null)
+  const previsionalLabel = isPensionado ? 'Pensionado' : 'No pensionado'
+  const previsionalSummary = isPensionado
+    ? 'Se registran institucion de pension y numero de pension. No se solicitan AFP ni ISAPRE/Fonasa.'
+    : 'Se registran AFP e ISAPRE/Fonasa. No se solicitan datos de pension.'
+  const previsionalChecklist = isPensionado
+    ? [
+        'Guardar institucion de pension',
+        'Guardar numero de pension',
+        'Definir tipo de contratacion',
+      ]
+    : [
+        'Guardar numero de AFP',
+        'Guardar numero de ISAPRE/Fonasa',
+        'Definir tipo de contratacion',
+      ]
 
   useEffect(() => {
     async function loadTransportistas() {
@@ -42,8 +57,43 @@ export default function NuevoConductorPage() {
     setError(null)
 
     const formData = new FormData(e.currentTarget)
+    const transportistaId = formData.get("transportista_id") as string
+    const selectedTransportista = transportistas.find((t) => t.id === transportistaId)
+    const tipoContratacion = formData.get("tipo_contratacion") as string || null
+
+    if (isPensionado === null) {
+      setError("Debes seleccionar si el conductor es pensionado o no pensionado.")
+      setLoading(false)
+      return
+    }
+
+    if (!tipoContratacion) {
+      setError("Debes seleccionar el tipo de contratacion.")
+      setLoading(false)
+      return
+    }
+
+    if (isPensionado) {
+      const institucionPension = formData.get("institucion_pension") as string || null
+      const numeroPension = formData.get("numero_pension") as string || null
+      if (!institucionPension || !numeroPension) {
+        setError("Completa institucion de pension y numero de pension para continuar.")
+        setLoading(false)
+        return
+      }
+    } else {
+      const numeroAfp = formData.get("numero_afp") as string || null
+      const numeroIsapre = formData.get("numero_isapre") as string || null
+      if (!numeroAfp || !numeroIsapre) {
+        setError("Completa numero de AFP y numero de ISAPRE/Fonasa para continuar.")
+        setLoading(false)
+        return
+      }
+    }
+
     const data = {
-      transportista_id: formData.get("transportista_id") as string,
+      transportista_id: transportistaId,
+      rut_proveedor: selectedTransportista?.rut || null,
       rut: formData.get("rut") as string,
       nombres: formData.get("nombres") as string,
       apellido_paterno: formData.get("apellido_paterno") as string,
@@ -60,7 +110,7 @@ export default function NuevoConductorPage() {
       es_pensionado: isPensionado,
       numero_afp: isPensionado ? null : (formData.get("numero_afp") as string || null),
       numero_isapre: isPensionado ? null : (formData.get("numero_isapre") as string || null),
-      tipo_contratacion: formData.get("tipo_contratacion") as string || null,
+      tipo_contratacion: tipoContratacion,
       numero_pension: isPensionado ? (formData.get("numero_pension") as string || null) : null,
       institucion_pension: isPensionado ? (formData.get("institucion_pension") as string || null) : null,
     }
@@ -203,6 +253,29 @@ export default function NuevoConductorPage() {
           }
         ]}
       />
+
+      <Card className="border-slate-200 bg-slate-50/70">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Situacion previsional confirmada</CardTitle>
+          <CardDescription>
+            Esta clasificacion define que datos se piden y como queda guardado el registro para cumplimiento en Chile.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">{previsionalLabel}</p>
+            <p className="text-sm text-muted-foreground">{previsionalSummary}</p>
+          </div>
+          <ul className="space-y-2 text-sm text-muted-foreground">
+            {previsionalChecklist.map((item) => (
+              <li key={item} className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
 
       <form onSubmit={handleSubmit}>
         <div className="grid gap-6 md:grid-cols-2">
@@ -360,11 +433,12 @@ export default function NuevoConductorPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="tipo_contratacion">Tipo de Contratación</Label>
-                    <select 
-                      id="tipo_contratacion" 
-                      name="tipo_contratacion"
-                      className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                    >
+                  <select
+                    id="tipo_contratacion"
+                    name="tipo_contratacion"
+                    required
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  >
                       <option value="">Seleccionar...</option>
                       <option value="honorarios">Honorarios</option>
                       <option value="plazo_fijo">Plazo Fijo</option>
@@ -394,11 +468,12 @@ export default function NuevoConductorPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="tipo_contratacion">Tipo de Contratación</Label>
-                    <select 
-                      id="tipo_contratacion" 
-                      name="tipo_contratacion"
-                      className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                    >
+                  <select
+                    id="tipo_contratacion"
+                    name="tipo_contratacion"
+                    required
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  >
                       <option value="">Seleccionar...</option>
                       <option value="honorarios">Honorarios</option>
                       <option value="plazo_fijo">Plazo Fijo</option>
