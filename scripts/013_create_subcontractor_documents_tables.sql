@@ -51,9 +51,8 @@ CREATE INDEX IF NOT EXISTS idx_subcontractor_document_alerts_is_read ON subcontr
 -- Insert default document types for subcontractors
 INSERT INTO subcontractor_document_types (code, nombre, descripcion, periodicidad, es_obligatorio)
 VALUES
-  ('AFP', 'Aporte Fondo de Pensiones', 'Comprobante de afiliación a AFP', 'Mensual', true),
-  ('SALUD', 'Sistema de Salud', 'Comprobante de afiliación a sistema de salud', 'Mensual', true),
-  ('MUTUAL', 'Mutual', 'Certificado de afiliación a mutual', 'Anual', true),
+  ('PLANILLAS_IMPOSICIONES', 'Planillas de Imposiciones', 'Planillas mensuales de imposiciones de los trabajadores', 'Mensual', true),
+  ('PENSION', 'Pensión', 'Comprobantes de pensión y/o jubilación', 'Mensual', true),
   ('F23', 'Formulario F-23', 'Declaración de retenciones de impuestos', 'Mensual', true),
   ('F30', 'Declaración de Ventas', 'Declaración mensual de ventas y servicios', 'Mensual', true),
   ('LICENCIA', 'Licencia de Conducir', 'Fotocopia licencia de conducir vigente', 'Anual', true),

@@ -50,10 +50,8 @@ CREATE INDEX idx_subcontractor_document_alerts_is_read ON subcontractor_document
 
 -- Insert document types (from the provided table)
 INSERT INTO subcontractor_document_types (code, nombre, descripcion, periodicidad, es_obligatorio) VALUES
-  ('AFP', 'Planilla de AFP', 'Planilla mensual de AFP de los trabajadores', 'Mensual', true),
-  ('SALUD', 'Planilla de SALUD', 'Planilla mensual de SALUD de los trabajadores', 'Mensual', true),
-  ('MUTUAL', 'Planilla de MUTUAL', 'Planilla mensual de MUTUAL de los trabajadores', 'Mensual', true),
-  ('SEGURO_SOCIAL', 'Planilla de SEGURO SOCIAL', 'Planilla mensual de Seguro Social', 'Mensual', true),
+  ('PLANILLAS_IMPOSICIONES', 'Planillas de Imposiciones', 'Planillas mensuales de imposiciones de los trabajadores', 'Mensual', true),
+  ('PENSION', 'Pensión', 'Comprobantes de pensión y/o jubilación', 'Mensual', true),
   ('CERT_COTIZACIONES', 'Certificado de cotizaciones individual', 'Certificado de cotizaciones por trabajador', 'Mensual', true),
   ('F23', 'Formulario F23', 'Formulario de declaración de impuestos F23', 'Mensual', true),
   ('F30', 'Formulario F30', 'Formulario F30 sin multas', 'Mensual', true),
