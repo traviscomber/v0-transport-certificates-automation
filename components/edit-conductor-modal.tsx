@@ -17,6 +17,7 @@ interface Driver {
   clase_licencia?: string
   is_active?: boolean
   nombre_subcontratista?: string
+  es_pensionado?: boolean
 }
 
 interface EditConductorModalProps {
@@ -47,7 +48,8 @@ export function EditConductorModal({
     apellido_materno: '',
     rut_proveedor: '',
     clase_licencia: 'B',
-    is_active: true
+    is_active: true,
+    es_pensionado: false
   })
   
   const supabaseClient = createClient(
@@ -89,7 +91,8 @@ export function EditConductorModal({
         apellido_materno: driver.apellido_materno || '',
         rut_proveedor: driver.rut_proveedor || '',
         clase_licencia: driver.clase_licencia || 'B',
-        is_active: driver.is_active !== false
+        is_active: driver.is_active !== false,
+        es_pensionado: driver.es_pensionado || false
       })
       setError('')
     }
@@ -315,6 +318,36 @@ export function EditConductorModal({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <Label className="text-sm font-semibold">Situación Previsional</Label>
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, es_pensionado: true})}
+                    className={`p-3 rounded-lg border-2 transition-all font-semibold ${
+                      formData.es_pensionado === true
+                        ? 'border-purple-600 bg-purple-600 text-white'
+                        : 'border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <div className="text-sm">Pensionado</div>
+                    <div className="text-xs opacity-90">Jubilado</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, es_pensionado: false})}
+                    className={`p-3 rounded-lg border-2 transition-all font-semibold ${
+                      formData.es_pensionado === false
+                        ? 'border-orange-600 bg-orange-600 text-white'
+                        : 'border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <div className="text-sm">No Pensionado</div>
+                    <div className="text-xs opacity-90">Activo</div>
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
