@@ -94,9 +94,10 @@ export default function EditarConductorPage() {
       return
     }
 
+    // @ts-ignore
     const { error: updateError } = await supabase
       .from("conductores")
-      .update(data as any)
+      .update(data)
       .eq("id", conductorId)
 
     if (updateError) {
