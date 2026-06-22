@@ -297,6 +297,45 @@ export default function EditarConductorPage() {
             </CardContent>
           </Card>
 
+          <Card>
+            <CardHeader>
+              <CardTitle>Situación Previsional</CardTitle>
+              <CardDescription>Selecciona si el conductor es pensionado o está activo</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Estado Previsional *</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsPensionado(true)}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      isPensionado === true
+                        ? 'border-purple-500 bg-purple-50 text-purple-900'
+                        : 'border-gray-200 bg-background hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="font-semibold">Pensionado</div>
+                    <div className="text-sm opacity-75">Jubilado/Pensión</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsPensionado(false)}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      isPensionado === false
+                        ? 'border-orange-500 bg-orange-50 text-orange-900'
+                        : 'border-gray-200 bg-background hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="font-semibold">No Pensionado</div>
+                    <div className="text-sm opacity-75">Activo/Trabajando</div>
+                  </button>
+                </div>
+                <input type="hidden" name="es_pensionado" value={isPensionado === true ? 'true' : 'false'} />
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="md:col-span-2">
             <CardHeader>
               <CardTitle>
