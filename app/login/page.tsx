@@ -13,8 +13,6 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      console.log('[v0] Login attempt:', email)
-      
       const response = await fetch('/api/login-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -22,10 +20,7 @@ export default function LoginPage() {
         credentials: 'include',
       })
 
-      console.log('[v0] Response status:', response.status)
-
       const data = await response.json()
-      console.log('[v0] Response data:', data)
 
       if (!response.ok || !data.success) {
         setError(data.error || 'Error al iniciar sesión')
@@ -42,24 +37,19 @@ export default function LoginPage() {
       document.cookie = `user_role=${encodeURIComponent(data.user.role)}; path=/; expires=${expiryDate.toUTCString()}`
       document.cookie = `user_organization_id=${encodeURIComponent(data.user.organization_id || '')}; path=/; expires=${expiryDate.toUTCString()}`
 
-      console.log('[v0] Cookies set via document.cookie:', {
-        user_email: document.cookie.includes('user_email'),
-        user_name: document.cookie.includes('user_name'),
-        user_role: document.cookie.includes('user_role'),
-        user_organization_id: document.cookie.includes('user_organization_id'),
-        organization_id_value: data.user.organization_id,
-      })
-
-      // Redirect based on role - ALL users including ejecutivas go to /dashboard/company
+      // Redirect based on role
       setTimeout(() => {
         const userRole = data.user.role
-        console.log('[v0] Redirecting, role:', userRole)
         
-        // All users go to /dashboard/company (Labbe company portal)
-        window.location.href = '/dashboard/company'
+        // Prevencionistas go to their dashboard
+        if (userRole === 'prevencionista') {
+          window.location.href = '/prevencionista/dashboard'
+        } else {
+          // All other users go to /dashboard/company (Labbe company portal)
+          window.location.href = '/dashboard/company'
+        }
       }, 300)
     } catch (err) {
-      console.error('[v0] Login error:', err)
       setError('Error al conectar con el servidor')
       setLoading(false)
     }
