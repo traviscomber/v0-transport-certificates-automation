@@ -117,7 +117,14 @@ export default function PrevencionistaDashboard() {
   }
 
   const handlePreview = (doc: ApprovedDocument) => {
-    window.open(doc.file_url, '_blank')
+    // Navigate directly to file URL (opens in new tab)
+    const link = document.createElement('a')
+    link.href = doc.file_url
+    link.target = '_blank'
+    link.rel = 'noopener noreferrer'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   return (
