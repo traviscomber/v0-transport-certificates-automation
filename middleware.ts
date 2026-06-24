@@ -66,6 +66,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Protect prevencionista routes - require authentication
+  if (path.startsWith('/prevencionista')) {
+    const userEmail = request.cookies.get('user_email')?.value
+    
+    if (!userEmail) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    
+    // /prevencionista (exact) redirects to /prevencionista/dashboard
+    if (path === '/prevencionista' || path === '/prevencionista/') {
+      return NextResponse.redirect(new URL('/prevencionista/dashboard', request.url))
+    }
+    
+    return NextResponse.next()
+  }
+
   // Protect dashboard routes - require authentication
   if (path.startsWith('/dashboard')) {
     const userEmail = request.cookies.get('user_email')?.value
