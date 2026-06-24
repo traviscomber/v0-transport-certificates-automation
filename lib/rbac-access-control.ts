@@ -1,4 +1,4 @@
-export type UserRole = 'administrador' | 'despachador' | 'mandante' | 'transportista' | 'conductor'
+export type UserRole = 'administrador' | 'despachador' | 'mandante' | 'transportista' | 'conductor' | 'prevencionista'
 
 export interface Permission {
   resource: string
@@ -121,6 +121,13 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
       { resource: 'documentos', action: 'write' }, // Puede subir sus documentos
     ],
   },
+
+  prevencionista: {
+    // Prevencionista solo lectura a documentos aprobados
+    documentos: [
+      { resource: 'documentos', action: 'read' }, // Solo lectura de documentos aprobados
+    ],
+  },
 }
 
 export function hasPermission(userRole: UserRole, resource: string, action: 'read' | 'write' | 'delete' | 'manage'): boolean {
@@ -175,6 +182,11 @@ export function getNavigationItems(userRole: UserRole) {
       { href: '/conductor/documentos', label: 'Mis Documentos', icon: 'FileText' },
       { href: '/conductor/alertas', label: 'Alertas', icon: 'AlertCircle' },
     )
+  } else if (userRole === 'prevencionista') {
+    navItems.push(
+      { href: '/prevencionista/dashboard', label: 'Mi Dashboard', icon: 'LayoutDashboard' },
+      { href: '/prevencionista/documentos', label: 'Documentos Aprobados', icon: 'FileText' },
+    )
   }
 
   return navItems
@@ -196,7 +208,9 @@ export function canAccessRoute(userRole: UserRole, route: string): boolean {
     '/transportista/': ['transportista'],
     '/conductor': ['conductor'],
     '/conductor/': ['conductor'],
-    '/dashboard': ['administrador', 'despachador', 'mandante', 'transportista', 'conductor'],
+    '/prevencionista': ['prevencionista'],
+    '/prevencionista/': ['prevencionista'],
+    '/dashboard': ['administrador', 'despachador', 'mandante', 'transportista', 'conductor', 'prevencionista'],
   }
 
   // Verificar acceso a ruta
@@ -221,6 +235,7 @@ export function getUserRoleDisplay(role: UserRole): string {
     mandante: 'Mandante',
     transportista: 'Transportista',
     conductor: 'Conductor',
+    prevencionista: 'Prevencionista',
   }
   return displayNames[role]
 }
