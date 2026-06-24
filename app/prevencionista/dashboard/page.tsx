@@ -3,9 +3,19 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { FileText, CheckCircle, Users } from 'lucide-react'
+import { FileText, CheckCircle, Users, Download, Eye } from 'lucide-react'
+
+interface ApprovedDocument {
+  id: string
+  file_name: string
+  document_type_id: string
+  created_at: string
+  file_url: string
+  subcontractor_id: string
+  type_code: string
+}
 
 interface DocumentStats {
   totalApproved: number
@@ -15,48 +25,100 @@ interface DocumentStats {
 
 export default function PrevencionistaDashboard() {
   const [stats, setStats] = useState<DocumentStats | null>(null)
+  const [documents, setDocuments] = useState<ApprovedDocument[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
   useEffect(() => {
-    async function loadStats() {
+    async function loadData() {
       try {
-        // Get total approved documents
-        const { count: approvedCount } = await supabase
-          .from('subcontractor_documents')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'approved')
+        // Get document types
+        const { data: types } = await supabase
+          .from('subcontractor_document_types')
+          .select('id, code')
+          .eq('is_active', true)
+          .order('code')
 
-        // Get total subcontractors with approved documents
+        // Get ALL approved documents using pagination
+        const allDocs: ApprovedDocument[] = []
+        let offset = 0
+        const batchSize = 1000
+        let hasMore = true
+
+        while (hasMore) {
+          const { data: batch } = await supabase
+            .from('subcontractor_documents')
+            .select('id, file_name, document_type_id, created_at, file_url, subcontractor_id')
+            .eq('status', 'approved')
+            .order('created_at', { ascending: false })
+            .range(offset, offset + batchSize - 1)
+
+          if (!batch || batch.length === 0) {
+            hasMore = false
+          } else {
+            allDocs.push(...batch)
+            offset += batchSize
+          }
+        }
+
+        // Map document type codes
+        const typesMap = new Map((types as any[])?.map((t: any) => [t.id, t.code]) || [])
+        const mappedDocs = allDocs.map((d: any) => ({
+          ...d,
+          type_code: typesMap.get(d.document_type_id) || 'UNKNOWN'
+        }))
+
+        // Get stats
         const { data: subcontractors } = await supabase
           .from('subcontractor_documents')
-          .select('subcontractor_id', { count: 'exact' })
+          .select('subcontractor_id')
           .eq('status', 'approved')
 
         const uniqueSubcontractors = new Set(
           (subcontractors as any[])?.map((d: any) => d.subcontractor_id)
         ).size
 
-        // Get document types with approved docs
-        const { data: docTypes } = await supabase
-          .from('subcontractor_document_types')
-          .select('id')
-          .eq('is_active', true)
-
+        setDocuments(mappedDocs.slice(0, 10)) // Show first 10 on dashboard
         setStats({
-          totalApproved: approvedCount || 0,
+          totalApproved: allDocs.length,
           totalSubcontractors: uniqueSubcontractors,
-          documentTypes: docTypes?.length || 0,
+          documentTypes: types?.length || 0,
         })
       } catch (error) {
-        console.error('Error loading stats:', error)
+        console.error('Error loading data:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    loadStats()
+    loadData()
   }, [supabase])
+
+  const handleDownload = async (doc: ApprovedDocument) => {
+    try {
+      const response = await fetch(doc.file_url)
+      if (!response.ok) {
+        throw new Error('Error downloading file')
+      }
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = doc.file_name
+      document.body.appendChild(a)
+      a.click()
+      URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('Error downloading document:', error)
+      alert('Error al descargar el documento')
+    }
+  }
+
+  const handlePreview = (doc: ApprovedDocument) => {
+    window.open(doc.file_url, '_blank')
+  }
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -125,56 +187,82 @@ export default function PrevencionistaDashboard() {
           </Card>
         </div>
 
-        {/* Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Link href="/prevencionista/documentos">
-            <Card className="bg-slate-900 border-slate-700 hover:bg-slate-800 cursor-pointer transition">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-teal-500" />
-                  Ver Documentos Aprobados
-                </CardTitle>
-                <CardDescription>
-                  Acceso de solo lectura y descarga
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-slate-400">
-                  Revisa todos los documentos aprobados con filtros por subcontratista y tipo
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Card className="bg-slate-900 border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-lg">Permisos</CardTitle>
-              <CardDescription>
-                Tu rol de prevencionista
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2 text-green-400">
-                  <CheckCircle className="w-4 h-4" />
-                  Ver documentos aprobados
-                </li>
-                <li className="flex items-center gap-2 text-green-400">
-                  <CheckCircle className="w-4 h-4" />
-                  Descargar documentos
-                </li>
-                <li className="flex items-center gap-2 text-red-400">
-                  <span className="w-4 h-4">✗</span>
-                  Crear o editar documentos
-                </li>
-                <li className="flex items-center gap-2 text-red-400">
-                  <span className="w-4 h-4">✗</span>
-                  Aprobar o rechazar documentos
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Recent Documents */}
+        <Card className="bg-slate-900 border-slate-700">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Documentos Recientes</CardTitle>
+                <CardDescription>Últimos 10 documentos aprobados</CardDescription>
+              </div>
+              <Link href="/prevencionista/documentos">
+                <Button variant="outline" size="sm" className="text-teal-400 border-teal-400/50 hover:bg-teal-500/10">
+                  Ver todos
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="text-center py-8 text-slate-400">
+                Cargando documentos...
+              </div>
+            ) : documents.length === 0 ? (
+              <div className="text-center py-8 text-slate-400">
+                No hay documentos aprobados
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-700">
+                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Nombre</th>
+                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Tipo</th>
+                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Fecha</th>
+                      <th className="text-right py-3 px-4 text-slate-400 font-medium">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {documents.map(doc => (
+                      <tr key={doc.id} className="border-b border-slate-800 hover:bg-slate-800/50">
+                        <td className="py-3 px-4 text-slate-100 flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-slate-500" />
+                          <span className="truncate">{doc.file_name}</span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-300 text-xs">
+                          {doc.type_code}
+                        </td>
+                        <td className="py-3 px-4 text-slate-400 text-xs">
+                          {new Date(doc.created_at).toLocaleDateString('es-CL')}
+                        </td>
+                        <td className="py-3 px-4 text-right flex gap-2 justify-end">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handlePreview(doc)}
+                            className="text-blue-400 hover:bg-blue-500/20"
+                            title="Ver documento"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDownload(doc)}
+                            className="text-teal-400 hover:bg-teal-500/20"
+                            title="Descargar documento"
+                          >
+                            <Download className="w-4 h-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
