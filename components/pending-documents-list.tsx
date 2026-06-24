@@ -62,6 +62,8 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [showAnalysisModal, setShowAnalysisModal] = useState(false)
   const [analysisResult, setAnalysisResult] = useState<any>(null)
+  const [analysisDocId, setAnalysisDocId] = useState<string | null>(null)
+  const [analysisDocType, setAnalysisDocType] = useState<'conductor' | 'subcontractor'>('conductor')
   const [filters, setFilters] = useState<DocumentFilters>({
     searchQuery: '',
     month: ALL_VALUE,
@@ -173,11 +175,9 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
     )
   }, [allDocs, filters])
 
-  const handleAnalyzeDocument = async (docId: string) => {
+  const handleAnalyzeDocument = async (docId: string, type: 'conductor' | 'subcontractor') => {
     setAnalyzing(docId)
     try {
-      console.log('[v0] Analyzing document with OCR/IA:', docId)
-      
       const response = await fetch(`/api/company/documents/${docId}/reprocess`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -190,13 +190,12 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
       }
 
       const result = await response.json()
-      console.log('[v0] Document analysis complete:', result)
 
-      // Show analysis results in modal
       setAnalysisResult(result)
+      setAnalysisDocId(docId)
+      setAnalysisDocType(type)
       setShowAnalysisModal(true)
     } catch (error) {
-      console.error('[v0] Analysis error:', error)
       const msg = document.createElement('div')
       msg.className = 'fixed bottom-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100]'
       msg.textContent = 'Error al analizar: ' + (error as Error).message
@@ -210,33 +209,26 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
   const handleProvideFeedback = async (correctedType?: string, correctedDate?: string) => {
     if (!analysisResult) return
     
-    try {
-      const response = await fetch('/api/company/ai-training/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          documentId: analysisResult.documentId,
-          documentTable: analysisResult.documentTable,
-          aiDetectedType: analysisResult.analysis.documentType,
-          actualDocumentType: correctedType || analysisResult.analysis.documentType,
-          aiExpirationDate: analysisResult.analysis.expirationDate,
-          actualExpirationDate: correctedDate || analysisResult.analysis.expirationDate,
-          isAccurate: !correctedType && !correctedDate,
-          confidenceScore: analysisResult.analysis.confidence,
-        })
+    // Save AI feedback (fire and forget - non-blocking)
+    fetch('/api/company/ai-training/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        documentId: analysisResult.documentId,
+        documentTable: analysisResult.documentTable,
+        aiDetectedType: analysisResult.analysis.documentType,
+        actualDocumentType: correctedType || analysisResult.analysis.documentType,
+        aiExpirationDate: analysisResult.analysis.expirationDate,
+        actualExpirationDate: correctedDate || analysisResult.analysis.expirationDate,
+        isAccurate: !correctedType && !correctedDate,
+        confidenceScore: analysisResult.analysis.confidence,
       })
+    }).catch(() => {}) // ignore feedback errors
 
-      if (response.ok) {
-        const msg = document.createElement('div')
-        msg.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100]'
-        msg.textContent = 'Feedback guardado - ayudando a entrenar el modelo'
-        document.body.appendChild(msg)
-        setTimeout(() => msg.remove(), 3000)
-        
-        setShowAnalysisModal(false)
-      }
-    } catch (error) {
-      console.error('[v0] Feedback error:', error)
+    // Always approve the document after feedback
+    setShowAnalysisModal(false)
+    if (analysisDocId) {
+      handleStatusChange(analysisDocId, 'aprobado', analysisDocType)
     }
   }
 
@@ -406,9 +398,9 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                           <Eye className="h-4 w-4" />
                         </Button>
                       )}
-                      <Button variant="outline" size="sm" onClick={() => handleAnalyzeDocument(doc.id)} disabled={analyzing === doc.id} className="text-xs gap-1 border-blue-400/50 text-blue-300 hover:bg-blue-500/20" title="Analizar con IA (OCR)">
-                        {analyzing === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                        Analizar
+                      <Button variant="outline" size="sm" onClick={() => handleAnalyzeDocument(doc.id, 'conductor')} disabled={analyzing === doc.id} className="text-xs gap-1 border-blue-400 text-blue-300 bg-blue-500/10 hover:bg-blue-500/30 ring-1 ring-blue-400/30" title="Recomendado: Analizar con IA antes de aprobar">
+                        {analyzing === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3 text-blue-400" />}
+                        Analizar con IA
                       </Button>
                       <Button variant="outline" size="sm" onClick={() => handleApprove(doc.id, 'conductor')} disabled={loading === doc.id} className="text-xs gap-1 border-green-500/50 text-green-400 hover:bg-green-500/20">
                         {loading === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
@@ -488,9 +480,9 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                           <Eye className="h-4 w-4" />
                         </Button>
                       )}
-                      <Button variant="outline" size="sm" onClick={() => handleAnalyzeDocument(doc.id)} disabled={analyzing === doc.id} className="text-xs gap-1 border-blue-400/50 text-blue-300 hover:bg-blue-500/20" title="Analizar con IA (OCR)">
-                        {analyzing === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                        Analizar
+                      <Button variant="outline" size="sm" onClick={() => handleAnalyzeDocument(doc.id, 'subcontractor')} disabled={analyzing === doc.id} className="text-xs gap-1 border-blue-400 text-blue-300 bg-blue-500/10 hover:bg-blue-500/30 ring-1 ring-blue-400/30" title="Recomendado: Analizar con IA antes de aprobar">
+                        {analyzing === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3 text-blue-400" />}
+                        Analizar con IA
                       </Button>
                       <Button variant="outline" size="sm" onClick={() => handleApprove(doc.id, 'subcontractor')} disabled={loading === doc.id} className="text-xs gap-1 border-green-500/50 text-green-400 hover:bg-green-500/20">
                         {loading === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
@@ -684,22 +676,16 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                 </div>
               )}
 
-              {/* Feedback Section */}
+              {/* Feedback Section - optional, trains AI model */}
               <div className="border-t border-slate-700 pt-3">
-                <p className="text-xs text-slate-400 mb-2">¿Es correcto el análisis?</p>
+                <p className="text-xs text-slate-400 mb-2">
+                  Feedback opcional — ayuda a entrenar el modelo
+                </p>
                 <div className="flex gap-2">
-                  <Button 
+                  <Button
                     size="sm"
                     variant="outline"
-                    className="flex-1 border-green-600/50 text-green-400 hover:bg-green-900/20"
-                    onClick={() => handleProvideFeedback()}
-                  >
-                    ✓ Correcto
-                  </Button>
-                  <Button 
-                    size="sm"
-                    variant="outline"
-                    className="flex-1 border-red-600/50 text-red-400 hover:bg-red-900/20"
+                    className="flex-1 border-slate-600 text-slate-400 hover:bg-slate-700/40 text-xs"
                     onClick={() => {
                       const correctedType = window.prompt(
                         'Ingrese el tipo de documento correcto:',
@@ -714,25 +700,26 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                       }
                     }}
                   >
-                    ✕ Corregir
+                    Corregir tipo / fecha
                   </Button>
                 </div>
-                <p className="text-xs text-slate-500 mt-2 text-center">Tu feedback entrena al modelo</p>
               </div>
 
+              {/* Action buttons */}
               <div className="flex justify-end pt-2 gap-2">
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   onClick={() => setShowAnalysisModal(false)}
                   className="text-slate-400"
                 >
-                  Cerrar
+                  Cancelar
                 </Button>
-                <Button 
+                <Button
                   onClick={() => handleProvideFeedback()}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-green-600 hover:bg-green-700 gap-1"
                 >
-                  Guardar & Continuar
+                  <Check className="h-4 w-4" />
+                  Aprobar Documento
                 </Button>
               </div>
             </div>

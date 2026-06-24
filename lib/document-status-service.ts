@@ -138,9 +138,10 @@ export async function changeDocumentStatus(
     }
 
     // STEP 3: Prepare update payload
+    // Note: subcontractor_documents does not have updated_at column
     const updatePayload: any = {
-      [statusColumn]: newStatus,  // Use dynamic column name based on table
-      updated_at: new Date().toISOString(),
+      [statusColumn]: newStatus,
+      ...(tableName === 'uploaded_documents' ? { updated_at: new Date().toISOString() } : {}),
     }
 
     // Store rejection reason if rejecting (both table schemas should support this)
