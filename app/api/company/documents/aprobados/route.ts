@@ -196,12 +196,15 @@ export async function GET() {
       }
     }
 
-    // Fetch document types for subcontractors (subcontractor_document_types uses 'nombre')
+    // Fetch document types for subcontractors
     const { data: docTypes } = await supabase
       .from("subcontractor_document_types")
       .select("id, code, nombre")
 
-    const docTypeMap = new Map(docTypes?.map(dt => [dt.id, { code: dt.code, nombre: dt.nombre }]) || [])
+    // Filter out deprecated types
+    const deprecatedCodes = ['AFP', 'SALUD', 'MUTUAL', 'SEGURO_SOCIAL']
+    const activeDocTypes = docTypes?.filter(dt => !deprecatedCodes.includes(dt.code)) || []
+    const docTypeMap = new Map(activeDocTypes.map(dt => [dt.id, { code: dt.code, nombre: dt.nombre }]) || [])
 
     // Fetch document types for conductors (document_types uses 'name')
     const { data: conductorDocTypes } = await supabase

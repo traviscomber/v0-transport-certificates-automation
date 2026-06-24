@@ -18,9 +18,15 @@ export async function GET() {
       )
     }
 
+    // Filter out deprecated types that have been replaced
+    // AFP → PLANILLAS_IMPOSICIONES, SALUD → CERT_AFIL_MUTUAL, 
+    // MUTUAL → CERT_TASAS_MUTUAL, SEGURO_SOCIAL → PLANILLAS_IMPOSICIONES
+    const deprecatedCodes = ['AFP', 'SALUD', 'MUTUAL', 'SEGURO_SOCIAL']
+    const activeTypes = documentTypes?.filter(dt => !deprecatedCodes.includes(dt.code)) || []
+
     return NextResponse.json({
       success: true,
-      documentTypes: documentTypes || [],
+      documentTypes: activeTypes,
     })
 
   } catch (error) {
