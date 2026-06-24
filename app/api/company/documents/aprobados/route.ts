@@ -196,10 +196,12 @@ export async function GET() {
       }
     }
 
-    // Fetch document types for subcontractors (subcontractor_document_types uses 'nombre')
+    // Fetch document types for subcontractors (excluding inactive)
+    const inactiveTypes = ['AFP', 'SALUD', 'MUTUAL', 'SEGURO_SOCIAL']
     const { data: docTypes } = await supabase
       .from("subcontractor_document_types")
       .select("id, code, nombre")
+      .notIn('code', inactiveTypes)
 
     const docTypeMap = new Map(docTypes?.map(dt => [dt.id, { code: dt.code, nombre: dt.nombre }]) || [])
 

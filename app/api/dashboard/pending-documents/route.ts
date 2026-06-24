@@ -75,10 +75,12 @@ export async function GET() {
     const subDocsRaw = allSubDocs
     console.log('[v0] Pending: Sub docs count (total):', subDocsRaw?.length || 0, '(fetched in', page, 'pages)')
 
-    // Fetch document types
+    // Fetch document types (excluding inactive ones)
+    const inactiveTypes = ['AFP', 'SALUD', 'MUTUAL', 'SEGURO_SOCIAL']
     const { data: docTypes } = await supabase
       .from("subcontractor_document_types")
       .select("id, code, nombre")
+      .notIn('code', inactiveTypes)
 
     const docTypeMap = new Map(docTypes?.map(dt => [dt.id, { code: dt.code, nombre: dt.nombre }]) || [])
 
