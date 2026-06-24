@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Shield, Users, Building2, Truck, User } from "lucide-react"
+import { Shield, Users, Building2, Truck, User, CheckCircle } from "lucide-react"
 import { UserRole, ROLE_PERMISSIONS, getUserRoleDisplay, getPermissionSummary } from "@/lib/rbac-access-control"
 
 interface RoleManagementProps {
@@ -17,6 +17,7 @@ const ROLE_ICONS: Record<UserRole, React.ReactNode> = {
   mandante: <Building2 className="w-5 h-5 text-blue-600" />,
   transportista: <Truck className="w-5 h-5 text-green-600" />,
   conductor: <User className="w-5 h-5 text-purple-600" />,
+  prevencionista: <CheckCircle className="w-5 h-5 text-teal-600" />,
 }
 
 const ROLE_COLORS: Record<UserRole, string> = {
@@ -25,6 +26,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
   mandante: 'bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-500/30',
   transportista: 'bg-gradient-to-br from-green-500/20 to-green-600/10 border-green-500/30',
   conductor: 'bg-gradient-to-br from-purple-500/20 to-purple-600/10 border-purple-500/30',
+  prevencionista: 'bg-gradient-to-br from-teal-500/20 to-teal-600/10 border-teal-500/30',
 }
 
 const ROLE_BADGE_COLORS: Record<UserRole, string> = {
@@ -33,10 +35,11 @@ const ROLE_BADGE_COLORS: Record<UserRole, string> = {
   mandante: 'bg-blue-500/30 text-blue-200 border border-blue-500/50',
   transportista: 'bg-green-500/30 text-green-200 border border-green-500/50',
   conductor: 'bg-purple-500/30 text-purple-200 border border-purple-500/50',
+  prevencionista: 'bg-teal-500/30 text-teal-200 border border-teal-500/50',
 }
 
 export function RoleManagement({ currentUserRole = 'administrador' }: RoleManagementProps) {
-  const roles: UserRole[] = ['administrador', 'despachador', 'mandante', 'transportista', 'conductor']
+  const roles: UserRole[] = ['administrador', 'despachador', 'mandante', 'transportista', 'conductor', 'prevencionista']
 
   return (
     <div className="space-y-6">
@@ -242,6 +245,24 @@ export function RoleManagement({ currentUserRole = 'administrador' }: RoleManage
               <li>• Ver estado de documentos</li>
               <li>• Recibir alertas de vencimiento</li>
               <li>• Descargar certificados</li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-teal-500/20 to-teal-600/10 border-teal-500/30">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-teal-400" />
+              <CardTitle className="text-teal-100">Prevencionista</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p className="text-sm text-slate-300">Revisa documentos aprobados</p>
+            <ul className="text-sm space-y-1 text-slate-400">
+              <li>• Ver documentos aprobados</li>
+              <li>• Descargar documentos</li>
+              <li>• Acceso de solo lectura</li>
+              <li>• Sin permisos de edición</li>
             </ul>
           </CardContent>
         </Card>
