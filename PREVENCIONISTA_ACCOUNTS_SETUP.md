@@ -3,14 +3,13 @@
 ## Cuentas Creadas
 
 ### Usuario 1
-- **Email:** aramrez@labbe.cl
+- **Email:** aramirez@labbe.cl
 - **Nombre:** Ignacia Guzmán
 - **Rol:** Prevencionista
 - **Perfil:** Perfil de Prevención
 
 ### Usuario 2
 - **Email:** bmiranda@labbe.cl
-- **Nombre:** Karla Miranda
 - **Rol:** Prevencionista
 - **Perfil:** Perfil de Prevención
 
@@ -40,7 +39,7 @@ Una vez ejecutado el SQL, ejecuta este comando para actualizar los perfiles:
 // En Supabase SQL Editor:
 UPDATE profiles
 SET role = 'prevencionista'
-WHERE email IN ('aramrez@labbe.cl', 'bmiranda@labbe.cl');
+WHERE email IN ('aramirez@labbe.cl', 'bmiranda@labbe.cl');
 ```
 
 ### Paso 3: Enviar Enlace de Configuración
@@ -81,7 +80,7 @@ Los usuarios recibirán un email de "reset password" para configurar su contrase
 ## Estados de Cuentas
 
 ```
-Usuario 1 (aramrez@labbe.cl)
+Usuario 1 (aramirez@labbe.cl - Ignacia Guzmán)
 ├─ Auth: ✓ Creado
 ├─ Perfil: ⏳ Pendiente (después de SQL)
 ├─ Rol: ✓ Asignado
