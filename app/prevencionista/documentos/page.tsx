@@ -25,6 +25,8 @@ export default function PrevencionistaDocumentos() {
   const [searchTerm, setSearchTerm] = useState('')
   const [typeFilter, setTypeFilter] = useState<string>('')
   const [documentTypes, setDocumentTypes] = useState<{ id: string; code: string }[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(50)
   const supabase = createClient()
 
   useEffect(() => {
@@ -39,20 +41,34 @@ export default function PrevencionistaDocumentos() {
 
         setDocumentTypes(types || [])
 
-        // Get approved documents ONLY
-        const { data: docs } = await supabase
-          .from('subcontractor_documents')
-          .select('id, file_name, document_type_id, created_at, file_url, subcontractor_id')
-          .eq('status', 'approved')
-          .order('created_at', { ascending: false })
-          .limit(1000)
+        // Get ALL approved documents using pagination
+        const allDocs: ApprovedDocument[] = []
+        let offset = 0
+        const batchSize = 1000
+        let hasMore = true
+
+        while (hasMore) {
+          const { data: batch } = await supabase
+            .from('subcontractor_documents')
+            .select('id, file_name, document_type_id, created_at, file_url, subcontractor_id')
+            .eq('status', 'approved')
+            .order('created_at', { ascending: false })
+            .range(offset, offset + batchSize - 1)
+
+          if (!batch || batch.length === 0) {
+            hasMore = false
+          } else {
+            allDocs.push(...batch)
+            offset += batchSize
+          }
+        }
 
         // Map document type codes
         const typesMap = new Map((types as any[])?.map((t: any) => [t.id, t.code]) || [])
-        const mappedDocs = (docs as any[])?.map((d: any) => ({
+        const mappedDocs = allDocs.map((d: any) => ({
           ...d,
           type_code: typesMap.get(d.document_type_id) || 'UNKNOWN'
-        })) || []
+        }))
 
         setDocuments(mappedDocs)
         setFilteredDocuments(mappedDocs)
@@ -81,28 +97,41 @@ export default function PrevencionistaDocumentos() {
     }
 
     setFilteredDocuments(filtered)
+    setCurrentPage(1) // Reset to first page when filters change
   }, [searchTerm, typeFilter, documents])
+
+  // Pagination
+  const totalPages = Math.ceil(filteredDocuments.length / pageSize)
+  const startIndex = (currentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const displayedDocuments = filteredDocuments.slice(startIndex, endIndex)
 
   const handleDownload = async (doc: ApprovedDocument) => {
     try {
-      const { data } = await supabase.storage
-        .from('documents')
-        .download(doc.file_url)
-
-      if (data) {
-        const url = URL.createObjectURL(data)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = doc.file_name
-        document.body.appendChild(a)
-        a.click()
-        URL.revokeObjectURL(url)
-        document.body.removeChild(a)
+      // file_url is already a public URL, we can download directly
+      const response = await fetch(doc.file_url)
+      if (!response.ok) {
+        throw new Error('Error downloading file')
       }
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = doc.file_name
+      document.body.appendChild(a)
+      a.click()
+      URL.revokeObjectURL(url)
+      document.body.removeChild(a)
     } catch (error) {
       console.error('Error downloading document:', error)
       alert('Error al descargar el documento')
     }
+  }
+
+  const handlePreview = (doc: ApprovedDocument) => {
+    // Open PDF in new tab
+    window.open(doc.file_url, '_blank')
   }
 
   return (
@@ -174,6 +203,7 @@ export default function PrevencionistaDocumentos() {
           <CardHeader>
             <CardTitle>
               {filteredDocuments.length} documentos encontrados
+              {totalPages > 1 && ` (Página ${currentPage} de ${totalPages})`}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -186,56 +216,96 @@ export default function PrevencionistaDocumentos() {
                 No hay documentos que coincidan con los filtros
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-700">
-                      <th className="text-left py-3 px-4 text-slate-400 font-medium">
-                        Nombre del archivo
-                      </th>
-                      <th className="text-left py-3 px-4 text-slate-400 font-medium">
-                        Tipo
-                      </th>
-                      <th className="text-left py-3 px-4 text-slate-400 font-medium">
-                        Fecha
-                      </th>
-                      <th className="text-right py-3 px-4 text-slate-400 font-medium">
-                        Acción
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredDocuments.map(doc => (
-                      <tr
-                        key={doc.id}
-                        className="border-b border-slate-800 hover:bg-slate-800/50"
-                      >
-                        <td className="py-3 px-4 text-slate-100 flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-slate-500" />
-                          <span className="truncate">{doc.file_name}</span>
-                        </td>
-                        <td className="py-3 px-4 text-slate-300">
-                          {doc.type_code}
-                        </td>
-                        <td className="py-3 px-4 text-slate-400">
-                          {new Date(doc.created_at).toLocaleDateString('es-CL')}
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDownload(doc)}
-                            className="text-teal-400 hover:bg-teal-500/20"
-                          >
-                            <Download className="w-4 h-4 mr-1" />
-                            Descargar
-                          </Button>
-                        </td>
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-700">
+                        <th className="text-left py-3 px-4 text-slate-400 font-medium">
+                          Nombre del archivo
+                        </th>
+                        <th className="text-left py-3 px-4 text-slate-400 font-medium">
+                          Tipo
+                        </th>
+                        <th className="text-left py-3 px-4 text-slate-400 font-medium">
+                          Fecha
+                        </th>
+                        <th className="text-right py-3 px-4 text-slate-400 font-medium">
+                          Acción
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {displayedDocuments.map(doc => (
+                        <tr
+                          key={doc.id}
+                          className="border-b border-slate-800 hover:bg-slate-800/50"
+                        >
+                          <td className="py-3 px-4 text-slate-100 flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-slate-500" />
+                            <span className="truncate">{doc.file_name}</span>
+                          </td>
+                          <td className="py-3 px-4 text-slate-300">
+                            {doc.type_code}
+                          </td>
+                          <td className="py-3 px-4 text-slate-400">
+                            {new Date(doc.created_at).toLocaleDateString('es-CL')}
+                          </td>
+                          <td className="py-3 px-4 text-right flex gap-2 justify-end">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handlePreview(doc)}
+                              className="text-blue-400 hover:bg-blue-500/20"
+                              title="Ver documento"
+                            >
+                              <FileText className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDownload(doc)}
+                              className="text-teal-400 hover:bg-teal-500/20"
+                              title="Descargar documento"
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="mt-6 flex items-center justify-between">
+                    <div className="text-sm text-slate-400">
+                      Mostrando {startIndex + 1} a {Math.min(endIndex, filteredDocuments.length)} de {filteredDocuments.length}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                        className="text-slate-400 border-slate-600"
+                      >
+                        Anterior
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                        className="text-slate-400 border-slate-600"
+                      >
+                        Siguiente
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
