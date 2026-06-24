@@ -132,14 +132,15 @@ export async function GET() {
       // Don't throw, just log and continue
     }
 
-    // Fetch document types (excluding inactive)
-    const inactiveTypes = ['AFP', 'SALUD', 'MUTUAL', 'SEGURO_SOCIAL']
+    // Fetch document types
     const { data: docTypes } = await supabase
       .from("subcontractor_document_types")
       .select("id, code, nombre")
-      .notIn('code', inactiveTypes)
 
-    const docTypeMap = new Map(docTypes?.map(dt => [dt.id, { code: dt.code, nombre: dt.nombre }]) || [])
+    // Filter out deprecated types
+    const deprecatedCodes = ['AFP', 'SALUD', 'MUTUAL', 'SEGURO_SOCIAL']
+    const activeDocTypes = docTypes?.filter(dt => !deprecatedCodes.includes(dt.code)) || []
+    const docTypeMap = new Map(activeDocTypes.map(dt => [dt.id, { code: dt.code, nombre: dt.nombre }]) || [])
 
     // Get assigned executives for conductors
     // Workflow: conductor_id -> conductores.rut_proveedor -> transportistas.rut -> transportistas.assigned_executive_id -> executive_staff.full_name
