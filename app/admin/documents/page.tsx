@@ -132,6 +132,7 @@ export default function DocumentManagementPage() {
               document={selectedDoc}
               companyCode="TRANS001"
               driverRut={selectedDoc.driver_rut || searchRut}
+              documentType="conductor"
               onUpdate={() => {
                 // Recargar datos
                 searchDocuments(searchRut)

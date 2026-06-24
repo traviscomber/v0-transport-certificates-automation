@@ -343,6 +343,7 @@ export function DocumentosClient({ documents: initialDocuments }: DocumentosClie
                         <DocumentStatusUpdater
                           documentId={doc.id}
                           currentStatus={doc.validation_status}
+                          documentType="conductor"
                           onStatusChange={(newStatus) => handleStatusChange(doc.id, newStatus)}
                         />
                       </td>

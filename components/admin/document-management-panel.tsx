@@ -21,6 +21,7 @@ interface DocumentManagementPanelProps {
   document: Document
   companyCode: string
   driverRut: string
+  documentType?: 'conductor' | 'subcontractor'
   onUpdate?: () => void
 }
 
@@ -28,6 +29,7 @@ export function DocumentManagementPanel({
   document,
   companyCode,
   driverRut,
+  documentType = 'conductor',
   onUpdate
 }: DocumentManagementPanelProps) {
   const { changeStatus, updateMetadata, generateCode, loading } = useDocumentManagement()
@@ -79,7 +81,7 @@ export function DocumentManagementPanel({
     }
     
     try {
-      await changeStatus(document.id, selectedStatus, changeReason)
+      await changeStatus(document.id, selectedStatus, changeReason, documentType)
       setChangeReason('')
       
       console.log('[v0] Document validated by:', selectedEjecutiva, 'New status:', selectedStatus)

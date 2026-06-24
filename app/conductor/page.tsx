@@ -71,8 +71,8 @@ export default function ConductorDashboard() {
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
         <div className="space-y-3 border-b border-slate-700 pb-6">
-          <h1 className="text-5xl font-bold text-white">Dashboard</h1>
-          <p className="text-slate-300 text-lg">Bienvenido de vuelta. Aquí está tu resumen de documentación y cumplimiento.</p>
+          <h1 className="text-5xl font-bold text-white">Portal del Conductor</h1>
+          <p className="text-slate-300 text-lg">Bienvenido de vuelta. Aqui esta tu resumen de documentacion y cumplimiento.</p>
         </div>
 
         {/* Compliance Status */}

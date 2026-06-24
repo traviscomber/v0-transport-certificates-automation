@@ -15,16 +15,18 @@ interface DocumentStatusUpdaterProps {
   documentId: string
   currentStatus: 'approved' | 'rejected' | 'pending'
   onStatusChange: (status: 'approved' | 'rejected' | 'pending') => void
+  documentType?: 'conductor' | 'subcontractor'
 }
 
 export function DocumentStatusUpdater({
   documentId,
   currentStatus,
   onStatusChange,
+  documentType = 'conductor',
 }: DocumentStatusUpdaterProps) {
   const [localStatus, setLocalStatus] = useState(currentStatus)
   const [mounted, setMounted] = useState(false)
-  const { state, actions } = useDocumentStatusChange(documentId)
+  const { state, actions } = useDocumentStatusChange(documentId, undefined, documentType)
 
   useEffect(() => {
     setMounted(true)

@@ -13,7 +13,7 @@ interface DocumentAlert {
 }
 
 interface DocumentManagement {
-  changeStatus: (documentId: string, status: string, reason?: string) => Promise<any>
+  changeStatus: (documentId: string, status: string, reason?: string, documentType?: 'conductor' | 'subcontractor') => Promise<any>
   updateMetadata: (documentId: string, customCode?: string, expirationDate?: string) => Promise<any>
   generateCode: (documentId: string, companyCode: string, driverRut: string, documentType: string) => Promise<string>
   deleteDocument: (documentId: string, storagePath: string) => Promise<any>
@@ -64,16 +64,22 @@ export function useDocumentManagement(): DocumentManagement {
     return false
   }, [])
 
-  const changeStatus = useCallback(async (documentId: string, status: string, reason?: string) => {
+  const changeStatus = useCallback(async (
+    documentId: string,
+    status: string,
+    reason?: string,
+    documentType: 'conductor' | 'subcontractor' = 'conductor'
+  ) => {
     setLoading(true)
     setError(null)
     try {
-      console.log('[v0] 🔄 Hook: changeStatus called with:', { documentId, status, reason })
+      console.log('[v0] 🔄 Hook: changeStatus called with:', { documentId, status, reason, documentType })
       
       const response = await fetch(`/api/company/documents/${documentId}/status`, {
         method: 'PATCH',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, reason })
+        body: JSON.stringify({ status, reason, documentType })
       })
 
       const responseData = await response.json()

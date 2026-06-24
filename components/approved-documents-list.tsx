@@ -325,7 +325,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
             <div className="flex flex-col items-center gap-3 py-6 px-4">
               <p className="text-sm text-slate-400">
                 Mostrando {paginatedDocs.length} de {filteredDocs.length} documentos
-                {remainingCount > 0 && ` (+${remainingCount} m��s)`}
+                {remainingCount > 0 && ` (+${remainingCount} mas)`}
               </p>
               <Button
                 onClick={() => setDisplayCount(prev => prev + LOAD_MORE_INCREMENT)}
@@ -333,7 +333,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
                 className="gap-2 border-slate-600 text-slate-300 hover:bg-slate-800/50"
               >
                 <ChevronDown className="w-4 h-4" />
-                Cargar {Math.min(LOAD_MORE_INCREMENT, remainingCount)} más documentos
+                Cargar {Math.min(LOAD_MORE_INCREMENT, remainingCount)} mas documentos
               </Button>
             </div>
           )}

@@ -18,9 +18,17 @@ export async function canChangeDocumentStatus(
   documentId: string,
   userRole: AuthUserRole,
   userCompanyId?: string,
-  userEmail?: string
+  userEmail?: string,
+  documentType: 'conductor' | 'subcontractor' = 'conductor'
 ): Promise<CanChangeDocumentStatusResult> {
-  console.log('[v0] canChangeDocumentStatus called:', { userId, documentId, userRole, userCompanyId, userEmail })
+  console.log('[v0] canChangeDocumentStatus called:', {
+    userId,
+    documentId,
+    userRole,
+    userCompanyId,
+    userEmail,
+    documentType,
+  })
   
   // SUPER-ADMIN BYPASS: Labbe (mandante) users can manage ALL documents
   // regardless of which transportista the conductor belongs to
@@ -48,37 +56,29 @@ export async function canChangeDocumentStatus(
     
     const adminClient = await createAdminClient()
 
-    // Get the document and its conductor
+    const tableName = documentType === 'subcontractor' ? 'subcontractor_documents' : 'uploaded_documents'
+    const companyField = documentType === 'subcontractor' ? 'subcontractor_id' : 'conductor_id'
+
+    // Get the document and its owning company relation
     const { data: document, error: docError } = await adminClient
-      .from('uploaded_documents')
-      .select('conductor_id')
+      .from(tableName)
+      .select(companyField)
       .eq('id', documentId)
       .single()
 
-    console.log('[v0] AUTH - Document lookup:', { documentId, found: !!document, error: docError?.message })
+    console.log('[v0] AUTH - Document lookup:', {
+      documentId,
+      tableName,
+      companyField,
+      found: !!document,
+      error: docError?.message,
+    })
 
     if (docError || !document) {
       console.log('[v0] AUTH DENY - Document not found:', docError)
       return {
         allowed: false,
         reason: 'Documento no encontrado',
-      }
-    }
-
-    // Get the conductor and their transportista (company)
-    const { data: conductor, error: conductorError } = await adminClient
-      .from('conductores')
-      .select('transportista_id')
-      .eq('id', document.conductor_id)
-      .single()
-
-    console.log('[v0] AUTH - Conductor lookup:', { conductor_id: document.conductor_id, found: !!conductor, transportista_id: conductor?.transportista_id, error: conductorError?.message })
-
-    if (conductorError || !conductor) {
-      console.log('[v0] AUTH DENY - Conductor not found:', conductorError)
-      return {
-        allowed: false,
-        reason: 'Conductor del documento no encontrado',
       }
     }
 
@@ -106,13 +106,16 @@ export async function canChangeDocumentStatus(
 
     // Use organization_id from profile (maps to transportista_id), fallback to userCompanyId parameter
     const userTransportista = userProfile?.organization_id || userCompanyId
-    const conductorTransportista = conductor.transportista_id
+    const documentTransportista =
+      documentType === 'subcontractor'
+        ? (document as { subcontractor_id?: string | null })?.subcontractor_id
+        : (document as { conductor_id?: string | null })?.conductor_id
     
     console.log('[v0] AUTH - Final company comparison:', { 
       user_transportista_from_profile: userProfile?.organization_id,
       user_transportista_from_param: userCompanyId,
       final_user_transportista: userTransportista,
-      conductor_transportista: conductorTransportista
+      document_transportista: documentTransportista
     })
 
     if (!userTransportista) {
@@ -123,13 +126,13 @@ export async function canChangeDocumentStatus(
       }
     }
 
-    // Check if user's transportista matches conductor's transportista
-    const companyMatch = userTransportista === conductorTransportista
+    // Check if user's transportista matches the document's owning company
+    const companyMatch = userTransportista === documentTransportista
     
-    console.log('[v0] AUTH - Company match:', { userTransportista, conductorTransportista, match: companyMatch })
+    console.log('[v0] AUTH - Company match:', { userTransportista, documentTransportista, match: companyMatch })
 
     if (!companyMatch) {
-      console.log('[v0] AUTH DENY - Company mismatch:', { user_transportista: userTransportista, conductor_transportista: conductorTransportista })
+      console.log('[v0] AUTH DENY - Company mismatch:', { user_transportista: userTransportista, document_transportista: documentTransportista })
       return {
         allowed: false,
         reason: 'No tienes permiso para cambiar documentos de otra empresa',

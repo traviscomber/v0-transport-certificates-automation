@@ -8,7 +8,6 @@
 
 import { useState, useCallback } from 'react'
 import { 
-  changeDocumentStatus, 
   getDocumentStatus,
   getDocumentStatusHistory,
   DocumentStatus,
@@ -34,7 +33,8 @@ export interface UseDocumentStatusChangeActions {
 
 export function useDocumentStatusChange(
   documentId: string,
-  onStatusChanged?: (result: DocumentStatusChangeResult) => void
+  onStatusChanged?: (result: DocumentStatusChangeResult) => void,
+  documentType: 'conductor' | 'subcontractor' = 'conductor'
 ) {
   const [state, setState] = useState<UseDocumentStatusChangeState>({
     loading: false,
@@ -51,12 +51,37 @@ export function useDocumentStatusChange(
       setState(prev => ({ ...prev, loading: true, error: null }))
 
       try {
-        const result = await changeDocumentStatus({
-          documentId,
-          newStatus,
-          reason,
-          userId: undefined // Will be set from auth context in caller
+        const response = await fetch(`/api/company/documents/${documentId}/status`, {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            status: newStatus,
+            reason,
+            documentType,
+          }),
         })
+
+        const responseData = await response.json()
+
+        const result: DocumentStatusChangeResult = response.ok
+          ? {
+              success: true,
+              documentId,
+              previousStatus: responseData.previous_status || '',
+              newStatus: responseData.status || newStatus,
+              message: responseData.message || 'Status updated',
+            }
+          : {
+              success: false,
+              documentId,
+              previousStatus: '',
+              newStatus,
+              message: responseData.error || 'Error updating status',
+              error: responseData.error || 'Error updating status',
+            }
 
         setState(prev => ({
           ...prev,
@@ -85,7 +110,7 @@ export function useDocumentStatusChange(
         }
       }
     },
-    [documentId, onStatusChanged]
+    [documentId, onStatusChanged, documentType]
   )
 
   // Refresh current status

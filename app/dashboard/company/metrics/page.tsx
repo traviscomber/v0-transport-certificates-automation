@@ -65,7 +65,7 @@ export default function MetricsPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex items-center gap-2 text-sm text-slate-400">
-          <Link href="/dashboard/company" className="hover:text-slate-200">Dashboard</Link>
+          <Link href="/dashboard/company" className="hover:text-slate-200">Inicio</Link>
           <span>/</span>
           <span className="text-slate-300">Metricas</span>
         </div>

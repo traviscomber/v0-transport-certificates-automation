@@ -103,6 +103,7 @@ export function DocumentsManagementClient({
       console.log('[v0] Mapped status:', { original: newStatus, mapped: dbStatus })
       
       const body: any = { status: dbStatus }
+      body.documentType = 'conductor'
       if (reason && newStatus.toLowerCase() === 'rechazado') {
         body.reason = reason
       }

@@ -15,6 +15,31 @@ const navItems = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const pageTitle =
+    pathname === '/admin'
+      ? 'Panel Admin'
+      : pathname.startsWith('/admin/usuarios')
+        ? 'Usuarios'
+        : pathname.startsWith('/admin/documentos')
+          ? 'Documentos'
+          : pathname.startsWith('/admin/roles')
+            ? 'Roles y Permisos'
+            : pathname.startsWith('/admin/reportes')
+              ? 'Reportes'
+              : 'Panel Admin'
+
+  const pageSubtitle =
+    pathname === '/admin'
+      ? 'Resumen general del sistema'
+      : pathname.startsWith('/admin/usuarios')
+        ? 'Gestion de accesos y perfiles'
+        : pathname.startsWith('/admin/documentos')
+          ? 'Revision y control documental'
+          : pathname.startsWith('/admin/roles')
+            ? 'Permisos y gobierno de acceso'
+            : pathname.startsWith('/admin/reportes')
+              ? 'Analisis y exportacion de datos'
+              : 'Administracion del sistema'
 
   return (
     <div className="min-h-screen bg-gradient-dark">
@@ -70,10 +95,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex h-full items-center justify-between px-8">
             <div>
               <h1 className="text-lg font-bold text-foreground">
-                {navItems.find(item => pathname === item.href || pathname.startsWith(item.href))?.label || 'Dashboard'}
+                {pageTitle}
               </h1>
               <p className="text-xs text-muted-foreground">
-                {pathname === "/admin" ? "Resumen general del sistema" : "Administracion de datos"}
+                {pageSubtitle}
               </p>
             </div>
             <div className="flex items-center gap-4">

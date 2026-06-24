@@ -132,7 +132,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
       
       const englishStatus = statusMap[newStatus?.toLowerCase() || ''] || newStatus.toLowerCase()
 
-      const body: any = { status: englishStatus }
+      const body: any = { status: englishStatus, documentType: 'conductor' }
       if (rejectionReason && (englishStatus === 'rejected')) {
         body.reason = rejectionReason
       }
@@ -141,6 +141,7 @@ export function useDriverDocuments(driverId: string, enabled = false, driverRut 
 
       const response = await fetch(`/api/company/documents/${documentId}/status`, {
         method: 'PATCH',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       })
