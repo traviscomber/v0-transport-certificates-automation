@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { resolveDocumentStorageTarget } from '@/lib/document-file-access'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,9 +11,9 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
-    const filePath = searchParams.get('path')
+    const fileSource = searchParams.get('url') || searchParams.get('path')
 
-    if (!filePath) {
+    if (!fileSource) {
       return NextResponse.json(
         { error: 'File path is required' },
         { status: 400 }
@@ -20,11 +21,12 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = createAdminClient()
+    const { bucket, path } = resolveDocumentStorageTarget(fileSource)
 
     // Get signed download URL
     const { data, error } = await supabase.storage
-      .from('documents')
-      .createSignedUrl(filePath, 3600) // 1 hour expiry
+      .from(bucket)
+      .createSignedUrl(path, 3600) // 1 hour expiry
 
     if (error || !data) {
       return NextResponse.json(
@@ -33,8 +35,24 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Redirect to signed URL
-    return NextResponse.redirect(data.signedUrl)
+    const fileResponse = await fetch(data.signedUrl)
+    if (!fileResponse.ok || !fileResponse.body) {
+      return NextResponse.json(
+        { error: 'Failed to fetch file for download' },
+        { status: 500 }
+      )
+    }
+
+    const filename = path.split('/').pop() || 'documento'
+    const contentType = fileResponse.headers.get('content-type') || 'application/octet-stream'
+
+    return new NextResponse(fileResponse.body, {
+      headers: {
+        'Content-Type': contentType,
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Cache-Control': 'no-store',
+      },
+    })
   } catch (error) {
     console.error('[v0] Error downloading document:', error)
     return NextResponse.json(

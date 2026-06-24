@@ -13,6 +13,7 @@ import { PDFViewer } from '@/components/pdf-viewer'
 import { formatToChileTime } from '@/lib/timezone-utils'
 import { DocumentFilter, type DocumentFilters } from '@/components/document-filter'
 import { ALL_VALUE, filterByMonthYear } from '@/lib/date-filters'
+import { buildDocumentAccessUrl } from '@/lib/document-file-access'
 
 interface PendingDocument {
   id: string
@@ -508,7 +509,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
             <DialogTitle className="flex-1">{previewDoc?.original_filename || previewDoc?.file_name}</DialogTitle>
             {previewDoc?.file_url && (
               <a
-                href={previewDoc.file_url}
+                href={buildDocumentAccessUrl(previewDoc.file_url, 'download')}
                 download={previewDoc.original_filename || previewDoc?.file_name}
                 target="_blank"
                 rel="noopener noreferrer"

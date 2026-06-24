@@ -11,6 +11,7 @@ import { getChileDate, getChileTime } from '@/lib/timezone-utils'
 import { PDFViewer } from '@/components/pdf-viewer'
 import { DocumentFilter, type DocumentFilters } from '@/components/document-filter'
 import { ALL_VALUE, filterByMonthYear } from '@/lib/date-filters'
+import { buildDocumentAccessUrl } from '@/lib/document-file-access'
 
 interface RejectedDocument {
   id: string
@@ -298,7 +299,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
                     </Button>
                   )}
                   {doc.file_url && (
-                    <a href={doc.file_url} download target="_blank" rel="noopener noreferrer">
+                    <a href={buildDocumentAccessUrl(doc.file_url, 'download')} target="_blank" rel="noopener noreferrer">
                       <Button
                         variant="outline"
                         size="sm"

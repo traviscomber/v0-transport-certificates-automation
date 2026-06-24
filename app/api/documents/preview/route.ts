@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { resolveDocumentStorageTarget } from '@/lib/document-file-access'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,9 +11,9 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
-    const filePath = searchParams.get('path')
+    const fileSource = searchParams.get('url') || searchParams.get('path')
 
-    if (!filePath) {
+    if (!fileSource) {
       return NextResponse.json(
         { error: 'File path is required' },
         { status: 400 }
@@ -20,11 +21,12 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = createAdminClient()
+    const { bucket, path } = resolveDocumentStorageTarget(fileSource)
 
     // Get signed public URL for preview
     const { data } = await supabase.storage
-      .from('documents')
-      .getPublicUrl(filePath)
+      .from(bucket)
+      .getPublicUrl(path)
 
     if (!data) {
       return NextResponse.json(

@@ -30,6 +30,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { buildDocumentAccessUrl } from '@/lib/document-file-access'
 
 interface SubcontractorDetailTabsProps {
   subcontractor: any
@@ -492,7 +493,7 @@ export function SubcontractorDetailTabs({
                                                     {doc.file_url && (
                                                       <div className="flex gap-2">
                                                         <a
-                                                          href={doc.file_url}
+                                                          href={buildDocumentAccessUrl(doc.file_url, 'preview')}
                                                           target="_blank"
                                                           rel="noopener noreferrer"
                                                           className="hover:opacity-75 transition-opacity text-blue-400 hover:text-blue-300"
@@ -501,8 +502,7 @@ export function SubcontractorDetailTabs({
                                                           <Eye className="w-4 h-4" />
                                                         </a>
                                                         <a
-                                                          href={doc.file_url}
-                                                          download={doc.file_name || 'documento'}
+                                                          href={buildDocumentAccessUrl(doc.file_url, 'download')}
                                                           className="hover:opacity-75 transition-opacity text-blue-400 hover:text-blue-300"
                                                           title="Descargar"
                                                         >
@@ -569,7 +569,7 @@ export function SubcontractorDetailTabs({
                               variant="outline"
                               size="sm"
                               className="w-full text-xs"
-                              onClick={() => window.open(`/api/documents/preview?path=${encodeURIComponent(certDoc.archivo_url)}`, '_blank')}
+                              onClick={() => window.open(buildDocumentAccessUrl(certDoc.archivo_url, 'preview'), '_blank')}
                             >
                               <Eye className="w-3 h-3 mr-1" />
                               Ver Documento

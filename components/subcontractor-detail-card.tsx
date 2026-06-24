@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DocumentManagementModal } from './document-management-modal'
 import { ChangeEjecutivaModal } from './change-ejecutiva-modal'
+import { buildDocumentAccessUrl } from '@/lib/document-file-access'
 
 interface SubcontractorDetailCardProps {
   subcontractor: any
@@ -190,7 +191,7 @@ export function SubcontractorDetailCard({
                       key={cert.key}
                       onClick={() => {
                         if (certDoc && certDoc.archivo_url) {
-                          window.open(`/api/documents/preview?path=${encodeURIComponent(certDoc.archivo_url)}`, '_blank')
+                          window.open(buildDocumentAccessUrl(certDoc.archivo_url, 'preview'), '_blank')
                         }
                       }}
                       disabled={!hasCert}
@@ -312,7 +313,7 @@ export function SubcontractorDetailCard({
                                 {uploadedDoc && uploadedDoc.file_url && (
                                   <div className="flex gap-1">
                                     <a
-                                      href={uploadedDoc.file_url}
+                                      href={buildDocumentAccessUrl(uploadedDoc.file_url, 'download')}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="hover:opacity-75 transition-opacity"
@@ -321,7 +322,7 @@ export function SubcontractorDetailCard({
                                       <Download className="w-3 h-3" />
                                     </a>
                                     <a
-                                      href={uploadedDoc.file_url}
+                                      href={buildDocumentAccessUrl(uploadedDoc.file_url, 'preview')}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="hover:opacity-75 transition-opacity"

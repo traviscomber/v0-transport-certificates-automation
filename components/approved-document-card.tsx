@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Calendar, User, Building2, Eye, Download } from 'lucide-react'
 import { getChileDate, getChileTime } from '@/lib/timezone-utils'
 import { getDocTypeIcon } from '@/lib/document-type-icons'
+import { buildDocumentAccessUrl } from '@/lib/document-file-access'
 
 interface ApprovedDocumentCardProps {
   doc: any
@@ -107,7 +108,7 @@ export function ApprovedDocumentCard({ doc, onPreview, getExecutive }: ApprovedD
               </Button>
             )}
             {doc.file_url && (
-              <a href={doc.file_url} download target="_blank" rel="noopener noreferrer">
+              <a href={buildDocumentAccessUrl(doc.file_url, 'download')} target="_blank" rel="noopener noreferrer">
                 <Button
                   variant="outline"
                   size="sm"

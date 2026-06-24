@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { useDocumentSync } from '@/contexts/document-sync-context'
 import { DatePeriodFilter } from '@/components/date-period-filter'
 import { ALL_VALUE, filterByMonthYear, type DateFilterValue } from '@/lib/date-filters'
+import { buildDocumentAccessUrl } from '@/lib/document-file-access'
 
 interface UploadedDocument {
   id: string
@@ -481,7 +482,7 @@ export default function ConductorDocumentosPage() {
                             className="text-slate-400 hover:text-white"
                             asChild
                           >
-                            <a href={uploadedDoc.file_url} target="_blank" rel="noopener noreferrer">
+                            <a href={buildDocumentAccessUrl(uploadedDoc.file_url, 'preview')} target="_blank" rel="noopener noreferrer">
                               <Download className="h-4 w-4" />
                             </a>
                           </Button>
@@ -557,7 +558,7 @@ export default function ConductorDocumentosPage() {
                   <div className="flex items-center gap-2 shrink-0">
                     {getStatusBadge(doc.validation_status, doc.expiration_date)}
                     <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white" asChild>
-                      <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
+                      <a href={buildDocumentAccessUrl(doc.file_url, 'preview')} target="_blank" rel="noopener noreferrer">
                         <Download className="h-4 w-4" />
                       </a>
                     </Button>

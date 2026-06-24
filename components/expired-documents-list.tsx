@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { AlertTriangle, Mail, FileText, Eye, Flame } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useDocumentSync } from '@/contexts/document-sync-context'
+import { buildDocumentAccessUrl } from '@/lib/document-file-access'
 
 interface ExpiredDocument {
   id: string
@@ -209,10 +210,10 @@ export function ExpiredDocumentsList({ initialDocuments }: Props) {
                     <p className="text-slate-400">
                       Tipo de archivo no soportado para vista previa
                     </p>
-                    <a
-                      href={previewDoc.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      <a
+                        href={buildDocumentAccessUrl(previewDoc.file_url, 'preview')}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       className="text-blue-400 hover:underline mt-2 block"
                     >
                       Descargar archivo

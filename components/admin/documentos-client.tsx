@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { DocumentStatusUpdater } from './document-status-updater'
 import { VisionResultsDialog } from './vision-results-dialog'
+import { buildDocumentAccessUrl } from '@/lib/document-file-access'
 
 interface Document {
   id: string
@@ -389,7 +390,7 @@ export function DocumentosClient({ documents: initialDocuments }: DocumentosClie
                           )}
                           {doc.file_url && (
                             <a 
-                              href={doc.file_url} 
+                              href={buildDocumentAccessUrl(doc.file_url, 'preview')}
                               target="_blank" 
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
