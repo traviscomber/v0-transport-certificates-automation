@@ -48,8 +48,8 @@ export default function PrevencionistaDocumentos() {
           .limit(1000)
 
         // Map document type codes
-        const typesMap = new Map(types?.map(t => [t.id, t.code]) || [])
-        const mappedDocs = docs?.map(d => ({
+        const typesMap = new Map((types as any[])?.map((t: any) => [t.id, t.code]) || [])
+        const mappedDocs = (docs as any[])?.map((d: any) => ({
           ...d,
           type_code: typesMap.get(d.document_type_id) || 'UNKNOWN'
         })) || []

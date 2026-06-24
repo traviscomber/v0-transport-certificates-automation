@@ -30,11 +30,12 @@ export default function PrevencionistaDashboard() {
         // Get total subcontractors with approved documents
         const { data: subcontractors } = await supabase
           .from('subcontractor_documents')
-          .select('subcontractor_id')
+          .select('subcontractor_id', { count: 'exact' })
           .eq('status', 'approved')
-          .limit(10000)
 
-        const uniqueSubcontractors = new Set(subcontractors?.map(d => d.subcontractor_id)).size
+        const uniqueSubcontractors = new Set(
+          (subcontractors as any[])?.map((d: any) => d.subcontractor_id)
+        ).size
 
         // Get document types with approved docs
         const { data: docTypes } = await supabase
