@@ -108,24 +108,30 @@ export default function PrevencionistaDocumentos() {
 
   const handleDownload = async (doc: ApprovedDocument) => {
     try {
-      const { data } = await supabase.storage
-        .from('documents')
-        .download(doc.file_url)
-
-      if (data) {
-        const url = URL.createObjectURL(data)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = doc.file_name
-        document.body.appendChild(a)
-        a.click()
-        URL.revokeObjectURL(url)
-        document.body.removeChild(a)
+      // file_url is already a public URL, we can download directly
+      const response = await fetch(doc.file_url)
+      if (!response.ok) {
+        throw new Error('Error downloading file')
       }
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = doc.file_name
+      document.body.appendChild(a)
+      a.click()
+      URL.revokeObjectURL(url)
+      document.body.removeChild(a)
     } catch (error) {
       console.error('Error downloading document:', error)
       alert('Error al descargar el documento')
     }
+  }
+
+  const handlePreview = (doc: ApprovedDocument) => {
+    // Open PDF in new tab
+    window.open(doc.file_url, '_blank')
   }
 
   return (
@@ -245,15 +251,24 @@ export default function PrevencionistaDocumentos() {
                           <td className="py-3 px-4 text-slate-400">
                             {new Date(doc.created_at).toLocaleDateString('es-CL')}
                           </td>
-                          <td className="py-3 px-4 text-right">
+                          <td className="py-3 px-4 text-right flex gap-2 justify-end">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handlePreview(doc)}
+                              className="text-blue-400 hover:bg-blue-500/20"
+                              title="Ver documento"
+                            >
+                              <FileText className="w-4 h-4" />
+                            </Button>
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => handleDownload(doc)}
                               className="text-teal-400 hover:bg-teal-500/20"
+                              title="Descargar documento"
                             >
-                              <Download className="w-4 h-4 mr-1" />
-                              Descargar
+                              <Download className="w-4 h-4" />
                             </Button>
                           </td>
                         </tr>
