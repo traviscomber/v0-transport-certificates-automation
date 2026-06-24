@@ -149,33 +149,17 @@ export async function changeDocumentStatus(
     }
 
     // Track who approved or rejected the document
-    // Note: subcontractor_documents uses different column names (reviewed_by_ejecutiva, reviewed_at)
-    if (newStatus === 'approved' && userId) {
+    // Both tables use reviewed_by_ejecutiva and reviewed_at to track reviewer
+    if ((newStatus === 'approved' || newStatus === 'rejected') && userId) {
       if (tableName === 'subcontractor_documents') {
-        // subcontractor_documents uses reviewed_by_ejecutiva and reviewed_at
         updatePayload.reviewed_by_ejecutiva = request.userEmail || userId
         updatePayload.reviewed_at = new Date().toISOString()
       } else {
-        // uploaded_documents has approved_by, approved_by_email, approved_at
-        updatePayload.approved_by = userId
-        updatePayload.approved_by_email = request.userEmail || null
-        updatePayload.approved_at = new Date().toISOString()
+        // uploaded_documents uses ejecutiva column to track reviewer
+        updatePayload.ejecutiva = request.userEmail || userId
+        updatePayload.validated_at = new Date().toISOString()
       }
-      console.log('[v0] Document approved by user:', userId, 'Email:', request.userEmail)
-    }
-
-    if (newStatus === 'rejected' && userId) {
-      if (tableName === 'subcontractor_documents') {
-        // subcontractor_documents uses reviewed_by_ejecutiva and reviewed_at
-        updatePayload.reviewed_by_ejecutiva = request.userEmail || userId
-        updatePayload.reviewed_at = new Date().toISOString()
-      } else {
-        // uploaded_documents has rejected_by, rejected_by_email, rejected_at
-        updatePayload.rejected_by = userId
-        updatePayload.rejected_by_email = request.userEmail || null
-        updatePayload.rejected_at = new Date().toISOString()
-      }
-      console.log('[v0] Document rejected by user:', userId, 'Email:', request.userEmail)
+      console.log('[v0] Document', newStatus, 'by user:', userId, 'Email:', request.userEmail)
     }
 
     // STEP 4: Update document status in database
