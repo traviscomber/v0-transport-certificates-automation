@@ -101,8 +101,10 @@ const CODE_MAP: Record<string, DocIconConfig> = {
   'SEGURO_SOCIAL':             cfg(PiggyBank,      SLATE, 'Seguro Social'),
   'F30':                       cfg(ReceiptText,    SLATE, 'F30'),
   'F30-1':                     cfg(ReceiptText,    SLATE, 'F30-1'),
-  'F30_DOÑA_ISIDORA':          cfg(ReceiptText,    SLATE, 'F30 D. Isidora'),
-  'F30_CLIENTE':               cfg(ReceiptText,    SLATE, 'F30 Cliente'),
+  'F30-1_DOÑA_ISIDORA':        cfg(ReceiptText,    SLATE, 'F30-1 D. Isidora'),
+  'F30-1_CLIENTE':             cfg(ReceiptText,    SLATE, 'F30-1 Cliente'),
+  'F30_DOÑA_ISIDORA':          cfg(ReceiptText,    SLATE, 'F30-1 D. Isidora'), // deprecated
+  'F30_CLIENTE':               cfg(ReceiptText,    SLATE, 'F30-1 Cliente'), // deprecated
   'F29':                       cfg(ReceiptText,    SLATE, 'F29'),
   'CUMPLIMIENTO-PREVISIONAL':  cfg(ReceiptText,    SLATE, 'Cumplimiento Previsional'),
 
