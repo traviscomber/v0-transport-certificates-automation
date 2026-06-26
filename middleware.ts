@@ -66,6 +66,23 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Protect admin routes - require authentication
+  if (path.startsWith('/admin')) {
+    const userEmail = request.cookies.get('user_email')?.value
+    
+    if (!userEmail) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    
+    // Only allow ejecutiva role to access admin routes
+    const userRole = request.cookies.get('user_role')?.value
+    if (userRole !== 'ejecutiva' && userRole !== 'admin') {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    
+    return NextResponse.next()
+  }
+
   // Protect prevencionista routes - require authentication
   if (path.startsWith('/prevencionista')) {
     const userEmail = request.cookies.get('user_email')?.value
