@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Download, FileText, Filter } from 'lucide-react'
+import { Download, FileText, Filter, Eye } from 'lucide-react'
 import Link from 'next/link'
 
 interface ApprovedDocument {
@@ -16,6 +16,7 @@ interface ApprovedDocument {
   file_url: string
   subcontractor_id: string
   type_code: string
+  subcontractor_name: string
 }
 
 export default function PrevencionistaDocumentos() {
@@ -24,7 +25,10 @@ export default function PrevencionistaDocumentos() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [typeFilter, setTypeFilter] = useState<string>('')
+  const [subcontractorFilter, setSubcontractorFilter] = useState<string>('')
+  const [monthFilter, setMonthFilter] = useState<string>('')
   const [documentTypes, setDocumentTypes] = useState<{ id: string; code: string }[]>([])
+  const [subcontractors, setSubcontractors] = useState<{ id: string; name: string }[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(50)
   const supabase = createClient()
@@ -40,6 +44,16 @@ export default function PrevencionistaDocumentos() {
           .order('code')
 
         setDocumentTypes(types || [])
+
+        // Get subcontractor names for filtering/display
+        const { data: subs } = await supabase
+          .from('subcontratistas')
+          .select('id, razon_social, nombre_fantasia')
+          .order('razon_social')
+
+        const subMap = new Map(
+          (subs as any[])?.map((s: any) => [s.id, s.nombre_fantasia || s.razon_social]) || []
+        )
 
         // Get ALL approved documents using pagination
         const allDocs: ApprovedDocument[] = []
@@ -63,12 +77,20 @@ export default function PrevencionistaDocumentos() {
           }
         }
 
-        // Map document type codes
+        // Map document type codes and subcontractor names
         const typesMap = new Map((types as any[])?.map((t: any) => [t.id, t.code]) || [])
         const mappedDocs = allDocs.map((d: any) => ({
           ...d,
-          type_code: typesMap.get(d.document_type_id) || 'UNKNOWN'
+          type_code: typesMap.get(d.document_type_id) || 'UNKNOWN',
+          subcontractor_name: subMap.get(d.subcontractor_id) || 'Sin asignar',
         }))
+
+        // Build unique subcontractor list from documents that actually have approved docs
+        const usedSubIds = new Set(allDocs.map((d: any) => d.subcontractor_id))
+        const usedSubs = Array.from(usedSubIds)
+          .map((id) => ({ id: id as string, name: subMap.get(id) || 'Sin asignar' }))
+          .sort((a, b) => a.name.localeCompare(b.name))
+        setSubcontractors(usedSubs)
 
         setDocuments(mappedDocs)
         setFilteredDocuments(mappedDocs)
@@ -82,13 +104,19 @@ export default function PrevencionistaDocumentos() {
     loadData()
   }, [supabase])
 
+  // Available months derived from documents (YYYY-MM, newest first)
+  const availableMonths = Array.from(
+    new Set(documents.map(d => d.created_at?.slice(0, 7)).filter(Boolean))
+  ).sort((a, b) => b.localeCompare(a))
+
   // Apply filters
   useEffect(() => {
     let filtered = documents
 
     if (searchTerm) {
       filtered = filtered.filter(d =>
-        d.file_name.toLowerCase().includes(searchTerm.toLowerCase())
+        d.file_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.subcontractor_name.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
 
@@ -96,9 +124,17 @@ export default function PrevencionistaDocumentos() {
       filtered = filtered.filter(d => d.type_code === typeFilter)
     }
 
+    if (subcontractorFilter) {
+      filtered = filtered.filter(d => d.subcontractor_id === subcontractorFilter)
+    }
+
+    if (monthFilter) {
+      filtered = filtered.filter(d => d.created_at?.slice(0, 7) === monthFilter)
+    }
+
     setFilteredDocuments(filtered)
     setCurrentPage(1) // Reset to first page when filters change
-  }, [searchTerm, typeFilter, documents])
+  }, [searchTerm, typeFilter, subcontractorFilter, monthFilter, documents])
 
   // Pagination
   const totalPages = Math.ceil(filteredDocuments.length / pageSize)
@@ -174,10 +210,10 @@ export default function PrevencionistaDocumentos() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm text-slate-300 mb-2 block">
-                  Buscar por nombre
+                  Buscar por nombre o subcontratista
                 </label>
                 <Input
-                  placeholder="Ej: liquidacion..."
+                  placeholder="Ej: liquidacion, transportes..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="bg-slate-800 border-slate-600 text-slate-100"
@@ -196,6 +232,40 @@ export default function PrevencionistaDocumentos() {
                   {documentTypes.map(type => (
                     <option key={type.id} value={type.code}>
                       {type.code}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-slate-300 mb-2 block">
+                  Subcontratista
+                </label>
+                <select
+                  value={subcontractorFilter}
+                  onChange={(e) => setSubcontractorFilter(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-md text-slate-100"
+                >
+                  <option value="">Todos los subcontratistas</option>
+                  {subcontractors.map(sub => (
+                    <option key={sub.id} value={sub.id}>
+                      {sub.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-slate-300 mb-2 block">
+                  Mes
+                </label>
+                <select
+                  value={monthFilter}
+                  onChange={(e) => setMonthFilter(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-md text-slate-100"
+                >
+                  <option value="">Todos los meses</option>
+                  {availableMonths.map(month => (
+                    <option key={month} value={month} className="capitalize">
+                      {new Date(month + '-01').toLocaleDateString('es-CL', { year: 'numeric', month: 'long' })}
                     </option>
                   ))}
                 </select>
@@ -231,6 +301,9 @@ export default function PrevencionistaDocumentos() {
                           Nombre del archivo
                         </th>
                         <th className="text-left py-3 px-4 text-slate-400 font-medium">
+                          Subcontratista
+                        </th>
+                        <th className="text-left py-3 px-4 text-slate-400 font-medium">
                           Tipo
                         </th>
                         <th className="text-left py-3 px-4 text-slate-400 font-medium">
@@ -252,6 +325,9 @@ export default function PrevencionistaDocumentos() {
                             <span className="truncate">{doc.file_name}</span>
                           </td>
                           <td className="py-3 px-4 text-slate-300">
+                            {doc.subcontractor_name}
+                          </td>
+                          <td className="py-3 px-4 text-slate-300">
                             {doc.type_code}
                           </td>
                           <td className="py-3 px-4 text-slate-400">
@@ -265,7 +341,7 @@ export default function PrevencionistaDocumentos() {
                               className="text-blue-400 hover:bg-blue-500/20"
                               title="Ver documento"
                             >
-                              <FileText className="w-4 h-4" />
+                              <Eye className="w-4 h-4" />
                             </Button>
                             <Button
                               size="sm"
