@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
+export const dynamic = 'force-dynamic'
 import bcrypt from "bcrypt"
 
 export async function POST(request: Request) {
