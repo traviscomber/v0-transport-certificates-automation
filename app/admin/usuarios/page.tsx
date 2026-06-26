@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { HelpBox } from '@/components/ui/help-box'
 import { UserListClient } from '@/components/admin/user-list-client'
 
+export const dynamic = 'force-dynamic'
+
 async function getAdminUsers() {
   try {
     const supabase = await createClient()
