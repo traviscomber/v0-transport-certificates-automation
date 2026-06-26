@@ -107,6 +107,12 @@ export function SubcontractorDetailTabs({
         month,
         monthLabel: new Date(month + '-01').toLocaleDateString('es-CL', { year: 'numeric', month: 'long' }),
         documentCount: docs.length,
+        stats: {
+          approved: docs.filter((d) => d.status === 'approved').length,
+          pending: docs.filter((d) => d.status === 'pending').length,
+          rejected: docs.filter((d) => d.status === 'rejected').length,
+          expired: docs.filter((d) => d.status === 'expired').length,
+        },
         docs: docs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
       }))
   }
@@ -121,31 +127,35 @@ export function SubcontractorDetailTabs({
     setExpandedMonths(newExpanded)
   }
 
+  // Expand the most recent month by default once documents are loaded
+  useEffect(() => {
+    if (documents.length > 0) {
+      const months = groupDocumentsByMonth(documents)
+      if (months.length > 0) {
+        setExpandedMonths((prev) => {
+          // Only auto-expand if user hasn't interacted yet (still has placeholder)
+          if (prev.has('current') || prev.size === 0) {
+            return new Set([months[0].month])
+          }
+          return prev
+        })
+      }
+    }
+  }, [documents])
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         // If documentsData is provided as prop, use it (pre-fetched from parent)
         if (documentsData) {
-          console.log('[v0] Using documentsData from prop:', {
-            subcontractorId: subcontractor.id,
-            documentCount: documentsData.documents?.length,
-            requirementCount: documentsData.requirements?.length,
-            documents: documentsData.documents,
-            requirements: documentsData.requirements
-          })
           setDocuments(documentsData.documents || [])
           setRequirements(documentsData.requirements || [])
           setSummary(documentsData.summary || summary)
         } else {
           // Otherwise fetch from API (fallback)
-          console.log('[v0] No documentsData prop, fetching from API for subcontractor:', subcontractor.id)
           const docResponse = await fetch(`/api/subcontractors/${subcontractor.id}/documents`)
           if (docResponse.ok) {
             const data = await docResponse.json()
-            console.log('[v0] API returned:', {
-              documentCount: data.documents?.length,
-              requirementCount: data.requirements?.length
-            })
             setDocuments(data.documents || [])
             setRequirements(data.requirements || [])
             setSummary(data.summary || summary)
@@ -155,7 +165,7 @@ export function SubcontractorDetailTabs({
         // Conductors are passed as a prop from subcontractors-list, no need to fetch
         // Use the conductoresData that's already been filtered by RUT matching
       } catch (error) {
-        console.error('[v0] Error fetching data:', error)
+        console.error('Error fetching data:', error)
       } finally {
         setLoading(false)
       }
@@ -444,8 +454,22 @@ export function SubcontractorDetailTabs({
                                             <ChevronDown 
                                               className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                                             />
-                                            <span className="text-sm font-semibold text-slate-200">{monthGroup.monthLabel}</span>
+                                            <span className="text-sm font-semibold text-slate-200 capitalize">{monthGroup.monthLabel}</span>
                                             <Badge variant="outline" className="text-xs">{docsInMonth} documentos</Badge>
+                                          </div>
+                                          <div className="flex items-center gap-1.5">
+                                            {monthGroup.stats.approved > 0 && (
+                                              <Badge className="bg-green-500/20 text-green-300 text-xs">{monthGroup.stats.approved} aprob.</Badge>
+                                            )}
+                                            {monthGroup.stats.pending > 0 && (
+                                              <Badge className="bg-yellow-500/20 text-yellow-300 text-xs">{monthGroup.stats.pending} pend.</Badge>
+                                            )}
+                                            {monthGroup.stats.rejected > 0 && (
+                                              <Badge className="bg-red-500/20 text-red-300 text-xs">{monthGroup.stats.rejected} rech.</Badge>
+                                            )}
+                                            {monthGroup.stats.expired > 0 && (
+                                              <Badge className="bg-orange-500/20 text-orange-300 text-xs">{monthGroup.stats.expired} venc.</Badge>
+                                            )}
                                           </div>
                                         </button>
                                         
