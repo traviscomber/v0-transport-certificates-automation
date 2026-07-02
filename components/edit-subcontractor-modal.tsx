@@ -98,8 +98,8 @@ export function EditSubcontractorModal({
         email: subcontractor?.email || '',
         nombre_contacto: subcontractor?.nombre_contacto || subcontractor?.representante_legal || '',
         is_active: subcontractor?.is_active !== false,
-        // IMPORTANT: Keep the actual assigned_executive_id value (don't convert empty to 'unassigned')
-        assigned_executive_id: subcontractor?.assigned_executive_id || ''
+        // Use 'unassigned' for UI, but convert to empty string on save
+        assigned_executive_id: subcontractor?.assigned_executive_id || 'unassigned'
       })
       setHasChanges(false)
     }
@@ -128,8 +128,8 @@ export function EditSubcontractorModal({
       // Only include fields that were changed - NEVER overwrite assigned_executive_id unintentionally
       const submitData = {
         ...formData,
-        // Keep the actual value - empty string means unassigned, not 'unassigned' string
-        assigned_executive_id: formData.assigned_executive_id || ''
+        // Convert 'unassigned' back to empty string for database
+        assigned_executive_id: formData.assigned_executive_id === 'unassigned' ? '' : formData.assigned_executive_id
       }
 
       const response = await fetch(`/api/transportistas/${subcontractor.id}`, {
@@ -328,7 +328,7 @@ export function EditSubcontractorModal({
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Sin asignar</SelectItem>
+                      <SelectItem value="unassigned">Sin asignar</SelectItem>
                       {executives.map((exec) => (
                         <SelectItem key={exec.id} value={exec.id}>
                           {exec.full_name} ({exec.email})
