@@ -333,6 +333,22 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
 
   const hasActiveFilters = searchTerm.length > 0 || selectedEjecutivas.length > 0 || selectedCertifications.length > 0 || showActiveOnly
 
+  // Memoize the conductores data for the currently selected subcontractor
+  // This prevents the modal from re-rendering and losing the selected subcontractor
+  const conductoresData = useMemo(() => {
+    if (!selectedDetailSubcontractor?.id) {
+      return []
+    }
+    
+    const normalizeRut = (rut: string) => rut?.replace(/[.\-]/g, '').toUpperCase() || ''
+    const normalizedSubRut = normalizeRut(selectedDetailSubcontractor.rut)
+    
+    return drivers.filter(d => {
+      const normalizedDriverRut = normalizeRut(d.rut_proveedor)
+      return normalizedDriverRut === normalizedSubRut && d.is_active
+    })
+  }, [selectedDetailSubcontractor?.id, selectedDetailSubcontractor?.rut, drivers])
+
   if (isLoading) {
     return <div className="text-center py-8 text-slate-400">Cargando subcontratistas...</div>
   }
@@ -682,12 +698,7 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
         <SubcontractorDetailTabs
           subcontractor={selectedDetailSubcontractor}
           initialTab={detailTabToOpen}
-          conductoresData={selectedDetailSubcontractor.id ? drivers.filter(d => {
-            const normalizeRut = (rut: string) => rut?.replace(/[.\-]/g, '').toUpperCase() || ''
-            const normalizedDriverRut = normalizeRut(d.rut_proveedor)
-            const normalizedSubRut = normalizeRut(selectedDetailSubcontractor.rut)
-            return normalizedDriverRut === normalizedSubRut && d.is_active
-          }) : []}
+          conductoresData={conductoresData}
           documentsData={documentsData || undefined}
           onClose={() => {
             setSelectedDetailSubcontractor(null)
