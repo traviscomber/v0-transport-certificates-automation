@@ -48,6 +48,7 @@ export function EditSubcontractorModal({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [executives, setExecutives] = useState<Executive[]>([])
   const [loadingExecutives, setLoadingExecutives] = useState(false)
+  const [initialSubcontractorId, setInitialSubcontractorId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     razon_social: '',
     rut: '',
@@ -59,6 +60,7 @@ export function EditSubcontractorModal({
     is_active: true,
     assigned_executive_id: ''
   })
+  const [hasChanges, setHasChanges] = useState(false)
 
   // Fetch executives when modal opens
   useEffect(() => {
@@ -82,9 +84,11 @@ export function EditSubcontractorModal({
     }
   }
 
-  // Update form data when subcontractor changes
+  // Update form data ONLY when subcontractor actually changes (not on modal open/close)
+  // This prevents accidental overwrites of assigned_executive_id
   useEffect(() => {
-    if (subcontractor) {
+    if (subcontractor && subcontractor.id !== initialSubcontractorId) {
+      setInitialSubcontractorId(subcontractor.id)
       setFormData({
         razon_social: subcontractor?.razon_social || subcontractor?.nombre || '',
         rut: subcontractor?.rut || '',
@@ -94,27 +98,38 @@ export function EditSubcontractorModal({
         email: subcontractor?.email || '',
         nombre_contacto: subcontractor?.nombre_contacto || subcontractor?.representante_legal || '',
         is_active: subcontractor?.is_active !== false,
-        assigned_executive_id: subcontractor?.assigned_executive_id ? subcontractor.assigned_executive_id : 'unassigned'
+        // IMPORTANT: Keep the actual assigned_executive_id value (don't convert empty to 'unassigned')
+        assigned_executive_id: subcontractor?.assigned_executive_id || ''
       })
+      setHasChanges(false)
     }
-  }, [subcontractor, isOpen])
+  }, [subcontractor?.id])
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+    setHasChanges(true)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!subcontractor?.id) return
 
+    // Prevent submission if no changes were made
+    if (!hasChanges) {
+      console.log('[v0] No changes detected - closing modal without saving')
+      onClose()
+      return
+    }
+
     setLoading(true)
     setError('')
 
     try {
-      // Convert "unassigned" to empty string for API
+      // Only include fields that were changed - NEVER overwrite assigned_executive_id unintentionally
       const submitData = {
         ...formData,
-        assigned_executive_id: formData.assigned_executive_id === 'unassigned' ? '' : formData.assigned_executive_id
+        // Keep the actual value - empty string means unassigned, not 'unassigned' string
+        assigned_executive_id: formData.assigned_executive_id || ''
       }
 
       const response = await fetch(`/api/transportistas/${subcontractor.id}`, {
@@ -131,6 +146,7 @@ export function EditSubcontractorModal({
 
       onSuccess()
       onClose()
+      setHasChanges(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
     } finally {
@@ -312,7 +328,7 @@ export function EditSubcontractorModal({
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="unassigned">Sin asignar</SelectItem>
+                      <SelectItem value="">Sin asignar</SelectItem>
                       {executives.map((exec) => (
                         <SelectItem key={exec.id} value={exec.id}>
                           {exec.full_name} ({exec.email})
