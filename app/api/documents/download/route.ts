@@ -20,33 +20,47 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const supabase = createAdminClient()
-    const { bucket, path } = resolveDocumentStorageTarget(fileSource)
+    const target = resolveDocumentStorageTarget(fileSource)
 
-    // Get signed download URL
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .createSignedUrl(path, 3600) // 1 hour expiry
+    const filename = (() => {
+      if (target.kind === 'external') {
+        try {
+          return decodeURIComponent(new URL(target.url).pathname.split('/').filter(Boolean).pop() || 'documento')
+        } catch {
+          return 'documento'
+        }
+      }
 
-    if (error || !data) {
-      return NextResponse.json(
-        { error: 'Failed to generate download link' },
-        { status: 500 }
-      )
-    }
+      return decodeURIComponent(target.path.split('/').filter(Boolean).pop() || 'documento')
+    })()
 
-    const fileResponse = await fetch(data.signedUrl)
-    if (!fileResponse.ok || !fileResponse.body) {
+    const sourceResponse = target.kind === 'external'
+      ? await fetch(target.url)
+      : await (async () => {
+          const supabase = createAdminClient()
+
+          // Get signed download URL
+          const { data, error } = await supabase.storage
+            .from(target.bucket)
+            .createSignedUrl(target.path, 3600) // 1 hour expiry
+
+          if (error || !data) {
+            return null
+          }
+
+          return fetch(data.signedUrl)
+        })()
+
+    if (!sourceResponse || !sourceResponse.ok || !sourceResponse.body) {
       return NextResponse.json(
         { error: 'Failed to fetch file for download' },
         { status: 500 }
       )
     }
 
-    const filename = path.split('/').pop() || 'documento'
-    const contentType = fileResponse.headers.get('content-type') || 'application/octet-stream'
+    const contentType = sourceResponse.headers.get('content-type') || 'application/octet-stream'
 
-    return new NextResponse(fileResponse.body, {
+    return new NextResponse(sourceResponse.body, {
       headers: {
         'Content-Type': contentType,
         'Content-Disposition': `attachment; filename="${filename}"`,

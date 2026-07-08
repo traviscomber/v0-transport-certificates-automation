@@ -1,38 +1,34 @@
 export type DocumentAccessMode = 'preview' | 'download'
 
+export type ResolvedDocumentAccessTarget =
+  | {
+      kind: 'storage'
+      bucket: string
+      path: string
+    }
+  | {
+      kind: 'external'
+      url: string
+    }
+
+const SUPABASE_PUBLIC_OBJECT_PATH = /\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/
+
 function isAbsoluteUrl(value: string): boolean {
   return /^https?:\/\//i.test(value)
 }
 
-function extractStorageTarget(value: string) {
-  try {
-    const parsed = new URL(value)
-    const match = parsed.pathname.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/)
+function parseStorageTargetFromPath(value: string) {
+  const match = value.match(SUPABASE_PUBLIC_OBJECT_PATH)
 
-    if (match) {
-      return {
-        bucket: decodeURIComponent(match[1]),
-        path: decodeURIComponent(match[2]),
-      }
-    }
-  } catch {
-    // Not a full URL, fall through to path handling.
-  }
-
-  const trimmed = value.replace(/^\/+/, '')
-  const bucketAndPath = trimmed.split('/')
-
-  if (bucketAndPath.length > 1 && bucketAndPath[0].includes('-')) {
+  if (match) {
     return {
-      bucket: bucketAndPath[0],
-      path: bucketAndPath.slice(1).join('/'),
+      kind: 'storage' as const,
+      bucket: decodeURIComponent(match[1]),
+      path: decodeURIComponent(match[2]),
     }
   }
 
-  return {
-    bucket: 'documents',
-    path: trimmed,
-  }
+  return null
 }
 
 export function buildDocumentAccessUrl(
@@ -43,23 +39,53 @@ export function buildDocumentAccessUrl(
 
   const encodedValue = encodeURIComponent(value)
 
-  if (mode === 'download') {
-    return `/api/documents/download?url=${encodedValue}`
-  }
-
-  return `/api/documents/preview?url=${encodedValue}`
+  return `/api/documents/${mode}?url=${encodedValue}`
 }
 
-export function resolveDocumentStorageTarget(value: string) {
+export function resolveDocumentStorageTarget(value: string): ResolvedDocumentAccessTarget {
   const normalized = value.trim()
 
   if (!normalized) {
-    return { bucket: 'documents', path: '' }
+    return {
+      kind: 'storage',
+      bucket: 'documents',
+      path: '',
+    }
   }
 
-  if (!isAbsoluteUrl(normalized)) {
-    return extractStorageTarget(normalized)
+  if (isAbsoluteUrl(normalized)) {
+    const storageTarget = parseStorageTargetFromPath(normalized)
+
+    if (storageTarget) {
+      return storageTarget
+    }
+
+    return {
+      kind: 'external',
+      url: normalized,
+    }
   }
 
-  return extractStorageTarget(normalized)
+  const storageTarget = parseStorageTargetFromPath(normalized)
+
+  if (storageTarget) {
+    return storageTarget
+  }
+
+  const trimmed = normalized.replace(/^\/+/, '')
+  const bucketAndPath = trimmed.split('/')
+
+  if (bucketAndPath.length > 1 && (bucketAndPath[0].includes('-') || bucketAndPath[0] === 'documents')) {
+    return {
+      kind: 'storage',
+      bucket: bucketAndPath[0],
+      path: bucketAndPath.slice(1).join('/'),
+    }
+  }
+
+  return {
+    kind: 'storage',
+    bucket: 'documents',
+    path: trimmed,
+  }
 }

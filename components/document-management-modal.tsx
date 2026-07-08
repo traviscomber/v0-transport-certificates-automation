@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { X, Upload, File, Trash2, CheckCircle, AlertCircle, Clock, Download, Eye } from 'lucide-react'
+import { buildDocumentAccessUrl } from '@/lib/document-file-access'
 
 interface Document {
   id: string
@@ -229,7 +230,7 @@ export function DocumentManagementModal({
                         {doc.archivo_url && (
                           <>
                             <a
-                              href={`/api/documents/download?path=${encodeURIComponent(doc.archivo_url)}`}
+                              href={buildDocumentAccessUrl(doc.archivo_url, 'download')}
                               download
                               className="p-1.5 hover:bg-slate-700 rounded transition-colors flex-shrink-0"
                               title="Descargar"
@@ -237,7 +238,7 @@ export function DocumentManagementModal({
                               <Download className="w-4 h-4" />
                             </a>
                             <a
-                              href={`/api/documents/preview?path=${encodeURIComponent(doc.archivo_url)}`}
+                              href={buildDocumentAccessUrl(doc.archivo_url, 'preview')}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="p-1.5 hover:bg-slate-700 rounded transition-colors flex-shrink-0"

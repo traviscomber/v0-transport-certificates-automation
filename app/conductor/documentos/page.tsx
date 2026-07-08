@@ -482,7 +482,7 @@ export default function ConductorDocumentosPage() {
                             className="text-slate-400 hover:text-white"
                             asChild
                           >
-                            <a href={buildDocumentAccessUrl(uploadedDoc.file_url, 'preview')} target="_blank" rel="noopener noreferrer">
+                            <a href={buildDocumentAccessUrl(uploadedDoc.file_url, 'download')} target="_blank" rel="noopener noreferrer">
                               <Download className="h-4 w-4" />
                             </a>
                           </Button>
@@ -558,7 +558,7 @@ export default function ConductorDocumentosPage() {
                   <div className="flex items-center gap-2 shrink-0">
                     {getStatusBadge(doc.validation_status, doc.expiration_date)}
                     <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white" asChild>
-                      <a href={buildDocumentAccessUrl(doc.file_url, 'preview')} target="_blank" rel="noopener noreferrer">
+                      <a href={buildDocumentAccessUrl(doc.file_url, 'download')} target="_blank" rel="noopener noreferrer">
                         <Download className="h-4 w-4" />
                       </a>
                     </Button>

@@ -20,13 +20,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const target = resolveDocumentStorageTarget(fileSource)
+
+    if (target.kind === 'external') {
+      return NextResponse.redirect(target.url)
+    }
+
     const supabase = createAdminClient()
-    const { bucket, path } = resolveDocumentStorageTarget(fileSource)
 
     // Get signed public URL for preview
     const { data } = await supabase.storage
-      .from(bucket)
-      .getPublicUrl(path)
+      .from(target.bucket)
+      .getPublicUrl(target.path)
 
     if (!data) {
       return NextResponse.json(
