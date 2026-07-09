@@ -503,12 +503,12 @@ export function ComplianceExcelMatrix({
                 onClick={() => setSearchTerm('')}
                 className="rounded-md border border-slate-700/70 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
               >
-                Limpiar búsqueda
+                Limpiar bÃºsqueda
               </button>
             ) : null}
           </div>
           <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
-            <span className="sticky left-0 z-10 mr-1 shrink-0 bg-slate-950/50 pr-2 font-semibold uppercase tracking-[0.18em] text-slate-400">Filtro alfabético</span>
+            <span className="sticky left-0 z-10 mr-1 shrink-0 bg-slate-950/50 pr-2 font-semibold uppercase tracking-[0.18em] text-slate-400">Filtro alfabÃ©tico</span>
             <button
               type="button"
               onClick={() => setActiveLetter('ALL')}
