@@ -61,6 +61,7 @@ const navigationGroups = [
     items: [
       { name: "Subir Documentos", href: "/dashboard/upload", icon: Upload },
       { name: "Verificación", href: "/dashboard/verification", icon: CheckSquare },
+      { name: "Compliance Matrix", href: "/compliance", icon: Shield },
     ],
   },
   {
