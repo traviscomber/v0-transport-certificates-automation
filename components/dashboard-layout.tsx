@@ -84,6 +84,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       icon: <BarChart3 className="w-5 h-5" />,
       roles: ["admin"]
     },
+    {
+      label: "Compliance Matrix",
+      href: "/compliance",
+      icon: <Shield className="w-5 h-5" />,
+      roles: ["admin", "mandante"]
+    },
     // Mandante navigation
     {
       label: "Transportistas",
