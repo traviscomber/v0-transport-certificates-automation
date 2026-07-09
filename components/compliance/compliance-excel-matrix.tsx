@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Shield } from 'lucide-react'
@@ -253,6 +253,9 @@ export function ComplianceExcelMatrix({
       .filter((group) => group.columns.length > 0)
   }, [])
 
+  const [rowsPerPage, setRowsPerPage] = useState(12)
+  const [currentPage, setCurrentPage] = useState(1)
+
   const rows = useMemo(() => {
     const allByConductor = new Map<string, MatrixDocument[]>()
     const allByCompany = new Map<string, MatrixDocument[]>()
@@ -325,6 +328,17 @@ export function ComplianceExcelMatrix({
       }
     })
   }, [approved.conductorDocs, approved.subDocs, conductors, pending.conductorDocs, pending.subDocs, rejected.conductorDocs, rejected.subDocs, transportistasByRut])
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / rowsPerPage))
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages))
+  }, [totalPages])
+
+  const paginatedRows = useMemo(() => {
+    const startIndex = (currentPage - 1) * rowsPerPage
+    return rows.slice(startIndex, startIndex + rowsPerPage)
+  }, [currentPage, rows, rowsPerPage])
 
   const summary = useMemo(() => {
     const totalCells = rows.reduce((acc, row) => acc + row.totalRelevant, 0)
@@ -408,6 +422,54 @@ export function ComplianceExcelMatrix({
           <span className="text-slate-500">El periodo se muestra debajo del valor aprobado.</span>
         </div>
 
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-700/50 bg-slate-950/50 px-4 py-3 text-sm text-slate-300">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-semibold uppercase tracking-[0.18em] text-slate-400">Paginación</span>
+            <span>
+              {rows.length === 0
+                ? 'Sin filas'
+                : `${(currentPage - 1) * rowsPerPage + 1}-${Math.min(currentPage * rowsPerPage, rows.length)} de ${rows.length} filas`}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="text-xs uppercase tracking-[0.18em] text-slate-400" htmlFor="rows-per-page">
+              Filas por página
+            </label>
+            <select
+              id="rows-per-page"
+              value={rowsPerPage}
+              onChange={(event) => {
+                setRowsPerPage(Number(event.target.value))
+                setCurrentPage(1)
+              }}
+              className="h-9 rounded-md border border-slate-700/70 bg-slate-900 px-3 text-sm text-slate-100 outline-none transition focus:border-blue-500"
+            >
+              <option value={10}>10</option>
+              <option value={12}>12</option>
+              <option value={20}>20</option>
+              <option value={40}>40</option>
+            </select>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+                disabled={currentPage <= 1}
+                className="h-9 rounded-md border border-slate-700/70 px-3 text-sm font-medium text-slate-100 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Anterior
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
+                disabled={currentPage >= totalPages}
+                className="h-9 rounded-md border border-slate-700/70 px-3 text-sm font-medium text-slate-100 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
+        </div>
+
         {loading ? (
           <div className="rounded-lg border border-slate-700/50 bg-slate-900/60 p-4 text-sm text-slate-400">
             Cargando matriz documental...
@@ -466,7 +528,7 @@ export function ComplianceExcelMatrix({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700/50 bg-slate-900/40">
-                {rows.map((row) => {
+                {paginatedRows.map((row) => {
                   const state = row.rejectedCount > 0 || row.expiredCount > 0
                     ? 'Riesgo'
                     : row.pendingCount > 0 || row.missingCount > 0
