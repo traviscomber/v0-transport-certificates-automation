@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Shield } from 'lucide-react'
@@ -131,9 +131,16 @@ const MATRIX_COLUMNS: MatrixColumn[] = [
 ]
 
 const MATRIX_GROUP_ORDER: MatrixColumn['group'][] = ['Mensual', 'Empresa', 'Conductor', 'Vehiculo', 'Subcontratacion', 'Seguridad']
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 
 function normalizeText(value?: string | null) {
   return (value || '').trim().toLowerCase()
+}
+
+function normalizeAlphabetText(value?: string | null) {
+  return normalizeText(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
 }
 
 function getEntityLabel(entity: Entity, fallback = 'Sin nombre') {
@@ -151,6 +158,22 @@ function getRowCompanyLabel(entity: Entity, transportistasByRut: Map<string, Ent
 
   if (entity.nombre_subcontratista) return entity.nombre_subcontratista
   return 'Sin empresa'
+}
+
+function getRowAlphabetLabel(entity: Entity, transportistasByRut: Map<string, Entity>) {
+  const surname = normalizeAlphabetText(entity.apellido_paterno)
+  if (surname) return surname
+
+  const company = normalizeAlphabetText(getRowCompanyLabel(entity, transportistasByRut))
+  if (company) return company
+
+  return normalizeAlphabetText(getEntityLabel(entity))
+}
+
+function getRowAlphabetLetter(entity: Entity, transportistasByRut: Map<string, Entity>) {
+  const label = getRowAlphabetLabel(entity, transportistasByRut)
+  const first = label.charAt(0).toUpperCase()
+  return first >= 'A' && first <= 'Z' ? first : '#'
 }
 
 function getDocDate(doc: MatrixDocument) {
@@ -253,8 +276,7 @@ export function ComplianceExcelMatrix({
       .filter((group) => group.columns.length > 0)
   }, [])
 
-  const [rowsPerPage, setRowsPerPage] = useState(12)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [activeLetter, setActiveLetter] = useState('ALL')
 
   const rows = useMemo(() => {
     const allByConductor = new Map<string, MatrixDocument[]>()
@@ -329,27 +351,29 @@ export function ComplianceExcelMatrix({
     })
   }, [approved.conductorDocs, approved.subDocs, conductors, pending.conductorDocs, pending.subDocs, rejected.conductorDocs, rejected.subDocs, transportistasByRut])
 
-  const totalPages = Math.max(1, Math.ceil(rows.length / rowsPerPage))
+  const filteredRows = useMemo(() => {
+    if (activeLetter === 'ALL') return rows
+    return rows.filter((row) => getRowAlphabetLetter(row.conductor, transportistasByRut) === activeLetter)
+  }, [activeLetter, rows, transportistasByRut])
 
-  useEffect(() => {
-    setCurrentPage((page) => Math.min(page, totalPages))
-  }, [totalPages])
-
-  const paginatedRows = useMemo(() => {
-    const startIndex = (currentPage - 1) * rowsPerPage
-    return rows.slice(startIndex, startIndex + rowsPerPage)
-  }, [currentPage, rows, rowsPerPage])
+  const availableLetters = useMemo(() => {
+    const letters = new Set<string>()
+    rows.forEach((row) => {
+      letters.add(getRowAlphabetLetter(row.conductor, transportistasByRut))
+    })
+    return ALPHABET.filter((letter) => letters.has(letter))
+  }, [rows, transportistasByRut])
 
   const summary = useMemo(() => {
-    const totalCells = rows.reduce((acc, row) => acc + row.totalRelevant, 0)
-    const approvedCells = rows.reduce((acc, row) => acc + row.approvedCount, 0)
-    const pendingCells = rows.reduce((acc, row) => acc + row.pendingCount, 0)
-    const rejectedCells = rows.reduce((acc, row) => acc + row.rejectedCount, 0)
-    const missingCells = rows.reduce((acc, row) => acc + row.missingCount, 0)
+    const totalCells = filteredRows.reduce((acc, row) => acc + row.totalRelevant, 0)
+    const approvedCells = filteredRows.reduce((acc, row) => acc + row.approvedCount, 0)
+    const pendingCells = filteredRows.reduce((acc, row) => acc + row.pendingCount, 0)
+    const rejectedCells = filteredRows.reduce((acc, row) => acc + row.rejectedCount, 0)
+    const missingCells = filteredRows.reduce((acc, row) => acc + row.missingCount, 0)
     const coverage = totalCells > 0 ? Math.round((approvedCells / totalCells) * 100) : 0
 
     return { totalCells, approvedCells, pendingCells, rejectedCells, missingCells, coverage }
-  }, [rows])
+  }, [filteredRows])
 
   const renderStatusCell = (doc?: MatrixDocument, requirementName?: string) => {
     if (!doc) {
@@ -422,51 +446,55 @@ export function ComplianceExcelMatrix({
           <span className="text-slate-500">El periodo se muestra debajo del valor aprobado.</span>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-700/50 bg-slate-950/50 px-4 py-3 text-sm text-slate-300">
+        <div className="rounded-xl border border-slate-700/50 bg-slate-950/50 px-4 py-3 text-sm text-slate-300">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold uppercase tracking-[0.18em] text-slate-400">Paginación</span>
-            <span>
-              {rows.length === 0
-                ? 'Sin filas'
-                : `${(currentPage - 1) * rowsPerPage + 1}-${Math.min(currentPage * rowsPerPage, rows.length)} de ${rows.length} filas`}
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="text-xs uppercase tracking-[0.18em] text-slate-400" htmlFor="rows-per-page">
-              Filas por página
-            </label>
-            <select
-              id="rows-per-page"
-              value={rowsPerPage}
-              onChange={(event) => {
-                setRowsPerPage(Number(event.target.value))
-                setCurrentPage(1)
-              }}
-              className="h-9 rounded-md border border-slate-700/70 bg-slate-900 px-3 text-sm text-slate-100 outline-none transition focus:border-blue-500"
+            <span className="font-semibold uppercase tracking-[0.18em] text-slate-400">Filtro alfab�tico</span>
+            <button
+              type="button"
+              onClick={() => setActiveLetter('ALL')}
+              className={`h-9 rounded-md border px-3 text-sm font-medium transition ${
+                activeLetter === 'ALL'
+                  ? 'border-blue-400 bg-blue-500/15 text-blue-200'
+                  : 'border-slate-700/70 text-slate-200 hover:border-slate-500 hover:bg-slate-800'
+              }`}
             >
-              <option value={10}>10</option>
-              <option value={12}>12</option>
-              <option value={20}>20</option>
-              <option value={40}>40</option>
-            </select>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
-                disabled={currentPage <= 1}
-                className="h-9 rounded-md border border-slate-700/70 px-3 text-sm font-medium text-slate-100 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Anterior
-              </button>
-              <button
-                type="button"
-                onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
-                disabled={currentPage >= totalPages}
-                className="h-9 rounded-md border border-slate-700/70 px-3 text-sm font-medium text-slate-100 transition hover:border-slate-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Siguiente
-              </button>
-            </div>
+              Todas
+            </button>
+            {ALPHABET.map((letter) => {
+              const isAvailable = availableLetters.includes(letter)
+              const isActive = activeLetter === letter
+              return (
+                <button
+                  key={letter}
+                  type="button"
+                  onClick={() => isAvailable && setActiveLetter(letter)}
+                  disabled={!isAvailable}
+                  className={`h-9 min-w-9 rounded-md border px-3 text-sm font-semibold transition ${
+                    isActive
+                      ? 'border-blue-400 bg-blue-500/15 text-blue-200'
+                      : isAvailable
+                        ? 'border-slate-700/70 text-slate-200 hover:border-slate-500 hover:bg-slate-800'
+                        : 'cursor-not-allowed border-slate-800/50 text-slate-600 opacity-40'
+                  }`}
+                >
+                  {letter}
+                </button>
+              )
+            })}
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+            <span>
+              {activeLetter === 'ALL'
+                ? `Mostrando ${filteredRows.length} filas`
+                : `Mostrando ${filteredRows.length} filas para ${activeLetter}`}
+            </span>
+            <button
+              type="button"
+              onClick={() => setActiveLetter('ALL')}
+              className="rounded-md border border-slate-700/70 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
+            >
+              Limpiar filtro
+            </button>
           </div>
         </div>
 
@@ -474,9 +502,9 @@ export function ComplianceExcelMatrix({
           <div className="rounded-lg border border-slate-700/50 bg-slate-900/60 p-4 text-sm text-slate-400">
             Cargando matriz documental...
           </div>
-        ) : rows.length === 0 || groupedColumns.length === 0 ? (
+        ) : filteredRows.length === 0 || groupedColumns.length === 0 ? (
           <div className="rounded-lg border border-slate-700/50 bg-slate-900/60 p-4 text-sm text-slate-400">
-            No hay datos suficientes para mostrar la matriz documental.
+            No hay datos suficientes para mostrar la matriz documental con ese filtro.
           </div>
         ) : (
           <div className="max-w-full overflow-x-auto overflow-y-hidden rounded-xl border border-slate-700/50">
@@ -528,7 +556,7 @@ export function ComplianceExcelMatrix({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700/50 bg-slate-900/40">
-                {paginatedRows.map((row) => {
+                {filteredRows.map((row) => {
                   const state = row.rejectedCount > 0 || row.expiredCount > 0
                     ? 'Riesgo'
                     : row.pendingCount > 0 || row.missingCount > 0
