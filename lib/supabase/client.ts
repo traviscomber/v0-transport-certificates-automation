@@ -12,10 +12,12 @@ export function createClient() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('[v0] Missing Supabase environment variables:', {
-      url: supabaseUrl ? 'SET' : 'MISSING',
-      key: supabaseAnonKey ? 'SET' : 'MISSING',
-    })
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[v0] Missing Supabase environment variables:', {
+        url: supabaseUrl ? 'SET' : 'MISSING',
+        key: supabaseAnonKey ? 'SET' : 'MISSING',
+      })
+    }
     // Create a dummy client to avoid null checks everywhere
     // This will fail at runtime but won't cause TypeScript errors
     clientInstance = createSupabaseClient('https://dummy.supabase.co', 'dummy-key', {

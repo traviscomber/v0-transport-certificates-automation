@@ -19,6 +19,14 @@ const nextConfig = {
   // Production optimizations
   compress: true,
   poweredByHeader: false,
+  webpack: (config, { dev }) => {
+    // Avoid filesystem cache writes in constrained build environments.
+    if (!dev) {
+      config.cache = false;
+    }
+
+    return config;
+  },
   
   // Security headers
   headers: async () => {
