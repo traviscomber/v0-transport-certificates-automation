@@ -177,6 +177,27 @@ function getRowAlphabetLetter(entity: Entity, transportistasByRut: Map<string, E
   return first >= 'A' && first <= 'Z' ? first : '#'
 }
 
+
+function getRowSearchText(row: { conductor: Entity; company?: Entity }) {
+  return normalizeAlphabetText(
+    [
+      row.conductor.rut,
+      row.conductor.nombres,
+      row.conductor.apellido_paterno,
+      row.conductor.ejecutivo_nombre,
+      row.conductor.nombre_subcontratista,
+      row.company?.rut,
+      row.company?.razon_social,
+      row.company?.nombre_subcontratista,
+      row.company?.ejecutivo_nombre,
+      getEntityLabel(row.conductor),
+      row.company ? getEntityLabel(row.company) : null,
+    ]
+      .filter(Boolean)
+      .join(' ')
+  )
+}
+
 function getDocDate(doc: MatrixDocument) {
   return doc.reviewed_at || doc.validated_at || doc.approved_at || doc.updated_at || doc.created_at || doc.submissionDate || ''
 }
@@ -278,6 +299,7 @@ export function ComplianceExcelMatrix({
   }, [])
 
   const [activeLetter, setActiveLetter] = useState('ALL')
+  const [searchTerm, setSearchTerm] = useState('')
 
   const rows = useMemo(() => {
     const allByConductor = new Map<string, MatrixDocument[]>()
@@ -353,9 +375,17 @@ export function ComplianceExcelMatrix({
   }, [approved.conductorDocs, approved.subDocs, conductors, pending.conductorDocs, pending.subDocs, rejected.conductorDocs, rejected.subDocs, transportistasByRut])
 
   const filteredRows = useMemo(() => {
-    if (activeLetter === 'ALL') return rows
-    return rows.filter((row) => getRowAlphabetLetter(row.conductor, transportistasByRut) === activeLetter)
-  }, [activeLetter, rows, transportistasByRut])
+    const normalizedSearch = normalizeAlphabetText(searchTerm)
+    const matchesSearch = (row: { conductor: Entity; company?: Entity }) => {
+      if (!normalizedSearch) return true
+      return getRowSearchText(row).includes(normalizedSearch)
+    }
+
+    return rows.filter((row) => {
+      const matchesLetter = activeLetter === 'ALL' || getRowAlphabetLetter(row.conductor, transportistasByRut) === activeLetter
+      return matchesLetter && matchesSearch(row)
+    })
+  }, [activeLetter, rows, searchTerm, transportistasByRut])
 
   const availableLetters = useMemo(() => {
     const letters = new Set<string>()
@@ -371,7 +401,6 @@ export function ComplianceExcelMatrix({
       return acc
     }, {})
   }, [rows, transportistasByRut])
-
 
   const summary = useMemo(() => {
     const totalCells = filteredRows.reduce((acc, row) => acc + row.totalRelevant, 0)
@@ -456,6 +485,28 @@ export function ComplianceExcelMatrix({
         </div>
 
         <div className="rounded-xl border border-slate-700/50 bg-slate-950/50 px-4 py-3 text-sm text-slate-300">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400" htmlFor="compliance-search">
+              Buscar
+            </label>
+            <input
+              id="compliance-search"
+              type="search"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="RUT, empresa, conductor o ejecutiva"
+              className="min-w-[240px] flex-1 rounded-md border border-slate-700/70 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-blue-500"
+            />
+            {searchTerm ? (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="rounded-md border border-slate-700/70 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
+              >
+                Limpiar búsqueda
+              </button>
+            ) : null}
+          </div>
           <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
             <span className="sticky left-0 z-10 mr-1 shrink-0 bg-slate-950/50 pr-2 font-semibold uppercase tracking-[0.18em] text-slate-400">Filtro alfabético</span>
             <button
