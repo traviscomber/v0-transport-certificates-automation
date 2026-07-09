@@ -363,6 +363,14 @@ export function ComplianceExcelMatrix({
     })
     return ALPHABET.filter((letter) => letters.has(letter))
   }, [rows, transportistasByRut])
+  const letterCounts = useMemo(() => {
+    return rows.reduce<Record<string, number>>((acc, row) => {
+      const letter = getRowAlphabetLetter(row.conductor, transportistasByRut)
+      acc[letter] = (acc[letter] || 0) + 1
+      return acc
+    }, {})
+  }, [rows, transportistasByRut])
+
 
   const summary = useMemo(() => {
     const totalCells = filteredRows.reduce((acc, row) => acc + row.totalRelevant, 0)
@@ -447,12 +455,12 @@ export function ComplianceExcelMatrix({
         </div>
 
         <div className="rounded-xl border border-slate-700/50 bg-slate-950/50 px-4 py-3 text-sm text-slate-300">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold uppercase tracking-[0.18em] text-slate-400">Filtro alfabético</span>
+          <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
+            <span className="sticky left-0 z-10 mr-1 shrink-0 bg-slate-950/50 pr-2 font-semibold uppercase tracking-[0.18em] text-slate-400">Filtro alfabético</span>
             <button
               type="button"
               onClick={() => setActiveLetter('ALL')}
-              className={`h-9 rounded-md border px-3 text-sm font-medium transition ${
+              className={`h-9 shrink-0 rounded-md border px-3 text-sm font-medium transition ${
                 activeLetter === 'ALL'
                   ? 'border-blue-400 bg-blue-500/15 text-blue-200'
                   : 'border-slate-700/70 text-slate-200 hover:border-slate-500 hover:bg-slate-800'
@@ -463,13 +471,14 @@ export function ComplianceExcelMatrix({
             {ALPHABET.map((letter) => {
               const isAvailable = availableLetters.includes(letter)
               const isActive = activeLetter === letter
+              const count = letterCounts[letter] || 0
               return (
                 <button
                   key={letter}
                   type="button"
                   onClick={() => isAvailable && setActiveLetter(letter)}
                   disabled={!isAvailable}
-                  className={`h-9 min-w-9 rounded-md border px-3 text-sm font-semibold transition ${
+                  className={`flex h-9 shrink-0 items-center gap-2 rounded-md border px-3 text-sm font-semibold transition ${
                     isActive
                       ? 'border-blue-400 bg-blue-500/15 text-blue-200'
                       : isAvailable
@@ -477,7 +486,10 @@ export function ComplianceExcelMatrix({
                         : 'cursor-not-allowed border-slate-800/50 text-slate-600 opacity-40'
                   }`}
                 >
-                  {letter}
+                  <span>{letter}</span>
+                  <span className="rounded-full bg-slate-900/70 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-slate-300">
+                    {count}
+                  </span>
                 </button>
               )
             })}
@@ -497,7 +509,6 @@ export function ComplianceExcelMatrix({
             </button>
           </div>
         </div>
-
         {loading ? (
           <div className="rounded-lg border border-slate-700/50 bg-slate-900/60 p-4 text-sm text-slate-400">
             Cargando matriz documental...
