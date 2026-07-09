@@ -6,14 +6,23 @@ import {
   CheckCircle2,
   Clock,
   FileText,
-  TrendingUp,
   AlertTriangle,
   Download,
+  Search,
+  SortAsc,
+  Eye,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { DOCUMENT_CATEGORIES, getDocumentsByCategory } from '@/lib/document-types'
 import { cn } from '@/lib/utils'
 
@@ -37,6 +46,8 @@ export function ComplianceDashboard({
   loading = false,
 }: ComplianceDashboardProps) {
   const [selectedCategory, setSelectedCategory] = useState<keyof typeof DOCUMENT_CATEGORIES | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [sortBy, setSortBy] = useState<'status' | 'name' | 'expiry'>('status')
 
   // Calculate compliance metrics
   const metrics = useMemo(() => {
@@ -70,8 +81,31 @@ export function ComplianceDashboard({
     )
   }, [documents])
 
-  // Filter documents by selected category
-  const filteredDocs = selectedCategory ? documentsByCategory[selectedCategory] || [] : documents
+  // Filter and sort documents
+  const filteredDocs = useMemo(() => {
+    let docs = selectedCategory ? documentsByCategory[selectedCategory] || [] : documents
+    
+    // Apply search filter
+    if (searchTerm) {
+      docs = docs.filter(doc => 
+        doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        doc.code.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+
+    // Apply sorting
+    const sorted = [...docs]
+    if (sortBy === 'status') {
+      const statusOrder = { expired: 0, pending: 1, missing: 2, validated: 3 }
+      sorted.sort((a, b) => statusOrder[a.status as keyof typeof statusOrder] - statusOrder[b.status as keyof typeof statusOrder])
+    } else if (sortBy === 'name') {
+      sorted.sort((a, b) => a.name.localeCompare(b.name))
+    } else if (sortBy === 'expiry') {
+      sorted.sort((a, b) => (a.expiryDate || '').localeCompare(b.expiryDate || ''))
+    }
+
+    return sorted
+  }, [selectedCategory, documents, documentsByCategory, searchTerm, sortBy])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -121,105 +155,98 @@ export function ComplianceDashboard({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-2 border-b">
         <div>
-          <h1 className="text-3xl font-bold">Cumplimiento Documental</h1>
-          <p className="text-muted-foreground">Estado actual de tus documentos para Walmart Chile</p>
+          <h1 className="text-3xl font-bold tracking-tight">Cumplimiento Documental</h1>
+          <p className="text-sm text-muted-foreground mt-1">Gestiona y monitorea el estado de tus documentos</p>
         </div>
-        <Button>
-          <Download className="mr-2 h-4 w-4" />
-          Descargar Reporte
+        <Button className="gap-2">
+          <Download className="h-4 w-4" />
+          Reporte
         </Button>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-5">
-        {/* Compliance Score */}
-        <Card>
+      {/* Key Metrics - Responsive Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Compliance Score - Featured */}
+        <Card className="lg:col-span-2 bg-gradient-to-br from-green-50 to-transparent border-green-200">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Compliance Score</CardTitle>
+            <CardTitle className="text-sm font-medium text-green-700">Cumplimiento</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600">{metrics.compliance}%</div>
-            <p className="text-xs text-muted-foreground mt-2">
-              {metrics.validated} de {metrics.total} validados
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Total Documents */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Documentos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{metrics.total}</div>
-            <p className="text-xs text-muted-foreground mt-2">tipos requeridos</p>
-          </CardContent>
-        </Card>
-
-        {/* Validados */}
-        <Card className="border-green-200">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-green-700">Validados</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-green-600">{metrics.validated}</div>
-            <div className="h-2 bg-gray-200 rounded-full mt-3 overflow-hidden">
-              <div
-                className="bg-green-600 h-full"
-                style={{ width: `${metrics.total > 0 ? (metrics.validated / metrics.total) * 100 : 0}%` }}
-              />
+            <div className="flex items-end justify-between">
+              <div>
+                <div className="text-4xl font-bold text-green-600">{metrics.compliance}%</div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {metrics.validated} de {metrics.total} documentos validados
+                </p>
+              </div>
+              <CheckCircle2 className="h-12 w-12 text-green-200" />
             </div>
           </CardContent>
         </Card>
 
-        {/* Pendientes */}
-        <Card className="border-yellow-200">
+        {/* Status Summary Cards */}
+        <Card className="border-yellow-200 bg-gradient-to-br from-yellow-50 to-transparent">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-yellow-700">Pendientes</CardTitle>
+            <CardTitle className="text-xs font-medium text-yellow-700 uppercase">Pendientes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-yellow-600">{metrics.pending}</div>
-            <div className="h-2 bg-gray-200 rounded-full mt-3 overflow-hidden">
-              <div
-                className="bg-yellow-600 h-full"
-                style={{ width: `${metrics.total > 0 ? (metrics.pending / metrics.total) * 100 : 0}%` }}
-              />
-            </div>
+            <div className="text-2xl font-bold text-yellow-600">{metrics.pending}</div>
+            <p className="text-xs text-muted-foreground mt-1">requieren atención</p>
           </CardContent>
         </Card>
 
-        {/* Vencidos */}
-        <Card className="border-red-200">
+        <Card className="border-red-200 bg-gradient-to-br from-red-50 to-transparent">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-red-700">Vencidos</CardTitle>
+            <CardTitle className="text-xs font-medium text-red-700 uppercase">Vencidos</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-red-600">{metrics.expired}</div>
-            <div className="h-2 bg-gray-200 rounded-full mt-3 overflow-hidden">
-              <div
-                className="bg-red-600 h-full"
-                style={{ width: `${metrics.total > 0 ? (metrics.expired / metrics.total) * 100 : 0}%` }}
-              />
-            </div>
+            <div className="text-2xl font-bold text-red-600">{metrics.expired}</div>
+            <p className="text-xs text-muted-foreground mt-1">acción urgente</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Category Filters */}
+      {/* Filters & Search Bar */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Categorías</CardTitle>
-          <CardDescription>Filtra por tipo de documento</CardDescription>
+          <CardTitle className="text-base mb-4">Buscar y Filtrar</CardTitle>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nombre o código..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 bg-background"
+              />
+            </div>
+
+            {/* Sort Dropdown */}
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+              <SelectTrigger className="w-full md:w-48">
+                <SortAsc className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Ordenar por..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="status">Por Estado (Urgencia)</SelectItem>
+                <SelectItem value="name">Por Nombre (A-Z)</SelectItem>
+                <SelectItem value="expiry">Por Vencimiento</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-2 md:grid-cols-6">
+
+        {/* Category Pills - Horizontal Scrollable */}
+        <CardContent className="pt-0">
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-6 px-6 md:mx-0 md:px-0">
             <Button
               variant={selectedCategory === null ? 'default' : 'outline'}
               onClick={() => setSelectedCategory(null)}
               size="sm"
-              className="w-full"
+              className="whitespace-nowrap"
             >
               Todos ({metrics.total})
             </Button>
@@ -232,7 +259,7 @@ export function ComplianceDashboard({
                   variant={selectedCategory === categoryKey ? 'default' : 'outline'}
                   onClick={() => setSelectedCategory(categoryKey)}
                   size="sm"
-                  className="w-full"
+                  className="whitespace-nowrap"
                 >
                   {cat.name} ({count})
                 </Button>
@@ -247,63 +274,65 @@ export function ComplianceDashboard({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Documentos {selectedCategory && `- ${DOCUMENT_CATEGORIES[selectedCategory]?.name}`}
+            Documentos
+            {selectedCategory && (
+              <Badge variant="outline">{DOCUMENT_CATEGORIES[selectedCategory]?.name}</Badge>
+            )}
           </CardTitle>
           <CardDescription>
-            {filteredDocs.length} documento{filteredDocs.length !== 1 ? 's' : ''} mostrado{filteredDocs.length !== 1 ? 's' : ''}
+            {filteredDocs.length > 0 ? (
+              <>Mostrando {filteredDocs.length} de {documents.length} documentos</>
+            ) : (
+              <>No hay documentos que coincidan</>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
             </div>
           ) : filteredDocs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8">
-              <AlertCircle className="h-12 w-12 text-muted-foreground mb-2" />
-              <p className="text-muted-foreground">No hay documentos para mostrar</p>
+            <div className="flex flex-col items-center justify-center py-12 rounded-lg bg-muted/30">
+              <AlertCircle className="h-10 w-10 text-muted-foreground mb-3" />
+              <p className="text-muted-foreground font-medium">No hay documentos</p>
+              <p className="text-sm text-muted-foreground">Intenta con otros filtros</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {filteredDocs.map((doc) => (
                 <div
                   key={doc.code}
-                  className={cn('border rounded-lg p-4 flex items-center justify-between', getStatusColor(doc.status))}
+                  className={cn(
+                    'border rounded-lg p-4 flex items-center justify-between hover:shadow-sm transition-shadow group',
+                    getStatusColor(doc.status)
+                  )}
                 >
-                  <div className="flex items-center gap-3 flex-1">
-                    {getStatusIcon(doc.status)}
-                    <div className="flex-1">
-                      <p className="font-medium">{doc.name}</p>
-                      <p className="text-xs text-muted-foreground">{doc.code}</p>
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className="flex-shrink-0">
+                      {getStatusIcon(doc.status)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{doc.name}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs text-muted-foreground font-mono">{doc.code}</p>
+                        {doc.expiryDate && (
+                          <p className="text-xs text-muted-foreground">Vence: {doc.expiryDate}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-4">
-                    {doc.confidence && (
-                      <div className="text-sm">
-                        <p className="text-muted-foreground">Confianza</p>
-                        <p className="font-semibold">{(doc.confidence * 100).toFixed(0)}%</p>
-                      </div>
-                    )}
-
-                    {doc.expiryDate && (
-                      <div className="text-sm">
-                        <p className="text-muted-foreground">Vencimiento</p>
-                        <p className="font-semibold">{doc.expiryDate}</p>
-                      </div>
-                    )}
-
-                    <Badge
-                      variant={doc.status === 'validated' ? 'default' : 'secondary'}
-                      className={cn({
-                        'bg-green-100 text-green-800': doc.status === 'validated',
-                        'bg-yellow-100 text-yellow-800': doc.status === 'pending',
-                        'bg-red-100 text-red-800': doc.status === 'expired',
-                        'bg-gray-100 text-gray-800': doc.status === 'missing',
-                      })}
-                    >
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Badge variant="secondary" className="text-xs">
                       {getStatusLabel(doc.status)}
                     </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
