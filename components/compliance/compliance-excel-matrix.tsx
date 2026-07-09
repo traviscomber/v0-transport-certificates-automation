@@ -417,26 +417,26 @@ export function ComplianceExcelMatrix({
             No hay datos suficientes para mostrar la matriz documental.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-slate-700/50">
-            <table className="min-w-[3200px] divide-y divide-slate-700/50">
+          <div className="max-w-full overflow-x-auto overflow-y-hidden rounded-xl border border-slate-700/50">
+            <table className="w-max min-w-full divide-y divide-slate-700/50">
               <thead className="bg-slate-950/80">
                 <tr>
-                  <th rowSpan={2} className="sticky left-0 z-20 w-56 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <th rowSpan={2} className="sticky left-0 z-20 w-48 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
                     RUT empresa
                   </th>
-                  <th rowSpan={2} className="sticky left-56 z-20 w-52 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <th rowSpan={2} className="sticky left-48 z-20 w-44 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
                     Empresa
                   </th>
-                  <th rowSpan={2} className="sticky left-[25rem] z-20 w-52 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <th rowSpan={2} className="sticky left-[23rem] z-20 w-44 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
                     Conductor
                   </th>
-                  <th rowSpan={2} className="sticky left-[37rem] z-20 w-44 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <th rowSpan={2} className="sticky left-[34rem] z-20 w-40 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
                     Ejecutiva
                   </th>
-                  <th rowSpan={2} className="sticky left-[48rem] z-20 w-24 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <th rowSpan={2} className="sticky left-[44rem] z-20 w-24 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
                     Cobertura
                   </th>
-                  <th rowSpan={2} className="sticky left-[54rem] z-20 w-24 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <th rowSpan={2} className="sticky left-[50rem] z-20 w-24 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
                     Estado
                   </th>
                   {groupedColumns.map((group) => (
@@ -454,7 +454,7 @@ export function ComplianceExcelMatrix({
                     group.columns.map((column) => (
                       <th
                         key={column.key}
-                        className="min-w-[124px] px-2 py-3 text-left text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400"
+                        className="min-w-[110px] px-2 py-3 text-left text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400"
                       >
                         <div className="space-y-1">
                           <p className="text-slate-200">{column.label}</p>
@@ -481,32 +481,32 @@ export function ComplianceExcelMatrix({
 
                   return (
                     <tr key={row.id} className="hover:bg-slate-800/50">
-                      <td className="sticky left-0 z-10 w-56 bg-slate-900/95 px-4 py-3 align-top">
+                      <td className="sticky left-0 z-10 w-48 bg-slate-900/95 px-4 py-3 align-top">
                         <p className="font-medium text-slate-100">{row.company?.rut || row.conductor.rut_proveedor || 'Sin RUT'}</p>
                         <p className="text-xs text-slate-400">{getRowCompanyLabel(row.conductor, transportistasByRut)}</p>
                       </td>
-                      <td className="sticky left-56 z-10 w-52 bg-slate-900/95 px-4 py-3 align-top">
+                      <td className="sticky left-48 z-10 w-44 bg-slate-900/95 px-4 py-3 align-top">
                         <p className="font-medium text-slate-100">{getRowCompanyLabel(row.conductor, transportistasByRut)}</p>
                         <p className="text-xs text-slate-400">{row.company?.rut || 'Sin RUT'}</p>
                       </td>
-                      <td className="sticky left-[25rem] z-10 w-52 bg-slate-900/95 px-4 py-3 align-top">
+                      <td className="sticky left-[23rem] z-10 w-44 bg-slate-900/95 px-4 py-3 align-top">
                         <p className="font-medium text-slate-100">{getEntityLabel(row.conductor, 'Sin conductor')}</p>
                         <p className="text-xs text-slate-400">{row.conductor.rut || 'Sin RUT'}</p>
                       </td>
-                      <td className="sticky left-[37rem] z-10 w-44 bg-slate-900/95 px-4 py-3 align-top">
+                      <td className="sticky left-[34rem] z-10 w-40 bg-slate-900/95 px-4 py-3 align-top">
                         <p className="font-medium text-slate-100">{row.conductor.ejecutivo_nombre || row.company?.ejecutivo_nombre || 'Sin asignar'}</p>
                       </td>
-                      <td className="sticky left-[48rem] z-10 w-24 bg-slate-900/95 px-4 py-3 align-top">
+                      <td className="sticky left-[44rem] z-10 w-24 bg-slate-900/95 px-4 py-3 align-top">
                         <p className="text-lg font-semibold text-slate-100">{row.complianceScore}%</p>
                       </td>
-                      <td className="sticky left-[54rem] z-10 w-24 bg-slate-900/95 px-4 py-3 align-top">
+                      <td className="sticky left-[50rem] z-10 w-24 bg-slate-900/95 px-4 py-3 align-top">
                         <Badge className={stateClass}>{state}</Badge>
                       </td>
                       {groupedColumns.flatMap((group) =>
                         group.columns.map((column) => {
                           const doc = row.cells.get(column.key)
                           return (
-                            <td key={`${row.id}-${column.key}`} className="min-w-[124px] px-1 py-2 align-top">
+                            <td key={`${row.id}-${column.key}`} className="min-w-[110px] px-1 py-2 align-top">
                               {renderStatusCell(doc, column.label)}
                             </td>
                           )

@@ -148,12 +148,12 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
         </SheetContent>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {/* Header - New Naranja Header */}
           <CompanyHeader />
           
           {/* Main content */}
-          <main className="flex-1 overflow-auto p-2 sm:p-3 md:p-6 lg:p-8">
+          <main className="flex-1 min-w-0 overflow-auto p-2 sm:p-3 md:p-6 lg:p-8">
             {children}
           </main>
         </div>
