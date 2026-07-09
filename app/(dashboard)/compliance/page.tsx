@@ -5,14 +5,11 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { ComplianceExcelMatrix } from '@/components/compliance/compliance-excel-matrix'
 import {
   Shield,
-  CheckCircle,
-  AlertTriangle,
-  XCircle,
   FileText,
   Calendar,
-  Download,
   ArrowRight,
   Bell,
 } from 'lucide-react'
@@ -45,12 +42,79 @@ type AlertEntry = {
   created_at?: string
 }
 
+type ExecutiveMetric = {
+  executive_id: string
+  executive_name: string
+  documents_processed: number
+  avg_validation_time: number
+  approval_rate: number
+  avg_ai_confidence: number
+  validation_date: string
+  validated_count: number
+  rejected_count: number
+  pending_count: number
+  performance_score: number
+  conductores_activos: number
+  tasa_validacion: string
+}
+
+type MetricsSummary = {
+  total_documents: number
+  total_validados: number
+  total_conductores: number
+  total_subcontratistas: number
+  total_rechazados: number
+  total_pendientes: number
+}
+
+type RequirementRow = {
+  id: string
+  code: string
+  name: string
+  category?: string
+  periodicity?: string | null
+  applicable_to_conductor?: boolean
+  applicable_to_transportista?: boolean
+  applicable_to_vehicle?: boolean
+}
+
+type DocumentTypeRow = {
+  id: string
+  code: string
+  name: string
+}
+
+type MatrixEntity = {
+  id: string
+  rut?: string
+  nombres?: string
+  apellido_paterno?: string
+  razon_social?: string
+  ejecutivo_nombre?: string
+  rut_proveedor?: string
+  nombre_subcontratista?: string
+}
+
+type MatrixBucket = {
+  conductorDocs: any[]
+  subDocs: any[]
+}
+
 export default function CompliancePage() {
   const [loading, setLoading] = useState(true)
   const [documents, setDocuments] = useState<DocumentEntry[]>([])
   const [expiredDocuments, setExpiredDocuments] = useState<DocumentEntry[]>([])
   const [renewalDocuments, setRenewalDocuments] = useState<DocumentEntry[]>([])
   const [alerts, setAlerts] = useState<AlertEntry[]>([])
+  const [executiveMetrics, setExecutiveMetrics] = useState<ExecutiveMetric[]>([])
+  const [metricsSummary, setMetricsSummary] = useState<MetricsSummary | null>(null)
+  const [requirements, setRequirements] = useState<RequirementRow[]>([])
+  const [documentTypes, setDocumentTypes] = useState<DocumentTypeRow[]>([])
+  const [conductors, setConductors] = useState<MatrixEntity[]>([])
+  const [transportistas, setTransportistas] = useState<MatrixEntity[]>([])
+  const [pendingMatrix, setPendingMatrix] = useState<MatrixBucket>({ conductorDocs: [], subDocs: [] })
+  const [approvedMatrix, setApprovedMatrix] = useState<MatrixBucket>({ conductorDocs: [], subDocs: [] })
+  const [rejectedMatrix, setRejectedMatrix] = useState<MatrixBucket>({ conductorDocs: [], subDocs: [] })
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -59,11 +123,21 @@ export default function CompliancePage() {
       setError(null)
 
       try {
-        const [allRes, expiredRes, renewalRes, alertsRes] = await Promise.all([
+        const [allRes, expiredRes, renewalRes, alertsRes, metricsRes] = await Promise.all([
           fetch('/api/company/documents/all', { cache: 'no-store' }),
           fetch('/api/company/documents/vencidos', { cache: 'no-store' }),
           fetch('/api/company/documents/renovar', { cache: 'no-store' }),
           fetch('/api/compliance/alerts', { cache: 'no-store' }),
+          fetch('/api/company/metrics?month=all&year=all', { cache: 'no-store' }),
+        ])
+
+        const [companyRes, dashboardRes, requirementsRes, pendingRes, approvedRes, rejectedRes] = await Promise.all([
+          fetch('/api/company/data', { cache: 'no-store' }),
+          fetch('/api/dashboard/data', { cache: 'no-store' }),
+          fetch('/api/compliance/requirements', { cache: 'no-store' }),
+          fetch('/api/dashboard/pending-documents', { cache: 'no-store' }),
+          fetch('/api/company/documents/aprobados', { cache: 'no-store' }),
+          fetch('/api/company/documents/rechazados', { cache: 'no-store' }),
         ])
 
         if (allRes.ok) {
@@ -84,6 +158,73 @@ export default function CompliancePage() {
         if (alertsRes.ok) {
           const alertsData = await alertsRes.json()
           setAlerts(Array.isArray(alertsData.alerts) ? alertsData.alerts : [])
+        }
+
+        if (metricsRes.ok) {
+          const metricsData = await metricsRes.json()
+          setExecutiveMetrics(Array.isArray(metricsData.executives) ? metricsData.executives : [])
+          setMetricsSummary(metricsData.summary || null)
+        }
+
+        if (companyRes.ok) {
+          const companyData = await companyRes.json()
+          setDocumentTypes(Array.isArray(companyData.documentTypes) ? companyData.documentTypes : [])
+        }
+
+        if (dashboardRes.ok) {
+          const dashboardData = await dashboardRes.json()
+          const mappedTransportistas = Array.isArray(dashboardData.dashboard?.transportistas)
+            ? dashboardData.dashboard.transportistas.map((item: any) => ({
+                id: item.id,
+                rut: item.rut || '',
+                razon_social: item.razon_social || item.nombre_fantasia || '',
+                ejecutivo_nombre: item.ejecutivo_nombre || 'Sin asignar',
+                nombre_subcontratista: item.nombre_fantasia || item.razon_social || '',
+              }))
+            : []
+          const mappedConductores = Array.isArray(dashboardData.dashboard?.conductores)
+            ? dashboardData.dashboard.conductores.map((item: any) => ({
+                id: item.id,
+                rut: item.rut || '',
+                nombres: item.nombres || '',
+                apellido_paterno: item.apellido_paterno || '',
+                rut_proveedor: item.rut_proveedor || '',
+                ejecutivo_nombre: item.ejecutivo_nombre || 'Sin asignar',
+                nombre_subcontratista: item.nombre_subcontratista || '',
+              }))
+            : []
+
+          setTransportistas(mappedTransportistas)
+          setConductors(mappedConductores)
+        }
+
+        if (requirementsRes.ok) {
+          const requirementsData = await requirementsRes.json()
+          setRequirements(Array.isArray(requirementsData.requirements) ? requirementsData.requirements : [])
+        }
+
+        if (pendingRes.ok) {
+          const pendingData = await pendingRes.json()
+          setPendingMatrix({
+            conductorDocs: Array.isArray(pendingData.conductorDocs) ? pendingData.conductorDocs : [],
+            subDocs: Array.isArray(pendingData.subDocs) ? pendingData.subDocs : [],
+          })
+        }
+
+        if (approvedRes.ok) {
+          const approvedData = await approvedRes.json()
+          setApprovedMatrix({
+            conductorDocs: Array.isArray(approvedData.conductorDocs) ? approvedData.conductorDocs : [],
+            subDocs: Array.isArray(approvedData.subDocs) ? approvedData.subDocs : [],
+          })
+        }
+
+        if (rejectedRes.ok) {
+          const rejectedData = await rejectedRes.json()
+          setRejectedMatrix({
+            conductorDocs: Array.isArray(rejectedData.conductorDocs) ? rejectedData.conductorDocs : [],
+            subDocs: Array.isArray(rejectedData.subDocs) ? rejectedData.subDocs : [],
+          })
         }
       } catch (loadError) {
         console.error('Error loading compliance data:', loadError)
@@ -137,6 +278,26 @@ export default function CompliancePage() {
     if (doc.document_type) return doc.document_type
     if (doc.original_filename) return doc.original_filename
     return 'Documento'
+  }
+
+  const matrixRows = useMemo(() => {
+    return [...executiveMetrics]
+      .sort((a, b) => b.performance_score - a.performance_score)
+      .map((metric) => ({
+        ...metric,
+        riskLevel: metric.performance_score >= 75 ? 'VERDE' : metric.performance_score >= 50 ? 'AMARILLO' : 'ROJO',
+      }))
+  }, [executiveMetrics])
+
+  const getMatrixBadge = (riskLevel: string) => {
+    switch (riskLevel) {
+      case 'VERDE':
+        return <Badge className="bg-green-500/20 text-green-300 border-green-500/40">OK</Badge>
+      case 'AMARILLO':
+        return <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/40">Atencion</Badge>
+      default:
+        return <Badge className="bg-red-500/20 text-red-300 border-red-500/40">Riesgo</Badge>
+    }
   }
 
   return (
@@ -215,6 +376,109 @@ export default function CompliancePage() {
           </Button>
         </Link>
       </div>
+
+      <ComplianceExcelMatrix
+        loading={loading}
+        requirements={requirements}
+        documentTypes={documentTypes}
+        conductors={conductors}
+        transportistas={transportistas}
+        pending={pendingMatrix}
+        approved={approvedMatrix}
+        rejected={rejectedMatrix}
+      />
+
+      <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900">
+        <CardHeader>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <CardTitle className="text-foreground flex items-center gap-2">
+                <Shield className="h-5 w-5 text-blue-400" />
+                Resumen por ejecutiva
+              </CardTitle>
+              <CardDescription>
+                Lectura ejecutiva real por ejecutiva, con score, validados, pendientes y rechazados.
+              </CardDescription>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link href="/dashboard/company/subcontratistas">
+                <Button variant="outline" size="sm" className="border-slate-600 text-slate-200 hover:bg-slate-700/40">
+                  Ver subcontratistas
+                </Button>
+              </Link>
+              <Link href="/dashboard/company/reportes">
+                <Button variant="outline" size="sm" className="border-slate-600 text-slate-200 hover:bg-slate-700/40">
+                  Ver reportes
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {matrixRows.length === 0 ? (
+            <div className="rounded-lg border border-slate-700/50 bg-slate-900/60 p-4 text-sm text-slate-400">
+              No hay datos de matriz para mostrar.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-slate-700/50">
+              <table className="min-w-full divide-y divide-slate-700/50">
+                <thead className="bg-slate-950/80">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Ejecutiva</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Procesados</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Validados</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Pendientes</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Rechazados</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Score</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Estado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-700/50 bg-slate-900/40">
+                  {matrixRows.map((row) => (
+                    <tr key={row.executive_id} className="hover:bg-slate-800/50">
+                      <td className="px-4 py-3">
+                        <div>
+                          <p className="font-medium text-slate-100">{row.executive_name}</p>
+                          <p className="text-xs text-slate-400">{row.conductores_activos} conductores activos</p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-200">{row.documents_processed}</td>
+                      <td className="px-4 py-3 text-emerald-300">{row.validated_count}</td>
+                      <td className="px-4 py-3 text-amber-300">{row.pending_count}</td>
+                      <td className="px-4 py-3 text-red-300">{row.rejected_count}</td>
+                      <td className="px-4 py-3">
+                        <span className="font-semibold text-slate-100">{row.performance_score}/100</span>
+                      </td>
+                      <td className="px-4 py-3">{getMatrixBadge(row.riskLevel)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {metricsSummary ? (
+            <div className="mt-4 grid gap-3 md:grid-cols-4">
+              <div className="rounded-xl border border-slate-700/50 bg-slate-900/60 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Total real</p>
+                <p className="mt-2 text-2xl font-bold text-slate-100">{metricsSummary.total_documents}</p>
+              </div>
+              <div className="rounded-xl border border-slate-700/50 bg-slate-900/60 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Validados</p>
+                <p className="mt-2 text-2xl font-bold text-emerald-300">{metricsSummary.total_validados}</p>
+              </div>
+              <div className="rounded-xl border border-slate-700/50 bg-slate-900/60 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Pendientes</p>
+                <p className="mt-2 text-2xl font-bold text-amber-300">{metricsSummary.total_pendientes}</p>
+              </div>
+              <div className="rounded-xl border border-slate-700/50 bg-slate-900/60 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Rechazados</p>
+                <p className="mt-2 text-2xl font-bold text-red-300">{metricsSummary.total_rechazados}</p>
+              </div>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
 
       {error ? (
         <Card className="border-red-500/30 bg-red-500/10">
