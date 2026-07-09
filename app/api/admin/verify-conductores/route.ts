@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { logSupabaseError } from '@/lib/supabase/error-utils'
 
 export async function GET() {
   try {
@@ -29,7 +30,7 @@ export async function GET() {
       timestamp: new Date().toISOString()
     })
   } catch (error) {
-    console.error('[v0] Error verifying conductores:', error)
+    logSupabaseError('[v0] Error verifying conductores:', error)
     return NextResponse.json(
       {
         success: false,

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getUserRoles, getUserPrimaryRole } from '@/lib/supabase/user-roles-service'
+import { logSupabaseError } from '@/lib/supabase/error-utils'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('[v0] Error fetching user roles:', error)
+    logSupabaseError('[v0] Error fetching user roles:', error)
     return NextResponse.json(
       { error: 'Failed to fetch roles' },
       { status: 500 }

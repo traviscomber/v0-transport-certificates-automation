@@ -1,5 +1,6 @@
 import { verifyBackupStatus, formatBackupStatus } from '@/lib/backup-verification';
 import { NextResponse } from 'next/server';
+import { isMissingSupabaseConfigError } from '@/lib/supabase/error-utils';
 
 /**
  * GET /api/backups/verify
@@ -11,8 +12,10 @@ export async function GET() {
   try {
     const backupStatus = await verifyBackupStatus();
 
-    // Log backup status for monitoring
-    console.log('[BACKUP_VERIFICATION]', formatBackupStatus(backupStatus));
+    // Log backup status for monitoring, but stay quiet when build-time env is incomplete.
+    if (!(backupStatus.status === 'error' && backupStatus.message === 'Supabase credentials not configured')) {
+      console.log('[BACKUP_VERIFICATION]', formatBackupStatus(backupStatus));
+    }
 
     // Return status with appropriate HTTP code
     const statusCode = backupStatus.status === 'healthy' ? 200 : 
@@ -20,7 +23,9 @@ export async function GET() {
 
     return NextResponse.json(backupStatus, { status: statusCode });
   } catch (error) {
-    console.error('[BACKUP_VERIFICATION_ERROR]', error);
+    if (!isMissingSupabaseConfigError(error)) {
+      console.error('[BACKUP_VERIFICATION_ERROR]', error);
+    }
 
     return NextResponse.json(
       {

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { logSupabaseError } from '@/lib/supabase/error-utils'
 
 export async function GET() {
   try {
@@ -11,7 +12,7 @@ export async function GET() {
       .order('nombre', { ascending: true })
 
     if (error) {
-      console.error('[v0] Error fetching document types:', error)
+      logSupabaseError('[v0] Error fetching document types:', error)
       return NextResponse.json(
         { error: 'Error al obtener tipos de documentos' },
         { status: 500 }
@@ -30,7 +31,7 @@ export async function GET() {
     })
 
   } catch (error) {
-    console.error('[v0] Error in document types endpoint:', error)
+    logSupabaseError('[v0] Error in document types endpoint:', error)
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }
