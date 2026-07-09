@@ -132,6 +132,7 @@ const MATRIX_COLUMNS: MatrixColumn[] = [
 
 const MATRIX_GROUP_ORDER: MatrixColumn['group'][] = ['Mensual', 'Empresa', 'Conductor', 'Vehiculo', 'Subcontratacion', 'Seguridad']
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+const FILTER_LETTERS = [...ALPHABET, '#']
 
 function normalizeText(value?: string | null) {
   return (value || '').trim().toLowerCase()
@@ -361,7 +362,7 @@ export function ComplianceExcelMatrix({
     rows.forEach((row) => {
       letters.add(getRowAlphabetLetter(row.conductor, transportistasByRut))
     })
-    return ALPHABET.filter((letter) => letters.has(letter))
+    return FILTER_LETTERS.filter((letter) => letters.has(letter))
   }, [rows, transportistasByRut])
   const letterCounts = useMemo(() => {
     return rows.reduce<Record<string, number>>((acc, row) => {
@@ -468,10 +469,11 @@ export function ComplianceExcelMatrix({
             >
               Todas
             </button>
-            {ALPHABET.map((letter) => {
+            {FILTER_LETTERS.map((letter) => {
               const isAvailable = availableLetters.includes(letter)
               const isActive = activeLetter === letter
               const count = letterCounts[letter] || 0
+              const label = letter === '#' ? 'Otros' : letter
               return (
                 <button
                   key={letter}
@@ -486,7 +488,7 @@ export function ComplianceExcelMatrix({
                         : 'cursor-not-allowed border-slate-800/50 text-slate-600 opacity-40'
                   }`}
                 >
-                  <span>{letter}</span>
+                  <span>{label}</span>
                   <span className="rounded-full bg-slate-900/70 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-slate-300">
                     {count}
                   </span>
