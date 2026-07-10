@@ -1,10 +1,12 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import {
   BarChart3,
   CheckCircle2,
   Clock3,
+  ChevronLeft,
+  ChevronRight,
   Filter,
   FileText,
   Search,
@@ -13,6 +15,7 @@ import {
   TriangleAlert,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 type Requirement = {
@@ -359,6 +362,7 @@ export function ComplianceExcelMatrix({
   const [activeLetter, setActiveLetter] = useState('ALL')
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<FilterState>('ALL')
+  const matrixScrollRef = useRef<HTMLDivElement | null>(null)
 
   const rows = useMemo<MatrixRow[]>(() => {
     const allByConductor = new Map<string, MatrixDocument[]>()
@@ -505,6 +509,17 @@ export function ComplianceExcelMatrix({
     setStatusFilter('ALL')
   }
 
+  const scrollMatrix = (direction: 'left' | 'right') => {
+    const container = matrixScrollRef.current
+    if (!container) return
+
+    const amount = Math.max(480, Math.floor(container.clientWidth * 0.7))
+    container.scrollBy({
+      left: direction === 'left' ? -amount : amount,
+      behavior: 'smooth',
+    })
+  }
+
   const renderStatusCell = (doc?: MatrixDocument, requirementName?: string) => {
     if (!doc) {
       const style = STATUS_STYLES.missing
@@ -609,7 +624,7 @@ export function ComplianceExcelMatrix({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-700/50 bg-slate-950/50 p-4">
+        <div className="lg:sticky lg:top-4 lg:z-30 rounded-2xl border border-slate-700/50 bg-slate-950/85 p-4 backdrop-blur-xl shadow-xl shadow-slate-950/30">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-500" />
@@ -743,6 +758,37 @@ export function ComplianceExcelMatrix({
           <span className="text-slate-500">Las celdas muestran el periodo bajo el valor cuando existe aprobación.</span>
         </div>
 
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-3 text-xs text-cyan-100/80">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-7 items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 font-semibold uppercase tracking-[0.18em] text-cyan-100">
+              Matriz completa
+            </span>
+            <span className="text-cyan-100/70">La tabla excede el ancho de pantalla. Usa los controles para moverla lateralmente.</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => scrollMatrix('left')}
+              className="border-cyan-500/30 bg-slate-950/40 text-cyan-100 hover:bg-cyan-500/10"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Izquierda
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => scrollMatrix('right')}
+              className="border-cyan-500/30 bg-slate-950/40 text-cyan-100 hover:bg-cyan-500/10"
+            >
+              Derecha
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
         {loading ? (
           <div className="rounded-2xl border border-slate-700/50 bg-slate-900/60 p-6 text-sm text-slate-400">
             Cargando matriz documental...
@@ -752,7 +798,7 @@ export function ComplianceExcelMatrix({
             No hay datos suficientes para mostrar la matriz documental con ese filtro.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-slate-700/50 bg-slate-950/40">
+          <div ref={matrixScrollRef} className="overflow-x-auto rounded-2xl border border-slate-700/50 bg-slate-950/40">
             <table className="w-max min-w-full divide-y divide-slate-700/50">
               <thead className="sticky top-0 z-30 bg-slate-950/95 backdrop-blur">
                 <tr>
