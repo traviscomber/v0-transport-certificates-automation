@@ -1,9 +1,20 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import {
+  BarChart3,
+  CheckCircle2,
+  Clock3,
+  Filter,
+  FileText,
+  Search,
+  Shield,
+  Sparkles,
+  TriangleAlert,
+  XCircle,
+} from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Shield } from 'lucide-react'
 
 type Requirement = {
   id: string
@@ -73,12 +84,15 @@ type Props = {
   rejected: MatrixBucket
 }
 
+type RowState = 'ok' | 'attention' | 'risk'
+type FilterState = 'ALL' | RowState
+
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {
   approved: { label: 'OK', className: 'bg-emerald-500/15 text-emerald-200 border-emerald-500/30' },
   pending: { label: 'Pend', className: 'bg-amber-500/15 text-amber-200 border-amber-500/30' },
   rejected: { label: 'Rech', className: 'bg-rose-500/15 text-rose-200 border-rose-500/30' },
   expired: { label: 'Venc', className: 'bg-orange-500/15 text-orange-200 border-orange-500/30' },
-  missing: { label: 'Sin', className: 'bg-rose-500/15 text-rose-200 border-rose-500/30' },
+  missing: { label: 'Sin', className: 'bg-slate-500/15 text-slate-200 border-slate-500/30' },
 }
 
 type MatrixColumn = {
@@ -87,6 +101,22 @@ type MatrixColumn = {
   label: string
   codes: string[]
   hints?: string[]
+}
+
+type MatrixRow = {
+  id: string
+  conductor: Entity
+  company?: Entity
+  cells: Map<string, MatrixDocument>
+  totalRelevant: number
+  approvedCount: number
+  pendingCount: number
+  rejectedCount: number
+  expiredCount: number
+  missingCount: number
+  complianceScore: number
+  state: RowState
+  stateLabel: string
 }
 
 const MATRIX_COLUMNS: MatrixColumn[] = [
@@ -176,7 +206,6 @@ function getRowAlphabetLetter(entity: Entity, transportistasByRut: Map<string, E
   const first = label.charAt(0).toUpperCase()
   return first >= 'A' && first <= 'Z' ? first : '#'
 }
-
 
 function getRowSearchText(row: { conductor: Entity; company?: Entity }) {
   return normalizeAlphabetText(
@@ -273,6 +302,36 @@ function pickLatestDoc(docs: MatrixDocument[]) {
   return ranked[0] || null
 }
 
+function getRowState(row: Pick<MatrixRow, 'rejectedCount' | 'expiredCount' | 'pendingCount' | 'missingCount'>): RowState {
+  if (row.rejectedCount > 0 || row.expiredCount > 0) return 'risk'
+  if (row.pendingCount > 0 || row.missingCount > 0) return 'attention'
+  return 'ok'
+}
+
+function getRowStateLabel(state: RowState) {
+  if (state === 'ok') return 'Estable'
+  if (state === 'attention') return 'Atención'
+  return 'Riesgo'
+}
+
+function getRowStateStyles(state: RowState) {
+  if (state === 'ok') return 'bg-emerald-500/15 text-emerald-200 border-emerald-500/30'
+  if (state === 'attention') return 'bg-amber-500/15 text-amber-200 border-amber-500/30'
+  return 'bg-rose-500/15 text-rose-200 border-rose-500/30'
+}
+
+function getScoreTone(score: number) {
+  if (score >= 85) return 'text-emerald-200'
+  if (score >= 65) return 'text-amber-200'
+  return 'text-rose-200'
+}
+
+function getProgressTone(score: number) {
+  if (score >= 85) return 'from-emerald-400 to-cyan-400'
+  if (score >= 65) return 'from-amber-400 to-yellow-300'
+  return 'from-rose-500 to-orange-400'
+}
+
 export function ComplianceExcelMatrix({
   loading,
   requirements,
@@ -292,7 +351,7 @@ export function ComplianceExcelMatrix({
     return MATRIX_GROUP_ORDER
       .map((group) => ({
         group,
-        label: group === 'Vehiculo' ? 'Vehiculo' : group === 'Subcontratacion' ? 'Subcontratacion' : group,
+        label: group === 'Vehiculo' ? 'Vehículo' : group === 'Subcontratacion' ? 'Subcontratación' : group,
         columns: MATRIX_COLUMNS.filter((column) => column.group === group),
       }))
       .filter((group) => group.columns.length > 0)
@@ -300,8 +359,9 @@ export function ComplianceExcelMatrix({
 
   const [activeLetter, setActiveLetter] = useState('ALL')
   const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<FilterState>('ALL')
 
-  const rows = useMemo(() => {
+  const rows = useMemo<MatrixRow[]>(() => {
     const allByConductor = new Map<string, MatrixDocument[]>()
     const allByCompany = new Map<string, MatrixDocument[]>()
 
@@ -345,7 +405,6 @@ export function ComplianceExcelMatrix({
       const cells = new Map<string, MatrixDocument>()
       MATRIX_COLUMNS.forEach((column) => {
         const matches = rowDocs.filter((doc) => matchesColumn(doc, column))
-
         const latest = pickLatestDoc(matches)
         if (latest) cells.set(column.key, latest)
       })
@@ -357,6 +416,7 @@ export function ComplianceExcelMatrix({
       const expiredCount = Array.from(cells.values()).filter((doc) => getDocStatus(doc) === 'expired').length
       const missingCount = Math.max(totalRelevant - cells.size, 0)
       const complianceScore = totalRelevant > 0 ? Math.round((approvedCount / totalRelevant) * 100) : 0
+      const state = getRowState({ rejectedCount, expiredCount, pendingCount, missingCount })
 
       return {
         id: conductor.id,
@@ -370,12 +430,15 @@ export function ComplianceExcelMatrix({
         expiredCount,
         missingCount,
         complianceScore,
+        state,
+        stateLabel: getRowStateLabel(state),
       }
     })
   }, [approved.conductorDocs, approved.subDocs, conductors, pending.conductorDocs, pending.subDocs, rejected.conductorDocs, rejected.subDocs, transportistasByRut])
 
+  const normalizedSearch = normalizeAlphabetText(searchTerm)
+
   const filteredRows = useMemo(() => {
-    const normalizedSearch = normalizeAlphabetText(searchTerm)
     const matchesSearch = (row: { conductor: Entity; company?: Entity }) => {
       if (!normalizedSearch) return true
       return getRowSearchText(row).includes(normalizedSearch)
@@ -383,9 +446,10 @@ export function ComplianceExcelMatrix({
 
     return rows.filter((row) => {
       const matchesLetter = activeLetter === 'ALL' || getRowAlphabetLetter(row.conductor, transportistasByRut) === activeLetter
-      return matchesLetter && matchesSearch(row)
+      const matchesState = statusFilter === 'ALL' || row.state === statusFilter
+      return matchesLetter && matchesState && matchesSearch(row)
     })
-  }, [activeLetter, rows, searchTerm, transportistasByRut])
+  }, [activeLetter, normalizedSearch, rows, statusFilter, transportistasByRut])
 
   const availableLetters = useMemo(() => {
     const letters = new Set<string>()
@@ -394,6 +458,7 @@ export function ComplianceExcelMatrix({
     })
     return FILTER_LETTERS.filter((letter) => letters.has(letter))
   }, [rows, transportistasByRut])
+
   const letterCounts = useMemo(() => {
     return rows.reduce<Record<string, number>>((acc, row) => {
       const letter = getRowAlphabetLetter(row.conductor, transportistasByRut)
@@ -402,6 +467,16 @@ export function ComplianceExcelMatrix({
     }, {})
   }, [rows, transportistasByRut])
 
+  const statusCounts = useMemo(() => {
+    return rows.reduce(
+      (acc, row) => {
+        acc[row.state] += 1
+        return acc
+      },
+      { ok: 0, attention: 0, risk: 0 }
+    )
+  }, [rows])
+
   const summary = useMemo(() => {
     const totalCells = filteredRows.reduce((acc, row) => acc + row.totalRelevant, 0)
     const approvedCells = filteredRows.reduce((acc, row) => acc + row.approvedCount, 0)
@@ -409,15 +484,33 @@ export function ComplianceExcelMatrix({
     const rejectedCells = filteredRows.reduce((acc, row) => acc + row.rejectedCount, 0)
     const missingCells = filteredRows.reduce((acc, row) => acc + row.missingCount, 0)
     const coverage = totalCells > 0 ? Math.round((approvedCells / totalCells) * 100) : 0
+    const averageScore = filteredRows.length > 0
+      ? Math.round(filteredRows.reduce((acc, row) => acc + row.complianceScore, 0) / filteredRows.length)
+      : 0
+    const rowsNeedingAttention = filteredRows.filter((row) => row.state !== 'ok').length
 
-    return { totalCells, approvedCells, pendingCells, rejectedCells, missingCells, coverage }
+    return { totalCells, approvedCells, pendingCells, rejectedCells, missingCells, coverage, averageScore, rowsNeedingAttention }
   }, [filteredRows])
+
+  const topRisks = useMemo(() => {
+    return [...filteredRows]
+      .sort((a, b) => a.complianceScore - b.complianceScore || b.pendingCount + b.rejectedCount + b.missingCount - (a.pendingCount + a.rejectedCount + a.missingCount))
+      .slice(0, 3)
+  }, [filteredRows])
+
+  const hasActiveFilters = Boolean(searchTerm || activeLetter !== 'ALL' || statusFilter !== 'ALL')
+
+  const clearFilters = () => {
+    setSearchTerm('')
+    setActiveLetter('ALL')
+    setStatusFilter('ALL')
+  }
 
   const renderStatusCell = (doc?: MatrixDocument, requirementName?: string) => {
     if (!doc) {
       const style = STATUS_STYLES.missing
       return (
-        <div className={`flex h-full min-h-[64px] flex-col items-center justify-center gap-1 rounded-md border px-2 py-2 text-center ${style.className}`}>
+        <div className={`flex h-full min-h-[72px] flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2 text-center ${style.className}`}>
           <span className="text-sm font-bold leading-none">0</span>
           <span className="text-[10px] uppercase tracking-[0.18em] leading-none">{style.label}</span>
         </div>
@@ -434,7 +527,7 @@ export function ComplianceExcelMatrix({
     return (
       <div
         title={`${label} | ${period} | ${style.label}`}
-        className={`flex h-full min-h-[64px] flex-col items-center justify-center gap-1 rounded-md border px-2 py-2 text-center ${style.className}`}
+        className={`flex h-full min-h-[72px] flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2 text-center ${style.className}`}
       >
         <span className="text-sm font-bold leading-none">{value}</span>
         <span className="max-w-full truncate text-[10px] uppercase tracking-[0.16em] leading-none">{detail}</span>
@@ -443,78 +536,140 @@ export function ComplianceExcelMatrix({
   }
 
   return (
-    <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-foreground">
-          <Shield className="h-5 w-5 text-blue-400" />
-          Matriz de cumplimiento
-        </CardTitle>
-        <CardDescription>
-          Vista tipo Excel con una fila por conductor y su empresa. Si una empresa tiene varios conductores, se repite la fila como en la matriz manual. Las celdas usan 1/0 y muestran el periodo debajo del valor.
-        </CardDescription>
+    <Card className="relative overflow-hidden border-slate-700/50 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 shadow-2xl shadow-slate-950/30">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-cyan-400 to-rose-400" />
+      <CardHeader className="relative border-b border-slate-700/50 bg-slate-950/40">
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-4xl space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+              <Sparkles className="h-3.5 w-3.5" />
+              Matriz ejecutiva
+            </div>
+            <div className="space-y-3">
+              <CardTitle className="flex items-center gap-2 text-foreground text-2xl md:text-3xl">
+                <Shield className="h-6 w-6 text-cyan-400" />
+                Matriz de cumplimiento super pro
+              </CardTitle>
+              <CardDescription className="max-w-3xl text-sm md:text-base text-slate-300">
+                Vista tipo Excel con foco ejecutivo: búsqueda global, filtro por letra, filtro por estado y lectura rápida de riesgo por fila.
+                Los documentos se consolidan desde la base real para que la matriz refleje el estado operativo actual.
+              </CardDescription>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs text-slate-300">
+              <Badge className="border-slate-700/60 bg-slate-900/70 text-slate-200">{rows.length} filas</Badge>
+              <Badge className="border-slate-700/60 bg-slate-900/70 text-slate-200">{requirements.length} requisitos</Badge>
+              <Badge className="border-slate-700/60 bg-slate-900/70 text-slate-200">{documentTypes.length} tipos de documento</Badge>
+              <Badge className="border-slate-700/60 bg-slate-900/70 text-slate-200">{summary.averageScore}% score medio</Badge>
+            </div>
+          </div>
+
+          <div className="grid w-full max-w-2xl grid-cols-2 gap-3 sm:grid-cols-3 xl:w-auto">
+            <div className="rounded-2xl border border-slate-700/60 bg-slate-950/60 p-4">
+              <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Cobertura</p>
+              <p className="mt-2 text-3xl font-bold text-slate-100">{summary.coverage}%</p>
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-800">
+                <div className={`h-full rounded-full bg-gradient-to-r ${getProgressTone(summary.coverage)}`} style={{ width: `${summary.coverage}%` }} />
+              </div>
+            </div>
+            <div className="rounded-2xl border border-slate-700/60 bg-slate-950/60 p-4">
+              <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">En atención</p>
+              <p className="mt-2 text-3xl font-bold text-amber-300">{summary.rowsNeedingAttention}</p>
+              <p className="mt-1 text-xs text-slate-400">filas con pendientes o faltantes</p>
+            </div>
+            <div className="rounded-2xl border border-slate-700/60 bg-slate-950/60 p-4">
+              <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Riesgo</p>
+              <p className="mt-2 text-3xl font-bold text-rose-300">{statusCounts.risk}</p>
+              <p className="mt-1 text-xs text-slate-400">filas con rechazados o vencidos</p>
+            </div>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+
+      <CardContent className="space-y-5 p-4 md:p-6">
         <div className="grid gap-3 md:grid-cols-5">
-          <div className="rounded-xl border border-slate-700/50 bg-slate-900/60 p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Filas</p>
-            <p className="mt-2 text-2xl font-bold text-slate-100">{rows.length}</p>
+          <div className="rounded-2xl border border-slate-700/50 bg-slate-950/60 p-4">
+            <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Filas visibles</p>
+            <p className="mt-2 text-2xl font-bold text-slate-100">{filteredRows.length}</p>
+            <p className="mt-1 text-xs text-slate-400">de {rows.length} totales</p>
           </div>
-          <div className="rounded-xl border border-slate-700/50 bg-slate-900/60 p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Aprobados</p>
-            <p className="mt-2 text-2xl font-bold text-emerald-300">{summary.approvedCells}</p>
+          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+            <p className="text-xs uppercase tracking-[0.22em] text-emerald-300/80">Aprobados</p>
+            <p className="mt-2 text-2xl font-bold text-emerald-200">{summary.approvedCells}</p>
           </div>
-          <div className="rounded-xl border border-slate-700/50 bg-slate-900/60 p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Pendientes</p>
-            <p className="mt-2 text-2xl font-bold text-amber-300">{summary.pendingCells}</p>
+          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4">
+            <p className="text-xs uppercase tracking-[0.22em] text-amber-300/80">Pendientes</p>
+            <p className="mt-2 text-2xl font-bold text-amber-200">{summary.pendingCells}</p>
           </div>
-          <div className="rounded-xl border border-slate-700/50 bg-slate-900/60 p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Rechazados</p>
-            <p className="mt-2 text-2xl font-bold text-rose-300">{summary.rejectedCells}</p>
+          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4">
+            <p className="text-xs uppercase tracking-[0.22em] text-rose-300/80">Rechazados</p>
+            <p className="mt-2 text-2xl font-bold text-rose-200">{summary.rejectedCells}</p>
           </div>
-          <div className="rounded-xl border border-slate-700/50 bg-slate-900/60 p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Cobertura</p>
-            <p className="mt-2 text-2xl font-bold text-slate-200">{summary.coverage}%</p>
+          <div className="rounded-2xl border border-slate-700/50 bg-slate-950/60 p-4">
+            <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Faltantes</p>
+            <p className="mt-2 text-2xl font-bold text-slate-100">{summary.missingCells}</p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-700/50 bg-slate-950/50 px-4 py-3 text-xs text-slate-300">
-          <span className="font-semibold uppercase tracking-[0.18em] text-slate-400">Leyenda</span>
-          <Badge className="border-emerald-500/30 bg-emerald-500/15 text-emerald-200">1 = aprobado</Badge>
-          <Badge className="border-rose-500/30 bg-rose-500/15 text-rose-200">0 = pendiente, rechazado, vencido o sin cargar</Badge>
-          <span className="text-slate-500">El periodo se muestra debajo del valor aprobado.</span>
-        </div>
+        <div className="rounded-2xl border border-slate-700/50 bg-slate-950/50 p-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-500" />
+              <input
+                id="compliance-search"
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Buscar por RUT, empresa, conductor o ejecutiva"
+                className="w-full rounded-xl border border-slate-700/70 bg-slate-900/90 py-3 pl-9 pr-4 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-cyan-400/70"
+              />
+            </div>
 
-        <div className="rounded-xl border border-slate-700/50 bg-slate-950/50 px-4 py-3 text-sm text-slate-300">
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400" htmlFor="compliance-search">
-              Buscar
-            </label>
-            <input
-              id="compliance-search"
-              type="search"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="RUT, empresa, conductor o ejecutiva"
-              className="min-w-[240px] flex-1 rounded-md border border-slate-700/70 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-blue-500"
-            />
-            {searchTerm ? (
+            <div className="flex flex-wrap gap-2">
+              {[
+                { key: 'ALL', label: 'Todos', count: rows.length, tone: 'border-slate-700/70 text-slate-200 hover:border-slate-500 hover:bg-slate-800' },
+                { key: 'ok', label: 'Estables', count: statusCounts.ok, tone: 'border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/10' },
+                { key: 'attention', label: 'Atención', count: statusCounts.attention, tone: 'border-amber-500/30 text-amber-200 hover:bg-amber-500/10' },
+                { key: 'risk', label: 'Riesgo', count: statusCounts.risk, tone: 'border-rose-500/30 text-rose-200 hover:bg-rose-500/10' },
+              ].map((item) => {
+                const active = statusFilter === item.key
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setStatusFilter(item.key as FilterState)}
+                    className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition ${
+                      active ? 'bg-slate-800 shadow-lg shadow-slate-950/30 ' + item.tone : item.tone
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                    <span className="rounded-full bg-slate-950/60 px-2 py-0.5 text-[10px] font-semibold">{item.count}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {hasActiveFilters ? (
               <button
                 type="button"
-                onClick={() => setSearchTerm('')}
-                className="rounded-md border border-slate-700/70 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
+                onClick={clearFilters}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-700/70 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
               >
-                Limpiar búsqueda
+                Limpiar filtros
               </button>
             ) : null}
           </div>
-          <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
-            <span className="sticky left-0 z-10 mr-1 shrink-0 bg-slate-950/50 pr-2 font-semibold uppercase tracking-[0.18em] text-slate-400">Filtro alfabético</span>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-800/80 bg-slate-900/60 p-3">
+            <span className="inline-flex items-center gap-2 rounded-full border border-slate-700/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+              <Filter className="h-3.5 w-3.5" />
+              Filtrar por letra
+            </span>
             <button
               type="button"
               onClick={() => setActiveLetter('ALL')}
-              className={`h-9 shrink-0 rounded-md border px-3 text-sm font-medium transition ${
+              className={`h-9 shrink-0 rounded-full border px-3 text-sm font-medium transition ${
                 activeLetter === 'ALL'
-                  ? 'border-blue-400 bg-blue-500/15 text-blue-200'
+                  ? 'border-cyan-400/60 bg-cyan-500/15 text-cyan-100'
                   : 'border-slate-700/70 text-slate-200 hover:border-slate-500 hover:bg-slate-800'
               }`}
             >
@@ -531,66 +686,93 @@ export function ComplianceExcelMatrix({
                   type="button"
                   onClick={() => isAvailable && setActiveLetter(letter)}
                   disabled={!isAvailable}
-                  className={`flex h-9 shrink-0 items-center gap-2 rounded-md border px-3 text-sm font-semibold transition ${
+                  className={`flex h-9 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-semibold transition ${
                     isActive
-                      ? 'border-blue-400 bg-blue-500/15 text-blue-200'
+                      ? 'border-cyan-400/60 bg-cyan-500/15 text-cyan-100'
                       : isAvailable
                         ? 'border-slate-700/70 text-slate-200 hover:border-slate-500 hover:bg-slate-800'
                         : 'cursor-not-allowed border-slate-800/50 text-slate-600 opacity-40'
                   }`}
                 >
                   <span>{label}</span>
-                  <span className="rounded-full bg-slate-900/70 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-slate-300">
+                  <span className="rounded-full bg-slate-950/70 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-slate-300">
                     {count}
                   </span>
                 </button>
               )
             })}
           </div>
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
-            <span>
-              {activeLetter === 'ALL'
-                ? `Mostrando ${filteredRows.length} filas`
-                : `Mostrando ${filteredRows.length} filas para ${activeLetter}`}
-            </span>
-            <button
-              type="button"
-              onClick={() => setActiveLetter('ALL')}
-              className="rounded-md border border-slate-700/70 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
-            >
-              Limpiar filtro
-            </button>
-          </div>
         </div>
+
+        <div className="grid gap-3 lg:grid-cols-3">
+          {topRisks.length > 0 ? (
+            topRisks.map((row) => (
+              <div key={row.id} className="rounded-2xl border border-slate-700/50 bg-slate-950/55 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-100">{getRowCompanyLabel(row.conductor, transportistasByRut)}</p>
+                    <p className="mt-1 truncate text-xs text-slate-400">{getEntityLabel(row.conductor, 'Sin conductor')}</p>
+                  </div>
+                  <Badge className={`border ${getRowStateStyles(row.state)}`}>{row.stateLabel}</Badge>
+                </div>
+                <div className="mt-4 flex items-end justify-between gap-3">
+                  <div>
+                    <p className={`text-3xl font-bold ${getScoreTone(row.complianceScore)}`}>{row.complianceScore}%</p>
+                    <p className="mt-1 text-xs text-slate-400">cumplimiento calculado</p>
+                  </div>
+                  <div className="max-w-[160px] text-right text-xs text-slate-400">
+                    <div>{row.pendingCount} pendientes</div>
+                    <div>{row.rejectedCount} rechazados</div>
+                    <div>{row.missingCount} faltantes</div>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="rounded-2xl border border-slate-700/50 bg-slate-950/55 p-4 text-sm text-slate-400 lg:col-span-3">
+              No hay filas para destacar con los filtros actuales.
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-700/50 bg-slate-950/50 px-4 py-3 text-xs text-slate-300">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge className="border-emerald-500/30 bg-emerald-500/15 text-emerald-200">1 = aprobado</Badge>
+            <Badge className="border-rose-500/30 bg-rose-500/15 text-rose-200">0 = pendiente, rechazado, vencido o sin cargar</Badge>
+            <Badge className="border-slate-700/60 bg-slate-900/70 text-slate-200">{summary.averageScore}% score medio</Badge>
+          </div>
+          <span className="text-slate-500">Las celdas muestran el periodo bajo el valor cuando existe aprobación.</span>
+        </div>
+
         {loading ? (
-          <div className="rounded-lg border border-slate-700/50 bg-slate-900/60 p-4 text-sm text-slate-400">
+          <div className="rounded-2xl border border-slate-700/50 bg-slate-900/60 p-6 text-sm text-slate-400">
             Cargando matriz documental...
           </div>
         ) : filteredRows.length === 0 || groupedColumns.length === 0 ? (
-          <div className="rounded-lg border border-slate-700/50 bg-slate-900/60 p-4 text-sm text-slate-400">
+          <div className="rounded-2xl border border-slate-700/50 bg-slate-900/60 p-6 text-sm text-slate-400">
             No hay datos suficientes para mostrar la matriz documental con ese filtro.
           </div>
         ) : (
-          <div className="max-w-full overflow-x-auto overflow-y-hidden rounded-xl border border-slate-700/50">
+          <div className="overflow-x-auto rounded-2xl border border-slate-700/50 bg-slate-950/40">
             <table className="w-max min-w-full divide-y divide-slate-700/50">
-              <thead className="bg-slate-950/80">
+              <thead className="sticky top-0 z-30 bg-slate-950/95 backdrop-blur">
                 <tr>
-                  <th rowSpan={2} className="sticky left-0 z-20 w-48 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <th rowSpan={2} className="sticky left-0 z-40 w-48 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
                     RUT empresa
                   </th>
-                  <th rowSpan={2} className="sticky left-48 z-20 w-44 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <th rowSpan={2} className="sticky left-48 z-40 w-44 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
                     Empresa
                   </th>
-                  <th rowSpan={2} className="sticky left-[23rem] z-20 w-44 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <th rowSpan={2} className="sticky left-[23rem] z-40 w-44 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
                     Conductor
                   </th>
-                  <th rowSpan={2} className="sticky left-[34rem] z-20 w-40 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <th rowSpan={2} className="sticky left-[34rem] z-40 w-40 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
                     Ejecutiva
                   </th>
-                  <th rowSpan={2} className="sticky left-[44rem] z-20 w-24 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <th rowSpan={2} className="sticky left-[44rem] z-40 w-52 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
                     Cobertura
                   </th>
-                  <th rowSpan={2} className="sticky left-[50rem] z-20 w-24 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <th rowSpan={2} className="sticky left-[56rem] z-40 w-28 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
                     Estado
                   </th>
                   {groupedColumns.map((group) => (
@@ -608,7 +790,7 @@ export function ComplianceExcelMatrix({
                     group.columns.map((column) => (
                       <th
                         key={column.key}
-                        className="min-w-[110px] px-2 py-3 text-left text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400"
+                        className="min-w-[112px] px-2 py-3 text-left text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400"
                       >
                         <div className="space-y-1">
                           <p className="text-slate-200">{column.label}</p>
@@ -619,60 +801,107 @@ export function ComplianceExcelMatrix({
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700/50 bg-slate-900/40">
-                {filteredRows.map((row) => {
-                  const state = row.rejectedCount > 0 || row.expiredCount > 0
-                    ? 'Riesgo'
-                    : row.pendingCount > 0 || row.missingCount > 0
-                      ? 'Atencion'
-                      : 'OK'
-                  const stateClass =
-                    state === 'OK'
-                      ? 'bg-emerald-500/15 text-emerald-200 border-emerald-500/30'
-                      : state === 'Atencion'
-                        ? 'bg-amber-500/15 text-amber-200 border-amber-500/30'
-                        : 'bg-rose-500/15 text-rose-200 border-rose-500/30'
-
-                  return (
-                    <tr key={row.id} className="hover:bg-slate-800/50">
-                      <td className="sticky left-0 z-10 w-48 bg-slate-900/95 px-4 py-3 align-top">
-                        <p className="font-medium text-slate-100">{row.company?.rut || row.conductor.rut_proveedor || 'Sin RUT'}</p>
-                        <p className="text-xs text-slate-400">{getRowCompanyLabel(row.conductor, transportistasByRut)}</p>
-                      </td>
-                      <td className="sticky left-48 z-10 w-44 bg-slate-900/95 px-4 py-3 align-top">
-                        <p className="font-medium text-slate-100">{getRowCompanyLabel(row.conductor, transportistasByRut)}</p>
-                        <p className="text-xs text-slate-400">{row.company?.rut || 'Sin RUT'}</p>
-                      </td>
-                      <td className="sticky left-[23rem] z-10 w-44 bg-slate-900/95 px-4 py-3 align-top">
-                        <p className="font-medium text-slate-100">{getEntityLabel(row.conductor, 'Sin conductor')}</p>
-                        <p className="text-xs text-slate-400">{row.conductor.rut || 'Sin RUT'}</p>
-                      </td>
-                      <td className="sticky left-[34rem] z-10 w-40 bg-slate-900/95 px-4 py-3 align-top">
-                        <p className="font-medium text-slate-100">{row.conductor.ejecutivo_nombre || row.company?.ejecutivo_nombre || 'Sin asignar'}</p>
-                      </td>
-                      <td className="sticky left-[44rem] z-10 w-24 bg-slate-900/95 px-4 py-3 align-top">
-                        <p className="text-lg font-semibold text-slate-100">{row.complianceScore}%</p>
-                      </td>
-                      <td className="sticky left-[50rem] z-10 w-24 bg-slate-900/95 px-4 py-3 align-top">
-                        <Badge className={stateClass}>{state}</Badge>
-                      </td>
-                      {groupedColumns.flatMap((group) =>
-                        group.columns.map((column) => {
-                          const doc = row.cells.get(column.key)
-                          return (
-                            <td key={`${row.id}-${column.key}`} className="min-w-[110px] px-1 py-2 align-top">
-                              {renderStatusCell(doc, column.label)}
-                            </td>
-                          )
-                        })
-                      )}
-                    </tr>
-                  )
-                })}
+              <tbody className="divide-y divide-slate-700/50 bg-slate-900/35">
+                {filteredRows.map((row) => (
+                  <tr key={row.id} className="group hover:bg-slate-800/45">
+                    <td className="sticky left-0 z-20 w-48 bg-slate-900/95 px-4 py-3 align-top">
+                      <p className="font-semibold text-slate-100">{row.company?.rut || row.conductor.rut_proveedor || 'Sin RUT'}</p>
+                      <p className="mt-1 text-xs text-slate-400">{getRowCompanyLabel(row.conductor, transportistasByRut)}</p>
+                    </td>
+                    <td className="sticky left-48 z-20 w-44 bg-slate-900/95 px-4 py-3 align-top">
+                      <p className="font-semibold text-slate-100">{getRowCompanyLabel(row.conductor, transportistasByRut)}</p>
+                      <p className="mt-1 text-xs text-slate-400">{row.company?.rut || 'Sin RUT'}</p>
+                    </td>
+                    <td className="sticky left-[23rem] z-20 w-44 bg-slate-900/95 px-4 py-3 align-top">
+                      <p className="font-semibold text-slate-100">{getEntityLabel(row.conductor, 'Sin conductor')}</p>
+                      <p className="mt-1 text-xs text-slate-400">{row.conductor.rut || 'Sin RUT'}</p>
+                    </td>
+                    <td className="sticky left-[34rem] z-20 w-40 bg-slate-900/95 px-4 py-3 align-top">
+                      <p className="font-semibold text-slate-100">{row.conductor.ejecutivo_nombre || row.company?.ejecutivo_nombre || 'Sin asignar'}</p>
+                      <p className="mt-1 text-xs text-slate-400">{row.stateLabel}</p>
+                    </td>
+                    <td className="sticky left-[44rem] z-20 w-52 bg-slate-900/95 px-4 py-3 align-top">
+                      <div className="space-y-2">
+                        <div className="flex items-end justify-between gap-3">
+                          <div>
+                            <p className={`text-2xl font-bold ${getScoreTone(row.complianceScore)}`}>{row.complianceScore}%</p>
+                            <p className="text-xs text-slate-400">cobertura documental</p>
+                          </div>
+                          <div className="text-right text-[11px] text-slate-400">
+                            <div>{row.approvedCount} OK</div>
+                            <div>{row.pendingCount} Pend.</div>
+                            <div>{row.missingCount} Sin</div>
+                          </div>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+                          <div className={`h-full rounded-full bg-gradient-to-r ${getProgressTone(row.complianceScore)}`} style={{ width: `${row.complianceScore}%` }} />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="sticky left-[56rem] z-20 w-28 bg-slate-900/95 px-4 py-3 align-top">
+                      <div className="space-y-2">
+                        <Badge className={`border ${getRowStateStyles(row.state)}`}>{row.stateLabel}</Badge>
+                        <p className="text-xs text-slate-400">{row.rejectedCount + row.expiredCount} críticos</p>
+                      </div>
+                    </td>
+                    {groupedColumns.flatMap((group) =>
+                      group.columns.map((column) => {
+                        const doc = row.cells.get(column.key)
+                        return (
+                          <td key={`${row.id}-${column.key}`} className="min-w-[112px] px-1 py-2 align-top">
+                            {renderStatusCell(doc, column.label)}
+                          </td>
+                        )
+                      })
+                    )}
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         )}
+
+        <div className="grid gap-3 md:grid-cols-4">
+          <div className="rounded-2xl border border-slate-700/50 bg-slate-950/60 p-4">
+            <div className="flex items-center gap-2 text-slate-400">
+              <BarChart3 className="h-4 w-4" />
+              <span className="text-xs uppercase tracking-[0.2em]">Cobertura media</span>
+            </div>
+            <p className="mt-3 text-2xl font-bold text-slate-100">{summary.averageScore}%</p>
+          </div>
+          <div className="rounded-2xl border border-slate-700/50 bg-slate-950/60 p-4">
+            <div className="flex items-center gap-2 text-slate-400">
+              <CheckCircle2 className="h-4 w-4" />
+              <span className="text-xs uppercase tracking-[0.2em]">Filas estables</span>
+            </div>
+            <p className="mt-3 text-2xl font-bold text-emerald-300">{statusCounts.ok}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-700/50 bg-slate-950/60 p-4">
+            <div className="flex items-center gap-2 text-slate-400">
+              <Clock3 className="h-4 w-4" />
+              <span className="text-xs uppercase tracking-[0.2em]">Filas en atención</span>
+            </div>
+            <p className="mt-3 text-2xl font-bold text-amber-300">{statusCounts.attention}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-700/50 bg-slate-950/60 p-4">
+            <div className="flex items-center gap-2 text-slate-400">
+              <TriangleAlert className="h-4 w-4" />
+              <span className="text-xs uppercase tracking-[0.2em]">Filas en riesgo</span>
+            </div>
+            <p className="mt-3 text-2xl font-bold text-rose-300">{statusCounts.risk}</p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-700/50 bg-slate-950/50 px-4 py-3 text-xs text-slate-300">
+          <span className="inline-flex items-center gap-2 rounded-full border border-slate-700/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+            <FileText className="h-3.5 w-3.5" />
+            Leyenda
+          </span>
+          <Badge className="border-emerald-500/30 bg-emerald-500/15 text-emerald-200">1 = aprobado</Badge>
+          <Badge className="border-rose-500/30 bg-rose-500/15 text-rose-200">0 = pendiente, rechazado, vencido o sin cargar</Badge>
+          <Badge className="border-slate-700/60 bg-slate-900/70 text-slate-200">Periodo visible solo en aprobados</Badge>
+          <span className="text-slate-500">Filtro activo: {statusFilter === 'ALL' ? 'todos los estados' : getRowStateLabel(statusFilter as RowState)}</span>
+        </div>
       </CardContent>
     </Card>
   )
