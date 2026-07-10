@@ -11,7 +11,6 @@ import {
   Shield,
   Sparkles,
   TriangleAlert,
-  XCircle,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
