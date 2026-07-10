@@ -88,7 +88,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       label: "Compliance Matrix",
       href: "/compliance",
       icon: <Shield className="w-5 h-5" />,
-      roles: ["admin", "mandante"]
+      roles: ["admin", "mandante", "executive"]
     },
     // Mandante navigation
     {

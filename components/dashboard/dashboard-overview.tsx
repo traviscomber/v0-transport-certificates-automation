@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { FileText, AlertTriangle, CheckCircle, Clock, LucideIcon, ArrowRight } from "lucide-react"
+import { FileText, AlertTriangle, CheckCircle, Clock, LucideIcon, ArrowRight, Shield } from "lucide-react"
 import { useDocumentSync } from "@/contexts/document-sync-context"
 import { StatCard } from "./stat-card"
 import { AlertItem } from "./alert-item"
@@ -366,6 +366,12 @@ export function DashboardOverview() {
               <Link href="/dashboard/company/reportes">
                 <Button variant="outline" size="sm" className="border-slate-600 text-slate-200 hover:bg-slate-800 h-8 text-xs">
                   Reportes <ArrowRight className="w-3 h-3 ml-1.5" />
+                </Button>
+              </Link>
+              <Link href="/compliance">
+                <Button variant="outline" size="sm" className="border-cyan-500/30 text-cyan-200 hover:bg-cyan-500/10 h-8 text-xs">
+                  <Shield className="w-3 h-3 mr-1.5" />
+                  Matriz
                 </Button>
               </Link>
             </div>
