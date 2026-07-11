@@ -50,9 +50,18 @@ export default function ReportesPage() {
   const [keyError, setKeyError] = useState('')
 
   useEffect(() => {
-    // Check if user is authorized from session storage
     const authorized = sessionStorage.getItem('company-reportes-authorized') === 'true'
-    setIsAuthorized(authorized)
+    const cookieRole =
+      typeof document !== 'undefined'
+        ? document.cookie
+            .split('; ')
+            .find((item) => item.startsWith('user_role='))
+            ?.split('=')[1]
+        : undefined
+
+    if (authorized || cookieRole === 'ejecutiva' || cookieRole === 'admin' || cookieRole === 'mandante') {
+      setIsAuthorized(true)
+    }
   }, [])
 
   const handleKeySubmit = (e: React.FormEvent) => {
@@ -251,6 +260,9 @@ export default function ReportesPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-8">
+            <div className="mb-4 rounded-md border border-cyan-500/30 bg-cyan-500/10 p-3 text-xs text-cyan-100">
+              Si ya iniciastes sesión como ejecutiva, este acceso debería desbloquearse automáticamente.
+            </div>
             <form onSubmit={handleKeySubmit} className="space-y-4">
               <div className="space-y-2">
                 <label htmlFor="key-input" className="block text-sm font-medium text-gray-700">

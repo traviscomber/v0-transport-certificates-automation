@@ -8,7 +8,6 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(
   request: Request,
-  { searchParams }: { searchParams: Record<string, string | string[] | undefined> }
 ) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -23,8 +22,9 @@ export async function GET(
 
     const supabase = createClient(supabaseUrl, serviceRoleKey)
 
-    const category = (searchParams.category as string) || undefined
-    const applicableTo = (searchParams.applicable_to as string) || undefined
+    const url = new URL(request.url)
+    const category = url.searchParams.get('category') || undefined
+    const applicableTo = url.searchParams.get('applicable_to') || undefined
 
     let query = supabase
       .from('document_requirements')
