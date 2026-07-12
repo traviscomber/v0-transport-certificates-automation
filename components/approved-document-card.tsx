@@ -34,6 +34,8 @@ export function ApprovedDocumentCard({ doc, onPreview, getExecutive }: ApprovedD
     return getMonthYear(dateStr, 'es')
   }
 
+  const docTypeChipClass = `${iconConfig.bg} ${iconConfig.border} ${iconConfig.color} border shadow-sm backdrop-blur-sm`
+
   return (
     <Card className="bg-gradient-to-r from-slate-900/80 to-slate-800/80 border-slate-700/50 hover:border-green-500/30 transition-all hover:shadow-lg hover:shadow-green-500/10">
       <CardContent className="p-6">
@@ -97,7 +99,10 @@ export function ApprovedDocumentCard({ doc, onPreview, getExecutive }: ApprovedD
               ✓ Aprobado
             </Badge>
             {doc.docType && (
-              <Badge variant="outline" className={`text-xs font-medium ${iconConfig.bg} ${iconConfig.border} ${iconConfig.color} whitespace-nowrap flex items-center gap-1 px-2 py-0.5`}>
+              <Badge
+                variant="outline"
+                className={`whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${docTypeChipClass}`}
+              >
                 <IconComponent className="h-3 w-3 flex-shrink-0" strokeWidth={1.5} />
                 {doc.docType.nombre}
               </Badge>

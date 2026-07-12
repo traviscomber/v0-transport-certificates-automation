@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { XCircle, FileText, User, Building2, AlertTriangle, Eye, Download } from 'lucide-react'
 import { useDocumentSync } from '@/contexts/document-sync-context'
 import { getChileDate, getChileTime } from '@/lib/timezone-utils'
+import { getDocTypeIcon } from '@/lib/document-type-icons'
 import { PDFViewer } from '@/components/pdf-viewer'
 import { DocumentFilter, type DocumentFilters } from '@/components/document-filter'
 import { ALL_VALUE, filterByMonthYear } from '@/lib/date-filters'
@@ -91,6 +92,11 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
 
   const getDocumentTypeLabel = (doc: RejectedDocument) =>
     doc.docType?.nombre || doc.docType?.code || 'Sin tipo'
+
+  const getDocumentTypeChipClass = (doc: RejectedDocument) => {
+    const iconConfig = getDocTypeIcon(doc.docType)
+    return `${iconConfig.bg} ${iconConfig.border} ${iconConfig.color} border shadow-sm backdrop-blur-sm`
+  }
 
   const getDocumentPeriod = (doc: RejectedDocument) => {
     const rawDate = doc.updated_at || doc.reviewed_at || doc.created_at
@@ -301,8 +307,11 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
                           Fecha: {getRejectionDate(doc)} {getRejectionTime(doc)}
                         </Badge>
                         {doc.docType && (
-                          <Badge variant="outline" className="bg-blue-500/10 border-blue-500/30 text-blue-300">
-                            {doc.docType.nombre}
+                          <Badge
+                            variant="outline"
+                            className={`whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${getDocumentTypeChipClass(doc)}`}
+                          >
+                            {getDocumentTypeLabel(doc)}
                           </Badge>
                         )}
                       </div>
@@ -326,8 +335,11 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
                     ✗ Rechazado
                   </Badge>
                   {doc.docType && (
-                    <Badge variant="outline" className="text-xs bg-blue-500/10 border-blue-500/30 text-blue-300 whitespace-nowrap">
-                      {doc.docType.nombre}
+                    <Badge
+                      variant="outline"
+                      className={`whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${getDocumentTypeChipClass(doc)}`}
+                    >
+                      {getDocumentTypeLabel(doc)}
                     </Badge>
                   )}
                   {doc.file_url && (

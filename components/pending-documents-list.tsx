@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useDocumentSync } from '@/contexts/document-sync-context'
 import { PDFViewer } from '@/components/pdf-viewer'
 import { formatToChileTime } from '@/lib/timezone-utils'
+import { getDocTypeIcon } from '@/lib/document-type-icons'
 import { DocumentFilter, type DocumentFilters } from '@/components/document-filter'
 import { ALL_VALUE, filterByMonthYear } from '@/lib/date-filters'
 import { buildDocumentAccessUrl } from '@/lib/document-file-access'
@@ -110,6 +111,11 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
     const rawDate = doc.uploaded_at || doc.created_at
     if (!rawDate) return 'Sin fecha'
     return formatToChileTime(rawDate, "d 'de' MMMM 'de' yyyy")
+  }
+
+  const getDocumentTypeChipClass = (doc: PendingDocument) => {
+    const iconConfig = getDocTypeIcon(doc.docType)
+    return `${iconConfig.bg} ${iconConfig.border} ${iconConfig.color} border shadow-sm backdrop-blur-sm`
   }
 
   // Get all documents combined
@@ -435,7 +441,10 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                           <span className="truncate">
                             {c ? `${c.nombres} ${c.apellido_paterno} - ${c.rut}` : ''}
                           </span>
-                          <Badge variant="outline" className="text-[10px] bg-blue-500/10 border-blue-500/30 text-blue-300">
+                          <Badge
+                            variant="outline"
+                            className={`whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${getDocumentTypeChipClass(doc)}`}
+                          >
                             {getDocumentTypeLabel(doc)}
                           </Badge>
                           <Badge variant="outline" className="text-[10px] bg-amber-500/10 border-amber-500/30 text-amber-300">
@@ -516,8 +525,11 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                             {t ? `${t.razon_social} - ${t.rut}` : ''}
                           </p>
                           {doc.docType && (
-                            <Badge variant="outline" className="text-xs bg-blue-500/10 border-blue-500/30 text-blue-300">
-                              {doc.docType.nombre}
+                            <Badge
+                              variant="outline"
+                              className={`whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${getDocumentTypeChipClass(doc)}`}
+                            >
+                              {getDocumentTypeLabel(doc)}
                             </Badge>
                           )}
                           <Badge variant="outline" className="text-xs bg-amber-500/10 border-amber-500/30 text-amber-300">
