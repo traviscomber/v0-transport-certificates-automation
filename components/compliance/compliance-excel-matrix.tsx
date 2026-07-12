@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, type WheelEvent } from 'react'
 import {
   BarChart3,
   CheckCircle2,
@@ -520,6 +520,22 @@ export function ComplianceExcelMatrix({
     })
   }
 
+  const handleMatrixWheel = (event: WheelEvent<HTMLDivElement>) => {
+    const container = matrixScrollRef.current
+    if (!container) return
+
+    if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
+      return
+    }
+
+    if (container.scrollWidth <= container.clientWidth) {
+      return
+    }
+
+    event.preventDefault()
+    container.scrollLeft += event.deltaY
+  }
+
   const renderStatusCell = (doc?: MatrixDocument, requirementName?: string) => {
     if (!doc) {
       const style = STATUS_STYLES.missing
@@ -763,7 +779,7 @@ export function ComplianceExcelMatrix({
             <span className="inline-flex h-7 items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 font-semibold uppercase tracking-[0.18em] text-cyan-100">
               Matriz completa
             </span>
-            <span className="text-cyan-100/70">La tabla excede el ancho de pantalla. Usa los controles para moverla lateralmente.</span>
+            <span className="text-cyan-100/70">La tabla excede el ancho de pantalla. Desliza horizontalmente o usa los controles para moverla lateralmente.</span>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -798,7 +814,14 @@ export function ComplianceExcelMatrix({
             No hay datos suficientes para mostrar la matriz documental con ese filtro.
           </div>
         ) : (
-          <div ref={matrixScrollRef} className="overflow-x-auto rounded-2xl border border-slate-700/50 bg-slate-950/40">
+          <div
+            ref={matrixScrollRef}
+            onWheel={handleMatrixWheel}
+            tabIndex={0}
+            role="region"
+            aria-label="Matriz de cumplimiento desplazable"
+            className="overflow-x-auto overflow-y-hidden rounded-2xl border border-slate-700/50 bg-slate-950/40 outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
+          >
             <table className="w-max min-w-full divide-y divide-slate-700/50">
               <thead className="sticky top-0 z-30 bg-slate-950/95 backdrop-blur">
                 <tr>
