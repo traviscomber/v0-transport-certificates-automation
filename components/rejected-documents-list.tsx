@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { XCircle, FileText, Calendar, User, Building2, AlertTriangle, Eye, Download } from 'lucide-react'
+import { XCircle, FileText, User, Building2, AlertTriangle, Eye, Download } from 'lucide-react'
 import { useDocumentSync } from '@/contexts/document-sync-context'
 import { getChileDate, getChileTime } from '@/lib/timezone-utils'
 import { PDFViewer } from '@/components/pdf-viewer'
@@ -288,14 +288,6 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
                         </div>
                       )}
                       
-                      <div className="flex items-center gap-2 text-sm text-slate-200">
-                        <Calendar className="h-4 w-4 flex-shrink-0 text-slate-300" />
-                        <span>{getRejectionDate(doc)}</span>
-                        <span className="text-xs text-slate-300 flex-shrink-0 ml-2">
-                          {getRejectionTime(doc)}
-                        </span>
-                      </div>
-
                       <div className="flex items-center gap-2 text-sm text-slate-200">
                         <User className="h-4 w-4 flex-shrink-0 text-slate-300" />
                         <span className="truncate text-xs">Rechazado por: {getExecutive(doc)}</span>

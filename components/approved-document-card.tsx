@@ -3,7 +3,7 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Calendar, User, Building2, Eye, Download } from 'lucide-react'
+import { User, Building2, Eye, Download } from 'lucide-react'
 import { getChileDate, getChileTime } from '@/lib/timezone-utils'
 import { getDocTypeIcon } from '@/lib/document-type-icons'
 import { buildDocumentAccessUrl } from '@/lib/document-file-access'
@@ -73,14 +73,6 @@ export function ApprovedDocumentCard({ doc, onPreview, getExecutive }: ApprovedD
                     </span>
                   </div>
                 )}
-                
-                <div className="flex items-center gap-2 text-sm text-slate-200">
-                  <Calendar className="h-4 w-4 flex-shrink-0 text-slate-300" />
-                  <span>{getApprovalDate(doc)}</span>
-                  <span className="text-xs text-slate-300 flex-shrink-0 ml-2">
-                    {getApprovalTime(doc)}
-                  </span>
-                </div>
                 
                 <div className="flex items-center gap-2 text-sm text-slate-200">
                   <User className="h-4 w-4 flex-shrink-0 text-slate-300" />
