@@ -305,6 +305,9 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
                         <Badge variant="outline" className="bg-amber-500/10 border-amber-500/30 text-amber-300">
                           Periodo: {getDocumentPeriod(doc)}
                         </Badge>
+                        <Badge variant="outline" className="bg-slate-500/10 border-slate-500/30 text-slate-200">
+                          Fecha: {getRejectionDate(doc)} {getRejectionTime(doc)}
+                        </Badge>
                         {doc.docType && (
                           <Badge variant="outline" className="bg-blue-500/10 border-blue-500/30 text-blue-300">
                             {doc.docType.nombre}

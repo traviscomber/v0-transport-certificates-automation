@@ -441,9 +441,9 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                           <Badge variant="outline" className="text-[10px] bg-amber-500/10 border-amber-500/30 text-amber-300">
                             Periodo: {getDocumentPeriod(doc)}
                           </Badge>
-                          <span className="flex items-center gap-1">
-                            {getDocumentDate(doc)}
-                          </span>
+                          <Badge variant="outline" className="text-[10px] bg-slate-500/10 border-slate-500/30 text-slate-200">
+                            Fecha: {getDocumentDate(doc)}
+                          </Badge>
                           {getExecutive(doc) !== 'No especificado' && (
                             <Badge variant="outline" className="text-[10px] bg-purple-500/10 border-purple-500/30 text-purple-300">
                               {getExecutive(doc)}
@@ -523,9 +523,9 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                           <Badge variant="outline" className="text-xs bg-amber-500/10 border-amber-500/30 text-amber-300">
                             Periodo: {getDocumentPeriod(doc)}
                           </Badge>
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            {getDocumentDate(doc)}
-                          </span>
+                          <Badge variant="outline" className="text-xs bg-slate-500/10 border-slate-500/30 text-slate-200">
+                            Fecha: {getDocumentDate(doc)}
+                          </Badge>
                           {doc.ejecutiva && doc.ejecutiva !== 'Sin asignar' && (
                             <Badge variant="outline" className="text-xs bg-purple-500/10 border-purple-500/30 text-purple-300">
                               {doc.ejecutiva}
