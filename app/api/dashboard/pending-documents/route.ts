@@ -80,10 +80,15 @@ export async function GET() {
       .from("subcontractor_document_types")
       .select("id, code, nombre")
 
+    const { data: conductorDocTypes } = await supabase
+      .from("document_types")
+      .select("id, code, name")
+
     // Filter out deprecated types
     const deprecatedCodes = ['AFP', 'SALUD', 'MUTUAL', 'SEGURO_SOCIAL']
     const activeDocTypes = docTypes?.filter(dt => !deprecatedCodes.includes(dt.code)) || []
     const docTypeMap = new Map(activeDocTypes.map(dt => [dt.id, { code: dt.code, nombre: dt.nombre }]) || [])
+    const conductorDocTypeMap = new Map(conductorDocTypes?.map(dt => [dt.id, { code: dt.code, nombre: dt.name }]) || [])
 
     // Get assigned executives for conductors
     // Workflow: conductor_id -> conductores.rut_proveedor -> transportistas.rut -> transportistas.assigned_executive_id -> executive_staff.full_name
@@ -175,7 +180,13 @@ export async function GET() {
     // Normalize conductor documents with assigned executives
     const normalizedConductorDocs = (conductorDocs || []).map((doc: any) => ({
       ...doc,
-      ejecutiva: conductorExecutiveMap.get(doc.conductores?.id) || 'Sin asignar'
+      document_name: doc.original_filename,
+      file_name: doc.original_filename,
+      status: doc.validation_status,
+      uploaded_at: doc.created_at,
+      docType: conductorDocTypeMap.get(doc.document_type_id) || null,
+      ejecutiva: conductorExecutiveMap.get(doc.conductores?.id) || 'Sin asignar',
+      document_source: 'conductor'
     }))
 
     // Normalize subcontractor documents with assigned executives

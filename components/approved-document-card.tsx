@@ -7,6 +7,7 @@ import { Calendar, User, Building2, Eye, Download } from 'lucide-react'
 import { getChileDate, getChileTime } from '@/lib/timezone-utils'
 import { getDocTypeIcon } from '@/lib/document-type-icons'
 import { buildDocumentAccessUrl } from '@/lib/document-file-access'
+import { getMonthYear } from '@/lib/document-grouping'
 
 interface ApprovedDocumentCardProps {
   doc: any
@@ -26,6 +27,11 @@ export function ApprovedDocumentCard({ doc, onPreview, getExecutive }: ApprovedD
   const getApprovalTime = (doc: any) => {
     const dateStr = doc.validated_at || doc.approved_at || doc.updated_at || doc.reviewed_at || doc.created_at
     return getChileTime(dateStr)
+  }
+
+  const getApprovalPeriod = (doc: any) => {
+    const dateStr = doc.validated_at || doc.approved_at || doc.updated_at || doc.reviewed_at || doc.created_at
+    return getMonthYear(dateStr, 'es')
   }
 
   return (
@@ -79,6 +85,15 @@ export function ApprovedDocumentCard({ doc, onPreview, getExecutive }: ApprovedD
                 <div className="flex items-center gap-2 text-sm text-slate-200">
                   <User className="h-4 w-4 flex-shrink-0 text-slate-300" />
                   <span className="truncate text-xs">Aprobado por: {getExecutive(doc)}</span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                  <Badge variant="outline" className="bg-emerald-500/10 border-emerald-500/30 text-emerald-300">
+                    Periodo: {getApprovalPeriod(doc)}
+                  </Badge>
+                  <Badge variant="outline" className="bg-slate-500/10 border-slate-500/30 text-slate-200">
+                    Fecha: {getApprovalDate(doc)} {getApprovalTime(doc)}
+                  </Badge>
                 </div>
               </div>
             </div>

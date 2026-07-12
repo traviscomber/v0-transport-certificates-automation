@@ -18,6 +18,7 @@ interface DocumentFilterProps {
   onFilterChange: (filters: DocumentFilters) => void
   executives?: Array<{ id: string; nombre: string }>
   companies?: Array<{ id: string; nombre: string; rut: string }>
+  documentTypes?: Array<{ value: string; label: string }>
 }
 
 export interface DocumentFilters {
@@ -29,7 +30,12 @@ export interface DocumentFilters {
   year: string
 }
 
-export function DocumentFilter({ onFilterChange, executives = [], companies = [] }: DocumentFilterProps) {
+export function DocumentFilter({
+  onFilterChange,
+  executives = [],
+  companies = [],
+  documentTypes = [],
+}: DocumentFilterProps) {
   const [filters, setFilters] = useState<DocumentFilters>({
     searchQuery: '',
     month: ALL_VALUE,
@@ -57,6 +63,14 @@ export function DocumentFilter({ onFilterChange, executives = [], companies = []
     year: filters.year,
   }
 
+  const hasActiveFilters =
+    filters.searchQuery ||
+    filters.executiveId ||
+    filters.companyId ||
+    filters.documentType ||
+    filters.month !== ALL_VALUE ||
+    filters.year !== ALL_VALUE
+
   return (
     <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4 mb-6">
       <div className="flex flex-col gap-4">
@@ -65,7 +79,7 @@ export function DocumentFilter({ onFilterChange, executives = [], companies = []
             <Filter className="w-4 h-4 text-slate-400" />
             <h3 className="text-sm font-medium text-slate-200">Filtrar Documentos</h3>
           </div>
-          {(filters.searchQuery || filters.executiveId || filters.companyId || filters.documentType || filters.month !== ALL_VALUE || filters.year !== ALL_VALUE) && (
+          {hasActiveFilters && (
             <button
               onClick={handleReset}
               className="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1"
@@ -134,10 +148,20 @@ export function DocumentFilter({ onFilterChange, executives = [], companies = []
             </SelectTrigger>
             <SelectContent className="bg-slate-800 border-slate-600">
               <SelectItem value="all">Todos los tipos</SelectItem>
-              <SelectItem value="license">Licencia</SelectItem>
-              <SelectItem value="insurance">Seguro</SelectItem>
-              <SelectItem value="id">Identificación</SelectItem>
-              <SelectItem value="other">Otro</SelectItem>
+              {documentTypes.length > 0 ? (
+                documentTypes.map((docType) => (
+                  <SelectItem key={docType.value} value={docType.value}>
+                    {docType.label}
+                  </SelectItem>
+                ))
+              ) : (
+                <>
+                  <SelectItem value="license">Licencia</SelectItem>
+                  <SelectItem value="insurance">Seguro</SelectItem>
+                  <SelectItem value="id">Identificacion</SelectItem>
+                  <SelectItem value="other">Otro</SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -148,7 +172,7 @@ export function DocumentFilter({ onFilterChange, executives = [], companies = []
           onClear={() => handleFilterChange({ month: ALL_VALUE, year: ALL_VALUE })}
         />
 
-        {(filters.searchQuery || filters.executiveId || filters.companyId || filters.documentType || filters.month !== ALL_VALUE || filters.year !== ALL_VALUE) && (
+        {hasActiveFilters && (
           <Button
             onClick={handleReset}
             variant="ghost"

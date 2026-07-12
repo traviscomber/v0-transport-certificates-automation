@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Clock, Users, Truck, ArrowLeft, FileText, Check, X, Loader2, Eye, Download, Calendar, Sparkles } from "lucide-react"
+import { Clock, Users, Truck, ArrowLeft, FileText, Check, X, Loader2, Eye, Download, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
@@ -91,6 +91,27 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
     return doc.ejecutiva || doc.reviewed_by_ejecutiva || doc.uploaded_by_ejecutiva || 'No especificado'
   }
 
+  const getDocumentTypeValue = (doc: PendingDocument) =>
+    doc.docType?.code || doc.document_type_id || doc.docType?.nombre || 'Sin tipo'
+
+  const getDocumentTypeLabel = (doc: PendingDocument) =>
+    doc.docType?.nombre || doc.docType?.code || 'Sin tipo'
+
+  const getDocumentPeriod = (doc: PendingDocument) => {
+    const rawDate = doc.uploaded_at || doc.created_at
+    if (!rawDate) return 'Sin fecha'
+    const normalized = rawDate.endsWith('Z') ? rawDate : `${rawDate}Z`
+    const date = new Date(normalized)
+    if (Number.isNaN(date.getTime())) return 'Fecha invalida'
+    return date.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })
+  }
+
+  const getDocumentDate = (doc: PendingDocument) => {
+    const rawDate = doc.uploaded_at || doc.created_at
+    if (!rawDate) return 'Sin fecha'
+    return formatToChileTime(rawDate, "d 'de' MMMM 'de' yyyy")
+  }
+
   // Get all documents combined
   const allDocs = [...conductorDocs, ...subDocs].sort((a, b) => {
     try {
@@ -113,6 +134,20 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
       }
     })
     return Array.from(execs).map(([id, nombre]) => ({ id, nombre }))
+  }, [allDocs])
+
+  const documentTypes = useMemo(() => {
+    const types = new Map<string, string>()
+    allDocs.forEach((doc) => {
+      const value = getDocumentTypeValue(doc)
+      const label = getDocumentTypeLabel(doc)
+      if (value && value !== 'Sin tipo' && !types.has(value)) {
+        types.set(value, label)
+      }
+    })
+    return Array.from(types.entries())
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label))
   }, [allDocs])
 
   const companies = useMemo(() => {
@@ -162,6 +197,13 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
             return false
           }
         } catch (e) {
+          return false
+        }
+      }
+
+      if (filters.documentType) {
+        const value = getDocumentTypeValue(doc)
+        if (value !== filters.documentType) {
           return false
         }
       }
@@ -354,6 +396,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
         onFilterChange={setFilters}
         executives={executives}
         companies={companies}
+        documentTypes={documentTypes}
       />
 
       {/* Conductor Documents Section */}
@@ -388,9 +431,25 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                       <FileText className="h-4 w-4 text-blue-400 flex-shrink-0" />
                       <div className="min-w-0">
                         <p className="font-medium text-sm truncate">{doc.original_filename}</p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {c ? `${c.nombres} ${c.apellido_paterno} - ${c.rut}` : ''}
-                        </p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <span className="truncate">
+                            {c ? `${c.nombres} ${c.apellido_paterno} - ${c.rut}` : ''}
+                          </span>
+                          <Badge variant="outline" className="text-[10px] bg-blue-500/10 border-blue-500/30 text-blue-300">
+                            {getDocumentTypeLabel(doc)}
+                          </Badge>
+                          <Badge variant="outline" className="text-[10px] bg-amber-500/10 border-amber-500/30 text-amber-300">
+                            Periodo: {getDocumentPeriod(doc)}
+                          </Badge>
+                          <span className="flex items-center gap-1">
+                            {getDocumentDate(doc)}
+                          </span>
+                          {getExecutive(doc) !== 'No especificado' && (
+                            <Badge variant="outline" className="text-[10px] bg-purple-500/10 border-purple-500/30 text-purple-300">
+                              {getExecutive(doc)}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0 ml-2">
@@ -461,16 +520,16 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                               {doc.docType.nombre}
                             </Badge>
                           )}
+                          <Badge variant="outline" className="text-xs bg-amber-500/10 border-amber-500/30 text-amber-300">
+                            Periodo: {getDocumentPeriod(doc)}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            {getDocumentDate(doc)}
+                          </span>
                           {doc.ejecutiva && doc.ejecutiva !== 'Sin asignar' && (
                             <Badge variant="outline" className="text-xs bg-purple-500/10 border-purple-500/30 text-purple-300">
                               {doc.ejecutiva}
                             </Badge>
-                          )}
-                          {doc.uploaded_at && (
-                            <span className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {formatToChileTime(doc.uploaded_at, "d 'de' MMMM 'de' yyyy HH:mm")}
-                            </span>
                           )}
                         </div>
                       </div>

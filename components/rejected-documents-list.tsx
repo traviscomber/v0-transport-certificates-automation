@@ -21,6 +21,7 @@ interface RejectedDocument {
   status?: string
   file_url?: string
   rejection_reason?: string
+  document_type_id?: string
   created_at: string
   updated_at?: string
   reviewed_at?: string
@@ -85,6 +86,21 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
     return doc.ejecutiva || doc.reviewed_by_ejecutiva || 'No especificado'
   }
 
+  const getDocumentTypeValue = (doc: RejectedDocument) =>
+    doc.docType?.code || doc.document_type_id || doc.docType?.nombre || 'Sin tipo'
+
+  const getDocumentTypeLabel = (doc: RejectedDocument) =>
+    doc.docType?.nombre || doc.docType?.code || 'Sin tipo'
+
+  const getDocumentPeriod = (doc: RejectedDocument) => {
+    const rawDate = doc.updated_at || doc.reviewed_at || doc.created_at
+    if (!rawDate) return 'Sin fecha'
+    const normalized = rawDate.endsWith('Z') ? rawDate : `${rawDate}Z`
+    const date = new Date(normalized)
+    if (Number.isNaN(date.getTime())) return 'Fecha invalida'
+    return date.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })
+  }
+
   const getRejectionDate = (doc: RejectedDocument) => {
     const dateStr = doc.updated_at || doc.reviewed_at || doc.created_at
     return getChileDate(dateStr)
@@ -105,6 +121,20 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
       }
     })
     return Array.from(execs).map(([id, nombre]) => ({ id, nombre }))
+  }, [allDocs])
+
+  const documentTypes = useMemo(() => {
+    const types = new Map<string, string>()
+    allDocs.forEach((doc) => {
+      const value = getDocumentTypeValue(doc)
+      const label = getDocumentTypeLabel(doc)
+      if (value && value !== 'Sin tipo' && !types.has(value)) {
+        types.set(value, label)
+      }
+    })
+    return Array.from(types.entries())
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label))
   }, [allDocs])
 
   const companies = useMemo(() => {
@@ -162,6 +192,13 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
         }
       }
 
+      if (filters.documentType) {
+        const value = getDocumentTypeValue(doc)
+        if (value !== filters.documentType) {
+          return false
+        }
+      }
+
       return true
     })
 
@@ -202,6 +239,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
         onFilterChange={setFilters}
         executives={executives}
         companies={companies}
+        documentTypes={documentTypes}
       />
       
       {docsToDisplay.length === 0 && hasActiveFilters ? (
@@ -261,6 +299,17 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
                       <div className="flex items-center gap-2 text-sm text-slate-200">
                         <User className="h-4 w-4 flex-shrink-0 text-slate-300" />
                         <span className="truncate text-xs">Rechazado por: {getExecutive(doc)}</span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <Badge variant="outline" className="bg-amber-500/10 border-amber-500/30 text-amber-300">
+                          Periodo: {getDocumentPeriod(doc)}
+                        </Badge>
+                        {doc.docType && (
+                          <Badge variant="outline" className="bg-blue-500/10 border-blue-500/30 text-blue-300">
+                            {doc.docType.nombre}
+                          </Badge>
+                        )}
                       </div>
 
                       {doc.rejection_reason && (
