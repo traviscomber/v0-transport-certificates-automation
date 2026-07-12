@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Clock, Users, Truck, ArrowLeft, FileText, Check, X, Loader2, Eye, Download, Sparkles } from "lucide-react"
+import { Clock, Users, Truck, ArrowLeft, FileText, Check, X, Loader2, Eye, Download, Sparkles, User, Building2 } from "lucide-react"
 import Link from "next/link"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
@@ -117,6 +117,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
     const iconConfig = getDocTypeIcon(doc.docType)
     return `${iconConfig.bg} ${iconConfig.border} ${iconConfig.color} border shadow-sm backdrop-blur-sm`
   }
+  const metaChipClass = 'whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold tracking-[0.14em] border border-slate-600/50 bg-slate-950/40 text-slate-100 shadow-sm backdrop-blur-sm'
 
   // Get all documents combined
   const allDocs = [...conductorDocs, ...subDocs].sort((a, b) => {
@@ -438,9 +439,15 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                       <div className="min-w-0">
                         <p className="font-medium text-sm truncate">{doc.original_filename}</p>
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                          <span className="truncate">
-                            {c ? `${c.nombres} ${c.apellido_paterno} - ${c.rut}` : ''}
-                          </span>
+                          <Badge variant="outline" className={metaChipClass}>
+                            <User className="h-4 w-4 flex-shrink-0 text-slate-300" />
+                            <span className="truncate">
+                              {c ? `${c.nombres} ${c.apellido_paterno}` : ''}
+                            </span>
+                            <span className="text-slate-400">
+                              {c ? `(${c.rut})` : ''}
+                            </span>
+                          </Badge>
                           <Badge
                             variant="outline"
                             className={`whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${getDocumentTypeChipClass(doc)}`}
@@ -454,8 +461,10 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                             Fecha: {getDocumentDate(doc)}
                           </Badge>
                           {getExecutive(doc) !== 'No especificado' && (
-                            <Badge variant="outline" className="text-[10px] bg-purple-500/10 border-purple-500/30 text-purple-300">
-                              {getExecutive(doc)}
+                            <Badge variant="outline" className={metaChipClass}>
+                              <Sparkles className="h-4 w-4 flex-shrink-0 text-purple-300" />
+                              <span className="truncate text-purple-100">Ejecutiva:</span>
+                              <span className="truncate text-purple-200">{getExecutive(doc)}</span>
                             </Badge>
                           )}
                         </div>
@@ -521,9 +530,15 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-sm truncate">{doc.file_name}</p>
                         <div className="flex gap-3 mt-1 flex-wrap">
-                          <p className="text-xs text-muted-foreground">
-                            {t ? `${t.razon_social} - ${t.rut}` : ''}
-                          </p>
+                          <Badge variant="outline" className={metaChipClass}>
+                            <Building2 className="h-4 w-4 flex-shrink-0 text-slate-300" />
+                            <span className="truncate">
+                              {t ? t.razon_social : ''}
+                            </span>
+                            <span className="text-slate-400">
+                              {t ? `(${t.rut})` : ''}
+                            </span>
+                          </Badge>
                           {doc.docType && (
                             <Badge
                               variant="outline"
@@ -539,8 +554,10 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
                             Fecha: {getDocumentDate(doc)}
                           </Badge>
                           {doc.ejecutiva && doc.ejecutiva !== 'Sin asignar' && (
-                            <Badge variant="outline" className="text-xs bg-purple-500/10 border-purple-500/30 text-purple-300">
-                              {doc.ejecutiva}
+                            <Badge variant="outline" className={metaChipClass}>
+                              <Sparkles className="h-4 w-4 flex-shrink-0 text-purple-300" />
+                              <span className="truncate text-purple-100">Ejecutiva:</span>
+                              <span className="truncate text-purple-200">{doc.ejecutiva}</span>
                             </Badge>
                           )}
                         </div>

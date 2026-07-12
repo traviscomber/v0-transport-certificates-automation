@@ -35,6 +35,7 @@ export function ApprovedDocumentCard({ doc, onPreview, getExecutive }: ApprovedD
   }
 
   const docTypeChipClass = `${iconConfig.bg} ${iconConfig.border} ${iconConfig.color} border shadow-sm backdrop-blur-sm`
+  const metaChipClass = 'whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold tracking-[0.14em] border border-slate-600/50 bg-slate-950/40 text-slate-100 shadow-sm backdrop-blur-sm'
 
   return (
     <Card className="bg-gradient-to-r from-slate-900/80 to-slate-800/80 border-slate-700/50 hover:border-green-500/30 transition-all hover:shadow-lg hover:shadow-green-500/10">
@@ -55,31 +56,30 @@ export function ApprovedDocumentCard({ doc, onPreview, getExecutive }: ApprovedD
               
               <div className="mt-3 space-y-2">
                 {doc.conductores && (
-                  <div className="flex items-center gap-2 text-sm text-slate-200">
+                  <Badge variant="outline" className={metaChipClass}>
                     <User className="h-4 w-4 flex-shrink-0 text-slate-300" />
                     <span className="truncate">
                       {doc.conductores.nombres} {doc.conductores.apellido_paterno}
                     </span>
-                    <span className="text-xs text-slate-300 flex-shrink-0">
-                      ({doc.conductores.rut})
-                    </span>
-                  </div>
+                    <span className="text-slate-400">({doc.conductores.rut})</span>
+                  </Badge>
                 )}
                 
                 {doc.transportistas && (
-                  <div className="flex items-center gap-2 text-sm text-slate-200">
+                  <Badge variant="outline" className={metaChipClass}>
                     <Building2 className="h-4 w-4 flex-shrink-0 text-slate-300" />
                     <span className="truncate">{(Array.isArray(doc.transportistas) ? doc.transportistas[0]?.razon_social : doc.transportistas?.razon_social) || 'N/A'}</span>
-                    <span className="text-xs text-slate-300 flex-shrink-0">
+                    <span className="text-slate-400">
                       ({(Array.isArray(doc.transportistas) ? doc.transportistas[0]?.rut : doc.transportistas?.rut) || 'N/A'})
                     </span>
-                  </div>
+                  </Badge>
                 )}
                 
-                <div className="flex items-center gap-2 text-sm text-slate-200">
-                  <User className="h-4 w-4 flex-shrink-0 text-slate-300" />
-                  <span className="truncate text-xs">Aprobado por: {getExecutive(doc)}</span>
-                </div>
+                <Badge variant="outline" className={metaChipClass}>
+                  <User className="h-4 w-4 flex-shrink-0 text-purple-300" />
+                  <span className="truncate text-purple-100">Aprobado por:</span>
+                  <span className="truncate text-purple-200">{getExecutive(doc)}</span>
+                </Badge>
 
                 <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
                   <Badge variant="outline" className="bg-emerald-500/10 border-emerald-500/30 text-emerald-300">
