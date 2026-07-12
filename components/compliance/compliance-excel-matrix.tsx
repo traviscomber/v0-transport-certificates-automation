@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState, type WheelEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type WheelEvent } from 'react'
 import {
   BarChart3,
   CheckCircle2,
@@ -362,7 +362,13 @@ export function ComplianceExcelMatrix({
   const [activeLetter, setActiveLetter] = useState('ALL')
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<FilterState>('ALL')
+  const [activeGroup, setActiveGroup] = useState<'ALL' | MatrixColumn['group']>('Mensual')
   const matrixScrollRef = useRef<HTMLDivElement | null>(null)
+
+  const visibleGroupedColumns = useMemo(() => {
+    if (activeGroup === 'ALL') return groupedColumns
+    return groupedColumns.filter((group) => group.group === activeGroup)
+  }, [activeGroup, groupedColumns])
 
   const rows = useMemo<MatrixRow[]>(() => {
     const allByConductor = new Map<string, MatrixDocument[]>()
@@ -507,7 +513,15 @@ export function ComplianceExcelMatrix({
     setSearchTerm('')
     setActiveLetter('ALL')
     setStatusFilter('ALL')
+    setActiveGroup('Mensual')
   }
+
+  useEffect(() => {
+    const container = matrixScrollRef.current
+    if (container) {
+      container.scrollTo({ left: 0, behavior: 'auto' })
+    }
+  }, [activeGroup])
 
   const scrollMatrix = (direction: 'left' | 'right') => {
     const container = matrixScrollRef.current
@@ -774,34 +788,72 @@ export function ComplianceExcelMatrix({
           <span className="text-slate-500">Las celdas muestran el periodo bajo el valor cuando existe aprobación.</span>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-3 text-xs text-cyan-100/80">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex h-7 items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 font-semibold uppercase tracking-[0.18em] text-cyan-100">
-              Matriz completa
-            </span>
-            <span className="text-cyan-100/70">La tabla excede el ancho de pantalla. Desliza horizontalmente o usa los controles para moverla lateralmente.</span>
+        <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-4 text-xs text-cyan-100/80">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="max-w-3xl space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex h-7 items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 font-semibold uppercase tracking-[0.18em] text-cyan-100">
+                  Vista enfocada
+                </span>
+                <Badge className="border-cyan-400/30 bg-cyan-400/10 text-cyan-100">
+                  {activeGroup === 'ALL' ? 'Completa' : groupedColumns.find((group) => group.group === activeGroup)?.label || activeGroup}
+                </Badge>
+              </div>
+              <p className="text-cyan-100/70">
+                La matriz se divide por categoria para que sea mas comoda. Cambia de vista por grupo y deja la completa solo cuando necesites cruzar todo.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {[{ key: 'ALL', label: 'Completa', count: groupedColumns.length } as const, ...groupedColumns.map((group) => ({ key: group.group, label: group.label, count: group.columns.length }))].map((item) => {
+                const isActive = activeGroup === item.key
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setActiveGroup(item.key)}
+                    className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition ${
+                      isActive
+                        ? 'border-cyan-300/70 bg-cyan-400/15 text-cyan-50 shadow-lg shadow-cyan-950/20'
+                        : 'border-slate-700/70 text-slate-200 hover:border-cyan-400/30 hover:bg-slate-900/70'
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                    <span className="rounded-full bg-slate-950/70 px-2 py-0.5 text-[10px] font-semibold text-slate-300">
+                      {item.count}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => scrollMatrix('left')}
-              className="border-cyan-500/30 bg-slate-950/40 text-cyan-100 hover:bg-cyan-500/10"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Izquierda
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => scrollMatrix('right')}
-              className="border-cyan-500/30 bg-slate-950/40 text-cyan-100 hover:bg-cyan-500/10"
-            >
-              Derecha
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-cyan-500/10 pt-4">
+            <p className="text-cyan-100/70">
+              La tabla sigue siendo desplazable, pero cada categoria ahora ocupa menos ancho y se lee mas rapido.
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => scrollMatrix('left')}
+                className="border-cyan-500/30 bg-slate-950/40 text-cyan-100 hover:bg-cyan-500/10"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Izquierda
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => scrollMatrix('right')}
+                className="border-cyan-500/30 bg-slate-950/40 text-cyan-100 hover:bg-cyan-500/10"
+              >
+                Derecha
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -809,7 +861,7 @@ export function ComplianceExcelMatrix({
           <div className="rounded-2xl border border-slate-700/50 bg-slate-900/60 p-6 text-sm text-slate-400">
             Cargando matriz documental...
           </div>
-        ) : filteredRows.length === 0 || groupedColumns.length === 0 ? (
+        ) : filteredRows.length === 0 || visibleGroupedColumns.length === 0 ? (
           <div className="rounded-2xl border border-slate-700/50 bg-slate-900/60 p-6 text-sm text-slate-400">
             No hay datos suficientes para mostrar la matriz documental con ese filtro.
           </div>
@@ -843,7 +895,7 @@ export function ComplianceExcelMatrix({
                   <th rowSpan={2} className="sticky left-[56rem] z-40 w-28 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
                     Estado
                   </th>
-                  {groupedColumns.map((group) => (
+                  {visibleGroupedColumns.map((group) => (
                     <th
                       key={group.group}
                       colSpan={group.columns.length}
@@ -854,7 +906,7 @@ export function ComplianceExcelMatrix({
                   ))}
                 </tr>
                 <tr>
-                  {groupedColumns.flatMap((group) =>
+                  {visibleGroupedColumns.flatMap((group) =>
                     group.columns.map((column) => (
                       <th
                         key={column.key}
