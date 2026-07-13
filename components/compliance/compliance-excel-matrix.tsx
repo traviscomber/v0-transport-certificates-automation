@@ -890,6 +890,96 @@ export function ComplianceExcelMatrix({
           <div className="rounded-2xl border border-slate-700/50 bg-slate-900/60 p-6 text-sm text-slate-400">
             No hay datos suficientes para mostrar la matriz documental con ese filtro.
           </div>
+        ) : viewMode === 'cards' ? (
+          <div className="space-y-4">
+            {filteredRows.map((row) => (
+              <details key={row.id} open={row.state !== 'ok'} className="group rounded-3xl border border-slate-700/50 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-950/60 shadow-xl shadow-slate-950/20">
+                <summary className="flex cursor-pointer list-none items-start justify-between gap-4 p-4 md:p-5">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge className={`border ${getRowStateStyles(row.state)}`}>{row.stateLabel}</Badge>
+                      <Badge className="border-slate-700/60 bg-slate-900/70 text-slate-200">{row.complianceScore}% cobertura</Badge>
+                      <Badge className="border-cyan-500/30 bg-cyan-500/10 text-cyan-100">{row.approvedCount} OK</Badge>
+                      <Badge className="border-amber-500/30 bg-amber-500/10 text-amber-100">{row.pendingCount} Pend.</Badge>
+                      <Badge className="border-rose-500/30 bg-rose-500/10 text-rose-100">{row.rejectedCount + row.expiredCount} Críticos</Badge>
+                    </div>
+
+                    <div className="mt-3 grid gap-3 lg:grid-cols-2 xl:grid-cols-4">
+                      <div className="rounded-2xl border border-slate-700/50 bg-slate-950/55 p-4">
+                        <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Empresa</p>
+                        <p className="mt-2 truncate text-sm font-semibold text-slate-100">{getRowCompanyLabel(row.conductor, transportistasByRut)}</p>
+                        <p className="mt-1 text-xs text-slate-400">{row.company?.rut || row.conductor.rut_proveedor || 'Sin RUT'}</p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-700/50 bg-slate-950/55 p-4">
+                        <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Conductor</p>
+                        <p className="mt-2 truncate text-sm font-semibold text-slate-100">{getEntityLabel(row.conductor, 'Sin conductor')}</p>
+                        <p className="mt-1 text-xs text-slate-400">{row.conductor.rut || 'Sin RUT'}</p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-700/50 bg-slate-950/55 p-4">
+                        <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Ejecutiva</p>
+                        <p className="mt-2 truncate text-sm font-semibold text-slate-100">{row.conductor.ejecutivo_nombre || row.company?.ejecutivo_nombre || 'Sin asignar'}</p>
+                        <p className="mt-1 text-xs text-slate-400">Estado: {row.stateLabel}</p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-700/50 bg-slate-950/55 p-4">
+                        <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Cobertura</p>
+                        <p className={`mt-2 text-3xl font-bold ${getScoreTone(row.complianceScore)}`}>{row.complianceScore}%</p>
+                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-800">
+                          <div className={`h-full rounded-full bg-gradient-to-r ${getProgressTone(row.complianceScore)}`} style={{ width: `${row.complianceScore}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="hidden shrink-0 items-start gap-2 text-right sm:flex">
+                    <div className="rounded-2xl border border-slate-700/50 bg-slate-950/55 px-4 py-3 text-left">
+                      <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Faltantes</p>
+                      <p className="mt-1 text-2xl font-bold text-slate-100">{row.missingCount}</p>
+                      <p className="text-xs text-slate-400">documentos sin cargar</p>
+                    </div>
+                  </div>
+                </summary>
+
+                <div className="border-t border-slate-700/50 px-4 pb-4 md:px-5 md:pb-5">
+                  <div className="grid gap-3">
+                    {visibleGroupedColumns.map((group) => (
+                      <section key={`${row.id}-${group.group}`} className="rounded-2xl border border-slate-700/50 bg-slate-950/40 p-3">
+                        <div className="mb-3 flex items-center justify-between gap-2">
+                          <div>
+                            <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">{group.label}</p>
+                            <p className="mt-1 text-xs text-slate-400">{group.columns.length} requisitos</p>
+                          </div>
+                          <Badge className="border-slate-700/60 bg-slate-900/70 text-slate-200">
+                            {group.columns.filter((column) => row.cells.has(column.key)).length}/{group.columns.length}
+                          </Badge>
+                        </div>
+
+                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                          {group.columns.map((column) => {
+                            const doc = row.cells.get(column.key)
+                            const docStatus = doc ? getDocStatus(doc) : 'missing'
+                            const docTone = doc ? (STATUS_STYLES[docStatus] || STATUS_STYLES.missing).className : STATUS_STYLES.missing.className
+                            return (
+                              <div key={`${row.id}-${column.key}`} className="rounded-2xl border border-slate-700/50 bg-slate-950/60 p-3">
+                                <div className="mb-2 flex items-start justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-semibold text-slate-100">{column.label}</p>
+                                    <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">{column.group}</p>
+                                  </div>
+                                  <Badge className={`shrink-0 border ${docTone}`}>
+                                    {doc ? (docStatus === 'approved' ? 'OK' : docStatus === 'pending' ? 'Pend' : docStatus === 'rejected' ? 'Rech' : docStatus === 'expired' ? 'Venc' : 'Sin') : 'Sin'}
+                                  </Badge>
+                                </div>
+                                {renderStatusCell(doc, column.label)}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </section>
+                    ))}
+                  </div>
+                </div>
+              </details>
+            ))}
+          </div>
         ) : (
           <details className="rounded-2xl border border-slate-700/50 bg-slate-950/40">
             <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-slate-100">
