@@ -384,6 +384,7 @@ export function ComplianceExcelMatrix({
   const [statusFilter, setStatusFilter] = useState<FilterState>('ALL')
   const [activeGroup, setActiveGroup] = useState<'ALL' | MatrixColumn['group']>('Mensual')
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
+  const [onlyCritical, setOnlyCritical] = useState(false)
   const matrixScrollRef = useRef<HTMLDivElement | null>(null)
 
   const visibleGroupedColumns = useMemo(() => {
@@ -499,9 +500,10 @@ export function ComplianceExcelMatrix({
     return rows.filter((row) => {
       const matchesLetter = activeLetter === 'ALL' || getRowAlphabetLetter(row.conductor, transportistasByRut) === activeLetter
       const matchesState = statusFilter === 'ALL' || row.state === statusFilter
-      return matchesLetter && matchesState && matchesSearch(row)
+      const matchesCritical = !onlyCritical || row.state !== 'ok'
+      return matchesLetter && matchesState && matchesCritical && matchesSearch(row)
     })
-  }, [activeLetter, normalizedSearch, rows, statusFilter, transportistasByRut])
+  }, [activeLetter, normalizedSearch, onlyCritical, rows, statusFilter, transportistasByRut])
 
   const availableLetters = useMemo(() => {
     const letters = new Set<string>()
@@ -550,13 +552,14 @@ export function ComplianceExcelMatrix({
       .slice(0, 3)
   }, [filteredRows])
 
-  const hasActiveFilters = Boolean(searchTerm || activeLetter !== 'ALL' || statusFilter !== 'ALL')
+  const hasActiveFilters = Boolean(searchTerm || activeLetter !== 'ALL' || statusFilter !== 'ALL' || onlyCritical)
 
   const clearFilters = () => {
     setSearchTerm('')
     setActiveLetter('ALL')
     setStatusFilter('ALL')
     setActiveGroup('Mensual')
+    setOnlyCritical(false)
   }
 
   useEffect(() => {
@@ -733,6 +736,17 @@ export function ComplianceExcelMatrix({
                   </button>
                 )
               })}
+              <button
+                type="button"
+                onClick={() => setOnlyCritical((current) => !current)}
+                className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition ${
+                  onlyCritical
+                    ? 'border-rose-500/40 bg-rose-500/15 text-rose-100 shadow-lg shadow-rose-950/20'
+                    : 'border-slate-700/70 text-slate-200 hover:border-slate-500 hover:bg-slate-800'
+                }`}
+              >
+                Solo críticos
+              </button>
             </div>
 
             {hasActiveFilters ? (
