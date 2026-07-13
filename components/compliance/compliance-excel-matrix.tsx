@@ -747,6 +747,11 @@ export function ComplianceExcelMatrix({
               >
                 Solo críticos
               </button>
+              {onlyCritical ? (
+                <Badge className="border-rose-500/30 bg-rose-500/10 text-rose-100">
+                  {filteredRows.length} filas visibles
+                </Badge>
+              ) : null}
             </div>
 
             {hasActiveFilters ? (
