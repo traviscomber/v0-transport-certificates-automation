@@ -363,6 +363,7 @@ export function ComplianceExcelMatrix({
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<FilterState>('ALL')
   const [activeGroup, setActiveGroup] = useState<'ALL' | MatrixColumn['group']>('Mensual')
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
   const matrixScrollRef = useRef<HTMLDivElement | null>(null)
 
   const visibleGroupedColumns = useMemo(() => {
@@ -798,12 +799,42 @@ export function ComplianceExcelMatrix({
                 <Badge className="border-cyan-400/30 bg-cyan-400/10 text-cyan-100">
                   {activeGroup === 'ALL' ? 'Completa' : groupedColumns.find((group) => group.group === activeGroup)?.label || activeGroup}
                 </Badge>
+                <Badge className="border-slate-700/60 bg-slate-900/70 text-slate-200">
+                  {viewMode === 'cards' ? 'Tarjetas' : 'Tabla'}
+                </Badge>
               </div>
               <p className="text-cyan-100/70">
-                La matriz se divide por categoria para que sea mas comoda. Cambia de vista por grupo y deja la completa solo cuando necesites cruzar todo.
+                La matriz puede verse como tarjetas o como tabla. Tarjetas es más cómoda para revisión rápida; tabla queda para cruce denso.
               </p>
             </div>
 
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setViewMode('cards')}
+                className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition ${
+                  viewMode === 'cards'
+                    ? 'border-cyan-300/70 bg-cyan-400/15 text-cyan-50 shadow-lg shadow-cyan-950/20'
+                    : 'border-slate-700/70 text-slate-200 hover:border-cyan-400/30 hover:bg-slate-900/70'
+                }`}
+              >
+                Tarjetas
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('table')}
+                className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition ${
+                  viewMode === 'table'
+                    ? 'border-cyan-300/70 bg-cyan-400/15 text-cyan-50 shadow-lg shadow-cyan-950/20'
+                    : 'border-slate-700/70 text-slate-200 hover:border-cyan-400/30 hover:bg-slate-900/70'
+                }`}
+              >
+                Tabla
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-cyan-500/10 pt-4">
             <div className="flex flex-wrap items-center gap-2">
               {[{ key: 'ALL', label: 'Completa', count: groupedColumns.length } as const, ...groupedColumns.map((group) => ({ key: group.group, label: group.label, count: group.columns.length }))].map((item) => {
                 const isActive = activeGroup === item.key
@@ -826,12 +857,6 @@ export function ComplianceExcelMatrix({
                 )
               })}
             </div>
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-cyan-500/10 pt-4">
-            <p className="text-cyan-100/70">
-              La tabla sigue siendo desplazable, pero cada categoria ahora ocupa menos ancho y se lee mas rapido.
-            </p>
             <div className="flex items-center gap-2">
               <Button
                 type="button"
@@ -866,14 +891,21 @@ export function ComplianceExcelMatrix({
             No hay datos suficientes para mostrar la matriz documental con ese filtro.
           </div>
         ) : (
-          <div
-            ref={matrixScrollRef}
-            onWheel={handleMatrixWheel}
-            tabIndex={0}
-            role="region"
-            aria-label="Matriz de cumplimiento desplazable"
-            className="overflow-x-auto overflow-y-hidden rounded-2xl border border-slate-700/50 bg-slate-950/40 outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
-          >
+          <details className="rounded-2xl border border-slate-700/50 bg-slate-950/40">
+            <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-slate-100">
+              Ver tabla detallada
+              <span className="ml-2 text-xs font-normal text-slate-400">
+                Úsala solo cuando necesites revisar cada columna en crudo
+              </span>
+            </summary>
+            <div
+              ref={matrixScrollRef}
+              onWheel={handleMatrixWheel}
+              tabIndex={0}
+              role="region"
+              aria-label="Matriz de cumplimiento desplazable"
+              className="overflow-x-auto overflow-y-hidden rounded-b-2xl border-t border-slate-700/50 bg-slate-950/40 outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
+            >
             <table className="w-max min-w-full divide-y divide-slate-700/50">
               <thead className="sticky top-0 z-30 bg-slate-950/95 backdrop-blur">
                 <tr>
@@ -979,6 +1011,7 @@ export function ComplianceExcelMatrix({
               </tbody>
             </table>
           </div>
+          </details>
         )}
 
         <div className="grid gap-3 md:grid-cols-4">
