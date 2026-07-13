@@ -183,6 +183,20 @@ function getEntityLabel(entity: Entity, fallback = 'Sin nombre') {
   return fallback
 }
 
+function getEntityIdentityKey(entity: Entity) {
+  return (
+    entity.id ||
+    entity.rut ||
+    [
+      normalizeAlphabetText(entity.razon_social),
+      normalizeAlphabetText(entity.nombres),
+      normalizeAlphabetText(entity.apellido_paterno),
+    ]
+      .filter(Boolean)
+      .join('|')
+  )
+}
+
 function getRowCompanyLabel(entity: Entity, transportistasByRut: Map<string, Entity>) {
   if (entity.rut_proveedor) {
     const company = transportistasByRut.get(entity.rut_proveedor)
@@ -397,7 +411,15 @@ export function ComplianceExcelMatrix({
 
     ;[...pending.conductorDocs, ...pending.subDocs, ...approved.conductorDocs, ...approved.subDocs, ...rejected.conductorDocs, ...rejected.subDocs].forEach(collect)
 
-    const sortedConductors = [...conductors].sort((a, b) => {
+    const seenConductors = new Set<string>()
+    const uniqueConductors = conductors.filter((conductor) => {
+      const key = getEntityIdentityKey(conductor)
+      if (!key || seenConductors.has(key)) return false
+      seenConductors.add(key)
+      return true
+    })
+
+    const sortedConductors = uniqueConductors.sort((a, b) => {
       const companyA = getRowCompanyLabel(a, transportistasByRut)
       const companyB = getRowCompanyLabel(b, transportistasByRut)
       if (companyA !== companyB) return companyA.localeCompare(companyB)
