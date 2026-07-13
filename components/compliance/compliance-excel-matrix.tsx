@@ -110,6 +110,7 @@ type MatrixRow = {
   conductor: Entity
   company?: Entity
   cells: Map<string, MatrixDocument>
+  latestDoc?: MatrixDocument | null
   totalRelevant: number
   approvedCount: number
   pendingCount: number
@@ -454,6 +455,7 @@ export function ComplianceExcelMatrix({
       const missingCount = Math.max(totalRelevant - cells.size, 0)
       const complianceScore = totalRelevant > 0 ? Math.round((approvedCount / totalRelevant) * 100) : 0
       const state = getRowState({ rejectedCount, expiredCount, pendingCount, missingCount })
+      const latestDoc = pickLatestDoc(Array.from(cells.values()))
 
       return {
         id: conductor.id,
@@ -469,6 +471,7 @@ export function ComplianceExcelMatrix({
         complianceScore,
         state,
         stateLabel: getRowStateLabel(state),
+        latestDoc,
       }
     })
 
@@ -967,6 +970,19 @@ export function ComplianceExcelMatrix({
                         </div>
                       </div>
                     </div>
+
+                    {row.latestDoc ? (
+                      <div className="mt-3 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-3">
+                        <p className="text-[10px] uppercase tracking-[0.24em] text-cyan-100/70">Último movimiento</p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-cyan-50">
+                          <span className="font-semibold">{row.latestDoc.docType?.nombre || row.latestDoc.original_filename || row.latestDoc.file_name || 'Documento'}</span>
+                          <span className="text-cyan-100/60">·</span>
+                          <span>{formatPeriod(getDocDate(row.latestDoc))}</span>
+                          <span className="text-cyan-100/60">·</span>
+                          <span>{STATUS_STYLES[getDocStatus(row.latestDoc)]?.label || 'Sin'}</span>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                   <div className="hidden shrink-0 items-start gap-2 text-right sm:flex">
                     <div className="rounded-2xl border border-slate-700/50 bg-slate-950/55 px-4 py-3 text-left">
