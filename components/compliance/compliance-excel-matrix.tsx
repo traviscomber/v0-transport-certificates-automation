@@ -336,6 +336,11 @@ function getRowStateStyles(state: RowState) {
   return 'bg-rose-500/15 text-rose-200 border-rose-500/30'
 }
 
+function getRowSortScore(row: MatrixRow) {
+  const stateScore = row.state === 'risk' ? 0 : row.state === 'attention' ? 1 : 2
+  return [stateScore, row.complianceScore, row.pendingCount + row.rejectedCount + row.missingCount] as const
+}
+
 function getScoreTone(score: number) {
   if (score >= 85) return 'text-emerald-200'
   if (score >= 65) return 'text-amber-200'
@@ -426,7 +431,7 @@ export function ComplianceExcelMatrix({
       return getEntityLabel(a).localeCompare(getEntityLabel(b))
     })
 
-    return sortedConductors.map((conductor) => {
+    const rows = sortedConductors.map((conductor) => {
       const companyId = conductor.rut_proveedor || ''
       const company = transportistasByRut.get(companyId)
       const rowDocs = [
@@ -465,6 +470,18 @@ export function ComplianceExcelMatrix({
         state,
         stateLabel: getRowStateLabel(state),
       }
+    })
+
+    return rows.sort((a, b) => {
+      const [stateA, scoreA, issuesA] = getRowSortScore(a)
+      const [stateB, scoreB, issuesB] = getRowSortScore(b)
+      if (stateA !== stateB) return stateA - stateB
+      if (scoreA !== scoreB) return scoreA - scoreB
+      if (issuesA !== issuesB) return issuesB - issuesA
+      const companyA = getRowCompanyLabel(a.conductor, transportistasByRut)
+      const companyB = getRowCompanyLabel(b.conductor, transportistasByRut)
+      if (companyA !== companyB) return companyA.localeCompare(companyB)
+      return getEntityLabel(a.conductor).localeCompare(getEntityLabel(b.conductor))
     })
   }, [approved.conductorDocs, approved.subDocs, conductors, pending.conductorDocs, pending.subDocs, rejected.conductorDocs, rejected.subDocs, transportistasByRut])
 
