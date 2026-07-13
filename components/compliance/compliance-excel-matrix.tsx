@@ -807,12 +807,27 @@ export function ComplianceExcelMatrix({
                     <p className={`text-3xl font-bold ${getScoreTone(row.complianceScore)}`}>{row.complianceScore}%</p>
                     <p className="mt-1 text-xs text-slate-400">cumplimiento calculado</p>
                   </div>
-                  <div className="max-w-[160px] text-right text-xs text-slate-400">
+                  <div className="max-w-[180px] text-right text-xs text-slate-400">
                     <div>{row.pendingCount} pendientes</div>
                     <div>{row.rejectedCount} rechazados</div>
                     <div>{row.missingCount} faltantes</div>
                   </div>
                 </div>
+                {row.latestDoc ? (
+                  <div className="mt-4 rounded-xl border border-slate-700/50 bg-slate-950/50 px-3 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate text-xs font-semibold text-slate-200">
+                        {row.latestDoc.docType?.nombre || row.latestDoc.original_filename || row.latestDoc.file_name || 'Documento'}
+                      </p>
+                      <Badge className="border-cyan-500/30 bg-cyan-500/10 text-cyan-100">
+                        {STATUS_STYLES[getDocStatus(row.latestDoc)]?.label || 'Sin'}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-[11px] text-slate-400">
+                      Último movimiento: {formatPeriod(getDocDate(row.latestDoc))}
+                    </p>
+                  </div>
+                ) : null}
               </div>
             ))
           ) : (
