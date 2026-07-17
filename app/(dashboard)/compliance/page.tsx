@@ -462,7 +462,7 @@ export default function CompliancePage() {
             </div>
           </div>
           <div className="mt-4 flex items-center justify-between gap-2">
-            <span className="text-xs text-emerald-100/70">Revisar documentos aprobados y su periodo visible.</span>
+            <span className="text-xs text-emerald-100/70">Ver documentos aprobados y su periodo.</span>
             <Link href="/dashboard/company/documentos/aprobados" className="text-xs font-semibold text-emerald-100 underline-offset-4 hover:underline">
               Ver lista
             </Link>
@@ -477,11 +477,11 @@ export default function CompliancePage() {
               <p className="mt-1 text-xs text-amber-100/70">{pendingMatrix.conductorDocs.length} conductores · {pendingMatrix.subDocs.length} subcontratistas</p>
             </div>
             <div className="rounded-full border border-amber-500/30 bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-100">
-              Atención
+              Revisar
             </div>
           </div>
           <div className="mt-4 flex items-center justify-between gap-2">
-            <span className="text-xs text-amber-100/70">Filtrar lo pendiente para actuar antes de cerrar mes.</span>
+            <span className="text-xs text-amber-100/70">Ver lo pendiente para actuar a tiempo.</span>
             <Link href="/dashboard/company/documentos/pendientes" className="text-xs font-semibold text-amber-100 underline-offset-4 hover:underline">
               Ver lista
             </Link>
@@ -500,7 +500,7 @@ export default function CompliancePage() {
             </div>
           </div>
           <div className="mt-4 flex items-center justify-between gap-2">
-            <span className="text-xs text-rose-100/70">Rechazados con causa para corrección rápida.</span>
+            <span className="text-xs text-rose-100/70">Ver rechazos y corregir rapido.</span>
             <Link href="/dashboard/company/documentos/rechazados" className="text-xs font-semibold text-rose-100 underline-offset-4 hover:underline">
               Ver lista
             </Link>

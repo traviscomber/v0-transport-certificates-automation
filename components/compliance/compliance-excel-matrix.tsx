@@ -329,8 +329,8 @@ function getRowState(row: Pick<MatrixRow, 'rejectedCount' | 'expiredCount' | 'pe
 
 function getRowStateLabel(state: RowState) {
   if (state === 'ok') return 'Estable'
-  if (state === 'attention') return 'Atención'
-  return 'Riesgo'
+  if (state === 'attention') return 'Revisar'
+  return 'Con problemas'
 }
 
 function getRowStateStyles(state: RowState) {
@@ -712,41 +712,41 @@ export function ComplianceExcelMatrix({
           <div className="max-w-4xl space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
               <Sparkles className="h-3.5 w-3.5" />
-              Matriz ejecutiva
+              Matriz simple
             </div>
             <div className="space-y-3">
               <CardTitle className="flex items-center gap-2 text-foreground text-2xl md:text-3xl">
                 <Shield className="h-6 w-6 text-cyan-400" />
-                Matriz de cumplimiento super pro
+                Matriz de cumplimiento
               </CardTitle>
               <CardDescription className="max-w-3xl text-sm md:text-base text-slate-300">
-                Vista tipo Excel con foco ejecutivo: búsqueda global, filtro por letra, filtro por estado y lectura rápida de riesgo por fila.
-                Los documentos se consolidan desde la base real para que la matriz refleje el estado operativo actual.
+                Aqui ves, por empresa o conductor, si los documentos estan al dia, pendientes o con riesgo.
+                Verde significa al dia, amarillo revisar y rojo requiere accion.
               </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2 text-xs text-slate-300">
               <Badge className="border-slate-700/60 bg-slate-900/70 text-slate-200">{rows.length} filas</Badge>
               <Badge className="border-slate-700/60 bg-slate-900/70 text-slate-200">{requirements.length} requisitos</Badge>
               <Badge className="border-slate-700/60 bg-slate-900/70 text-slate-200">{documentTypes.length} tipos de documento</Badge>
-              <Badge className="border-slate-700/60 bg-slate-900/70 text-slate-200">{summary.averageScore}% score medio</Badge>
+              <Badge className="border-slate-700/60 bg-slate-900/70 text-slate-200">{summary.averageScore}% promedio</Badge>
             </div>
           </div>
 
           <div className="grid w-full max-w-2xl grid-cols-2 gap-3 sm:grid-cols-3 xl:w-auto">
             <div className="rounded-2xl border border-slate-700/60 bg-slate-950/60 p-4">
-              <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Cobertura</p>
+              <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Al dia</p>
               <p className="mt-2 text-3xl font-bold text-slate-100">{summary.coverage}%</p>
               <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-800">
                 <div className={`h-full rounded-full bg-gradient-to-r ${getProgressTone(summary.coverage)}`} style={{ width: `${summary.coverage}%` }} />
               </div>
             </div>
             <div className="rounded-2xl border border-slate-700/60 bg-slate-950/60 p-4">
-              <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">En atención</p>
+              <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Por revisar</p>
               <p className="mt-2 text-3xl font-bold text-amber-300">{summary.rowsNeedingAttention}</p>
               <p className="mt-1 text-xs text-slate-400">filas con pendientes o faltantes</p>
             </div>
             <div className="rounded-2xl border border-slate-700/60 bg-slate-950/60 p-4">
-              <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Riesgo</p>
+              <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Con problemas</p>
               <p className="mt-2 text-3xl font-bold text-rose-300">{statusCounts.risk}</p>
               <p className="mt-1 text-xs text-slate-400">filas con rechazados o vencidos</p>
             </div>
@@ -788,7 +788,7 @@ export function ComplianceExcelMatrix({
                 type="search"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Buscar por RUT, empresa, conductor o ejecutiva"
+                placeholder="Buscar empresa o conductor"
                 className="w-full rounded-xl border border-slate-700/70 bg-slate-900/90 py-3 pl-9 pr-4 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-cyan-400/70"
               />
             </div>
@@ -802,16 +802,16 @@ export function ComplianceExcelMatrix({
                   : 'border-slate-700/70 text-slate-200 hover:border-cyan-400/30 hover:bg-slate-900/70'
               }`}
             >
-              {showAdvancedFilters ? 'Ocultar filtros' : 'Filtros avanzados'}
+              {showAdvancedFilters ? 'Ocultar filtros' : 'Mas filtros'}
             </button>
 
             {showAdvancedFilters ? (
             <div className="flex flex-wrap gap-2">
               {[
                 { key: 'ALL', label: 'Todos', count: rows.length, tone: 'border-slate-700/70 text-slate-200 hover:border-slate-500 hover:bg-slate-800' },
-                { key: 'ok', label: 'Estables', count: statusCounts.ok, tone: 'border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/10' },
-                { key: 'attention', label: 'Atención', count: statusCounts.attention, tone: 'border-amber-500/30 text-amber-200 hover:bg-amber-500/10' },
-                { key: 'risk', label: 'Riesgo', count: statusCounts.risk, tone: 'border-rose-500/30 text-rose-200 hover:bg-rose-500/10' },
+                { key: 'ok', label: 'Bien', count: statusCounts.ok, tone: 'border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/10' },
+                { key: 'attention', label: 'Revisar', count: statusCounts.attention, tone: 'border-amber-500/30 text-amber-200 hover:bg-amber-500/10' },
+                { key: 'risk', label: 'Con problemas', count: statusCounts.risk, tone: 'border-rose-500/30 text-rose-200 hover:bg-rose-500/10' },
               ].map((item) => {
                 const active = statusFilter === item.key
                 return (
@@ -860,7 +860,7 @@ export function ComplianceExcelMatrix({
 
           <div className="mt-4 grid gap-3 rounded-2xl border border-slate-800/70 bg-slate-900/50 p-3 lg:grid-cols-[160px_1fr] lg:items-end">
             <div className="space-y-2">
-              <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500">Foco inicial</p>
+              <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500">Primero</p>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -890,11 +890,11 @@ export function ComplianceExcelMatrix({
             <div className="grid gap-2 md:grid-cols-[1fr_auto] md:items-end">
               <div className="space-y-2">
                 <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500">
-                  {focusMode === 'company' ? 'Selecciona una empresa' : 'Selecciona un conductor'}
+                  {focusMode === 'company' ? 'Elige una empresa' : 'Elige un conductor'}
                 </p>
                 <Select value={selectedFocus} onValueChange={setSelectedFocus}>
                   <SelectTrigger className="h-11 w-full border-slate-700/70 bg-slate-900/90 text-slate-100">
-                    <SelectValue placeholder={focusMode === 'company' ? 'Elegir empresa' : 'Elegir conductor'} />
+                    <SelectValue placeholder={focusMode === 'company' ? 'Elige empresa' : 'Elige conductor'} />
                   </SelectTrigger>
                   <SelectContent className="max-h-[320px]">
                     <SelectItem value="ALL">Ver todos</SelectItem>
@@ -926,7 +926,7 @@ export function ComplianceExcelMatrix({
                   }}
                   className="border-slate-700/70 bg-slate-950/40 text-slate-200 hover:bg-slate-800"
                 >
-                  Reiniciar foco
+                  Reiniciar
                 </Button>
               </div>
             </div>
@@ -957,7 +957,7 @@ export function ComplianceExcelMatrix({
           <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-800/80 bg-slate-900/60 p-3">
             <span className="inline-flex items-center gap-2 rounded-full border border-slate-700/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
               <Filter className="h-3.5 w-3.5" />
-              Filtrar por letra
+              Filtrar por inicial
             </span>
             <button
               type="button"
@@ -1033,7 +1033,7 @@ export function ComplianceExcelMatrix({
                       </Badge>
                     </div>
                     <p className="mt-1 text-[11px] text-slate-400">
-                      Último movimiento: {formatPeriod(getDocDate(row.latestDoc))}
+                      Ultimo movimiento: {formatPeriod(getDocDate(row.latestDoc))}
                     </p>
                   </div>
                 ) : null}
@@ -1050,7 +1050,7 @@ export function ComplianceExcelMatrix({
           <div className="flex flex-wrap items-center gap-2">
             <Badge className="border-emerald-500/30 bg-emerald-500/15 text-emerald-200">1 = aprobado</Badge>
             <Badge className="border-rose-500/30 bg-rose-500/15 text-rose-200">0 = pendiente, rechazado, vencido o sin cargar</Badge>
-            <Badge className="border-slate-700/60 bg-slate-900/70 text-slate-200">{summary.averageScore}% score medio</Badge>
+            <Badge className="border-slate-700/60 bg-slate-900/70 text-slate-200">{summary.averageScore}% promedio</Badge>
           </div>
           <span className="text-slate-500">Las celdas muestran el periodo bajo el valor cuando existe aprobación.</span>
         </div>
@@ -1061,17 +1061,17 @@ export function ComplianceExcelMatrix({
             <div className="max-w-3xl space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex h-7 items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 font-semibold uppercase tracking-[0.18em] text-cyan-100">
-                  Vista enfocada
+                  Vista simple
                 </span>
                 <Badge className="border-cyan-400/30 bg-cyan-400/10 text-cyan-100">
                   {activeGroup === 'ALL' ? 'Completa' : groupedColumns.find((group) => group.group === activeGroup)?.label || activeGroup}
                 </Badge>
                 <Badge className="border-slate-700/60 bg-slate-900/70 text-slate-200">
-                  {viewMode === 'cards' ? 'Tarjetas' : 'Tabla'}
+                  {viewMode === 'cards' ? 'Resumen' : 'Detalle'}
                 </Badge>
               </div>
               <p className="text-cyan-100/70">
-                La matriz puede verse como tarjetas o como tabla. Tarjetas es más cómoda para revisión rápida; tabla queda para cruce denso.
+                Resumen muestra lo principal. Detalle muestra todo.
               </p>
             </div>
 
@@ -1085,7 +1085,7 @@ export function ComplianceExcelMatrix({
                     : 'border-slate-700/70 text-slate-200 hover:border-cyan-400/30 hover:bg-slate-900/70'
                 }`}
               >
-                Tarjetas
+                Resumen
               </button>
               <button
                 type="button"
@@ -1096,7 +1096,7 @@ export function ComplianceExcelMatrix({
                     : 'border-slate-700/70 text-slate-200 hover:border-cyan-400/30 hover:bg-slate-900/70'
                 }`}
               >
-                Tabla
+                Detalle
               </button>
             </div>
           </div>
@@ -1152,15 +1152,15 @@ export function ComplianceExcelMatrix({
 
         {loading ? (
           <div className="rounded-2xl border border-slate-700/50 bg-slate-900/60 p-6 text-sm text-slate-400">
-            Cargando matriz documental...
+            Cargando matriz...
           </div>
         ) : selectedFocus === 'ALL' ? (
           <div className="rounded-2xl border border-slate-700/50 bg-slate-900/60 p-6 text-sm text-slate-400">
-            Selecciona una empresa o un conductor para mostrar la matriz documental.
+            Elige una empresa o un conductor para mostrar la matriz documental.
           </div>
         ) : focusedRows.length === 0 || visibleGroupedColumns.length === 0 ? (
           <div className="rounded-2xl border border-slate-700/50 bg-slate-900/60 p-6 text-sm text-slate-400">
-            No hay datos suficientes para mostrar la matriz documental con ese filtro.
+            No hay datos suficientes para mostrar la matriz con ese filtro.
           </div>
         ) : viewMode === 'cards' ? (
           <div className="space-y-4">
@@ -1193,7 +1193,7 @@ export function ComplianceExcelMatrix({
                         <p className="mt-1 text-xs text-slate-400">Estado: {row.stateLabel}</p>
                       </div>
                       <div className="rounded-2xl border border-slate-700/50 bg-slate-950/55 p-4">
-                        <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Cobertura</p>
+                        <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Al dia</p>
                         <p className={`mt-2 text-3xl font-bold ${getScoreTone(row.complianceScore)}`}>{row.complianceScore}%</p>
                         <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-800">
                           <div className={`h-full rounded-full bg-gradient-to-r ${getProgressTone(row.complianceScore)}`} style={{ width: `${row.complianceScore}%` }} />
@@ -1203,7 +1203,7 @@ export function ComplianceExcelMatrix({
 
                     {row.latestDoc ? (
                       <div className="mt-3 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-3">
-                        <p className="text-[10px] uppercase tracking-[0.24em] text-cyan-100/70">Último movimiento</p>
+                        <p className="text-[10px] uppercase tracking-[0.24em] text-cyan-100/70">Ultimo movimiento</p>
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-cyan-50">
                           <span className="font-semibold">{row.latestDoc.docType?.nombre || row.latestDoc.original_filename || row.latestDoc.file_name || 'Documento'}</span>
                           <span className="text-cyan-100/60">·</span>
@@ -1297,7 +1297,7 @@ export function ComplianceExcelMatrix({
                     Ejecutiva
                   </th>
                   <th rowSpan={2} className="sticky left-[44rem] z-40 w-52 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
-                    Cobertura
+                    Al dia
                   </th>
                   <th rowSpan={2} className="sticky left-[56rem] z-40 w-28 bg-slate-950/95 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
                     Estado
@@ -1393,7 +1393,7 @@ export function ComplianceExcelMatrix({
           <div className="rounded-2xl border border-slate-700/50 bg-slate-950/60 p-4">
             <div className="flex items-center gap-2 text-slate-400">
               <BarChart3 className="h-4 w-4" />
-              <span className="text-xs uppercase tracking-[0.2em]">Cobertura media</span>
+              <span className="text-xs uppercase tracking-[0.2em]">Al dia media</span>
             </div>
             <p className="mt-3 text-2xl font-bold text-slate-100">{summary.averageScore}%</p>
           </div>
