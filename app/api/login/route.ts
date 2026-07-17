@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+function maskEmail(email?: string | null) {
+  if (!email) return 'unknown'
+  const [local, domain] = email.split('@')
+  if (!domain) return 'unknown'
+  return `${local.slice(0, 2)}***@${domain}`
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -23,7 +30,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[v0] Login attempt for:', email)
+    console.log('[v0] Login attempt for:', maskEmail(email))
 
     // Call Supabase Auth REST API directly (no SDK)
     const authResponse = await fetch(
@@ -61,7 +68,7 @@ export async function POST(request: NextRequest) {
 
     const userData = await userResponse.json()
 
-    console.log('[v0] Login successful for:', email)
+    console.log('[v0] Login successful for:', maskEmail(email))
 
     // Create response with httpOnly cookie
     const response = NextResponse.json({

@@ -31,16 +31,14 @@ export default function SubcontratistasLoginPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || 'Error al iniciar sesión')
+        setError(data.error || 'Error al iniciar sesion')
         setLoading(false)
         return
       }
 
-      // Login successful, redirect to onboarding first
       window.location.href = '/subcontractors/onboarding'
-
     } catch (err) {
-      setError('Error de conexión. Intenta nuevamente.')
+      setError('Error de conexion. Intenta nuevamente.')
       console.error('[v0] Login error:', err)
       setLoading(false)
     }
@@ -52,7 +50,12 @@ export default function SubcontratistasLoginPage() {
         <CardHeader className="space-y-2 text-center">
           <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-orange-500/20 text-orange-400">
             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
             </svg>
           </div>
           <CardTitle className="text-2xl">Portal Subcontratistas</CardTitle>
@@ -80,12 +83,12 @@ export default function SubcontratistasLoginPage() {
                 disabled={loading}
                 className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-400"
               />
-              <p className="text-xs text-slate-400">Ingresa el RUT sin puntos, solo con guion (ej: 12345678-9)</p>
+              <p className="text-xs text-slate-400">Ingresa el RUT sin puntos, solo con guion.</p>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium text-slate-200">
-                Contraseña
+                Contrasena
               </Label>
               <div className="relative">
                 <Input
@@ -101,21 +104,12 @@ export default function SubcontratistasLoginPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
-                  title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  title={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
-              <p className="text-xs text-slate-400">
-                <strong className="text-slate-300">labbe</strong> + últimos 4 dígitos de tu RUT
-              </p>
-              <p className="text-xs text-slate-500">
-                Ejemplo RUT 12345678-9 → Contraseña: <strong>labbe5678</strong>
-              </p>
+              <p className="text-xs text-slate-400">La contrasena se genera segun la regla entregada por la plataforma.</p>
             </div>
 
             <Button
@@ -126,24 +120,13 @@ export default function SubcontratistasLoginPage() {
               {loading ? (
                 <>
                   <Loader className="mr-2 h-4 w-4 animate-spin" />
-                  Iniciando sesión...
+                  Iniciando sesion...
                 </>
               ) : (
-                'Iniciar Sesión'
+                'Iniciar Sesion'
               )}
             </Button>
           </form>
-
-          <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
-            <p className="text-xs text-amber-300 font-medium mb-2">
-              <strong>📋 Instrucciones de Login:</strong>
-            </p>
-            <ul className="text-xs text-amber-300 space-y-1 ml-4">
-              <li>RUT: Sin puntos, solo con guion (ej: 12345678-9)</li>
-              <li>Contraseña: labbe + últimos 4 dígitos del RUT (antes del guion)</li>
-              <li>Ejemplo: RUT 12345678-9 → Contraseña: <strong>labbe5678</strong></li>
-            </ul>
-          </div>
         </CardContent>
       </Card>
     </div>

@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+function maskEmail(email?: string | null) {
+  if (!email) return 'unknown'
+  const [local, domain] = email.split('@')
+  if (!domain) return 'unknown'
+  return `${local.slice(0, 2)}***@${domain}`
+}
+
 export async function POST(request: NextRequest) {
   try {
     let email = ''
@@ -32,7 +39,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[v0] Login attempt for:', email)
+    console.log('[v0] Login attempt for:', maskEmail(email))
 
     // Try to get user from profiles table first (admins, executives)
     const profileResponse = await fetch(
@@ -58,7 +65,7 @@ export async function POST(request: NextRequest) {
       role = user.role || 'admin'
       organizationId = user.organization_id
 
-      console.log('[v0] Found in profiles table:', { email, role, fullName })
+      console.log('[v0] Found in profiles table:', { email: maskEmail(email), role, fullName })
     } else {
       // Not in profiles, try executive_staff table (ejecutivas)
       console.log('[v0] Not in profiles, checking executive_staff table...')
@@ -83,7 +90,7 @@ export async function POST(request: NextRequest) {
         role = 'ejecutiva'
         organizationId = executive.transportista_id
 
-        console.log('[v0] Found in executive_staff table (ejecutiva):', { email, fullName, organizationId })
+        console.log('[v0] Found in executive_staff table (ejecutiva):', { email: maskEmail(email), fullName, organizationId })
       }
     }
 
@@ -111,7 +118,7 @@ export async function POST(request: NextRequest) {
         role = 'driver'
         organizationId = conductor.transportista_id
 
-        console.log('[v0] Found in conductores table (driver):', { email, fullName, organizationId })
+        console.log('[v0] Found in conductores table (driver):', { email: maskEmail(email), fullName, organizationId })
       }
     }
 
@@ -162,7 +169,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log('[v0] Login successful for:', email, 'Name:', fullName, 'Role:', role, 'Org:', organizationId)
+    console.log('[v0] Login successful for:', maskEmail(email), 'Role:', role, 'Org:', organizationId)
 
     // Return success JSON response
     const response = NextResponse.json({

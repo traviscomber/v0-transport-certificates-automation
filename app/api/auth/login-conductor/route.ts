@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { loginConductor } from '@/lib/supabase/auth-conductor'
 
+function maskEmail(email?: string | null) {
+  if (!email) return 'unknown'
+  const [local, domain] = email.split('@')
+  if (!domain) return 'unknown'
+  return `${local.slice(0, 2)}***@${domain}`
+}
+
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
@@ -27,7 +34,7 @@ export async function POST(request: NextRequest) {
       id: conductor.id,
       rut: conductor.rut,
       nombre_completo: conductor.nombre_completo,
-      email: conductor.email,
+      email: maskEmail(conductor.email),
     })
 
     // Build response first, then set cookies on the response object
@@ -42,7 +49,13 @@ export async function POST(request: NextRequest) {
       transportista_id: conductor.transportista_id,
     }
     
-    console.log('[v0] Sending response:', responseData)
+    console.log('[v0] Sending response:', {
+      success: responseData.success,
+      conductor_id: responseData.conductor_id,
+      rut: responseData.rut,
+      nombre_completo: responseData.nombre_completo,
+      transportista_id: responseData.transportista_id,
+    })
     
     const response = NextResponse.json(responseData)
 

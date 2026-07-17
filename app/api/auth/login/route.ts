@@ -2,6 +2,13 @@ import { createServerClient, serialize, parse } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
+function maskEmail(email?: string | null) {
+  if (!email) return 'unknown'
+  const [local, domain] = email.split('@')
+  if (!domain) return 'unknown'
+  return `${local.slice(0, 2)}***@${domain}`
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json()
@@ -30,7 +37,7 @@ export async function POST(request: NextRequest) {
       },
     )
 
-    console.log('[v0] Server-side login attempt for:', email)
+    console.log('[v0] Server-side login attempt for:', maskEmail(email))
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -50,7 +57,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[v0] Server-side login successful for:', email)
+    console.log('[v0] Server-side login successful for:', maskEmail(email))
 
     return NextResponse.json({
       success: true,
