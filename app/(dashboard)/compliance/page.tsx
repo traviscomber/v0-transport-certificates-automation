@@ -115,6 +115,11 @@ export default function CompliancePage() {
   const [pendingMatrix, setPendingMatrix] = useState<MatrixBucket>({ conductorDocs: [], subDocs: [] })
   const [approvedMatrix, setApprovedMatrix] = useState<MatrixBucket>({ conductorDocs: [], subDocs: [] })
   const [rejectedMatrix, setRejectedMatrix] = useState<MatrixBucket>({ conductorDocs: [], subDocs: [] })
+  const [matrixFocus, setMatrixFocus] = useState<{ mode: 'company' | 'conductor'; value: string }>({
+    mode: 'company',
+    value: 'ALL',
+  })
+  const [matrixLoading, setMatrixLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -131,13 +136,10 @@ export default function CompliancePage() {
           fetch('/api/company/metrics?month=all&year=all', { cache: 'no-store' }),
         ])
 
-        const [companyRes, dashboardRes, requirementsRes, pendingRes, approvedRes, rejectedRes] = await Promise.all([
+        const [companyRes, dashboardRes, requirementsRes] = await Promise.all([
           fetch('/api/company/data', { cache: 'no-store' }),
           fetch('/api/dashboard/data', { cache: 'no-store' }),
           fetch('/api/compliance/requirements', { cache: 'no-store' }),
-          fetch('/api/dashboard/pending-documents', { cache: 'no-store' }),
-          fetch('/api/company/documents/aprobados', { cache: 'no-store' }),
-          fetch('/api/company/documents/rechazados', { cache: 'no-store' }),
         ])
 
         if (allRes.ok) {
@@ -203,6 +205,40 @@ export default function CompliancePage() {
           setRequirements(Array.isArray(requirementsData.requirements) ? requirementsData.requirements : [])
         }
 
+      } catch (loadError) {
+        console.error('Error loading compliance data:', loadError)
+        setError('No fue posible cargar datos reales de compliance')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void load()
+  }, [])
+
+  useEffect(() => {
+    const loadMatrixBuckets = async () => {
+      if (matrixFocus.value === 'ALL') {
+        setPendingMatrix({ conductorDocs: [], subDocs: [] })
+        setApprovedMatrix({ conductorDocs: [], subDocs: [] })
+        setRejectedMatrix({ conductorDocs: [], subDocs: [] })
+        setMatrixLoading(false)
+        return
+      }
+
+      setMatrixLoading(true)
+      try {
+        const params = new URLSearchParams({
+          focus_mode: matrixFocus.mode,
+          focus_id: matrixFocus.value,
+        })
+
+        const [pendingRes, approvedRes, rejectedRes] = await Promise.all([
+          fetch(`/api/dashboard/pending-documents?${params.toString()}`, { cache: 'no-store' }),
+          fetch(`/api/company/documents/aprobados?${params.toString()}`, { cache: 'no-store' }),
+          fetch(`/api/company/documents/rechazados?${params.toString()}`, { cache: 'no-store' }),
+        ])
+
         if (pendingRes.ok) {
           const pendingData = await pendingRes.json()
           setPendingMatrix({
@@ -226,16 +262,16 @@ export default function CompliancePage() {
             subDocs: Array.isArray(rejectedData.subDocs) ? rejectedData.subDocs : [],
           })
         }
-      } catch (loadError) {
-        console.error('Error loading compliance data:', loadError)
-        setError('No fue posible cargar datos reales de compliance')
+      } catch (matrixLoadError) {
+        console.error('Error loading matrix buckets:', matrixLoadError)
+        setError('No fue posible cargar la matriz filtrada')
       } finally {
-        setLoading(false)
+        setMatrixLoading(false)
       }
     }
 
-    void load()
-  }, [])
+    void loadMatrixBuckets()
+  }, [matrixFocus.mode, matrixFocus.value])
 
   const stats = useMemo(() => {
     const approved = documents.filter((doc) => doc.validation_status === 'approved' || doc.validation_status === 'validated').length
@@ -260,6 +296,18 @@ export default function CompliancePage() {
       riskRate,
     }
   }, [alerts, documents, expiredDocuments.length, renewalDocuments.length])
+
+  const bucketSummary = useMemo(() => {
+    const approvedDocs = (approvedMatrix.conductorDocs?.length || 0) + (approvedMatrix.subDocs?.length || 0)
+    const pendingDocs = (pendingMatrix.conductorDocs?.length || 0) + (pendingMatrix.subDocs?.length || 0)
+    const rejectedDocs = (rejectedMatrix.conductorDocs?.length || 0) + (rejectedMatrix.subDocs?.length || 0)
+
+    return {
+      approvedDocs,
+      pendingDocs,
+      rejectedDocs,
+    }
+  }, [approvedMatrix, pendingMatrix, rejectedMatrix])
 
   const getSeverityBadge = (severity?: string) => {
     switch ((severity || '').toLowerCase()) {
@@ -302,7 +350,7 @@ export default function CompliancePage() {
 
   return (
     <div className="space-y-6">
-      <Card className="overflow-hidden border-slate-700/60 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 shadow-2xl shadow-slate-950/20">
+      <Card id="summary" className="overflow-hidden border-slate-700/60 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 shadow-2xl shadow-slate-950/20">
         <CardContent className="p-6 md:p-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="space-y-4 max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-300">
@@ -377,18 +425,104 @@ export default function CompliancePage() {
         </Link>
       </div>
 
-      <ComplianceExcelMatrix
-        loading={loading}
-        requirements={requirements}
-        documentTypes={documentTypes}
-        conductors={conductors}
-        transportistas={transportistas}
-        pending={pendingMatrix}
-        approved={approvedMatrix}
-        rejected={rejectedMatrix}
-      />
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-700/50 bg-slate-950/55 px-4 py-3 text-xs text-slate-300">
+        <span className="inline-flex items-center gap-2 rounded-full border border-slate-700/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+          Secciones
+        </span>
+        <a href="#summary" className="rounded-full border border-slate-700/70 px-3 py-1.5 font-medium text-slate-200 transition hover:border-cyan-400/40 hover:bg-cyan-500/10">
+          Resumen
+        </a>
+        <a href="#matrix" className="rounded-full border border-slate-700/70 px-3 py-1.5 font-medium text-slate-200 transition hover:border-cyan-400/40 hover:bg-cyan-500/10">
+          Matriz
+        </a>
+        <a href="#executives" className="rounded-full border border-slate-700/70 px-3 py-1.5 font-medium text-slate-200 transition hover:border-cyan-400/40 hover:bg-cyan-500/10">
+          Ejecutivas
+        </a>
+        <a href="#totals" className="rounded-full border border-slate-700/70 px-3 py-1.5 font-medium text-slate-200 transition hover:border-cyan-400/40 hover:bg-cyan-500/10">
+          Totales
+        </a>
+        <a href="/dashboard/company/subcontratistas" className="rounded-full border border-slate-700/70 px-3 py-1.5 font-medium text-slate-200 transition hover:border-cyan-400/40 hover:bg-cyan-500/10">
+          Subcontratistas
+        </a>
+        <a href="/dashboard/company/reportes" className="rounded-full border border-slate-700/70 px-3 py-1.5 font-medium text-slate-200 transition hover:border-cyan-400/40 hover:bg-cyan-500/10">
+          Reportes
+        </a>
+      </div>
 
-      <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900">
+      <div id="status-hub" className="grid gap-3 md:grid-cols-3">
+        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 shadow-lg shadow-emerald-950/10">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.24em] text-emerald-300/80">Aprobados</p>
+              <p className="mt-2 text-3xl font-bold text-emerald-200">{bucketSummary.approvedDocs}</p>
+              <p className="mt-1 text-xs text-emerald-100/70">{approvedMatrix.conductorDocs.length} conductores · {approvedMatrix.subDocs.length} subcontratistas</p>
+            </div>
+            <div className="rounded-full border border-emerald-500/30 bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-100">
+              OK
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between gap-2">
+            <span className="text-xs text-emerald-100/70">Revisar documentos aprobados y su periodo visible.</span>
+            <Link href="/dashboard/company/documentos/aprobados" className="text-xs font-semibold text-emerald-100 underline-offset-4 hover:underline">
+              Ver lista
+            </Link>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 shadow-lg shadow-amber-950/10">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.24em] text-amber-300/80">Pendientes</p>
+              <p className="mt-2 text-3xl font-bold text-amber-200">{bucketSummary.pendingDocs}</p>
+              <p className="mt-1 text-xs text-amber-100/70">{pendingMatrix.conductorDocs.length} conductores · {pendingMatrix.subDocs.length} subcontratistas</p>
+            </div>
+            <div className="rounded-full border border-amber-500/30 bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-100">
+              Atención
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between gap-2">
+            <span className="text-xs text-amber-100/70">Filtrar lo pendiente para actuar antes de cerrar mes.</span>
+            <Link href="/dashboard/company/documentos/pendientes" className="text-xs font-semibold text-amber-100 underline-offset-4 hover:underline">
+              Ver lista
+            </Link>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 shadow-lg shadow-rose-950/10">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.24em] text-rose-300/80">Rechazados</p>
+              <p className="mt-2 text-3xl font-bold text-rose-200">{bucketSummary.rejectedDocs}</p>
+              <p className="mt-1 text-xs text-rose-100/70">{rejectedMatrix.conductorDocs.length} conductores · {rejectedMatrix.subDocs.length} subcontratistas</p>
+            </div>
+            <div className="rounded-full border border-rose-500/30 bg-rose-500/15 px-3 py-1 text-xs font-semibold text-rose-100">
+              Riesgo
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between gap-2">
+            <span className="text-xs text-rose-100/70">Rechazados con causa para corrección rápida.</span>
+            <Link href="/dashboard/company/documentos/rechazados" className="text-xs font-semibold text-rose-100 underline-offset-4 hover:underline">
+              Ver lista
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div id="matrix">
+        <ComplianceExcelMatrix
+          loading={loading || matrixLoading}
+          requirements={requirements}
+          documentTypes={documentTypes}
+          conductors={conductors}
+          transportistas={transportistas}
+          pending={pendingMatrix}
+          approved={approvedMatrix}
+          rejected={rejectedMatrix}
+          onFocusChange={setMatrixFocus}
+        />
+      </div>
+
+      <Card id="executives" className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900">
         <CardHeader>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
@@ -458,7 +592,7 @@ export default function CompliancePage() {
           )}
 
           {metricsSummary ? (
-            <div className="mt-4 grid gap-3 md:grid-cols-4">
+            <div id="totals" className="mt-4 grid gap-3 md:grid-cols-4">
               <div className="rounded-xl border border-slate-700/50 bg-slate-900/60 p-4">
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Total real</p>
                 <p className="mt-2 text-2xl font-bold text-slate-100">{metricsSummary.total_documents}</p>
@@ -485,6 +619,24 @@ export default function CompliancePage() {
           <CardContent className="p-6 text-red-200">{error}</CardContent>
         </Card>
       ) : null}
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <Link href="/dashboard/company/documentos/aprobados" className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 transition hover:border-emerald-400/40 hover:bg-emerald-500/10">
+          <p className="text-[10px] uppercase tracking-[0.24em] text-emerald-300/80">Ir a aprobados</p>
+          <p className="mt-2 text-lg font-semibold text-slate-100">Ver detalle operativo</p>
+          <p className="mt-1 text-sm text-slate-400">Lista con periodo y filtro histórico por mes/año.</p>
+        </Link>
+        <Link href="/dashboard/company/documentos/pendientes" className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 transition hover:border-amber-400/40 hover:bg-amber-500/10">
+          <p className="text-[10px] uppercase tracking-[0.24em] text-amber-300/80">Ir a pendientes</p>
+          <p className="mt-2 text-lg font-semibold text-slate-100">Revisar lo que falta</p>
+          <p className="mt-1 text-sm text-slate-400">Conecta revisión con acción inmediata para ejecutivas.</p>
+        </Link>
+        <Link href="/dashboard/company/documentos/rechazados" className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4 transition hover:border-rose-400/40 hover:bg-rose-500/10">
+          <p className="text-[10px] uppercase tracking-[0.24em] text-rose-300/80">Ir a rechazados</p>
+          <p className="mt-2 text-lg font-semibold text-slate-100">Cerrar el ciclo</p>
+          <p className="mt-1 text-sm text-slate-400">Permite corregir causas y volver a validar rápido.</p>
+        </Link>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900 lg:col-span-2">

@@ -3,12 +3,13 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { FileText, LayoutDashboard, Settings, LogOut, Shield, BarChart3, UsersIcon, Lock } from "lucide-react"
+import { FileText, LayoutDashboard, Settings, LogOut, Shield, BarChart3, UsersIcon, Lock, SquareStack } from "lucide-react"
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/usuarios", label: "Usuarios", icon: UsersIcon },
   { href: "/admin/documentos", label: "Documentos", icon: FileText },
+  { href: "/compliance", label: "Compliance Matrix", icon: SquareStack },
   { href: "/admin/roles", label: "Roles y Permisos", icon: Shield },
   { href: "/admin/reportes", label: "Reportes", icon: BarChart3 },
 ]
@@ -20,8 +21,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       ? 'Panel Admin'
       : pathname.startsWith('/admin/usuarios')
         ? 'Usuarios'
-        : pathname.startsWith('/admin/documentos')
+      : pathname.startsWith('/admin/documentos')
           ? 'Documentos'
+          : pathname.startsWith('/compliance')
+            ? 'Compliance Matrix'
           : pathname.startsWith('/admin/roles')
             ? 'Roles y Permisos'
             : pathname.startsWith('/admin/reportes')
@@ -33,8 +36,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       ? 'Resumen general del sistema'
       : pathname.startsWith('/admin/usuarios')
         ? 'Gestion de accesos y perfiles'
-        : pathname.startsWith('/admin/documentos')
+      : pathname.startsWith('/admin/documentos')
           ? 'Revision y control documental'
+          : pathname.startsWith('/compliance')
+            ? 'Matriz ejecutiva de cumplimiento'
           : pathname.startsWith('/admin/roles')
             ? 'Permisos y gobierno de acceso'
             : pathname.startsWith('/admin/reportes')

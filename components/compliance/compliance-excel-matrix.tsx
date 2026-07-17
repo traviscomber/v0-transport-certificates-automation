@@ -17,6 +17,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 type Requirement = {
   id: string
@@ -84,6 +85,7 @@ type Props = {
   pending: MatrixBucket
   approved: MatrixBucket
   rejected: MatrixBucket
+  onFocusChange?: (focus: { mode: 'company' | 'conductor'; value: string }) => void
 }
 
 type RowState = 'ok' | 'attention' | 'risk'
@@ -363,6 +365,7 @@ export function ComplianceExcelMatrix({
   pending,
   approved,
   rejected,
+  onFocusChange,
 }: Props) {
   const transportistasByRut = useMemo(
     () => new Map(transportistas.filter((item) => item.rut).map((item) => [item.rut as string, item])),
@@ -385,6 +388,9 @@ export function ComplianceExcelMatrix({
   const [activeGroup, setActiveGroup] = useState<'ALL' | MatrixColumn['group']>('Mensual')
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
   const [onlyCritical, setOnlyCritical] = useState(false)
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  const [focusMode, setFocusMode] = useState<'company' | 'conductor'>('company')
+  const [selectedFocus, setSelectedFocus] = useState('ALL')
   const matrixScrollRef = useRef<HTMLDivElement | null>(null)
 
   const visibleGroupedColumns = useMemo(() => {
@@ -501,9 +507,18 @@ export function ComplianceExcelMatrix({
       const matchesLetter = activeLetter === 'ALL' || getRowAlphabetLetter(row.conductor, transportistasByRut) === activeLetter
       const matchesState = statusFilter === 'ALL' || row.state === statusFilter
       const matchesCritical = !onlyCritical || row.state !== 'ok'
-      return matchesLetter && matchesState && matchesCritical && matchesSearch(row)
+      const matchesFocus =
+        selectedFocus === 'ALL'
+          ? true
+          : focusMode === 'company'
+            ? row.company?.id === selectedFocus ||
+              row.conductor.rut_proveedor === selectedFocus ||
+              getRowCompanyLabel(row.conductor, transportistasByRut) === selectedFocus
+            : row.conductor.id === selectedFocus || row.conductor.rut === selectedFocus
+
+      return matchesLetter && matchesState && matchesCritical && matchesSearch(row) && matchesFocus
     })
-  }, [activeLetter, normalizedSearch, onlyCritical, rows, statusFilter, transportistasByRut])
+  }, [activeLetter, focusMode, normalizedSearch, onlyCritical, rows, selectedFocus, statusFilter, transportistasByRut])
 
   const availableLetters = useMemo(() => {
     const letters = new Set<string>()
@@ -520,6 +535,54 @@ export function ComplianceExcelMatrix({
       return acc
     }, {})
   }, [rows, transportistasByRut])
+
+  const companyOptions = useMemo(() => {
+    const options = new Map<string, { value: string; label: string; count: number }>()
+
+    rows.forEach((row) => {
+      const value = row.company?.id || row.conductor.rut_proveedor || getRowCompanyLabel(row.conductor, transportistasByRut)
+      if (!value) return
+
+      const label = getRowCompanyLabel(row.conductor, transportistasByRut)
+      const current = options.get(value) || { value, label, count: 0 }
+      current.count += 1
+      current.label = label || current.label
+      options.set(value, current)
+    })
+
+    return [...options.values()].sort((a, b) => a.label.localeCompare(b.label))
+  }, [rows, transportistasByRut])
+
+  const conductorOptions = useMemo(() => {
+    const options = new Map<string, { value: string; label: string; secondary: string; count: number }>()
+
+    rows.forEach((row) => {
+      const value = row.conductor.id || row.conductor.rut || getEntityLabel(row.conductor)
+      if (!value) return
+
+      const label = getEntityLabel(row.conductor, 'Sin conductor')
+      const current = options.get(value) || {
+        value,
+        label,
+        secondary: getRowCompanyLabel(row.conductor, transportistasByRut),
+        count: 0,
+      }
+      current.count += 1
+      current.label = label || current.label
+      current.secondary = getRowCompanyLabel(row.conductor, transportistasByRut)
+      options.set(value, current)
+    })
+
+    return [...options.values()].sort((a, b) => a.label.localeCompare(b.label))
+  }, [rows, transportistasByRut])
+
+  const selectedFocusLabel = useMemo(() => {
+    if (selectedFocus === 'ALL') return null
+    if (focusMode === 'company') {
+      return companyOptions.find((option) => option.value === selectedFocus)?.label || null
+    }
+    return conductorOptions.find((option) => option.value === selectedFocus)?.label || null
+  }, [companyOptions, conductorOptions, focusMode, selectedFocus])
 
   const statusCounts = useMemo(() => {
     return rows.reduce(
@@ -546,13 +609,18 @@ export function ComplianceExcelMatrix({
     return { totalCells, approvedCells, pendingCells, rejectedCells, missingCells, coverage, averageScore, rowsNeedingAttention }
   }, [filteredRows])
 
+  const focusedRows = useMemo(() => {
+    if (selectedFocus === 'ALL') return []
+    return filteredRows
+  }, [filteredRows, selectedFocus])
+
   const topRisks = useMemo(() => {
-    return [...filteredRows]
+    return [...(selectedFocus === 'ALL' ? rows : filteredRows)]
       .sort((a, b) => a.complianceScore - b.complianceScore || b.pendingCount + b.rejectedCount + b.missingCount - (a.pendingCount + a.rejectedCount + a.missingCount))
       .slice(0, 3)
-  }, [filteredRows])
+  }, [filteredRows, rows, selectedFocus])
 
-  const hasActiveFilters = Boolean(searchTerm || activeLetter !== 'ALL' || statusFilter !== 'ALL' || onlyCritical)
+  const hasActiveFilters = Boolean(searchTerm || activeLetter !== 'ALL' || statusFilter !== 'ALL' || onlyCritical || selectedFocus !== 'ALL')
 
   const clearFilters = () => {
     setSearchTerm('')
@@ -560,6 +628,9 @@ export function ComplianceExcelMatrix({
     setStatusFilter('ALL')
     setActiveGroup('Mensual')
     setOnlyCritical(false)
+    setShowAdvancedFilters(false)
+    setFocusMode('company')
+    setSelectedFocus('ALL')
   }
 
   useEffect(() => {
@@ -568,6 +639,14 @@ export function ComplianceExcelMatrix({
       container.scrollTo({ left: 0, behavior: 'auto' })
     }
   }, [activeGroup])
+
+  useEffect(() => {
+    setSelectedFocus('ALL')
+  }, [focusMode])
+
+  useEffect(() => {
+    onFocusChange?.({ mode: focusMode, value: selectedFocus })
+  }, [focusMode, onFocusChange, selectedFocus])
 
   const scrollMatrix = (direction: 'left' | 'right') => {
     const container = matrixScrollRef.current
@@ -714,6 +793,19 @@ export function ComplianceExcelMatrix({
               />
             </div>
 
+            <button
+              type="button"
+              onClick={() => setShowAdvancedFilters((current) => !current)}
+              className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition ${
+                showAdvancedFilters
+                  ? 'border-cyan-300/70 bg-cyan-400/15 text-cyan-50 shadow-lg shadow-cyan-950/20'
+                  : 'border-slate-700/70 text-slate-200 hover:border-cyan-400/30 hover:bg-slate-900/70'
+              }`}
+            >
+              {showAdvancedFilters ? 'Ocultar filtros' : 'Filtros avanzados'}
+            </button>
+
+            {showAdvancedFilters ? (
             <div className="flex flex-wrap gap-2">
               {[
                 { key: 'ALL', label: 'Todos', count: rows.length, tone: 'border-slate-700/70 text-slate-200 hover:border-slate-500 hover:bg-slate-800' },
@@ -753,8 +845,9 @@ export function ComplianceExcelMatrix({
                 </Badge>
               ) : null}
             </div>
+            ) : null}
 
-            {hasActiveFilters ? (
+              {hasActiveFilters ? (
               <button
                 type="button"
                 onClick={clearFilters}
@@ -765,6 +858,102 @@ export function ComplianceExcelMatrix({
             ) : null}
           </div>
 
+          <div className="mt-4 grid gap-3 rounded-2xl border border-slate-800/70 bg-slate-900/50 p-3 lg:grid-cols-[160px_1fr] lg:items-end">
+            <div className="space-y-2">
+              <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500">Foco inicial</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFocusMode('company')}
+                  className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                    focusMode === 'company'
+                      ? 'border-cyan-400/60 bg-cyan-500/15 text-cyan-100'
+                      : 'border-slate-700/70 text-slate-300 hover:border-slate-500 hover:bg-slate-800'
+                  }`}
+                >
+                  Empresa
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFocusMode('conductor')}
+                  className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                    focusMode === 'conductor'
+                      ? 'border-cyan-400/60 bg-cyan-500/15 text-cyan-100'
+                      : 'border-slate-700/70 text-slate-300 hover:border-slate-500 hover:bg-slate-800'
+                  }`}
+                >
+                  Conductor
+                </button>
+              </div>
+            </div>
+
+            <div className="grid gap-2 md:grid-cols-[1fr_auto] md:items-end">
+              <div className="space-y-2">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500">
+                  {focusMode === 'company' ? 'Selecciona una empresa' : 'Selecciona un conductor'}
+                </p>
+                <Select value={selectedFocus} onValueChange={setSelectedFocus}>
+                  <SelectTrigger className="h-11 w-full border-slate-700/70 bg-slate-900/90 text-slate-100">
+                    <SelectValue placeholder={focusMode === 'company' ? 'Elegir empresa' : 'Elegir conductor'} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[320px]">
+                    <SelectItem value="ALL">Ver todos</SelectItem>
+                    {focusMode === 'company'
+                      ? companyOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label} ({option.count})
+                          </SelectItem>
+                        ))
+                      : conductorOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label} · {option.secondary}
+                          </SelectItem>
+                        ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setFocusMode('company')
+                    setSelectedFocus('ALL')
+                    setSearchTerm('')
+                    setActiveLetter('ALL')
+                  }}
+                  className="border-slate-700/70 bg-slate-950/40 text-slate-200 hover:bg-slate-800"
+                >
+                  Reiniciar foco
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {selectedFocus === 'ALL' ? (
+            <div className="mt-4 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="max-w-2xl space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100/70">Vista resumida</p>
+                  <p className="text-sm text-cyan-50/80">
+                    Elegir una {focusMode === 'company' ? 'empresa' : 'persona'} reduce el peso visual y hace la matriz mucho más legible.
+                    La recomendación es partir por empresa y luego bajar al conductor.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Badge className="border-slate-700/60 bg-slate-900/70 text-slate-200">{rows.length} filas disponibles</Badge>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-4 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-3 text-xs text-cyan-100/80">
+              Mostrando {focusedRows.length} filas para {selectedFocusLabel}. Puedes seguir refinando por letra, estado o búsqueda.
+            </div>
+          )}
+
+          {showAdvancedFilters ? (
           <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-800/80 bg-slate-900/60 p-3">
             <span className="inline-flex items-center gap-2 rounded-full border border-slate-700/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
               <Filter className="h-3.5 w-3.5" />
@@ -808,6 +997,7 @@ export function ComplianceExcelMatrix({
               )
             })}
           </div>
+          ) : null}
         </div>
 
         <div className="grid gap-3 lg:grid-cols-3">
@@ -865,6 +1055,7 @@ export function ComplianceExcelMatrix({
           <span className="text-slate-500">Las celdas muestran el periodo bajo el valor cuando existe aprobación.</span>
         </div>
 
+        {showAdvancedFilters ? (
         <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-4 text-xs text-cyan-100/80">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="max-w-3xl space-y-2">
@@ -957,18 +1148,23 @@ export function ComplianceExcelMatrix({
             </div>
           </div>
         </div>
+        ) : null}
 
         {loading ? (
           <div className="rounded-2xl border border-slate-700/50 bg-slate-900/60 p-6 text-sm text-slate-400">
             Cargando matriz documental...
           </div>
-        ) : filteredRows.length === 0 || visibleGroupedColumns.length === 0 ? (
+        ) : selectedFocus === 'ALL' ? (
+          <div className="rounded-2xl border border-slate-700/50 bg-slate-900/60 p-6 text-sm text-slate-400">
+            Selecciona una empresa o un conductor para mostrar la matriz documental.
+          </div>
+        ) : focusedRows.length === 0 || visibleGroupedColumns.length === 0 ? (
           <div className="rounded-2xl border border-slate-700/50 bg-slate-900/60 p-6 text-sm text-slate-400">
             No hay datos suficientes para mostrar la matriz documental con ese filtro.
           </div>
         ) : viewMode === 'cards' ? (
           <div className="space-y-4">
-            {filteredRows.map((row) => (
+            {focusedRows.map((row) => (
               <details key={row.id} open={row.state !== 'ok'} className="group rounded-3xl border border-slate-700/50 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-950/60 shadow-xl shadow-slate-950/20">
                 <summary className="flex cursor-pointer list-none items-start justify-between gap-4 p-4 md:p-5">
                   <div className="min-w-0 flex-1">
@@ -1133,7 +1329,7 @@ export function ComplianceExcelMatrix({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700/50 bg-slate-900/35">
-                {filteredRows.map((row) => (
+                {focusedRows.map((row) => (
                   <tr key={row.id} className="group hover:bg-slate-800/45">
                     <td className="sticky left-0 z-20 w-48 bg-slate-900/95 px-4 py-3 align-top">
                       <p className="font-semibold text-slate-100">{row.company?.rut || row.conductor.rut_proveedor || 'Sin RUT'}</p>

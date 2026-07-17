@@ -8,9 +8,26 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-export async function GET() {
+type FocusMode = 'company' | 'conductor'
+
+function getFocus(request: Request) {
+  const url = new URL(request.url)
+  const focusMode = url.searchParams.get('focus_mode')
+  const focusId = url.searchParams.get('focus_id')
+
+  if (focusMode !== 'company' && focusMode !== 'conductor') return null
+  if (!focusId) return null
+
+  return {
+    mode: focusMode as FocusMode,
+    id: focusId,
+  }
+}
+
+export async function GET(request: Request) {
   try {
     const supabase = createAdminClient()
+    const focus = getFocus(request)
 
     // Get current user session to determine default filter
     let currentExecutiva: string | null = null
@@ -94,6 +111,7 @@ export async function GET() {
     // Get assigned executives AND empresa razon_social for conductors
     let conductorExecutiveMap = new Map<string, string>()
     let conductorEmpresaMap = new Map<string, string>() // conductor_id -> razon_social
+    let conductorCompanyIdMap = new Map<string, string>() // conductor_id -> transportista.id
     if (conductorDocs && conductorDocs.length > 0) {
       const { data: conductorRuts } = await supabase
         .from('conductores')
@@ -105,10 +123,11 @@ export async function GET() {
         
         const { data: transportistas } = await supabase
           .from('transportistas')
-          .select('rut, assigned_executive_id, razon_social')
+          .select('id, rut, assigned_executive_id, razon_social')
           .in('rut', transportistaRuts)
 
         if (transportistas && transportistas.length > 0) {
+          const transportistaByRut = new Map(transportistas.map((t: any) => [t.rut, t]))
           const executiveIds = transportistas
             .map(t => t.assigned_executive_id)
             .filter(Boolean) as string[]
@@ -122,11 +141,14 @@ export async function GET() {
             if (executives) {
               const execMap = new Map(executives.map(e => [e.id, e.full_name]))
               conductorRuts.forEach(cr => {
-                const transportista = transportistas.find(t => t.rut === cr.rut_proveedor)
+                const transportista = transportistaByRut.get(cr.rut_proveedor)
                 if (transportista) {
                   // Map empresa name
                   if (transportista.razon_social) {
                     conductorEmpresaMap.set(cr.id, transportista.razon_social)
+                  }
+                  if (transportista.id) {
+                    conductorCompanyIdMap.set(cr.id, transportista.id)
                   }
                   // Map executive name
                   if (transportista.assigned_executive_id) {
@@ -308,8 +330,10 @@ export async function GET() {
           id: conductor.id,
           nombres: conductor.nombres,
           apellido_paterno: conductor.apellido_paterno,
-          rut: conductor.rut
+          rut: conductor.rut,
+          rut_proveedor: conductor.rut_proveedor || null
         } : null,
+        company_id: conductorCompanyIdMap.get(doc.conductor_id) || null,
         created_at: doc.created_at,
         updated_at: doc.updated_at,
         reviewed_at: doc.validated_at || doc.updated_at,
@@ -357,9 +381,23 @@ export async function GET() {
         reviewed_at: doc.reviewed_at || doc.approved_at || doc.updated_at,
         subcontractor_id: doc.subcontractor_id,
         subcontractor_rut: doc.subcontractor_rut,
+        company_id: doc.subcontractor_id || null,
         document_source: 'subcontractor'
       }
     })
+
+    const filteredConductor = focus
+      ? normalizedConductor.filter((doc: any) => {
+          if (focus.mode === 'conductor') {
+            return doc.conductores?.id === focus.id || doc.conductor_id === focus.id
+          }
+          return doc.company_id === focus.id
+        })
+      : normalizedConductor
+
+    const filteredSub = focus
+      ? normalizedSub.filter((doc: any) => focus.mode === 'company' && doc.company_id === focus.id)
+      : normalizedSub
 
     const allDocs = [...normalizedConductor, ...normalizedSub]
       .sort((a, b) => {
@@ -373,15 +411,17 @@ export async function GET() {
         }
       })
 
+    const filteredAllDocs = focus ? [...filteredConductor, ...filteredSub] : allDocs
+
     console.log('[v0] Aprobados endpoint: Returning', allDocs.length, 'total approved documents')
 
     return NextResponse.json({
-      conductorDocs: normalizedConductor,
-      subDocs: normalizedSub,
-      allDocs: allDocs,
-      documents: allDocs,
+      conductorDocs: filteredConductor,
+      subDocs: filteredSub,
+      allDocs: filteredAllDocs,
+      documents: filteredAllDocs,
       currentExecutiva: currentExecutiva,
-      total: allDocs.length,
+      total: filteredAllDocs.length,
       timestamp: new Date().toISOString()
     })
 

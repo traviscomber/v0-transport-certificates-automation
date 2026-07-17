@@ -4,9 +4,26 @@ import { NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-export async function GET() {
+type FocusMode = 'company' | 'conductor'
+
+function getFocus(request: Request) {
+  const url = new URL(request.url)
+  const focusMode = url.searchParams.get('focus_mode')
+  const focusId = url.searchParams.get('focus_id')
+
+  if (focusMode !== 'company' && focusMode !== 'conductor') return null
+  if (!focusId) return null
+
+  return {
+    mode: focusMode as FocusMode,
+    id: focusId,
+  }
+}
+
+export async function GET(request: Request) {
   try {
     const supabase = await createClient()
+    const focus = getFocus(request)
     
     // Get pending conductor documents - REMOVED LIMIT to get ALL pending documents
     const { data: conductorDocs } = await supabase
@@ -22,7 +39,8 @@ export async function GET() {
           id,
           nombres,
           apellido_paterno,
-          rut
+          rut,
+          rut_proveedor
         )
       `)
       .or('validation_status.eq.pending,validation_status.is.null')
@@ -93,6 +111,7 @@ export async function GET() {
     // Get assigned executives for conductors
     // Workflow: conductor_id -> conductores.rut_proveedor -> transportistas.rut -> transportistas.assigned_executive_id -> executive_staff.full_name
     let conductorExecutiveMap = new Map<string, string>()
+    let conductorCompanyIdMap = new Map<string, string>()
     if (conductorDocs && conductorDocs.length > 0) {
       // Get unique rut_proveedor from conductores
       const { data: conductorRuts } = await supabase
@@ -106,10 +125,11 @@ export async function GET() {
         // Get transportistas with their assigned executives
         const { data: transportistas } = await supabase
           .from('transportistas')
-          .select('rut, assigned_executive_id')
+          .select('id, rut, assigned_executive_id')
           .in('rut', transportistaRuts)
 
         if (transportistas && transportistas.length > 0) {
+          const transportistaByRut = new Map(transportistas.map((t: any) => [t.rut, t]))
           const executiveIds = transportistas
             .map(t => t.assigned_executive_id)
             .filter(Boolean) as string[]
@@ -124,12 +144,15 @@ export async function GET() {
               const execMap = new Map(executives.map(e => [e.id, e.full_name]))
               // Map conductor_id -> executive_name
               conductorRuts.forEach(cr => {
-                const transportista = transportistas.find(t => t.rut === cr.rut_proveedor)
+                const transportista = transportistaByRut.get(cr.rut_proveedor)
                 if (transportista && transportista.assigned_executive_id) {
                   const execName = execMap.get(transportista.assigned_executive_id)
                   if (execName) {
                     conductorExecutiveMap.set(cr.id, execName)
                   }
+                }
+                if (transportista?.id) {
+                  conductorCompanyIdMap.set(cr.id, transportista.id)
                 }
               })
             }
@@ -186,6 +209,7 @@ export async function GET() {
       uploaded_at: doc.created_at,
       docType: conductorDocTypeMap.get(doc.document_type_id) || null,
       ejecutiva: conductorExecutiveMap.get(doc.conductores?.id) || 'Sin asignar',
+      company_id: conductorCompanyIdMap.get(doc.conductores?.id) || null,
       document_source: 'conductor'
     }))
 
@@ -203,13 +227,27 @@ export async function GET() {
         ...doc,
         transportistas: transportistaMap.get(doc.subcontractor_id),
         docType: docTypeMap.get(doc.document_type_id),
+        company_id: doc.subcontractor_id || null,
         ejecutiva: executiveMap.get(doc.subcontractor_id) || 'Sin asignar'
       })))
     }
 
+    const filteredConductorDocs = focus
+      ? normalizedConductorDocs.filter((doc: any) => {
+          if (focus.mode === 'conductor') {
+            return doc.conductores?.id === focus.id
+          }
+          return doc.company_id === focus.id
+        })
+      : normalizedConductorDocs
+
+    const filteredSubDocs = focus
+      ? normalizedSubDocs.filter((doc: any) => focus.mode === 'company' && doc.company_id === focus.id)
+      : normalizedSubDocs
+
     return NextResponse.json({
-      conductorDocs: normalizedConductorDocs || [],
-      subDocs: normalizedSubDocs || [],
+      conductorDocs: filteredConductorDocs || [],
+      subDocs: filteredSubDocs || [],
       success: true
     })
   } catch (error) {

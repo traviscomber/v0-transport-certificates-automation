@@ -10,9 +10,26 @@ export const revalidate = 0
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-export async function GET() {
+type FocusMode = 'company' | 'conductor'
+
+function getFocus(request: Request) {
+  const url = new URL(request.url)
+  const focusMode = url.searchParams.get('focus_mode')
+  const focusId = url.searchParams.get('focus_id')
+
+  if (focusMode !== 'company' && focusMode !== 'conductor') return null
+  if (!focusId) return null
+
+  return {
+    mode: focusMode as FocusMode,
+    id: focusId,
+  }
+}
+
+export async function GET(request: Request) {
   try {
     const supabase = createAdminClient()
+    const focus = getFocus(request)
 
     // Get current user session to determine default filter
     let currentExecutiva: string | null = null
@@ -145,6 +162,7 @@ export async function GET() {
     // Get assigned executives for conductors
     // Workflow: conductor_id -> conductores.rut_proveedor -> transportistas.rut -> transportistas.assigned_executive_id -> executive_staff.full_name
     let conductorExecutiveMap = new Map<string, string>()
+    let conductorCompanyIdMap = new Map<string, string>()
     if (conductorDocs && conductorDocs.length > 0) {
       // Get unique rut_proveedor from conductores
       const { data: conductorRuts } = await supabase
@@ -158,10 +176,11 @@ export async function GET() {
         // Get transportistas with their assigned executives
         const { data: transportistas } = await supabase
           .from('transportistas')
-          .select('rut, assigned_executive_id')
+          .select('id, rut, assigned_executive_id')
           .in('rut', transportistaRuts)
 
         if (transportistas && transportistas.length > 0) {
+          const transportistaByRut = new Map(transportistas.map((t: any) => [t.rut, t]))
           const executiveIds = transportistas
             .map(t => t.assigned_executive_id)
             .filter(Boolean) as string[]
@@ -176,12 +195,15 @@ export async function GET() {
               const execMap = new Map(executives.map(e => [e.id, e.full_name]))
               // Map conductor_id -> executive_name
               conductorRuts.forEach(cr => {
-                const transportista = transportistas.find(t => t.rut === cr.rut_proveedor)
+                const transportista = transportistaByRut.get(cr.rut_proveedor)
                 if (transportista && transportista.assigned_executive_id) {
                   const execName = execMap.get(transportista.assigned_executive_id)
                   if (execName) {
                     conductorExecutiveMap.set(cr.id, execName)
                   }
+                }
+                if (transportista?.id) {
+                  conductorCompanyIdMap.set(cr.id, transportista.id)
                 }
               })
             }
@@ -261,6 +283,7 @@ export async function GET() {
         updated_at: doc.updated_at,
         reviewed_at: doc.validated_at || doc.updated_at,
         conductores: doc.conductores,
+        company_id: conductorCompanyIdMap.get(doc.conductor_id) || null,
         docType: docTypeMap.get(doc.document_type_id),
         document_source: 'conductor'
       }
@@ -298,10 +321,24 @@ export async function GET() {
           razon_social: 'Subcontratista',
           rut: doc.subcontractor_rut
         },
+        company_id: doc.subcontractor_id || null,
         docType: docTypeMap.get(doc.document_type_id),
         document_source: 'subcontractor'
       }
     })
+
+    const filteredConductor = focus
+      ? normalizedConductor.filter((doc: any) => {
+          if (focus.mode === 'conductor') {
+            return doc.conductores?.id === focus.id || doc.conductor_id === focus.id
+          }
+          return doc.company_id === focus.id
+        })
+      : normalizedConductor
+
+    const filteredSub = focus
+      ? normalizedSub.filter((doc: any) => focus.mode === 'company' && doc.company_id === focus.id)
+      : normalizedSub
 
     const allDocs = [...normalizedConductor, ...normalizedSub]
       .sort((a, b) => {
@@ -315,15 +352,17 @@ export async function GET() {
         }
       })
 
+    const filteredAllDocs = focus ? [...filteredConductor, ...filteredSub] : allDocs
+
     console.log('[v0] Rechazados endpoint: Returning', allDocs.length, 'rejected documents')
 
     return NextResponse.json({
-      conductorDocs: normalizedConductor,
-      subDocs: normalizedSub,
-      allDocs: allDocs,
-      documents: allDocs,
+      conductorDocs: filteredConductor,
+      subDocs: filteredSub,
+      allDocs: filteredAllDocs,
+      documents: filteredAllDocs,
       currentExecutiva: currentExecutiva,
-      total: allDocs.length,
+      total: filteredAllDocs.length,
       timestamp: new Date().toISOString()
     }, {
       headers: {
