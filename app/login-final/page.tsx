@@ -97,14 +97,11 @@ export default function LoginFinal() {
             </button>
           </form>
 
-          <div className="mt-6 p-4 bg-gray-700 rounded text-sm text-gray-300">
-            <p className="font-medium mb-2">Usuarios de prueba:</p>
-            <div className="space-y-1 text-xs">
-              <p>ocarrasco@labbe.cl - Olga Carrasco</p>
-              <p>csepulveda@labbe.cl - Carolina Sepúlveda</p>
-              <p>dsilva@labbe.cl - Daniela Silva</p>
-              <p className="text-gray-400 mt-2">Contraseña: TempPassword123!</p>
-            </div>
+          <div className="mt-6 rounded-lg border border-slate-700 bg-slate-700/40 p-4 text-sm text-slate-300">
+            <p className="font-medium text-slate-100">Acceso interno</p>
+            <p className="mt-1 text-xs text-slate-400">
+              Ingresa con tu correo y credenciales reales. No mostramos cuentas de ejemplo ni contraseñas en esta pantalla.
+            </p>
           </div>
         </div>
       </div>

@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function SimpleLoginPage() {
-  const [email, setEmail] = useState('ocarrasco@labbe.cl')
-  const [password, setPassword] = useState('TempPassword123!')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -96,16 +96,11 @@ export default function SimpleLoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 pt-6 border-t border-gray-700">
-          <h3 className="text-white font-medium mb-3">Usuarios Transportes Labbe:</h3>
-          <div className="space-y-2 text-sm text-gray-300">
-            <p>ocarrasco@labbe.cl - Olga Carrasco</p>
-            <p>csepulveda@labbe.cl - Carolina Sepúlveda</p>
-            <p>dsilva@labbe.cl - Daniela Silva</p>
-            <p>dgonzalez@labbe.cl - Diego González</p>
-            <p>kcanales@labbe.cl - Katherinne Canales</p>
-            <p className="mt-4 text-yellow-400">Contraseña: TempPassword123!</p>
-          </div>
+        <div className="mt-6 rounded-lg border border-gray-700 bg-gray-800/60 p-4 text-sm text-gray-300">
+          <p className="font-medium text-white">Acceso interno</p>
+          <p className="mt-1 text-xs text-gray-400">
+            Ingresa con tu correo y tu clave reales. No mostramos cuentas de ejemplo en esta pantalla.
+          </p>
         </div>
       </div>
     </div>

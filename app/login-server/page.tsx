@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('ocarrasco@labbe.cl')
-  const [password, setPassword] = useState('TempPassword123!')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -88,18 +88,11 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="border-t border-slate-600 pt-6">
-            <p className="text-gray-400 text-sm mb-3">
-              Usuarios Transportes Labbe:
+          <div className="rounded-lg border border-slate-700 bg-slate-700/40 p-4 text-sm text-slate-300">
+            <p className="font-medium text-white">Acceso interno</p>
+            <p className="mt-1 text-xs text-slate-400">
+              Ingresa con tus credenciales reales. No mostramos usuarios de prueba en esta pantalla.
             </p>
-            <div className="space-y-1 text-xs text-gray-300">
-              <p>ocarrasco@labbe.cl - Olga Carrasco</p>
-              <p>csepulveda@labbe.cl - Carolina Sepúlveda</p>
-              <p>dsilva@labbe.cl - Daniela Silva</p>
-              <p>dgonzalez@labbe.cl - Diego González</p>
-              <p>kcanales@labbe.cl - Katherinne Canales</p>
-              <p className="text-yellow-400 mt-2">Contraseña: TempPassword123!</p>
-            </div>
           </div>
         </div>
       </div>

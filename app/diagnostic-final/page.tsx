@@ -44,8 +44,8 @@ export default function DiagnosticPage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            email: 'ocarrasco@labbe.cl',
-            password: 'TempPassword123!',
+            email: 'redacted@example.com',
+            password: 'redacted',
           }),
         })
         console.log('[v0] Auth test response:', response.status)

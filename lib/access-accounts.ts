@@ -1,34 +1,34 @@
 'use client'
 
-// Single source of truth for access accounts used in the login screen
+// Placeholder access accounts for local login helpers.
 export const ACCESS_ACCOUNTS = [
   {
     role: 'ejecutiva',
-    title: 'Cuenta demo',
+    title: 'Acceso interno',
     name: 'Ejecutiva 1',
-    email: 'ejecutiva1@ejemplo.com',
-    password: 'demo1234',
+    email: 'usuario1@acceso.local',
+    password: 'cambiar1234',
   },
   {
     role: 'ejecutiva',
-    title: 'Cuenta demo',
+    title: 'Acceso interno',
     name: 'Ejecutiva 2',
-    email: 'ejecutiva2@ejemplo.com',
-    password: 'demo1234',
+    email: 'usuario2@acceso.local',
+    password: 'cambiar1234',
   },
   {
     role: 'ejecutiva',
-    title: 'Cuenta demo',
+    title: 'Acceso interno',
     name: 'Ejecutiva 3',
-    email: 'ejecutiva3@ejemplo.com',
-    password: 'demo1234',
+    email: 'usuario3@acceso.local',
+    password: 'cambiar1234',
   },
   {
     role: 'ejecutiva',
-    title: 'Cuenta demo',
+    title: 'Acceso interno',
     name: 'Ejecutiva 4',
-    email: 'ejecutiva4@ejemplo.com',
-    password: 'demo1234',
+    email: 'usuario4@acceso.local',
+    password: 'cambiar1234',
   },
 ]
 

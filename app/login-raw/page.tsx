@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function LoginRawPage() {
-  const [email, setEmail] = useState('ocarrasco@labbe.cl')
-  const [password, setPassword] = useState('TempPassword123!')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -111,15 +111,8 @@ export default function LoginRawPage() {
       </form>
 
       <div style={{ marginTop: '30px', fontSize: '12px', color: '#666' }}>
-        <p><strong>Usuarios de Transportes Labbe:</strong></p>
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          <li>ocarrasco@labbe.cl - Olga Carrasco</li>
-          <li>csepulveda@labbe.cl - Carolina Sepúlveda</li>
-          <li>dsilva@labbe.cl - Daniela Silva</li>
-          <li>dgonzalez@labbe.cl - Diego González</li>
-          <li>kcanales@labbe.cl - Katherinne Canales</li>
-        </ul>
-        <p><strong>Contraseña:</strong> TempPassword123!</p>
+        <p><strong>Acceso interno</strong></p>
+        <p>Ingresa con credenciales reales. No mostramos cuentas de ejemplo en esta pantalla.</p>
       </div>
     </div>
   )

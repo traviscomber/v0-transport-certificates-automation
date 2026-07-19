@@ -69,7 +69,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="ocarrasco@labbe.cl"
+                placeholder="correo@empresa.cl"
                 className="w-full bg-slate-700 text-white px-4 py-2 rounded border border-slate-600 focus:border-blue-500 focus:outline-none"
                 required
               />
@@ -96,16 +96,11 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-slate-700">
-            <p className="text-slate-300 text-sm font-semibold mb-3">Usuarios Transportes Labbe:</p>
-            <div className="space-y-1 text-xs text-slate-400">
-              <p>• ocarrasco@labbe.cl - Olga Carrasco</p>
-              <p>• csepulveda@labbe.cl - Carolina Sepúlveda</p>
-              <p>• dsilva@labbe.cl - Daniela Silva</p>
-              <p>• dgonzalez@labbe.cl - Diego González</p>
-              <p>• kcanales@labbe.cl - Katherinne Canales</p>
-              <p className="mt-2 text-yellow-400">Contraseña: TempPassword123!</p>
-            </div>
+          <div className="mt-6 rounded-lg border border-slate-700 bg-slate-800/60 p-4 text-sm text-slate-300">
+            <p className="font-semibold text-white">Acceso interno</p>
+            <p className="mt-1 text-xs text-slate-400">
+              Ingresa con tus credenciales reales. No mostramos cuentas de ejemplo en esta pantalla.
+            </p>
           </div>
         </div>
       </div>
