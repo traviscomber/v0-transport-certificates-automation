@@ -402,6 +402,7 @@ export function ComplianceExcelMatrix({
   const [focusMode, setFocusMode] = useState<'company' | 'conductor'>('company')
   const [selectedFocus, setSelectedFocus] = useState('ALL')
   const matrixScrollRef = useRef<HTMLDivElement | null>(null)
+  const autoFocusedRef = useRef(false)
 
   const visibleGroupedColumns = useMemo(() => {
     if (activeGroup === 'ALL') return groupedColumns
@@ -682,6 +683,16 @@ export function ComplianceExcelMatrix({
     setSelectedFocus('ALL')
     setActiveLetter('ALL')
   }, [focusMode])
+
+  useEffect(() => {
+    if (autoFocusedRef.current) return
+    if (focusMode !== 'company') return
+    if (selectedFocus !== 'ALL') return
+    if (rows.length === 0 || companyOptions.length === 0) return
+
+    autoFocusedRef.current = true
+    setSelectedFocus(companyOptions[0].value)
+  }, [companyOptions, focusMode, rows.length, selectedFocus])
 
   useEffect(() => {
     onFocusChange?.({ mode: focusMode, value: selectedFocus })
