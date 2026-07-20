@@ -311,6 +311,13 @@ function formatPeriod(dateValue?: string) {
   return date.toLocaleDateString('es-CL', { month: 'short', year: 'numeric' })
 }
 
+function formatDateLabel(dateValue?: string) {
+  if (!dateValue) return 'Sin fecha'
+  const date = new Date(dateValue)
+  if (Number.isNaN(date.getTime())) return 'Sin fecha'
+  return date.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
 function pickLatestDoc(docs: MatrixDocument[]) {
   const ranked = [...docs].sort((a, b) => {
     const dateB = new Date(getDocDate(b)).getTime()
@@ -1035,6 +1042,17 @@ export function ComplianceExcelMatrix({
                     <p className="mt-1 text-[11px] text-slate-400">
                       Ultimo movimiento: {formatPeriod(getDocDate(row.latestDoc))}
                     </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span className="rounded-full border border-slate-700/60 bg-slate-900/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+                        Periodo {formatPeriod(getDocDate(row.latestDoc))}
+                      </span>
+                      <span className="rounded-full border border-slate-700/60 bg-slate-900/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+                        Fecha {formatDateLabel(getDocDate(row.latestDoc))}
+                      </span>
+                      <span className="rounded-full border border-slate-700/60 bg-slate-900/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-300">
+                        Estado {STATUS_STYLES[getDocStatus(row.latestDoc)]?.label || 'Sin'}
+                      </span>
+                    </div>
                   </div>
                 ) : null}
               </div>

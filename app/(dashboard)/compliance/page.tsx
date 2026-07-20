@@ -462,7 +462,7 @@ export default function CompliancePage() {
             </div>
           </div>
           <div className="mt-4 flex items-center justify-between gap-2">
-            <span className="text-xs text-emerald-100/70">Ver documentos aprobados y su periodo.</span>
+            <span className="text-xs text-emerald-100/70">Aprobados: periodo visible y filtro historico.</span>
             <Link href="/dashboard/company/documentos/aprobados" className="text-xs font-semibold text-emerald-100 underline-offset-4 hover:underline">
               Ver lista
             </Link>
@@ -481,7 +481,7 @@ export default function CompliancePage() {
             </div>
           </div>
           <div className="mt-4 flex items-center justify-between gap-2">
-            <span className="text-xs text-amber-100/70">Ver lo pendiente para actuar a tiempo.</span>
+            <span className="text-xs text-amber-100/70">Pendientes: revisar antes del cierre.</span>
             <Link href="/dashboard/company/documentos/pendientes" className="text-xs font-semibold text-amber-100 underline-offset-4 hover:underline">
               Ver lista
             </Link>
@@ -500,7 +500,7 @@ export default function CompliancePage() {
             </div>
           </div>
           <div className="mt-4 flex items-center justify-between gap-2">
-            <span className="text-xs text-rose-100/70">Ver rechazos y corregir rapido.</span>
+            <span className="text-xs text-rose-100/70">Rechazados: corregir con causa visible.</span>
             <Link href="/dashboard/company/documentos/rechazados" className="text-xs font-semibold text-rose-100 underline-offset-4 hover:underline">
               Ver lista
             </Link>
