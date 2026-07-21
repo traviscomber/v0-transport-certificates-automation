@@ -159,10 +159,7 @@ export default function ConductorLoginForm() {
                 disabled={isLoading}
               />
               <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '6px' }}>
-                <strong style={{ color: '#cbd5e1' }}>labbe</strong> + últimos 4 dígitos de tu RUT
-              </p>
-              <p style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
-                Ejemplo: RUT 12345678-9 → Contraseña: <strong>labbe5678</strong>
+                Usa la clave entregada por tu ejecutiva.
               </p>
             </div>
 
@@ -203,10 +200,7 @@ export default function ConductorLoginForm() {
                 <strong style={{ color: '#cbd5e1' }}>RUT:</strong> Sin puntos, solo con guion (ej: 12345678-9)
               </li>
               <li style={{ marginTop: '6px' }}>
-                <strong style={{ color: '#cbd5e1' }}>Contraseña:</strong> labbe + últimos 4 dígitos del RUT (antes del guion)
-              </li>
-              <li style={{ marginTop: '6px' }}>
-                Ejemplo RUT <strong>12345678-9</strong> → Contraseña: <strong>labbe5678</strong>
+                <strong style={{ color: '#cbd5e1' }}>Contraseña:</strong> ingresa la clave entregada por tu ejecutiva.
               </li>
             </ul>
           </div>

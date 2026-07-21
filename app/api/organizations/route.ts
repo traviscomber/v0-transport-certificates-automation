@@ -97,7 +97,7 @@ export async function POST(request: Request) {
       if (authError) {
         console.error('[v0] Error creating transportista auth:', authError)
       } else {
-        console.log('[v0] Transportista auth created for:', tax_id, 'Password:', plainPassword)
+        console.log('[v0] Transportista auth created for:', tax_id)
       }
     } catch (setupError) {
       console.warn('[v0] Organization created but auto-auth setup failed:', setupError)

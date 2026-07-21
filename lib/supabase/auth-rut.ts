@@ -46,7 +46,7 @@ export async function loginByRUT(
 
   console.log('[v0] ========== LOGIN BY RUT START ==========')
   console.log('[v0] Input RUT:', rut)
-  console.log('[v0] Input Password:', password)
+  console.log('[v0] Password provided:', Boolean(password))
   console.log('[v0] Normalized RUT:', normalizedInput)
   console.log('[v0] Formatted RUT for query:', formattedRUT)
 
@@ -70,9 +70,14 @@ export async function loginByRUT(
       throw new Error('RUT o contraseña incorrectos')
     }
 
-    console.log('[v0] Company found:', companyData)
+    console.log('[v0] Company found:', {
+      id: companyData.id,
+      rut: companyData.rut,
+      razon_social: companyData.razon_social,
+      is_active: companyData.is_active,
+    })
     console.log('[v0] Database RUT:', companyData.rut)
-    console.log('[v0] Database password_hash:', companyData.password_hash)
+    console.log('[v0] Database password_hash present:', Boolean(companyData.password_hash))
     console.log('[v0] Is active:', companyData.is_active)
 
     if (!companyData.is_active) {
@@ -82,8 +87,6 @@ export async function loginByRUT(
 
     // Validar contraseña
     console.log('[v0] Comparing passwords:')
-    console.log('[v0]   Input password:', password)
-    console.log('[v0]   DB password_hash:', companyData.password_hash)
     console.log('[v0]   Match:', password === companyData.password_hash)
 
     if (password !== companyData.password_hash) {

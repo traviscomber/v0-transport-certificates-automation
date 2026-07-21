@@ -3,10 +3,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { hashPassword } from '@/lib/supabase/auth-conductor'
 
 /**
- * Generates password for the new conductor following LABBE standard
- * Format: "labbe" + last 4 digits of RUT (only numbers)
- * Example: If RUT is 10958706-0, password is "labbe0706"
- *          If RUT is 12671737-7, password is "labbe1737"
+ * Generates a legacy initial password for a new conductor.
+ * Do not expose this formula in public UI or logs.
  */
 function generateConductorPassword(rut: string): string {
   // Extract only numbers from RUT

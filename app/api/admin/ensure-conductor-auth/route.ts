@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
           console.error('[v0] Error creating auth for RUT', normalizedRut, ':', insertError)
           errors++
         } else {
-          console.log('[v0] Created auth record for RUT', normalizedRut, 'Password:', password)
+          console.log('[v0] Created auth record for RUT', normalizedRut)
           created++
         }
       } catch (err) {
