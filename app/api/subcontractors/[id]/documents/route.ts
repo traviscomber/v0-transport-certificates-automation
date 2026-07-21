@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getDocumentPeriodDate, normalizeDocumentPeriod } from '@/lib/document-period'
 
 // Increase max duration for larger file uploads
 export const maxDuration = 60
@@ -26,6 +27,9 @@ export async function POST(
     const file = formData.get('file') as File
     const documentTypeId = formData.get('documentTypeId') as string
     const subcontractorRut = formData.get('subcontractorRut') as string
+    const periodMonth = formData.get('documentPeriodMonth') || formData.get('periodMonth')
+    const periodYear = formData.get('documentPeriodYear') || formData.get('periodYear')
+    const documentPeriod = normalizeDocumentPeriod(periodMonth as string | null, periodYear as string | null)
 
     console.log('[v0] FormData parsed')
     console.log('[v0] File exists:', !!file)
@@ -148,20 +152,45 @@ export async function POST(
     }
 
     // Save document record
-    const { data: newDocument, error: saveError } = await supabase
+    const insertPayload = {
+      subcontractor_id: id,
+      subcontractor_rut: subcontractorRut,
+      document_type_id: documentTypeId,
+      file_url: publicUrl,
+      file_name: file.name,
+      status: 'pending',
+      uploaded_at: new Date().toISOString(),
+      expires_at: expiresAt.toISOString(),
+      ...(documentPeriod || {}),
+    }
+
+    let { data: newDocument, error: saveError } = await supabase
       .from('subcontractor_documents')
-      .insert({
-        subcontractor_id: id,
-        subcontractor_rut: subcontractorRut,
-        document_type_id: documentTypeId,
-        file_url: publicUrl,
-        file_name: file.name,
-        status: 'pending',
-        uploaded_at: new Date().toISOString(),
-        expires_at: expiresAt.toISOString(),
-      })
+      .insert(insertPayload)
       .select()
       .single()
+
+    if (saveError && documentPeriod && /document_period/i.test(saveError.message || '')) {
+      const fallbackPayload = {
+        subcontractor_id: insertPayload.subcontractor_id,
+        subcontractor_rut: insertPayload.subcontractor_rut,
+        document_type_id: insertPayload.document_type_id,
+        file_url: insertPayload.file_url,
+        file_name: insertPayload.file_name,
+        status: insertPayload.status,
+        uploaded_at: insertPayload.uploaded_at,
+        expires_at: insertPayload.expires_at,
+      }
+
+      const fallbackResult = await supabase
+        .from('subcontractor_documents')
+        .insert(fallbackPayload)
+        .select()
+        .single()
+
+      newDocument = fallbackResult.data
+      saveError = fallbackResult.error
+    }
 
     if (saveError) {
       console.error('[v0] Error saving document record:', saveError)
@@ -255,7 +284,7 @@ export async function GET(
     }
 
     /**
-     * DEDUPLICATION RULE - Keep only unique documents per document_type_id
+     * DEDUPLICATION RULE - Keep only unique documents per document_type_id and period
      * 
      * PROBLEM SOLVED:
      * - Database can have multiple versions/duplicates of same document type
@@ -263,7 +292,7 @@ export async function GET(
      * - "Por Subir" was showing negative numbers when duplicates existed
      * 
      * SOLUTION:
-     * - Create Map of document_type_id → most recent document
+     * - Create Map of document_type_id + document period -> most recent document
      * - For each document type, keep only the newest version (by created_at)
      * - Return unique array: one document per type maximum
      * 
@@ -275,9 +304,11 @@ export async function GET(
      */
     const uniqueDocuments = new Map()
     documents?.forEach((doc) => {
-      const existing = uniqueDocuments.get(doc.document_type_id)
+      const periodKey = getDocumentPeriodDate(doc).slice(0, 7) || 'no-period'
+      const uniqueKey = `${doc.document_type_id}:${periodKey}`
+      const existing = uniqueDocuments.get(uniqueKey)
       if (!existing || new Date(doc.created_at) > new Date(existing.created_at)) {
-        uniqueDocuments.set(doc.document_type_id, doc)
+        uniqueDocuments.set(uniqueKey, doc)
       }
     })
     const uniqueDocsArray = Array.from(uniqueDocuments.values())

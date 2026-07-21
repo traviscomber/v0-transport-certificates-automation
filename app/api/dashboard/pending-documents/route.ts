@@ -29,12 +29,7 @@ export async function GET(request: Request) {
     const { data: conductorDocs } = await supabase
       .from("uploaded_documents")
       .select(`
-        id,
-        original_filename,
-        document_type_id,
-        validation_status,
-        file_url,
-        created_at,
+        *,
         conductores (
           id,
           nombres,
@@ -60,17 +55,7 @@ export async function GET(request: Request) {
       const { data: subDocsPage, error: pageError } = await supabase
         .from("subcontractor_documents")
         .select(`
-          id,
-          file_name,
-          document_type_id,
-          status,
-          file_url,
-          created_at,
-          uploaded_at,
-          subcontractor_id,
-          subcontractor_rut,
-          reviewed_by_ejecutiva,
-          uploaded_by_ejecutiva
+          *
         `)
         .eq('status', 'pending')
         .range(start, end)

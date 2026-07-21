@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertCircle, CheckCircle, Clock, LogOut, Upload, FileText, HelpCircle, Calendar } from 'lucide-react'
 import { HelpBox } from '@/components/ui/help-box'
+import { getDocumentPeriodDate, getDocumentPeriodLabel } from '@/lib/document-period'
 
 interface DocumentType {
   id: string
@@ -23,6 +24,9 @@ interface Document {
   file_name: string
   status: string
   uploaded_at: string
+  document_period_month?: number | string | null
+  document_period_year?: number | string | null
+  document_period_start?: string | null
   expires_at: string
   rejection_reason?: string
 }
@@ -148,6 +152,8 @@ export default function SubcontractorDashboardPage() {
       formData.append('documentTypeId', selectedDocType)
       formData.append('subcontractorRut', transportista.rut)
       formData.append('documentDate', documentDate)
+      formData.append('documentPeriodMonth', selectedMonth)
+      formData.append('documentPeriodYear', selectedYear)
 
       console.log('[v0] Uploading file:', {
         name: selectedFile.name,
@@ -214,7 +220,7 @@ export default function SubcontractorDashboardPage() {
 
   // Filter documents by selected period
   const filteredDocuments = documents.filter((doc) => {
-    const docDate = new Date(doc.uploaded_at)
+    const docDate = new Date(getDocumentPeriodDate(doc) || doc.uploaded_at)
     const { start, end } = getDateRangeForPeriod(selectedMonth, selectedYear)
     return docDate >= start && docDate <= end
   })
@@ -461,6 +467,9 @@ export default function SubcontractorDashboardPage() {
                     <div className="flex-1">
                       <p className="text-white font-medium">{doc.file_name}</p>
                       <p className="text-xs text-slate-400">
+                        Periodo: {getDocumentPeriodLabel(doc)}
+                      </p>
+                      <p className="text-xs text-slate-500">
                         Subido: {new Date(doc.uploaded_at).toLocaleDateString('es-CL')}
                       </p>
                       {doc.status === 'rejected' && doc.rejection_reason && (

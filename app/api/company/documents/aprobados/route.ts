@@ -67,7 +67,7 @@ export async function GET(request: Request) {
       
       const { data: conductorPageData, error: pageError } = await supabase
         .from('uploaded_documents')
-        .select('id, original_filename, document_type_id, validation_status, file_url, validated_at, ejecutiva, created_at, updated_at, conductor_id')
+        .select('*')
         .eq('validation_status', 'approved')
         .order('updated_at', { ascending: false })
         .range(start, end)
@@ -177,7 +177,7 @@ export async function GET(request: Request) {
       
       const { data: subDocsPage, error: pageError } = await supabase
         .from('subcontractor_documents')
-        .select('id, file_name, document_type_id, status, file_url, approved_at, reviewed_by_ejecutiva, reviewed_at, created_at, updated_at, subcontractor_id, subcontractor_rut')
+        .select('*')
         .eq('status', 'approved')
         .order('updated_at', { ascending: false })
         .range(start, end)
@@ -336,6 +336,10 @@ export async function GET(request: Request) {
         company_id: conductorCompanyIdMap.get(doc.conductor_id) || null,
         created_at: doc.created_at,
         updated_at: doc.updated_at,
+        uploaded_at: doc.uploaded_at,
+        document_period_month: doc.document_period_month,
+        document_period_year: doc.document_period_year,
+        document_period_start: doc.document_period_start,
         reviewed_at: doc.validated_at || doc.updated_at,
         document_source: 'conductor'
       }
@@ -378,6 +382,10 @@ export async function GET(request: Request) {
         } : null,
         created_at: doc.created_at,
         updated_at: doc.updated_at,
+        uploaded_at: doc.uploaded_at,
+        document_period_month: doc.document_period_month,
+        document_period_year: doc.document_period_year,
+        document_period_start: doc.document_period_start,
         reviewed_at: doc.reviewed_at || doc.approved_at || doc.updated_at,
         subcontractor_id: doc.subcontractor_id,
         subcontractor_rut: doc.subcontractor_rut,

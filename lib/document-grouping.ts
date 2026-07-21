@@ -1,6 +1,7 @@
 /**
  * Utilities for grouping and organizing documents by month
  */
+import { getDocumentPeriodDate } from '@/lib/document-period'
 
 export interface DocumentByMonth {
   month: string // "JUNIO 2026" or "JUNE 2026"
@@ -86,6 +87,9 @@ export function groupDocumentsByMonth(
   documents.forEach((doc) => {
     // For each document, use the best available approval date
     let dateValue = doc[dateField]
+    if (dateField === 'document_period_start') {
+      dateValue = getDocumentPeriodDate(doc)
+    }
     
     // Smart fallback chain for approval documents:
     // 1. Use the specified field (validated_at or approved_at)
@@ -116,6 +120,9 @@ export function groupDocumentsByMonth(
       // Get the best date from first doc for display - use same fallback chain
       const firstDoc = docs[0]
       let displayDate = firstDoc[dateField]
+      if (dateField === 'document_period_start') {
+        displayDate = getDocumentPeriodDate(firstDoc)
+      }
       if (!displayDate) {
         if (dateField === 'validated_at') {
           displayDate = firstDoc.approved_at || firstDoc.updated_at || firstDoc.created_at

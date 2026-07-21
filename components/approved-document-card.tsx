@@ -8,6 +8,7 @@ import { getChileDate, getChileTime } from '@/lib/timezone-utils'
 import { getDocTypeIcon } from '@/lib/document-type-icons'
 import { buildDocumentAccessUrl } from '@/lib/document-file-access'
 import { getMonthYear } from '@/lib/document-grouping'
+import { getDocumentPeriodDate } from '@/lib/document-period'
 
 interface ApprovedDocumentCardProps {
   doc: any
@@ -30,7 +31,7 @@ export function ApprovedDocumentCard({ doc, onPreview, getExecutive }: ApprovedD
   }
 
   const getApprovalPeriod = (doc: any) => {
-    const dateStr = doc.validated_at || doc.approved_at || doc.updated_at || doc.reviewed_at || doc.created_at
+    const dateStr = getDocumentPeriodDate(doc)
     return getMonthYear(dateStr, 'es')
   }
 

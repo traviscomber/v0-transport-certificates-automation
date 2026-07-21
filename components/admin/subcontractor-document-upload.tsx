@@ -5,6 +5,7 @@ import { Upload, Loader2, CheckCircle, AlertCircle, Sparkles } from 'lucide-reac
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { getDefaultDocumentPeriod } from '@/lib/document-period'
 
 interface SubcontractorDocumentUploadProps {
   subcontractorId: string
@@ -30,6 +31,8 @@ export function SubcontractorDocumentUpload({ subcontractorId, onUploadSuccess }
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [selectedCategory, setSelectedCategory] = useState('Contract')
   const [expiryDate, setExpiryDate] = useState('')
+  const [documentPeriodMonth, setDocumentPeriodMonth] = useState(() => String(getDefaultDocumentPeriod().month))
+  const [documentPeriodYear, setDocumentPeriodYear] = useState(() => String(getDefaultDocumentPeriod().year))
   const [showAnalysisModal, setShowAnalysisModal] = useState(false)
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
 
@@ -63,6 +66,8 @@ export function SubcontractorDocumentUpload({ subcontractorId, onUploadSuccess }
     }
     formData.append('subcontractorId', subcontractorId)
     formData.append('category', selectedCategory)
+    formData.append('documentPeriodMonth', documentPeriodMonth)
+    formData.append('documentPeriodYear', documentPeriodYear)
     if (expiryDate) {
       formData.append('expiryDate', expiryDate)
     }
@@ -163,6 +168,44 @@ export function SubcontractorDocumentUpload({ subcontractorId, onUploadSuccess }
               className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 rounded-lg border border-orange-200 bg-orange-50 p-3">
+          <div>
+            <label className="text-sm font-medium text-orange-950">Periodo del Documento</label>
+            <select
+              value={documentPeriodMonth}
+              onChange={(e) => setDocumentPeriodMonth(e.target.value)}
+              className="w-full mt-1 px-3 py-2 border border-orange-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+            >
+              <option value="1">Enero</option>
+              <option value="2">Febrero</option>
+              <option value="3">Marzo</option>
+              <option value="4">Abril</option>
+              <option value="5">Mayo</option>
+              <option value="6">Junio</option>
+              <option value="7">Julio</option>
+              <option value="8">Agosto</option>
+              <option value="9">Septiembre</option>
+              <option value="10">Octubre</option>
+              <option value="11">Noviembre</option>
+              <option value="12">Diciembre</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-orange-950">Año</label>
+            <input
+              type="number"
+              min="2020"
+              max="2100"
+              value={documentPeriodYear}
+              onChange={(e) => setDocumentPeriodYear(e.target.value)}
+              className="w-full mt-1 px-3 py-2 border border-orange-200 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+          <p className="col-span-2 text-xs text-orange-900">
+            Este periodo se mantiene aunque el documento se apruebe o rechace despues.
+          </p>
         </div>
 
         {/* Drag and Drop Area */}

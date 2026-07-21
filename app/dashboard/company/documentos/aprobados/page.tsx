@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { ApprovedDocumentsList } from '@/components/approved-documents-list'
 import { DatePeriodFilter } from '@/components/date-period-filter'
 import { ALL_VALUE, filterByMonthYear, getMonthLabel, type DateFilterValue } from '@/lib/date-filters'
+import { getDocumentPeriodDate } from '@/lib/document-period'
 
 export default function AprobadosPage() {
   const [allData, setAllData] = useState<any>(null)
@@ -41,13 +42,13 @@ export default function AprobadosPage() {
     return {
       conductorDocs: filterByMonthYear<any>(
         allData.conductorDocs || [],
-        (doc) => doc.updated_at || doc.reviewed_at || doc.validated_at || doc.created_at,
+        (doc) => getDocumentPeriodDate(doc),
         period.month,
         period.year
       ),
       subDocs: filterByMonthYear<any>(
         allData.subDocs || [],
-        (doc) => doc.updated_at || doc.reviewed_at || doc.validated_at || doc.created_at,
+        (doc) => getDocumentPeriodDate(doc),
         period.month,
         period.year
       ),

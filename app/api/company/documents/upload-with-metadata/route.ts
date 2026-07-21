@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateCompanyFilePath } from '@/lib/utils/file-naming'
+import { normalizeDocumentPeriod } from '@/lib/document-period'
 
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
@@ -157,13 +158,37 @@ export async function POST(request: NextRequest) {
       insertPayload.extracted_expiration_date = metadata.expiry_date
     }
 
+    const documentPeriod = normalizeDocumentPeriod(
+      metadata.document_period_month || metadata.period_month,
+      metadata.document_period_year || metadata.period_year
+    )
+    if (documentPeriod) {
+      Object.assign(insertPayload, documentPeriod)
+    }
+
     console.log('[v0] Inserting document record')
 
-    const { data: docRecord, error: dbError } = await adminClient
+    let { data: docRecord, error: dbError } = await adminClient
       .from('uploaded_documents')
       .insert([insertPayload])
       .select()
       .single()
+
+    if (dbError && documentPeriod && /document_period/i.test(dbError.message || '')) {
+      const fallbackPayload = { ...insertPayload }
+      delete fallbackPayload.document_period_month
+      delete fallbackPayload.document_period_year
+      delete fallbackPayload.document_period_start
+
+      const fallbackResult = await adminClient
+        .from('uploaded_documents')
+        .insert([fallbackPayload])
+        .select()
+        .single()
+
+      docRecord = fallbackResult.data
+      dbError = fallbackResult.error
+    }
 
     if (dbError) {
       console.error('[v0] Database insert error:', dbError)

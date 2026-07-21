@@ -62,17 +62,7 @@ export async function GET(request: Request) {
     const { data: conductorDocs, error: conductorError } = await supabase
       .from('uploaded_documents')
       .select(`
-        id,
-        original_filename,
-        document_type_id,
-        validation_status,
-        file_url,
-        rejection_reason,
-        validated_at,
-        ejecutiva,
-        created_at,
-        updated_at,
-        conductor_id,
+        *,
         conductores (
           id,
           nombres,
@@ -104,17 +94,7 @@ export async function GET(request: Request) {
       const { data: pageData, error: pageError } = await supabase
         .from('subcontractor_documents')
         .select(`
-          id,
-          file_name,
-          document_type_id,
-          status,
-          file_url,
-          rejection_reason,
-          reviewed_by_ejecutiva,
-          created_at,
-          updated_at,
-          subcontractor_id,
-          subcontractor_rut,
+          *,
           transportistas:subcontractor_id (
             id,
             razon_social,
@@ -281,6 +261,10 @@ export async function GET(request: Request) {
         ejecutiva: assignedEjecutiva,
         created_at: doc.created_at,
         updated_at: doc.updated_at,
+        uploaded_at: doc.uploaded_at,
+        document_period_month: doc.document_period_month,
+        document_period_year: doc.document_period_year,
+        document_period_start: doc.document_period_start,
         reviewed_at: doc.validated_at || doc.updated_at,
         conductores: doc.conductores,
         company_id: conductorCompanyIdMap.get(doc.conductor_id) || null,
@@ -314,6 +298,10 @@ export async function GET(request: Request) {
         ejecutiva: assignedEjecutiva, // Use assigned ejecutiva for filtering
         created_at: doc.created_at,
         updated_at: doc.updated_at,
+        uploaded_at: doc.uploaded_at,
+        document_period_month: doc.document_period_month,
+        document_period_year: doc.document_period_year,
+        document_period_start: doc.document_period_start,
         reviewed_at: doc.approved_at || doc.updated_at,
         // Use transportistas from relationship if available
         transportistas: doc.transportistas || {

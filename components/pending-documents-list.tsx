@@ -15,6 +15,7 @@ import { getDocTypeIcon } from '@/lib/document-type-icons'
 import { DocumentFilter, type DocumentFilters } from '@/components/document-filter'
 import { ALL_VALUE, filterByMonthYear } from '@/lib/date-filters'
 import { buildDocumentAccessUrl } from '@/lib/document-file-access'
+import { getDocumentPeriodDate, getDocumentPeriodLabel } from '@/lib/document-period'
 
 interface PendingDocument {
   id: string
@@ -24,6 +25,9 @@ interface PendingDocument {
   file_url?: string
   created_at?: string
   uploaded_at?: string
+  document_period_month?: number | string | null
+  document_period_year?: number | string | null
+  document_period_start?: string | null
   ejecutiva?: string
   reviewed_by_ejecutiva?: string
   uploaded_by_ejecutiva?: string
@@ -99,12 +103,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
     doc.docType?.nombre || doc.docType?.code || 'Sin tipo'
 
   const getDocumentPeriod = (doc: PendingDocument) => {
-    const rawDate = doc.uploaded_at || doc.created_at
-    if (!rawDate) return 'Sin fecha'
-    const normalized = rawDate.endsWith('Z') ? rawDate : `${rawDate}Z`
-    const date = new Date(normalized)
-    if (Number.isNaN(date.getTime())) return 'Fecha invalida'
-    return date.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })
+    return getDocumentPeriodLabel(doc)
   }
 
   const getDocumentDate = (doc: PendingDocument) => {
@@ -122,8 +121,8 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
   // Get all documents combined
   const allDocs = [...conductorDocs, ...subDocs].sort((a, b) => {
     try {
-      const dateB = new Date(b.uploaded_at || b.created_at || 0).getTime()
-      const dateA = new Date(a.uploaded_at || a.created_at || 0).getTime()
+      const dateB = new Date(getDocumentPeriodDate(b) || b.uploaded_at || b.created_at || 0).getTime()
+      const dateA = new Date(getDocumentPeriodDate(a) || a.uploaded_at || a.created_at || 0).getTime()
       return dateB - dateA
     } catch (e) {
       console.error('[v0] Error sorting pending docs:', e)
@@ -181,10 +180,12 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
       if (filters.searchQuery) {
         const query = filters.searchQuery.toLowerCase()
         const filename = (doc.original_filename || doc.file_name || '').toLowerCase()
-        const company = doc.transportistas ? ((Array.isArray(doc.transportistas) ? doc.transportistas[0]?.razon_social : doc.transportistas?.razon_social) || '') : ''
-        const conductor = doc.conductores ? ((Array.isArray(doc.conductores) ? doc.conductores[0]?.nombres : doc.conductores?.nombres) || '') : ''
+        const transportista = doc.transportistas ? (Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas) : null
+        const conductorData = doc.conductores ? (Array.isArray(doc.conductores) ? doc.conductores[0] : doc.conductores) : null
+        const company = [transportista?.razon_social, transportista?.rut, (doc as any).subcontractor_rut].filter(Boolean).join(' ').toLowerCase()
+        const conductor = [conductorData?.nombres, conductorData?.apellido_paterno, conductorData?.rut].filter(Boolean).join(' ').toLowerCase()
         
-        if (!filename.includes(query) && !company.toLowerCase().includes(query) && !conductor.toLowerCase().includes(query)) {
+        if (!filename.includes(query) && !company.includes(query) && !conductor.includes(query)) {
           return false
         }
       }
@@ -219,7 +220,7 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
     })
     return filterByMonthYear(
       result,
-      (doc) => doc.uploaded_at || doc.created_at,
+      (doc) => getDocumentPeriodDate(doc),
       filters.month,
       filters.year
     )

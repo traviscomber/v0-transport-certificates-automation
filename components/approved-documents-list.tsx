@@ -19,6 +19,7 @@ import { getChileDate, getChileTime } from '@/lib/timezone-utils'
 import { DocumentsByMonth } from '@/components/documents-by-month'
 import { groupDocumentsByMonth } from '@/lib/document-grouping'
 import { ApprovedDocumentCard } from '@/components/approved-document-card'
+import { getDocumentPeriodDate, getDocumentWorkflowDate } from '@/lib/document-period'
 
 // Safely parse a date string from Supabase.
 // Supabase timestamps come WITHOUT a 'Z' suffix (e.g. "2026-06-11T20:30:07.631").
@@ -45,6 +46,10 @@ interface ApprovedDocument {
   updated_at?: string
   reviewed_at?: string
   validated_at?: string
+  uploaded_at?: string
+  document_period_month?: number | string | null
+  document_period_year?: number | string | null
+  document_period_start?: string | null
   ejecutiva?: string
   approved_at?: string
   approved_by?: string
@@ -102,8 +107,8 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   // Merge and sort all docs once
   const allDocs = useMemo(() => {
     return [...conductorDocs, ...subDocs].sort((a, b) => {
-      const dateB = parseSupabaseDate(b.updated_at || b.reviewed_at || b.created_at)
-      const dateA = parseSupabaseDate(a.updated_at || a.reviewed_at || a.created_at)
+      const dateB = parseSupabaseDate(getDocumentWorkflowDate(b))
+      const dateA = parseSupabaseDate(getDocumentWorkflowDate(a))
       return dateB - dateA
     })
   }, [conductorDocs, subDocs])
@@ -148,9 +153,22 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
 
     if (searchText.trim()) {
       const q = searchText.toLowerCase()
-      result = result.filter(doc =>
-        (doc.original_filename || doc.document_name || '').toLowerCase().includes(q)
-      )
+      result = result.filter(doc => {
+        const company = [
+          doc.empresa_nombre,
+          doc.transportistas?.razon_social,
+          doc.transportistas?.rut,
+          (doc as any).subcontractor_rut,
+        ].filter(Boolean).join(' ').toLowerCase()
+        const conductor = [
+          doc.conductores?.nombres,
+          doc.conductores?.apellido_paterno,
+          doc.conductores?.rut,
+        ].filter(Boolean).join(' ').toLowerCase()
+        const filename = (doc.original_filename || doc.document_name || '').toLowerCase()
+        const docType = [doc.docType?.nombre, doc.docType?.code].filter(Boolean).join(' ').toLowerCase()
+        return filename.includes(q) || company.includes(q) || conductor.includes(q) || docType.includes(q)
+      })
     }
 
     if (selectedExecutive !== ALL_EXEC) {
@@ -219,10 +237,10 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
             {/* Search */}
             <div>
               <label className="text-xs font-medium text-slate-400 block mb-2">
-                Buscar por nombre de documento
+                Buscar por documento, empresa, RUT o conductor
               </label>
               <Input
-                placeholder="Ej: certificado, licencia..."
+                placeholder="Ej: Rodmac, 76..., certificado, Juan..."
                 value={searchText}
                 onChange={e => setSearchText(e.target.value)}
                 className="bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-500"
@@ -309,7 +327,7 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
       ) : (
         <>
           <DocumentsByMonth
-            monthsData={groupDocumentsByMonth(paginatedDocs, 'reviewed_at', 'es')}
+            monthsData={groupDocumentsByMonth(paginatedDocs, 'document_period_start', 'es')}
             renderDocument={(doc) => (
               <ApprovedDocumentCard
                 key={doc.id}

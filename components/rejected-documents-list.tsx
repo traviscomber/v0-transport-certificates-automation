@@ -13,6 +13,7 @@ import { PDFViewer } from '@/components/pdf-viewer'
 import { DocumentFilter, type DocumentFilters } from '@/components/document-filter'
 import { ALL_VALUE, filterByMonthYear } from '@/lib/date-filters'
 import { buildDocumentAccessUrl } from '@/lib/document-file-access'
+import { getDocumentPeriodDate, getDocumentPeriodLabel, getDocumentWorkflowDate } from '@/lib/document-period'
 
 interface RejectedDocument {
   id: string
@@ -27,6 +28,10 @@ interface RejectedDocument {
   updated_at?: string
   reviewed_at?: string
   validated_at?: string
+  uploaded_at?: string
+  document_period_month?: number | string | null
+  document_period_year?: number | string | null
+  document_period_start?: string | null
   ejecutiva?: string
   approved_at?: string
   reviewed_by_ejecutiva?: string
@@ -74,8 +79,8 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
 
   const allDocs = [...conductorDocs, ...subDocs].sort((a, b) => {
     try {
-      const dateB = new Date(b.updated_at || b.reviewed_at || b.created_at || 0).getTime()
-      const dateA = new Date(a.updated_at || a.reviewed_at || a.created_at || 0).getTime()
+      const dateB = new Date(getDocumentWorkflowDate(b) || 0).getTime()
+      const dateA = new Date(getDocumentWorkflowDate(a) || 0).getTime()
       return dateB - dateA
     } catch (e) {
       console.error('[v0] Error sorting docs:', e, 'docA:', (a as any).document_name || a.original_filename, 'docB:', (b as any).document_name || b.original_filename)
@@ -100,12 +105,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
   const metaChipClass = 'whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold tracking-[0.14em] border border-slate-600/50 bg-slate-950/40 text-slate-100 shadow-sm backdrop-blur-sm'
 
   const getDocumentPeriod = (doc: RejectedDocument) => {
-    const rawDate = doc.updated_at || doc.reviewed_at || doc.created_at
-    if (!rawDate) return 'Sin fecha'
-    const normalized = rawDate.endsWith('Z') ? rawDate : `${rawDate}Z`
-    const date = new Date(normalized)
-    if (Number.isNaN(date.getTime())) return 'Fecha invalida'
-    return date.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })
+    return getDocumentPeriodLabel(doc)
   }
 
   const getRejectionDate = (doc: RejectedDocument) => {
@@ -172,10 +172,10 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
       if (filters.searchQuery) {
         const query = filters.searchQuery.toLowerCase()
         const filename = (doc.original_filename || doc.document_name || '').toLowerCase()
-        const company = doc.transportistas ? ((Array.isArray(doc.transportistas) ? doc.transportistas[0]?.razon_social : doc.transportistas?.razon_social) || '') : ''
-        const conductor = doc.conductores ? ((Array.isArray(doc.conductores) ? doc.conductores[0]?.nombres : doc.conductores?.nombres) || '') : ''
+        const company = doc.transportistas ? [doc.transportistas.razon_social, doc.transportistas.rut].filter(Boolean).join(' ').toLowerCase() : ''
+        const conductor = doc.conductores ? [doc.conductores.nombres, doc.conductores.apellido_paterno, doc.conductores.rut].filter(Boolean).join(' ').toLowerCase() : ''
         
-        if (!filename.includes(query) && !company.toLowerCase().includes(query) && !conductor.toLowerCase().includes(query)) {
+        if (!filename.includes(query) && !company.includes(query) && !conductor.includes(query)) {
           return false
         }
       }
@@ -211,7 +211,7 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
 
     return filterByMonthYear(
       result,
-      (doc) => doc.updated_at || doc.reviewed_at || doc.created_at,
+      (doc) => getDocumentPeriodDate(doc),
       filters.month,
       filters.year
     )

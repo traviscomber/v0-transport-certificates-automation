@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { getDocumentPeriodDate } from '@/lib/document-period'
 
 type Requirement = {
   id: string
@@ -60,6 +61,9 @@ type MatrixDocument = {
   reviewed_at?: string
   approved_at?: string
   validated_at?: string
+  document_period_month?: number | string | null
+  document_period_year?: number | string | null
+  document_period_start?: string | null
   submissionDate?: string
   expiryDate?: string | null
   rejection_reason?: string
@@ -250,7 +254,7 @@ function getRowSearchText(row: { conductor: Entity; company?: Entity }) {
 }
 
 function getDocDate(doc: MatrixDocument) {
-  return doc.reviewed_at || doc.validated_at || doc.approved_at || doc.updated_at || doc.created_at || doc.submissionDate || ''
+  return getDocumentPeriodDate(doc)
 }
 
 function getDocStatus(doc: MatrixDocument) {

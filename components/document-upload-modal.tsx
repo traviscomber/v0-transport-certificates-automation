@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { useDocumentSelector } from '@/hooks/use-document-selector'
+import { getDefaultDocumentPeriod } from '@/lib/document-period'
 
 interface DocumentUploadModalProps {
   isOpen: boolean
@@ -38,6 +39,8 @@ export function DocumentUploadModal({
     expiry_date: '',
     provider: '',
     notes: '',
+    document_period_month: String(getDefaultDocumentPeriod().month),
+    document_period_year: String(getDefaultDocumentPeriod().year),
   })
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
@@ -53,6 +56,8 @@ export function DocumentUploadModal({
       expiry_date: '',
       provider: '',
       notes: '',
+      document_period_month: String(getDefaultDocumentPeriod().month),
+      document_period_year: String(getDefaultDocumentPeriod().year),
     })
   }
 
@@ -79,7 +84,14 @@ export function DocumentUploadModal({
       // Reset
       setSelectedDoc(null)
       setUploadFile(null)
-      setMetadata({ document_number: '', expiry_date: '', provider: '', notes: '' })
+      setMetadata({
+        document_number: '',
+        expiry_date: '',
+        provider: '',
+        notes: '',
+        document_period_month: String(getDefaultDocumentPeriod().month),
+        document_period_year: String(getDefaultDocumentPeriod().year),
+      })
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al subir el documento')
@@ -237,6 +249,43 @@ export function DocumentUploadModal({
 
                 {/* Metadata Fields */}
                 <div className="space-y-2">
+                  <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 p-3">
+                    <label className="block text-xs font-semibold text-orange-100 mb-2">
+                      Periodo del documento
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <select
+                        value={metadata.document_period_month}
+                        onChange={(e) => setMetadata({ ...metadata, document_period_month: e.target.value })}
+                        className="w-full px-2 py-2 bg-slate-800 border border-slate-700 rounded text-white text-sm"
+                      >
+                        <option value="1">Enero</option>
+                        <option value="2">Febrero</option>
+                        <option value="3">Marzo</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Mayo</option>
+                        <option value="6">Junio</option>
+                        <option value="7">Julio</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Septiembre</option>
+                        <option value="10">Octubre</option>
+                        <option value="11">Noviembre</option>
+                        <option value="12">Diciembre</option>
+                      </select>
+                      <Input
+                        type="number"
+                        min="2020"
+                        max="2100"
+                        value={metadata.document_period_year}
+                        onChange={(e) => setMetadata({ ...metadata, document_period_year: e.target.value })}
+                        className="bg-slate-800 border-slate-700 text-white text-sm"
+                      />
+                    </div>
+                    <p className="mt-2 text-[11px] text-orange-100/80">
+                      Se usa para cumplimiento mensual y no cambia al aprobar.
+                    </p>
+                  </div>
+
                   {selectedDoc.fields?.includes('document_number') && (
                     <div>
                       <label className="block text-xs font-medium text-slate-300 mb-1">

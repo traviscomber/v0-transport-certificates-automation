@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { triggerSubcontractorDocumentUploadedAlert } from '@/lib/operations/alert-triggers'
+import { normalizeDocumentPeriod } from '@/lib/document-period'
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,6 +12,9 @@ export async function POST(request: NextRequest) {
     const subcontractorId = formData.get('subcontractorId') as string
     const category = formData.get('category') as string
     const expiryDate = formData.get('expiryDate') as string | null
+    const periodMonth = formData.get('documentPeriodMonth') || formData.get('periodMonth')
+    const periodYear = formData.get('documentPeriodYear') || formData.get('periodYear')
+    const documentPeriod = normalizeDocumentPeriod(periodMonth as string | null, periodYear as string | null)
 
     console.log('[v0] Subcontractor document upload:', { subcontractorId, category, fileCount: files.length })
 
@@ -92,20 +96,40 @@ export async function POST(request: NextRequest) {
         .from(bucketName)
         .getPublicUrl(filePath)
 
-      // Save metadata to subcontractor_documents table
-      const { data: doc, error: docError } = await adminClient
+      const insertPayload = {
+        subcontractor_id: subcontractorId,
+        subcontractor_rut: subcontractor.rut || '',
+        document_type_id: category,
+        file_url: publicUrl,
+        file_name: file.name,
+        status: 'pending',
+        uploaded_at: new Date().toISOString(),
+        ...(documentPeriod || {}),
+      }
+
+      let { data: doc, error: docError } = await adminClient
         .from('subcontractor_documents')
-        .insert({
-          subcontractor_id: subcontractorId,
-          subcontractor_rut: subcontractor.rut || '',
-          document_type_id: category,
-          file_url: publicUrl,
-          file_name: file.name,
-          status: 'pending',
-          uploaded_at: new Date().toISOString(),
-        })
+        .insert(insertPayload)
         .select()
         .single()
+
+      if (docError && documentPeriod && /document_period/i.test(docError.message || '')) {
+        const { data: fallbackDoc, error: fallbackError } = await adminClient
+          .from('subcontractor_documents')
+          .insert({
+            subcontractor_id: insertPayload.subcontractor_id,
+            subcontractor_rut: insertPayload.subcontractor_rut,
+            document_type_id: insertPayload.document_type_id,
+            file_url: insertPayload.file_url,
+            file_name: insertPayload.file_name,
+            status: insertPayload.status,
+            uploaded_at: insertPayload.uploaded_at,
+          })
+          .select()
+          .single()
+        doc = fallbackDoc
+        docError = fallbackError
+      }
 
       if (!docError && doc) {
         uploadedDocs.push(doc)
