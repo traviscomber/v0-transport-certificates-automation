@@ -29,7 +29,17 @@ export async function GET(request: Request) {
     const { data: conductorDocs } = await supabase
       .from("uploaded_documents")
       .select(`
-        *,
+        id,
+        original_filename,
+        document_type_id,
+        validation_status,
+        file_url,
+        created_at,
+        updated_at,
+        document_period_month,
+        document_period_year,
+        document_period_start,
+        conductor_id,
         conductores (
           id,
           nombres,
@@ -55,7 +65,21 @@ export async function GET(request: Request) {
       const { data: subDocsPage, error: pageError } = await supabase
         .from("subcontractor_documents")
         .select(`
-          *
+          id,
+          file_name,
+          document_type_id,
+          status,
+          file_url,
+          created_at,
+          updated_at,
+          uploaded_at,
+          subcontractor_id,
+          subcontractor_rut,
+          reviewed_by_ejecutiva,
+          uploaded_by_ejecutiva,
+          document_period_month,
+          document_period_year,
+          document_period_start
         `)
         .eq('status', 'pending')
         .range(start, end)
@@ -187,7 +211,17 @@ export async function GET(request: Request) {
 
     // Normalize conductor documents with assigned executives
     const normalizedConductorDocs = (conductorDocs || []).map((doc: any) => ({
-      ...doc,
+      id: doc.id,
+      original_filename: doc.original_filename,
+      document_type_id: doc.document_type_id,
+      validation_status: doc.validation_status,
+      file_url: doc.file_url,
+      created_at: doc.created_at,
+      updated_at: doc.updated_at,
+      document_period_month: doc.document_period_month,
+      document_period_year: doc.document_period_year,
+      document_period_start: doc.document_period_start,
+      conductores: doc.conductores,
       document_name: doc.original_filename,
       file_name: doc.original_filename,
       status: doc.validation_status,
@@ -209,7 +243,22 @@ export async function GET(request: Request) {
       const transportistaMap = new Map(transportistas?.map(t => [t.id, t]) || [])
 
       normalizedSubDocs.push(...subDocsRaw.map(doc => ({
-        ...doc,
+        id: doc.id,
+        file_name: doc.file_name,
+        document_name: doc.file_name,
+        document_type_id: doc.document_type_id,
+        status: doc.status,
+        file_url: doc.file_url,
+        created_at: doc.created_at,
+        updated_at: doc.updated_at,
+        uploaded_at: doc.uploaded_at,
+        subcontractor_id: doc.subcontractor_id,
+        subcontractor_rut: doc.subcontractor_rut,
+        reviewed_by_ejecutiva: doc.reviewed_by_ejecutiva,
+        uploaded_by_ejecutiva: doc.uploaded_by_ejecutiva,
+        document_period_month: doc.document_period_month,
+        document_period_year: doc.document_period_year,
+        document_period_start: doc.document_period_start,
         transportistas: transportistaMap.get(doc.subcontractor_id),
         docType: docTypeMap.get(doc.document_type_id),
         company_id: doc.subcontractor_id || null,

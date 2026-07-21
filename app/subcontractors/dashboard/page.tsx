@@ -53,6 +53,29 @@ export default function SubcontractorDashboardPage() {
   const [selectedYear, setSelectedYear] = useState(String(today.getFullYear()))
   const [documentDate, setDocumentDate] = useState(new Date().toISOString().split('T')[0])
 
+  const syncDocumentDateToPeriod = (month: string, year: string) => {
+    setDocumentDate(`${year}-${month.padStart(2, '0')}-01`)
+  }
+
+  const handleSelectedMonthChange = (month: string) => {
+    setSelectedMonth(month)
+    syncDocumentDateToPeriod(month, selectedYear)
+  }
+
+  const handleSelectedYearChange = (year: string) => {
+    setSelectedYear(year)
+    syncDocumentDateToPeriod(selectedMonth, year)
+  }
+
+  const handleDocumentDateChange = (value: string) => {
+    setDocumentDate(value)
+    const match = /^(\d{4})-(\d{2})-\d{2}$/.exec(value)
+    if (match) {
+      setSelectedYear(match[1])
+      setSelectedMonth(match[2])
+    }
+  }
+
   useEffect(() => {
     // Get transportista info from cookies/session
     fetchTransportistaData()
@@ -304,7 +327,7 @@ export default function SubcontractorDashboardPage() {
                   <label className="text-xs font-semibold text-slate-400 mb-1 block">Mes</label>
                   <select 
                     value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    onChange={(e) => handleSelectedMonthChange(e.target.value)}
                     className="w-full rounded-md border border-slate-600 bg-slate-700/50 px-3 py-2 text-sm text-white"
                   >
                     <option value="01">Enero</option>
@@ -325,7 +348,7 @@ export default function SubcontractorDashboardPage() {
                   <label className="text-xs font-semibold text-slate-400 mb-1 block">Año</label>
                   <select 
                     value={selectedYear}
-                    onChange={(e) => setSelectedYear(e.target.value)}
+                    onChange={(e) => handleSelectedYearChange(e.target.value)}
                     className="w-full rounded-md border border-slate-600 bg-slate-700/50 px-3 py-2 text-sm text-white"
                   >
                     <option value="2024">2024</option>
@@ -402,13 +425,13 @@ export default function SubcontractorDashboardPage() {
                     id="docdate"
                     type="date"
                     value={documentDate}
-                    onChange={(e) => setDocumentDate(e.target.value)}
+                    onChange={(e) => handleDocumentDateChange(e.target.value)}
                     min={minDateString}
                     max={new Date().toISOString().split('T')[0]}
                     className="bg-slate-700/50 border-slate-600 text-slate-300"
                   />
                   <p className="text-xs text-slate-400">
-                    Hasta 4 meses atrás
+                    Esta fecha define el periodo mensual de cumplimiento
                   </p>
                 </div>
 

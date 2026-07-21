@@ -171,25 +171,10 @@ export async function POST(
       .single()
 
     if (saveError && documentPeriod && /document_period/i.test(saveError.message || '')) {
-      const fallbackPayload = {
-        subcontractor_id: insertPayload.subcontractor_id,
-        subcontractor_rut: insertPayload.subcontractor_rut,
-        document_type_id: insertPayload.document_type_id,
-        file_url: insertPayload.file_url,
-        file_name: insertPayload.file_name,
-        status: insertPayload.status,
-        uploaded_at: insertPayload.uploaded_at,
-        expires_at: insertPayload.expires_at,
-      }
-
-      const fallbackResult = await supabase
-        .from('subcontractor_documents')
-        .insert(fallbackPayload)
-        .select()
-        .single()
-
-      newDocument = fallbackResult.data
-      saveError = fallbackResult.error
+      return NextResponse.json(
+        { error: 'La base de datos aun no tiene habilitado el periodo documental. Aplica la migracion 014 antes de subir documentos.' },
+        { status: 503 }
+      )
     }
 
     if (saveError) {
@@ -254,7 +239,21 @@ export async function GET(
     const { data: documents, error: docsError } = await supabase
       .from('subcontractor_documents')
       .select(`
-        *,
+        id,
+        subcontractor_id,
+        subcontractor_rut,
+        document_type_id,
+        file_url,
+        file_name,
+        status,
+        uploaded_at,
+        expires_at,
+        rejection_reason,
+        created_at,
+        updated_at,
+        document_period_month,
+        document_period_year,
+        document_period_start,
         document_type:subcontractor_document_types(code, nombre, periodicidad)
       `)
       .eq('subcontractor_id', id)
@@ -271,7 +270,7 @@ export async function GET(
     // Fetch document types (requirements)
     const { data: documentTypes, error: typesError } = await supabase
       .from('subcontractor_document_types')
-      .select('*')
+      .select('id, code, nombre, periodicidad, es_obligatorio')
       .eq('es_obligatorio', true)
       .order('nombre', { ascending: true })
 

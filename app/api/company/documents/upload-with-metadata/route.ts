@@ -175,19 +175,10 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (dbError && documentPeriod && /document_period/i.test(dbError.message || '')) {
-      const fallbackPayload = { ...insertPayload }
-      delete fallbackPayload.document_period_month
-      delete fallbackPayload.document_period_year
-      delete fallbackPayload.document_period_start
-
-      const fallbackResult = await adminClient
-        .from('uploaded_documents')
-        .insert([fallbackPayload])
-        .select()
-        .single()
-
-      docRecord = fallbackResult.data
-      dbError = fallbackResult.error
+      return NextResponse.json(
+        { error: 'La base de datos aun no tiene habilitado el periodo documental. Aplica la migracion 014 antes de subir documentos.' },
+        { status: 503 }
+      )
     }
 
     if (dbError) {

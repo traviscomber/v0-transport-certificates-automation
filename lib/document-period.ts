@@ -52,10 +52,10 @@ export function getDefaultDocumentPeriod(date = new Date()) {
 }
 
 export function getDocumentPeriodDate(doc: DocumentPeriodFields) {
-  if (doc.document_period_start) return doc.document_period_start
+  if (doc.document_period_start) return toLocalNoonDate(doc.document_period_start)
 
   const normalized = normalizeDocumentPeriod(doc.document_period_month, doc.document_period_year)
-  if (normalized) return normalized.document_period_start
+  if (normalized) return toLocalNoonDate(normalized.document_period_start)
 
   return doc.uploaded_at || doc.created_at || doc.submissionDate || ''
 }
@@ -80,4 +80,10 @@ export function getDocumentPeriodShortLabel(doc: DocumentPeriodFields) {
   const date = new Date(normalized)
   if (Number.isNaN(date.getTime())) return 'Sin'
   return date.toLocaleDateString('es-CL', { month: 'short', year: 'numeric' })
+}
+
+function toLocalNoonDate(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
+  if (!match) return value
+  return `${match[1]}-${match[2]}-${match[3]}T12:00:00`
 }

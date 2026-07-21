@@ -62,7 +62,20 @@ export async function GET(request: Request) {
     const { data: conductorDocs, error: conductorError } = await supabase
       .from('uploaded_documents')
       .select(`
-        *,
+        id,
+        original_filename,
+        document_type_id,
+        validation_status,
+        file_url,
+        rejection_reason,
+        validated_at,
+        ejecutiva,
+        created_at,
+        updated_at,
+        conductor_id,
+        document_period_month,
+        document_period_year,
+        document_period_start,
         conductores (
           id,
           nombres,
@@ -94,7 +107,23 @@ export async function GET(request: Request) {
       const { data: pageData, error: pageError } = await supabase
         .from('subcontractor_documents')
         .select(`
-          *,
+          id,
+          file_name,
+          document_type_id,
+          status,
+          file_url,
+          rejection_reason,
+          approved_at,
+          reviewed_at,
+          reviewed_by_ejecutiva,
+          created_at,
+          updated_at,
+          uploaded_at,
+          subcontractor_id,
+          subcontractor_rut,
+          document_period_month,
+          document_period_year,
+          document_period_start,
           transportistas:subcontractor_id (
             id,
             razon_social,

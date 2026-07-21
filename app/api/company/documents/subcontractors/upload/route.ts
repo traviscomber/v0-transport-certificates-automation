@@ -114,21 +114,10 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (docError && documentPeriod && /document_period/i.test(docError.message || '')) {
-        const { data: fallbackDoc, error: fallbackError } = await adminClient
-          .from('subcontractor_documents')
-          .insert({
-            subcontractor_id: insertPayload.subcontractor_id,
-            subcontractor_rut: insertPayload.subcontractor_rut,
-            document_type_id: insertPayload.document_type_id,
-            file_url: insertPayload.file_url,
-            file_name: insertPayload.file_name,
-            status: insertPayload.status,
-            uploaded_at: insertPayload.uploaded_at,
-          })
-          .select()
-          .single()
-        doc = fallbackDoc
-        docError = fallbackError
+        return NextResponse.json(
+          { error: 'La base de datos aun no tiene habilitado el periodo documental. Aplica la migracion 014 antes de subir documentos.' },
+          { status: 503 }
+        )
       }
 
       if (!docError && doc) {
