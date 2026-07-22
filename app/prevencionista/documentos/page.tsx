@@ -45,14 +45,14 @@ export default function PrevencionistaDocumentos() {
 
         setDocumentTypes(types || [])
 
-        // Get subcontractor names for filtering/display
+        // Get subcontractor names from transportistas (subcontractor_documents.subcontractor_id references transportistas.id)
         const { data: subs } = await supabase
-          .from('subcontratistas')
-          .select('id, razon_social, nombre_fantasia')
+          .from('transportistas')
+          .select('id, razon_social')
           .order('razon_social')
 
         const subMap = new Map(
-          (subs as any[])?.map((s: any) => [s.id, s.nombre_fantasia || s.razon_social]) || []
+          (subs as any[])?.map((s: any) => [s.id, s.razon_social]) || []
         )
 
         // Get ALL approved documents using pagination
