@@ -180,9 +180,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       conductor: newConductor,
-      password: conductorPassword,
-      message: `Conductor creado exitosamente. Contraseña: ${conductorPassword}`,
-      instructions: 'El conductor puede usar su RUT y esta contraseña para acceder y subir documentos. Se han asignado automáticamente las licencias de conducir clase A2 y A5 (ley antigua).'
+      message: 'Conductor creado exitosamente.',
+      instructions: 'El conductor puede usar sus credenciales entregadas por el equipo Labbe para acceder y subir documentos. Se han asignado automáticamente las licencias de conducir clase A2 y A5 (ley antigua).'
     })
   } catch (error) {
     console.error('[v0] Error:', error)

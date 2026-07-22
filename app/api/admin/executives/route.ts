@@ -58,10 +58,17 @@ export async function POST(request: NextRequest) {
 
     const { email, full_name, password } = body
 
+    if (!email || !full_name || !password || String(password).length < 8) {
+      return NextResponse.json(
+        { error: 'Email, full_name, and a password of at least 8 characters are required' },
+        { status: 400 }
+      )
+    }
+
     // Create auth user
     const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
       email,
-      password: password || 'TempPassword123!',
+      password,
       email_confirm: true
     })
 

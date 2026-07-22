@@ -190,14 +190,13 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      console.log(`[v0] Auth record created for RUT ${rut}: password format ${password}`)
+      console.log(`[v0] Auth record created for RUT ${rut}`)
     }
 
     return NextResponse.json({
       success: true,
       transportista: newTransportista,
       assigned_executive: selectedExecutive,
-      default_password: password,
       message: `Subcontratista creado y asignado a ${selectedExecutive.full_name}. Puede hacer login inmediatamente.`
     })
   } catch (error) {
