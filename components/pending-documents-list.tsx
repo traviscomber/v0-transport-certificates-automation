@@ -201,7 +201,8 @@ export function PendingDocumentsList({ conductorDocs: propConductorDocs, subDocs
       if (filters.companyId) {
         try {
           const docCompany = doc.transportistas ? (Array.isArray(doc.transportistas) ? doc.transportistas[0]?.id : doc.transportistas?.id) : (doc as any).subcontractor_rut
-          if (docCompany !== filters.companyId) {
+          const normalizedCompanyId = (doc as any).company_id || docCompany
+          if (normalizedCompanyId !== filters.companyId) {
             return false
           }
         } catch (e) {

@@ -172,7 +172,13 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
       if (filters.searchQuery) {
         const query = filters.searchQuery.toLowerCase()
         const filename = (doc.original_filename || doc.document_name || '').toLowerCase()
-        const company = doc.transportistas ? [doc.transportistas.razon_social, doc.transportistas.rut].filter(Boolean).join(' ').toLowerCase() : ''
+        const transportista = doc.transportistas ? (Array.isArray(doc.transportistas) ? doc.transportistas[0] : doc.transportistas) : null
+        const company = [
+          (doc as any).empresa_nombre,
+          transportista?.razon_social,
+          transportista?.rut,
+          (doc as any).subcontractor_rut,
+        ].filter(Boolean).join(' ').toLowerCase()
         const conductor = doc.conductores ? [doc.conductores.nombres, doc.conductores.apellido_paterno, doc.conductores.rut].filter(Boolean).join(' ').toLowerCase() : ''
         
         if (!filename.includes(query) && !company.includes(query) && !conductor.includes(query)) {
@@ -191,7 +197,8 @@ export function RejectedDocumentsList({ conductorDocs: initialConductorDocs, sub
       if (filters.companyId) {
         try {
           const docCompany = doc.transportistas ? (Array.isArray(doc.transportistas) ? doc.transportistas[0]?.id : doc.transportistas?.id) : (doc as any).subcontractor_rut
-          if (docCompany !== filters.companyId) {
+          const normalizedCompanyId = (doc as any).company_id || docCompany
+          if (normalizedCompanyId !== filters.companyId) {
             return false
           }
         } catch (e) {

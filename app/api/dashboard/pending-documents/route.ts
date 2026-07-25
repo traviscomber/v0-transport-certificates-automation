@@ -121,6 +121,7 @@ export async function GET(request: Request) {
     // Workflow: conductor_id -> conductores.rut_proveedor -> transportistas.rut -> transportistas.assigned_executive_id -> executive_staff.full_name
     let conductorExecutiveMap = new Map<string, string>()
     let conductorCompanyIdMap = new Map<string, string>()
+    let conductorCompanyMap = new Map<string, any>()
     if (conductorDocs && conductorDocs.length > 0) {
       // Get unique rut_proveedor from conductores
       const { data: conductorRuts } = await supabase
@@ -134,7 +135,7 @@ export async function GET(request: Request) {
         // Get transportistas with their assigned executives
         const { data: transportistas } = await supabase
           .from('transportistas')
-          .select('id, rut, assigned_executive_id')
+          .select('id, rut, assigned_executive_id, razon_social')
           .in('rut', transportistaRuts)
 
         if (transportistas && transportistas.length > 0) {
@@ -162,6 +163,11 @@ export async function GET(request: Request) {
                 }
                 if (transportista?.id) {
                   conductorCompanyIdMap.set(cr.id, transportista.id)
+                  conductorCompanyMap.set(cr.id, {
+                    id: transportista.id,
+                    razon_social: transportista.razon_social || 'Empresa',
+                    rut: transportista.rut || cr.rut_proveedor || ''
+                  })
                 }
               })
             }
@@ -222,6 +228,8 @@ export async function GET(request: Request) {
       document_period_year: doc.document_period_year,
       document_period_start: doc.document_period_start,
       conductores: doc.conductores,
+      transportistas: conductorCompanyMap.get(doc.conductores?.id) || null,
+      empresa_nombre: conductorCompanyMap.get(doc.conductores?.id)?.razon_social || null,
       document_name: doc.original_filename,
       file_name: doc.original_filename,
       status: doc.validation_status,

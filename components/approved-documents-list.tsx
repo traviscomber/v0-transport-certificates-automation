@@ -19,6 +19,8 @@ import { getChileDate, getChileTime } from '@/lib/timezone-utils'
 import { DocumentsByMonth } from '@/components/documents-by-month'
 import { groupDocumentsByMonth } from '@/lib/document-grouping'
 import { ApprovedDocumentCard } from '@/components/approved-document-card'
+import { DatePeriodFilter } from '@/components/date-period-filter'
+import { ALL_VALUE, filterByMonthYear, type DateFilterValue } from '@/lib/date-filters'
 import { getDocumentPeriodDate, getDocumentWorkflowDate } from '@/lib/document-period'
 
 // Safely parse a date string from Supabase.
@@ -77,6 +79,8 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
   const [selectedExecutive, setSelectedExecutive] = useState(ALL_EXEC)
   const [selectedDocType, setSelectedDocType] = useState(ALL_TYPE)
   const [selectedEmpresa, setSelectedEmpresa] = useState(ALL_EMPRESA)
+  const [selectedMonth, setSelectedMonth] = useState(ALL_VALUE)
+  const [selectedYear, setSelectedYear] = useState(ALL_VALUE)
   const [showFilters, setShowFilters] = useState(true)
 
   const LOAD_MORE_INCREMENT = 300
@@ -187,20 +191,39 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
       result = result.filter(doc => doc.empresa_nombre === selectedEmpresa)
     }
 
-    return result
-  }, [allDocs, searchText, selectedExecutive, selectedDocType, selectedEmpresa])
+    return filterByMonthYear(
+      result,
+      (doc) => getDocumentPeriodDate(doc),
+      selectedMonth,
+      selectedYear
+    )
+  }, [allDocs, searchText, selectedExecutive, selectedDocType, selectedEmpresa, selectedMonth, selectedYear])
 
   const hasActiveFilters =
     searchText.trim() !== '' ||
     selectedExecutive !== ALL_EXEC ||
     selectedDocType !== ALL_TYPE ||
-    selectedEmpresa !== ALL_EMPRESA
+    selectedEmpresa !== ALL_EMPRESA ||
+    selectedMonth !== ALL_VALUE ||
+    selectedYear !== ALL_VALUE
 
   const handleClearFilters = () => {
     setSearchText('')
     setSelectedExecutive(ALL_EXEC)
     setSelectedDocType(ALL_TYPE)
     setSelectedEmpresa(ALL_EMPRESA)
+    setSelectedMonth(ALL_VALUE)
+    setSelectedYear(ALL_VALUE)
+  }
+
+  const temporalFilters: DateFilterValue = {
+    month: selectedMonth,
+    year: selectedYear,
+  }
+
+  const handleTemporalFilterChange = (value: DateFilterValue) => {
+    setSelectedMonth(value.month)
+    setSelectedYear(value.year)
   }
 
   const getExecutive = (doc: ApprovedDocument) =>
@@ -296,6 +319,12 @@ export function ApprovedDocumentsList({ conductorDocs: initialConductorDocs, sub
                 </Select>
               </div>
             </div>
+
+            <DatePeriodFilter
+              value={temporalFilters}
+              onChange={handleTemporalFilterChange}
+              onClear={() => handleTemporalFilterChange({ month: ALL_VALUE, year: ALL_VALUE })}
+            />
 
             {hasActiveFilters && (
               <Button

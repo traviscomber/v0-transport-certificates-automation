@@ -168,10 +168,18 @@ export async function GET(request: Request) {
     const activeDocTypes = docTypes?.filter(dt => !deprecatedCodes.includes(dt.code)) || []
     const docTypeMap = new Map(activeDocTypes.map(dt => [dt.id, { code: dt.code, nombre: dt.nombre }]) || [])
 
+    // Fetch document types for conductors
+    const { data: conductorDocTypes } = await supabase
+      .from("document_types")
+      .select("id, code, name")
+
+    const conductorDocTypeMap = new Map(conductorDocTypes?.map(dt => [dt.id, { code: dt.code, nombre: dt.name }]) || [])
+
     // Get assigned executives for conductors
     // Workflow: conductor_id -> conductores.rut_proveedor -> transportistas.rut -> transportistas.assigned_executive_id -> executive_staff.full_name
     let conductorExecutiveMap = new Map<string, string>()
     let conductorCompanyIdMap = new Map<string, string>()
+    let conductorCompanyMap = new Map<string, any>()
     if (conductorDocs && conductorDocs.length > 0) {
       // Get unique rut_proveedor from conductores
       const { data: conductorRuts } = await supabase
@@ -185,7 +193,7 @@ export async function GET(request: Request) {
         // Get transportistas with their assigned executives
         const { data: transportistas } = await supabase
           .from('transportistas')
-          .select('id, rut, assigned_executive_id')
+          .select('id, rut, assigned_executive_id, razon_social')
           .in('rut', transportistaRuts)
 
         if (transportistas && transportistas.length > 0) {
@@ -213,6 +221,11 @@ export async function GET(request: Request) {
                 }
                 if (transportista?.id) {
                   conductorCompanyIdMap.set(cr.id, transportista.id)
+                  conductorCompanyMap.set(cr.id, {
+                    id: transportista.id,
+                    razon_social: transportista.razon_social || 'Empresa',
+                    rut: transportista.rut || cr.rut_proveedor || ''
+                  })
                 }
               })
             }
@@ -296,8 +309,10 @@ export async function GET(request: Request) {
         document_period_start: doc.document_period_start,
         reviewed_at: doc.validated_at || doc.updated_at,
         conductores: doc.conductores,
+        transportistas: conductorCompanyMap.get(doc.conductor_id) || null,
+        empresa_nombre: conductorCompanyMap.get(doc.conductor_id)?.razon_social || null,
         company_id: conductorCompanyIdMap.get(doc.conductor_id) || null,
-        docType: docTypeMap.get(doc.document_type_id),
+        docType: conductorDocTypeMap.get(doc.document_type_id) || null,
         document_source: 'conductor'
       }
     })
