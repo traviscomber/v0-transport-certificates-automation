@@ -165,13 +165,13 @@ export async function DELETE(
     }
 
     // Delete conductor auth records
-    const { error: authError } = await supabase
+    const { error: conductorAuthDeleteError } = await supabase
       .from('conductor_auth')
       .delete()
       .eq('conductor_id', id)
 
-    if (authError) {
-      console.warn('[v0] Warning deleting conductor_auth:', authError)
+    if (conductorAuthDeleteError) {
+      console.warn('[v0] Warning deleting conductor_auth:', conductorAuthDeleteError)
     }
 
     // Delete conductor licenses
