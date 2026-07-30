@@ -1,5 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { verifyAuth } from '@/lib/auth-middleware'
 import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,8 +10,13 @@ export const dynamic = 'force-dynamic'
  * Returns ALL documents from all drivers (for dashboard statistics)
  * No parameters required
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { user, error: authError } = await verifyAuth(request)
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const adminClient = await createAdminClient()
 
     console.log('[v0] Fetching ALL documents for dashboard stats')

@@ -69,9 +69,22 @@ async function getDocumentStats() {
   })
 
   // Get certifications stats from transportistas
-  const { data: transportistas, error: transError } = await supabase
+  const primaryTransportistaSelect = "id, certificacion_ariztia, certificacion_lts, certificacion_rendic, certificacion_interpolar, ariztia_vencimiento, lts_vencimiento, rendic_vencimiento, interpolar_vencimiento"
+  const fallbackTransportistaSelect = "id, certificacion_lts, certificacion_rendic, certificacion_interpolar, lts_vencimiento, rendic_vencimiento, interpolar_vencimiento"
+
+  let { data: transportistas, error: transError } = await supabase
     .from("transportistas")
-    .select("id, certificacion_ariztia, certificacion_lts, certificacion_rendic, certificacion_interpolar, ariztia_vencimiento, lts_vencimiento, rendic_vencimiento, interpolar_vencimiento")
+    .select(primaryTransportistaSelect)
+
+  if (transError?.message?.includes('certificacion_ariztia')) {
+    console.warn("[v0] transportistas query fallback: certificacion_ariztia missing, retrying reduced certification set")
+    const fallbackResult = await supabase
+      .from("transportistas")
+      .select(fallbackTransportistaSelect)
+
+    transportistas = fallbackResult.data
+    transError = fallbackResult.error
+  }
   
   if (transError) {
     console.error("[v0] Error fetching transportistas:", transError)

@@ -1,11 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isSuperAdmin, verifyAuth } from '@/lib/auth-middleware'
 
-export async function PATCH(request: NextRequest) {
+const DRIVER_UPDATE_ROLES = new Set(['admin', 'dispatcher', 'ejecutiva', 'super_admin'])
+const DRIVER_DELETE_ROLES = new Set(['admin', 'super_admin'])
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
+    const { user, error: authError } = await verifyAuth(request)
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: authError || 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    if (!isSuperAdmin(user.email, user.role) && !DRIVER_UPDATE_ROLES.has(user.role)) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     const {
-      id,
       rut,
       nombres,
       apellido_paterno,
@@ -29,6 +51,8 @@ export async function PATCH(request: NextRequest) {
       numero_pension,
       institucion_pension,
     } = body
+
+    const id = params.id
 
     if (!id || !rut) {
       return NextResponse.json(
@@ -93,10 +117,29 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
+    const { user, error: authError } = await verifyAuth(request)
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: authError || 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    if (!isSuperAdmin(user.email, user.role) && !DRIVER_DELETE_ROLES.has(user.role)) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
+    const id = params.id || searchParams.get('id')
 
     if (!id) {
       return NextResponse.json(

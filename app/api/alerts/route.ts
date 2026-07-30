@@ -1,5 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin"
+import { verifyAuth } from "@/lib/auth-middleware"
 import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 30
@@ -45,8 +47,13 @@ interface NormalizedAlert {
   [key: string]: unknown
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
+    const { user, error: authError } = await verifyAuth(request)
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const supabase = createAdminClient()
 
     const url = new URL(request.url)
@@ -164,8 +171,13 @@ export async function GET(request: Request) {
   }
 }
 
-export async function PATCH(request: Request) {
+export async function PATCH(request: NextRequest) {
   try {
+    const { user, error: authError } = await verifyAuth(request)
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const supabase = createAdminClient()
     const body = await request.json()
     const { ids, is_read, is_dismissed } = body as { ids: string[], is_read?: boolean, is_dismissed?: boolean }

@@ -163,11 +163,14 @@ export async function generateDocumentStatusChangeAlert(
     let transportistaId: string | null = null
     let ejecutivaAsignada: string | null = null
     
-    const { data: conductor } = await supabase
-      .from('conductores')
-      .select('id, transportista_id')
-      .eq('id', conductorId)
-      .maybeSingle()
+    const normalizedConductorId = isUuid(conductorId) ? conductorId : null
+    const { data: conductor } = normalizedConductorId
+      ? await supabase
+          .from('conductores')
+          .select('id, transportista_id')
+          .eq('id', normalizedConductorId)
+          .maybeSingle()
+      : { data: null }
 
     if (conductor?.transportista_id) {
       transportistaId = conductor.transportista_id
@@ -222,14 +225,14 @@ export async function generateDocumentStatusChangeAlert(
         status: newStatus === 'pending' ? 'pendiente' : 'resuelto',
         ejecutiva_nombre: ejecutivaAsignada,
         transportista_id: transportistaId,
-        driver_id: conductorId,
+        driver_id: normalizedConductorId,
         document_id: uploadedDocumentId,
         document_type: documentType,
         action_url: `/dashboard/company/documentos`,
         created_at: new Date().toISOString(),
         metadata: {
           document_id: uploadedDocumentId,
-          conductor_id: conductorId,
+          conductor_id: normalizedConductorId,
           conductor_name: conductorName,
           document_type: documentType,
           transportista_name: transportistaName,
@@ -506,4 +509,7 @@ export async function generateExpirationAlerts() {
   } catch (error) {
     console.error('[v0] Error in generateExpirationAlerts:', error)
   }
+}
+function isUuid(value?: string | null): value is string {
+  return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
 }
