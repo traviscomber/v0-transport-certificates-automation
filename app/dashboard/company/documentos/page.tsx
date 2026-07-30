@@ -5,6 +5,18 @@ export const fetchCache = 'force-no-store'
 import { createClient } from "@/lib/supabase/server"
 import { DocumentManagerHub } from "@/components/document-manager-hub"
 
+type TransportistaCertifications = {
+  id: string
+  certificacion_ariztia: unknown
+  certificacion_lts: unknown
+  certificacion_rendic: unknown
+  certificacion_interpolar: unknown
+  ariztia_vencimiento: unknown
+  lts_vencimiento: unknown
+  rendic_vencimiento: unknown
+  interpolar_vencimiento: unknown
+}
+
 async function getDocumentStats() {
   const supabase = await createClient()
   
@@ -76,13 +88,20 @@ async function getDocumentStats() {
     .from("transportistas")
     .select(primaryTransportistaSelect)
 
+  let normalizedTransportistas: TransportistaCertifications[] | null =
+    (transportistas as TransportistaCertifications[] | null) ?? null
+
   if (transError?.message?.includes('certificacion_ariztia')) {
     console.warn("[v0] transportistas query fallback: certificacion_ariztia missing, retrying reduced certification set")
     const fallbackResult = await supabase
       .from("transportistas")
       .select(fallbackTransportistaSelect)
 
-    transportistas = fallbackResult.data
+    normalizedTransportistas = (fallbackResult.data || []).map((item: any) => ({
+      ...item,
+      certificacion_ariztia: null,
+      ariztia_vencimiento: null,
+    }))
     transError = fallbackResult.error
   }
   
@@ -105,7 +124,7 @@ async function getDocumentStats() {
     { cert: 'certificacion_interpolar', venc: 'interpolar_vencimiento' },
   ]
   
-  transportistas?.forEach((t: any) => {
+  normalizedTransportistas?.forEach((t: any) => {
     certFields.forEach(({ cert, venc }) => {
       if (t[cert]) {
         totalCerts++
