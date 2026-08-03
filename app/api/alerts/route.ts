@@ -55,17 +55,15 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = createAdminClient()
-
     const url = new URL(request.url)
     const type = url.searchParams.get('type')
     const priority = url.searchParams.get('priority')
-    const is_read = url.searchParams.get('is_read')
+    const isRead = url.searchParams.get('is_read')
     const ejecutiva = url.searchParams.get('ejecutiva')
     const status = url.searchParams.get('status')
-    const limit = parseInt(url.searchParams.get('limit') || '100')
-    const offset = parseInt(url.searchParams.get('offset') || '0')
+    const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '100', 10), 1), 500)
+    const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10), 0)
 
-    // Get alerts from alerts_log table (AI-generated alerts)
     let alertsLogQuery = supabase
       .from('alerts_log')
       .select('*', { count: 'exact' })
@@ -74,7 +72,7 @@ export async function GET(request: NextRequest) {
     if (type) alertsLogQuery = alertsLogQuery.eq('alert_type', type)
     if (priority) alertsLogQuery = alertsLogQuery.eq('priority', priority)
     if (status) alertsLogQuery = alertsLogQuery.eq('status', status)
-    if (is_read !== null && is_read !== '') alertsLogQuery = alertsLogQuery.eq('is_read', is_read === 'true')
+    if (isRead !== null && isRead !== '') alertsLogQuery = alertsLogQuery.eq('is_read', isRead === 'true')
 
     const { data: logAlerts = [], error: logError } = await alertsLogQuery
       .order('created_at', { ascending: false })
@@ -84,73 +82,73 @@ export async function GET(request: NextRequest) {
       console.error('alerts_log query error:', logError)
     }
 
-    // Get alerts from alerts table (legacy)
+    // The legacy alerts table does not consistently contain ejecutiva_nombre in
+    // production. Never add that column to its SQL filters; apply compatibility
+    // filtering after normalization instead.
     let alertsQuery = supabase
       .from('alerts')
       .select('*', { count: 'exact' })
 
-    if (ejecutiva) alertsQuery = alertsQuery.eq('ejecutiva_nombre', ejecutiva)
     if (type) alertsQuery = alertsQuery.eq('alert_type', type)
     if (priority) alertsQuery = alertsQuery.eq('priority', priority)
     if (status) alertsQuery = alertsQuery.eq('status', status)
-    if (is_read !== null && is_read !== '') alertsQuery = alertsQuery.eq('is_read', is_read === 'true')
+    if (isRead !== null && isRead !== '') alertsQuery = alertsQuery.eq('is_read', isRead === 'true')
 
-    const { data: rawAlerts = [], error } = await alertsQuery
+    const { data: rawAlerts = [], error: legacyError } = await alertsQuery
       .order('created_at', { ascending: false })
       .limit(limit * 2)
 
-    if (error) {
-      console.error('alerts API GET error:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (legacyError) {
+      console.warn('legacy alerts query skipped:', legacyError.message)
     }
 
-    // Normalize alerts from alerts_log
-    const alerts: NormalizedAlert[] = (logAlerts as AlertLog[]).map((a) => ({
-      id: `log_${a.id}`,
-      type: a.alert_type || 'info',
-      title: a.title,
-      message: a.message || a.description || '',
-      description: a.description || a.message || '',
-      priority: a.priority || 'medium',
-      category: a.entity_type || 'general',
-      is_read: a.is_read ?? false,
-      is_dismissed: a.is_resolved ?? false,
-      action_url: a.action_url,
-      ejecutiva_asignada: a.ejecutiva_nombre,
-      status: a.status || 'pendiente',
-      transportista_id: a.transportista_id,
-      driver_id: a.driver_id,
-      document_id: a.document_id,
-      document_type: a.document_type,
-      entity_name: a.entity_name,
-      metadata: a.metadata || {},
-      created_at: a.created_at,
-      source: 'alerts_log (AI)'
+    const alerts: NormalizedAlert[] = (logAlerts as AlertLog[]).map((alert) => ({
+      id: `log_${alert.id}`,
+      type: alert.alert_type || 'info',
+      title: alert.title,
+      message: alert.message || alert.description || '',
+      description: alert.description || alert.message || '',
+      priority: alert.priority || 'medium',
+      category: alert.entity_type || 'general',
+      is_read: alert.is_read ?? false,
+      is_dismissed: alert.is_resolved ?? false,
+      action_url: alert.action_url,
+      ejecutiva_asignada: alert.ejecutiva_nombre,
+      status: alert.status || 'pendiente',
+      transportista_id: alert.transportista_id,
+      driver_id: alert.driver_id,
+      document_id: alert.document_id,
+      document_type: alert.document_type,
+      entity_name: alert.entity_name,
+      metadata: alert.metadata || {},
+      created_at: alert.created_at,
+      source: 'alerts_log',
     }))
 
-    // Add normalized alerts from alerts table
-    const legacyAlerts: NormalizedAlert[] = (rawAlerts as AlertLog[]).map((a) => ({
-      id: a.id,
-      type: a.alert_type || 'info',
-      title: a.title,
-      message: a.message || a.description || '',
-      description: a.description || a.message || '',
-      priority: a.priority || 'medium',
-      category: a.entity_type || 'general',
-      is_read: a.is_read ?? false,
-      is_dismissed: a.is_resolved ?? false,
-      action_url: a.action_url,
-      ejecutiva_asignada: a.ejecutiva_nombre,
-      status: a.status || 'pendiente',
-      metadata: a.metadata || {},
-      created_at: a.created_at,
-      source: 'alerts_table'
-    }))
+    const legacyAlerts: NormalizedAlert[] = legacyError
+      ? []
+      : (rawAlerts as AlertLog[]).map((alert) => ({
+          id: alert.id,
+          type: alert.alert_type || 'info',
+          title: alert.title,
+          message: alert.message || alert.description || '',
+          description: alert.description || alert.message || '',
+          priority: alert.priority || 'medium',
+          category: alert.entity_type || 'general',
+          is_read: alert.is_read ?? false,
+          is_dismissed: alert.is_resolved ?? false,
+          action_url: alert.action_url,
+          ejecutiva_asignada: alert.ejecutiva_nombre,
+          status: alert.status || 'pendiente',
+          metadata: alert.metadata || {},
+          created_at: alert.created_at,
+          source: 'alerts_legacy',
+        }))
 
-    // Combine and sort by date
     const allAlerts = [...alerts, ...legacyAlerts]
+      .filter((alert) => !ejecutiva || alert.ejecutiva_asignada === ejecutiva)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, limit)
+      .slice(offset, offset + limit)
 
     const response = NextResponse.json({
       alerts: allAlerts,
@@ -162,7 +160,6 @@ export async function GET(request: NextRequest) {
 
     response.headers.set('Cache-Control', 'private, max-age=10, stale-while-revalidate=30')
     response.headers.set('Content-Type', 'application/json')
-
     return response
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -190,17 +187,33 @@ export async function PATCH(request: NextRequest) {
     if (is_read !== undefined) updateData.is_read = is_read
     if (is_dismissed !== undefined) updateData.is_resolved = is_dismissed
 
-    const { data: updated, error } = await supabase
-      .from('alerts')
-      .update(updateData)
-      .in('id', ids)
-      .select()
+    const logIds = ids.filter((id) => id.startsWith('log_')).map((id) => id.slice(4))
+    const legacyIds = ids.filter((id) => !id.startsWith('log_'))
+    let updatedCount = 0
 
-    if (error) throw error
+    if (logIds.length > 0) {
+      const { data, error } = await supabase
+        .from('alerts_log')
+        .update(updateData)
+        .in('id', logIds)
+        .select('id')
+      if (error) throw error
+      updatedCount += data?.length || 0
+    }
 
-    return NextResponse.json({ 
-      data: updated, 
-      message: `${updated?.length || 0} alertas actualizadas` 
+    if (legacyIds.length > 0) {
+      const { data, error } = await supabase
+        .from('alerts')
+        .update(updateData)
+        .in('id', legacyIds)
+        .select('id')
+      if (error) throw error
+      updatedCount += data?.length || 0
+    }
+
+    return NextResponse.json({
+      updated: updatedCount,
+      message: `${updatedCount} alertas actualizadas`,
     })
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
