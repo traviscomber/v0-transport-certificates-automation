@@ -5,156 +5,73 @@ export const fetchCache = 'force-no-store'
 import { createClient } from "@/lib/supabase/server"
 import { DocumentManagerHub } from "@/components/document-manager-hub"
 
-type TransportistaCertifications = {
-  id: string
-  certificacion_ariztia: unknown
-  certificacion_lts: unknown
-  certificacion_rendic: unknown
-  certificacion_interpolar: unknown
-  ariztia_vencimiento: unknown
-  lts_vencimiento: unknown
-  rendic_vencimiento: unknown
-  interpolar_vencimiento: unknown
-}
-
 async function getDocumentStats() {
   const supabase = await createClient()
-  
+
   console.log("[v0] documentos/page.tsx getDocumentStats called - fetching all documents with pagination")
-  
-  // Get conductor documents stats - PAGINATE for all records
+
   const { data: conductorPage0, error: conductorError } = await supabase
     .from("uploaded_documents")
     .select("id, validation_status")
     .range(0, 999)
-  
-  const { data: conductorPage1 } = await supabase
+
+  const { data: conductorPage1, error: conductorPage1Error } = await supabase
     .from("uploaded_documents")
     .select("id, validation_status")
     .range(1000, 1999)
 
   const allConductorDocs = [...(conductorPage0 || []), ...(conductorPage1 || [])]
-  
-  if (conductorError) {
-    console.error("[v0] Error fetching conductor docs:", conductorError)
+
+  if (conductorError || conductorPage1Error) {
+    console.error("[v0] Error fetching conductor docs:", conductorError || conductorPage1Error)
   }
-  
+
   const conductorStats = {
     total: allConductorDocs.length,
     pendientes: allConductorDocs.filter(d => d.validation_status === 'pending' || !d.validation_status).length,
     aprobados: allConductorDocs.filter(d => d.validation_status === 'approved').length,
     rechazados: allConductorDocs.filter(d => d.validation_status === 'rejected').length,
-    vencidos: 0
+    vencidos: 0,
   }
 
-  // Get subcontractor documents stats - PAGINATE for all records
   const { data: subPage0, error: subError } = await supabase
     .from("subcontractor_documents")
     .select("id, status")
     .range(0, 999)
 
-  const { data: subPage1 } = await supabase
+  const { data: subPage1, error: subPage1Error } = await supabase
     .from("subcontractor_documents")
     .select("id, status")
     .range(1000, 1999)
 
   const allSubDocs = [...(subPage0 || []), ...(subPage1 || [])]
-  
-  if (subError) {
-    console.error("[v0] Error fetching subcontractor docs:", subError.message)
+
+  if (subError || subPage1Error) {
+    console.error("[v0] Error fetching subcontractor docs:", subError || subPage1Error)
   }
-  
-  console.log("[v0] Conductor stats:", allConductorDocs.length, "docs")
-  console.log("[v0] Subcontractor stats:", allSubDocs.length, "docs")
-  
+
   const subStats = {
     total: allSubDocs.length,
     pendientes: allSubDocs.filter(d => d.status === 'pending').length,
     aprobados: allSubDocs.filter(d => d.status === 'approved').length,
     rechazados: allSubDocs.filter(d => d.status === 'rejected').length,
-    vencidos: 0
+    vencidos: 0,
   }
-  
-  console.log("[v0] Document Stats calculated:", { 
-    conductor: conductorStats, 
-    subcontractor: subStats 
-  })
 
-  // Get certifications stats from transportistas
-  const primaryTransportistaSelect = "id, certificacion_ariztia, certificacion_lts, certificacion_rendic, certificacion_interpolar, ariztia_vencimiento, lts_vencimiento, rendic_vencimiento, interpolar_vencimiento"
-  const fallbackTransportistaSelect = "id, certificacion_lts, certificacion_rendic, certificacion_interpolar, lts_vencimiento, rendic_vencimiento, interpolar_vencimiento"
-
-  let { data: transportistas, error: transError } = await supabase
-    .from("transportistas")
-    .select(primaryTransportistaSelect)
-
-  let normalizedTransportistas: TransportistaCertifications[] | null =
-    (transportistas as TransportistaCertifications[] | null) ?? null
-
-  if (transError?.message?.includes('certificacion_ariztia')) {
-    console.warn("[v0] transportistas query fallback: certificacion_ariztia missing, retrying reduced certification set")
-    const fallbackResult = await supabase
-      .from("transportistas")
-      .select(fallbackTransportistaSelect)
-
-    normalizedTransportistas = (fallbackResult.data || []).map((item: any) => ({
-      ...item,
-      certificacion_ariztia: null,
-      ariztia_vencimiento: null,
-    }))
-    transError = fallbackResult.error
-  }
-  
-  if (transError) {
-    console.error("[v0] Error fetching transportistas:", transError)
-  }
-  
-  // Count certifications
-  let totalCerts = 0
-  let vigentes = 0
-  let porVencer = 0
-  let vencidas = 0
-  const now = new Date()
-  const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-  
-  const certFields = [
-    { cert: 'certificacion_ariztia', venc: 'ariztia_vencimiento' },
-    { cert: 'certificacion_lts', venc: 'lts_vencimiento' },
-    { cert: 'certificacion_rendic', venc: 'rendic_vencimiento' },
-    { cert: 'certificacion_interpolar', venc: 'interpolar_vencimiento' },
-  ]
-  
-  normalizedTransportistas?.forEach((t: any) => {
-    certFields.forEach(({ cert, venc }) => {
-      if (t[cert]) {
-        totalCerts++
-        const vencDate = t[venc] ? new Date(t[venc]) : null
-        if (vencDate) {
-          if (vencDate < now) {
-            vencidas++
-          } else if (vencDate < thirtyDaysFromNow) {
-            porVencer++
-          } else {
-            vigentes++
-          }
-        } else {
-          vigentes++ // If no expiry date, assume vigente
-        }
-      }
-    })
-  })
-
+  // Certification columns previously queried from transportistas are not part of
+  // the current production schema. Keep this section explicitly neutral until a
+  // canonical certification source is introduced instead of issuing invalid SQL.
   const certStats = {
-    total: totalCerts,
-    vigentes,
-    porVencer,
-    vencidas
+    total: 0,
+    vigentes: 0,
+    porVencer: 0,
+    vencidas: 0,
   }
 
   return {
     conductores: conductorStats,
     subcontratistas: subStats,
-    certificaciones: certStats
+    certificaciones: certStats,
   }
 }
 
