@@ -19,16 +19,18 @@ async function getDocumentStats() {
     const { count, error } = await supabase
       .from(table)
       .select('id', { count: 'exact', head: true })
+      .eq('is_current', true)
       .eq(statusColumn, status)
 
     if (error) throw error
     return count || 0
   }
 
-  const countTotal = async (table: string) => {
+  const countCurrent = async (table: string) => {
     const { count, error } = await supabase
       .from(table)
       .select('id', { count: 'exact', head: true })
+      .eq('is_current', true)
 
     if (error) throw error
     return count || 0
@@ -45,11 +47,11 @@ async function getDocumentStats() {
     subcontractorPending,
     transportistasResult,
   ] = await Promise.all([
-    countTotal('uploaded_documents'),
+    countCurrent('uploaded_documents'),
     countByStatus('uploaded_documents', 'validation_status', 'approved'),
     countByStatus('uploaded_documents', 'validation_status', 'rejected'),
     countByStatus('uploaded_documents', 'validation_status', 'pending'),
-    countTotal('subcontractor_documents'),
+    countCurrent('subcontractor_documents'),
     countByStatus('subcontractor_documents', 'status', 'approved'),
     countByStatus('subcontractor_documents', 'status', 'rejected'),
     countByStatus('subcontractor_documents', 'status', 'pending'),
