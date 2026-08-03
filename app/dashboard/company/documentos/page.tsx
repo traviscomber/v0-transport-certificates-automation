@@ -5,10 +5,15 @@ export const fetchCache = 'force-no-store'
 import { createClient } from "@/lib/supabase/server"
 import { DocumentManagerHub } from "@/components/document-manager-hub"
 
+type TransportistaCertificationFlags = {
+  ariztia: boolean | null
+  lts: boolean | null
+  rendic: boolean | null
+  interpolar: boolean | null
+}
+
 async function getDocumentStats() {
   const supabase = await createClient()
-
-  console.log("[v0] documentos/page.tsx getDocumentStats called - fetching all documents with pagination")
 
   const { data: conductorPage0, error: conductorError } = await supabase
     .from("uploaded_documents")
@@ -58,12 +63,26 @@ async function getDocumentStats() {
     vencidos: 0,
   }
 
-  // Certification columns previously queried from transportistas are not part of
-  // the current production schema. Keep this section explicitly neutral until a
-  // canonical certification source is introduced instead of issuing invalid SQL.
+  const { data: transportistas, error: transportistasError } = await supabase
+    .from("transportistas")
+    .select("ariztia, lts, rendic, interpolar")
+
+  if (transportistasError) {
+    console.error("[v0] Error fetching transportista certification flags:", transportistasError)
+  }
+
+  const certificationFlags = (transportistas || []) as TransportistaCertificationFlags[]
+  const totalCertifications = certificationFlags.reduce((total, transportista) => {
+    return total + [transportista.ariztia, transportista.lts, transportista.rendic, transportista.interpolar]
+      .filter(Boolean).length
+  }, 0)
+
+  // The current schema stores assignment flags but no certification expiration
+  // dates. Every assigned certification is therefore counted as active, while
+  // expiring and expired values remain zero until a canonical expiry source exists.
   const certStats = {
-    total: 0,
-    vigentes: 0,
+    total: totalCertifications,
+    vigentes: totalCertifications,
     porVencer: 0,
     vencidas: 0,
   }
