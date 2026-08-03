@@ -8,11 +8,11 @@ export const revalidate = 30
 
 interface AlertLog {
   id: string
-  alert_type: string
+  alert_type?: string
   title: string
   message?: string
   description?: string
-  priority: string
+  priority?: string
   entity_type?: string
   is_read?: boolean
   is_resolved?: boolean
@@ -24,6 +24,21 @@ interface AlertLog {
   document_id?: string
   document_type?: string
   entity_name?: string
+  metadata?: Record<string, unknown>
+  created_at: string
+}
+
+interface LegacyAlert {
+  id: string
+  title: string
+  message: string
+  type?: string
+  priority?: string
+  category?: string
+  is_read?: boolean
+  is_dismissed?: boolean
+  action_url?: string
+  status?: string
   metadata?: Record<string, unknown>
   created_at: string
 }
@@ -64,10 +79,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '100', 10), 1), 500)
     const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10), 0)
 
-    let alertsLogQuery = supabase
-      .from('alerts_log')
-      .select('*', { count: 'exact' })
-
+    let alertsLogQuery = supabase.from('alerts_log').select('*', { count: 'exact' })
     if (ejecutiva) alertsLogQuery = alertsLogQuery.eq('ejecutiva_nombre', ejecutiva)
     if (type) alertsLogQuery = alertsLogQuery.eq('alert_type', type)
     if (priority) alertsLogQuery = alertsLogQuery.eq('priority', priority)
@@ -78,29 +90,19 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(limit * 2)
 
-    if (logError) {
-      console.error('alerts_log query error:', logError)
-    }
+    if (logError) console.error('alerts_log query error:', logError)
 
-    // The legacy alerts table does not consistently contain ejecutiva_nombre in
-    // production. Never add that column to its SQL filters; apply compatibility
-    // filtering after normalization instead.
-    let alertsQuery = supabase
-      .from('alerts')
-      .select('*', { count: 'exact' })
+    let legacyQuery = supabase.from('alerts').select('*', { count: 'exact' })
+    if (type) legacyQuery = legacyQuery.eq('type', type)
+    if (priority) legacyQuery = legacyQuery.eq('priority', priority)
+    if (status) legacyQuery = legacyQuery.eq('status', status)
+    if (isRead !== null && isRead !== '') legacyQuery = legacyQuery.eq('is_read', isRead === 'true')
 
-    if (type) alertsQuery = alertsQuery.eq('alert_type', type)
-    if (priority) alertsQuery = alertsQuery.eq('priority', priority)
-    if (status) alertsQuery = alertsQuery.eq('status', status)
-    if (isRead !== null && isRead !== '') alertsQuery = alertsQuery.eq('is_read', isRead === 'true')
-
-    const { data: rawAlerts = [], error: legacyError } = await alertsQuery
+    const { data: rawLegacyAlerts = [], error: legacyError } = await legacyQuery
       .order('created_at', { ascending: false })
       .limit(limit * 2)
 
-    if (legacyError) {
-      console.warn('legacy alerts query skipped:', legacyError.message)
-    }
+    if (legacyError) console.warn('legacy alerts query skipped:', legacyError.message)
 
     const alerts: NormalizedAlert[] = (logAlerts as AlertLog[]).map((alert) => ({
       id: `log_${alert.id}`,
@@ -127,32 +129,31 @@ export async function GET(request: NextRequest) {
 
     const legacyAlerts: NormalizedAlert[] = legacyError
       ? []
-      : (rawAlerts as AlertLog[]).map((alert) => ({
+      : (rawLegacyAlerts as LegacyAlert[]).map((alert) => ({
           id: alert.id,
-          type: alert.alert_type || 'info',
+          type: alert.type || 'info',
           title: alert.title,
-          message: alert.message || alert.description || '',
-          description: alert.description || alert.message || '',
-          priority: alert.priority || 'medium',
-          category: alert.entity_type || 'general',
+          message: alert.message || '',
+          description: alert.message || '',
+          priority: alert.priority || 'normal',
+          category: alert.category || 'system',
           is_read: alert.is_read ?? false,
-          is_dismissed: alert.is_resolved ?? false,
+          is_dismissed: alert.is_dismissed ?? false,
           action_url: alert.action_url,
-          ejecutiva_asignada: alert.ejecutiva_nombre,
           status: alert.status || 'pendiente',
           metadata: alert.metadata || {},
           created_at: alert.created_at,
           source: 'alerts_legacy',
         }))
 
-    const allAlerts = [...alerts, ...legacyAlerts]
+    const combined = [...alerts, ...legacyAlerts]
       .filter((alert) => !ejecutiva || alert.ejecutiva_asignada === ejecutiva)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(offset, offset + limit)
 
+    const paginated = combined.slice(offset, offset + limit)
     const response = NextResponse.json({
-      alerts: allAlerts,
-      total: allAlerts.length,
+      alerts: paginated,
+      total: combined.length,
       limit,
       offset,
       ejecutiva: ejecutiva || null,
@@ -183,18 +184,18 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "ids es requerido" }, { status: 400 })
     }
 
-    const updateData: Record<string, unknown> = {}
-    if (is_read !== undefined) updateData.is_read = is_read
-    if (is_dismissed !== undefined) updateData.is_resolved = is_dismissed
-
     const logIds = ids.filter((id) => id.startsWith('log_')).map((id) => id.slice(4))
     const legacyIds = ids.filter((id) => !id.startsWith('log_'))
     let updatedCount = 0
 
     if (logIds.length > 0) {
+      const logUpdate: Record<string, unknown> = {}
+      if (is_read !== undefined) logUpdate.is_read = is_read
+      if (is_dismissed !== undefined) logUpdate.is_resolved = is_dismissed
+
       const { data, error } = await supabase
         .from('alerts_log')
-        .update(updateData)
+        .update(logUpdate)
         .in('id', logIds)
         .select('id')
       if (error) throw error
@@ -202,9 +203,13 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (legacyIds.length > 0) {
+      const legacyUpdate: Record<string, unknown> = {}
+      if (is_read !== undefined) legacyUpdate.is_read = is_read
+      if (is_dismissed !== undefined) legacyUpdate.is_dismissed = is_dismissed
+
       const { data, error } = await supabase
         .from('alerts')
-        .update(updateData)
+        .update(legacyUpdate)
         .in('id', legacyIds)
         .select('id')
       if (error) throw error
