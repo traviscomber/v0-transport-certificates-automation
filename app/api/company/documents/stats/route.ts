@@ -42,22 +42,35 @@ export async function GET(request: NextRequest) {
       return count || 0
     }
 
+    const countProcessed = async (table: string) => {
+      const { count, error } = await supabase
+        .from(table)
+        .select('id', { count: 'exact', head: true })
+
+      if (error) throw error
+      return count || 0
+    }
+
     const [
       conductorTotal,
+      conductorProcessed,
       conductorApproved,
       conductorRejected,
       conductorPending,
       subcontractorTotal,
+      subcontractorProcessed,
       subcontractorApproved,
       subcontractorRejected,
       subcontractorPending,
       transportistasResult,
     ] = await Promise.all([
       countCurrent('uploaded_documents'),
+      countProcessed('uploaded_documents'),
       countByStatus('uploaded_documents', 'validation_status', 'approved'),
       countByStatus('uploaded_documents', 'validation_status', 'rejected'),
       countByStatus('uploaded_documents', 'validation_status', 'pending'),
       countCurrent('subcontractor_documents'),
+      countProcessed('subcontractor_documents'),
       countByStatus('subcontractor_documents', 'status', 'approved'),
       countByStatus('subcontractor_documents', 'status', 'rejected'),
       countByStatus('subcontractor_documents', 'status', 'pending'),
@@ -75,6 +88,7 @@ export async function GET(request: NextRequest) {
     const stats = {
       conductores: {
         total: conductorTotal,
+        processed: conductorProcessed,
         pendientes: conductorPending,
         aprobados: conductorApproved,
         rechazados: conductorRejected,
@@ -82,6 +96,7 @@ export async function GET(request: NextRequest) {
       },
       subcontratistas: {
         total: subcontractorTotal,
+        processed: subcontractorProcessed,
         pendientes: subcontractorPending,
         aprobados: subcontractorApproved,
         rechazados: subcontractorRejected,
