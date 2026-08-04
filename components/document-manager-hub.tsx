@@ -97,9 +97,9 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
   const totalPendientes = stats.conductores.pendientes + stats.subcontratistas.pendientes
   const totalAprobados = stats.conductores.aprobados + stats.subcontratistas.aprobados
   const totalRechazados = stats.conductores.rechazados + stats.subcontratistas.rechazados
-  const totalVigentes = stats.conductores.total + stats.subcontratistas.total
-  const totalProcesados = stats.conductores.processed + stats.subcontratistas.processed
-  const totalHistoricos = totalProcesados - totalVigentes
+  const totalActuales = stats.conductores.total + stats.subcontratistas.total
+  const totalGestionados = stats.conductores.processed + stats.subcontratistas.processed
+  const totalVersionesAnteriores = totalGestionados - totalActuales
 
   const modules = [
     {
@@ -114,10 +114,10 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       current: stats.conductores.total,
       processed: stats.conductores.processed,
       statItems: [
-        { label: 'Pendientes', value: stats.conductores.pendientes, icon: Clock, color: 'text-amber-500' },
-        { label: 'Aprobados', value: stats.conductores.aprobados, icon: CheckCircle, color: 'text-green-500' },
-        { label: 'Rechazados', value: stats.conductores.rechazados, icon: XCircle, color: 'text-red-500' },
-        { label: 'Históricos', value: stats.conductores.processed - stats.conductores.total, icon: FileStack, color: 'text-slate-400' },
+        { label: 'Pendientes actuales', value: stats.conductores.pendientes, icon: Clock, color: 'text-amber-500' },
+        { label: 'Aprobados actuales', value: stats.conductores.aprobados, icon: CheckCircle, color: 'text-green-500' },
+        { label: 'Rechazados actuales', value: stats.conductores.rechazados, icon: XCircle, color: 'text-red-500' },
+        { label: 'Versiones anteriores', value: stats.conductores.processed - stats.conductores.total, icon: FileStack, color: 'text-slate-400' },
       ],
     },
     {
@@ -132,10 +132,10 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       current: stats.subcontratistas.total,
       processed: stats.subcontratistas.processed,
       statItems: [
-        { label: 'Pendientes', value: stats.subcontratistas.pendientes, icon: Clock, color: 'text-amber-500' },
-        { label: 'Aprobados', value: stats.subcontratistas.aprobados, icon: CheckCircle, color: 'text-green-500' },
-        { label: 'Rechazados', value: stats.subcontratistas.rechazados, icon: XCircle, color: 'text-red-500' },
-        { label: 'Históricos', value: stats.subcontratistas.processed - stats.subcontratistas.total, icon: FileStack, color: 'text-slate-400' },
+        { label: 'Pendientes actuales', value: stats.subcontratistas.pendientes, icon: Clock, color: 'text-amber-500' },
+        { label: 'Aprobados actuales', value: stats.subcontratistas.aprobados, icon: CheckCircle, color: 'text-green-500' },
+        { label: 'Rechazados actuales', value: stats.subcontratistas.rechazados, icon: XCircle, color: 'text-red-500' },
+        { label: 'Versiones anteriores', value: stats.subcontratistas.processed - stats.subcontratistas.total, icon: FileStack, color: 'text-slate-400' },
       ],
     },
     {
@@ -167,14 +167,14 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
               <span className="truncate">Gestor de Documentos</span>
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
-              {totalVigentes.toLocaleString('es-CL')} vigentes de {totalProcesados.toLocaleString('es-CL')} documentos procesados
+              {totalGestionados.toLocaleString('es-CL')} documentos gestionados en total. {totalActuales.toLocaleString('es-CL')} corresponden a la versión actual de cada requisito.
             </p>
           </div>
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 w-full sm:w-auto">
             <Badge variant="outline" className="text-xs px-2 py-1">
               <BarChart3 className="h-3 w-3 mr-1" />
-              <span className="hidden sm:inline">{totalProcesados.toLocaleString('es-CL')} procesados</span>
-              <span className="sm:hidden">{totalProcesados.toLocaleString('es-CL')}</span>
+              <span className="hidden sm:inline">{totalGestionados.toLocaleString('es-CL')} gestionados</span>
+              <span className="sm:hidden">{totalGestionados.toLocaleString('es-CL')}</span>
             </Badge>
             <Button variant="outline" size="sm" onClick={handleManualRefresh} disabled={isRefreshing} className="gap-1 text-xs h-8 px-2">
               <RotateCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -185,18 +185,22 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-3">
+        <MetricCard label="Documentos gestionados" value={totalGestionados} detail="Incluye todas las cargas y versiones" icon={FileStack} tone="blue" />
+        <MetricCard label="Documentos actuales" value={totalActuales} detail="Una versión activa por requisito" icon={FileText} tone="slate" />
         <Link href="/dashboard/company/documentos/pendientes">
-          <MetricCard label="Pendientes" value={totalPendientes} icon={Clock} tone="amber" />
+          <MetricCard label="Pendientes actuales" value={totalPendientes} icon={Clock} tone="amber" />
         </Link>
-        <MetricCard label="Vigentes" value={totalVigentes} icon={FileText} tone="slate" />
-        <MetricCard label="Procesados" value={totalProcesados} detail={`${totalHistoricos.toLocaleString('es-CL')} históricos`} icon={FileStack} tone="blue" />
         <Link href="/dashboard/company/documentos/aprobados">
-          <MetricCard label="Aprobados" value={totalAprobados} icon={CheckCircle} tone="green" />
+          <MetricCard label="Aprobados actuales" value={totalAprobados} icon={CheckCircle} tone="green" />
         </Link>
         <Link href="/dashboard/company/documentos/rechazados">
-          <MetricCard label="Rechazados" value={totalRechazados} icon={XCircle} tone="red" />
+          <MetricCard label="Rechazados actuales" value={totalRechazados} icon={XCircle} tone="red" />
         </Link>
       </div>
+
+      <p className="text-[11px] text-muted-foreground">
+        Las {totalVersionesAnteriores.toLocaleString('es-CL')} versiones anteriores se conservan como trazabilidad y no representan documentos faltantes.
+      </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
         {modules.map((module) => {
@@ -209,9 +213,13 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
                     <Icon className={`h-4 sm:h-5 w-4 sm:w-5 ${module.color}`} />
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <Badge variant="secondary" className="text-xs">{module.current.toLocaleString('es-CL')} vigentes</Badge>
-                    {module.processed !== null && (
-                      <span className="text-[10px] text-muted-foreground">{module.processed.toLocaleString('es-CL')} procesados</span>
+                    {module.processed !== null ? (
+                      <>
+                        <Badge variant="secondary" className="text-xs">{module.processed.toLocaleString('es-CL')} gestionados</Badge>
+                        <span className="text-[10px] text-muted-foreground">{module.current.toLocaleString('es-CL')} documentos actuales</span>
+                      </>
+                    ) : (
+                      <Badge variant="secondary" className="text-xs">{module.current.toLocaleString('es-CL')} asignadas</Badge>
                     )}
                   </div>
                 </div>
