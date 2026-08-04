@@ -48,10 +48,14 @@ export async function POST(request: NextRequest) {
 
       if (!response.ok) {
         console.warn('[v0] SII verification endpoint returned:', response.status)
-        // Still return success - verification will be retried
+        return NextResponse.json({ triggered: false, error: 'Endpoint error' }, { status: 200 })
       }
 
-      return NextResponse.json({ triggered: true }, { status: 200 })
+      // Parse the response to ensure verification completed
+      const result = await response.json()
+      console.log('[v0] SII verification triggered, result:', result?.status)
+
+      return NextResponse.json({ triggered: true, runStatus: result?.status }, { status: 200 })
     } catch (error) {
       console.error('[v0] Error calling SII verification endpoint:', error)
       // Return success anyway - don't block the user
