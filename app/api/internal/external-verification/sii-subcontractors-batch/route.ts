@@ -9,7 +9,7 @@ export const maxDuration = 300
 
 const NONCE_SHA256 = '8f2d1b822e1fdbc4186e09f3e3f37ea20822ea90e2bd543323bb09daef140508'
 const EXPIRES_AT = Date.parse('2026-08-04T08:00:00.000Z')
-const MAX_BATCH_SIZE = 10
+const MAX_BATCH_SIZE = 250
 
 function safeEqualHex(left: string, right: string): boolean {
   if (!/^[a-f0-9]{64}$/i.test(left) || !/^[a-f0-9]{64}$/i.test(right)) return false
