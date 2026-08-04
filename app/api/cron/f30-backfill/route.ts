@@ -5,10 +5,9 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const maxDuration = 300
 
-const BATCH_SIZE = 4
-const PAUSE_MS = 1_500
+const BATCH_SIZE = 20
+const CONCURRENCY = 4
 const PRODUCTION_ORIGIN = process.env.NEXT_PUBLIC_APP_URL || 'https://transn3uralia.vercel.app'
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 function isAuthorizedCron(request: NextRequest): boolean {
   const authorization = request.headers.get('authorization')
@@ -18,12 +17,72 @@ function isAuthorizedCron(request: NextRequest): boolean {
   return hasValidSecret || isVercelCron
 }
 
+async function processDocument(
+  document: { id: string; file_name: string | null },
+  supabase: ReturnType<typeof createAdminClient>,
+): Promise<Record<string, unknown>> {
+  try {
+    const response = await fetch(`${PRODUCTION_ORIGIN}/api/company/documents/${document.id}/reprocess`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ documentId: document.id, source: 'f30_backfill' }),
+      cache: 'no-store',
+    })
+    const payload = await response.json().catch(() => ({}))
+
+    if (!response.ok || payload?.success !== true) {
+      const message = payload?.error || `HTTP ${response.status}`
+      await supabase
+        .from('subcontractor_documents')
+        .update({
+          f30_status: 'analysis_failed',
+          f30_details: { detected: false, warnings: ['backfill_failed'], error: message },
+          f30_validated_at: new Date().toISOString(),
+        })
+        .eq('id', document.id)
+
+      return { id: document.id, fileName: document.file_name, status: 'analysis_failed', error: message }
+    }
+
+    return {
+      id: document.id,
+      fileName: document.file_name,
+      status: payload?.f30?.status ?? 'processed',
+      saved: payload?.saved ?? false,
+      periodConflict: payload?.periodConflict ?? false,
+      usedOcrFallback: payload?.usedOcrFallback ?? false,
+    }
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : 'Unknown backfill error'
+    await supabase
+      .from('subcontractor_documents')
+      .update({
+        f30_status: 'analysis_failed',
+        f30_details: { detected: false, warnings: ['backfill_failed'], error: message },
+        f30_validated_at: new Date().toISOString(),
+      })
+      .eq('id', document.id)
+
+    return { id: document.id, fileName: document.file_name, status: 'analysis_failed', error: message }
+  }
+}
+
 export async function GET(request: NextRequest) {
+  const startedAt = Date.now()
+
   if (!isAuthorizedCron(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const supabase = createAdminClient()
+  const staleBefore = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+
+  await supabase
+    .from('subcontractor_documents')
+    .update({ f30_status: null, f30_validated_at: null })
+    .eq('f30_status', 'processing')
+    .lt('f30_validated_at', staleBefore)
+
   const { data: pending, error } = await supabase
     .from('subcontractor_documents')
     .select('id, file_name, uploaded_at')
@@ -40,54 +99,24 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ status: 'complete', processed: 0, remaining: 0 })
   }
 
+  const claimedAt = new Date().toISOString()
+  const claimedIds = pending.map((document) => document.id)
+  const { error: claimError } = await supabase
+    .from('subcontractor_documents')
+    .update({ f30_status: 'processing', f30_validated_at: claimedAt })
+    .in('id', claimedIds)
+    .is('f30_status', null)
+
+  if (claimError) {
+    return NextResponse.json({ error: claimError.message }, { status: 500 })
+  }
+
   const results: Array<Record<string, unknown>> = []
 
-  for (let index = 0; index < pending.length; index += 1) {
-    const document = pending[index]
-    if (index > 0) await sleep(PAUSE_MS)
-
-    try {
-      const response = await fetch(`${PRODUCTION_ORIGIN}/api/company/documents/${document.id}/reprocess`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ documentId: document.id, source: 'f30_backfill' }),
-        cache: 'no-store',
-      })
-      const payload = await response.json().catch(() => ({}))
-
-      if (!response.ok || payload?.success !== true) {
-        const message = payload?.error || `HTTP ${response.status}`
-        await supabase
-          .from('subcontractor_documents')
-          .update({
-            f30_status: 'analysis_failed',
-            f30_details: { detected: false, warnings: ['backfill_failed'], error: message },
-            f30_validated_at: new Date().toISOString(),
-          })
-          .eq('id', document.id)
-        results.push({ id: document.id, fileName: document.file_name, status: 'analysis_failed', error: message })
-        continue
-      }
-
-      results.push({
-        id: document.id,
-        fileName: document.file_name,
-        status: payload?.f30?.status ?? 'processed',
-        saved: payload?.saved ?? false,
-        periodConflict: payload?.periodConflict ?? false,
-      })
-    } catch (cause) {
-      const message = cause instanceof Error ? cause.message : 'Unknown backfill error'
-      await supabase
-        .from('subcontractor_documents')
-        .update({
-          f30_status: 'analysis_failed',
-          f30_details: { detected: false, warnings: ['backfill_failed'], error: message },
-          f30_validated_at: new Date().toISOString(),
-        })
-        .eq('id', document.id)
-      results.push({ id: document.id, fileName: document.file_name, status: 'analysis_failed', error: message })
-    }
+  for (let index = 0; index < pending.length; index += CONCURRENCY) {
+    const chunk = pending.slice(index, index + CONCURRENCY)
+    const chunkResults = await Promise.all(chunk.map((document) => processDocument(document, supabase)))
+    results.push(...chunkResults)
   }
 
   const { count: remaining } = await supabase
@@ -96,11 +125,23 @@ export async function GET(request: NextRequest) {
     .is('f30_status', null)
     .or('file_name.ilike.F30%,file_name.ilike.F 30%')
 
+  const summary = results.reduce(
+    (acc, result) => {
+      const status = String(result.status ?? 'unknown')
+      acc[status] = (acc[status] ?? 0) + 1
+      return acc
+    },
+    {} as Record<string, number>,
+  )
+
   return NextResponse.json({
     status: 'processed',
     batchSize: BATCH_SIZE,
+    concurrency: CONCURRENCY,
     processed: results.length,
     remaining: remaining ?? null,
+    durationMs: Date.now() - startedAt,
+    summary,
     results,
   })
 }
