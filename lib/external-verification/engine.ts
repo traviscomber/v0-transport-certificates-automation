@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getVerificationAdapter } from './registry'
+import { isVerificationProviderFailure, isVerificationSuccess } from './circuit-status'
 import type { VerificationRequest, VerificationResult } from './types'
 
 function stableSerialize(value: unknown): string {
@@ -114,6 +115,13 @@ export async function runExternalVerification(
     const completedAt = new Date()
     const durationMs = Date.now() - startedAt
     const expiresAt = new Date(completedAt.getTime() + source.cache_ttl_seconds * 1000)
+    const successful = isVerificationSuccess(result.status)
+    const providerFailure = isVerificationProviderFailure(result.status)
+    const nextFailures = providerFailure ? (circuit?.consecutive_failures ?? 0) + 1 : 0
+    const shouldOpen = providerFailure && nextFailures >= source.failure_threshold
+    const retryAfter = shouldOpen
+      ? new Date(completedAt.getTime() + source.cooldown_seconds * 1000).toISOString()
+      : null
 
     await supabase
       .from('external_verification_runs')
@@ -127,11 +135,11 @@ export async function runExternalVerification(
         http_status: result.httpStatus ?? null,
         duration_ms: durationMs,
         completed_at: completedAt.toISOString(),
-        expires_at: ['success', 'warning', 'not_found'].includes(result.status) ? expiresAt.toISOString() : null,
+        expires_at: successful ? expiresAt.toISOString() : null,
       })
       .eq('id', run.id)
 
-    if (['success', 'warning', 'not_found'].includes(result.status)) {
+    if (successful) {
       await supabase.from('external_verification_cache').upsert({
         source_code: request.sourceCode,
         input_fingerprint: fingerprint,
@@ -141,12 +149,19 @@ export async function runExternalVerification(
         fetched_at: completedAt.toISOString(),
         expires_at: expiresAt.toISOString(),
       })
-
-      await supabase
-        .from('external_verification_circuit_state')
-        .update({ state: 'closed', consecutive_failures: 0, opened_at: null, retry_after: null, last_error_code: null, updated_at: completedAt.toISOString() })
-        .eq('source_code', request.sourceCode)
     }
+
+    await supabase
+      .from('external_verification_circuit_state')
+      .update({
+        state: shouldOpen ? 'open' : 'closed',
+        consecutive_failures: nextFailures,
+        opened_at: shouldOpen ? completedAt.toISOString() : null,
+        retry_after: retryAfter,
+        last_error_code: providerFailure ? result.errorCode ?? result.status.toUpperCase() : null,
+        updated_at: completedAt.toISOString(),
+      })
+      .eq('source_code', request.sourceCode)
 
     return { runId: run.id, result, cacheHit: false }
   } catch (error) {
