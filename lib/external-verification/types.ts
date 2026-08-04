@@ -7,6 +7,7 @@ export type VerificationSourceCode =
   | 'mercado_publico_supplier'
   | 'cmf_registry'
   | 'mtt_sitcomex'
+  | 'mtt_prt_vehicle_status'
 
 export type VerificationEntityType =
   | 'transportista'
