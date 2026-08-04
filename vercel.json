@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/prt-discovery",
       "schedule": "15 7 * * *"
+    },
+    {
+      "path": "/api/cron/prt-inspect",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
