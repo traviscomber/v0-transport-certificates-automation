@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/sii-transportistas",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/f30-backfill",
+      "schedule": "* * * * *"
     }
   ]
 }
