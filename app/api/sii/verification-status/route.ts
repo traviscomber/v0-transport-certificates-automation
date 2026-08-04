@@ -16,16 +16,15 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY || '',
     )
 
-    // Query for recent verification results
-    const { data: existingRuns, error: queryError } = await supabase
+    // Query for recent verification results (get all to find non-stuck runs)
+    const { data: allRuns, error: queryError } = await supabase
       .from('external_verification_runs')
       .select('id, status, normalized_result, created_at, expires_at')
       .eq('source_code', 'sii_tax_status')
       .eq('entity_type', 'transportista')
       .eq('entity_id', transportistaId)
-      .or(`expires_at.is.null,expires_at.gte.${new Date().toISOString()}`)
       .order('created_at', { ascending: false })
-      .limit(1)
+      .limit(10)
 
     if (queryError) {
       console.error('[v0] Error querying verification runs:', queryError)
@@ -39,9 +38,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // If we have a valid cached result, return it
-    if (existingRuns && existingRuns.length > 0) {
-      const run = existingRuns[0]
+    // Filter out stuck runs (status='running' for >5 minutes)
+    const now = Date.now()
+    const fiveMinutesAgo = now - (5 * 60 * 1000)
+    
+    const validRuns = allRuns?.filter(run => {
+      if (run.status === 'running') {
+        const runAge = new Date(run.created_at).getTime()
+        return runAge > fiveMinutesAgo // Keep only recent "running" runs
+      }
+      return true // Keep all non-running runs
+    }) || []
+
+    // If we have a valid result, return it
+    if (validRuns && validRuns.length > 0) {
+      const run = validRuns[0]
       const status = run.status === 'success' ? 'verified' : run.status === 'failed' ? 'failed' : 'pending'
 
       return NextResponse.json({
