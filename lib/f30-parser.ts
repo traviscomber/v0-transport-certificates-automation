@@ -53,14 +53,17 @@ function cleanCompanyName(value: string | null): string | null {
 
 export function parseF30Document(input: {
   rawText: string
+  summaryText?: string | null
   expectedRut?: string | null
   documentNumber?: string | null
   issuanceDate?: string | null
   confidence?: number | null
   warnings?: string[] | null
 }): { status: F30Status; details: F30Details } | null {
-  const text = input.rawText || ''
-  const normalized = text.toLowerCase()
+  const rawText = input.rawText || ''
+  const summaryText = input.summaryText || ''
+  const combinedText = `${summaryText}\n${rawText}`
+  const normalized = combinedText.toLowerCase()
   const detected =
     normalized.includes('cumplimiento de obligaciones laborales') ||
     normalized.includes('obligaciones laborales y previsionales') ||
@@ -68,14 +71,20 @@ export function parseF30Document(input: {
 
   if (!detected) return null
 
-  const rutMatch = text.match(/\b(\d{1,2}(?:\.\d{3}){2}-[0-9Kk]|\d{7,8}-[0-9Kk])\b/)
+  const rutMatch = rawText.match(/\b(\d{1,2}(?:\.\d{3}){2}-[0-9Kk]|\d{7,8}-[0-9Kk])\b/)
   const documentRut = normalizeRut(rutMatch?.[1])
   const expectedRut = normalizeRut(input.expectedRut)
 
-  const companyMatch = text.match(
-    /(?:empleador|contratista|subcontratista|raz[oó]n social)\s*[:\-]?\s*([^\n]{4,180})/i,
+  const summaryCompanyMatch = summaryText.match(
+    /(?:empresa|empleador)\s+(.+?)\s+(?:cumple|como subcontratista|mantiene|acredita)/i,
   )
-  const principalMatch = text.match(
+  const summaryPrincipalMatch = summaryText.match(
+    /empresa principal\s+(.+?)(?:\.|,|\s+se\s+reporta|\s+con\s+)/i,
+  )
+  const rawCompanyMatch = rawText.match(
+    /(?:raz[oó]n social|nombre o raz[oó]n social)\s*[:\-]?\s*([^\n]{4,180})/i,
+  )
+  const rawPrincipalMatch = rawText.match(
     /(?:empresa principal|mandante)\s*[:\-]?\s*([^\n]{4,180})/i,
   )
 
@@ -90,8 +99,8 @@ export function parseF30Document(input: {
     }
   }
 
-  const workersMatch = text.match(/(?:trabajadores?|n[uú]mero de trabajadores?)\D{0,25}(\d{1,5})/i)
-  const amountMatch = text.match(/(?:remuneraciones?|monto total)\D{0,30}\$?\s*([\d.]{3,})/i)
+  const workersMatch = combinedText.match(/(?:trabajadores?|n[uú]mero de trabajadores?)\D{0,25}(\d{1,5})/i)
+  const amountMatch = combinedText.match(/(?:remuneraciones?|monto(?: total)?)\D{0,50}\$\s*([\d.]{3,})/i)
   const remunerationAmount = amountMatch
     ? Number(amountMatch[1].replace(/\./g, ''))
     : null
@@ -108,8 +117,8 @@ export function parseF30Document(input: {
       detected: true,
       documentRut,
       expectedRut,
-      companyName: cleanCompanyName(companyMatch?.[1] ?? null),
-      principalCompany: cleanCompanyName(principalMatch?.[1] ?? null),
+      companyName: cleanCompanyName(summaryCompanyMatch?.[1] ?? rawCompanyMatch?.[1] ?? null),
+      principalCompany: cleanCompanyName(summaryPrincipalMatch?.[1] ?? rawPrincipalMatch?.[1] ?? null),
       periodMonth,
       periodYear,
       workers: workersMatch ? Number(workersMatch[1]) : null,
