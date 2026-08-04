@@ -1,216 +1,166 @@
 import OpenAI from 'openai'
 import { z } from 'zod'
 
-// Define the extraction schema
 const DocumentExtractionSchema = z.object({
-  documentType: z.string().describe('Type of document (e.g., "Licencia de Conducir", "Certificado de Antecedentes", "Póliza de Seguro", "Verificación Técnica")'),
-  expirationDate: z.string().nullable().describe('Expiration date in YYYY-MM-DD format, or null if not found'),
-  issuanceDate: z.string().nullable().describe('Issuance date in YYYY-MM-DD format, or null if not found'),
-  documentNumber: z.string().nullable().describe('Document number, ID number, or reference number'),
-  extractedText: z.string().describe('Key information extracted from the document'),
-  confidence: z.number().min(0).max(1).describe('Confidence score of the extraction (0-1)'),
-  warnings: z.array(z.string()).describe('Any warnings or issues detected'),
+  documentType: z.string(),
+  expirationDate: z.string().nullable(),
+  issuanceDate: z.string().nullable(),
+  documentNumber: z.string().nullable(),
+  extractedText: z.string(),
+  confidence: z.number().min(0).max(1),
+  warnings: z.array(z.string()),
 })
 
-type DocumentExtraction = z.infer<typeof DocumentExtractionSchema>
+export type DocumentExtraction = z.infer<typeof DocumentExtractionSchema>
 
-/**
- * Extract metadata from a document using Claude Haiku vision
- * @param imageBase64 - Base64 encoded image
- * @param mimeType - MIME type of the image
- * @returns Extracted metadata
- */
-export async function extractDocumentMetadata(
-  imageBase64: string,
-  mimeType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/jpeg'
-): Promise<DocumentExtraction> {
-  try {
-    // Initialize OpenAI client at runtime, not at module load time
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY environment variable is not set')
+const JSON_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['documentType', 'expirationDate', 'issuanceDate', 'documentNumber', 'extractedText', 'confidence', 'warnings'],
+  properties: {
+    documentType: { type: 'string' },
+    expirationDate: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+    issuanceDate: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+    documentNumber: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+    extractedText: { type: 'string' },
+    confidence: { type: 'number', minimum: 0, maximum: 1 },
+    warnings: { type: 'array', items: { type: 'string' } },
+  },
+} as const
+
+function getOpenAI(): OpenAI {
+  if (!process.env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY environment variable is not set')
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+}
+
+function parseExtraction(content: string): DocumentExtraction {
+  const normalized = content
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim()
+  const jsonMatch = normalized.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) throw new Error('Could not extract JSON from response')
+  return DocumentExtractionSchema.parse(JSON.parse(jsonMatch[0]))
+}
+
+async function extractFromTextAttempt(text: string, expectedType: string): Promise<DocumentExtraction> {
+  const openai = getOpenAI()
+  const truncatedText = text.length > 12000 ? `${text.substring(0, 12000)}...` : text
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      {
+        role: 'system',
+        content: `Eres un experto en documentos chilenos. Extrae datos verificables. Tipo esperado: ${expectedType}. No inventes datos ausentes.`,
+      },
+      {
+        role: 'user',
+        content: `Analiza este documento y devuelve la extracción estructurada.\n\n${truncatedText}`,
+      },
+    ],
+    response_format: {
+      type: 'json_schema',
+      json_schema: { name: 'document_extraction', strict: true, schema: JSON_SCHEMA },
+    },
+    max_tokens: 900,
+    temperature: 0,
+  })
+  const content = response.choices[0]?.message?.content
+  if (!content) throw new Error('No response from OpenAI')
+  return parseExtraction(content)
+}
+
+export async function extractDocumentFromText(text: string, expectedType = 'documento'): Promise<DocumentExtraction> {
+  let lastError: unknown
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      return await extractFromTextAttempt(text, expectedType)
+    } catch (error) {
+      lastError = error
+      console.warn(`[v0] Structured text extraction attempt ${attempt} failed`, error)
     }
+  }
+  throw lastError instanceof Error ? lastError : new Error('Text extraction failed')
+}
 
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    })
+export async function extractDocumentFromPdfBuffer(
+  pdfBuffer: ArrayBuffer | Uint8Array,
+  expectedType = 'documento',
+): Promise<DocumentExtraction> {
+  const openai = getOpenAI()
+  const bytes = pdfBuffer instanceof Uint8Array ? pdfBuffer : new Uint8Array(pdfBuffer)
+  const fileData = `data:application/pdf;base64,${Buffer.from(bytes).toString('base64')}`
 
-    console.log('[v0] Starting document extraction with OpenAI Vision...')
-
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
+  let lastError: unknown
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      const response = await (openai.responses as any).create({
+        model: 'gpt-4o-mini',
+        input: [{
           role: 'user',
           content: [
+            { type: 'input_file', filename: 'document.pdf', file_data: fileData },
             {
-              type: 'image_url',
-              image_url: {
-                url: `data:${mimeType};base64,${imageBase64}`,
-                detail: 'high',
-              },
-            },
-            {
-              type: 'text',
-              text: `Analyze this document image and extract the following information in JSON format:
-1. Document type (e.g., Licencia de Conducir, Certificado de Antecedentes, Póliza de Seguro, etc.)
-2. Expiration date (YYYY-MM-DD format, or null)
-3. Issuance date (YYYY-MM-DD format, or null)
-4. Document number or reference number (or null)
-5. Key information extracted
-6. Confidence score (0-1, where 1 is very confident)
-7. Any warnings or issues
-
-Respond ONLY with valid JSON matching this structure:
-{
-  "documentType": "string",
-  "expirationDate": "YYYY-MM-DD or null",
-  "issuanceDate": "YYYY-MM-DD or null",
-  "documentNumber": "string or null",
-  "extractedText": "key information",
-  "confidence": 0.95,
-  "warnings": ["any issues"]
-}`,
+              type: 'input_text',
+              text: `Lee visualmente este PDF escaneado. Extrae datos verificables del documento chileno. Tipo esperado: ${expectedType}. No inventes datos ausentes.`,
             },
           ],
+        }],
+        text: {
+          format: { type: 'json_schema', name: 'document_extraction', strict: true, schema: JSON_SCHEMA },
         },
-      ],
-      max_tokens: 500,
-    })
-
-    const content = response.choices[0]?.message?.content
-    if (!content) {
-      throw new Error('No response from OpenAI')
+        max_output_tokens: 900,
+      })
+      const content = response.output_text
+      if (!content) throw new Error('No OCR response from OpenAI')
+      const extraction = parseExtraction(content)
+      return {
+        ...extraction,
+        warnings: Array.from(new Set([...extraction.warnings, 'ocr_fallback_used'])),
+      }
+    } catch (error) {
+      lastError = error
+      console.warn(`[v0] PDF OCR attempt ${attempt} failed`, error)
     }
-
-    console.log('[v0] OpenAI response:', content)
-
-    // Parse JSON from response
-    const jsonMatch = content.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
-      throw new Error('Could not extract JSON from response')
-    }
-
-    const parsed = JSON.parse(jsonMatch[0])
-    const extraction = DocumentExtractionSchema.parse(parsed)
-
-    console.log('[v0] Document extraction successful:', {
-      documentType: extraction.documentType,
-      expirationDate: extraction.expirationDate,
-      confidence: extraction.confidence,
-    })
-
-    return extraction
-  } catch (error) {
-    console.error('[v0] Document extraction error:', error)
-    throw error
   }
+  throw lastError instanceof Error ? lastError : new Error('PDF OCR failed')
 }
 
-/**
- * Extract metadata from PDF text content using GPT
- * @param text - Extracted text from PDF
- * @param expectedType - Expected document type hint
- * @returns Extracted metadata
- */
-export async function extractDocumentFromText(
-  text: string,
-  expectedType: string = 'documento'
+export async function extractDocumentMetadata(
+  imageBase64: string,
+  mimeType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/jpeg',
 ): Promise<DocumentExtraction> {
-  try {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY environment variable is not set')
-    }
-
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    })
-
-    console.log('[v0] Starting text analysis with GPT-4o-mini...')
-
-    // Truncate text if too long
-    const truncatedText = text.length > 4000 ? text.substring(0, 4000) + '...' : text
-
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: `Eres un experto en análisis de documentos chilenos de transporte y empresas. 
-Analiza el texto extraído de un documento y extrae información clave.
-El tipo de documento esperado es: ${expectedType}`
-        },
-        {
-          role: 'user',
-          content: `Analiza el siguiente texto extraído de un documento PDF y extrae la información relevante.
-
-TEXTO DEL DOCUMENTO:
-${truncatedText}
-
-Responde SOLO con JSON válido con esta estructura:
-{
-  "documentType": "tipo de documento identificado",
-  "expirationDate": "YYYY-MM-DD o null si no se encuentra",
-  "issuanceDate": "YYYY-MM-DD o null si no se encuentra", 
-  "documentNumber": "número de documento o null",
-  "extractedText": "resumen de información clave encontrada",
-  "confidence": 0.85,
-  "warnings": ["cualquier problema o advertencia"]
-}`
-        },
+  const openai = getOpenAI()
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}`, detail: 'high' } },
+        { type: 'text', text: 'Analiza el documento y devuelve únicamente los datos estructurados verificables.' },
       ],
-      max_tokens: 500,
-      temperature: 0.1,
-    })
-
-    const content = response.choices[0]?.message?.content
-    if (!content) {
-      throw new Error('No response from OpenAI')
-    }
-
-    console.log('[v0] GPT text analysis response:', content)
-
-    // Parse JSON from response
-    const jsonMatch = content.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
-      throw new Error('Could not extract JSON from response')
-    }
-
-    const parsed = JSON.parse(jsonMatch[0])
-    const extraction = DocumentExtractionSchema.parse(parsed)
-
-    console.log('[v0] Text extraction successful:', {
-      documentType: extraction.documentType,
-      expirationDate: extraction.expirationDate,
-      confidence: extraction.confidence,
-    })
-
-    return extraction
-  } catch (error) {
-    console.error('[v0] Text extraction error:', error)
-    throw error
-  }
+    }],
+    response_format: {
+      type: 'json_schema',
+      json_schema: { name: 'document_extraction', strict: true, schema: JSON_SCHEMA },
+    },
+    max_tokens: 900,
+    temperature: 0,
+  })
+  const content = response.choices[0]?.message?.content
+  if (!content) throw new Error('No response from OpenAI')
+  return parseExtraction(content)
 }
 
-/**
- * Determine document status based on expiration date
- */
 export function getDocumentStatus(
   expirationDate: string | null,
-  daysWarningThreshold: number = 30
+  daysWarningThreshold = 30,
 ): 'vigente' | 'por-vencer' | 'vencido' | 'pendiente' {
-  if (!expirationDate) {
-    return 'pendiente'
-  }
-
+  if (!expirationDate) return 'pendiente'
   const expDate = new Date(expirationDate)
   const today = new Date()
-  const daysUntilExpiration = Math.floor((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-
-  if (daysUntilExpiration < 0) {
-    return 'vencido'
-  } else if (daysUntilExpiration <= daysWarningThreshold) {
-    return 'por-vencer'
-  } else {
-    return 'vigente'
-  }
+  const daysUntilExpiration = Math.floor((expDate.getTime() - today.getTime()) / 86_400_000)
+  if (daysUntilExpiration < 0) return 'vencido'
+  if (daysUntilExpiration <= daysWarningThreshold) return 'por-vencer'
+  return 'vigente'
 }
