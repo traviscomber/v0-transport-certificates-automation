@@ -192,8 +192,9 @@ export function SubcontractorDetailTabs({
       const status = await getOrVerifySIIStatus(subcontractor.id, subcontractor.rut)
       setSiiVerificationStatus(status)
       
-      // If verification is pending and SII canary is enabled, trigger it
-      if (status.status === 'pending' && process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL !== 'false') {
+      // If verification is pending, trigger async verification
+      // The server will check if SII_TAX_STATUS_CANARY_ENABLED is set
+      if (status.status === 'pending') {
         triggerSIIVerification(subcontractor.id, subcontractor.rut)
       }
     } catch (error) {

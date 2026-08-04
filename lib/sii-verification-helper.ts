@@ -57,25 +57,25 @@ export async function getOrVerifySIIStatus(
 
 /**
  * Trigger async SII verification for a transportista
+ * Calls server-side API which validates SII_TAX_STATUS_CANARY_ENABLED
  * Returns immediately; verification runs in background
  */
 export async function triggerSIIVerification(transportistaId: string, rut: string): Promise<void> {
-  if (!process.env.EXTERNAL_VERIFICATION_LAB_ENABLED) {
-    return
-  }
-
   try {
-    await fetch('/api/internal/external-verification/sii', {
+    const response = await fetch('/api/sii/trigger-verification', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.EXTERNAL_VERIFICATION_LAB_TOKEN || ''}`,
       },
       body: JSON.stringify({
-        rut,
         transportistaId,
+        transportistaRut: rut,
       }),
     })
+
+    if (!response.ok) {
+      console.warn('[v0] Trigger verification returned status:', response.status)
+    }
   } catch (error) {
     console.error('[v0] Error triggering SII verification:', error)
   }
