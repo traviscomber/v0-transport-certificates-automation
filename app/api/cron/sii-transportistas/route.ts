@@ -6,10 +6,11 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const maxDuration = 60
 
-const BATCH_SIZE = 5
+const BATCH_SIZE = 8
 const PAUSE_MS = 3_000
 const ADAPTER_VERSION = 4
 const SUCCESS_STATUSES = new Set(['success', 'warning', 'not_found'])
+const TERMINAL_ERROR_CODES = new Set(['SII_INVALID_RUT'])
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 function isAuthorizedCron(request: NextRequest): boolean {
@@ -44,10 +45,9 @@ export async function GET(request: NextRequest) {
     supabase.from('transportistas').select('id, rut, razon_social, is_active').not('rut', 'is', null).order('id'),
     supabase
       .from('external_verification_runs')
-      .select('entity_id, status, input_payload')
+      .select('entity_id, status, error_code, input_payload')
       .eq('source_code', 'sii_tax_status')
-      .eq('entity_type', 'transportista')
-      .in('status', [...SUCCESS_STATUSES]),
+      .eq('entity_type', 'transportista'),
   ])
 
   if (transportistasError || runsError) {
@@ -58,7 +58,8 @@ export async function GET(request: NextRequest) {
     (completedRuns ?? [])
       .filter((run) => {
         const payload = run.input_payload as Record<string, unknown> | null
-        return payload?.adapterVersion === ADAPTER_VERSION
+        if (payload?.adapterVersion !== ADAPTER_VERSION) return false
+        return SUCCESS_STATUSES.has(run.status) || TERMINAL_ERROR_CODES.has(run.error_code ?? '')
       })
       .map((run) => run.entity_id)
       .filter(Boolean),
@@ -89,13 +90,15 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const successfulNow = results.filter((item) => SUCCESS_STATUSES.has(item.status)).length
+  const completedNow = results.filter((item) => SUCCESS_STATUSES.has(item.status)).length
   return NextResponse.json({
     status: 'processed',
     parserVersion: ADAPTER_VERSION,
+    batchSize: BATCH_SIZE,
+    pauseMs: PAUSE_MS,
     processed: results.length,
-    successful: successfulNow,
-    remaining: Math.max(0, (transportistas ?? []).length - completedIds.size - successfulNow),
+    successful: completedNow,
+    remaining: Math.max(0, (transportistas ?? []).length - completedIds.size - completedNow),
     results,
   })
 }
