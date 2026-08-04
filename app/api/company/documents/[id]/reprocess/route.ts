@@ -99,6 +99,7 @@ export async function POST(
     const f30Result = docTable === 'subcontractor_documents' && rawDocumentText
       ? parseF30Document({
           rawText: rawDocumentText,
+          summaryText: aiExtraction.extractedText,
           expectedRut: doc.subcontractor_rut,
           documentNumber: aiExtraction.documentNumber,
           issuanceDate: aiExtraction.issuanceDate,
