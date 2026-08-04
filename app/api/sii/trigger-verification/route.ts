@@ -28,21 +28,23 @@ export async function POST(request: NextRequest) {
 
     // Call the internal SII verification endpoint
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:3000'}/api/internal/external-verification/sii`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${labToken}`,
-            'X-Labbe-Lab-Token': labToken || '',
-          },
-          body: JSON.stringify({
-            rut: transportistaRut,
-            transportistaId,
-          }),
-        }
-      )
+      // Get the app URL from headers or use localhost
+      const protocol = request.headers.get('x-forwarded-proto') || 'http'
+      const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'localhost:3000'
+      const appUrl = `${protocol}://${host}`
+
+      const response = await fetch(`${appUrl}/api/internal/external-verification/sii`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${labToken}`,
+          'X-Labbe-Lab-Token': labToken || '',
+        },
+        body: JSON.stringify({
+          rut: transportistaRut,
+          transportistaId,
+        }),
+      })
 
       if (!response.ok) {
         console.warn('[v0] SII verification endpoint returned:', response.status)
