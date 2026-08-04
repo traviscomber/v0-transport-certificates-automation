@@ -10,6 +10,7 @@ const BATCH_SIZE = 20
 const CONCURRENCY = 4
 const LOCK_NAME = 'f30_backfill'
 const LOCK_LEASE_SECONDS = 360
+const F30_TYPE_CODES = ['F30', 'F30-1_CLIENTE', 'F30-1_DOÑA_ISIDORA']
 const PRODUCTION_ORIGIN = process.env.NEXT_PUBLIC_APP_URL || 'https://transn3uralia.vercel.app'
 
 function isAuthorizedCron(request: NextRequest): boolean {
@@ -18,6 +19,23 @@ function isAuthorizedCron(request: NextRequest): boolean {
   const hasValidSecret = Boolean(configuredSecret && authorization === `Bearer ${configuredSecret}`)
   const isVercelCron = request.headers.get('user-agent') === 'vercel-cron/1.0'
   return hasValidSecret || isVercelCron
+}
+
+async function getF30TypeIds(supabase: ReturnType<typeof createAdminClient>): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('subcontractor_document_types')
+    .select('id, code')
+    .in('code', F30_TYPE_CODES)
+    .eq('is_active', true)
+
+  if (error) throw new Error(`Unable to resolve F30 document types: ${error.message}`)
+  return (data ?? []).map((row) => row.id)
+}
+
+function buildF30Filter(typeIds: string[]): string {
+  const filters = ['file_name.ilike.F30%', 'file_name.ilike.F 30%']
+  if (typeIds.length > 0) filters.push(`document_type_id.in.(${typeIds.join(',')})`)
+  return filters.join(',')
 }
 
 async function processDocument(
@@ -102,11 +120,14 @@ export async function GET(request: NextRequest) {
       .eq('f30_status', 'processing')
       .lt('f30_validated_at', staleBefore)
 
+    const f30TypeIds = await getF30TypeIds(supabase)
+    const f30Filter = buildF30Filter(f30TypeIds)
+
     const { data: pending, error } = await supabase
       .from('subcontractor_documents')
       .select('id, file_name, uploaded_at')
       .is('f30_status', null)
-      .or('file_name.ilike.F30%,file_name.ilike.F 30%')
+      .or(f30Filter)
       .order('uploaded_at', { ascending: true })
       .limit(BATCH_SIZE)
 
@@ -142,7 +163,7 @@ export async function GET(request: NextRequest) {
       .from('subcontractor_documents')
       .select('id', { count: 'exact', head: true })
       .is('f30_status', null)
-      .or('file_name.ilike.F30%,file_name.ilike.F 30%')
+      .or(f30Filter)
 
     const summary = results.reduce<Record<string, number>>((acc, result) => {
       const status = String(result.status ?? 'unknown')
@@ -155,6 +176,7 @@ export async function GET(request: NextRequest) {
       status: 'processed',
       batchSize: BATCH_SIZE,
       concurrency: CONCURRENCY,
+      detectedTypeIds: f30TypeIds.length,
       processed: results.length,
       remaining: remaining ?? null,
       durationMs: Date.now() - startedAt,
