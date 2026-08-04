@@ -1,70 +1,23 @@
-import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { runExternalVerification } from '@/lib/external-verification/engine'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-const SIGNED_REQUEST_TTL_SECONDS = 120
-const EPHEMERAL_TEST_NONCE_SHA256 = '6bcac5fe7336c7bfa9cb976503b912520520f6de44194367bf9d460a782bef56'
-const EPHEMERAL_TEST_EXPIRES_AT = 1785814300
-const EPHEMERAL_TEST_RUT = '77965304-8'
-const EPHEMERAL_TEST_TRANSPORTISTA_ID = '3c15f69c-862f-433c-9d34-0ee57c1a3d47'
-
-function safeHexEqual(left: string, right: string): boolean {
-  if (!/^[a-f0-9]{64}$/i.test(left) || !/^[a-f0-9]{64}$/i.test(right)) return false
-  const leftBuffer = Buffer.from(left, 'hex')
-  const rightBuffer = Buffer.from(right, 'hex')
-  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer)
-}
-
-function isSignedRequestAuthorized(request: NextRequest, expected: string): boolean {
-  const run = request.nextUrl.searchParams.get('run')
-  const timestamp = request.nextUrl.searchParams.get('ts')
-  const signature = request.nextUrl.searchParams.get('sig')
-  const rut = request.nextUrl.searchParams.get('rut') ?? ''
-  const transportistaId = request.nextUrl.searchParams.get('transportistaId') ?? ''
-
-  if (run !== '1' || !timestamp || !signature || !rut) return false
-
-  const timestampSeconds = Number(timestamp)
-  if (!Number.isFinite(timestampSeconds)) return false
-  const ageSeconds = Math.abs(Math.floor(Date.now() / 1000) - timestampSeconds)
-  if (ageSeconds > SIGNED_REQUEST_TTL_SECONDS) return false
-
-  const canonical = `${timestamp}:${rut}:${transportistaId}`
-  const expectedSignature = createHmac('sha256', expected).update(canonical).digest('hex')
-  return safeHexEqual(signature, expectedSignature)
-}
-
-function isEphemeralTestAuthorized(request: NextRequest): boolean {
-  if (Math.floor(Date.now() / 1000) > EPHEMERAL_TEST_EXPIRES_AT) return false
-  if (request.nextUrl.searchParams.get('run') !== '1') return false
-  if (request.nextUrl.searchParams.get('rut') !== EPHEMERAL_TEST_RUT) return false
-  if (request.nextUrl.searchParams.get('transportistaId') !== EPHEMERAL_TEST_TRANSPORTISTA_ID) return false
-
-  const nonce = request.nextUrl.searchParams.get('nonce')
-  if (!nonce) return false
-  const nonceHash = createHash('sha256').update(nonce).digest('hex')
-  return safeHexEqual(nonceHash, EPHEMERAL_TEST_NONCE_SHA256)
-}
-
 function isAuthorized(request: NextRequest) {
-  if (isEphemeralTestAuthorized(request)) return true
-
   const expected = process.env.EXTERNAL_VERIFICATION_LAB_TOKEN
   if (!expected) return false
 
   const authorization = request.headers.get('authorization')
   const internalToken = request.headers.get('x-labbe-lab-token')
-  return (
-    authorization === `Bearer ${expected}` ||
-    internalToken === expected ||
-    isSignedRequestAuthorized(request, expected)
-  )
+  return authorization === `Bearer ${expected}` || internalToken === expected
 }
 
-async function executeCanary(rut: string, transportistaId?: string) {
+async function executeCanary(
+  rut: string,
+  transportistaId?: string,
+  recaptchaToken?: string,
+) {
   return runExternalVerification(
     {
       sourceCode: 'sii_tax_status',
@@ -73,6 +26,7 @@ async function executeCanary(rut: string, transportistaId?: string) {
       payload: {
         rut,
         testMode: true,
+        ...(recaptchaToken ? { recaptchaToken } : {}),
       },
     },
     undefined,
@@ -91,24 +45,32 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const body = payload as { rut?: unknown; transportistaId?: unknown }
+  const body = payload as {
+    rut?: unknown
+    transportistaId?: unknown
+    recaptchaToken?: unknown
+  }
+
   if (typeof body.rut !== 'string' || body.rut.trim().length === 0) {
     return NextResponse.json({ error: 'rut is required' }, { status: 400 })
   }
-
   if (body.transportistaId !== undefined && typeof body.transportistaId !== 'string') {
     return NextResponse.json({ error: 'transportistaId must be a string' }, { status: 400 })
+  }
+  if (body.recaptchaToken !== undefined && typeof body.recaptchaToken !== 'string') {
+    return NextResponse.json({ error: 'recaptchaToken must be a string' }, { status: 400 })
   }
 
   try {
     const result = await executeCanary(
       body.rut,
       typeof body.transportistaId === 'string' ? body.transportistaId : undefined,
+      typeof body.recaptchaToken === 'string' ? body.recaptchaToken : undefined,
     )
 
     return NextResponse.json({
       success: true,
-      mode: 'silent_canary',
+      mode: body.recaptchaToken ? 'browser_assisted_canary' : 'silent_canary',
       disclaimer: 'La información SII es parcial y no constituye certificación tributaria.',
       ...result,
     })
@@ -122,31 +84,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  if (request.nextUrl.searchParams.get('run') === '1') {
-    const rut = request.nextUrl.searchParams.get('rut')
-    const transportistaId = request.nextUrl.searchParams.get('transportistaId') ?? undefined
-    if (!rut) return NextResponse.json({ error: 'rut is required' }, { status: 400 })
-
-    try {
-      const result = await executeCanary(rut, transportistaId)
-      return NextResponse.json({
-        success: true,
-        mode: 'signed_single_canary',
-        disclaimer: 'La información SII es parcial y no constituye certificación tributaria.',
-        ...result,
-      })
-    } catch (error) {
-      return verificationErrorResponse(error)
-    }
-  }
-
   return NextResponse.json({
     source: 'sii_tax_status',
     labEnabled: process.env.EXTERNAL_VERIFICATION_LAB_ENABLED === 'true',
     canaryEnabled: process.env.SII_TAX_STATUS_CANARY_ENABLED === 'true',
     tokenConfigured: Boolean(process.env.EXTERNAL_VERIFICATION_LAB_TOKEN),
-    queryUrlConfigured: Boolean(process.env.SII_TAX_STATUS_QUERY_URL),
-    mode: 'silent_canary',
+    mode: 'recaptcha_aware_canary',
+    browserAssistedTokenAccepted: true,
   })
 }
 
