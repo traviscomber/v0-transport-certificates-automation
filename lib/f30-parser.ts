@@ -46,8 +46,9 @@ function normalizeRut(value: string | null | undefined): string | null {
 function cleanCompanyName(value: string | null): string | null {
   if (!value) return null
   return value
+    .replace(/^subcontratista\s*,?\s*/i, '')
     .replace(/\s+/g, ' ')
-    .replace(/[.,;:]+$/g, '')
+    .replace(/[;,]+$/g, '')
     .trim() || null
 }
 
@@ -79,7 +80,7 @@ export function parseF30Document(input: {
     /(?:empresa|empleador)\s+(.+?)\s+(?:cumple|como subcontratista|mantiene|acredita)/i,
   )
   const summaryPrincipalMatch = summaryText.match(
-    /empresa principal\s+(.+?)(?:\.|,|\s+se\s+reporta|\s+con\s+)/i,
+    /empresa principal\s+(.+?)(?=\s+para\s+el\s+periodo|\s+para\s+el\s+período|\s+durante\s+el\s+periodo|\s+durante\s+el\s+período|\s+se\s+reporta|\s+con\s+\d|$)/i,
   )
   const rawCompanyMatch = rawText.match(
     /(?:raz[oó]n social|nombre o raz[oó]n social)\s*[:\-]?\s*([^\n]{4,180})/i,
