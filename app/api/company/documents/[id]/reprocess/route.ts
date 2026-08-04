@@ -53,6 +53,39 @@ export async function POST(
     }
 
     const buffer = await fileResponse.arrayBuffer()
+    const analyzedAt = new Date().toISOString()
+
+    if (buffer.byteLength === 0) {
+      if (docTable === 'subcontractor_documents') {
+        await adminClient
+          .from('subcontractor_documents')
+          .update({
+            f30_status: 'empty_file',
+            f30_details: {
+              detected: false,
+              warnings: ['empty_file', 'reload_required'],
+              error: 'Archivo vacío o corrupto. Debe volver a cargarse.',
+              fileSizeBytes: 0,
+            },
+            f30_validated_at: analyzedAt,
+            ai_warnings: ['empty_file', 'reload_required'],
+            ai_analyzed_at: analyzedAt,
+          })
+          .eq('id', documentId)
+      }
+
+      return NextResponse.json({
+        success: true,
+        saved: true,
+        documentId,
+        documentTable: docTable,
+        f30: { status: 'empty_file' },
+        analysis: null,
+        usedOcrFallback: false,
+        message: 'Archivo vacío o corrupto; se requiere recarga',
+      })
+    }
+
     const fileUrl = doc.file_url.toLowerCase()
     const isPdf = fileUrl.endsWith('.pdf') || fileUrl.includes('.pdf?')
 
@@ -97,7 +130,6 @@ export async function POST(
         })
       : null
 
-    const analyzedAt = new Date().toISOString()
     const updateData: Record<string, unknown> = {
       ai_document_type: aiExtraction.documentType,
       ai_expiration_date: aiExtraction.expirationDate || null,
