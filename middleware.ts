@@ -46,18 +46,16 @@ export async function middleware(request: NextRequest) {
     )
   }
 
-  // Skip auth and API auth routes entirely
   if (
     path.startsWith('/api/auth') ||
     path.startsWith('/auth/login') ||
-    path === '/login' ||  // ✅ Allow /login page
-    path === '/api/login-email' ||  // ✅ Allow login endpoint
+    path === '/login' ||
+    path === '/api/login-email' ||
     path === '/api/logout'
   ) {
     return NextResponse.next()
   }
 
-  // Protect conductor routes — check httpOnly cookie set by the login endpoint
   if (path.startsWith('/conductor')) {
     const conductorId = request.cookies.get('conductor_id')?.value
     if (!conductorId) {
@@ -66,78 +64,64 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Protect admin routes - require authentication
   if (path.startsWith('/admin')) {
     const userEmail = request.cookies.get('user_email')?.value
-    
     if (!userEmail) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
-    
-    // Only allow ejecutiva role to access admin routes
+
     const userRole = request.cookies.get('user_role')?.value
     if (userRole !== 'ejecutiva' && userRole !== 'admin') {
       return NextResponse.redirect(new URL('/login', request.url))
     }
-    
+
     return NextResponse.next()
   }
 
-  // Protect prevencionista routes - require authentication
   if (path.startsWith('/prevencionista')) {
     const userEmail = request.cookies.get('user_email')?.value
-    
     if (!userEmail) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
-    
-    // /prevencionista (exact) redirects to /prevencionista/dashboard
+
     if (path === '/prevencionista' || path === '/prevencionista/') {
       return NextResponse.redirect(new URL('/prevencionista/dashboard', request.url))
     }
-    
+
     return NextResponse.next()
   }
 
-  // Protect dashboard routes - require authentication
   if (path.startsWith('/dashboard')) {
     const userEmail = request.cookies.get('user_email')?.value
-    
     if (!userEmail) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
-    
-    // /dashboard (exact) always redirects to /dashboard/company
+
     if (path === '/dashboard' || path === '/dashboard/') {
       return NextResponse.redirect(new URL('/dashboard/company', request.url))
     }
-    
+
     return NextResponse.next()
   }
 
-  // Skip API routes (except dashboard data which might need auth)
   if (path.startsWith('/api/')) {
     return NextResponse.next()
   }
 
-  // Skip static files and assets
   if (path.includes('.')) {
     return NextResponse.next()
   }
 
-  // Redirect old walmart-ocr routes to new /ocr routes
   if (path.startsWith('/walmart-ocr')) {
     const newPath = path.replace('/walmart-ocr', '/ocr')
     return NextResponse.redirect(new URL(newPath, request.url), { status: 308 })
   }
 
-  // For other routes, just update the session
   return await updateSession(request)
 }
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api/cron/sii-transportistas|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 }
-
