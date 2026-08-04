@@ -3,6 +3,10 @@
     {
       "path": "/api/company/alerts/check-expiring-documents",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/sii-transportistas",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
