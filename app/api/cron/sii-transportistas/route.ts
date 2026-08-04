@@ -8,6 +8,7 @@ export const maxDuration = 60
 
 const BATCH_SIZE = 5
 const PAUSE_MS = 3_000
+const ADAPTER_VERSION = 4
 const SUCCESS_STATUSES = new Set(['success', 'warning', 'not_found'])
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
     supabase.from('transportistas').select('id, rut, razon_social, is_active').not('rut', 'is', null).order('id'),
     supabase
       .from('external_verification_runs')
-      .select('entity_id, status')
+      .select('entity_id, status, input_payload')
       .eq('source_code', 'sii_tax_status')
       .eq('entity_type', 'transportista')
       .in('status', [...SUCCESS_STATUSES]),
@@ -41,7 +42,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: transportistasError?.message ?? runsError?.message }, { status: 500 })
   }
 
-  const completedIds = new Set((completedRuns ?? []).map((run) => run.entity_id).filter(Boolean))
+  const completedIds = new Set(
+    (completedRuns ?? [])
+      .filter((run) => {
+        const payload = run.input_payload as Record<string, unknown> | null
+        return payload?.adapterVersion === ADAPTER_VERSION
+      })
+      .map((run) => run.entity_id)
+      .filter(Boolean),
+  )
   const pending = (transportistas ?? []).filter((item) => !completedIds.has(item.id)).slice(0, BATCH_SIZE)
 
   if (pending.length === 0) return NextResponse.json({ status: 'complete', processed: 0, remaining: 0 })
@@ -56,7 +65,7 @@ export async function GET(request: NextRequest) {
         sourceCode: 'sii_tax_status',
         entityType: 'transportista',
         entityId: item.id,
-        payload: { rut: item.rut, adapterVersion: 3 },
+        payload: { rut: item.rut, adapterVersion: ADAPTER_VERSION },
       })
       results.push({ id: item.id, rut: item.rut, status: verification.result.status, runId: verification.runId })
 
@@ -71,6 +80,7 @@ export async function GET(request: NextRequest) {
   const successfulNow = results.filter((item) => SUCCESS_STATUSES.has(item.status)).length
   return NextResponse.json({
     status: 'processed',
+    parserVersion: ADAPTER_VERSION,
     processed: results.length,
     successful: successfulNow,
     remaining: Math.max(0, (transportistas ?? []).length - completedIds.size - successfulNow),
