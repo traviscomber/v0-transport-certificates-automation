@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       sourceCode: 'sii_tax_status',
       entityType: 'transportista',
       entityId: TRANSPORTISTA_ID,
-      payload: { rut: TRANSPORTISTA_RUT, testMode: true, adapterVersion: 2 },
+      payload: { rut: TRANSPORTISTA_RUT, testMode: true, adapterVersion: 3 },
     })
 
     return NextResponse.json(result)
