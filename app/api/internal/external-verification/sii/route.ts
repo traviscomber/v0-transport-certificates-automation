@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
           testMode: true,
         },
       },
-      'internal-sii-canary',
+      undefined,
     )
 
     return NextResponse.json({
