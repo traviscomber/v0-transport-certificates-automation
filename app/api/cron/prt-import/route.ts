@@ -127,13 +127,22 @@ function resultLabel(code: string | null): string | null {
   return code
 }
 
-function buildRows(xlsxBuffer: Buffer, batch: { id: string; period: string }): { rows: ImportRow[]; rejected: number } {
+function deduplicateRows(rows: ImportRow[]): { rows: ImportRow[]; duplicates: number } {
+  const unique = new Map<string, ImportRow>()
+  for (const row of rows) {
+    const key = [row.batch_id, row.plate_normalized, row.inspection_date ?? '', row.certificate_number ?? ''].join('|')
+    unique.set(key, row)
+  }
+  return { rows: [...unique.values()], duplicates: rows.length - unique.size }
+}
+
+function buildRows(xlsxBuffer: Buffer, batch: { id: string; period: string }): { rows: ImportRow[]; rejected: number; duplicates: number } {
   const workbook = XLSX.read(xlsxBuffer, { type: 'buffer', cellDates: true })
   const sheetName = workbook.SheetNames[0]
   if (!sheetName) throw new Error('PRT workbook has no sheets')
   const sheet = workbook.Sheets[sheetName]
   const sourceRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { raw: true, defval: null })
-  const rows: ImportRow[] = []
+  const candidateRows: ImportRow[] = []
   let rejected = 0
 
   for (const source of sourceRows) {
@@ -145,7 +154,7 @@ function buildRows(xlsxBuffer: Buffer, batch: { id: string; period: string }): {
       continue
     }
     const resultCode = clean(source.RESULTADO_CRT)?.toUpperCase() ?? null
-    rows.push({
+    candidateRows.push({
       batch_id: batch.id,
       plate: clean(source.PPU) ?? plateNormalized,
       plate_normalized: plateNormalized,
@@ -182,7 +191,9 @@ function buildRows(xlsxBuffer: Buffer, batch: { id: string; period: string }): {
       },
     })
   }
-  return { rows, rejected }
+
+  const deduplicated = deduplicateRows(candidateRows)
+  return { rows: deduplicated.rows, rejected, duplicates: deduplicated.duplicates }
 }
 
 export async function GET(request: NextRequest) {
@@ -216,7 +227,7 @@ export async function GET(request: NextRequest) {
     const response = await fetch(batch.source_url, {
       cache: 'no-store',
       redirect: 'follow',
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LABBE-PRT-Importer/1.0)' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LABBE-PRT-Importer/1.1)' },
     })
     if (!response.ok) throw new Error(`PRT ZIP download failed with HTTP ${response.status}`)
 
@@ -224,7 +235,7 @@ export async function GET(request: NextRequest) {
     const xlsxEntry = listZipEntries(zipBuffer).find((entry) => /\.xlsx$/i.test(entry.name))
     if (!xlsxEntry) throw new Error('No XLSX file found inside PRT ZIP')
     const xlsxBuffer = extractEntry(zipBuffer, xlsxEntry)
-    const { rows, rejected } = buildRows(xlsxBuffer, { id: batch.id, period: batch.period })
+    const { rows, rejected, duplicates } = buildRows(xlsxBuffer, { id: batch.id, period: batch.period })
 
     let imported = 0
     for (let offset = 0; offset < rows.length; offset += UPSERT_CHUNK_SIZE) {
@@ -237,7 +248,7 @@ export async function GET(request: NextRequest) {
       imported += chunk.length
       await supabase
         .from('prt_import_batches')
-        .update({ rows_read: imported + rejected, rows_valid: imported, rows_rejected: rejected, updated_at: new Date().toISOString() })
+        .update({ rows_read: imported + rejected + duplicates, rows_valid: imported, rows_rejected: rejected + duplicates, updated_at: new Date().toISOString() })
         .eq('id', batch.id)
     }
 
@@ -246,9 +257,9 @@ export async function GET(request: NextRequest) {
       .from('prt_import_batches')
       .update({
         status: 'imported',
-        rows_read: rows.length + rejected,
+        rows_read: rows.length + rejected + duplicates,
         rows_valid: imported,
-        rows_rejected: rejected,
+        rows_rejected: rejected + duplicates,
         completed_at: completedAt,
         updated_at: completedAt,
       })
@@ -258,7 +269,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       imported,
       rejected,
-      rowsRead: rows.length + rejected,
+      duplicates,
+      rowsRead: rows.length + rejected + duplicates,
       batch: { id: batch.id, period: batch.period, recordType: batch.record_type },
     })
   } catch (error) {
