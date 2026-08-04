@@ -133,10 +133,35 @@ export async function POST(
       }
     }
 
-    const { error: updateError } = await adminClient
+    let { error: updateError } = await adminClient
       .from(docTable)
       .update(updateData)
       .eq('id', documentId)
+
+    let periodConflict = false
+
+    if (updateError?.code === '23505' && f30Result && docTable === 'subcontractor_documents') {
+      periodConflict = true
+      const fallbackData = { ...updateData }
+      delete fallbackData.document_period_month
+      delete fallbackData.document_period_year
+      delete fallbackData.document_period_start
+      delete fallbackData.document_period_source
+
+      fallbackData.f30_status = 'warning'
+      fallbackData.f30_details = {
+        ...f30Result.details,
+        warnings: [...f30Result.details.warnings, 'period_already_registered'],
+        periodConflict: true,
+      }
+
+      const retry = await adminClient
+        .from(docTable)
+        .update(fallbackData)
+        .eq('id', documentId)
+
+      updateError = retry.error
+    }
 
     if (updateError) {
       console.error('[v0] Error saving analysis to DB:', updateError)
@@ -161,6 +186,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       saved: !updateError,
+      periodConflict,
       documentId,
       documentTable: docTable,
       originalDocument: {
@@ -179,7 +205,11 @@ export async function POST(
       },
       f30: f30Result,
       alertsGenerated: !!aiExtraction.expirationDate,
-      message: updateError ? 'Analisis completado (no guardado)' : 'Analisis completado y guardado',
+      message: updateError
+        ? 'Analisis completado (no guardado)'
+        : periodConflict
+          ? 'Analisis guardado con conflicto de periodo'
+          : 'Analisis completado y guardado',
     })
   } catch (error) {
     console.error('[v0] Reprocess error:', error)
