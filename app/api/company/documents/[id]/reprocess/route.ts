@@ -128,7 +128,7 @@ export async function POST(
         updateData.document_period_month = f30Result.details.periodMonth
         updateData.document_period_year = f30Result.details.periodYear
         updateData.document_period_start = `${f30Result.details.periodYear}-${String(f30Result.details.periodMonth).padStart(2, '0')}-01`
-        updateData.document_period_source = 'f30_parser'
+        updateData.document_period_source = 'metadata'
       }
     }
 
