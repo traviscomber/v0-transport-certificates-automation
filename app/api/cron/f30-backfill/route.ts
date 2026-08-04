@@ -7,6 +7,7 @@ export const maxDuration = 300
 
 const BATCH_SIZE = 4
 const PAUSE_MS = 1_500
+const PRODUCTION_ORIGIN = process.env.NEXT_PUBLIC_APP_URL || 'https://transn3uralia.vercel.app'
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 function isAuthorizedCron(request: NextRequest): boolean {
@@ -39,7 +40,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ status: 'complete', processed: 0, remaining: 0 })
   }
 
-  const origin = new URL(request.url).origin
   const results: Array<Record<string, unknown>> = []
 
   for (let index = 0; index < pending.length; index += 1) {
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     if (index > 0) await sleep(PAUSE_MS)
 
     try {
-      const response = await fetch(`${origin}/api/company/documents/${document.id}/reprocess`, {
+      const response = await fetch(`${PRODUCTION_ORIGIN}/api/company/documents/${document.id}/reprocess`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ documentId: document.id, source: 'f30_backfill' }),
