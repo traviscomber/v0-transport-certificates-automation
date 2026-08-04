@@ -160,7 +160,7 @@ async function loadCaptchaConfiguration(session: SiiSession): Promise<{ config: 
 function safeSignals(payload: JsonRecord) {
   return {
     tieneInicio: toBoolean(payload.tieneInicio),
-    inicioActividades: firstString(payload.inicioActividades),
+    inicioActividades: toBoolean(payload.inicioActividades) ?? toBoolean(payload.tieneInicio),
     fechaInicioActividades: firstString(payload.fechaInicioActividades),
     cumpleObligacionTributaria: firstString(payload.cumpleObligacionTributaria),
     tieneGirosNegocio: toBoolean(payload.tieneGirosNegocio),
@@ -173,16 +173,22 @@ function safeSignals(payload: JsonRecord) {
   }
 }
 
-function hasPublicWarning(payload: JsonRecord): boolean {
+function warningReasons(payload: JsonRecord): string[] {
+  const reasons: string[] = []
   const obligation = firstString(payload.cumpleObligacionTributaria)?.toLowerCase() ?? ''
   const observations = [payload.observacion1, payload.observacion2]
     .map((value) => firstString(value))
     .filter((value): value is string => Boolean(value))
   const alerts = Array.isArray(payload.alertaTablas) ? payload.alertaTablas : []
 
-  return (
-    Boolean(obligation) && !['si', 'sí', 'cumple', 'true'].includes(obligation)
-  ) || observations.length > 0 || alerts.length > 0 || toBoolean(payload.nocondonable) === true
+  if (obligation && !['si', 'sí', 'cumple', 'true'].includes(obligation)) {
+    reasons.push('tax_obligation_not_compliant')
+  }
+  if (observations.length > 0) reasons.push('public_observation_present')
+  if (alerts.length > 0) reasons.push('public_alerts_present')
+  if (toBoolean(payload.nocondonable) === true) reasons.push('non_waivable_condition')
+
+  return reasons
 }
 
 function parseSiiResult(payload: unknown, rut: string, retrievedAt: string): VerificationResult {
@@ -244,7 +250,8 @@ function parseSiiResult(payload: unknown, rut: string, retrievedAt: string): Ver
     }
   }
 
-  const warning = hasPublicWarning(payload)
+  const reasons = warningReasons(payload)
+  const warning = reasons.length > 0
   const evidence: VerificationEvidence[] = [{
     label: 'Razón social',
     value: razonSocial,
@@ -270,6 +277,7 @@ function parseSiiResult(payload: unknown, rut: string, retrievedAt: string): Ver
       razonSocial,
       fechaConsulta: firstString(payload.fechaConsulta),
       hasPublicWarnings: warning,
+      warningReasons: reasons,
       signals: safeSignals(payload),
       source: 'SII Situación Tributaria de Terceros',
       sourceDisclaimer: 'La consulta es informativa, parcial y no constituye una certificación tributaria.',
