@@ -42,8 +42,16 @@ export async function POST(request: NextRequest) {
       errorCode: result.errorCode ?? null,
     })
   } catch (error) {
-    // Don't surface errors to client — badge will stay pending
-    console.error('[SII trigger]', error instanceof Error ? error.message : error)
-    return NextResponse.json({ triggered: false, reason: 'engine_error' }, { status: 200 })
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('[SII trigger error]', {
+      message,
+      stack: error instanceof Error ? error.stack : undefined,
+      canaryEnabled: process.env.SII_TAX_STATUS_CANARY_ENABLED,
+      labEnabled: process.env.EXTERNAL_VERIFICATION_LAB_ENABLED,
+    })
+    return NextResponse.json(
+      { triggered: false, reason: 'engine_error', details: message },
+      { status: 200 },
+    )
   }
 }
