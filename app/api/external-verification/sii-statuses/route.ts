@@ -8,10 +8,26 @@ type LatestRun = {
   entity_id: string
   status: string
   normalized_result: Record<string, unknown> | null
+  input_payload: Record<string, unknown> | null
   error_code: string | null
   error_message: string | null
   completed_at: string | null
   created_at: string
+}
+
+function parserVersion(run: LatestRun): number {
+  const normalizedVersion = run.normalized_result?.parserVersion
+  const inputVersion = run.input_payload?.adapterVersion
+  const value = normalizedVersion ?? inputVersion ?? 0
+  const numeric = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(numeric) ? numeric : 0
+}
+
+function isNewerCandidate(candidate: LatestRun, current: LatestRun): boolean {
+  const candidateVersion = parserVersion(candidate)
+  const currentVersion = parserVersion(current)
+  if (candidateVersion !== currentVersion) return candidateVersion > currentVersion
+  return new Date(candidate.created_at).getTime() > new Date(current.created_at).getTime()
 }
 
 export async function GET(request: NextRequest) {
@@ -22,7 +38,7 @@ export async function GET(request: NextRequest) {
   const [{ data, error }, { count: total, error: totalError }] = await Promise.all([
     supabase
       .from('external_verification_runs')
-      .select('entity_id,status,normalized_result,error_code,error_message,completed_at,created_at')
+      .select('entity_id,status,normalized_result,input_payload,error_code,error_message,completed_at,created_at')
       .eq('source_code', 'sii_tax_status')
       .eq('entity_type', 'transportista')
       .order('created_at', { ascending: false }),
@@ -37,7 +53,9 @@ export async function GET(request: NextRequest) {
 
   const latestByEntity = new Map<string, LatestRun>()
   for (const run of (data ?? []) as LatestRun[]) {
-    if (run.entity_id && !latestByEntity.has(run.entity_id)) latestByEntity.set(run.entity_id, run)
+    if (!run.entity_id) continue
+    const current = latestByEntity.get(run.entity_id)
+    if (!current || isNewerCandidate(run, current)) latestByEntity.set(run.entity_id, run)
   }
 
   const statuses = Object.fromEntries(
@@ -50,8 +68,9 @@ export async function GET(request: NextRequest) {
         checkedAt: run.completed_at ?? run.created_at,
         razonSocial: typeof normalized.razonSocial === 'string' ? normalized.razonSocial : null,
         warningReasons: Array.isArray(normalized.warningReasons) ? normalized.warningReasons : [],
+        parserVersion: parserVersion(run),
       }]
-    })
+    }),
   )
 
   const runs = Array.from(latestByEntity.values())
@@ -82,6 +101,10 @@ export async function GET(request: NextRequest) {
       updatedAt: new Date().toISOString(),
     },
   }, {
-    headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' },
+    headers: {
+      'Cache-Control': 'private, no-store, no-cache, must-revalidate, max-age=0',
+      Pragma: 'no-cache',
+      Expires: '0',
+    },
   })
 }
