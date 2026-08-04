@@ -147,14 +147,18 @@ function parseResponse(body: string, rut: string, sourceUrl: string, response: R
 
   let json: unknown = null
   if ((response.headers.get('content-type') || '').includes('json') || /^\s*[\[{]/.test(body)) {
-    try { json = JSON.parse(body) } catch { json = null }
+    try {
+      json = JSON.parse(body)
+    } catch {
+      json = null
+    }
   }
 
   const razonSocial =
-    (json && findJsonValue(json, ['razonSocial', 'razon_social', 'nombreRazonSocial', 'nombre'])) ||
+    (json ? findJsonValue(json, ['razonSocial', 'razon_social', 'nombreRazonSocial', 'nombre']) : null) ||
     extractAfterLabel(text, ['Nombre o Razón Social', 'Razón Social', 'Nombre'])
   const inicioActividades =
-    (json && findJsonValue(json, ['fechaInicioActividades', 'inicioActividades', 'fecha_inicio_actividades'])) ||
+    (json ? findJsonValue(json, ['fechaInicioActividades', 'inicioActividades', 'fecha_inicio_actividades']) : null) ||
     extractAfterLabel(text, ['Fecha de Inicio de Actividades', 'Inicio de Actividades'])
   const hasTaxContent = hasAny(text, [
     /inicio de actividades/i,
