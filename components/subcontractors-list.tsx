@@ -1,35 +1,10 @@
 'use client'
 
-/**
- * ARCHITECTURE PATTERN - SubcontractorsList (Parent Component)
- * 
- * This component manages the data fetching strategy for the detail modal.
- * 
- * DATA FETCHING RULES:
- * 1. When modal opens for a subcontractor, useEffect triggers
- * 2. Fetch BOTH conductoresData AND documentsData from APIs
- * 3. Pass BOTH as props to SubcontractorDetailTabs child component
- * 4. Child component NEVER re-fetches - it uses props data
- * 
- * BENEFITS:
- * - Single source of truth (parent controls all data)
- * - Consistent data across all tabs
- * - Prevents race conditions from multiple API calls
- * - Easy to cache and synchronize
- * 
- * PATTERN TO FOLLOW FOR NEW TABS:
- * - If new tab needs data: add to parent useEffect
- * - Fetch from API in parent
- * - Pass as prop to SubcontractorDetailTabs
- * - Child uses prop, never fetches
- */
-
-import { useState, useMemo, useEffect } from 'react'
-import { Search, MapPin, Phone, Mail, CheckCircle, AlertCircle, X, Filter, Users, Edit, UserPlus } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useEffect, useMemo, useState } from 'react'
+import { Search, Phone, Mail, CheckCircle, AlertCircle, X, Filter, Users, Edit, UserPlus, ShieldCheck, ShieldAlert, ShieldX, Clock3 } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import { SubcontractorDetailTabs } from './subcontractor-detail-tabs'
 import { EditSubcontractorModal } from './edit-subcontractor-modal'
 import { AssignExecutiveModal } from './assign-executive-modal'
@@ -83,6 +58,29 @@ interface Subcontractor {
   }
 }
 
+interface Driver {
+  id: string
+  rut: string
+  nombre: string
+  rut_proveedor: string
+  proveedor: string
+  is_active: boolean
+}
+
+interface SiiStatus {
+  status: string
+  errorCode: string | null
+  errorMessage: string | null
+  checkedAt: string | null
+  razonSocial: string | null
+  warningReasons: string[]
+}
+
+interface SubcontractorsListProps {
+  subcontractors?: Subcontractor[]
+  drivers?: Driver[]
+}
+
 function getCompletion(sub: Subcontractor) {
   const checks = [
     Boolean(sub.id),
@@ -94,11 +92,9 @@ function getCompletion(sub: Subcontractor) {
     Boolean(sub.ejecutivo_nombre),
     Boolean(sub.ariztia || sub.lts || sub.rendic || sub.interpolar),
   ]
-
   const completed = checks.filter(Boolean).length
   const total = checks.length
   const percent = Math.round((completed / total) * 100)
-
   return {
     completed,
     total,
@@ -107,32 +103,78 @@ function getCompletion(sub: Subcontractor) {
   }
 }
 
-interface Driver {
-  id: string
-  rut: string
-  nombre: string
-  rut_proveedor: string
-  proveedor: string
-  is_active: boolean
+function formatCheckedAt(value: string | null) {
+  if (!value) return null
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  return new Intl.DateTimeFormat('es-CL', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
 }
 
-interface SubcontractorsListProps {
-  subcontractors?: Subcontractor[]
-  drivers?: Driver[]
+function SiiBadge({ value }: { value?: SiiStatus }) {
+  if (!value) {
+    return (
+      <Badge variant="outline" className="gap-1 border-slate-600 bg-slate-800/60 text-slate-300" title="Aún no existe una consulta SII registrada">
+        <Clock3 className="h-3.5 w-3.5" /> Pendiente SII
+      </Badge>
+    )
+  }
+
+  const checkedAt = formatCheckedAt(value.checkedAt)
+  const title = [
+    value.razonSocial ? `Razón social SII: ${value.razonSocial}` : null,
+    checkedAt ? `Última consulta: ${checkedAt}` : null,
+    value.errorMessage,
+  ].filter(Boolean).join('\n')
+
+  if (value.status === 'success') {
+    return (
+      <Badge variant="outline" className="gap-1 border-emerald-400/40 bg-emerald-500/10 text-emerald-200" title={title}>
+        <ShieldCheck className="h-3.5 w-3.5" /> SII validado
+      </Badge>
+    )
+  }
+
+  if (value.status === 'warning') {
+    return (
+      <Badge variant="outline" className="gap-1 border-amber-400/40 bg-amber-500/10 text-amber-200" title={title}>
+        <ShieldAlert className="h-3.5 w-3.5" /> SII con alertas
+      </Badge>
+    )
+  }
+
+  if (value.status === 'not_found') {
+    return (
+      <Badge variant="outline" className="gap-1 border-rose-400/40 bg-rose-500/10 text-rose-200" title={title}>
+        <ShieldX className="h-3.5 w-3.5" /> No encontrado SII
+      </Badge>
+    )
+  }
+
+  const invalidRut = value.errorCode === 'SII_INVALID_RUT'
+  return (
+    <Badge variant="outline" className="gap-1 border-rose-400/40 bg-rose-500/10 text-rose-200" title={title}>
+      <ShieldX className="h-3.5 w-3.5" /> {invalidRut ? 'RUT inválido' : 'Error SII'}
+    </Badge>
+  )
 }
 
 export function SubcontractorsList({ subcontractors: initialSubcontractors, drivers: initialDrivers }: SubcontractorsListProps) {
-  // Load subcontractors and drivers
   const [subcontractors, setSubcontractors] = useState<Subcontractor[]>(initialSubcontractors || [])
   const [drivers, setDrivers] = useState<Driver[]>(initialDrivers || [])
+  const [siiStatuses, setSiiStatuses] = useState<Record<string, SiiStatus>>({})
   const [isLoading, setIsLoading] = useState(!initialSubcontractors)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedEjecutivas, setSelectedEjecutivas] = useState<string[]>([])
   const [selectedCertifications, setSelectedCertifications] = useState<string[]>([])
   const [showActiveOnly, setShowActiveOnly] = useState(false)
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
-  const [expandedSubcontractor, setExpandedSubcontractor] = useState<string | null>(null)
-  const [expandedDocuments, setExpandedDocuments] = useState<Set<string>>(new Set())
+  const [expandedSubcontractor] = useState<string | null>(null)
   const [selectedDetailSubcontractor, setSelectedDetailSubcontractor] = useState<any>(null)
   const [detailTabToOpen, setDetailTabToOpen] = useState<'resumen' | 'documentos' | 'conductores' | 'certificaciones' | 'onboarding'>('resumen')
   const [documentsData, setDocumentsData] = useState<{ documents: any[], requirements: any[], summary: any } | null>(null)
@@ -141,33 +183,19 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
   const [assigningSubcontractor, setAssigningSubcontractor] = useState<Subcontractor | null>(null)
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false)
 
-  // Fetch data from API if not provided as prop
   useEffect(() => {
-    if (initialSubcontractors) {
-      return // Use provided data
-    }
-
+    if (initialSubcontractors) return
     const fetchData = async () => {
       try {
         const response = await fetch('/api/dashboard/data', {
           cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
-          }
+          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', Pragma: 'no-cache' },
         })
-        
-        if (response.ok) {
-          const data = await response.json()
-          if (data.dashboard?.transportistas && Array.isArray(data.dashboard.transportistas)) {
-            // Load ALL transportistas regardless of active status
-            setSubcontractors(data.dashboard.transportistas)
-            setDrivers(data.dashboard.conductores || [])
-          }
-        } else {
-          console.error('[v0] API error:', response.status)
-          setSubcontractors([])
-          setDrivers([])
+        if (!response.ok) throw new Error(`Dashboard API ${response.status}`)
+        const data = await response.json()
+        if (Array.isArray(data.dashboard?.transportistas)) {
+          setSubcontractors(data.dashboard.transportistas)
+          setDrivers(data.dashboard.conductores || [])
         }
       } catch (error) {
         console.error('[v0] Error fetching subcontractors:', error)
@@ -177,91 +205,63 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
         setIsLoading(false)
       }
     }
-
     fetchData()
   }, [initialSubcontractors])
 
-  /**
-   * DOCUMENTS DATA FETCHING - Critical Pattern
-   * 
-   * When modal opens (selectedDetailSubcontractor changes):
-   * 1. Fetch from /api/subcontractors/[id]/documents
-   * 2. API returns: { documents[], requirements[], summary{} }
-   * 3. API deduplicates: keeps only unique documents per document_type_id
-   * 4. Store in documentsData state
-   * 5. Pass to SubcontractorDetailTabs as prop
-   * 
-   * DATA STRUCTURE RETURNED FROM API:
-   * {
-   *   documents: [{ id, document_type_id, status, created_at, ... }],  // Unique per type
-   *   requirements: [{ id, name, description, ... }],                  // All 16 types
-   *   summary: {
-   *     totalDocumentsUploaded: 5,    // Unique count
-   *     totalRequirements: 16,        // Required types
-   *     approvedDocuments: 3,
-   *     pendingDocuments: 2,
-   *     expiredDocuments: 0,
-   *     rejectedDocuments: 0
-   *   }
-   * }
-   * 
-   * USED BY TABS:
-   * - Resumen: summary stats
-   * - Documentos: requirements loop with documents lookup
-   * - Onboarding: summary + requirements to calculate checklist
-   */
+  useEffect(() => {
+    let cancelled = false
+    const loadSiiStatuses = async () => {
+      try {
+        const response = await fetch('/api/external-verification/sii-statuses', {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
+        })
+        if (!response.ok) throw new Error(`SII statuses API ${response.status}`)
+        const data = await response.json()
+        if (!cancelled) setSiiStatuses(data.statuses || {})
+      } catch (error) {
+        console.error('[v0] Error fetching SII statuses:', error)
+      }
+    }
+
+    loadSiiStatuses()
+    const interval = window.setInterval(loadSiiStatuses, 60_000)
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+    }
+  }, [])
+
   useEffect(() => {
     const fetchDocuments = async () => {
-      if (!selectedDetailSubcontractor?.id) {
-        console.log('[v0] No subcontractor ID, skipping fetch')
-        return
-      }
-      
-      console.log('[v0] Fetching documents for subcontractor:', selectedDetailSubcontractor.id)
+      if (!selectedDetailSubcontractor?.id) return
       try {
         const response = await fetch(`/api/subcontractors/${selectedDetailSubcontractor.id}/documents`)
-        if (response.ok) {
-          const data = await response.json()
-          console.log('[v0] Documents fetched successfully:', data)
-          setDocumentsData(data)
-        } else {
-          console.error('[v0] Failed to fetch documents:', response.status)
-        }
+        if (response.ok) setDocumentsData(await response.json())
       } catch (error) {
         console.error('[v0] Error fetching documents for subcontractor:', error)
       }
     }
-
     fetchDocuments()
   }, [selectedDetailSubcontractor?.id])
 
-  // Function to refresh a single subcontractor after update
   const refreshSubcontractor = async (subcontractorId: string) => {
     try {
       const response = await fetch(`/api/transportistas/${subcontractorId}`)
-      if (response.ok) {
-        const data = await response.json()
-        const updatedTransportista = data.transportista
-        
-        // Update the subcontractors list with the updated data
-        setSubcontractors(prev => 
-          prev.map(s => s.id === subcontractorId ? { ...s, ...updatedTransportista } : s)
-        )
-        console.log('[v0] Subcontractor refreshed:', subcontractorId)
-      }
+      if (!response.ok) return
+      const data = await response.json()
+      setSubcontractors(prev => prev.map(s => s.id === subcontractorId ? { ...s, ...data.transportista } : s))
     } catch (error) {
       console.error('[v0] Error refreshing subcontractor:', error)
-      // Fallback to full reload if refresh fails
       window.location.reload()
     }
   }
+
   const ejecutivas = useMemo(() => Array.from(new Set(subcontractors.map(s => s.ejecutivo_nombre || 'Sin asignar'))).filter(Boolean).sort(), [subcontractors])
   const certifications = { ariztia: 'Ariztia', lts: 'LTS', rendic: 'Rendic', interpolar: 'Interpolar' }
 
-  // Smart search and filtering
   const filtered = useMemo(() => {
     const results = subcontractors.filter(sub => {
-      // Search term filter
       if (searchTerm) {
         const query = searchTerm.toLowerCase()
         const matchesSearch =
@@ -275,14 +275,8 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
           (sub.email || '').toLowerCase().includes(query)
         if (!matchesSearch) return false
       }
-
-      // Ejecutiva filter
       const subEjecutiva = sub.ejecutivo_nombre || 'Sin asignar'
-      if (selectedEjecutivas.length > 0 && subEjecutiva && !selectedEjecutivas.includes(subEjecutiva)) {
-        return false
-      }
-
-      // Certifications filter
+      if (selectedEjecutivas.length > 0 && !selectedEjecutivas.includes(subEjecutiva)) return false
       if (selectedCertifications.length > 0) {
         const hasCertification = selectedCertifications.some(cert => {
           if (cert === 'ariztia') return sub.ariztia
@@ -293,36 +287,14 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
         })
         if (!hasCertification) return false
       }
-
-      // Active status filter
-      if (showActiveOnly && !sub.is_active) {
-        return false
-      }
-
+      if (showActiveOnly && !sub.is_active) return false
       return true
     })
-
-    // Sort alphabetically by nombre
-    return results.sort((a, b) => {
-      const nameA = (a.nombre || a.razon_social || '').toLowerCase()
-      const nameB = (b.nombre || b.razon_social || '').toLowerCase()
-      return nameA.localeCompare(nameB)
-    })
+    return results.sort((a, b) => (a.nombre || a.razon_social || '').localeCompare(b.nombre || b.razon_social || '', 'es'))
   }, [searchTerm, selectedEjecutivas, selectedCertifications, showActiveOnly, subcontractors])
 
-  // Toggle filter functions
-  const toggleEjecutiva = (ejecutiva: string) => {
-    setSelectedEjecutivas(prev =>
-      prev.includes(ejecutiva) ? prev.filter(e => e !== ejecutiva) : [...prev, ejecutiva]
-    )
-  }
-
-  const toggleCertification = (cert: string) => {
-    setSelectedCertifications(prev =>
-      prev.includes(cert) ? prev.filter(c => c !== cert) : [...prev, cert]
-    )
-  }
-
+  const toggleEjecutiva = (ejecutiva: string) => setSelectedEjecutivas(prev => prev.includes(ejecutiva) ? prev.filter(e => e !== ejecutiva) : [...prev, ejecutiva])
+  const toggleCertification = (cert: string) => setSelectedCertifications(prev => prev.includes(cert) ? prev.filter(c => c !== cert) : [...prev, cert])
   const clearAllFilters = () => {
     setSearchTerm('')
     setSelectedEjecutivas([])
@@ -330,411 +302,148 @@ export function SubcontractorsList({ subcontractors: initialSubcontractors, driv
     setShowActiveOnly(false)
     setShowAdvancedFilters(false)
   }
-
   const hasActiveFilters = searchTerm.length > 0 || selectedEjecutivas.length > 0 || selectedCertifications.length > 0 || showActiveOnly
 
-  // Memoize the conductores data for the currently selected subcontractor
-  // This prevents the modal from re-rendering and losing the selected subcontractor
   const conductoresData = useMemo(() => {
-    if (!selectedDetailSubcontractor?.id) {
-      return []
-    }
-    
+    if (!selectedDetailSubcontractor?.id) return []
     const normalizeRut = (rut: string) => rut?.replace(/[.\-]/g, '').toUpperCase() || ''
     const normalizedSubRut = normalizeRut(selectedDetailSubcontractor.rut)
-    
-    return drivers.filter(d => {
-      const normalizedDriverRut = normalizeRut(d.rut_proveedor)
-      return normalizedDriverRut === normalizedSubRut && d.is_active
-    })
+    return drivers.filter(d => normalizeRut(d.rut_proveedor) === normalizedSubRut && d.is_active)
   }, [selectedDetailSubcontractor?.id, selectedDetailSubcontractor?.rut, drivers])
 
-  if (isLoading) {
-    return <div className="text-center py-8 text-slate-400">Cargando subcontratistas...</div>
-  }
+  if (isLoading) return <div className="py-8 text-center text-slate-400">Cargando subcontratistas...</div>
 
   return (
     <div className="space-y-4">
-      {/* Header Educativo */}
-      <div className="space-y-2 mb-6">
+      <div className="mb-6 space-y-2">
         <h2 className="text-2xl font-bold text-foreground">Gestión de Subcontratistas</h2>
-        <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
-          Visualiza, busca y filtra todos tus proveedores de transporte. Monitorea su cumplimiento normativo y certificaciones. Mantén contacto directo con representantes y ejecutivas.
-        </p>
+        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">Visualiza, busca y filtra proveedores de transporte, cumplimiento normativo y estado tributario SII.</p>
       </div>
 
-      {/* Search Bar */}
       <div className="flex gap-2">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
-          <Input
-            placeholder="Buscar por nombre, RUT, región, ejecutiva..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-slate-900 border-slate-700 text-white placeholder-slate-500"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-400"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <Input placeholder="Buscar por nombre, RUT, región, ejecutiva..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="border-slate-700 bg-slate-900 pl-10 text-white placeholder-slate-500" />
+          {searchTerm && <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-400"><X className="h-4 w-4" /></button>}
         </div>
-        <button
-          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-          className={`px-4 py-2 rounded border transition-colors flex items-center gap-2 ${
-            showAdvancedFilters
-              ? 'bg-orange-500 border-orange-500 text-white'
-              : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Filter className="w-4 h-4" />
-          Filtros
-          {hasActiveFilters && (
-            <Badge className="ml-1 bg-red-500 text-white">
-              {selectedCertifications.length + (showActiveOnly ? 1 : 0)}
-            </Badge>
-          )}
+        <button onClick={() => setShowAdvancedFilters(!showAdvancedFilters)} className={`flex items-center gap-2 rounded border px-4 py-2 transition-colors ${showAdvancedFilters ? 'border-orange-500 bg-orange-500 text-white' : 'border-slate-700 bg-slate-900 text-slate-400 hover:text-slate-200'}`}>
+          <Filter className="h-4 w-4" /> Filtros
+          {hasActiveFilters && <Badge className="ml-1 bg-red-500 text-white">{selectedCertifications.length + (showActiveOnly ? 1 : 0)}</Badge>}
         </button>
-        {hasActiveFilters && (
-          <button
-            onClick={clearAllFilters}
-            className="px-3 py-2 rounded bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-200 transition-colors"
-            title="Limpiar todos los filtros"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        )}
+        {hasActiveFilters && <button onClick={clearAllFilters} className="rounded border border-slate-700 bg-slate-800 px-3 py-2 text-slate-400 hover:text-slate-200" title="Limpiar filtros"><X className="h-4 w-4" /></button>}
       </div>
 
-      {/* Ejecutivas Filter - Always visible */}
       <div className="space-y-2">
-        <label className="text-sm font-semibold text-slate-300 block">Ejecutivas</label>
+        <label className="block text-sm font-semibold text-slate-300">Ejecutivas</label>
         <div className="flex flex-wrap gap-2">
-          {ejecutivas.map(ejecutiva => (
-            <button
-              key={ejecutiva}
-              onClick={() => toggleEjecutiva(ejecutiva)}
-              className={`px-3 py-1 rounded text-sm transition-colors ${
-                selectedEjecutivas.includes(ejecutiva)
-                  ? 'bg-green-600 text-white'
-                  : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {ejecutiva}
-            </button>
-          ))}
+          {ejecutivas.map(ejecutiva => <button key={ejecutiva} onClick={() => toggleEjecutiva(ejecutiva)} className={`rounded px-3 py-1 text-sm transition-colors ${selectedEjecutivas.includes(ejecutiva) ? 'bg-green-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-200'}`}>{ejecutiva}</button>)}
         </div>
       </div>
 
-      {/* Advanced Filters */}
       {showAdvancedFilters && (
-        <div className="space-y-4 p-4 bg-slate-900 rounded-lg border border-slate-800">
-          {/* Certifications Filter */}
+        <div className="space-y-4 rounded-lg border border-slate-800 bg-slate-900 p-4">
           <div>
-            <label className="text-sm font-semibold text-slate-300 block mb-2">Certificaciones ({selectedCertifications.length})</label>
+            <label className="mb-2 block text-sm font-semibold text-slate-300">Certificaciones ({selectedCertifications.length})</label>
             <div className="flex flex-wrap gap-2">
-              {Object.entries(certifications).map(([key, label]) => (
-                <button
-                  key={key}
-                  onClick={() => toggleCertification(key)}
-                  className={`px-3 py-1 rounded text-sm transition-colors ${
-                    selectedCertifications.includes(key)
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+              {Object.entries(certifications).map(([key, label]) => <button key={key} onClick={() => toggleCertification(key)} className={`rounded px-3 py-1 text-sm ${selectedCertifications.includes(key) ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-200'}`}>{label}</button>)}
             </div>
           </div>
-
-          {/* Status Filter */}
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showActiveOnly}
-              onChange={(e) => setShowActiveOnly(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-700 bg-slate-800"
-            />
-            <span className="text-sm text-slate-300">Solo activos</span>
-          </label>
+          <label className="flex cursor-pointer items-center gap-2"><input type="checkbox" checked={showActiveOnly} onChange={e => setShowActiveOnly(e.target.checked)} className="h-4 w-4 rounded border-slate-700 bg-slate-800" /><span className="text-sm text-slate-300">Solo activos</span></label>
         </div>
       )}
 
-      {/* Results count */}
-      <div className="text-sm text-slate-400">
-        Mostrando {filtered.length} de {subcontractors.length} subcontratistas
-      </div>
+      <div className="text-sm text-slate-400">Mostrando {filtered.length} de {subcontractors.length} subcontratistas</div>
 
-      {/* Results Grid with scrollable container */}
       <div className="max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
         <div className="grid gap-4">
-        {filtered.length === 0 ? (
-          <Card className="col-span-full">
-            <CardContent className="p-8 text-center">
-              <p className="text-slate-400">No hay subcontratistas que coincidan con los filtros.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          filtered.map((sub, subIdx) => {
-            // Normalize RUT format for matching (remove dots, hyphens, spaces)
-            const normalizeRut = (rut: string | undefined) => {
-              if (!rut) return ''
-              return rut.trim().replace(/[.-]/g, '').toUpperCase()
-            }
-            
+          {filtered.length === 0 ? (
+            <Card><CardContent className="p-8 text-center"><p className="text-slate-400">No hay subcontratistas que coincidan con los filtros.</p></CardContent></Card>
+          ) : filtered.map((sub, subIdx) => {
+            const normalizeRut = (rut?: string) => rut?.trim().replace(/[.\-]/g, '').toUpperCase() || ''
             const normalizedSubRut = normalizeRut(sub.rut)
-            
-            // Get or calculate driver count and filter drivers for this subcontractor
             let driverCount = sub.conductores_count ?? 0
-            let subDrivers = drivers.filter((d) => {
-              const normalizedDriverRut = normalizeRut(d.rut_proveedor)
-              return normalizedDriverRut === normalizedSubRut && d.is_active
-            })
-            
-            // If conductores_count is not available from API, use the filtered count
-            if (driverCount === 0 && drivers.length > 0) {
-              driverCount = subDrivers.length
-            }
-            
+            const subDrivers = drivers.filter(d => normalizeRut(d.rut_proveedor) === normalizedSubRut && d.is_active)
+            if (driverCount === 0 && drivers.length > 0) driverCount = subDrivers.length
             const isExpanded = expandedSubcontractor === sub.id
             const completion = getCompletion(sub)
+            const siiStatus = siiStatuses[sub.id]
 
             return (
-            <Card key={sub.id} className="hover:border-slate-500 transition-colors">
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  {/* Header with name and status */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-baseline gap-3 mb-1">
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-500 text-white text-sm font-bold flex-shrink-0">
-                          {subIdx + 1}
-                        </span>
-                        <h3 className="font-bold text-lg text-white">{sub.nombre}</h3>
+              <Card key={sub.id} className="transition-colors hover:border-slate-500">
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="mb-1 flex items-baseline gap-3">
+                          <span className="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">{subIdx + 1}</span>
+                          <h3 className="text-lg font-bold text-white">{sub.nombre || sub.razon_social}</h3>
+                        </div>
+                        {sub.nombre_fantasia && <p className="ml-9 text-sm italic text-slate-400">{sub.nombre_fantasia}</p>}
                       </div>
-                      {sub.nombre_fantasia && (
-                        <p className="text-sm text-slate-400 italic ml-9">{sub.nombre_fantasia}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {sub.is_active ? (
-                        <>
-                          <CheckCircle className="w-5 h-5 text-green-500" />
-                          <Badge className="bg-green-500/20 text-green-300">Activo</Badge>
-                        </>
-                      ) : (
-                        <>
-                          <AlertCircle className="w-5 h-5 text-red-500" />
-                          <Badge className="bg-red-500/20 text-red-300">Inactivo</Badge>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Driver count badge and action buttons */}
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-slate-400" />
-                      <span className="text-sm text-slate-300">
-                        <span className="font-semibold text-amber-400">{driverCount}</span> conductores
-                      </span>
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className={
-                        completion.label === 'Completo'
-                          ? 'border-emerald-200/40 bg-emerald-500/10 text-emerald-200'
-                          : completion.label === 'Parcial'
-                            ? 'border-amber-200/40 bg-amber-500/10 text-amber-200'
-                            : 'border-rose-200/40 bg-rose-500/10 text-rose-200'
-                      }
-                    >
-                      Perfil {completion.percent}%
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className={
-                        completion.label === 'Completo'
-                          ? 'border-emerald-200/40 bg-emerald-500/10 text-emerald-200'
-                          : completion.label === 'Parcial'
-                            ? 'border-amber-200/40 bg-amber-500/10 text-amber-200'
-                            : 'border-rose-200/40 bg-rose-500/10 text-rose-200'
-                      }
-                    >
-                      {completion.label}
-                    </Badge>
-                    
-                    {/* Edit Button */}
-                    <button
-                      onClick={() => {
-                        setEditingSubcontractor(sub)
-                        setIsEditModalOpen(true)
-                      }}
-                      className="ml-auto p-2 rounded hover:bg-slate-700/60 transition-colors text-slate-400 hover:text-slate-200"
-                      title="Editar subcontratista"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-
-                    {/* Assign Executive Button */}
-                    <button
-                      onClick={() => {
-                        setAssigningSubcontractor(sub)
-                        setIsAssignModalOpen(true)
-                      }}
-                      className="p-2 rounded hover:bg-slate-700/60 transition-colors text-slate-400 hover:text-slate-200"
-                      title="Asignar ejecutiva"
-                    >
-                      <UserPlus className="w-4 h-4" />
-                    </button>
-
-                    {/* Documentos Button */}
-                    <button
-                      onClick={() => {
-                        setDetailTabToOpen('documentos')
-                        setSelectedDetailSubcontractor(sub)
-                      }}
-                      className="text-xs px-3 py-1 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors border border-blue-500/30"
-                    >
-                      Documentos
-                    </button>
-                    {/* Conductores Button */}
-                    <button
-                      onClick={() => {
-                        setDetailTabToOpen('conductores')
-                        setSelectedDetailSubcontractor(sub)
-                      }}
-                      className="text-xs px-3 py-1 rounded bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 transition-colors border border-orange-500/30"
-                    >
-                      Ver Conductores
-                    </button>
-                  </div>
-
-                  {/* Contact Info */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <p className="text-xs text-slate-400 font-semibold">RUT</p>
-                      <p className="font-mono text-sm text-amber-400">{sub.rut}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-400 font-semibold">COMUNA</p>
-                      <p className="text-sm text-white">{sub.comuna || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-400 font-semibold">DIRECCIÓN</p>
-                      <p className="text-sm text-white">{sub.direccion || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-400 font-semibold">REPRESENTANTE</p>
-                      <p className="text-sm text-white">{sub.representante_legal || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-400 font-semibold">EJECUTIVA ASIGNADA</p>
-                      <p className="text-sm text-white">{sub.ejecutivo_nombre || 'Sin asignar'}</p>
-                    </div>
-                  </div>
-
-                  {/* Contact Details */}
-                  <div className="flex flex-wrap gap-2 text-sm">
-                    {sub.telefono && (
-                      <a href={`tel:${sub.telefono}`} className="flex items-center gap-1 text-blue-400 hover:text-blue-300">
-                        <Phone className="w-4 h-4" />
-                        {sub.telefono}
-                      </a>
-                    )}
-                    {(sub.correo || sub.email) && (
-                      <a href={`mailto:${sub.correo || sub.email}`} className="flex items-center gap-1 text-blue-400 hover:text-blue-300">
-                        <Mail className="w-4 h-4" />
-                        {sub.correo || sub.email}
-                      </a>
-                    )}
-                  </div>
-
-                  {/* Certifications */}
-                  <div className="flex flex-wrap gap-2">
-                    {sub.ariztia && <Badge className="bg-blue-500/20 text-blue-300">Ariztia</Badge>}
-                    {sub.lts && <Badge className="bg-green-500/20 text-green-300">LTS</Badge>}
-                    {sub.rendic && <Badge className="bg-purple-500/20 text-purple-300">Rendic</Badge>}
-                    {sub.interpolar && <Badge className="bg-orange-500/20 text-orange-300">Interpolar</Badge>}
-                  </div>
-
-                  {/* Expandable Drivers Section */}
-                  {isExpanded && driverCount > 0 && (
-                    <div className="mt-6 pt-4 border-t border-slate-700 space-y-2">
-                      <p className="text-sm font-semibold text-slate-300">Conductores asociados ({driverCount}):</p>
-                      <div className="grid gap-2 max-h-96 overflow-y-auto">
-                        {subDrivers.map(driver => (
-                          <div key={driver.id} className="p-3 bg-slate-900 rounded border border-slate-700 text-sm">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1">
-                                <p className="font-semibold text-white">{driver.nombre}</p>
-                                <p className="text-xs text-slate-400">RUT: <span className="font-mono text-amber-400">{driver.rut}</span></p>
-                              </div>
-                              {driver.is_active && (
-                                <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                              )}
-                            </div>
-                          </div>
-                        ))}
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        <SiiBadge value={siiStatus} />
+                        {sub.is_active ? <><CheckCircle className="h-5 w-5 text-green-500" /><Badge className="bg-green-500/20 text-green-300">Activo</Badge></> : <><AlertCircle className="h-5 w-5 text-red-500" /><Badge className="bg-red-500/20 text-red-300">Inactivo</Badge></>}
                       </div>
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex items-center gap-2"><Users className="h-4 w-4 text-slate-400" /><span className="text-sm text-slate-300"><span className="font-semibold text-amber-400">{driverCount}</span> conductores</span></div>
+                      <Badge variant="outline" className={completion.label === 'Completo' ? 'border-emerald-200/40 bg-emerald-500/10 text-emerald-200' : completion.label === 'Parcial' ? 'border-amber-200/40 bg-amber-500/10 text-amber-200' : 'border-rose-200/40 bg-rose-500/10 text-rose-200'}>Perfil {completion.percent}%</Badge>
+                      <Badge variant="outline" className={completion.label === 'Completo' ? 'border-emerald-200/40 bg-emerald-500/10 text-emerald-200' : completion.label === 'Parcial' ? 'border-amber-200/40 bg-amber-500/10 text-amber-200' : 'border-rose-200/40 bg-rose-500/10 text-rose-200'}>{completion.label}</Badge>
+                      <button onClick={() => { setEditingSubcontractor(sub); setIsEditModalOpen(true) }} className="ml-auto rounded p-2 text-slate-400 hover:bg-slate-700/60 hover:text-slate-200" title="Editar subcontratista"><Edit className="h-4 w-4" /></button>
+                      <button onClick={() => { setAssigningSubcontractor(sub); setIsAssignModalOpen(true) }} className="rounded p-2 text-slate-400 hover:bg-slate-700/60 hover:text-slate-200" title="Asignar ejecutiva"><UserPlus className="h-4 w-4" /></button>
+                      <button onClick={() => { setDetailTabToOpen('documentos'); setSelectedDetailSubcontractor(sub) }} className="rounded border border-blue-500/30 bg-blue-500/20 px-3 py-1 text-xs text-blue-400 hover:bg-blue-500/30">Documentos</button>
+                      <button onClick={() => { setDetailTabToOpen('conductores'); setSelectedDetailSubcontractor(sub) }} className="rounded border border-orange-500/30 bg-orange-500/20 px-3 py-1 text-xs text-orange-400 hover:bg-orange-500/30">Ver Conductores</button>
+                    </div>
+
+                    {siiStatus?.checkedAt && (
+                      <div className="rounded-lg border border-slate-700/70 bg-slate-900/50 px-3 py-2 text-xs text-slate-400">
+                        Última consulta SII: <span className="text-slate-200">{formatCheckedAt(siiStatus.checkedAt)}</span>
+                        {siiStatus.razonSocial && siiStatus.razonSocial !== (sub.razon_social || sub.nombre) && <span className="ml-3">Razón social SII: <span className="text-slate-200">{siiStatus.razonSocial}</span></span>}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><p className="text-xs font-semibold text-slate-400">RUT</p><p className="font-mono text-sm text-amber-400">{sub.rut}</p></div>
+                      <div><p className="text-xs font-semibold text-slate-400">COMUNA</p><p className="text-sm text-white">{sub.comuna || 'N/A'}</p></div>
+                      <div><p className="text-xs font-semibold text-slate-400">DIRECCIÓN</p><p className="text-sm text-white">{sub.direccion || 'N/A'}</p></div>
+                      <div><p className="text-xs font-semibold text-slate-400">REPRESENTANTE</p><p className="text-sm text-white">{sub.representante_legal || 'N/A'}</p></div>
+                      <div><p className="text-xs font-semibold text-slate-400">EJECUTIVA ASIGNADA</p><p className="text-sm text-white">{sub.ejecutivo_nombre || 'Sin asignar'}</p></div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 text-sm">
+                      {sub.telefono && <a href={`tel:${sub.telefono}`} className="flex items-center gap-1 text-blue-400 hover:text-blue-300"><Phone className="h-4 w-4" />{sub.telefono}</a>}
+                      {(sub.correo || sub.email) && <a href={`mailto:${sub.correo || sub.email}`} className="flex items-center gap-1 text-blue-400 hover:text-blue-300"><Mail className="h-4 w-4" />{sub.correo || sub.email}</a>}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {sub.ariztia && <Badge className="bg-blue-500/20 text-blue-300">Ariztia</Badge>}
+                      {sub.lts && <Badge className="bg-green-500/20 text-green-300">LTS</Badge>}
+                      {sub.rendic && <Badge className="bg-purple-500/20 text-purple-300">Rendic</Badge>}
+                      {sub.interpolar && <Badge className="bg-orange-500/20 text-orange-300">Interpolar</Badge>}
+                    </div>
+
+                    {isExpanded && driverCount > 0 && (
+                      <div className="mt-6 space-y-2 border-t border-slate-700 pt-4">
+                        <p className="text-sm font-semibold text-slate-300">Conductores asociados ({driverCount}):</p>
+                        <div className="grid max-h-96 gap-2 overflow-y-auto">
+                          {subDrivers.map(driver => <div key={driver.id} className="rounded border border-slate-700 bg-slate-900 p-3 text-sm"><div className="flex items-start justify-between gap-2"><div className="flex-1"><p className="font-semibold text-white">{driver.nombre}</p><p className="text-xs text-slate-400">RUT: <span className="font-mono text-amber-400">{driver.rut}</span></p></div>{driver.is_active && <CheckCircle className="h-4 w-4 flex-shrink-0 text-green-500" />}</div></div>)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             )
-          })
-        )}
+          })}
         </div>
       </div>
 
-      {/* Subcontractor Detail Modal */}
-      {selectedDetailSubcontractor && (
-        <SubcontractorDetailTabs
-          subcontractor={selectedDetailSubcontractor}
-          initialTab={detailTabToOpen}
-          conductoresData={conductoresData}
-          documentsData={documentsData || undefined}
-          onClose={() => {
-            setSelectedDetailSubcontractor(null)
-            setDetailTabToOpen('resumen')
-            setDocumentsData(null)
-          }}
-        />
-      )}
+      {selectedDetailSubcontractor && <SubcontractorDetailTabs subcontractor={selectedDetailSubcontractor} initialTab={detailTabToOpen} conductoresData={conductoresData} documentsData={documentsData || undefined} onClose={() => { setSelectedDetailSubcontractor(null); setDetailTabToOpen('resumen'); setDocumentsData(null) }} />}
 
-      <EditSubcontractorModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        onSuccess={() => {
-          setIsEditModalOpen(false)
-          // Refresh the updated subcontractor data
-          if (editingSubcontractor?.id) {
-            refreshSubcontractor(editingSubcontractor.id)
-          }
-          setEditingSubcontractor(null)
-        }}
-        subcontractor={editingSubcontractor || undefined}
-      />
+      <EditSubcontractorModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onSuccess={() => { setIsEditModalOpen(false); if (editingSubcontractor?.id) refreshSubcontractor(editingSubcontractor.id); setEditingSubcontractor(null) }} subcontractor={editingSubcontractor || undefined} />
 
-      <AssignExecutiveModal
-        open={isAssignModalOpen}
-        onOpenChange={setIsAssignModalOpen}
-        transportistaId={assigningSubcontractor?.id || ''}
-        transportistaNombre={assigningSubcontractor?.nombre || ''}
-        onAssignmentSuccess={async () => {
-          // Refresh the updated subcontractor data from API
-          if (assigningSubcontractor?.id) {
-            await refreshSubcontractor(assigningSubcontractor.id)
-          }
-          setAssigningSubcontractor(null)
-        }}
-      />
+      <AssignExecutiveModal open={isAssignModalOpen} onOpenChange={setIsAssignModalOpen} transportistaId={assigningSubcontractor?.id || ''} transportistaNombre={assigningSubcontractor?.nombre || assigningSubcontractor?.razon_social || ''} onAssignmentSuccess={async () => { if (assigningSubcontractor?.id) await refreshSubcontractor(assigningSubcontractor.id); setAssigningSubcontractor(null) }} />
     </div>
   )
 }
