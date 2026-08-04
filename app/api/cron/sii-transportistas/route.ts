@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const maxDuration = 60
 
-const BATCH_SIZE = 8
+const BATCH_SIZE = 5
 const PAUSE_MS = 3_000
 const ADAPTER_VERSION = 4
 const SUCCESS_STATUSES = new Set(['success', 'warning', 'not_found'])
