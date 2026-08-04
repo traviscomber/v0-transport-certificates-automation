@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -7,6 +8,8 @@ export const maxDuration = 300
 
 const BATCH_SIZE = 20
 const CONCURRENCY = 4
+const LOCK_NAME = 'f30_backfill'
+const LOCK_LEASE_SECONDS = 360
 const PRODUCTION_ORIGIN = process.env.NEXT_PUBLIC_APP_URL || 'https://transn3uralia.vercel.app'
 
 function isAuthorizedCron(request: NextRequest): boolean {
@@ -75,71 +78,94 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = createAdminClient()
-  const staleBefore = new Date(Date.now() - 10 * 60 * 1000).toISOString()
-
-  await supabase
-    .from('subcontractor_documents')
-    .update({ f30_status: null, f30_validated_at: null })
-    .eq('f30_status', 'processing')
-    .lt('f30_validated_at', staleBefore)
-
-  const { data: pending, error } = await supabase
-    .from('subcontractor_documents')
-    .select('id, file_name, uploaded_at')
-    .is('f30_status', null)
-    .or('file_name.ilike.F30%,file_name.ilike.F 30%')
-    .order('uploaded_at', { ascending: true })
-    .limit(BATCH_SIZE)
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  if (!pending || pending.length === 0) {
-    return NextResponse.json({ status: 'complete', processed: 0, remaining: 0 })
-  }
-
-  const claimedAt = new Date().toISOString()
-  const claimedIds = pending.map((document) => document.id)
-  const { error: claimError } = await supabase
-    .from('subcontractor_documents')
-    .update({ f30_status: 'processing', f30_validated_at: claimedAt })
-    .in('id', claimedIds)
-    .is('f30_status', null)
-
-  if (claimError) {
-    return NextResponse.json({ error: claimError.message }, { status: 500 })
-  }
-
-  const results: Array<Record<string, unknown>> = []
-
-  for (let index = 0; index < pending.length; index += CONCURRENCY) {
-    const chunk = pending.slice(index, index + CONCURRENCY)
-    const chunkResults = await Promise.all(chunk.map((document) => processDocument(document, supabase)))
-    results.push(...chunkResults)
-  }
-
-  const { count: remaining } = await supabase
-    .from('subcontractor_documents')
-    .select('id', { count: 'exact', head: true })
-    .is('f30_status', null)
-    .or('file_name.ilike.F30%,file_name.ilike.F 30%')
-
-  const summary = results.reduce<Record<string, number>>((acc, result) => {
-    const status = String(result.status ?? 'unknown')
-    const currentCount = acc[status] ?? 0
-    acc[status] = currentCount + 1
-    return acc
-  }, {})
-
-  return NextResponse.json({
-    status: 'processed',
-    batchSize: BATCH_SIZE,
-    concurrency: CONCURRENCY,
-    processed: results.length,
-    remaining: remaining ?? null,
-    durationMs: Date.now() - startedAt,
-    summary,
-    results,
+  const ownerToken = randomUUID()
+  const { data: acquired, error: lockError } = await supabase.rpc('acquire_system_job_lock', {
+    p_job_name: LOCK_NAME,
+    p_owner_token: ownerToken,
+    p_lease_seconds: LOCK_LEASE_SECONDS,
   })
+
+  if (lockError) {
+    return NextResponse.json({ error: `Unable to acquire F30 lock: ${lockError.message}` }, { status: 500 })
+  }
+
+  if (!acquired) {
+    return NextResponse.json({ status: 'skipped', reason: 'backfill_already_running' })
+  }
+
+  try {
+    const staleBefore = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+
+    await supabase
+      .from('subcontractor_documents')
+      .update({ f30_status: null, f30_validated_at: null })
+      .eq('f30_status', 'processing')
+      .lt('f30_validated_at', staleBefore)
+
+    const { data: pending, error } = await supabase
+      .from('subcontractor_documents')
+      .select('id, file_name, uploaded_at')
+      .is('f30_status', null)
+      .or('file_name.ilike.F30%,file_name.ilike.F 30%')
+      .order('uploaded_at', { ascending: true })
+      .limit(BATCH_SIZE)
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    if (!pending || pending.length === 0) {
+      return NextResponse.json({ status: 'complete', processed: 0, remaining: 0 })
+    }
+
+    const claimedAt = new Date().toISOString()
+    const claimedIds = pending.map((document) => document.id)
+    const { error: claimError } = await supabase
+      .from('subcontractor_documents')
+      .update({ f30_status: 'processing', f30_validated_at: claimedAt })
+      .in('id', claimedIds)
+      .is('f30_status', null)
+
+    if (claimError) {
+      return NextResponse.json({ error: claimError.message }, { status: 500 })
+    }
+
+    const results: Array<Record<string, unknown>> = []
+
+    for (let index = 0; index < pending.length; index += CONCURRENCY) {
+      const chunk = pending.slice(index, index + CONCURRENCY)
+      const chunkResults = await Promise.all(chunk.map((document) => processDocument(document, supabase)))
+      results.push(...chunkResults)
+    }
+
+    const { count: remaining } = await supabase
+      .from('subcontractor_documents')
+      .select('id', { count: 'exact', head: true })
+      .is('f30_status', null)
+      .or('file_name.ilike.F30%,file_name.ilike.F 30%')
+
+    const summary = results.reduce<Record<string, number>>((acc, result) => {
+      const status = String(result.status ?? 'unknown')
+      const currentCount = acc[status] ?? 0
+      acc[status] = currentCount + 1
+      return acc
+    }, {})
+
+    return NextResponse.json({
+      status: 'processed',
+      batchSize: BATCH_SIZE,
+      concurrency: CONCURRENCY,
+      processed: results.length,
+      remaining: remaining ?? null,
+      durationMs: Date.now() - startedAt,
+      summary,
+      results,
+    })
+  } finally {
+    const { error: releaseError } = await supabase.rpc('release_system_job_lock', {
+      p_job_name: LOCK_NAME,
+      p_owner_token: ownerToken,
+    })
+    if (releaseError) console.error('[f30-backfill] Failed to release lock', releaseError)
+  }
 }
