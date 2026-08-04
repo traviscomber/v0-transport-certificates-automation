@@ -1,3 +1,4 @@
+import { SiiTaxStatusAdapter } from './adapters/sii-tax-status'
 import type { VerificationSourceAdapter, VerificationSourceCode } from './types'
 
 class DisabledSourceAdapter implements VerificationSourceAdapter {
@@ -13,7 +14,7 @@ class DisabledSourceAdapter implements VerificationSourceAdapter {
 }
 
 const adapters = new Map<VerificationSourceCode, VerificationSourceAdapter>([
-  ['sii_tax_status', new DisabledSourceAdapter('sii_tax_status')],
+  ['sii_tax_status', new SiiTaxStatusAdapter()],
   ['res_company_registry', new DisabledSourceAdapter('res_company_registry')],
   ['dt_document_verifier', new DisabledSourceAdapter('dt_document_verifier')],
   ['registro_civil_verifier', new DisabledSourceAdapter('registro_civil_verifier')],
