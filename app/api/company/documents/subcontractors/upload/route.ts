@@ -5,97 +5,117 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { triggerSubcontractorDocumentUploadedAlert } from '@/lib/operations/alert-triggers'
 import { normalizeDocumentPeriod } from '@/lib/document-period'
 
+export const maxDuration = 300
+export const dynamic = 'force-dynamic'
+
+const F30_CODES = new Set(['F30', 'F30-1_DOÑA_ISIDORA', 'F30-1_CLIENTE'])
+
+type F30AnalysisResult = {
+  success: boolean
+  analysis?: unknown
+  error?: string
+}
+
+async function analyzeF30Document(origin: string, documentId: string): Promise<F30AnalysisResult> {
+  try {
+    const response = await fetch(`${origin}/api/company/documents/${documentId}/reprocess`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ documentId }),
+      cache: 'no-store',
+    })
+
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      return {
+        success: false,
+        error: typeof payload?.error === 'string' ? payload.error : `F30 analysis returned HTTP ${response.status}`,
+      }
+    }
+
+    return { success: true, analysis: payload?.analysis ?? payload }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown F30 analysis error',
+    }
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const files = formData.getAll('files') as File[]
     const subcontractorId = formData.get('subcontractorId') as string
     const category = formData.get('category') as string
-    const expiryDate = formData.get('expiryDate') as string | null
     const periodMonth = formData.get('documentPeriodMonth') || formData.get('periodMonth')
     const periodYear = formData.get('documentPeriodYear') || formData.get('periodYear')
     const documentPeriod = normalizeDocumentPeriod(periodMonth as string | null, periodYear as string | null)
 
-    console.log('[v0] Subcontractor document upload:', { subcontractorId, category, fileCount: files.length })
-
-    if (!subcontractorId || !files.length) {
+    if (!subcontractorId || !files.length || !category) {
       return NextResponse.json(
-        { error: 'Subcontractor ID and files required' },
-        { status: 400 }
+        { error: 'Subcontractor ID, document category and files are required' },
+        { status: 400 },
       )
     }
 
     const adminClient = createAdminClient()
-
-    // Asegurar que el bucket existe
     const bucketName = 'subcontractor-documents'
+
     try {
       const { data: buckets } = await adminClient.storage.listBuckets()
-      const bucketExists = buckets?.some((b: any) => b.name === bucketName)
-      
-      if (!bucketExists) {
-        console.log('[v0] Creating', bucketName, 'bucket...')
+      if (!buckets?.some((bucket) => bucket.name === bucketName)) {
         await adminClient.storage.createBucket(bucketName, {
           public: true,
-          fileSizeLimit: 52428800, // 50MB
+          fileSizeLimit: 52_428_800,
         })
-        console.log('[v0] Bucket created successfully')
       }
     } catch (bucketError) {
-      console.log('[v0] Bucket check/create attempt (may already exist):', bucketError)
+      console.warn('[documents/upload] Bucket check failed:', bucketError)
     }
 
-    // Verify subcontractor exists
-    const { data: subcontractor, error: subError } = await adminClient
-      .from('transportistas')
-      .select('id, rut, razon_social')
-      .eq('id', subcontractorId)
-      .single()
+    const [{ data: subcontractor, error: subcontractorError }, { data: documentType, error: typeError }] = await Promise.all([
+      adminClient
+        .from('transportistas')
+        .select('id, rut, razon_social')
+        .eq('id', subcontractorId)
+        .single(),
+      adminClient
+        .from('subcontractor_document_types')
+        .select('id, code, nombre')
+        .eq('id', category)
+        .single(),
+    ])
 
-    if (subError || !subcontractor) {
-      return NextResponse.json(
-        { error: 'Subcontractor not found' },
-        { status: 404 }
-      )
+    if (subcontractorError || !subcontractor) {
+      return NextResponse.json({ error: 'Subcontractor not found' }, { status: 404 })
+    }
+    if (typeError || !documentType) {
+      return NextResponse.json({ error: 'Document type not found' }, { status: 400 })
     }
 
-    console.log('[v0] Found subcontractor:', subcontractor.razon_social)
+    const shouldAnalyzeF30 = F30_CODES.has(documentType.code)
+    const uploadedDocs: Array<Record<string, unknown>> = []
 
-    // Upload each file
-    const uploadedDocs = []
     for (const file of files) {
-      const fileName = `${Date.now()}_${file.name}`
-      const filePath = `subcontractors/${subcontractorId}/${fileName}`
+      const storageName = `${Date.now()}_${crypto.randomUUID()}_${file.name}`
+      const filePath = `subcontractors/${subcontractorId}/${storageName}`
+      const buffer = Buffer.from(await file.arrayBuffer())
 
-      console.log('[v0] Uploading file:', { fileName, size: file.size, type: file.type })
-
-      // Convert File to Buffer for upload
-      const arrayBuffer = await file.arrayBuffer()
-      const buffer = Buffer.from(arrayBuffer)
-
-      console.log('[v0] File converted to buffer:', { bufferSize: buffer.length })
-
-      // Upload to Supabase Storage
-      const { error: uploadError, data: uploadData } = await adminClient.storage
+      const { error: uploadError } = await adminClient.storage
         .from(bucketName)
         .upload(filePath, buffer, {
           cacheControl: '3600',
           upsert: false,
-          contentType: file.type,
+          contentType: file.type || 'application/octet-stream',
         })
 
       if (uploadError) {
-        console.error('[v0] Upload error:', uploadError.message)
+        console.error('[documents/upload] Storage upload failed:', uploadError.message)
         continue
       }
 
-      console.log('[v0] Upload successful:', uploadData)
-
-      // Get signed URL
-      const { data: { publicUrl } } = adminClient.storage
-        .from(bucketName)
-        .getPublicUrl(filePath)
-
+      const { data: { publicUrl } } = adminClient.storage.from(bucketName).getPublicUrl(filePath)
       const insertPayload = {
         subcontractor_id: subcontractorId,
         subcontractor_rut: subcontractor.rut || '',
@@ -107,51 +127,68 @@ export async function POST(request: NextRequest) {
         ...(documentPeriod || {}),
       }
 
-      let { data: doc, error: docError } = await adminClient
+      const { data: document, error: documentError } = await adminClient
         .from('subcontractor_documents')
         .insert(insertPayload)
         .select()
         .single()
 
-      if (docError && documentPeriod && /document_period/i.test(docError.message || '')) {
+      if (documentError && documentPeriod && /document_period/i.test(documentError.message || '')) {
         return NextResponse.json(
           { error: 'La base de datos aun no tiene habilitado el periodo documental. Aplica la migracion 014 antes de subir documentos.' },
-          { status: 503 }
+          { status: 503 },
         )
       }
 
-      if (!docError && doc) {
-        uploadedDocs.push(doc)
-        console.log('[v0] Document saved:', doc.id)
+      if (documentError || !document) {
+        console.error('[documents/upload] Database insert failed:', documentError?.message)
+        continue
+      }
 
-        // Trigger alert for subcontractor document upload
-        try {
-          await triggerSubcontractorDocumentUploadedAlert(
-            subcontractorId,
-            file.name,
-            subcontractor.razon_social,
-            category,
-            doc.id
-          )
-          console.log('[v0] Alert triggered for subcontractor doc upload')
-        } catch (alertError) {
-          console.error('[v0] Alert trigger error (non-fatal):', alertError)
+      let f30Analysis: F30AnalysisResult | null = null
+      if (shouldAnalyzeF30) {
+        f30Analysis = await analyzeF30Document(request.nextUrl.origin, document.id)
+        if (!f30Analysis.success) {
+          await adminClient
+            .from('subcontractor_documents')
+            .update({
+              ai_warnings: [`F30_AUTO_ANALYSIS_FAILED: ${f30Analysis.error ?? 'unknown error'}`],
+              ai_analyzed_at: new Date().toISOString(),
+            })
+            .eq('id', document.id)
         }
       }
-    }
 
-    console.log('[v0] Upload complete:', uploadedDocs.length, 'documents')
+      try {
+        await triggerSubcontractorDocumentUploadedAlert(
+          subcontractorId,
+          file.name,
+          subcontractor.razon_social,
+          category,
+          document.id,
+        )
+      } catch (alertError) {
+        console.error('[documents/upload] Alert trigger failed:', alertError)
+      }
+
+      uploadedDocs.push({
+        ...document,
+        document_type_code: documentType.code,
+        auto_analysis: shouldAnalyzeF30 ? f30Analysis : null,
+      })
+    }
 
     return NextResponse.json({
       success: true,
       message: `${uploadedDocs.length} document(s) uploaded successfully`,
+      f30AutoAnalysisEnabled: shouldAnalyzeF30,
       documents: uploadedDocs,
     })
   } catch (error) {
-    console.error('[v0] Error uploading subcontractor documents:', error)
+    console.error('[documents/upload] Unexpected error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Error uploading documents' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
