@@ -50,15 +50,13 @@ type ImportRow = {
 
 function isAuthorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET
-  if (!secret) return true
-  return request.headers.get('authorization') === `Bearer ${secret}`
+  return !secret || request.headers.get('authorization') === `Bearer ${secret}`
 }
 
 function clean(value: unknown): string | null {
   if (value === null || value === undefined) return null
   const text = String(value).trim()
-  if (!text || text.toUpperCase() === 'NULL') return null
-  return text
+  return !text || text.toUpperCase() === 'NULL' ? null : text
 }
 
 function normalizePlate(value: unknown): string | null {
@@ -67,16 +65,32 @@ function normalizePlate(value: unknown): string | null {
 }
 
 function excelDateToIso(value: unknown): string | null {
-  if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString().slice(0, 10)
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10)
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    const wholeDays = Math.floor(value)
+    const utcMs = Date.UTC(1899, 11, 30) + wholeDays * 86_400_000
+    const date = new Date(utcMs)
+    return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10)
+  }
+
   const text = clean(value)
   if (!text) return null
   const match = text.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/)
   if (!match) return null
+
   const month = Number(match[1])
   const day = Number(match[2])
   const year = Number(match[3]) < 100 ? 2000 + Number(match[3]) : Number(match[3])
   const date = new Date(Date.UTC(year, month - 1, day))
-  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return null
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) return null
+
   return date.toISOString().slice(0, 10)
 }
 
@@ -84,6 +98,19 @@ function resultLabel(code: string | null): string | null {
   if (code === 'A') return 'APROBADO'
   if (code === 'R') return 'RECHAZADO'
   return code
+}
+
+function normalizeCell(value: unknown): unknown {
+  if (value && typeof value === 'object') {
+    if ('result' in value) return (value as { result?: unknown }).result ?? null
+    if ('text' in value) return (value as { text?: unknown }).text ?? null
+    if ('richText' in value) {
+      return (value as { richText?: Array<{ text?: string }> }).richText
+        ?.map((item) => item.text ?? '')
+        .join('') ?? null
+    }
+  }
+  return value
 }
 
 function rowObject(values: readonly unknown[], headers: string[]): Record<string, unknown> {
@@ -95,18 +122,6 @@ function rowObject(values: readonly unknown[], headers: string[]): Record<string
   return output
 }
 
-function normalizeCell(value: unknown): unknown {
-  if (value && typeof value === 'object') {
-    if ('result' in value) return (value as { result?: unknown }).result ?? null
-    if ('text' in value) return (value as { text?: unknown }).text ?? null
-    if ('richText' in value) {
-      const rich = (value as { richText?: Array<{ text?: string }> }).richText
-      return rich?.map((item) => item.text ?? '').join('') ?? null
-    }
-  }
-  return value
-}
-
 function buildImportRow(source: Record<string, unknown>, batch: Batch): ImportRow | null {
   const plateNormalized = normalizePlate(source.PPU)
   const inspectionDate = excelDateToIso(source.FEC_REVISION)
@@ -114,13 +129,15 @@ function buildImportRow(source: Record<string, unknown>, batch: Batch): ImportRo
   if (!plateNormalized || !inspectionDate || !certificateNumber) return null
 
   const resultCode = clean(source.RESULTADO_CRT)?.toUpperCase() ?? null
+  const expirationDate = excelDateToIso(source.FEC_VENCIMIENTO)
+
   return {
     batch_id: batch.id,
     plate: clean(source.PPU) ?? plateNormalized,
     plate_normalized: plateNormalized,
     record_type: batch.record_type,
     inspection_date: inspectionDate,
-    expiration_date: excelDateToIso(source.FEC_VENCIMIENTO),
+    expiration_date: expirationDate,
     result_code: resultCode,
     result_label: resultLabel(resultCode),
     station_code: clean(source.COD_PRT),
@@ -144,7 +161,7 @@ function buildImportRow(source: Record<string, unknown>, batch: Batch): ImportRo
       KILOMETRAJE: clean(source.KILOMETRAJE),
       NUM_CERTIFICADO: certificateNumber,
       FEC_REVISION: inspectionDate,
-      FEC_VENCIMIENTO: excelDateToIso(source.FEC_VENCIMIENTO),
+      FEC_VENCIMIENTO: expirationDate,
       RESULTADO_CRT: resultCode,
       FEC_VENCIMIENTO_GASES: excelDateToIso(source.FEC_VENCIMIENTO_GASES),
       RESULTADO_CRT_GASES: clean(source.RESULTADO_CRT_GASES),
@@ -160,7 +177,9 @@ async function downloadAndExtractWorkbook(sourceUrl: string, directory: string):
     redirect: 'follow',
     headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LABBE-PRT-Stream/1.0)' },
   })
-  if (!response.ok || !response.body) throw new Error(`PRT ZIP download failed with HTTP ${response.status}`)
+  if (!response.ok || !response.body) {
+    throw new Error(`PRT ZIP download failed with HTTP ${response.status}`)
+  }
 
   await pipeline(Readable.fromWeb(response.body as never), createWriteStream(archivePath))
   const directoryInfo = await unzipper.Open.file(archivePath)
@@ -181,7 +200,9 @@ async function upsertChunk(rows: ImportRow[]): Promise<void> {
 }
 
 export async function GET(request: NextRequest) {
-  if (!isAuthorized(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   const supabase = createAdminClient()
   const eligibleStatuses = ['inspected', 'profiled', 'profiling', 'failed']
@@ -243,8 +264,7 @@ export async function GET(request: NextRequest) {
         if (sourceRowIndex <= batch.source_cursor) continue
         processedThisRun += 1
 
-        const source = rowObject(values, headers)
-        const record = buildImportRow(source, batch)
+        const record = buildImportRow(rowObject(values, headers), batch)
         if (!record) {
           rejectedThisRun += 1
         } else {
@@ -292,6 +312,7 @@ export async function GET(request: NextRequest) {
         error_message: null,
       })
       .eq('id', batch.id)
+
     if (updateError) throw new Error(updateError.message)
 
     return NextResponse.json({
