@@ -43,14 +43,23 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
+    const isDev = process.env.NODE_ENV === 'development'
+
     console.error('[SII trigger error]', {
       message,
       stack: error instanceof Error ? error.stack : undefined,
       canaryEnabled: process.env.SII_TAX_STATUS_CANARY_ENABLED,
       labEnabled: process.env.EXTERNAL_VERIFICATION_LAB_ENABLED,
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? '✓' : '✗',
+      supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY ? '✓' : '✗',
     })
+
     return NextResponse.json(
-      { triggered: false, reason: 'engine_error', details: message },
+      {
+        triggered: false,
+        reason: 'engine_error',
+        details: isDev ? message : undefined,
+      },
       { status: 200 },
     )
   }
