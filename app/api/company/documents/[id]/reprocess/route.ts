@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { extractDocumentMetadata, extractDocumentFromText } from '@/lib/ai-document-processor'
-import { normalizeDocumentType, determineValidationStatus } from '@/lib/document-classification'
 import { extractText } from 'unpdf'
 import { generateAIAnalysisAlerts } from '@/lib/document-alerts-generator'
+import { parseF30Document } from '@/lib/f30-parser'
 
-export const maxDuration = 300 // 5 minutes
+export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
-/**
- * Endpoint to manually reprocess a document with AI
- * Useful for documents that failed extraction or need re-evaluation
- * 
- * POST /api/company/documents/[id]/reprocess
- * Body: { documentId: string }
- */
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -25,28 +18,26 @@ export async function POST(
 
     console.log('[v0] Reprocessing document:', documentId)
 
-    // Try to find document in subcontractor_documents first (most common for pending)
     let doc: any = null
     let docTable = ''
-    
-    const { data: subDoc, error: subError } = await adminClient
+
+    const { data: subDoc } = await adminClient
       .from('subcontractor_documents')
       .select('*')
       .eq('id', documentId)
       .single()
-    
+
     if (subDoc) {
       doc = subDoc
       docTable = 'subcontractor_documents'
       console.log('[v0] Found document in subcontractor_documents')
     } else {
-      // Try uploaded_documents (conductor documents)
-      const { data: uploadedDoc, error: uploadedError } = await adminClient
+      const { data: uploadedDoc } = await adminClient
         .from('uploaded_documents')
         .select('*')
         .eq('id', documentId)
         .single()
-      
+
       if (uploadedDoc) {
         doc = uploadedDoc
         docTable = 'uploaded_documents'
@@ -55,60 +46,39 @@ export async function POST(
     }
 
     if (!doc) {
-      console.log('[v0] Document not found in any table:', documentId)
-      return NextResponse.json(
-        { error: 'Document not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Document not found' }, { status: 404 })
     }
 
     if (!doc.file_url) {
-      return NextResponse.json(
-        { error: 'Document has no file URL' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Document has no file URL' }, { status: 400 })
     }
 
-    console.log('[v0] Fetching document from storage:', doc.file_url)
-
-    // Download document from storage
     const fileResponse = await fetch(doc.file_url)
     if (!fileResponse.ok) {
-      return NextResponse.json(
-        { error: 'Failed to fetch document from storage' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Failed to fetch document from storage' }, { status: 500 })
     }
 
     const buffer = await fileResponse.arrayBuffer()
     const fileUrl = doc.file_url.toLowerCase()
     const isPdf = fileUrl.endsWith('.pdf') || fileUrl.includes('.pdf?')
-    
+
     let aiExtraction: any
-    
+    let rawDocumentText = ''
+
     if (isPdf) {
-      // Extract text from PDF using pdf-parse
-      console.log('[v0] Extracting text from PDF...')
       try {
         const pdfBuffer = new Uint8Array(buffer)
         const { text: textArray } = await extractText(pdfBuffer)
-        
-        // unpdf returns an array of strings (one per page), join them
-        const pdfText = Array.isArray(textArray) ? textArray.join('\n') : String(textArray)
-        
-        if (!pdfText || pdfText.trim().length < 10) {
+        rawDocumentText = Array.isArray(textArray) ? textArray.join('\n') : String(textArray)
+
+        if (!rawDocumentText || rawDocumentText.trim().length < 10) {
           return NextResponse.json(
             { error: 'El PDF no contiene texto extraíble. Puede ser un PDF escaneado como imagen.' },
             { status: 400 }
           )
         }
-        
-        console.log('[v0] PDF text extracted, length:', pdfText.length)
-        console.log('[v0] First 500 chars:', pdfText.substring(0, 500))
-        
-        // Analyze extracted text with GPT
-        aiExtraction = await extractDocumentFromText(pdfText, doc.document_type || 'documento')
-        console.log('[v0] PDF text analysis complete')
+
+        aiExtraction = await extractDocumentFromText(rawDocumentText, doc.document_type || 'documento')
       } catch (pdfError) {
         console.error('[v0] PDF parsing error:', pdfError)
         return NextResponse.json(
@@ -117,23 +87,28 @@ export async function POST(
         )
       }
     } else {
-      // Regular image file - use vision API
       const base64 = Buffer.from(buffer).toString('base64')
-      
-      // Detect MIME type from URL
       let mimeType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/jpeg'
       if (fileUrl.includes('.png')) mimeType = 'image/png'
       else if (fileUrl.includes('.gif')) mimeType = 'image/gif'
       else if (fileUrl.includes('.webp')) mimeType = 'image/webp'
-      
-      console.log('[v0] Starting image analysis with mimeType:', mimeType)
+
       aiExtraction = await extractDocumentMetadata(base64, mimeType)
     }
 
-    console.log('[v0] Analysis successful:', aiExtraction)
+    const f30Result = docTable === 'subcontractor_documents' && rawDocumentText
+      ? parseF30Document({
+          rawText: rawDocumentText,
+          expectedRut: doc.subcontractor_rut,
+          documentNumber: aiExtraction.documentNumber,
+          issuanceDate: aiExtraction.issuanceDate,
+          confidence: aiExtraction.confidence,
+          warnings: aiExtraction.warnings,
+        })
+      : null
 
-    // Save the analysis results to the database
-    const updateData = {
+    const analyzedAt = new Date().toISOString()
+    const updateData: Record<string, unknown> = {
       ai_document_type: aiExtraction.documentType,
       ai_expiration_date: aiExtraction.expirationDate || null,
       ai_issuance_date: aiExtraction.issuanceDate || null,
@@ -141,7 +116,20 @@ export async function POST(
       ai_extracted_text: aiExtraction.extractedText || null,
       ai_confidence: aiExtraction.confidence || null,
       ai_warnings: aiExtraction.warnings || [],
-      ai_analyzed_at: new Date().toISOString(),
+      ai_analyzed_at: analyzedAt,
+    }
+
+    if (f30Result) {
+      updateData.f30_status = f30Result.status
+      updateData.f30_details = f30Result.details
+      updateData.f30_validated_at = analyzedAt
+
+      if (f30Result.details.periodMonth && f30Result.details.periodYear) {
+        updateData.document_period_month = f30Result.details.periodMonth
+        updateData.document_period_year = f30Result.details.periodYear
+        updateData.document_period_start = `${f30Result.details.periodYear}-${String(f30Result.details.periodMonth).padStart(2, '0')}-01`
+        updateData.document_period_source = 'f30_parser'
+      }
     }
 
     const { error: updateError } = await adminClient
@@ -151,11 +139,8 @@ export async function POST(
 
     if (updateError) {
       console.error('[v0] Error saving analysis to DB:', updateError)
-    } else {
-      console.log('[v0] Analysis results saved to database')
     }
 
-    // Generate alerts based on analysis results (especially expiration dates)
     const transportistaId = doc.transportista_id || doc.subcontractor_id || null
     const conductorId = doc.conductor_id || doc.driver_id || null
     const fileName = doc.file_name || doc.filename || 'documento'
@@ -172,7 +157,6 @@ export async function POST(
       fileName,
     })
 
-    // Return the analysis results to show in the modal
     return NextResponse.json({
       success: true,
       saved: !updateError,
@@ -192,18 +176,14 @@ export async function POST(
         confidence: aiExtraction.confidence,
         warnings: aiExtraction.warnings || [],
       },
+      f30: f30Result,
       alertsGenerated: !!aiExtraction.expirationDate,
-      message: updateError 
-        ? 'Analisis completado (no guardado)' 
-        : aiExtraction.expirationDate 
-          ? 'Analisis completado, guardado y alertas generadas' 
-          : 'Analisis completado y guardado',
+      message: updateError ? 'Analisis completado (no guardado)' : 'Analisis completado y guardado',
     })
   } catch (error) {
     console.error('[v0] Reprocess error:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Server error'
     return NextResponse.json(
-      { error: errorMessage },
+      { error: error instanceof Error ? error.message : 'Server error' },
       { status: 500 }
     )
   }
