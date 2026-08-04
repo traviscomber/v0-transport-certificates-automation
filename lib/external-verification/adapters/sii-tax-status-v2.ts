@@ -173,19 +173,78 @@ function safeSignals(payload: JsonRecord) {
   }
 }
 
+function normalizeDiagnosticText(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function isMeaningfulNegativeText(value: unknown): boolean {
+  if (typeof value !== 'string') return false
+  const text = normalizeDiagnosticText(value)
+  if (!text) return false
+
+  const neutralPatterns = [
+    /^sin observaciones?\.?$/,
+    /^sin alertas?\.?$/,
+    /^no registra(?: observaciones?| alertas?)?\.?$/,
+    /^no presenta(?: observaciones?| alertas?)?\.?$/,
+    /^ninguna?\.?$/,
+    /^no aplica\.?$/,
+    /^n\/?a\.?$/,
+    /^ok\.?$/,
+  ]
+  if (neutralPatterns.some((pattern) => pattern.test(text))) return false
+
+  const negativePatterns = [
+    /\bno cumple\b/,
+    /\bincumpl/,
+    /\birregular/,
+    /\bdeuda/,
+    /\bmora\b/,
+    /\bpendiente/,
+    /\bbloquead/,
+    /\bsuspendid/,
+    /\binconsisten/,
+    /\bno autorizad/,
+    /\bno habilitad/,
+    /\bobservad[oa]?\b/,
+    /\balerta tributaria\b/,
+    /\briesgo tributario\b/,
+  ]
+
+  return negativePatterns.some((pattern) => pattern.test(text))
+}
+
+function containsMeaningfulAlert(value: unknown): boolean {
+  if (isMeaningfulNegativeText(value)) return true
+  if (Array.isArray(value)) return value.some(containsMeaningfulAlert)
+  if (!isRecord(value)) return false
+
+  return Object.entries(value).some(([key, nested]) => {
+    const normalizedKey = normalizeDiagnosticText(key)
+    if (['activo', 'vigente', 'cumple', 'habilitado'].includes(normalizedKey)) return false
+    if (typeof nested === 'boolean') {
+      return nested === true && /alert|observ|incumpl|deuda|mora|bloque|riesgo|irregular/.test(normalizedKey)
+    }
+    return containsMeaningfulAlert(nested)
+  })
+}
+
 function warningReasons(payload: JsonRecord): string[] {
   const reasons: string[] = []
-  const obligation = firstString(payload.cumpleObligacionTributaria)?.toLowerCase() ?? ''
+  const obligation = normalizeDiagnosticText(firstString(payload.cumpleObligacionTributaria) ?? '')
   const observations = [payload.observacion1, payload.observacion2]
-    .map((value) => firstString(value))
-    .filter((value): value is string => Boolean(value))
   const alerts = Array.isArray(payload.alertaTablas) ? payload.alertaTablas : []
 
-  if (obligation && !['si', 'sí', 'cumple', 'true'].includes(obligation)) {
+  if (obligation && !['si', 'cumple', 'true'].includes(obligation)) {
     reasons.push('tax_obligation_not_compliant')
   }
-  if (observations.length > 0) reasons.push('public_observation_present')
-  if (alerts.length > 0) reasons.push('public_alerts_present')
+  if (observations.some(isMeaningfulNegativeText)) reasons.push('public_observation_present')
+  if (alerts.some(containsMeaningfulAlert)) reasons.push('public_alerts_present')
   if (toBoolean(payload.nocondonable) === true) reasons.push('non_waivable_condition')
 
   return reasons
@@ -281,6 +340,7 @@ function parseSiiResult(payload: unknown, rut: string, retrievedAt: string): Ver
       signals: safeSignals(payload),
       source: 'SII Situación Tributaria de Terceros',
       sourceDisclaimer: 'La consulta es informativa, parcial y no constituye una certificación tributaria.',
+      parserVersion: 4,
     },
     evidence,
   }
