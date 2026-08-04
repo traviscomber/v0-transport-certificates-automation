@@ -23,7 +23,7 @@
  * This ensures single source of truth and prevents data mismatches.
  */
 
-import { X, FileText, Award, AlertCircle, CheckCircle, Loader, Download, Eye, Users, CheckSquare, Mail, Phone, ChevronDown } from 'lucide-react'
+import { X, FileText, Award, AlertCircle, CheckCircle, Loader, Download, Eye, Users, CheckSquare, Mail, Phone, ChevronDown, Shield } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
@@ -31,6 +31,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { buildDocumentAccessUrl } from '@/lib/document-file-access'
+import { getOrVerifySIIStatus, getSIIStatusBadge, triggerSIIVerification, type DocumentSIIStatus } from '@/lib/sii-verification-helper'
 
 interface SubcontractorDetailTabsProps {
   subcontractor: any
@@ -54,6 +55,8 @@ export function SubcontractorDetailTabs({
   const [requirements, setRequirements] = useState<any[]>([])
   const [conductores, setConductores] = useState<any[]>(conductoresData)
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set(['current']))
+  const [siiVerificationStatus, setSiiVerificationStatus] = useState<DocumentSIIStatus | null>(null)
+  const [siiLoading, setSiiLoading] = useState(false)
   const [summary, setSummary] = useState({
     totalDocumentsUploaded: 0,
     totalRequirements: 0,
@@ -173,8 +176,32 @@ export function SubcontractorDetailTabs({
 
     if (subcontractor.id) {
       fetchData()
+      
+      // Load SII verification status
+      if (subcontractor.rut) {
+        loadSIIStatus()
+      }
     }
   }, [subcontractor.id, documentsData])
+
+  const loadSIIStatus = async () => {
+    if (!subcontractor.id || !subcontractor.rut) return
+    
+    setSiiLoading(true)
+    try {
+      const status = await getOrVerifySIIStatus(subcontractor.id, subcontractor.rut)
+      setSiiVerificationStatus(status)
+      
+      // If verification is pending and SII canary is enabled, trigger it
+      if (status.status === 'pending' && process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL !== 'false') {
+        triggerSIIVerification(subcontractor.id, subcontractor.rut)
+      }
+    } catch (error) {
+      console.error('[v0] Error loading SII status:', error)
+    } finally {
+      setSiiLoading(false)
+    }
+  }
 
   const handleRefreshData = async () => {
     const docResponse = await fetch(`/api/subcontractors/${subcontractor.id}/documents`)
@@ -215,7 +242,7 @@ export function SubcontractorDetailTabs({
                   {subcontractor.nombre_fantasia}
                 </p>
               )}
-              <div className="flex gap-2 items-center">
+              <div className="flex gap-2 items-center flex-wrap">
                 {subcontractor.is_active ? (
                   <>
                     <CheckCircle className="w-4 h-4 text-green-500" />
@@ -239,6 +266,18 @@ export function SubcontractorDetailTabs({
                 >
                   Perfil {completion.percent}%
                 </Badge>
+                
+                {/* SII Verification Badge */}
+                {siiVerificationStatus && (
+                  <Badge
+                    variant="outline"
+                    className={`border ${getSIIStatusBadge(siiVerificationStatus.status).color}`}
+                  >
+                    <Shield className="w-3 h-3 mr-1" />
+                    {siiLoading ? '◌' : getSIIStatusBadge(siiVerificationStatus.status).icon} {getSIIStatusBadge(siiVerificationStatus.status).label}
+                  </Badge>
+                )}
+                
                 <Badge
                   variant="outline"
                   className={
