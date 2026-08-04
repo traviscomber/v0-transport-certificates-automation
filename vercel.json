@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/cron/f30-backfill",
-      "schedule": "* * * * *"
+      "schedule": "*/5 * * * *"
     }
   ]
 }
