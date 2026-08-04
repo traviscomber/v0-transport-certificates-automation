@@ -186,16 +186,18 @@ export function SubcontractorDetailTabs({
 
   const loadSIIStatus = async () => {
     if (!subcontractor.id || !subcontractor.rut) return
-    
+
     setSiiLoading(true)
     try {
       const status = await getOrVerifySIIStatus(subcontractor.id, subcontractor.rut)
       setSiiVerificationStatus(status)
-      
-      // If verification is pending, trigger async verification
-      // The server will check if SII_TAX_STATUS_CANARY_ENABLED is set
+
+      // If no prior run exists, trigger one and then re-fetch the result
       if (status.status === 'pending') {
-        triggerSIIVerification(subcontractor.id, subcontractor.rut)
+        await triggerSIIVerification(subcontractor.id, subcontractor.rut)
+        // After trigger completes (engine ran synchronously), re-fetch status
+        const updated = await getOrVerifySIIStatus(subcontractor.id, subcontractor.rut)
+        setSiiVerificationStatus(updated)
       }
     } catch (error) {
       console.error('[v0] Error loading SII status:', error)

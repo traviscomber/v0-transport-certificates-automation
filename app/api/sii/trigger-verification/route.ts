@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { runExternalVerification } from '@/lib/external-verification/engine'
+
+export const dynamic = 'force-dynamic'
 
 /**
- * Trigger SII verification for a transportista
- * This endpoint should be called from the client when a subcontractor detail modal opens
- * and the SII verification status is "pending"
+ * Trigger SII verification for a transportista.
+ * Calls the engine directly (no internal HTTP loop) so verification
+ * completes synchronously and persists results before responding.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -13,56 +16,34 @@ export async function POST(request: NextRequest) {
     if (!transportistaId || !transportistaRut) {
       return NextResponse.json(
         { error: 'Missing transportistaId or transportistaRut' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
-    // Check if SII canary is enabled
+    if (process.env.EXTERNAL_VERIFICATION_LAB_ENABLED !== 'true') {
+      return NextResponse.json({ triggered: false, reason: 'lab_disabled' }, { status: 200 })
+    }
+
     if (process.env.SII_TAX_STATUS_CANARY_ENABLED !== 'true') {
-      console.log('[v0] SII verification disabled')
-      return NextResponse.json({ triggered: false }, { status: 200 })
+      return NextResponse.json({ triggered: false, reason: 'canary_disabled' }, { status: 200 })
     }
 
-    // Get the lab token
-    const labToken = process.env.EXTERNAL_VERIFICATION_LAB_TOKEN
+    const { runId, result } = await runExternalVerification({
+      sourceCode: 'sii_tax_status',
+      entityType: 'transportista',
+      entityId: transportistaId,
+      payload: { rut: transportistaRut },
+    })
 
-    // Call the internal SII verification endpoint
-    try {
-      // Get the app URL from headers or use localhost
-      const protocol = request.headers.get('x-forwarded-proto') || 'http'
-      const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'localhost:3000'
-      const appUrl = `${protocol}://${host}`
-
-      const response = await fetch(`${appUrl}/api/internal/external-verification/sii`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${labToken}`,
-          'X-Labbe-Lab-Token': labToken || '',
-        },
-        body: JSON.stringify({
-          rut: transportistaRut,
-          transportistaId,
-        }),
-      })
-
-      if (!response.ok) {
-        console.warn('[v0] SII verification endpoint returned:', response.status)
-        return NextResponse.json({ triggered: false, error: 'Endpoint error' }, { status: 200 })
-      }
-
-      // Parse the response to ensure verification completed
-      const result = await response.json()
-      console.log('[v0] SII verification triggered, result:', result?.status)
-
-      return NextResponse.json({ triggered: true, runStatus: result?.status }, { status: 200 })
-    } catch (error) {
-      console.error('[v0] Error calling SII verification endpoint:', error)
-      // Return success anyway - don't block the user
-      return NextResponse.json({ triggered: false, error: 'Endpoint call failed' }, { status: 200 })
-    }
+    return NextResponse.json({
+      triggered: true,
+      runId,
+      runStatus: result.status,
+      errorCode: result.errorCode ?? null,
+    })
   } catch (error) {
-    console.error('[v0] Error in SII trigger endpoint:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    // Don't surface errors to client — badge will stay pending
+    console.error('[SII trigger]', error instanceof Error ? error.message : error)
+    return NextResponse.json({ triggered: false, reason: 'engine_error' }, { status: 200 })
   }
 }

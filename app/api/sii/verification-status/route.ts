@@ -53,14 +53,26 @@ export async function POST(request: NextRequest) {
     // If we have a valid result, return it
     if (validRuns && validRuns.length > 0) {
       const run = validRuns[0]
-      const status = run.status === 'success' ? 'verified' : run.status === 'failed' ? 'failed' : 'pending'
+
+      // Map engine statuses → badge statuses
+      let badgeStatus: 'verified' | 'failed' | 'pending' | 'blocked'
+      if (run.status === 'success' || run.status === 'warning') {
+        badgeStatus = 'verified'
+      } else if (run.status === 'blocked') {
+        badgeStatus = 'blocked'
+      } else if (run.status === 'failed' || run.status === 'skipped' || run.status === 'not_found') {
+        badgeStatus = 'failed'
+      } else {
+        // 'running' (fresh) → still pending
+        badgeStatus = 'pending'
+      }
 
       return NextResponse.json({
         documentId: transportistaId,
-        status,
+        status: badgeStatus,
         rut: transportistaRut,
         verifiedAt: run.created_at,
-        errorCode: (run.normalized_result as any)?.errorCode,
+        errorCode: (run.normalized_result as any)?.errorCode ?? run.status,
         confidence: (run.normalized_result as any)?.confidence,
       })
     }
