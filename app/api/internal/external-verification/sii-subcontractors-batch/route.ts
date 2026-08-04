@@ -7,8 +7,8 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const maxDuration = 300
 
-const NONCE_SHA256 = '1c02db13271518ee5a29e8d791c80ba24a8955961796c58260a82ac916afc10e'
-const EXPIRES_AT = Date.parse('2026-08-04T06:30:00.000Z')
+const NONCE_SHA256 = '8f2d1b822e1fdbc4186e09f3e3f37ea20822ea90e2bd543323bb09daef140508'
+const EXPIRES_AT = Date.parse('2026-08-04T08:00:00.000Z')
 const MAX_BATCH_SIZE = 10
 
 function safeEqualHex(left: string, right: string): boolean {
@@ -26,44 +26,37 @@ function isAuthorized(request: NextRequest): boolean {
 }
 
 export async function GET(request: NextRequest) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  }
+  if (!isAuthorized(request)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const requestedOffset = Number(request.nextUrl.searchParams.get('offset') ?? '0')
-  const requestedLimit = Number(request.nextUrl.searchParams.get('limit') ?? String(MAX_BATCH_SIZE))
-  const offset = Number.isInteger(requestedOffset) && requestedOffset >= 0 ? requestedOffset : 0
-  const limit = Number.isInteger(requestedLimit)
-    ? Math.min(Math.max(requestedLimit, 1), MAX_BATCH_SIZE)
-    : MAX_BATCH_SIZE
+  const rawOffset = Number(request.nextUrl.searchParams.get('offset') ?? '0')
+  const rawLimit = Number(request.nextUrl.searchParams.get('limit') ?? String(MAX_BATCH_SIZE))
+  const offset = Number.isInteger(rawOffset) && rawOffset >= 0 ? rawOffset : 0
+  const limit = Number.isInteger(rawLimit) ? Math.min(Math.max(rawLimit, 1), MAX_BATCH_SIZE) : MAX_BATCH_SIZE
 
   const supabase = createAdminClient()
-  const { data: subcontractors, error, count } = await supabase
-    .from('subcontratistas')
+  const { data: transportistas, error, count } = await supabase
+    .from('transportistas')
     .select('id, rut, razon_social, is_active', { count: 'exact' })
     .not('rut', 'is', null)
     .order('id', { ascending: true })
     .range(offset, offset + limit - 1)
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   const results = []
-  for (const subcontractor of subcontractors ?? []) {
+  for (const transportista of transportistas ?? []) {
     try {
       const verification = await runExternalVerification({
         sourceCode: 'sii_tax_status',
-        entityType: 'subcontratista',
-        entityId: subcontractor.id,
-        payload: { rut: subcontractor.rut, adapterVersion: 3 },
+        entityType: 'transportista',
+        entityId: transportista.id,
+        payload: { rut: transportista.rut, adapterVersion: 3 },
       })
-
       results.push({
-        id: subcontractor.id,
-        rut: subcontractor.rut,
-        storedName: subcontractor.razon_social,
-        active: subcontractor.is_active,
+        id: transportista.id,
+        rut: transportista.rut,
+        storedName: transportista.razon_social,
+        active: transportista.is_active,
         runId: verification.runId,
         cacheHit: verification.cacheHit,
         status: verification.result.status,
@@ -71,15 +64,15 @@ export async function GET(request: NextRequest) {
         errorCode: verification.result.errorCode ?? null,
         errorMessage: verification.result.errorMessage ?? null,
       })
-    } catch (verificationError) {
+    } catch (error) {
       results.push({
-        id: subcontractor.id,
-        rut: subcontractor.rut,
-        storedName: subcontractor.razon_social,
-        active: subcontractor.is_active,
+        id: transportista.id,
+        rut: transportista.rut,
+        storedName: transportista.razon_social,
+        active: transportista.is_active,
         status: 'failed',
         errorCode: 'BATCH_ITEM_FAILURE',
-        errorMessage: verificationError instanceof Error ? verificationError.message : 'Unknown error',
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
       })
     }
   }
