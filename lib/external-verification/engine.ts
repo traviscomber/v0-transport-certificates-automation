@@ -116,7 +116,7 @@ export async function runExternalVerification(
     const durationMs = Date.now() - startedAt
     const expiresAt = new Date(completedAt.getTime() + source.cache_ttl_seconds * 1000)
     const successful = isVerificationSuccess(result.status)
-    const providerFailure = isVerificationProviderFailure(result.status)
+    const providerFailure = isVerificationProviderFailure(result)
     const nextFailures = providerFailure ? (circuit?.consecutive_failures ?? 0) + 1 : 0
     const shouldOpen = providerFailure && nextFailures >= source.failure_threshold
     const retryAfter = shouldOpen
