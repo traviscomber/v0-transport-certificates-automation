@@ -14,30 +14,27 @@ export interface DocumentSIIStatus {
 /**
  * Get or trigger SII verification for a document's associated transportista RUT
  * Returns verification status and results from the external_verification_runs table
+ * This calls a server-side API route to fetch the verification status
  */
 export async function getOrVerifySIIStatus(
   transportistaId: string,
   transportistaRut: string,
 ): Promise<DocumentSIIStatus> {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    process.env.SUPABASE_SERVICE_ROLE_KEY || '',
-  )
-
   try {
-    // Check if we already have a recent verification for this RUT
-    const { data: existingRuns, error: queryError } = await supabase
-      .from('external_verification_runs')
-      .select('id, status, normalized_result, created_at, expires_at')
-      .eq('source_code', 'sii_tax_status')
-      .eq('entity_type', 'transportista')
-      .eq('entity_id', transportistaId)
-      .gte('expires_at', new Date().toISOString())
-      .order('created_at', { ascending: false })
-      .limit(1)
+    // Call server-side API to fetch verification status (avoiding client-side env var access)
+    const response = await fetch('/api/sii/verification-status', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        transportistaId,
+        transportistaRut,
+      }),
+    })
 
-    if (queryError) {
-      console.error('[v0] Error querying verification runs:', queryError)
+    if (!response.ok) {
+      console.error('[v0] API error fetching SII status:', response.status)
       return {
         documentId: transportistaId,
         status: 'pending',
@@ -45,33 +42,14 @@ export async function getOrVerifySIIStatus(
       }
     }
 
-    // If we have a cached valid result, return it
-    if (existingRuns && existingRuns.length > 0) {
-      const run = existingRuns[0]
-      const status =
-        run.status === 'success' ? 'verified' : run.status === 'failed' ? 'failed' : 'pending'
+    const data = await response.json()
+    return data
 
-      return {
-        documentId: transportistaId,
-        status,
-        rut: transportistaRut,
-        verifiedAt: run.created_at,
-        confidence: (run.normalized_result as any)?.confidence || undefined,
-      }
-    }
-
-    // No cached result - would need to trigger verification via API
-    // (This would be done asynchronously via the SII canary endpoint)
-    return {
-      documentId: transportistaId,
-      status: 'pending',
-      rut: transportistaRut,
-    }
   } catch (error) {
     console.error('[v0] Error getting SII status:', error)
     return {
       documentId: transportistaId,
-      status: 'failed',
+      status: 'pending',
       rut: transportistaRut,
     }
   }
