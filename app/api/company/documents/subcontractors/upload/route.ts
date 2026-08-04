@@ -1,6 +1,6 @@
 'use server'
 
-import { NextRequest, NextResponse } from 'next/server'
+import { after, NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { triggerSubcontractorDocumentUploadedAlert } from '@/lib/operations/alert-triggers'
 import { normalizeDocumentPeriod } from '@/lib/document-period'
@@ -40,6 +40,22 @@ async function analyzeF30Document(origin: string, documentId: string): Promise<F
       error: error instanceof Error ? error.message : 'Unknown F30 analysis error',
     }
   }
+}
+
+function queueF30Analysis(origin: string, documentId: string): void {
+  after(async () => {
+    const result = await analyzeF30Document(origin, documentId)
+    if (result.success) return
+
+    const adminClient = createAdminClient()
+    await adminClient
+      .from('subcontractor_documents')
+      .update({
+        ai_warnings: [`F30_AUTO_ANALYSIS_FAILED: ${result.error ?? 'unknown error'}`],
+        ai_analyzed_at: new Date().toISOString(),
+      })
+      .eq('id', documentId)
+  })
 }
 
 export async function POST(request: NextRequest) {
@@ -145,18 +161,8 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      let f30Analysis: F30AnalysisResult | null = null
       if (shouldAnalyzeF30) {
-        f30Analysis = await analyzeF30Document(request.nextUrl.origin, document.id)
-        if (!f30Analysis.success) {
-          await adminClient
-            .from('subcontractor_documents')
-            .update({
-              ai_warnings: [`F30_AUTO_ANALYSIS_FAILED: ${f30Analysis.error ?? 'unknown error'}`],
-              ai_analyzed_at: new Date().toISOString(),
-            })
-            .eq('id', document.id)
-        }
+        queueF30Analysis(request.nextUrl.origin, document.id)
       }
 
       try {
@@ -174,7 +180,7 @@ export async function POST(request: NextRequest) {
       uploadedDocs.push({
         ...document,
         document_type_code: documentType.code,
-        auto_analysis: shouldAnalyzeF30 ? f30Analysis : null,
+        auto_analysis: shouldAnalyzeF30 ? { status: 'queued' } : null,
       })
     }
 
