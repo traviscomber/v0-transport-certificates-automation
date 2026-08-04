@@ -1,4 +1,4 @@
-import { after, NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { triggerSubcontractorDocumentUploadedAlert } from '@/lib/operations/alert-triggers'
 import { normalizeDocumentPeriod } from '@/lib/document-period'
@@ -12,6 +12,14 @@ type F30AnalysisResult = {
   success: boolean
   analysis?: unknown
   error?: string
+}
+
+type RequestContextValue = {
+  waitUntil?: (promise: Promise<unknown>) => void
+}
+
+type RequestContext = {
+  get?: () => RequestContextValue | undefined
 }
 
 async function analyzeF30Document(origin: string, documentId: string): Promise<F30AnalysisResult> {
@@ -40,8 +48,24 @@ async function analyzeF30Document(origin: string, documentId: string): Promise<F
   }
 }
 
+function registerBackgroundTask(task: Promise<unknown>): void {
+  const requestContext = (globalThis as typeof globalThis & Record<symbol, RequestContext | undefined>)[
+    Symbol.for('@next/request-context')
+  ]
+  const waitUntil = requestContext?.get?.()?.waitUntil
+
+  if (waitUntil) {
+    waitUntil(task)
+    return
+  }
+
+  void task.catch((error) => {
+    console.error('[documents/upload] Background task failed without waitUntil:', error)
+  })
+}
+
 function queueF30Analysis(origin: string, documentId: string): void {
-  after(async () => {
+  registerBackgroundTask((async () => {
     const result = await analyzeF30Document(origin, documentId)
     if (result.success) return
 
@@ -53,7 +77,7 @@ function queueF30Analysis(origin: string, documentId: string): void {
         ai_analyzed_at: new Date().toISOString(),
       })
       .eq('id', documentId)
-  })
+  })())
 }
 
 export async function POST(request: NextRequest) {
