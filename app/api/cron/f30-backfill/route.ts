@@ -125,14 +125,12 @@ export async function GET(request: NextRequest) {
     .is('f30_status', null)
     .or('file_name.ilike.F30%,file_name.ilike.F 30%')
 
-  const summary = results.reduce(
-    (acc, result) => {
-      const status = String(result.status ?? 'unknown')
-      acc[status] = (acc[status] ?? 0) + 1
-      return acc
-    },
-    {} as Record<string, number>,
-  )
+  const summary = results.reduce<Record<string, number>>((acc, result) => {
+    const status = String(result.status ?? 'unknown')
+    const currentCount = acc[status] ?? 0
+    acc[status] = currentCount + 1
+    return acc
+  }, {})
 
   return NextResponse.json({
     status: 'processed',
