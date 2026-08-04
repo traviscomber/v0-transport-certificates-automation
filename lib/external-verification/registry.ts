@@ -1,4 +1,4 @@
-import { SiiTaxStatusAdapter } from './adapters/sii-tax-status'
+import { SiiTaxStatusAdapter } from './adapters/sii-tax-status-v2'
 import type { VerificationSourceAdapter, VerificationSourceCode } from './types'
 
 class DisabledSourceAdapter implements VerificationSourceAdapter {
