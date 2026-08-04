@@ -22,6 +22,7 @@ const adapters = new Map<VerificationSourceCode, VerificationSourceAdapter>([
   ['mercado_publico_supplier', new DisabledSourceAdapter('mercado_publico_supplier')],
   ['cmf_registry', new DisabledSourceAdapter('cmf_registry')],
   ['mtt_sitcomex', new DisabledSourceAdapter('mtt_sitcomex')],
+  ['mtt_prt_vehicle_status', new DisabledSourceAdapter('mtt_prt_vehicle_status')],
 ])
 
 export function getVerificationAdapter(code: VerificationSourceCode) {
