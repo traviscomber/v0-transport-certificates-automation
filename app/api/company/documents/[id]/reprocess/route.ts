@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { extractDocumentMetadata, extractDocumentFromText } from '@/lib/ai-document-processor'
+import {
+  extractDocumentMetadata,
+  extractDocumentFromPdfBuffer,
+  extractDocumentFromText,
+} from '@/lib/ai-document-processor'
 import { extractText } from 'unpdf'
 import { generateAIAnalysisAlerts } from '@/lib/document-alerts-generator'
 import { parseF30Document } from '@/lib/f30-parser'
@@ -10,13 +14,11 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const documentId = params.id
     const adminClient = createAdminClient()
-
-    console.log('[v0] Reprocessing document:', documentId)
 
     let doc: any = null
     let docTable = ''
@@ -30,28 +32,20 @@ export async function POST(
     if (subDoc) {
       doc = subDoc
       docTable = 'subcontractor_documents'
-      console.log('[v0] Found document in subcontractor_documents')
     } else {
       const { data: uploadedDoc } = await adminClient
         .from('uploaded_documents')
         .select('*')
         .eq('id', documentId)
         .single()
-
       if (uploadedDoc) {
         doc = uploadedDoc
         docTable = 'uploaded_documents'
-        console.log('[v0] Found document in uploaded_documents')
       }
     }
 
-    if (!doc) {
-      return NextResponse.json({ error: 'Document not found' }, { status: 404 })
-    }
-
-    if (!doc.file_url) {
-      return NextResponse.json({ error: 'Document has no file URL' }, { status: 400 })
-    }
+    if (!doc) return NextResponse.json({ error: 'Document not found' }, { status: 404 })
+    if (!doc.file_url) return NextResponse.json({ error: 'Document has no file URL' }, { status: 400 })
 
     const fileResponse = await fetch(doc.file_url)
     if (!fileResponse.ok) {
@@ -64,27 +58,23 @@ export async function POST(
 
     let aiExtraction: any
     let rawDocumentText = ''
+    let usedOcrFallback = false
 
     if (isPdf) {
+      const pdfBuffer = new Uint8Array(buffer)
       try {
-        const pdfBuffer = new Uint8Array(buffer)
         const { text: textArray } = await extractText(pdfBuffer)
         rawDocumentText = Array.isArray(textArray) ? textArray.join('\n') : String(textArray)
+      } catch (error) {
+        console.warn('[v0] Native PDF text extraction failed, using OCR fallback', error)
+      }
 
-        if (!rawDocumentText || rawDocumentText.trim().length < 10) {
-          return NextResponse.json(
-            { error: 'El PDF no contiene texto extraíble. Puede ser un PDF escaneado como imagen.' },
-            { status: 400 }
-          )
-        }
-
+      if (rawDocumentText.trim().length >= 10) {
         aiExtraction = await extractDocumentFromText(rawDocumentText, doc.document_type || 'documento')
-      } catch (pdfError) {
-        console.error('[v0] PDF parsing error:', pdfError)
-        return NextResponse.json(
-          { error: 'Error al procesar el PDF: ' + (pdfError as Error).message },
-          { status: 500 }
-        )
+      } else {
+        usedOcrFallback = true
+        aiExtraction = await extractDocumentFromPdfBuffer(pdfBuffer, doc.document_type || 'documento')
+        rawDocumentText = aiExtraction.extractedText || ''
       }
     } else {
       const base64 = Buffer.from(buffer).toString('base64')
@@ -92,7 +82,6 @@ export async function POST(
       if (fileUrl.includes('.png')) mimeType = 'image/png'
       else if (fileUrl.includes('.gif')) mimeType = 'image/gif'
       else if (fileUrl.includes('.webp')) mimeType = 'image/webp'
-
       aiExtraction = await extractDocumentMetadata(base64, mimeType)
     }
 
@@ -122,7 +111,7 @@ export async function POST(
 
     if (f30Result) {
       updateData.f30_status = f30Result.status
-      updateData.f30_details = f30Result.details
+      updateData.f30_details = { ...f30Result.details, usedOcrFallback }
       updateData.f30_validated_at = analyzedAt
 
       if (f30Result.details.periodMonth && f30Result.details.periodYear) {
@@ -139,7 +128,6 @@ export async function POST(
       .eq('id', documentId)
 
     let periodConflict = false
-
     if (updateError?.code === '23505' && f30Result && docTable === 'subcontractor_documents') {
       periodConflict = true
       const fallbackData = { ...updateData }
@@ -147,37 +135,27 @@ export async function POST(
       delete fallbackData.document_period_year
       delete fallbackData.document_period_start
       delete fallbackData.document_period_source
-
       fallbackData.f30_status = 'warning'
       fallbackData.f30_details = {
         ...f30Result.details,
+        usedOcrFallback,
         warnings: [...f30Result.details.warnings, 'period_already_registered'],
         periodConflict: true,
       }
-
-      const retry = await adminClient
-        .from(docTable)
-        .update(fallbackData)
-        .eq('id', documentId)
-
+      const retry = await adminClient.from(docTable).update(fallbackData).eq('id', documentId)
       updateError = retry.error
-    }
-
-    if (updateError) {
-      console.error('[v0] Error saving analysis to DB:', updateError)
     }
 
     const transportistaId = doc.transportista_id || doc.subcontractor_id || null
     const conductorId = doc.conductor_id || doc.driver_id || null
     const fileName = doc.file_name || doc.filename || 'documento'
-    const detectedDocType = aiExtraction.documentType || doc.document_type || 'Documento'
 
     await generateAIAnalysisAlerts({
       documentId,
       documentTable: docTable as 'subcontractor_documents' | 'uploaded_documents',
       transportistaId,
       conductorId,
-      documentType: detectedDocType,
+      documentType: aiExtraction.documentType || doc.document_type || 'Documento',
       aiExpirationDate: aiExtraction.expirationDate,
       aiConfidence: aiExtraction.confidence || 0.5,
       fileName,
@@ -187,22 +165,10 @@ export async function POST(
       success: true,
       saved: !updateError,
       periodConflict,
+      usedOcrFallback,
       documentId,
       documentTable: docTable,
-      originalDocument: {
-        file_name: fileName,
-        document_type: doc.document_type,
-        uploaded_at: doc.uploaded_at || doc.created_at,
-      },
-      analysis: {
-        documentType: aiExtraction.documentType,
-        expirationDate: aiExtraction.expirationDate,
-        issuanceDate: aiExtraction.issuanceDate,
-        documentNumber: aiExtraction.documentNumber,
-        extractedText: aiExtraction.extractedText,
-        confidence: aiExtraction.confidence,
-        warnings: aiExtraction.warnings || [],
-      },
+      analysis: aiExtraction,
       f30: f30Result,
       alertsGenerated: !!aiExtraction.expirationDate,
       message: updateError
@@ -215,7 +181,7 @@ export async function POST(
     console.error('[v0] Reprocess error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Server error' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
