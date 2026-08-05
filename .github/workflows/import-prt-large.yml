@@ -1,0 +1,59 @@
+name: Import large PRT batch
+
+on:
+  workflow_dispatch:
+    inputs:
+      period:
+        description: Period in YYYY-MM-01 format; leave empty for next eligible batch
+        required: false
+        type: string
+      record_type:
+        description: RA2 or RB; leave empty for next eligible batch
+        required: false
+        type: choice
+        options:
+          - ''
+          - RA2
+          - RB
+
+concurrency:
+  group: prt-large-import-production
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    permissions:
+      contents: read
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      PRT_PERIOD: ${{ inputs.period }}
+      PRT_RECORD_TYPE: ${{ inputs.record_type }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install production dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify required secrets
+        shell: bash
+        run: |
+          test -n "$SUPABASE_URL" || { echo "Missing SUPABASE_URL"; exit 1; }
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo "Missing SUPABASE_SERVICE_ROLE_KEY"; exit 1; }
+
+      - name: Import PRT batch with checkpoints
+        run: node scripts/import-prt-large.mjs
