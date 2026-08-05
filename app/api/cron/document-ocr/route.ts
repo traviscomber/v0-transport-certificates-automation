@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { extractDocumentLocally } from '@/lib/local-ocr'
+import { extractDocumentViaWorker } from '@/lib/external-ocr-worker'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -82,11 +83,45 @@ export async function GET(request: NextRequest) {
         throw new Error(`Document exceeds OCR size limit (${buffer.byteLength} bytes)`)
       }
 
-      const extraction = await extractDocumentLocally(
-        new Uint8Array(buffer),
-        candidate.document_type || 'DOCUMENTO',
-        inferMimeType(candidate.file_name, response.headers.get('content-type')),
-      )
+      // Try external OCR worker first if enabled, fallback to local OCR
+      let extraction
+      let engine = 'local_tesseract_ocr'
+
+      const useExternalWorker = process.env.OCR_PROCESSING_ENABLED === 'true' && process.env.OCR_WORKER_URL
+
+      if (useExternalWorker) {
+        try {
+          console.log('[OCR] Attempting external worker for document:', candidate.document_id)
+          extraction = await extractDocumentViaWorker(
+            new Uint8Array(buffer),
+            candidate.document_type || 'DOCUMENTO',
+            inferMimeType(candidate.file_name, response.headers.get('content-type')),
+          )
+          engine = 'external_ocr_worker'
+          console.log('[OCR] External worker success:', {
+            documentId: candidate.document_id,
+            processingTimeMs: extraction.processingTimeMs,
+          })
+        } catch (workerError) {
+          console.warn('[OCR] External worker failed, falling back to local OCR:', {
+            documentId: candidate.document_id,
+            error: workerError instanceof Error ? workerError.message : 'Unknown error',
+          })
+          extraction = await extractDocumentLocally(
+            new Uint8Array(buffer),
+            candidate.document_type || 'DOCUMENTO',
+            inferMimeType(candidate.file_name, response.headers.get('content-type')),
+          )
+          engine = 'local_tesseract_ocr_fallback'
+        }
+      } else {
+        extraction = await extractDocumentLocally(
+          new Uint8Array(buffer),
+          candidate.document_type || 'DOCUMENTO',
+          inferMimeType(candidate.file_name, response.headers.get('content-type')),
+        )
+      }
+
       const extractedText = extraction.extractedText.trim()
 
       const analyzedAt = new Date().toISOString()
@@ -110,7 +145,7 @@ export async function GET(request: NextRequest) {
         .from('document_text_extractions')
         .update({
           status: 'text_extracted',
-          extraction_method: 'local_tesseract_ocr',
+          extraction_method: engine,
           text_length: extractedText.length,
           error_message: null,
           processed_at: analyzedAt,
@@ -127,7 +162,8 @@ export async function GET(request: NextRequest) {
         textLength: extractedText.length,
         confidence: extraction.confidence,
         pagesProcessed: extraction.pagesProcessed,
-        engine: 'local_tesseract_ocr',
+        engine,
+        processingTimeMs: extraction.processingTimeMs,
       })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown local OCR error'
@@ -145,7 +181,7 @@ export async function GET(request: NextRequest) {
         fileName: candidate.file_name,
         status: 'failed',
         error: message,
-        engine: 'local_tesseract_ocr',
+        engine: useExternalWorker ? 'external_ocr_worker' : 'local_tesseract_ocr',
       })
     }
   }
@@ -199,10 +235,12 @@ export async function GET(request: NextRequest) {
     pipeline = { documentFacts, workerFacts, intelligence }
   }
 
+  const usedExternalWorker = process.env.OCR_PROCESSING_ENABLED === 'true' && process.env.OCR_WORKER_URL
+
   return NextResponse.json({
     processed: results.length,
     extracted: extractedCount,
-    engine: 'local_tesseract_ocr',
+    engine: usedExternalWorker ? 'external_ocr_worker (with local fallback)' : 'local_tesseract_ocr',
     results,
     pipeline,
     durationMs: Date.now() - startedAt,
