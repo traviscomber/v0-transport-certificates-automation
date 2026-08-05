@@ -7,7 +7,7 @@ export const revalidate = 0
 export const maxDuration = 300
 
 const MAX_FILE_BYTES = 12 * 1024 * 1024
-const MAX_DOCUMENTS_PER_RUN = 1
+const MAX_DOCUMENTS_PER_RUN = 3
 
 function isAuthorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET
@@ -22,14 +22,6 @@ function isRateLimitError(error: unknown): boolean {
 export async function GET(request: NextRequest) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  if (process.env.OCR_PROCESSING_ENABLED !== 'true') {
-    return NextResponse.json({
-      processed: 0,
-      reason: 'ocr_processing_disabled',
-      enableWith: 'OCR_PROCESSING_ENABLED=true',
-    })
   }
 
   const startedAt = Date.now()
