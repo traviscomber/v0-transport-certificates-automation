@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { extractDocumentLocally } from '@/lib/local-ocr'
-import { extractDocumentViaWorker } from '@/lib/external-ocr-worker'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -83,62 +82,13 @@ export async function GET(request: NextRequest) {
         throw new Error(`Document exceeds OCR size limit (${buffer.byteLength} bytes)`)
       }
 
-      // Use external OCR worker if enabled, otherwise use local OCR
-      let extraction
-      let engine = 'local_tesseract_ocr'
-
-      const useExternalWorker = process.env.OCR_PROCESSING_ENABLED === 'true' && process.env.OCR_WORKER_URL
-
-      if (useExternalWorker) {
-        console.log('[OCR] Using external worker for document:', candidate.document_id)
-        try {
-          extraction = await extractDocumentViaWorker(
-            new Uint8Array(buffer),
-            candidate.document_type || 'DOCUMENTO',
-            inferMimeType(candidate.file_name, response.headers.get('content-type')),
-          )
-          engine = 'external_ocr_worker'
-          console.log('[OCR] External worker success:', {
-            documentId: candidate.document_id,
-            processingTimeMs: extraction.processingTimeMs,
-          })
-        } catch (workerError) {
-          // When using external worker, if it fails, mark as pending instead of falling back
-          // to avoid missing native dependencies on serverless
-          const errorMsg = workerError instanceof Error ? workerError.message : 'Unknown error'
-          console.warn('[OCR] External worker failed, marking pending for retry:', {
-            documentId: candidate.document_id,
-            error: errorMsg,
-          })
-
-          const { error: updateError } = await supabase
-            .from('document_text_extractions')
-            .update({
-              status: 'pending_worker_retry',
-              extraction_method: 'external_ocr_worker_pending',
-              error_message: `Worker error: ${errorMsg}`,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('document_id', candidate.document_id)
-
-          results.push({
-            documentId: candidate.document_id,
-            fileName: candidate.file_name,
-            status: 'pending_worker_retry',
-            error: errorMsg,
-            engine: 'external_ocr_worker_pending',
-          })
-
-          continue
-        }
-      } else {
-        console.log('[OCR] Using local Tesseract for document:', candidate.document_id)
-        extraction = await extractDocumentLocally(
-          new Uint8Array(buffer),
-          candidate.document_type || 'DOCUMENTO',
-          inferMimeType(candidate.file_name, response.headers.get('content-type')),
-        )
-      }
+      const mimeType = inferMimeType(candidate.file_name, response.headers.get('content-type'))
+      const extraction = await extractDocumentLocally(
+        new Uint8Array(buffer),
+        candidate.document_type || 'DOCUMENTO',
+        mimeType,
+      )
+      const engine = 'openai_vision_ocr'
 
       const extractedText = extraction.extractedText.trim()
 
@@ -181,7 +131,6 @@ export async function GET(request: NextRequest) {
         confidence: extraction.confidence,
         pagesProcessed: extraction.pagesProcessed,
         engine,
-        processingTimeMs: (extraction as any).processingTimeMs ?? undefined,
       })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown local OCR error'
@@ -199,7 +148,7 @@ export async function GET(request: NextRequest) {
         fileName: candidate.file_name,
         status: 'failed',
         error: message,
-        engine: process.env.OCR_PROCESSING_ENABLED === 'true' ? 'external_ocr_worker' : 'local_tesseract_ocr',
+        engine: 'openai_vision_ocr',
       })
     }
   }
@@ -253,12 +202,10 @@ export async function GET(request: NextRequest) {
     pipeline = { documentFacts, workerFacts, intelligence }
   }
 
-  const usedExternalWorker = process.env.OCR_PROCESSING_ENABLED === 'true' && process.env.OCR_WORKER_URL
-
   return NextResponse.json({
     processed: results.length,
     extracted: extractedCount,
-    engine: usedExternalWorker ? 'external_ocr_worker (with local fallback)' : 'local_tesseract_ocr',
+    engine: 'openai_vision_ocr',
     results,
     pipeline,
     durationMs: Date.now() - startedAt,
