@@ -87,26 +87,43 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: firstError.message }, { status: 500 })
   }
 
-  const vehicleTypeIds = (vehicleTypeResult.data ?? []).map((item) => item.id)
-  let suppliedVehicleDocuments = 0
-
-  if (vehicleTypeIds.length > 0) {
-    const vehicleDocumentsResult = await supabase
-      .from('subcontractor_documents')
-      .select('id', { count: 'exact', head: true })
-      .eq('subcontractor_id', companyRef)
-      .in('document_type_id', vehicleTypeIds)
-      .eq('is_current', true)
-
-    if (vehicleDocumentsResult.error) {
-      return NextResponse.json({ error: vehicleDocumentsResult.error.message }, { status: 500 })
-    }
-
-    suppliedVehicleDocuments = vehicleDocumentsResult.count ?? 0
-  }
-
   const company = companyResult.data
   const period = periodResult.data
+  const evaluatedPeriod = requestedPeriod ?? period?.period_start ?? null
+
+  let workerQuery = supabase
+    .from('worker_reconciliation_current')
+    .select('verification_state, reconciliation_status, worker_rut, reconciliation_confidence')
+    .eq('company_entity_ref', companyRef)
+
+  if (evaluatedPeriod) workerQuery = workerQuery.eq('period_start', evaluatedPeriod)
+
+  const vehicleTypeIds = (vehicleTypeResult.data ?? []).map((item) => item.id)
+  const workerResultPromise = workerQuery
+  let suppliedVehicleDocuments = 0
+
+  const [workerResult, vehicleDocumentsResult] = await Promise.all([
+    workerResultPromise,
+    vehicleTypeIds.length > 0
+      ? supabase
+          .from('subcontractor_documents')
+          .select('id', { count: 'exact', head: true })
+          .eq('subcontractor_id', companyRef)
+          .in('document_type_id', vehicleTypeIds)
+          .eq('is_current', true)
+      : Promise.resolve({ data: null, error: null, count: 0 }),
+  ])
+
+  if (workerResult.error) {
+    return NextResponse.json({ error: workerResult.error.message }, { status: 500 })
+  }
+
+  if (vehicleDocumentsResult.error) {
+    return NextResponse.json({ error: vehicleDocumentsResult.error.message }, { status: 500 })
+  }
+
+  suppliedVehicleDocuments = vehicleDocumentsResult.count ?? 0
+
   const companyReasons = (company?.reason_codes ?? []) as string[]
   const periodReasons = (period?.reason_codes ?? []) as string[]
 
@@ -117,6 +134,15 @@ export async function GET(request: NextRequest) {
   const missingPrevired = Number(period?.missing_in_previred ?? 0)
   const missingLiquidations = Number(period?.missing_liquidations ?? 0)
   const missingContracts = Number(period?.missing_contracts ?? 0)
+
+  const workerRows = workerResult.data ?? []
+  const reconciledWorkers = workerRows.length
+  const verifiedWorkers = workerRows.filter((row) => row.verification_state === 'verified').length
+  const reviewWorkers = workerRows.filter((row) => row.verification_state === 'review_required').length
+  const partialWorkers = workerRows.filter((row) => row.verification_state === 'partial_evidence').length
+  const averageWorkerConfidence = reconciledWorkers > 0
+    ? workerRows.reduce((sum, row) => sum + Number(row.reconciliation_confidence ?? 0), 0) / reconciledWorkers
+    : 0
 
   const hasSiiFailure = companyReasons.some((code) => code.includes('sii') || code.includes('tax'))
   const siiState: BadgeState = !company
@@ -163,16 +189,13 @@ export async function GET(request: NextRequest) {
         ? 'warning'
         : 'pending'
 
-  const workerMissingTotal = missingPrevired + missingLiquidations + missingContracts
-  const workersState: BadgeState = !period
+  const workersState: BadgeState = reconciledWorkers === 0
     ? 'unknown'
-    : expectedWorkers <= 0
-      ? 'pending'
-      : workerMissingTotal === 0
+    : partialWorkers > 0 || reviewWorkers > 0
+      ? 'warning'
+      : verifiedWorkers === reconciledWorkers
         ? 'verified'
-        : missingPrevired > 0
-          ? 'blocked'
-          : 'warning'
+        : 'unknown'
 
   const badges: Badge[] = [
     {
@@ -224,14 +247,24 @@ export async function GET(request: NextRequest) {
       code: 'workers_verified',
       label: 'Trabajadores Verificados',
       state: workersState,
-      summary: workerMissingTotal === 0 ? 'No se detectaron faltantes entre las fuentes disponibles.' : `${workerMissingTotal} faltantes acumulados requieren revisión.`,
-      value: expectedWorkers,
+      summary: reconciledWorkers === 0
+        ? 'No existe evidencia conciliada para el período evaluado.'
+        : `${verifiedWorkers}/${reconciledWorkers} trabajadores verificados entre liquidación y Previred.`,
+      value: reconciledWorkers > 0 ? Math.round((verifiedWorkers / reconciledWorkers) * 100) : null,
       reasonCodes: [
-        ...(missingPrevired > 0 ? ['missing_in_previred'] : []),
-        ...(missingLiquidations > 0 ? ['missing_liquidations'] : []),
-        ...(missingContracts > 0 ? ['missing_contracts'] : []),
+        ...(partialWorkers > 0 ? ['partial_worker_evidence'] : []),
+        ...(reviewWorkers > 0 ? ['worker_review_required'] : []),
       ],
-      evidence: { period: period?.period_start ?? null, expectedWorkers, missingPrevired, missingLiquidations, missingContracts },
+      evidence: {
+        period: evaluatedPeriod,
+        reconciledWorkers,
+        verifiedWorkers,
+        partialWorkers,
+        reviewWorkers,
+        averageConfidence: Number(averageWorkerConfidence.toFixed(3)),
+        comparedSources: ['liquidations', 'previred'],
+        contractsIncluded: false,
+      },
     },
   ]
 
@@ -259,7 +292,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     companyRef,
-    period: period?.period_start ?? requestedPeriod ?? null,
+    period: evaluatedPeriod,
     badges,
     generatedAt: new Date().toISOString(),
   })
