@@ -153,9 +153,60 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  const extractedCount = results.filter((item) => item.status === 'text_extracted').length
+  let pipeline: Record<string, unknown> | null = null
+
+  if (extractedCount > 0) {
+    const { data: documentFacts, error: documentFactsError } = await supabase.rpc(
+      'sync_subcontractor_document_facts',
+    )
+    if (documentFactsError) {
+      return NextResponse.json({
+        stage: 'document_facts',
+        processed: results.length,
+        results,
+        error: documentFactsError.message,
+        durationMs: Date.now() - startedAt,
+      }, { status: 500 })
+    }
+
+    const { data: workerFacts, error: workerFactsError } = await supabase.rpc(
+      'extract_worker_facts_from_documents',
+    )
+    if (workerFactsError) {
+      return NextResponse.json({
+        stage: 'worker_facts',
+        processed: results.length,
+        results,
+        documentFacts,
+        error: workerFactsError.message,
+        durationMs: Date.now() - startedAt,
+      }, { status: 500 })
+    }
+
+    const { data: intelligence, error: intelligenceError } = await supabase.rpc(
+      'run_compliance_intelligence_sync',
+    )
+    if (intelligenceError) {
+      return NextResponse.json({
+        stage: 'compliance_intelligence',
+        processed: results.length,
+        results,
+        documentFacts,
+        workerFacts,
+        error: intelligenceError.message,
+        durationMs: Date.now() - startedAt,
+      }, { status: 500 })
+    }
+
+    pipeline = { documentFacts, workerFacts, intelligence }
+  }
+
   return NextResponse.json({
     processed: results.length,
+    extracted: extractedCount,
     results,
+    pipeline,
     durationMs: Date.now() - startedAt,
   })
 }
