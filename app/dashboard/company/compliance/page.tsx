@@ -152,7 +152,13 @@ export default function CompanyCompliancePage() {
             </p>
           </section>
         ) : (
-          <CompliancePassport companyRef={companyRef} period={period} />
+          <CompliancePassport
+            companyRef={companyRef}
+            period={period}
+            compact
+            collapsible
+            defaultExpanded={false}
+          />
         )}
       </div>
     </main>
