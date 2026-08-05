@@ -16,7 +16,7 @@ export type ExternalOcrResult = {
 }
 
 async function callOcrWorker(
-  documentBuffer: Buffer,
+  bytes: Uint8Array,
   expectedType: string,
   mimeType: string,
 ): Promise<ExternalOcrResult> {
@@ -27,8 +27,12 @@ async function callOcrWorker(
     throw new Error('OCR_WORKER_URL or OCR_WORKER_SECRET not configured')
   }
 
+  // Copy into a plain ArrayBuffer to avoid SharedArrayBuffer issues with Blob
+  const plainBuffer = new ArrayBuffer(bytes.byteLength)
+  new Uint8Array(plainBuffer).set(bytes)
+
   const formData = new FormData()
-  formData.append('document', new Blob([documentBuffer], { type: mimeType }))
+  formData.append('document', new Blob([plainBuffer], { type: mimeType }))
   formData.append('expectedType', expectedType)
   formData.append('mimeType', mimeType)
 
@@ -86,6 +90,5 @@ export async function extractDocumentViaWorker(
     throw new Error('External OCR worker is not enabled. Set OCR_PROCESSING_ENABLED=true and configure OCR_WORKER_URL and OCR_WORKER_SECRET')
   }
 
-  const documentBuffer = Buffer.from(bytes)
-  return callOcrWorker(documentBuffer, expectedType, mimeType)
+  return callOcrWorker(bytes, expectedType, mimeType)
 }

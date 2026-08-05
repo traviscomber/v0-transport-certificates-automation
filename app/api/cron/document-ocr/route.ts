@@ -181,7 +181,7 @@ export async function GET(request: NextRequest) {
         confidence: extraction.confidence,
         pagesProcessed: extraction.pagesProcessed,
         engine,
-        processingTimeMs: extraction.processingTimeMs,
+        processingTimeMs: (extraction as any).processingTimeMs ?? undefined,
       })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown local OCR error'
@@ -199,7 +199,7 @@ export async function GET(request: NextRequest) {
         fileName: candidate.file_name,
         status: 'failed',
         error: message,
-        engine: useExternalWorker ? 'external_ocr_worker' : 'local_tesseract_ocr',
+        engine: process.env.OCR_PROCESSING_ENABLED === 'true' ? 'external_ocr_worker' : 'local_tesseract_ocr',
       })
     }
   }
