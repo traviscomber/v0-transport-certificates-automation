@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createWriteStream } from 'node:fs'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { Readable } from 'node:stream'
-import { pipeline } from 'node:stream/promises'
 import ExcelJS from 'exceljs'
 import * as unzipper from 'unzipper'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -169,24 +164,18 @@ function buildImportRow(source: Record<string, unknown>, batch: Batch): ImportRo
   }
 }
 
-async function downloadAndExtractWorkbook(sourceUrl: string, directory: string): Promise<string> {
-  const archivePath = join(directory, 'source.zip')
-  const workbookPath = join(directory, 'source.xlsx')
+async function openWorkbookStream(sourceUrl: string): Promise<NodeJS.ReadableStream> {
   const response = await fetch(sourceUrl, {
     cache: 'no-store',
     redirect: 'follow',
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LABBE-PRT-Stream/1.0)' },
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LABBE-PRT-Stream/2.0)' },
   })
   if (!response.ok || !response.body) {
     throw new Error(`PRT ZIP download failed with HTTP ${response.status}`)
   }
 
-  await pipeline(Readable.fromWeb(response.body as never), createWriteStream(archivePath))
-  const directoryInfo = await unzipper.Open.file(archivePath)
-  const workbookEntry = directoryInfo.files.find((file) => /\.xlsx$/i.test(file.path))
-  if (!workbookEntry) throw new Error('No XLSX file found inside PRT ZIP')
-  await pipeline(workbookEntry.stream(), createWriteStream(workbookPath))
-  return workbookPath
+  const zipStream = Readable.fromWeb(response.body as never)
+  return zipStream.pipe(unzipper.ParseOne(/\.xlsx$/i))
 }
 
 async function upsertChunk(rows: ImportRow[]): Promise<void> {
@@ -231,10 +220,9 @@ export async function GET(request: NextRequest) {
   if (lockError) return NextResponse.json({ error: lockError.message }, { status: 500 })
   if (!locked) return NextResponse.json({ processed: 0, reason: 'batch_already_claimed' })
 
-  const workdir = await mkdtemp(join(tmpdir(), 'prt-stream-'))
   try {
-    const workbookPath = await downloadAndExtractWorkbook(batch.source_url, workdir)
-    const reader = new ExcelJS.stream.xlsx.WorkbookReader(workbookPath, {
+    const workbookStream = await openWorkbookStream(batch.source_url)
+    const reader = new ExcelJS.stream.xlsx.WorkbookReader(workbookStream as never, {
       entries: 'emit',
       sharedStrings: 'cache',
       hyperlinks: 'ignore',
@@ -331,7 +319,5 @@ export async function GET(request: NextRequest) {
       .update({ status: 'failed', error_message: message, updated_at: new Date().toISOString() })
       .eq('id', batch.id)
     return NextResponse.json({ error: message, batchId: batch.id }, { status: 500 })
-  } finally {
-    await rm(workdir, { recursive: true, force: true })
   }
 }
