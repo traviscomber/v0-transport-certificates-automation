@@ -14,16 +14,16 @@ import {
   XCircle,
 } from 'lucide-react'
 
-export type ComplianceBadgeStatus = 'verified' | 'warning' | 'blocked' | 'pending' | 'unknown'
+export type ComplianceBadgeState = 'verified' | 'warning' | 'blocked' | 'pending' | 'unknown'
 
 type ComplianceBadge = {
   code: string
   label: string
-  status: ComplianceBadgeStatus
+  state: ComplianceBadgeState
   summary?: string | null
   value?: number | string | null
   reasonCodes?: string[]
-  evidenceCount?: number
+  evidence?: Record<string, unknown>
 }
 
 type PassportResponse = {
@@ -50,7 +50,7 @@ const badgeIcons: Record<string, typeof ShieldCheck> = {
   operational_status: ShieldCheck,
 }
 
-const statusMeta: Record<ComplianceBadgeStatus, { label: string; classes: string; icon: typeof CheckCircle2 }> = {
+const statusMeta: Record<ComplianceBadgeState, { label: string; classes: string; icon: typeof CheckCircle2 }> = {
   verified: {
     label: 'Verificado',
     classes: 'border-emerald-400/25 bg-emerald-400/[0.07] text-emerald-200',
@@ -106,6 +106,7 @@ export function CompliancePassport({ companyRef, period, compact = false, classN
       try {
         const response = await fetch(`/api/internal/compliance-badges?${params.toString()}`, {
           cache: 'no-store',
+          credentials: 'same-origin',
           signal: controller.signal,
         })
         if (!response.ok) throw new Error(`No fue posible cargar el pasaporte (${response.status})`)
@@ -151,7 +152,7 @@ export function CompliancePassport({ companyRef, period, compact = false, classN
           </h2>
         </div>
         {operationalBadge && (() => {
-          const meta = statusMeta[operationalBadge.status]
+          const meta = statusMeta[operationalBadge.state]
           const StatusIcon = meta.icon
           return (
             <div className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${meta.classes}`}>
@@ -164,7 +165,7 @@ export function CompliancePassport({ companyRef, period, compact = false, classN
 
       <div className={`mt-4 grid gap-2 ${compact ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-2 xl:grid-cols-4'}`}>
         {data?.badges.map((badge) => {
-          const meta = statusMeta[badge.status]
+          const meta = statusMeta[badge.state]
           const StatusIcon = meta.icon
           const BadgeIcon = badgeIcons[badge.code] ?? ShieldCheck
 
@@ -174,7 +175,7 @@ export function CompliancePassport({ companyRef, period, compact = false, classN
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.055] text-slate-300">
                   <BadgeIcon className="h-4 w-4" />
                 </div>
-                <StatusIcon className={`h-4 w-4 ${badge.status === 'verified' ? 'text-emerald-300' : badge.status === 'warning' ? 'text-amber-300' : badge.status === 'blocked' ? 'text-rose-300' : 'text-slate-500'}`} />
+                <StatusIcon className={`h-4 w-4 ${badge.state === 'verified' ? 'text-emerald-300' : badge.state === 'warning' ? 'text-amber-300' : badge.state === 'blocked' ? 'text-rose-300' : 'text-slate-500'}`} />
               </div>
               <h3 className="mt-3 text-sm font-semibold text-slate-100">{badge.label}</h3>
               <p className="mt-1 line-clamp-2 min-h-10 text-xs leading-5 text-slate-400">
