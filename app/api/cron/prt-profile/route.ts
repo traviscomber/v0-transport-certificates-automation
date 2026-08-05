@@ -127,13 +127,14 @@ export async function GET(request: NextRequest) {
     .from('prt_import_batches')
     .select('id, period, record_type, source_url, status')
     .eq('status', 'inspected')
+    .in('record_type', ['RA1', 'RA2'])
     .order('period', { ascending: false })
     .order('record_type', { ascending: true })
     .limit(1)
     .maybeSingle()
 
   if (batchError) return NextResponse.json({ error: batchError.message }, { status: 500 })
-  if (!batch) return NextResponse.json({ profiled: 0, reason: 'no_inspected_batch' })
+  if (!batch) return NextResponse.json({ profiled: 0, reason: 'no_small_prt_batch' })
 
   const { error: lockError } = await supabase
     .from('prt_import_batches')
