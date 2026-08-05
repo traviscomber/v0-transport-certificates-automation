@@ -1,22 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { extractDocumentFromPdfBuffer } from '@/lib/ai-document-processor'
+import { extractDocumentLocally } from '@/lib/local-ocr'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const maxDuration = 300
+export const runtime = 'nodejs'
 
 const MAX_FILE_BYTES = 12 * 1024 * 1024
-const MAX_DOCUMENTS_PER_RUN = 3
+const MAX_DOCUMENTS_PER_RUN = 1
 
 function isAuthorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET
   return !secret || request.headers.get('authorization') === `Bearer ${secret}`
 }
 
-function isRateLimitError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error)
-  return /429|rate.?limit|quota|insufficient_quota/i.test(message)
+function inferMimeType(fileName: string | null, contentType: string | null): string {
+  if (contentType) return contentType
+  const normalized = String(fileName ?? '').toLowerCase()
+  if (normalized.endsWith('.png')) return 'image/png'
+  if (normalized.endsWith('.jpg') || normalized.endsWith('.jpeg')) return 'image/jpeg'
+  if (normalized.endsWith('.webp')) return 'image/webp'
+  return 'application/pdf'
 }
 
 export async function GET(request: NextRequest) {
@@ -77,12 +82,12 @@ export async function GET(request: NextRequest) {
         throw new Error(`Document exceeds OCR size limit (${buffer.byteLength} bytes)`)
       }
 
-      const extraction = await extractDocumentFromPdfBuffer(
+      const extraction = await extractDocumentLocally(
         new Uint8Array(buffer),
-        candidate.document_type || 'documento',
+        candidate.document_type || 'DOCUMENTO',
+        inferMimeType(candidate.file_name, response.headers.get('content-type')),
       )
       const extractedText = extraction.extractedText.trim()
-      if (extractedText.length < 10) throw new Error('OCR returned insufficient text')
 
       const analyzedAt = new Date().toISOString()
       const { error: documentError } = await supabase
@@ -105,7 +110,7 @@ export async function GET(request: NextRequest) {
         .from('document_text_extractions')
         .update({
           status: 'text_extracted',
-          extraction_method: 'openai_ocr',
+          extraction_method: 'local_tesseract_ocr',
           text_length: extractedText.length,
           error_message: null,
           processed_at: analyzedAt,
@@ -121,14 +126,15 @@ export async function GET(request: NextRequest) {
         status: 'text_extracted',
         textLength: extractedText.length,
         confidence: extraction.confidence,
+        pagesProcessed: extraction.pagesProcessed,
+        engine: 'local_tesseract_ocr',
       })
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown OCR error'
-      const rateLimited = isRateLimitError(error)
+      const message = error instanceof Error ? error.message : 'Unknown local OCR error'
       await supabase
         .from('document_text_extractions')
         .update({
-          status: rateLimited ? 'ocr_required' : 'failed',
+          status: 'failed',
           error_message: message.slice(0, 1000),
           updated_at: new Date().toISOString(),
         })
@@ -137,11 +143,10 @@ export async function GET(request: NextRequest) {
       results.push({
         documentId: candidate.document_id,
         fileName: candidate.file_name,
-        status: rateLimited ? 'paused_rate_limit' : 'failed',
+        status: 'failed',
         error: message,
+        engine: 'local_tesseract_ocr',
       })
-
-      if (rateLimited) break
     }
   }
 
@@ -197,6 +202,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     processed: results.length,
     extracted: extractedCount,
+    engine: 'local_tesseract_ocr',
     results,
     pipeline,
     durationMs: Date.now() - startedAt,
