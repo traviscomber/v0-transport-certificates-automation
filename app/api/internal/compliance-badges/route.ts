@@ -18,7 +18,9 @@ type Badge = {
 
 function isAuthorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET
-  return !secret || request.headers.get('authorization') === `Bearer ${secret}`
+  const hasInternalSecret = Boolean(secret) && request.headers.get('authorization') === `Bearer ${secret}`
+  const hasApplicationSession = Boolean(request.cookies.get('user_email')?.value)
+  return hasInternalSecret || hasApplicationSession
 }
 
 function operationalState(decision?: string | null): BadgeState {
@@ -201,10 +203,10 @@ export async function GET(request: NextRequest) {
       code: 'vehicles_verified',
       label: 'Vehículos Verificados',
       state: 'pending',
-      summary: 'Pendiente hasta completar PRT y añadir SOAP, permiso de circulación y padrón.',
+      summary: 'PRT utiliza información canónica oficial. SOAP, permiso y padrón se validan cuando el transportista los aporta.',
       value: null,
-      reasonCodes: ['vehicle_sources_incomplete'],
-      evidence: {},
+      reasonCodes: ['no_vehicle_documents_supplied'],
+      evidence: { canonicalSource: 'prt' },
     },
     {
       code: 'operational_status',
