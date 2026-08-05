@@ -76,7 +76,7 @@ async function recognizeImages(images: Buffer[], expectedType: string): Promise<
 async function renderPdfPages(bytes: Uint8Array): Promise<Buffer[]> {
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
   const createCanvas = getCreateCanvas()
-  const loadingTask = pdfjs.getDocument({ data: bytes, disableWorker: true })
+  const loadingTask = pdfjs.getDocument({ data: bytes })
   const pdf = await loadingTask.promise
   const pageCount = Math.min(pdf.numPages, MAX_PDF_PAGES)
   const images: Buffer[] = []
