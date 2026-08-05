@@ -137,6 +137,16 @@ export function CompliancePassport({
     [data],
   )
 
+  const hasIncompleteValidations = useMemo(
+    () => Boolean(
+      operationalBadge?.state === 'verified' &&
+      data?.badges.some(
+        (badge) => badge.code !== 'operational_status' && (badge.state === 'pending' || badge.state === 'unknown'),
+      ),
+    ),
+    [data, operationalBadge],
+  )
+
   if (!data && !error) return <PassportSkeleton compact={compact} />
 
   if (error) {
@@ -194,6 +204,12 @@ export function CompliancePassport({
 
       {expanded && (
         <div id={contentId}>
+          {hasIncompleteValidations && (
+            <p className="mt-4 rounded-lg border border-slate-700/70 bg-slate-900/60 px-3 py-2 text-xs leading-5 text-slate-400">
+              La empresa está habilitada operacionalmente, pero algunas validaciones aún no cuentan con información suficiente. Esto no implica incumplimiento ni bloqueo.
+            </p>
+          )}
+
           <div className={`mt-4 grid gap-2 ${compact ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2 xl:grid-cols-4'}`}>
             {data?.badges.map((badge) => {
               const meta = statusMeta[badge.state]
