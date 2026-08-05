@@ -1,3 +1,4 @@
+import { createCanvas } from '@napi-rs/canvas'
 import { createWorker } from 'tesseract.js'
 
 export type LocalOcrResult = {
@@ -13,11 +14,6 @@ export type LocalOcrResult = {
 
 const MAX_PDF_PAGES = 2
 const PDF_RENDER_SCALE = 1.6
-
-function getCreateCanvas(): (width: number, height: number) => any {
-  const runtimeRequire = eval('require') as NodeRequire
-  return runtimeRequire('@napi-rs/canvas').createCanvas
-}
 
 function normalizeDate(raw: string | undefined): string | null {
   if (!raw) return null
@@ -75,7 +71,6 @@ async function recognizeImages(images: Buffer[], expectedType: string): Promise<
 
 async function renderPdfPages(bytes: Uint8Array): Promise<Buffer[]> {
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
-  const createCanvas = getCreateCanvas()
   const loadingTask = pdfjs.getDocument({ data: bytes })
   const pdf = await loadingTask.promise
   const pageCount = Math.min(pdf.numPages, MAX_PDF_PAGES)
@@ -86,7 +81,7 @@ async function renderPdfPages(bytes: Uint8Array): Promise<Buffer[]> {
     const viewport = page.getViewport({ scale: PDF_RENDER_SCALE })
     const canvas = createCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height))
     const context = canvas.getContext('2d')
-    await page.render({ canvasContext: context, viewport }).promise
+    await page.render({ canvasContext: context as never, viewport }).promise
     images.push(canvas.toBuffer('image/png'))
     page.cleanup()
   }
