@@ -14,6 +14,10 @@
       "schedule": "* * * * *"
     },
     {
+      "path": "/api/cron/compliance-intelligence",
+      "schedule": "3,13,23,33,43,53 * * * *"
+    },
+    {
       "path": "/api/cron/prt-discovery",
       "schedule": "15 7 * * *"
     },
