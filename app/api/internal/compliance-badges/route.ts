@@ -16,6 +16,17 @@ type Badge = {
   evidence: Record<string, unknown>
 }
 
+const VEHICLE_DOCUMENT_CODES = [
+  'SOAP',
+  'SEGURO-SOAP',
+  'PADRON',
+  'PADRON-VEHICULO',
+  'PERMISO_CIRCULACION',
+  'PERMISO-CIRCULACION',
+  'REVISION_TECNICA',
+  'REVISION-TECNICA',
+]
+
 function isAuthorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET
   const hasInternalSecret = Boolean(secret) && request.headers.get('authorization') === `Bearer ${secret}`
@@ -61,14 +72,37 @@ export async function GET(request: NextRequest) {
 
   if (requestedPeriod) periodQuery = periodQuery.eq('period_start', requestedPeriod)
 
-  const [companyResult, periodResult] = await Promise.all([
+  const [companyResult, periodResult, vehicleTypeResult] = await Promise.all([
     companyDecisionQuery,
     periodQuery.maybeSingle(),
+    supabase
+      .from('document_types')
+      .select('id, code')
+      .in('code', VEHICLE_DOCUMENT_CODES)
+      .eq('is_active', true),
   ])
 
-  const firstError = companyResult.error ?? periodResult.error
+  const firstError = companyResult.error ?? periodResult.error ?? vehicleTypeResult.error
   if (firstError) {
     return NextResponse.json({ error: firstError.message }, { status: 500 })
+  }
+
+  const vehicleTypeIds = (vehicleTypeResult.data ?? []).map((item) => item.id)
+  let suppliedVehicleDocuments = 0
+
+  if (vehicleTypeIds.length > 0) {
+    const vehicleDocumentsResult = await supabase
+      .from('subcontractor_documents')
+      .select('id', { count: 'exact', head: true })
+      .eq('subcontractor_id', companyRef)
+      .in('document_type_id', vehicleTypeIds)
+      .eq('is_current', true)
+
+    if (vehicleDocumentsResult.error) {
+      return NextResponse.json({ error: vehicleDocumentsResult.error.message }, { status: 500 })
+    }
+
+    suppliedVehicleDocuments = vehicleDocumentsResult.count ?? 0
   }
 
   const company = companyResult.data
@@ -199,25 +233,29 @@ export async function GET(request: NextRequest) {
       ],
       evidence: { period: period?.period_start ?? null, expectedWorkers, missingPrevired, missingLiquidations, missingContracts },
     },
-    {
+  ]
+
+  if (suppliedVehicleDocuments > 0) {
+    badges.push({
       code: 'vehicles_verified',
       label: 'Vehículos Verificados',
       state: 'pending',
-      summary: 'PRT utiliza información canónica oficial. SOAP, permiso y padrón se validan cuando el transportista los aporta.',
-      value: null,
-      reasonCodes: ['no_vehicle_documents_supplied'],
-      evidence: { canonicalSource: 'prt' },
-    },
-    {
-      code: 'operational_status',
-      label: 'Estado Operacional',
-      state: operationalState(company?.decision),
-      summary: company?.explanation ?? 'No existe una decisión operacional vigente.',
-      value: company?.score ?? null,
-      reasonCodes: companyReasons,
-      evidence: { evidenceIds: company?.evidence_ids ?? [], decision: company?.decision ?? null, createdAt: company?.created_at ?? null },
-    },
-  ]
+      summary: `${suppliedVehicleDocuments} documento${suppliedVehicleDocuments === 1 ? '' : 's'} vehicular${suppliedVehicleDocuments === 1 ? '' : 'es'} aportado${suppliedVehicleDocuments === 1 ? '' : 's'}; validación en proceso.`,
+      value: suppliedVehicleDocuments,
+      reasonCodes: ['vehicle_documents_require_validation'],
+      evidence: { canonicalSource: 'prt', suppliedDocuments: suppliedVehicleDocuments },
+    })
+  }
+
+  badges.push({
+    code: 'operational_status',
+    label: 'Estado Operacional',
+    state: operationalState(company?.decision),
+    summary: company?.explanation ?? 'No existe una decisión operacional vigente.',
+    value: company?.score ?? null,
+    reasonCodes: companyReasons,
+    evidence: { evidenceIds: company?.evidence_ids ?? [], decision: company?.decision ?? null, createdAt: company?.created_at ?? null },
+  })
 
   return NextResponse.json({
     companyRef,
