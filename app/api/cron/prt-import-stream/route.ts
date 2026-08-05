@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Readable } from 'node:stream'
+import { PassThrough, Readable } from 'node:stream'
 import ExcelJS from 'exceljs'
 import * as unzipper from 'unzipper'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -164,18 +164,31 @@ function buildImportRow(source: Record<string, unknown>, batch: Batch): ImportRo
   }
 }
 
-async function openWorkbookStream(sourceUrl: string): Promise<NodeJS.ReadableStream> {
+async function openWorkbookStream(sourceUrl: string): Promise<PassThrough> {
   const response = await fetch(sourceUrl, {
     cache: 'no-store',
     redirect: 'follow',
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LABBE-PRT-Stream/2.0)' },
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LABBE-PRT-Stream/2.1)' },
   })
   if (!response.ok || !response.body) {
     throw new Error(`PRT ZIP download failed with HTTP ${response.status}`)
   }
 
   const zipStream = Readable.fromWeb(response.body as never)
-  return zipStream.pipe(unzipper.ParseOne(/\.xlsx$/i))
+  const unzipStream = unzipper.ParseOne(/\.xlsx$/i)
+  const workbookStream = new PassThrough()
+
+  const propagate = (source: NodeJS.EventEmitter, label: string) => {
+    source.once('error', (cause) => {
+      const message = cause instanceof Error ? cause.message : String(cause)
+      workbookStream.destroy(new Error(`${label}: ${message}`))
+    })
+  }
+
+  propagate(zipStream, 'PRT ZIP stream failed')
+  propagate(unzipStream, 'PRT ZIP extraction failed')
+  zipStream.pipe(unzipStream).pipe(workbookStream)
+  return workbookStream
 }
 
 async function upsertChunk(rows: ImportRow[]): Promise<void> {
@@ -222,7 +235,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const workbookStream = await openWorkbookStream(batch.source_url)
-    const reader = new ExcelJS.stream.xlsx.WorkbookReader(workbookStream as never, {
+    const reader = new ExcelJS.stream.xlsx.WorkbookReader(workbookStream, {
       entries: 'emit',
       sharedStrings: 'cache',
       hyperlinks: 'ignore',
