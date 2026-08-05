@@ -1,14 +1,83 @@
 'use client'
 
-import { useSearchParams } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, ShieldCheck } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { ArrowLeft, Building2, Loader2, ShieldCheck } from 'lucide-react'
 import { CompliancePassport } from '@/components/compliance-passport'
 
+type CompanyOption = {
+  id: string
+  rut?: string
+  nombre?: string
+  razon_social?: string
+  nombre_fantasia?: string
+}
+
 export default function CompanyCompliancePage() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const companyRef = searchParams.get('companyRef')?.trim() || ''
   const period = searchParams.get('period')?.trim() || undefined
+  const [companies, setCompanies] = useState<CompanyOption[]>([])
+  const [loadingCompanies, setLoadingCompanies] = useState(true)
+  const [companyLoadError, setCompanyLoadError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadCompanies() {
+      setLoadingCompanies(true)
+      setCompanyLoadError(null)
+
+      try {
+        const response = await fetch('/api/dashboard/data', {
+          cache: 'no-store',
+          credentials: 'same-origin',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            Pragma: 'no-cache',
+          },
+        })
+
+        if (!response.ok) throw new Error(`Dashboard API ${response.status}`)
+
+        const payload = await response.json()
+        const transportistas = Array.isArray(payload.dashboard?.transportistas)
+          ? payload.dashboard.transportistas
+          : []
+
+        if (!cancelled) setCompanies(transportistas)
+      } catch (error) {
+        console.error('[compliance-passport] Error loading companies:', error)
+        if (!cancelled) setCompanyLoadError('No fue posible cargar la lista de empresas.')
+      } finally {
+        if (!cancelled) setLoadingCompanies(false)
+      }
+    }
+
+    loadCompanies()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const selectedCompany = useMemo(
+    () => companies.find((company) => company.id === companyRef),
+    [companies, companyRef],
+  )
+
+  const handleCompanyChange = (nextCompanyRef: string) => {
+    if (!nextCompanyRef) {
+      router.replace('/dashboard/company/compliance')
+      return
+    }
+
+    const params = new URLSearchParams()
+    params.set('companyRef', nextCompanyRef)
+    if (period) params.set('period', period)
+    router.replace(`/dashboard/company/compliance?${params.toString()}`)
+  }
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 sm:px-6 lg:px-8">
@@ -33,11 +102,53 @@ export default function CompanyCompliancePage() {
           </Link>
         </div>
 
+        <section className="mb-6 rounded-2xl border border-white/10 bg-white/[0.025] p-4 sm:p-5">
+          <label htmlFor="company-ref" className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-200">
+            <Building2 className="h-4 w-4 text-slate-400" />
+            Empresa
+          </label>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <select
+              id="company-ref"
+              value={companyRef}
+              onChange={(event) => handleCompanyChange(event.target.value)}
+              disabled={loadingCompanies}
+              className="min-h-11 w-full rounded-lg border border-white/10 bg-slate-900 px-3 text-sm text-slate-100 outline-none transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-400/30 disabled:cursor-wait disabled:opacity-60 sm:max-w-xl"
+            >
+              <option value="">Selecciona una empresa</option>
+              {companies.map((company) => {
+                const primaryName = company.razon_social || company.nombre || company.nombre_fantasia || 'Empresa sin nombre'
+                const secondary = company.rut ? ` · ${company.rut}` : ''
+                return (
+                  <option key={company.id} value={company.id}>
+                    {primaryName}{secondary}
+                  </option>
+                )
+              })}
+            </select>
+
+            {loadingCompanies && (
+              <span className="inline-flex items-center gap-2 text-sm text-slate-400">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Cargando empresas
+              </span>
+            )}
+          </div>
+
+          {companyLoadError && <p className="mt-3 text-sm text-rose-300">{companyLoadError}</p>}
+          {selectedCompany && (
+            <p className="mt-3 text-sm text-slate-400">
+              Mostrando: <span className="font-medium text-slate-200">{selectedCompany.razon_social || selectedCompany.nombre || selectedCompany.nombre_fantasia}</span>
+            </p>
+          )}
+        </section>
+
         {!companyRef ? (
           <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-6">
             <h2 className="text-base font-semibold">Selecciona una empresa</h2>
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              Abre esta vista desde una empresa o agrega el parámetro <code className="rounded bg-white/5 px-1.5 py-0.5 font-mono text-slate-300">companyRef</code> a la URL.
+              El Pasaporte mostrará únicamente validaciones respaldadas por evidencia real. Los badges sin documentación aportada se omiten.
             </p>
           </section>
         ) : (
