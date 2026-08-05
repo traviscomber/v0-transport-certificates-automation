@@ -11,11 +11,33 @@ type ComplianceEvent = {
   entity_type: string
   entity_ref: string
   organization_id: string | null
+  source_record_id: string | null
+  payload: Record<string, unknown> | null
+  metadata: Record<string, unknown> | null
+}
+
+type CompanyPeriod = {
+  companyEntityRef: string
+  periodStart: string
 }
 
 function isAuthorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET
   return !secret || request.headers.get('authorization') === `Bearer ${secret}`
+}
+
+function isIsoDate(value: unknown): value is string {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+}
+
+function uniqueCompanyPeriods(periods: CompanyPeriod[]): CompanyPeriod[] {
+  const seen = new Set<string>()
+  return periods.filter((item) => {
+    const key = `${item.companyEntityRef}:${item.periodStart}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 }
 
 async function completeEvents(
@@ -33,11 +55,42 @@ async function completeEvents(
   if (rpcError) throw new Error(`Could not complete compliance events: ${rpcError.message}`)
 }
 
-async function runRpc(name: string): Promise<unknown> {
+async function resolveCompanyPeriods(events: ComplianceEvent[]): Promise<CompanyPeriod[]> {
   const supabase = createAdminClient()
-  const { data, error } = await supabase.rpc(name)
-  if (error) throw new Error(`${name} failed: ${error.message}`)
-  return data
+  const periods: CompanyPeriod[] = []
+
+  for (const event of events) {
+    const periodCandidate = event.metadata?.periodStart ?? event.payload?.periodStart
+    if (event.entity_type === 'company' && isIsoDate(periodCandidate)) {
+      periods.push({ companyEntityRef: event.entity_ref, periodStart: periodCandidate })
+    }
+  }
+
+  const documentIds = Array.from(new Set(events
+    .filter((event) => event.event_type.startsWith('document.'))
+    .map((event) => event.source_record_id ?? event.entity_ref)
+    .filter((value): value is string => Boolean(value))))
+
+  if (documentIds.length > 0) {
+    const { data, error } = await supabase
+      .from('subcontractor_documents')
+      .select('id, subcontractor_id, document_period_start')
+      .in('id', documentIds)
+      .eq('is_current', true)
+
+    if (error) throw new Error(`Could not resolve document periods: ${error.message}`)
+
+    for (const document of data ?? []) {
+      if (document.subcontractor_id && isIsoDate(document.document_period_start)) {
+        periods.push({
+          companyEntityRef: String(document.subcontractor_id),
+          periodStart: document.document_period_start,
+        })
+      }
+    }
+  }
+
+  return uniqueCompanyPeriods(periods)
 }
 
 export async function GET(request: NextRequest) {
@@ -58,38 +111,59 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ processed: 0, reason: 'no_pending_events', durationMs: Date.now() - startedAt })
   }
 
-  const relevant: ComplianceEvent[] = []
-  const ignored: ComplianceEvent[] = []
-
-  for (const event of events) {
-    const isDocumentEvent = event.event_type.startsWith('document.')
-    const isEvidenceEvent = event.event_type === 'evidence.created'
-    if (isDocumentEvent || isEvidenceEvent) relevant.push(event)
-    else ignored.push(event)
-  }
+  const relevant = events.filter((event) =>
+    event.event_type.startsWith('document.') || event.event_type === 'evidence.created',
+  )
+  const ignored = events.filter((event) => !relevant.some((candidate) => candidate.id === event.id))
 
   try {
     if (ignored.length > 0) {
       await completeEvents(ignored.map((event) => event.id), 'ignored')
     }
 
-    const results: Record<string, unknown> = {}
-    if (relevant.length > 0) {
-      const hasDocumentEvents = relevant.some((event) => event.event_type.startsWith('document.'))
-      if (hasDocumentEvents) {
-        results.documentFacts = await runRpc('sync_subcontractor_document_facts')
-        results.companyFacts = await runRpc('sync_company_period_facts_from_documents')
-      }
-      results.intelligence = await runRpc('run_compliance_intelligence_sync')
-      await completeEvents(relevant.map((event) => event.id), 'processed')
+    if (relevant.length === 0) {
+      return NextResponse.json({
+        claimed: events.length,
+        processed: 0,
+        ignored: ignored.length,
+        durationMs: Date.now() - startedAt,
+      })
     }
+
+    const hasDocumentEvents = relevant.some((event) => event.event_type.startsWith('document.'))
+    let documentFacts: unknown = null
+    if (hasDocumentEvents) {
+      const { data: factsData, error: factsError } = await supabase.rpc('sync_subcontractor_document_facts')
+      if (factsError) throw new Error(`sync_subcontractor_document_facts failed: ${factsError.message}`)
+      documentFacts = factsData
+    }
+
+    const companyPeriods = await resolveCompanyPeriods(relevant)
+    const decisions: unknown[] = []
+
+    for (const item of companyPeriods) {
+      const { data: decision, error: decisionError } = await supabase.rpc(
+        'recalculate_company_period_decision',
+        {
+          p_company_entity_ref: item.companyEntityRef,
+          p_period_start: item.periodStart,
+        },
+      )
+      if (decisionError) {
+        throw new Error(`Granular decision failed for ${item.companyEntityRef}:${item.periodStart}: ${decisionError.message}`)
+      }
+      decisions.push(decision)
+    }
+
+    await completeEvents(relevant.map((event) => event.id), 'processed')
 
     return NextResponse.json({
       claimed: events.length,
       processed: relevant.length,
       ignored: ignored.length,
-      entityCount: new Set(relevant.map((event) => `${event.entity_type}:${event.entity_ref}`)).size,
-      results,
+      recalculatedPeriods: companyPeriods.length,
+      documentFacts,
+      decisions,
       durationMs: Date.now() - startedAt,
     })
   } catch (error) {
