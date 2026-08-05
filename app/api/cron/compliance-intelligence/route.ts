@@ -17,12 +17,32 @@ export async function GET(request: NextRequest) {
 
   const startedAt = Date.now()
   const supabase = createAdminClient()
-  const { data, error } = await supabase.rpc('run_compliance_intelligence_sync')
 
-  if (error) {
+  const { data: documentFacts, error: documentFactsError } = await supabase.rpc(
+    'sync_subcontractor_document_facts',
+  )
+
+  if (documentFactsError) {
     return NextResponse.json(
       {
-        error: error.message,
+        stage: 'document_facts',
+        error: documentFactsError.message,
+        durationMs: Date.now() - startedAt,
+      },
+      { status: 500 },
+    )
+  }
+
+  const { data: intelligence, error: intelligenceError } = await supabase.rpc(
+    'run_compliance_intelligence_sync',
+  )
+
+  if (intelligenceError) {
+    return NextResponse.json(
+      {
+        stage: 'compliance_intelligence',
+        documentFacts,
+        error: intelligenceError.message,
         durationMs: Date.now() - startedAt,
       },
       { status: 500 },
@@ -31,7 +51,8 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     ok: true,
-    result: data,
+    documentFacts,
+    intelligence,
     durationMs: Date.now() - startedAt,
   })
 }
