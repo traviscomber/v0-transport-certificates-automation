@@ -33,6 +33,22 @@ export async function GET(request: NextRequest) {
     )
   }
 
+  const { data: workerFacts, error: workerFactsError } = await supabase.rpc(
+    'extract_worker_facts_from_documents',
+  )
+
+  if (workerFactsError) {
+    return NextResponse.json(
+      {
+        stage: 'worker_facts',
+        documentFacts,
+        error: workerFactsError.message,
+        durationMs: Date.now() - startedAt,
+      },
+      { status: 500 },
+    )
+  }
+
   const { data: intelligence, error: intelligenceError } = await supabase.rpc(
     'run_compliance_intelligence_sync',
   )
@@ -42,6 +58,7 @@ export async function GET(request: NextRequest) {
       {
         stage: 'compliance_intelligence',
         documentFacts,
+        workerFacts,
         error: intelligenceError.message,
         durationMs: Date.now() - startedAt,
       },
@@ -52,6 +69,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     ok: true,
     documentFacts,
+    workerFacts,
     intelligence,
     durationMs: Date.now() - startedAt,
   })
