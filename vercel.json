@@ -1,5 +1,10 @@
 {
   "installCommand": "pnpm install --no-frozen-lockfile",
+  "functions": {
+    "api/pdf-ocr.py": {
+      "maxDuration": 300
+    }
+  },
   "crons": [
     {
       "path": "/api/company/alerts/check-expiring-documents",
