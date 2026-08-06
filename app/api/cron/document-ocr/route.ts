@@ -9,6 +9,7 @@ export const runtime = 'nodejs'
 
 const MAX_FILE_BYTES = 12 * 1024 * 1024
 const MAX_DOCUMENTS_PER_RUN = 1
+const MAX_RETRYABLE_ATTEMPTS = 3
 
 type Semaphore = 'processing' | 'green' | 'yellow' | 'red'
 
@@ -26,6 +27,14 @@ function inferMimeType(fileName: string | null, contentType: string | null): str
   return 'application/pdf'
 }
 
+function inferExpectedOcrType(fileName: string | null, documentType: string | null): string {
+  const source = `${fileName ?? ''} ${documentType ?? ''}`
+  if (/patente|placa|matr[ií]cula|cam[ií]on|veh[ií]culo/i.test(source)) return 'PATENTE_VEHICULO'
+  if (/padr[oó]n/i.test(source)) return 'PADRON_VEHICULO'
+  if (/revisi[oó]n\s*t[eé]cnica/i.test(source)) return 'REVISION_TECNICA_VEHICULO'
+  return documentType || 'DOCUMENTO'
+}
+
 function semaphoreForCanonicalStatus(status: string | null): Semaphore {
   if (status === 'matched') return 'green'
   if (status === 'owner_conflict' || status === 'failed') return 'red'
@@ -34,11 +43,17 @@ function semaphoreForCanonicalStatus(status: string | null): Semaphore {
 }
 
 async function triggerCanonicalRecovery(request: NextRequest, documentId: string) {
-  const headers: Record<string, string> = {}
+  const headers: Record<string, string> = {
+    'user-agent': 'vercel-cron/1.0',
+    'x-internal-cron': 'document-ocr',
+  }
   if (process.env.CRON_SECRET) headers.authorization = `Bearer ${process.env.CRON_SECRET}`
 
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : request.nextUrl.origin
   const response = await fetch(
-    `${request.nextUrl.origin}/api/cron/vehicle-fleet-recovery?documentId=${encodeURIComponent(documentId)}`,
+    `${baseUrl}/api/cron/vehicle-fleet-recovery?documentId=${encodeURIComponent(documentId)}`,
     { method: 'GET', headers, cache: 'no-store' },
   )
 
@@ -111,11 +126,12 @@ export async function GET(request: NextRequest) {
       if (batchDocumentError) throw new Error(batchDocumentError.message)
 
       const now = new Date().toISOString()
+      const nextAttempts = Number(candidate.attempts ?? 0) + 1
       const { data: locked, error: lockError } = await supabase
         .from('document_text_extractions')
         .update({
           status: 'processing',
-          attempts: Number(candidate.attempts ?? 0) + 1,
+          attempts: nextAttempts,
           error_message: null,
           updated_at: now,
         })
@@ -143,9 +159,10 @@ export async function GET(request: NextRequest) {
         }
 
         const mimeType = inferMimeType(candidate.file_name, response.headers.get('content-type'))
+        const expectedType = inferExpectedOcrType(candidate.file_name, candidate.document_type)
         const extraction = await extractDocumentLocally(
           new Uint8Array(buffer),
-          candidate.document_type || 'DOCUMENTO',
+          expectedType,
           mimeType,
         )
         const engine = 'openai_vision_ocr'
@@ -189,11 +206,12 @@ export async function GET(request: NextRequest) {
             extraction_status: 'text_extracted',
             metadata: {
               fileName: candidate.file_name,
-              documentType: candidate.document_type,
+              documentType: expectedType,
               priorityScore: candidate.priority_score,
               textLength: extractedText.length,
               confidence: extraction.confidence,
               engine,
+              warnings: extraction.warnings,
             },
             updated_at: analyzedAt,
           })
@@ -242,12 +260,18 @@ export async function GET(request: NextRequest) {
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown local OCR error'
         const failedAt = new Date().toISOString()
+        const retryable = message.startsWith('OCR_RETRYABLE:') && nextAttempts < MAX_RETRYABLE_ATTEMPTS
+        const extractionStatus = retryable ? 'ocr_required' : 'failed'
+        const semaphore: Semaphore = retryable ? 'yellow' : 'red'
 
         await supabase
           .from('document_text_extractions')
           .update({
-            status: 'failed',
+            status: extractionStatus,
+            extraction_method: retryable ? null : 'openai_vision_ocr',
+            text_length: null,
             error_message: message.slice(0, 1000),
+            processed_at: null,
             updated_at: failedAt,
           })
           .eq('document_id', candidate.document_id)
@@ -255,9 +279,9 @@ export async function GET(request: NextRequest) {
         await supabase
           .from('ocr_batch_documents')
           .update({
-            status: 'failed',
-            semaphore: 'red',
-            extraction_status: 'failed',
+            status: retryable ? 'queued_retry' : 'failed',
+            semaphore,
+            extraction_status: extractionStatus,
             canonical_status: 'not_run',
             error_message: message.slice(0, 1000),
             completed_at: failedAt,
@@ -266,12 +290,13 @@ export async function GET(request: NextRequest) {
           .eq('batch_id', batch.id)
           .eq('document_id', candidate.document_id)
 
-        responseStatus = 500
+        responseStatus = retryable ? 503 : 500
         results.push({
           documentId: candidate.document_id,
           fileName: candidate.file_name,
-          status: 'failed',
-          semaphore: 'red',
+          status: extractionStatus,
+          retryable,
+          semaphore,
           error: message,
           engine: 'openai_vision_ocr',
         })
