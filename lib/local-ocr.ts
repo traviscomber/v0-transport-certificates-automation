@@ -59,6 +59,10 @@ function isRefusal(text: string): boolean {
   return REFUSAL_PATTERNS.some((pattern) => pattern.test(text))
 }
 
+function isValidText(text: string): boolean {
+  return text.trim().length >= 4 && !isRefusal(text)
+}
+
 async function requestVisionText(input: {
   bytes: Uint8Array
   mimeType: string
@@ -121,9 +125,8 @@ async function callOpenAIVision(
       : `Tipo de documento esperado: ${expectedType}. Extrae todo el texto visible con máxima fidelidad. Conserva fechas, RUT, nombres y números exactamente como aparecen. Responde solo con la transcripción.`,
   })
 
-  const firstInvalid = first.text.length < 4 || isRefusal(first.text)
   const missingPlate = plateTarget && !PLATE_PATTERN.test(first.text)
-  if (!firstInvalid && !missingPlate) {
+  if (isValidText(first.text) && !missingPlate) {
     return {
       text: first.text,
       confidence: PLATE_PATTERN.test(first.text) ? 0.98 : first.finishReason === 'stop' ? 0.92 : 0.72,
@@ -141,11 +144,28 @@ async function callOpenAIVision(
         'Observa cuidadosamente la placa patente del vehículo. Devuelve únicamente la matrícula en mayúsculas y sin explicación. Formatos esperados: ABCD12 o AB1234. Revisa dos veces caracteres similares como B/8, D/0, G/6, I/1, S/5 y Z/2.',
     })
 
-    if (!isRefusal(retry.text) && PLATE_PATTERN.test(retry.text)) {
+    if (isValidText(retry.text) && PLATE_PATTERN.test(retry.text)) {
       return {
         text: retry.text.toUpperCase(),
         confidence: 0.97,
         warnings: ['openai_vision_ocr', 'plate_specialized_retry'],
+      }
+    }
+  } else {
+    const retry = await requestVisionText({
+      bytes,
+      mimeType,
+      systemPrompt:
+        'Eres un lector OCR mecánico. Transcribe cualquier carácter legible del documento sin resumir, interpretar ni rechazar. Aunque la imagen esté inclinada, recortada o tenga baja calidad, devuelve solamente el texto que puedas leer.',
+      userPrompt:
+        `Segundo intento para un documento chileno tipo ${expectedType}. Examina la imagen por secciones, de arriba hacia abajo. Transcribe encabezados, nombres, RUT, fechas, montos, firmas y cualquier número visible. No inventes texto ilegible; usa [ILEGIBLE] solo para fragmentos puntuales. Responde únicamente con la transcripción.`,
+    })
+
+    if (isValidText(retry.text)) {
+      return {
+        text: retry.text,
+        confidence: retry.finishReason === 'stop' ? 0.82 : 0.68,
+        warnings: ['openai_vision_ocr', 'generic_document_retry'],
       }
     }
   }
@@ -161,7 +181,7 @@ export async function extractDocumentLocally(
   if (!bytes.length) throw new Error('Document is empty')
 
   const { text, confidence, warnings } = await callOpenAIVision(bytes, mimeType, expectedType)
-  if (text.length < 4 || isRefusal(text)) {
+  if (!isValidText(text)) {
     throw new Error('OCR_RETRYABLE: invalid OCR response')
   }
 
