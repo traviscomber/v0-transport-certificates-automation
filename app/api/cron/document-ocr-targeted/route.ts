@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
 
   const { data: document, error: documentQueryError } = await supabase
     .from('subcontractor_documents')
-    .select('id, file_name, file_url, document_type, is_current')
+    .select('id, file_name, file_url, document_type_id, is_current')
     .eq('id', documentId)
     .eq('is_current', true)
     .maybeSingle()
@@ -71,6 +71,18 @@ export async function GET(request: NextRequest) {
   if (!document) {
     return NextResponse.json({ error: 'Current document not found' }, { status: 404 })
   }
+
+  const { data: documentTypeRow, error: documentTypeError } = await supabase
+    .from('document_types')
+    .select('code')
+    .eq('id', document.document_type_id)
+    .maybeSingle()
+
+  if (documentTypeError) {
+    return NextResponse.json({ stage: 'document_type_query', error: documentTypeError.message }, { status: 500 })
+  }
+
+  const documentType = documentTypeRow?.code ?? 'DOCUMENTO'
 
   const { data: extractionState, error: extractionQueryError } = await supabase
     .from('document_text_extractions')
@@ -106,7 +118,7 @@ export async function GET(request: NextRequest) {
     status: 'processing',
     semaphore: 'processing',
     extraction_status: 'processing',
-    metadata: { fileName: document.file_name, documentType: document.document_type },
+    metadata: { fileName: document.file_name, documentType },
   })
 
   try {
@@ -129,7 +141,7 @@ export async function GET(request: NextRequest) {
     if (buffer.byteLength > MAX_FILE_BYTES) throw new Error(`Document exceeds OCR size limit (${buffer.byteLength} bytes)`)
 
     const mimeType = inferMimeType(document.file_name, fileResponse.headers.get('content-type'))
-    const targetType = expectedType(document.file_name, document.document_type)
+    const targetType = expectedType(document.file_name, documentType)
     const extraction = await extractDocumentLocally(new Uint8Array(buffer), targetType, mimeType)
     const extractedText = extraction.extractedText.trim()
     const analyzedAt = new Date().toISOString()
@@ -168,8 +180,9 @@ export async function GET(request: NextRequest) {
     let canonicalStatus = 'not_vehicle_related'
     let candidateCount = 0
     let matchedCount = 0
+    const vehicleRelated = isVehicleRelated(document.file_name, documentType)
 
-    if (isVehicleRelated(document.file_name, document.document_type)) {
+    if (vehicleRelated) {
       const { error: canonicalError } = await supabase.rpc('canonicalize_vehicle_document', {
         p_document_id: documentId,
       })
@@ -207,7 +220,7 @@ export async function GET(request: NextRequest) {
           textLength: extractedText.length,
           confidence: extraction.confidence,
           engine,
-          vehicleRelated: isVehicleRelated(document.file_name, document.document_type),
+          vehicleRelated,
         },
       })
       .eq('batch_id', batch.id)
@@ -238,7 +251,7 @@ export async function GET(request: NextRequest) {
       status: 'text_extracted',
       canonicalStatus,
       semaphore,
-      vehicleRelated: isVehicleRelated(document.file_name, document.document_type),
+      vehicleRelated,
       candidateCount,
       matchedCount,
       textLength: extractedText.length,
