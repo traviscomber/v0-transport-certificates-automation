@@ -25,7 +25,7 @@ as $$
   left join public.vehicle_document_scans s on s.document_id = d.id
   where s.document_id is null
      or s.source_signature <> encode(
-       digest(
+       extensions.digest(
          coalesce(d.file_name, '') || '|' ||
          coalesce(d.ai_extracted_text, '') || '|' ||
          coalesce(d.ai_analyzed_at::text, '') || '|' ||
