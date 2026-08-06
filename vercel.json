@@ -26,6 +26,10 @@
       "schedule": "4,19,34,49 * * * *"
     },
     {
+      "path": "/api/cron/vehicle-fleet-recovery",
+      "schedule": "8,23,38,53 * * * *"
+    },
+    {
       "path": "/api/cron/compliance-intelligence",
       "schedule": "3,13,23,33,43,53 * * * *"
     },
