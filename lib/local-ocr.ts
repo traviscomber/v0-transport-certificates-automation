@@ -1,11 +1,13 @@
+import 'server-only'
+
 /**
  * OCR Engine — OpenAI Vision (gpt-4o)
  *
- * Sends the raw document bytes directly to gpt-4o as a base64 data URL.
- * - PDFs are sent as application/pdf data URLs (gpt-4o reads PDFs natively)
+ * Sends raw document bytes directly to OpenAI as a base64 data URL.
+ * - PDFs are sent as application/pdf data URLs
  * - Images are sent as image/png or image/jpeg data URLs
- * - No pdfjs, no canvas, no native binaries, no web workers
- * - Works on all Vercel runtimes
+ * - No pdfjs, canvas, Tesseract, native binaries, or web workers
+ * - Server-only and compatible with the Vercel Node runtime
  */
 
 export type LocalOcrResult = {
@@ -22,18 +24,15 @@ export type LocalOcrResult = {
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions'
 const MODEL = 'gpt-4o'
 
-// ─── date normalizer ─────────────────────────────────────────────────────────
-
 function normalizeDate(raw: string | undefined): string | null {
   if (!raw) return null
-  const m = raw.match(/(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})/)
-  if (!m) return null
-  const iso = `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`
-  const d = new Date(`${iso}T00:00:00Z`)
-  return Number.isNaN(d.getTime()) ? null : iso
-}
+  const match = raw.match(/(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})/)
+  if (!match) return null
 
-// ─── metadata extractor ───────────────────────────────────────────────────────
+  const iso = `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`
+  const date = new Date(`${iso}T00:00:00Z`)
+  return Number.isNaN(date.getTime()) ? null : iso
+}
 
 function inferMetadata(text: string, expectedType: string) {
   const issuance = text.match(
@@ -45,6 +44,7 @@ function inferMetadata(text: string, expectedType: string) {
   const number = text.match(
     /(?:folio|n[uú]mero|n[°º]|documento)\s*[:\-]?\s*([A-Z0-9.\-]{4,30})/i,
   )
+
   return {
     documentType: expectedType || 'DOCUMENTO',
     issuanceDate: normalizeDate(issuance?.[1]),
@@ -53,37 +53,16 @@ function inferMetadata(text: string, expectedType: string) {
   }
 }
 
-// ─── OpenAI Vision call ───────────────────────────────────────────────────────
-
 async function callOpenAIVision(
   bytes: Uint8Array,
   mimeType: string,
   expectedType: string,
 ): Promise<{ text: string; confidence: number }> {
-  const apiKey = process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY
+  const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) throw new Error('OPENAI_API_KEY is not configured')
 
   const base64 = Buffer.from(bytes).toString('base64')
   const dataUrl = `data:${mimeType};base64,${base64}`
-
-  const isPdf = mimeType.includes('pdf')
-
-  // gpt-4o supports PDFs natively via document type, images via image_url
-  const documentContent = isPdf
-    ? { type: 'document', source: { type: 'base64', media_type: mimeType, data: base64 } }
-    : { type: 'image_url', image_url: { url: dataUrl, detail: 'high' } }
-
-  // For gpt-4o use the standard vision format — PDF as image_url with data URL works too
-  const userContent = [
-    {
-      type: 'text',
-      text: `Tipo de documento esperado: ${expectedType}. Extrae TODO el texto visible en el documento con máxima fidelidad. Conserva fechas, RUTs, nombres y números exactamente como aparecen. Responde SOLO con el texto extraído, sin comentarios.`,
-    },
-    {
-      type: 'image_url',
-      image_url: { url: dataUrl, detail: 'high' },
-    },
-  ]
 
   const response = await fetch(OPENAI_API_URL, {
     method: 'POST',
@@ -99,7 +78,19 @@ async function callOpenAIVision(
           content:
             'Eres un sistema experto en OCR de documentos laborales y legales chilenos. Extrae TODO el texto con máxima fidelidad.',
         },
-        { role: 'user', content: userContent },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: `Tipo de documento esperado: ${expectedType}. Extrae TODO el texto visible en el documento con máxima fidelidad. Conserva fechas, RUTs, nombres y números exactamente como aparecen. Responde SOLO con el texto extraído, sin comentarios.`,
+            },
+            {
+              type: 'image_url',
+              image_url: { url: dataUrl, detail: 'high' },
+            },
+          ],
+        },
       ],
       max_tokens: 3000,
       temperature: 0,
@@ -107,8 +98,8 @@ async function callOpenAIVision(
   })
 
   if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`OpenAI Vision returned ${response.status}: ${err.slice(0, 300)}`)
+    const errorBody = await response.text()
+    throw new Error(`OpenAI Vision returned ${response.status}: ${errorBody.slice(0, 300)}`)
   }
 
   const json = await response.json()
@@ -118,8 +109,6 @@ async function callOpenAIVision(
   return { text, confidence }
 }
 
-// ─── public API ──────────────────────────────────────────────────────────────
-
 export async function extractDocumentLocally(
   bytes: Uint8Array,
   expectedType = 'DOCUMENTO',
@@ -128,7 +117,6 @@ export async function extractDocumentLocally(
   if (!bytes.length) throw new Error('Document is empty')
 
   const { text, confidence } = await callOpenAIVision(bytes, mimeType, expectedType)
-
   if (text.length < 10) throw new Error('OpenAI Vision returned insufficient text')
 
   const metadata = inferMetadata(text, expectedType)
