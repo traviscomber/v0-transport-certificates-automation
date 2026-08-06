@@ -1,12 +1,10 @@
 const PLATE_PATTERNS = [
-  /\b[A-Z]{4}[0-9]{2}\b/g,
-  /\b[A-Z]{3}[0-9]{3}\b/g,
-  /\b[A-Z]{2}[0-9]{4}\b/g,
+  /\b([A-Z]{4})[\s.-]?([0-9]{2})\b/g,
+  /\b([A-Z]{3})[\s.-]?([0-9]{3})\b/g,
+  /\b([A-Z]{2})[\s.-]?([0-9]{4})\b/g,
 ]
 
 const VEHICLE_KEYWORDS = [
-  'revision tecnica',
-  'revision técnico',
   'revision tecnica',
   'certificado de revision',
   'permiso de circulacion',
@@ -31,14 +29,14 @@ export function normalizePlate(value: string): string {
 function extractFromValue(value: string, source: PlateCandidate['source']): PlateCandidate[] {
   const normalizedText = value
     .toUpperCase()
-    .replace(/[._/\\-]+/g, ' ')
-    .replace(/[^A-Z0-9\s]/g, ' ')
+    .replace(/[_/\\]+/g, ' ')
+    .replace(/[^A-Z0-9\s.-]/g, ' ')
 
   const candidates = new Map<string, PlateCandidate>()
 
   for (const pattern of PLATE_PATTERNS) {
     for (const match of normalizedText.matchAll(pattern)) {
-      const plate = normalizePlate(match[0])
+      const plate = normalizePlate(`${match[1]}${match[2]}`)
       candidates.set(plate, {
         plate,
         source,
@@ -79,5 +77,5 @@ export function isVehicleRelatedDocument(input: {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
 
-  return VEHICLE_KEYWORDS.some((keyword) => searchable.includes(keyword.normalize('NFD').replace(/[\u0300-\u036f]/g, '')))
+  return VEHICLE_KEYWORDS.some((keyword) => searchable.includes(keyword))
 }
