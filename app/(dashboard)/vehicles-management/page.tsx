@@ -22,6 +22,8 @@ import {
   CheckCircle,
   AlertTriangle,
   Building2,
+  ShieldCheck,
+  CircleDashed,
 } from 'lucide-react'
 
 type Vehicle = {
@@ -37,6 +39,11 @@ type Vehicle = {
     id: string
     name?: string
   } | null
+  verification?: {
+    advanced: boolean
+    evidence_count: number
+    confidence: number | null
+  }
 }
 
 export default function VehiclesManagementPage() {
@@ -82,7 +89,7 @@ export default function VehiclesManagementPage() {
 
   const counts = useMemo(() => {
     const active = vehicles.filter((vehicle) => vehicle.is_active !== false).length
-    const inactive = vehicles.length - active
+    const verified = vehicles.filter((vehicle) => vehicle.verification?.advanced === true).length
     const byOrg = new Map<string, number>()
 
     vehicles.forEach((vehicle) => {
@@ -95,7 +102,7 @@ export default function VehiclesManagementPage() {
     return {
       total: vehicles.length,
       active,
-      inactive,
+      verified,
       topOrganization,
     }
   }, [vehicles])
@@ -108,6 +115,36 @@ export default function VehiclesManagementPage() {
     )
   }
 
+  const getVerificationBadge = (vehicle: Vehicle) => {
+    if (vehicle.verification?.advanced) {
+      const confidence = vehicle.verification.confidence
+      const title = confidence == null
+        ? 'Evidencia vehicular canónica coincidente'
+        : `Evidencia vehicular canónica coincidente · ${Math.round(confidence * 100)}%`
+
+      return (
+        <Badge
+          title={title}
+          className="gap-1.5 bg-emerald-500/20 text-emerald-200 border-emerald-400/40 whitespace-nowrap"
+        >
+          <ShieldCheck className="h-3.5 w-3.5" />
+          Validación avanzada
+        </Badge>
+      )
+    }
+
+    return (
+      <Badge
+        variant="outline"
+        title="El badge es opcional y su ausencia no invalida el vehículo ni al cliente"
+        className="gap-1.5 border-slate-600 text-slate-300 whitespace-nowrap"
+      >
+        <CircleDashed className="h-3.5 w-3.5" />
+        Válido · sin badge
+      </Badge>
+    )
+  }
+
   const getTypeLabel = (type?: string) => {
     const value = (type || '').toLowerCase()
     const map: Record<string, string> = {
@@ -116,6 +153,8 @@ export default function VehiclesManagementPage() {
       trailer: 'Tráiler',
       semi: 'Semi-remolque',
       semi_remolque: 'Semi-remolque',
+      vehiculo: 'Vehículo',
+      vehículo: 'Vehículo',
       otro: 'Otro',
     }
     return map[value] || value || 'Sin tipo'
@@ -129,7 +168,9 @@ export default function VehiclesManagementPage() {
             <Truck className="h-8 w-8 text-green-400" />
             Gestión de Vehículos reales
           </h1>
-          <p className="text-muted-foreground">Flota cargada desde la base de datos, sin inventar fechas ni estados</p>
+          <p className="text-muted-foreground">
+            Flota canónica. La validación avanzada agrega confianza, pero no es obligatoria ni invalidante.
+          </p>
         </div>
         <Button className="btn-orange" asChild>
           <a href="/admin/vehiculos/nuevo">
@@ -162,14 +203,14 @@ export default function VehiclesManagementPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-red-500/30 bg-gradient-to-br from-red-500/10 to-transparent">
+        <Card className="border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-transparent">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-red-300">Inactivos</p>
-                <p className="text-2xl font-bold text-red-400">{counts.inactive}</p>
+                <p className="text-sm text-emerald-300">Con badge avanzado</p>
+                <p className="text-2xl font-bold text-emerald-300">{counts.verified}</p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-red-500/50" />
+              <ShieldCheck className="h-8 w-8 text-emerald-500/50" />
             </div>
           </CardContent>
         </Card>
@@ -230,6 +271,7 @@ export default function VehiclesManagementPage() {
                   <TableHead className="text-slate-400">Tipo</TableHead>
                   <TableHead className="text-slate-400">VIN</TableHead>
                   <TableHead className="text-slate-400">Estado</TableHead>
+                  <TableHead className="text-slate-400">Validación</TableHead>
                   <TableHead className="text-slate-400 text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -264,6 +306,7 @@ export default function VehiclesManagementPage() {
                       {vehicle.vin || 'Sin VIN'}
                     </TableCell>
                     <TableCell>{getStatusBadge(vehicle)}</TableCell>
+                    <TableCell>{getVerificationBadge(vehicle)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
