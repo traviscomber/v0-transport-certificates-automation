@@ -42,12 +42,12 @@ type PrtRow = {
   raw_payload: Record<string, unknown>
 }
 
+type ScanStatus = 'matched' | 'no_candidate' | 'queued_ocr' | 'unmatched_prt' | 'owner_conflict' | 'failed'
+
 function isAuthorizedCron(request: NextRequest): boolean {
   const authorization = request.headers.get('authorization')
   const configuredSecret = process.env.CRON_SECRET
-  const hasValidSecret = Boolean(
-    configuredSecret && authorization === `Bearer ${configuredSecret}`,
-  )
+  const hasValidSecret = Boolean(configuredSecret && authorization === `Bearer ${configuredSecret}`)
   const isVercelCron = request.headers.get('user-agent') === 'vercel-cron/1.0'
   return hasValidSecret || isVercelCron
 }
@@ -91,7 +91,6 @@ async function queueForExistingOcr(supabase: ReturnType<typeof createAdminClient
       error_message: null,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'document_id' })
-
   if (error) throw error
 }
 
@@ -114,13 +113,9 @@ async function saveFact(input: {
       prt_matched: Boolean(input.prt),
       prt_record_id: input.prt?.id ?? null,
       prt_snapshot: input.prt ?? {},
-      context: {
-        fileName: input.document.file_name,
-        aiAnalyzedAt: input.document.ai_analyzed_at,
-      },
+      context: { fileName: input.document.file_name, aiAnalyzedAt: input.document.ai_analyzed_at },
       updated_at: new Date().toISOString(),
     }, { onConflict: 'document_id,plate_normalized' })
-
   if (error) throw error
 }
 
@@ -128,11 +123,12 @@ async function saveScan(input: {
   supabase: ReturnType<typeof createAdminClient>
   document: DocumentRow
   signature: string
-  status: 'matched' | 'no_candidate' | 'queued_ocr' | 'unmatched_prt' | 'owner_conflict' | 'failed'
+  status: ScanStatus
   candidateCount: number
   matchedCount: number
   errorMessage?: string | null
 }) {
+  const now = new Date().toISOString()
   const { error } = await input.supabase
     .from('vehicle_document_scans')
     .upsert({
@@ -143,10 +139,9 @@ async function saveScan(input: {
       candidate_count: input.candidateCount,
       matched_count: input.matchedCount,
       error_message: input.errorMessage ?? null,
-      scanned_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      scanned_at: now,
+      updated_at: now,
     }, { onConflict: 'document_id' })
-
   if (error) throw error
 }
 
@@ -161,7 +156,6 @@ async function recoverVehicle(input: {
     .select('id, transportista_id')
     .eq('patente', input.candidate.plate)
     .maybeSingle()
-
   if (existingError) throw existingError
 
   if (existing && existing.transportista_id !== input.document.subcontractor_id) {
@@ -184,20 +178,12 @@ async function recoverVehicle(input: {
 
   if (existing) {
     const { data, error } = await input.supabase
-      .from('vehiculos')
-      .update(payload)
-      .eq('id', existing.id)
-      .select('id')
-      .single()
+      .from('vehiculos').update(payload).eq('id', existing.id).select('id').single()
     if (error) throw error
     return { vehicleId: data.id, created: false, updated: true, conflict: false }
   }
 
-  const { data, error } = await input.supabase
-    .from('vehiculos')
-    .insert(payload)
-    .select('id')
-    .single()
+  const { data, error } = await input.supabase.from('vehiculos').insert(payload).select('id').single()
   if (error) throw error
   return { vehicleId: data.id, created: true, updated: false, conflict: false }
 }
@@ -207,6 +193,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const requestedDocumentId = request.nextUrl.searchParams.get('documentId')
   const supabase = createAdminClient()
   const ownerToken = randomUUID()
   const { data: lockAcquired, error: lockError } = await supabase.rpc('acquire_system_job_lock', {
@@ -216,7 +203,7 @@ export async function GET(request: NextRequest) {
   })
 
   if (lockError) return NextResponse.json({ error: lockError.message }, { status: 500 })
-  if (!lockAcquired) return NextResponse.json({ status: 'locked', processed: 0 })
+  if (!lockAcquired) return NextResponse.json({ status: 'locked', processed: 0 }, { status: 409 })
 
   const stats = {
     scanned: 0,
@@ -229,56 +216,48 @@ export async function GET(request: NextRequest) {
     unresolved: 0,
     failed: 0,
   }
+  const documentResults: Array<{ documentId: string; status: ScanStatus }> = []
 
   try {
+    let documentQuery = supabase
+      .from('subcontractor_documents')
+      .select('id, subcontractor_id, document_type_id, file_name, ai_extracted_text, ai_analyzed_at, updated_at')
+
+    documentQuery = requestedDocumentId
+      ? documentQuery.eq('id', requestedDocumentId).limit(1)
+      : documentQuery.order('updated_at', { ascending: true }).limit(250)
+
     const [{ data: documents, error: documentsError }, { data: documentTypes, error: typesError }] = await Promise.all([
-      supabase
-        .from('subcontractor_documents')
-        .select('id, subcontractor_id, document_type_id, file_name, ai_extracted_text, ai_analyzed_at, updated_at')
-        .order('updated_at', { ascending: true })
-        .limit(250),
+      documentQuery,
       supabase.from('subcontractor_document_types').select('id, code, nombre'),
     ])
 
-    if (documentsError || typesError) {
-      throw documentsError ?? typesError
-    }
+    if (documentsError || typesError) throw documentsError ?? typesError
 
     const rows = (documents ?? []) as DocumentRow[]
+    if (requestedDocumentId && rows.length === 0) {
+      return NextResponse.json({ error: 'Document not found', documentId: requestedDocumentId }, { status: 404 })
+    }
+
     const ids = rows.map((row) => row.id)
     const { data: priorScans, error: scansError } = ids.length
-      ? await supabase
-          .from('vehicle_document_scans')
-          .select('document_id, source_signature')
-          .in('document_id', ids)
+      ? await supabase.from('vehicle_document_scans').select('document_id, source_signature').in('document_id', ids)
       : { data: [], error: null }
-
     if (scansError) throw scansError
 
-    const signatures = new Map(
-      (priorScans ?? []).map((scan) => [scan.document_id as string, scan.source_signature as string]),
-    )
-    const typeNames = new Map(
-      (documentTypes ?? []).map((type) => [
-        type.id as string,
-        `${type.code ?? ''} ${type.nombre ?? ''}`.trim(),
-      ]),
-    )
-
+    const signatures = new Map((priorScans ?? []).map((scan) => [scan.document_id as string, scan.source_signature as string]))
+    const typeNames = new Map((documentTypes ?? []).map((type) => [type.id as string, `${type.code ?? ''} ${type.nombre ?? ''}`.trim()]))
     const pending = rows
-      .filter((document) => signatures.get(document.id) !== sourceSignature(document))
-      .slice(0, BATCH_SIZE)
+      .filter((document) => requestedDocumentId || signatures.get(document.id) !== sourceSignature(document))
+      .slice(0, requestedDocumentId ? 1 : BATCH_SIZE)
 
     for (const document of pending) {
       const signature = sourceSignature(document)
       stats.scanned += 1
-
       try {
-        const candidates = extractPlateCandidates({
-          fileName: document.file_name,
-          ocrText: document.ai_extracted_text,
-        })
+        const candidates = extractPlateCandidates({ fileName: document.file_name, ocrText: document.ai_extracted_text })
         stats.candidates += candidates.length
+        let finalStatus: ScanStatus
 
         if (candidates.length === 0) {
           const vehicleRelated = isVehicleRelatedDocument({
@@ -289,25 +268,14 @@ export async function GET(request: NextRequest) {
           if (vehicleRelated && !document.ai_extracted_text?.trim()) {
             await queueForExistingOcr(supabase, document.id)
             stats.queuedForOcr += 1
-            await saveScan({
-              supabase,
-              document,
-              signature,
-              status: 'queued_ocr',
-              candidateCount: 0,
-              matchedCount: 0,
-            })
+            finalStatus = 'queued_ocr'
           } else {
             stats.unresolved += vehicleRelated ? 1 : 0
-            await saveScan({
-              supabase,
-              document,
-              signature,
-              status: 'no_candidate',
-              candidateCount: 0,
-              matchedCount: 0,
-            })
+            finalStatus = 'no_candidate'
           }
+
+          await saveScan({ supabase, document, signature, status: finalStatus, candidateCount: 0, matchedCount: 0 })
+          documentResults.push({ documentId: document.id, status: finalStatus })
           continue
         }
 
@@ -318,8 +286,8 @@ export async function GET(request: NextRequest) {
           .in('plate_normalized', plates)
           .order('source_period', { ascending: false })
           .order('inspection_date', { ascending: false })
-
         if (prtError) throw prtError
+
         const prtByPlate = newestPrtByPlate((prtRows ?? []) as PrtRow[])
         let matchedCount = 0
         let hasConflict = false
@@ -338,25 +306,20 @@ export async function GET(request: NextRequest) {
           stats.vehiclesUpdated += recovered.updated ? 1 : 0
           stats.ownerConflicts += recovered.conflict ? 1 : 0
           hasConflict ||= recovered.conflict
-
-          await saveFact({
-            supabase,
-            document,
-            candidate,
-            prt,
-            vehicleId: recovered.vehicleId,
-          })
+          await saveFact({ supabase, document, candidate, prt, vehicleId: recovered.vehicleId })
         }
 
         if (matchedCount === 0) stats.unresolved += 1
+        finalStatus = hasConflict ? 'owner_conflict' : matchedCount > 0 ? 'matched' : 'unmatched_prt'
         await saveScan({
           supabase,
           document,
           signature,
-          status: hasConflict ? 'owner_conflict' : matchedCount > 0 ? 'matched' : 'unmatched_prt',
+          status: finalStatus,
           candidateCount: candidates.length,
           matchedCount,
         })
+        documentResults.push({ documentId: document.id, status: finalStatus })
       } catch (error) {
         stats.failed += 1
         const message = error instanceof Error ? error.message : 'Unknown error'
@@ -369,13 +332,26 @@ export async function GET(request: NextRequest) {
           matchedCount: 0,
           errorMessage: message,
         })
+        documentResults.push({ documentId: document.id, status: 'failed' })
       }
+    }
+
+    if (requestedDocumentId && documentResults.length !== 1) {
+      return NextResponse.json({
+        error: 'Canonical status was not persisted',
+        documentId: requestedDocumentId,
+        documentResults,
+        ...stats,
+      }, { status: 500 })
     }
 
     return NextResponse.json({
       status: 'processed',
-      batchSize: BATCH_SIZE,
-      remainingCandidates: Math.max(0, rows.length - pending.length),
+      requestedDocumentId,
+      batchSize: requestedDocumentId ? 1 : BATCH_SIZE,
+      remainingCandidates: requestedDocumentId ? 0 : Math.max(0, rows.length - pending.length),
+      documentResults,
+      canonicalStatusComplete: requestedDocumentId ? documentResults.length === 1 : true,
       ...stats,
     })
   } finally {
