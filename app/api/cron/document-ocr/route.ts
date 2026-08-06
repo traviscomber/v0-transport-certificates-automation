@@ -19,12 +19,12 @@ function isAuthorized(request: NextRequest): boolean {
 }
 
 function inferMimeType(fileName: string | null, contentType: string | null): string {
-  if (contentType) return contentType
   const normalized = String(fileName ?? '').toLowerCase()
   if (normalized.endsWith('.png')) return 'image/png'
   if (normalized.endsWith('.jpg') || normalized.endsWith('.jpeg')) return 'image/jpeg'
   if (normalized.endsWith('.webp')) return 'image/webp'
-  return 'application/pdf'
+  if (contentType?.startsWith('image/')) return contentType
+  throw new Error('OCR_UNSUPPORTED_FORMAT: only JPG, JPEG, PNG and WEBP are enabled in this worker')
 }
 
 function inferExpectedOcrType(fileName: string | null, documentType: string | null): string {
@@ -38,30 +38,7 @@ function inferExpectedOcrType(fileName: string | null, documentType: string | nu
 function semaphoreForCanonicalStatus(status: string | null): Semaphore {
   if (status === 'matched') return 'green'
   if (status === 'owner_conflict' || status === 'failed') return 'red'
-  if (status === 'no_candidate' || status === 'unmatched_prt' || status === 'queued_ocr') return 'yellow'
   return 'yellow'
-}
-
-async function triggerCanonicalRecovery(request: NextRequest, documentId: string) {
-  const headers: Record<string, string> = {
-    'user-agent': 'vercel-cron/1.0',
-    'x-internal-cron': 'document-ocr',
-  }
-  if (process.env.CRON_SECRET) headers.authorization = `Bearer ${process.env.CRON_SECRET}`
-
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : request.nextUrl.origin
-  const response = await fetch(
-    `${baseUrl}/api/cron/vehicle-fleet-recovery?documentId=${encodeURIComponent(documentId)}`,
-    { method: 'GET', headers, cache: 'no-store' },
-  )
-
-  return {
-    ok: response.ok,
-    status: response.status,
-    body: await response.text(),
-  }
 }
 
 export async function GET(request: NextRequest) {
@@ -79,7 +56,10 @@ export async function GET(request: NextRequest) {
       source: 'document_ocr_cron',
       status: 'processing',
       total_documents: 0,
-      metadata: { deployment: process.env.VERCEL_GIT_COMMIT_SHA ?? null },
+      metadata: {
+        deployment: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
+        acceptedFormats: ['jpg', 'jpeg', 'png', 'webp'],
+      },
     })
     .select('id')
     .single()
@@ -95,6 +75,7 @@ export async function GET(request: NextRequest) {
       const { data: candidate, error: candidateError } = await supabase
         .from('ocr_priority_queue')
         .select('document_id, document_type, file_name, file_url, attempts, priority_score')
+        .or('file_name.ilike.%.jpg,file_name.ilike.%.jpeg,file_name.ilike.%.png,file_name.ilike.%.webp')
         .order('priority_score', { ascending: false })
         .order('updated_at', { ascending: true })
         .limit(1)
@@ -103,9 +84,10 @@ export async function GET(request: NextRequest) {
       if (candidateError) throw new Error(candidateError.message)
       if (!candidate) break
 
+      const now = new Date().toISOString()
       await supabase
         .from('ocr_processing_batches')
-        .update({ total_documents: 1, updated_at: new Date().toISOString() })
+        .update({ total_documents: 1, updated_at: now })
         .eq('id', batch.id)
 
       const { error: batchDocumentError } = await supabase
@@ -125,7 +107,6 @@ export async function GET(request: NextRequest) {
 
       if (batchDocumentError) throw new Error(batchDocumentError.message)
 
-      const now = new Date().toISOString()
       const nextAttempts = Number(candidate.attempts ?? 0) + 1
       const { data: locked, error: lockError } = await supabase
         .from('document_text_extractions')
@@ -144,30 +125,26 @@ export async function GET(request: NextRequest) {
       if (!locked) continue
 
       try {
-        const response = await fetch(candidate.file_url, { cache: 'no-store', redirect: 'follow' })
-        if (!response.ok) throw new Error(`Document download failed with HTTP ${response.status}`)
+        const fileResponse = await fetch(candidate.file_url, { cache: 'no-store', redirect: 'follow' })
+        if (!fileResponse.ok) throw new Error(`Document download failed with HTTP ${fileResponse.status}`)
 
-        const contentLength = Number(response.headers.get('content-length') ?? 0)
+        const contentLength = Number(fileResponse.headers.get('content-length') ?? 0)
         if (contentLength > MAX_FILE_BYTES) {
           throw new Error(`Document exceeds OCR size limit (${contentLength} bytes)`)
         }
 
-        const buffer = await response.arrayBuffer()
+        const buffer = await fileResponse.arrayBuffer()
         if (buffer.byteLength === 0) throw new Error('Document is empty')
         if (buffer.byteLength > MAX_FILE_BYTES) {
           throw new Error(`Document exceeds OCR size limit (${buffer.byteLength} bytes)`)
         }
 
-        const mimeType = inferMimeType(candidate.file_name, response.headers.get('content-type'))
+        const mimeType = inferMimeType(candidate.file_name, fileResponse.headers.get('content-type'))
         const expectedType = inferExpectedOcrType(candidate.file_name, candidate.document_type)
-        const extraction = await extractDocumentLocally(
-          new Uint8Array(buffer),
-          expectedType,
-          mimeType,
-        )
-        const engine = 'openai_vision_ocr'
+        const extraction = await extractDocumentLocally(new Uint8Array(buffer), expectedType, mimeType)
         const extractedText = extraction.extractedText.trim()
         const analyzedAt = new Date().toISOString()
+        const engine = 'openai_vision_ocr'
 
         const { error: documentError } = await supabase
           .from('subcontractor_documents')
@@ -218,32 +195,38 @@ export async function GET(request: NextRequest) {
           .eq('batch_id', batch.id)
           .eq('document_id', candidate.document_id)
 
-        const recovery = await triggerCanonicalRecovery(request, candidate.document_id)
-        const { data: scan } = await supabase
+        const { error: canonicalError } = await supabase.rpc('canonicalize_vehicle_document', {
+          p_document_id: candidate.document_id,
+        })
+        if (canonicalError) throw new Error(`Canonicalization failed: ${canonicalError.message}`)
+
+        const { data: scan, error: scanError } = await supabase
           .from('vehicle_document_scans')
           .select('status, candidate_count, matched_count, error_message, scanned_at')
           .eq('document_id', candidate.document_id)
           .maybeSingle()
 
-        const canonicalStatus = scan?.status ?? (recovery.ok ? 'pending' : 'failed')
+        if (scanError) throw new Error(scanError.message)
+        if (!scan) throw new Error('Canonicalization did not persist vehicle_document_scans')
+
+        const canonicalStatus = scan.status as string
         const semaphore = semaphoreForCanonicalStatus(canonicalStatus)
-        const canonicalized = Boolean(scan)
         const completedAt = new Date().toISOString()
 
-        await supabase
+        const { error: finalBatchError } = await supabase
           .from('ocr_batch_documents')
           .update({
-            status: canonicalized ? 'canonicalized' : recovery.ok ? 'extracted' : 'failed',
+            status: 'canonicalized',
             semaphore,
             canonical_status: canonicalStatus,
-            error_message: scan?.error_message ?? (recovery.ok ? null : recovery.body.slice(0, 1000)),
-            completed_at: canonicalized || !recovery.ok ? completedAt : null,
+            error_message: scan.error_message ?? null,
+            completed_at: completedAt,
             updated_at: completedAt,
           })
           .eq('batch_id', batch.id)
           .eq('document_id', candidate.document_id)
 
-        if (!canonicalized) responseStatus = recovery.ok ? 202 : 500
+        if (finalBatchError) throw new Error(finalBatchError.message)
 
         results.push({
           documentId: candidate.document_id,
@@ -251,14 +234,16 @@ export async function GET(request: NextRequest) {
           status: 'text_extracted',
           canonicalStatus,
           semaphore,
-          canonicalized,
+          canonicalized: true,
+          candidateCount: scan.candidate_count,
+          matchedCount: scan.matched_count,
           textLength: extractedText.length,
           confidence: extraction.confidence,
           pagesProcessed: extraction.pagesProcessed,
           engine,
         })
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown local OCR error'
+        const message = error instanceof Error ? error.message : 'Unknown OCR error'
         const failedAt = new Date().toISOString()
         const retryable = message.startsWith('OCR_RETRYABLE:') && nextAttempts < MAX_RETRYABLE_ATTEMPTS
         const extractionStatus = retryable ? 'ocr_required' : 'failed'
@@ -269,7 +254,7 @@ export async function GET(request: NextRequest) {
           .update({
             status: extractionStatus,
             extraction_method: retryable ? null : 'openai_vision_ocr',
-            text_length: null,
+            text_length: 0,
             error_message: message.slice(0, 1000),
             processed_at: null,
             updated_at: failedAt,
@@ -304,28 +289,22 @@ export async function GET(request: NextRequest) {
     }
 
     const extractedCount = results.filter((item) => item.status === 'text_extracted').length
+    const failedCount = results.filter((item) => item.status === 'failed').length
     let pipeline: Record<string, unknown> | null = null
 
     if (extractedCount > 0) {
-      const { data: documentFacts, error: documentFactsError } = await supabase.rpc(
-        'sync_subcontractor_document_facts',
-      )
+      const { data: documentFacts, error: documentFactsError } = await supabase.rpc('sync_subcontractor_document_facts')
       if (documentFactsError) throw new Error(documentFactsError.message)
 
-      const { data: workerFacts, error: workerFactsError } = await supabase.rpc(
-        'extract_worker_facts_from_documents',
-      )
+      const { data: workerFacts, error: workerFactsError } = await supabase.rpc('extract_worker_facts_from_documents')
       if (workerFactsError) throw new Error(workerFactsError.message)
 
-      const { data: intelligence, error: intelligenceError } = await supabase.rpc(
-        'run_compliance_intelligence_sync',
-      )
+      const { data: intelligence, error: intelligenceError } = await supabase.rpc('run_compliance_intelligence_sync')
       if (intelligenceError) throw new Error(intelligenceError.message)
 
       pipeline = { documentFacts, workerFacts, intelligence }
     }
 
-    const failedCount = results.filter((item) => item.status === 'failed').length
     const completedAt = new Date().toISOString()
     const batchStatus = results.length === 0
       ? 'completed'
@@ -360,6 +339,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown OCR batch error'
     const failedAt = new Date().toISOString()
+
     await supabase
       .from('ocr_processing_batches')
       .update({
