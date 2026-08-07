@@ -3,13 +3,14 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { FileText, LayoutDashboard, Settings, LogOut, Shield, BarChart3, UsersIcon, Lock, SquareStack, FileSearch } from "lucide-react"
+import { FileText, LayoutDashboard, Settings, LogOut, Shield, BarChart3, UsersIcon, Lock, SquareStack, FileSearch, Activity } from "lucide-react"
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/usuarios", label: "Usuarios", icon: UsersIcon },
   { href: "/admin/documentos", label: "Documentos", icon: FileText },
   { href: "/admin/ocr", label: "Operación OCR", icon: FileSearch },
+  { href: "/admin/cronos", label: "Cronos", icon: Activity },
   { href: "/compliance", label: "Compliance Matrix", icon: SquareStack },
   { href: "/admin/roles", label: "Roles y Permisos", icon: Shield },
   { href: "/admin/reportes", label: "Reportes", icon: BarChart3 },
@@ -26,6 +27,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           ? 'Documentos'
           : pathname.startsWith('/admin/ocr')
             ? 'Operación OCR'
+          : pathname.startsWith('/admin/cronos')
+            ? 'Cronos'
           : pathname.startsWith('/compliance')
             ? 'Compliance Matrix'
           : pathname.startsWith('/admin/roles')
@@ -43,6 +46,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           ? 'Revision y control documental'
           : pathname.startsWith('/admin/ocr')
             ? 'OCR, badge opcional y revisión humana'
+          : pathname.startsWith('/admin/cronos')
+            ? 'Crons, sincronizaciones y salud operativa'
           : pathname.startsWith('/compliance')
             ? 'Matriz ejecutiva de cumplimiento'
           : pathname.startsWith('/admin/roles')
