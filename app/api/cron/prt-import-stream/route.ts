@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PassThrough, Readable } from 'node:stream'
-import ExcelJS from 'exceljs'
 import * as unzipper from 'unzipper'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { readPrtWorkbookRows } from '@/lib/prt-xlsx-stream-reader'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -95,28 +95,6 @@ function resultLabel(code: string | null): string | null {
   return code
 }
 
-function normalizeCell(value: unknown): unknown {
-  if (value && typeof value === 'object') {
-    if ('result' in value) return (value as { result?: unknown }).result ?? null
-    if ('text' in value) return (value as { text?: unknown }).text ?? null
-    if ('richText' in value) {
-      return (value as { richText?: Array<{ text?: string }> }).richText
-        ?.map((item) => item.text ?? '')
-        .join('') ?? null
-    }
-  }
-  return value
-}
-
-function rowObject(values: readonly unknown[], headers: string[]): Record<string, unknown> {
-  const output: Record<string, unknown> = {}
-  for (let index = 0; index < headers.length; index += 1) {
-    const header = headers[index]
-    if (header) output[header] = values[index + 1] ?? null
-  }
-  return output
-}
-
 function buildImportRow(source: Record<string, unknown>, batch: Batch): ImportRow | null {
   const plateNormalized = normalizePlate(source.PPU)
   const inspectionDate = excelDateToIso(source.FEC_REVISION)
@@ -168,7 +146,7 @@ async function openWorkbookStream(sourceUrl: string): Promise<PassThrough> {
   const response = await fetch(sourceUrl, {
     cache: 'no-store',
     redirect: 'follow',
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LABBE-PRT-Stream/2.1)' },
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LABBE-PRT-Stream/3.0)' },
   })
   if (!response.ok || !response.body) {
     throw new Error(`PRT ZIP download failed with HTTP ${response.status}`)
@@ -235,65 +213,42 @@ export async function GET(request: NextRequest) {
 
   try {
     const workbookStream = await openWorkbookStream(batch.source_url)
-    const reader = new ExcelJS.stream.xlsx.WorkbookReader(workbookStream, {
-      entries: 'emit',
-      sharedStrings: 'cache',
-      hyperlinks: 'ignore',
-      styles: 'ignore',
-      worksheets: 'emit',
-    })
+    const workbook = await readPrtWorkbookRows(
+      workbookStream,
+      Number(batch.source_cursor ?? 0),
+      MAX_SOURCE_ROWS_PER_RUN,
+    )
 
-    let headers: string[] = []
-    let sourceRowIndex = 0
-    let processedThisRun = 0
     let validThisRun = 0
     let rejectedThisRun = 0
     let duplicatesThisRun = 0
-    let reachedLimit = false
     const pending: ImportRow[] = []
     const seen = new Set<string>()
 
-    outer: for await (const worksheet of reader) {
-      for await (const row of worksheet) {
-        const values = (row.values as unknown[]).map(normalizeCell)
-        if (headers.length === 0) {
-          headers = values.slice(1).map((value) => String(value ?? '').trim())
-          continue
-        }
-
-        sourceRowIndex += 1
-        if (sourceRowIndex <= batch.source_cursor) continue
-        processedThisRun += 1
-
-        const record = buildImportRow(rowObject(values, headers), batch)
-        if (!record) {
-          rejectedThisRun += 1
+    for (const source of workbook.rows) {
+      const record = buildImportRow(source, batch)
+      if (!record) {
+        rejectedThisRun += 1
+      } else {
+        const key = `${record.plate_normalized}|${record.inspection_date}|${record.certificate_number}`
+        if (seen.has(key)) {
+          duplicatesThisRun += 1
         } else {
-          const key = `${record.plate_normalized}|${record.inspection_date}|${record.certificate_number}`
-          if (seen.has(key)) {
-            duplicatesThisRun += 1
-          } else {
-            seen.add(key)
-            pending.push(record)
-            validThisRun += 1
-          }
-        }
-
-        if (pending.length >= UPSERT_CHUNK_SIZE) {
-          await upsertChunk(pending.splice(0, pending.length))
-        }
-
-        if (processedThisRun >= MAX_SOURCE_ROWS_PER_RUN) {
-          reachedLimit = true
-          break outer
+          seen.add(key)
+          pending.push(record)
+          validThisRun += 1
         }
       }
-      break
+
+      if (pending.length >= UPSERT_CHUNK_SIZE) {
+        await upsertChunk(pending.splice(0, pending.length))
+      }
     }
 
     await upsertChunk(pending)
 
-    const nextCursor = batch.source_cursor + processedThisRun
+    const processedThisRun = workbook.processed
+    const nextCursor = Number(batch.source_cursor ?? 0) + processedThisRun
     const nextValid = Number(batch.rows_valid ?? 0) + validThisRun
     const nextRejected = Number(batch.rows_rejected ?? 0) + rejectedThisRun + duplicatesThisRun
     const nextDuplicates = Number(batch.rows_duplicates ?? 0) + duplicatesThisRun
@@ -302,13 +257,13 @@ export async function GET(request: NextRequest) {
     const { error: updateError } = await supabase
       .from('prt_import_batches')
       .update({
-        status: reachedLimit ? 'profiled' : 'imported',
+        status: workbook.reachedLimit ? 'profiled' : 'imported',
         source_cursor: nextCursor,
         rows_read: nextCursor,
         rows_valid: nextValid,
         rows_rejected: nextRejected,
         rows_duplicates: nextDuplicates,
-        completed_at: reachedLimit ? null : now,
+        completed_at: workbook.reachedLimit ? null : now,
         updated_at: now,
         error_message: null,
       })
@@ -322,7 +277,8 @@ export async function GET(request: NextRequest) {
       rejected: rejectedThisRun,
       duplicates: duplicatesThisRun,
       cursor: nextCursor,
-      completed: !reachedLimit,
+      completed: !workbook.reachedLimit,
+      parser: 'memory_bounded_xml_stream',
       batch: { id: batch.id, period: batch.period, recordType: batch.record_type },
     })
   } catch (error) {
