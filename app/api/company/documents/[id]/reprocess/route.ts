@@ -18,6 +18,9 @@ export async function POST(
 ) {
   try {
     const documentId = params.id
+    const requestBody = await request.json().catch(() => ({}))
+    const source = typeof requestBody?.source === 'string' ? requestBody.source : null
+    const isF30Backfill = source === 'f30_backfill'
     const adminClient = createAdminClient()
 
     let doc: any = null
@@ -152,6 +155,15 @@ export async function POST(
         updateData.document_period_start = `${f30Result.details.periodYear}-${String(f30Result.details.periodMonth).padStart(2, '0')}-01`
         updateData.document_period_source = 'metadata'
       }
+    } else if (isF30Backfill && docTable === 'subcontractor_documents') {
+      updateData.f30_status = 'analysis_failed'
+      updateData.f30_details = {
+        detected: false,
+        warnings: ['f30_not_detected'],
+        error: 'F30 candidate was analyzed but the document content was not confirmed as F30',
+        usedOcrFallback,
+      }
+      updateData.f30_validated_at = analyzedAt
     }
 
     let { error: updateError } = await adminClient
@@ -202,6 +214,7 @@ export async function POST(
       documentTable: docTable,
       analysis: aiExtraction,
       f30: f30Result,
+      f30Terminalized: Boolean(isF30Backfill && docTable === 'subcontractor_documents' && !f30Result),
       alertsGenerated: !!aiExtraction.expirationDate,
       message: updateError
         ? 'Analisis completado (no guardado)'
