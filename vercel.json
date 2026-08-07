@@ -31,6 +31,10 @@
       "schedule": "4,19,34,49 * * * *"
     },
     {
+      "path": "/api/cron/pdf-ocr-backfill",
+      "schedule": "9,24,39,54 * * * *"
+    },
+    {
       "path": "/api/cron/vehicle-fleet-recovery",
       "schedule": "8,23,38,53 * * * *"
     },
