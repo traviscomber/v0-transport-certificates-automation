@@ -19,6 +19,7 @@ export type JobHealth = {
 const SLA_MINUTES: Record<string, number> = {
   compliance_events: 10,
   compliance_intelligence: 20,
+  cronos_reconciliation: 15,
   document_ocr: 30,
   document_text_extract: 15,
   f30_backfill: 5,
