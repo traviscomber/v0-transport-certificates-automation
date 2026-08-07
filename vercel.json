@@ -39,11 +39,11 @@
       "schedule": "8,23,38,53 * * * *"
     },
     {
-      "path": "/api/cron/compliance-intelligence",
+      "path": "/api/cron/cronos-compliance-intelligence",
       "schedule": "3,13,23,33,43,53 * * * *"
     },
     {
-      "path": "/api/cron/prt-discovery",
+      "path": "/api/cron/cronos-prt-discovery",
       "schedule": "15 7 * * *"
     },
     {
