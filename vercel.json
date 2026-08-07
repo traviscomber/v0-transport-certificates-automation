@@ -11,7 +11,7 @@
       "schedule": "0 6 * * *"
     },
     {
-      "path": "/api/cron/sii-transportistas",
+      "path": "/api/cron/cronos-sii-transportistas",
       "schedule": "*/5 * * * *"
     },
     {
