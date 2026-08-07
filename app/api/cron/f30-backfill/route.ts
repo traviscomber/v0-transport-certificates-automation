@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveF30BackfillOutcome } from '@/lib/f30-backfill-outcome'
+import { finishSystemJobRun, startSystemJobRun } from '@/lib/system-job-runs'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -10,6 +11,7 @@ export const maxDuration = 300
 const BATCH_SIZE = 20
 const CONCURRENCY = 4
 const LOCK_NAME = 'f30_backfill'
+const JOB_NAME = 'f30_backfill'
 const LOCK_LEASE_SECONDS = 360
 const F30_TYPE_CODES = ['F30', 'F30-1_CLIENTE', 'F30-1_DOÑA_ISIDORA']
 const PRODUCTION_ORIGIN = process.env.NEXT_PUBLIC_APP_URL || 'https://transn3uralia.vercel.app'
@@ -109,6 +111,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const jobRun = await startSystemJobRun(JOB_NAME)
   const supabase = createAdminClient()
   const ownerToken = randomUUID()
   const { data: acquired, error: lockError } = await supabase.rpc('acquire_system_job_lock', {
@@ -118,10 +121,25 @@ export async function GET(request: NextRequest) {
   })
 
   if (lockError) {
+    await finishSystemJobRun(jobRun, {
+      status: 'failed',
+      processedCount: 0,
+      succeededCount: 0,
+      failedCount: 0,
+      errorMessage: lockError.message,
+      result: { stage: 'lock_acquire' },
+    })
     return NextResponse.json({ error: `Unable to acquire F30 lock: ${lockError.message}` }, { status: 500 })
   }
 
   if (!acquired) {
+    await finishSystemJobRun(jobRun, {
+      status: 'skipped',
+      processedCount: 0,
+      succeededCount: 0,
+      failedCount: 0,
+      result: { reason: 'backfill_already_running' },
+    })
     return NextResponse.json({ status: 'skipped', reason: 'backfill_already_running' })
   }
 
@@ -146,10 +164,25 @@ export async function GET(request: NextRequest) {
       .limit(BATCH_SIZE)
 
     if (error) {
+      await finishSystemJobRun(jobRun, {
+        status: 'failed',
+        processedCount: 0,
+        succeededCount: 0,
+        failedCount: 0,
+        errorMessage: error.message,
+        result: { stage: 'pending_query' },
+      })
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     if (!pending || pending.length === 0) {
+      await finishSystemJobRun(jobRun, {
+        status: 'completed',
+        processedCount: 0,
+        succeededCount: 0,
+        failedCount: 0,
+        result: { remaining: 0 },
+      })
       return NextResponse.json({ status: 'complete', processed: 0, remaining: 0 })
     }
 
@@ -162,6 +195,14 @@ export async function GET(request: NextRequest) {
       .is('f30_status', null)
 
     if (claimError) {
+      await finishSystemJobRun(jobRun, {
+        status: 'failed',
+        processedCount: 0,
+        succeededCount: 0,
+        failedCount: 0,
+        errorMessage: claimError.message,
+        result: { stage: 'claim' },
+      })
       return NextResponse.json({ error: claimError.message }, { status: 500 })
     }
 
@@ -186,6 +227,23 @@ export async function GET(request: NextRequest) {
       return acc
     }, {})
 
+    const failed = results.filter((result) => result.status === 'analysis_failed').length
+    const succeeded = results.length - failed
+    const runStatus = failed === 0 ? 'completed' : succeeded > 0 ? 'partial' : 'failed'
+
+    await finishSystemJobRun(jobRun, {
+      status: runStatus,
+      processedCount: results.length,
+      succeededCount: succeeded,
+      failedCount: failed,
+      result: {
+        remaining: remaining ?? null,
+        summary,
+        detectedTypeIds: f30TypeIds.length,
+      },
+      errorMessage: failed > 0 ? `${failed} F30 document(s) ended in analysis_failed` : null,
+    })
+
     return NextResponse.json({
       status: 'processed',
       batchSize: BATCH_SIZE,
@@ -197,6 +255,14 @@ export async function GET(request: NextRequest) {
       summary,
       results,
     })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown F30 backfill error'
+    await finishSystemJobRun(jobRun, {
+      status: 'failed',
+      errorMessage: message,
+      result: { stage: 'unexpected' },
+    })
+    return NextResponse.json({ error: message }, { status: 500 })
   } finally {
     const { error: releaseError } = await supabase.rpc('release_system_job_lock', {
       p_job_name: LOCK_NAME,

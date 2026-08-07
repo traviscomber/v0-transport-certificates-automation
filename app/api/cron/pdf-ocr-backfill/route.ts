@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { finishSystemJobRun, startSystemJobRun } from '@/lib/system-job-runs'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -9,6 +10,7 @@ export const runtime = 'nodejs'
 const DOCUMENTS_PER_RUN = 3
 const PDF_OCR_TIMEOUT_MS = 90_000
 const DEFAULT_PUBLIC_ORIGIN = 'https://transn3uralia.vercel.app'
+const JOB_NAME = 'pdf_ocr_backfill'
 
 function isAuthorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET
@@ -44,12 +46,21 @@ export async function GET(request: NextRequest) {
   }
 
   const startedAt = Date.now()
+  const jobRun = await startSystemJobRun(JOB_NAME)
   const supabase = createAdminClient()
 
   const { data: recovered, error: recoveryError } = await supabase.rpc('recover_stale_pdf_ocr_processing', {
     p_stale_minutes: 20,
   })
   if (recoveryError) {
+    await finishSystemJobRun(jobRun, {
+      status: 'failed',
+      processedCount: 0,
+      succeededCount: 0,
+      failedCount: 0,
+      errorMessage: recoveryError.message,
+      result: { stage: 'stale_recovery' },
+    })
     return NextResponse.json({ stage: 'stale_recovery', error: recoveryError.message }, { status: 500 })
   }
 
@@ -57,17 +68,33 @@ export async function GET(request: NextRequest) {
     p_limit: DOCUMENTS_PER_RUN,
   })
   if (claimError) {
+    await finishSystemJobRun(jobRun, {
+      status: 'failed',
+      processedCount: 0,
+      succeededCount: 0,
+      failedCount: 0,
+      errorMessage: claimError.message,
+      result: { stage: 'claim', recovered: Number(recovered ?? 0) },
+    })
     return NextResponse.json({ stage: 'claim', error: claimError.message }, { status: 500 })
   }
 
   const documents = (claimed ?? []).map((row: { document_id: string }) => row.document_id).filter(Boolean)
   if (documents.length === 0) {
-    return NextResponse.json({
+    const result = {
       status: 'idle',
       recovered: Number(recovered ?? 0),
       reason: 'No eligible PDF documents found',
       durationMs: Date.now() - startedAt,
+    }
+    await finishSystemJobRun(jobRun, {
+      status: 'completed',
+      processedCount: 0,
+      succeededCount: 0,
+      failedCount: 0,
+      result,
     })
+    return NextResponse.json(result)
   }
 
   const headers: Record<string, string> = {}
@@ -121,15 +148,29 @@ export async function GET(request: NextRequest) {
 
   const succeeded = results.filter((result) => result.ok === true).length
   const failed = results.length - succeeded
-  const status = failed === 0 ? 200 : succeeded > 0 ? 207 : 500
-
-  return NextResponse.json({
-    status: failed === 0 ? 'completed' : succeeded > 0 ? 'partial' : 'failed',
+  const httpStatus = failed === 0 ? 200 : succeeded > 0 ? 207 : 500
+  const runStatus = failed === 0 ? 'completed' : succeeded > 0 ? 'partial' : 'failed'
+  const responseBody = {
+    status: runStatus,
     claimed: documents.length,
     recovered: Number(recovered ?? 0),
     succeeded,
     failed,
     results,
     durationMs: Date.now() - startedAt,
-  }, { status })
+  }
+
+  await finishSystemJobRun(jobRun, {
+    status: runStatus,
+    processedCount: documents.length,
+    succeededCount: succeeded,
+    failedCount: failed,
+    result: {
+      claimed: documents.length,
+      recovered: Number(recovered ?? 0),
+    },
+    errorMessage: failed > 0 ? `${failed} PDF OCR document(s) failed` : null,
+  })
+
+  return NextResponse.json(responseBody, { status: httpStatus })
 }
