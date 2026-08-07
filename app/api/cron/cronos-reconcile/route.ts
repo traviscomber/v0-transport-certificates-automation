@@ -20,7 +20,7 @@ export async function GET() {
       supabase.from('prt_import_batches').select('id,status,updated_at').eq('status', 'importing'),
       supabase.from('compliance_events').select('id,processing_status,created_at').eq('processing_status', 'processing'),
       supabase.from('documents').select('id,processing_status,updated_at').eq('processing_status', 'processing'),
-      supabase.from('document_text_extractions').select('id,status,updated_at').eq('status', 'processing'),
+      supabase.from('document_text_extractions').select('document_id,status,updated_at').eq('status', 'processing'),
       supabase.from('ocr_processing_batches').select('id,status,updated_at').eq('status', 'processing'),
     ])
 
@@ -32,7 +32,7 @@ export async function GET() {
       ...(prt.data ?? []).map((row) => ({ source: 'prt_import_batches', id: String(row.id), state: String(row.status), claimedAt: row.updated_at, staleAfterMinutes: RECONCILIATION_THRESHOLDS_MINUTES.prt_import_batches })),
       ...(compliance.data ?? []).map((row) => ({ source: 'compliance_events', id: String(row.id), state: String(row.processing_status), claimedAt: row.created_at, staleAfterMinutes: RECONCILIATION_THRESHOLDS_MINUTES.compliance_events })),
       ...(documents.data ?? []).map((row) => ({ source: 'documents', id: String(row.id), state: String(row.processing_status), claimedAt: row.updated_at, staleAfterMinutes: RECONCILIATION_THRESHOLDS_MINUTES.documents })),
-      ...(textExtractions.data ?? []).map((row) => ({ source: 'document_text_extractions', id: String(row.id), state: String(row.status), claimedAt: row.updated_at, staleAfterMinutes: RECONCILIATION_THRESHOLDS_MINUTES.document_text_extractions })),
+      ...(textExtractions.data ?? []).map((row) => ({ source: 'document_text_extractions', id: String(row.document_id), state: String(row.status), claimedAt: row.updated_at, staleAfterMinutes: RECONCILIATION_THRESHOLDS_MINUTES.document_text_extractions })),
       ...(ocrBatches.data ?? []).map((row) => ({ source: 'ocr_processing_batches', id: String(row.id), state: String(row.status), claimedAt: row.updated_at, staleAfterMinutes: RECONCILIATION_THRESHOLDS_MINUTES.ocr_processing_batches })),
     ]
 
