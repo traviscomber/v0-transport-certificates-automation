@@ -11,10 +11,12 @@ describe('Cronos wrapper configuration', () => {
       'prt_import_stream',
       'prt_discovery',
       'compliance_intelligence',
+      'expiration_alerts',
+      'sii_transportistas',
     ]
 
     expect(new Set(jobNames).size).toBe(jobNames.length)
-    expect(jobNames).toContain('prt_discovery')
-    expect(jobNames).toContain('compliance_intelligence')
+    expect(jobNames).toContain('sii_transportistas')
+    expect(jobNames).toContain('expiration_alerts')
   })
 })
