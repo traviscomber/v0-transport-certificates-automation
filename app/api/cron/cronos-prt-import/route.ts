@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       status: response.ok ? 'completed' : 'failed',
       processedCount: attempted,
       succeededCount: response.ok ? imported : 0,
-      failedCount: response.ok ? rejected : Math.max(1, attempted),
+      failedCount: response.ok ? 0 : Math.max(1, attempted),
       result: {
         imported,
         rejected,
