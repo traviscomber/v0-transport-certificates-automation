@@ -7,10 +7,35 @@ export const maxDuration = 300
 export const runtime = 'nodejs'
 
 const DOCUMENTS_PER_RUN = 3
+const PDF_OCR_TIMEOUT_MS = 90_000
+const DEFAULT_PUBLIC_ORIGIN = 'https://transn3uralia.vercel.app'
 
 function isAuthorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET
   return !secret || request.headers.get('authorization') === `Bearer ${secret}`
+}
+
+function publicOrigin(): string {
+  const configured = process.env.PDF_OCR_PUBLIC_ORIGIN?.trim() || process.env.NEXT_PUBLIC_APP_URL?.trim()
+  return (configured || DEFAULT_PUBLIC_ORIGIN).replace(/\/$/, '')
+}
+
+async function releaseClaim(
+  supabase: ReturnType<typeof createAdminClient>,
+  documentId: string,
+  message: string,
+) {
+  const { error } = await supabase
+    .from('document_text_extractions')
+    .update({
+      status: 'ocr_required',
+      error_message: message.slice(0, 1000),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('document_id', documentId)
+    .eq('status', 'processing')
+
+  if (error) throw error
 }
 
 export async function GET(request: NextRequest) {
@@ -50,18 +75,30 @@ export async function GET(request: NextRequest) {
   if (secret) headers.authorization = `Bearer ${secret}`
 
   const results: Array<Record<string, unknown>> = []
+  const origin = publicOrigin()
 
   for (const documentId of documents) {
-    const target = new URL('/api/pdf-ocr', request.nextUrl.origin)
+    const target = new URL('/api/pdf-ocr', origin)
     target.searchParams.set('documentId', documentId)
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), PDF_OCR_TIMEOUT_MS)
 
     try {
       const response = await fetch(target, {
         method: 'GET',
         headers,
         cache: 'no-store',
+        signal: controller.signal,
       })
       const payload = await response.json().catch(() => ({})) as Record<string, unknown>
+
+      if (!response.ok) {
+        const errorMessage = typeof payload.error === 'string'
+          ? payload.error
+          : `PDF OCR returned HTTP ${response.status}`
+        await releaseClaim(supabase, documentId, errorMessage)
+      }
+
       results.push({
         documentId,
         ok: response.ok,
@@ -69,12 +106,16 @@ export async function GET(request: NextRequest) {
         ...payload,
       })
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'PDF OCR request failed'
+      await releaseClaim(supabase, documentId, `PDF OCR backfill subrequest failed: ${message}`)
       results.push({
         documentId,
         ok: false,
         httpStatus: 500,
-        error: error instanceof Error ? error.message : 'PDF OCR request failed',
+        error: message,
       })
+    } finally {
+      clearTimeout(timeout)
     }
   }
 
