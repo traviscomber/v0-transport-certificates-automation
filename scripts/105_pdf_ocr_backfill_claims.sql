@@ -33,8 +33,8 @@ begin
 
   update public.ocr_processing_batches opb
   set status = 'failed',
-      processed_documents = greatest(opb.processed_documents, 1),
-      failed_documents = greatest(opb.failed_documents, 1),
+      processed_documents = greatest(coalesce(opb.processed_documents, 0), 1),
+      failed_documents = greatest(coalesce(opb.failed_documents, 0), 1),
       error_message = coalesce(opb.error_message, 'Recovered stale PDF OCR processing state'),
       completed_at = coalesce(opb.completed_at, now()),
       updated_at = now()
@@ -60,7 +60,7 @@ end;
 $$;
 
 create or replace function public.claim_pdf_ocr_documents(
-  p_limit integer default 3
+  p_limit integer default 1
 )
 returns table(document_id uuid, attempts integer)
 language plpgsql
@@ -68,7 +68,7 @@ security definer
 set search_path = public
 as $$
 declare
-  v_limit integer := least(greatest(coalesce(p_limit, 3), 1), 3);
+  v_limit integer := least(greatest(coalesce(p_limit, 1), 1), 3);
 begin
   return query
   with candidates as (
@@ -103,7 +103,7 @@ begin
     select
       candidates.id,
       'processing',
-      1,
+      0,
       0,
       null,
       null,
@@ -111,7 +111,6 @@ begin
     from candidates
     on conflict (document_id) do update
     set status = 'processing',
-        attempts = current_row.attempts + 1,
         text_length = 0,
         error_message = null,
         processed_at = null,
