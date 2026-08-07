@@ -7,7 +7,7 @@
   },
   "crons": [
     {
-      "path": "/api/company/alerts/check-expiring-documents",
+      "path": "/api/cron/cronos-expiration-alerts",
       "schedule": "0 6 * * *"
     },
     {
