@@ -1,0 +1,24 @@
+name: Cronos Safety
+
+on:
+  pull_request:
+    paths:
+      - 'app/api/cron/cronos-**'
+      - 'vercel.json'
+      - 'lib/system-job-runs.ts'
+      - '__tests__/lib/cronos-wrappers.test.ts'
+
+jobs:
+  cronos-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm jest __tests__/lib/cronos-wrappers.test.ts --runInBand
