@@ -32,7 +32,7 @@
     },
     {
       "path": "/api/cron/pdf-ocr-backfill",
-      "schedule": "9,24,39,54 * * * *"
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/cron/vehicle-fleet-recovery",

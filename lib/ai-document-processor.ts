@@ -123,8 +123,10 @@ export async function extractDocumentFromPdfBuffer(
   pdfBuffer: ArrayBuffer | Uint8Array,
   expectedType = 'documento',
 ): Promise<DocumentExtraction> {
-  const openai = getOpenAI()
   const bytes = pdfBuffer instanceof Uint8Array ? pdfBuffer : new Uint8Array(pdfBuffer)
+  if (bytes.byteLength === 0) throw new Error('Document PDF is empty')
+
+  const openai = getOpenAI()
   const fileData = `data:application/pdf;base64,${Buffer.from(bytes).toString('base64')}`
 
   let lastError: unknown
@@ -166,13 +168,16 @@ export async function extractDocumentMetadata(
   imageBase64: string,
   mimeType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/jpeg',
 ): Promise<DocumentExtraction> {
+  const normalizedBase64 = imageBase64.trim()
+  if (!normalizedBase64) throw new Error('Document image is empty')
+
   const openai = getOpenAI()
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [{
       role: 'user',
       content: [
-        { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}`, detail: 'high' } },
+        { type: 'image_url', image_url: { url: `data:${mimeType};base64,${normalizedBase64}`, detail: 'high' } },
         { type: 'text', text: 'Analiza el documento y devuelve únicamente los datos estructurados verificables.' },
       ],
     }],

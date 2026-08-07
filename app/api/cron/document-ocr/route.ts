@@ -27,6 +27,11 @@ function inferMimeType(fileName: string | null, contentType: string | null): str
   throw new Error('OCR_UNSUPPORTED_FORMAT: only JPG, JPEG, PNG and WEBP are enabled in this worker')
 }
 
+function isVehicleRelated(fileName: string | null, documentType: string | null): boolean {
+  return /patente|placa|matr[ií]cula|cam[ií]on|veh[ií]culo|padr[oó]n|revisi[oó]n\s*t[eé]cnica/i
+    .test(`${fileName ?? ''} ${documentType ?? ''}`)
+}
+
 function inferExpectedOcrType(fileName: string | null, documentType: string | null): string {
   const source = `${fileName ?? ''} ${documentType ?? ''}`
   if (/patente|placa|matr[ií]cula|cam[ií]on|veh[ií]culo/i.test(source)) return 'PATENTE_VEHICULO'
@@ -36,7 +41,7 @@ function inferExpectedOcrType(fileName: string | null, documentType: string | nu
 }
 
 function semaphoreForCanonicalStatus(status: string | null): Semaphore {
-  if (status === 'matched') return 'green'
+  if (status === 'matched' || status === 'not_vehicle_related') return 'green'
   if (status === 'owner_conflict' || status === 'failed') return 'red'
   return 'yellow'
 }
@@ -108,6 +113,7 @@ export async function GET(request: NextRequest) {
       if (batchDocumentError) throw new Error(batchDocumentError.message)
 
       const nextAttempts = Number(candidate.attempts ?? 0) + 1
+      const vehicleRelated = isVehicleRelated(candidate.file_name, candidate.document_type)
       const { data: locked, error: lockError } = await supabase
         .from('document_text_extractions')
         .update({
@@ -117,12 +123,23 @@ export async function GET(request: NextRequest) {
           updated_at: now,
         })
         .eq('document_id', candidate.document_id)
-        .eq('status', 'ocr_required')
+        .in('status', ['ocr_required', 'queued_retry'])
         .select('document_id')
         .maybeSingle()
 
       if (lockError) throw new Error(lockError.message)
-      if (!locked) continue
+      if (!locked) {
+        await supabase.from('ocr_batch_documents').update({
+          status: 'failed',
+          semaphore: 'yellow',
+          extraction_status: 'not_locked',
+          canonical_status: 'not_run',
+          error_message: 'Document was no longer eligible when the worker attempted to claim it',
+          completed_at: now,
+          updated_at: now,
+        }).eq('batch_id', batch.id).eq('document_id', candidate.document_id)
+        continue
+      }
 
       try {
         const fileResponse = await fetch(candidate.file_url, { cache: 'no-store', redirect: 'follow' })
@@ -189,27 +206,39 @@ export async function GET(request: NextRequest) {
               confidence: extraction.confidence,
               engine,
               warnings: extraction.warnings,
+              vehicleRelated,
             },
             updated_at: analyzedAt,
           })
           .eq('batch_id', batch.id)
           .eq('document_id', candidate.document_id)
 
-        const { error: canonicalError } = await supabase.rpc('canonicalize_vehicle_document', {
-          p_document_id: candidate.document_id,
-        })
-        if (canonicalError) throw new Error(`Canonicalization failed: ${canonicalError.message}`)
+        let canonicalStatus = 'not_vehicle_related'
+        let candidateCount = 0
+        let matchedCount = 0
+        let scanErrorMessage: string | null = null
 
-        const { data: scan, error: scanError } = await supabase
-          .from('vehicle_document_scans')
-          .select('status, candidate_count, matched_count, error_message, scanned_at')
-          .eq('document_id', candidate.document_id)
-          .maybeSingle()
+        if (vehicleRelated) {
+          const { error: canonicalError } = await supabase.rpc('canonicalize_vehicle_document', {
+            p_document_id: candidate.document_id,
+          })
+          if (canonicalError) throw new Error(`Canonicalization failed: ${canonicalError.message}`)
 
-        if (scanError) throw new Error(scanError.message)
-        if (!scan) throw new Error('Canonicalization did not persist vehicle_document_scans')
+          const { data: scan, error: scanError } = await supabase
+            .from('vehicle_document_scans')
+            .select('status, candidate_count, matched_count, error_message, scanned_at')
+            .eq('document_id', candidate.document_id)
+            .maybeSingle()
 
-        const canonicalStatus = scan.status as string
+          if (scanError) throw new Error(scanError.message)
+          if (!scan) throw new Error('Canonicalization did not persist vehicle_document_scans')
+
+          canonicalStatus = String(scan.status)
+          candidateCount = Number(scan.candidate_count ?? 0)
+          matchedCount = Number(scan.matched_count ?? 0)
+          scanErrorMessage = scan.error_message ?? null
+        }
+
         const semaphore = semaphoreForCanonicalStatus(canonicalStatus)
         const completedAt = new Date().toISOString()
 
@@ -219,7 +248,7 @@ export async function GET(request: NextRequest) {
             status: 'canonicalized',
             semaphore,
             canonical_status: canonicalStatus,
-            error_message: scan.error_message ?? null,
+            error_message: scanErrorMessage,
             completed_at: completedAt,
             updated_at: completedAt,
           })
@@ -235,8 +264,10 @@ export async function GET(request: NextRequest) {
           canonicalStatus,
           semaphore,
           canonicalized: true,
-          candidateCount: scan.candidate_count,
-          matchedCount: scan.matched_count,
+          vehicleRelated,
+          badgeEligible: vehicleRelated && canonicalStatus === 'matched',
+          candidateCount,
+          matchedCount,
           textLength: extractedText.length,
           confidence: extraction.confidence,
           pagesProcessed: extraction.pagesProcessed,
@@ -246,14 +277,18 @@ export async function GET(request: NextRequest) {
         const message = error instanceof Error ? error.message : 'Unknown OCR error'
         const failedAt = new Date().toISOString()
         const retryable = message.startsWith('OCR_RETRYABLE:') && nextAttempts < MAX_RETRYABLE_ATTEMPTS
-        const extractionStatus = retryable ? 'ocr_required' : 'failed'
-        const semaphore: Semaphore = retryable ? 'yellow' : 'red'
+        const extractionStatus = vehicleRelated && nextAttempts >= 2
+          ? 'requires_new_photo'
+          : retryable
+            ? 'queued_retry'
+            : 'failed'
+        const semaphore: Semaphore = vehicleRelated && extractionStatus === 'failed' ? 'red' : 'yellow'
 
         await supabase
           .from('document_text_extractions')
           .update({
             status: extractionStatus,
-            extraction_method: retryable ? null : 'openai_vision_ocr',
+            extraction_method: extractionStatus === 'failed' ? 'openai_vision_ocr' : null,
             text_length: 0,
             error_message: message.slice(0, 1000),
             processed_at: null,
@@ -264,7 +299,7 @@ export async function GET(request: NextRequest) {
         await supabase
           .from('ocr_batch_documents')
           .update({
-            status: retryable ? 'queued_retry' : 'failed',
+            status: extractionStatus === 'queued_retry' ? 'queued_retry' : extractionStatus === 'requires_new_photo' ? 'requires_new_photo' : 'failed',
             semaphore,
             extraction_status: extractionStatus,
             canonical_status: 'not_run',
@@ -275,13 +310,15 @@ export async function GET(request: NextRequest) {
           .eq('batch_id', batch.id)
           .eq('document_id', candidate.document_id)
 
-        responseStatus = retryable ? 503 : 500
+        responseStatus = extractionStatus === 'queued_retry' ? 503 : 500
         results.push({
           documentId: candidate.document_id,
           fileName: candidate.file_name,
           status: extractionStatus,
           retryable,
           semaphore,
+          vehicleRelated,
+          badgeEligible: false,
           error: message,
           engine: 'openai_vision_ocr',
         })
@@ -306,11 +343,12 @@ export async function GET(request: NextRequest) {
     }
 
     const completedAt = new Date().toISOString()
+    const failedOrDeferredCount = results.filter((item) => item.status !== 'text_extracted').length
     const batchStatus = results.length === 0
       ? 'completed'
-      : failedCount === results.length
+      : failedOrDeferredCount === results.length
         ? 'failed'
-        : failedCount > 0 || responseStatus !== 200
+        : failedOrDeferredCount > 0 || responseStatus !== 200
           ? 'partial'
           : 'completed'
 
