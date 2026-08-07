@@ -5,22 +5,28 @@ on:
     paths:
       - 'app/api/cron/document-ocr/**'
       - 'app/api/cron/pdf-ocr-backfill/**'
+      - 'app/api/cron/f30-backfill/**'
       - 'app/api/admin/ocr-review/**'
       - 'lib/ai-document-processor.ts'
+      - 'lib/f30-backfill-outcome.ts'
       - 'lib/fleet/**'
       - '__tests__/lib/plate-extractor.test.ts'
       - '__tests__/lib/ai-document-processor-inputs.test.ts'
+      - '__tests__/lib/f30-backfill-outcome.test.ts'
       - '.github/workflows/ocr-tests.yml'
   push:
     branches: [main]
     paths:
       - 'app/api/cron/document-ocr/**'
       - 'app/api/cron/pdf-ocr-backfill/**'
+      - 'app/api/cron/f30-backfill/**'
       - 'app/api/admin/ocr-review/**'
       - 'lib/ai-document-processor.ts'
+      - 'lib/f30-backfill-outcome.ts'
       - 'lib/fleet/**'
       - '__tests__/lib/plate-extractor.test.ts'
       - '__tests__/lib/ai-document-processor-inputs.test.ts'
+      - '__tests__/lib/f30-backfill-outcome.test.ts'
       - '.github/workflows/ocr-tests.yml'
 
 jobs:
@@ -37,4 +43,4 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --no-frozen-lockfile
-      - run: pnpm jest __tests__/lib/plate-extractor.test.ts __tests__/lib/ai-document-processor-inputs.test.ts --runInBand
+      - run: pnpm jest __tests__/lib/plate-extractor.test.ts __tests__/lib/ai-document-processor-inputs.test.ts __tests__/lib/f30-backfill-outcome.test.ts --runInBand

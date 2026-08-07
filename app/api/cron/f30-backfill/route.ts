@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { resolveF30BackfillOutcome } from '@/lib/f30-backfill-outcome'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -38,6 +39,24 @@ function buildF30Filter(typeIds: string[]): string {
   return filters.join(',')
 }
 
+async function persistTerminalOutcome(
+  documentId: string,
+  status: string,
+  details: Record<string, unknown> | undefined,
+  supabase: ReturnType<typeof createAdminClient>,
+) {
+  const { error } = await supabase
+    .from('subcontractor_documents')
+    .update({
+      f30_status: status,
+      f30_details: details ?? { detected: false, warnings: ['backfill_terminalized'] },
+      f30_validated_at: new Date().toISOString(),
+    })
+    .eq('id', documentId)
+
+  if (error) throw new Error(`Unable to persist F30 terminal state: ${error.message}`)
+}
+
 async function processDocument(
   document: { id: string; file_name: string | null },
   supabase: ReturnType<typeof createAdminClient>,
@@ -50,39 +69,34 @@ async function processDocument(
       cache: 'no-store',
     })
     const payload = await response.json().catch(() => ({}))
+    const outcome = resolveF30BackfillOutcome({
+      httpOk: response.ok,
+      httpStatus: response.status,
+      payload,
+    })
 
-    if (!response.ok || payload?.success !== true) {
-      const message = payload?.error || `HTTP ${response.status}`
-      await supabase
-        .from('subcontractor_documents')
-        .update({
-          f30_status: 'analysis_failed',
-          f30_details: { detected: false, warnings: ['backfill_failed'], error: message },
-          f30_validated_at: new Date().toISOString(),
-        })
-        .eq('id', document.id)
-
-      return { id: document.id, fileName: document.file_name, status: 'analysis_failed', error: message }
+    if (outcome.persistTerminalState) {
+      await persistTerminalOutcome(document.id, outcome.status, outcome.details, supabase)
     }
 
     return {
       id: document.id,
       fileName: document.file_name,
-      status: payload?.f30?.status ?? 'processed',
+      status: outcome.status,
       saved: payload?.saved ?? false,
       periodConflict: payload?.periodConflict ?? false,
       usedOcrFallback: payload?.usedOcrFallback ?? false,
+      terminalizedByBackfill: outcome.persistTerminalState,
+      error: outcome.details?.error,
     }
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : 'Unknown backfill error'
-    await supabase
-      .from('subcontractor_documents')
-      .update({
-        f30_status: 'analysis_failed',
-        f30_details: { detected: false, warnings: ['backfill_failed'], error: message },
-        f30_validated_at: new Date().toISOString(),
-      })
-      .eq('id', document.id)
+    await persistTerminalOutcome(
+      document.id,
+      'analysis_failed',
+      { detected: false, warnings: ['backfill_failed'], error: message },
+      supabase,
+    )
 
     return { id: document.id, fileName: document.file_name, status: 'analysis_failed', error: message }
   }
