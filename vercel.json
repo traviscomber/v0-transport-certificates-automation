@@ -47,11 +47,11 @@
       "schedule": "15 7 * * *"
     },
     {
-      "path": "/api/cron/prt-inspect",
+      "path": "/api/cron/cronos-prt-inspect",
       "schedule": "0,15,30,45 * * * *"
     },
     {
-      "path": "/api/cron/prt-profile",
+      "path": "/api/cron/cronos-prt-profile",
       "schedule": "5,20,35,50 * * * *"
     },
     {
