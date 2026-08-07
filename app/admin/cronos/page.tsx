@@ -36,10 +36,11 @@ export default async function CronosOperationsPage() {
   const now = new Date()
   const rows = (latest ?? []).map((row) => ({ ...row, semantic: classifyJobHealth(row, now) }))
   const healthCounts = rows.reduce<Record<CronosHealth, number>>((acc, row) => {
-    acc[row.semantic.health] += 1
+    const health = row.semantic.health as CronosHealth
+    acc[health] += 1
     return acc
   }, { healthy: 0, degraded: 0, stuck: 0, broken: 0 })
-  const overall = worstHealth(rows.map((row) => row.semantic.health))
+  const overall = worstHealth(rows.map((row) => row.semantic.health as CronosHealth))
   const overallMeta = healthMeta(overall)
   const OverallIcon = overallMeta.Icon
   const activePrt = (prtBatches ?? []).filter((batch) => batch.status !== 'imported')
@@ -82,7 +83,7 @@ export default async function CronosOperationsPage() {
           </div>
           <div className="space-y-3">
             {rows.map((row) => {
-              const meta = healthMeta(row.semantic.health)
+              const meta = healthMeta(row.semantic.health as CronosHealth)
               const Icon = meta.Icon
               return (
                 <div key={row.job_name} className="grid gap-3 rounded-lg border border-slate-700/60 bg-slate-950/50 p-4 lg:grid-cols-[1.3fr_.75fr_.65fr_.7fr_.8fr_1fr] lg:items-center">
