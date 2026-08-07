@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { generateExpirationAlerts } from '@/lib/document-alerts-generator'
+import { isAuthorizedExpirationCronRequest } from '@/lib/expiration-cron-auth'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -8,24 +9,8 @@ function isVercelCron(request: NextRequest): boolean {
   return request.headers.get('user-agent') === 'vercel-cron/1.0'
 }
 
-function hasValidManualAuthorization(request: NextRequest): boolean {
-  const authorization = request.headers.get('authorization')
-  if (!authorization) return false
-
-  const configuredSecrets = [process.env.CRON_SECRET, process.env.INTERNAL_API_KEY].filter(
-    (value): value is string => Boolean(value),
-  )
-
-  return configuredSecrets.some((secret) => authorization === `Bearer ${secret}`)
-}
-
-function isAuthorized(request: NextRequest): boolean {
-  if (process.env.NODE_ENV !== 'production') return true
-  return isVercelCron(request) || hasValidManualAuthorization(request)
-}
-
 async function runExpirationAlertCheck(request: NextRequest, source: string) {
-  if (!isAuthorized(request)) {
+  if (!isAuthorizedExpirationCronRequest(request.headers)) {
     console.log('[v0] Unauthorized access to expiration check endpoint')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
