@@ -55,11 +55,11 @@
       "schedule": "5,20,35,50 * * * *"
     },
     {
-      "path": "/api/cron/prt-import",
+      "path": "/api/cron/cronos-prt-import",
       "schedule": "10,25,40,55 * * * *"
     },
     {
-      "path": "/api/cron/prt-import-stream",
+      "path": "/api/cron/cronos-prt-import-stream",
       "schedule": "12,27,42,57 * * * *"
     }
   ]
