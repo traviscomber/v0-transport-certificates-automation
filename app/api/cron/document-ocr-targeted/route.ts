@@ -73,8 +73,8 @@ export async function GET(request: NextRequest) {
   }
 
   const { data: documentTypeRow, error: documentTypeError } = await supabase
-    .from('document_types')
-    .select('code')
+    .from('subcontractor_document_types')
+    .select('code, nombre')
     .eq('id', document.document_type_id)
     .maybeSingle()
 
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ stage: 'document_type_query', error: documentTypeError.message }, { status: 500 })
   }
 
-  const documentType = documentTypeRow?.code ?? 'DOCUMENTO'
+  const documentType = [documentTypeRow?.code, documentTypeRow?.nombre].filter(Boolean).join(' ') || 'DOCUMENTO'
 
   const { data: extractionState, error: extractionQueryError } = await supabase
     .from('document_text_extractions')
