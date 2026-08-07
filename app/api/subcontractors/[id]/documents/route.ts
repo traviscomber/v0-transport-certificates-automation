@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getDocumentPeriodDate, normalizeDocumentPeriod } from '@/lib/document-period'
+import { normalizeDocumentPeriod } from '@/lib/document-period'
 
-// Increase max duration for larger file uploads
 export const maxDuration = 60
 
-/**
- * POST /api/subcontractors/[id]/documents
- * Upload a document for a subcontractor
- */
+type DocumentVerification = {
+  advanced: boolean
+  confidence: number | null
+  plate: string | null
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -16,14 +17,8 @@ export async function POST(
   try {
     const supabase = createAdminClient()
     const { id } = params
-    
-    console.log('[v0] ===== PDF UPLOAD DIAGNOSTIC START =====')
-    console.log('[v0] Request method:', request.method)
-    console.log('[v0] Content-Type:', request.headers.get('content-type'))
-    console.log('[v0] Content-Length:', request.headers.get('content-length'))
-    
     const formData = await request.formData()
-    
+
     const file = formData.get('file') as File
     const documentTypeId = formData.get('documentTypeId') as string
     const subcontractorRut = formData.get('subcontractorRut') as string
@@ -31,24 +26,10 @@ export async function POST(
     const periodYear = formData.get('documentPeriodYear') || formData.get('periodYear')
     const documentPeriod = normalizeDocumentPeriod(periodMonth as string | null, periodYear as string | null)
 
-    console.log('[v0] FormData parsed')
-    console.log('[v0] File exists:', !!file)
-    console.log('[v0] File name:', file?.name)
-    console.log('[v0] File type:', file?.type)
-    console.log('[v0] File.size property:', file?.size)
-    console.log('[v0] documentTypeId:', documentTypeId)
-
     if (!file || !documentTypeId || !subcontractorRut || !id) {
-      console.error('[v0] Missing required fields')
-      return NextResponse.json(
-        { error: 'Faltan campos requeridos' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 })
     }
 
-    console.log('[v0] Starting document upload for subcontractor:', id)
-
-    // Get document type details
     const { data: docType, error: docTypeError } = await supabase
       .from('subcontractor_document_types')
       .select('id, code, periodicidad')
@@ -56,65 +37,36 @@ export async function POST(
       .single()
 
     if (docTypeError || !docType) {
-      console.error('[v0] Error fetching document type:', docTypeError)
-      return NextResponse.json(
-        { error: 'Tipo de documento no encontrado' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Tipo de documento no encontrado' }, { status: 404 })
     }
 
-    // Upload file to Supabase Storage with simple, safe filename
     const fileExtension = file.name.split('.').pop() || 'pdf'
     const safeFileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`
     const fileName = `${id}/${safeFileName}`
-    
-    // Create documents bucket if it doesn't exist
+
     try {
       const { data: buckets } = await supabase.storage.listBuckets()
-      const bucketExists = buckets?.some((b: any) => b.name === 'subcontractor-documents')
-      
+      const bucketExists = buckets?.some((bucket: any) => bucket.name === 'subcontractor-documents')
       if (!bucketExists) {
-        console.log('[v0] Creating subcontractor-documents bucket...')
         await supabase.storage.createBucket('subcontractor-documents', {
           public: true,
-          fileSizeLimit: 52428800, // 50MB
+          fileSizeLimit: 52428800,
         })
       }
     } catch (bucketError) {
-      console.log('[v0] Bucket check (may already exist):', bucketError)
+      console.log('[documents] bucket check:', bucketError)
     }
 
     const buffer = await file.arrayBuffer()
-    const uint8Array = new Uint8Array(buffer)
-    
-    console.log('[v0] === BUFFER CONVERSION ===')
-    console.log('[v0] File.size:', file.size)
-    console.log('[v0] ArrayBuffer.byteLength:', buffer.byteLength)
-    console.log('[v0] Uint8Array.length:', uint8Array.length)
-    console.log('[v0] First 20 bytes:', Array.from(uint8Array.slice(0, 20)))
-
     if (buffer.byteLength === 0) {
-      console.error('[v0] CRITICAL: ArrayBuffer is empty! File.size was:', file.size)
       return NextResponse.json(
         { error: 'El archivo llegó vacío al servidor. Verifica que el archivo no esté corrupto.' },
         { status: 400 }
       )
     }
 
-    if (uint8Array.length === 0) {
-      console.error('[v0] CRITICAL: Uint8Array conversion failed!')
-      return NextResponse.json(
-        { error: 'Error al procesar el archivo en el servidor' },
-        { status: 500 }
-      )
-    }
-    
-    console.log('[v0] === UPLOADING TO SUPABASE ===')
-    console.log('[v0] Filename in storage:', fileName)
-    console.log('[v0] Data to upload size:', uint8Array.length + ' bytes')
-    console.log('[v0] Content-Type:', file.type)
-    
-    const { error: uploadError, data: uploadData } = await supabase.storage
+    const uint8Array = new Uint8Array(buffer)
+    const { error: uploadError } = await supabase.storage
       .from('subcontractor-documents')
       .upload(fileName, uint8Array, {
         cacheControl: '3600',
@@ -123,35 +75,19 @@ export async function POST(
       })
 
     if (uploadError) {
-      console.error('[v0] UPLOAD FAILED:', uploadError)
-      return NextResponse.json(
-        { error: 'Error al subir el archivo: ' + uploadError.message },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: `Error al subir el archivo: ${uploadError.message}` }, { status: 500 })
     }
 
-    console.log('[v0] UPLOAD SUCCESS')
-    console.log('[v0] Storage path:', uploadData.path)
-    console.log('[v0] Full path:', uploadData.fullPath)
-
-    // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('subcontractor-documents')
       .getPublicUrl(fileName)
 
-    // Calculate expiry date based on periodicity
     const now = new Date()
-    let expiresAt = new Date(now)
-    
-    if (docType.periodicidad === 'Mensual') {
-      expiresAt.setMonth(expiresAt.getMonth() + 1)
-    } else if (docType.periodicidad === 'Trimestral') {
-      expiresAt.setMonth(expiresAt.getMonth() + 3)
-    } else if (docType.periodicidad === 'Anual') {
-      expiresAt.setFullYear(expiresAt.getFullYear() + 1)
-    }
+    const expiresAt = new Date(now)
+    if (docType.periodicidad === 'Mensual') expiresAt.setMonth(expiresAt.getMonth() + 1)
+    else if (docType.periodicidad === 'Trimestral') expiresAt.setMonth(expiresAt.getMonth() + 3)
+    else if (docType.periodicidad === 'Anual') expiresAt.setFullYear(expiresAt.getFullYear() + 1)
 
-    // Save document record
     const insertPayload = {
       subcontractor_id: id,
       subcontractor_rut: subcontractorRut,
@@ -164,7 +100,7 @@ export async function POST(
       ...(documentPeriod || {}),
     }
 
-    let { data: newDocument, error: saveError } = await supabase
+    const { data: newDocument, error: saveError } = await supabase
       .from('subcontractor_documents')
       .insert(insertPayload)
       .select()
@@ -178,14 +114,9 @@ export async function POST(
     }
 
     if (saveError) {
-      console.error('[v0] Error saving document record:', saveError)
-      return NextResponse.json(
-        { error: 'Error al guardar el documento' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Error al guardar el documento' }, { status: 500 })
     }
 
-    // Create alert for pending review
     const { error: alertError } = await supabase
       .from('subcontractor_document_alerts')
       .insert({
@@ -195,31 +126,19 @@ export async function POST(
         message: `Nuevo documento ${docType.code} subido - Pendiente de revisión`,
       })
 
-    if (alertError) {
-      console.warn('[v0] Warning: Could not create alert:', alertError)
-    }
-
-    console.log('[v0] Document uploaded successfully:', newDocument.id)
+    if (alertError) console.warn('[documents] could not create alert:', alertError)
 
     return NextResponse.json({
       success: true,
       document: newDocument,
       message: `Documento subido exitosamente. Se vencerá el ${expiresAt.toLocaleDateString('es-CL')}`,
     })
-
   } catch (error) {
-    console.error('[v0] Error in document upload:', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    console.error('[documents] upload error:', error)
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }
 
-/**
- * GET /api/subcontractors/[id]/documents
- * Fetch all documents for a specific subcontractor
- */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -229,13 +148,9 @@ export async function GET(
     const { id } = params
 
     if (!id) {
-      return NextResponse.json(
-        { error: 'Subcontractor ID is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Subcontractor ID is required' }, { status: 400 })
     }
 
-    // Fetch documents uploaded by this subcontractor
     const { data: documents, error: docsError } = await supabase
       .from('subcontractor_documents')
       .select(`
@@ -260,14 +175,42 @@ export async function GET(
       .order('uploaded_at', { ascending: false })
 
     if (docsError) {
-      console.error('[v0] Error fetching documents:', docsError)
-      return NextResponse.json(
-        { error: 'Error al obtener documentos' },
-        { status: 500 }
-      )
+      console.error('[documents] fetch error:', docsError)
+      return NextResponse.json({ error: 'Error al obtener documentos' }, { status: 500 })
     }
 
-    // Fetch document types (requirements)
+    const documentIds = (documents ?? []).map((document) => document.id)
+    const verificationByDocumentId = new Map<string, DocumentVerification>()
+
+    if (documentIds.length > 0) {
+      const { data: verificationFacts, error: verificationError } = await supabase
+        .from('vehicle_document_facts')
+        .select('document_id, prt_matched, confidence, plate_normalized, updated_at')
+        .in('document_id', documentIds)
+        .eq('prt_matched', true)
+        .order('updated_at', { ascending: false })
+
+      if (verificationError) {
+        console.error('[documents] verification facts error:', verificationError)
+        return NextResponse.json({ error: 'Error al obtener validación avanzada' }, { status: 500 })
+      }
+
+      for (const fact of verificationFacts ?? []) {
+        if (verificationByDocumentId.has(fact.document_id)) continue
+        const confidence = Number(fact.confidence ?? 0)
+        verificationByDocumentId.set(fact.document_id, {
+          advanced: true,
+          confidence: Number.isFinite(confidence) ? confidence : null,
+          plate: fact.plate_normalized ?? null,
+        })
+      }
+    }
+
+    const documentsWithVerification = (documents ?? []).map((document) => ({
+      ...document,
+      verification: verificationByDocumentId.get(document.id) ?? null,
+    }))
+
     const { data: documentTypes, error: typesError } = await supabase
       .from('subcontractor_document_types')
       .select('id, code, nombre, periodicidad, es_obligatorio')
@@ -275,62 +218,28 @@ export async function GET(
       .order('nombre', { ascending: true })
 
     if (typesError) {
-      console.error('[v0] Error fetching document types:', typesError)
-      return NextResponse.json(
-        { error: 'Error al obtener tipos de documento' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Error al obtener tipos de documento' }, { status: 500 })
     }
 
-    /**
-     * DEDUPLICATION RULE - Keep only unique documents per document_type_id and period
-     * 
-     * PROBLEM SOLVED:
-     * - Database can have multiple versions/duplicates of same document type
-     * - UI should show: "Documentos (5/16)" not "Documentos (27/16)"
-     * - "Por Subir" was showing negative numbers when duplicates existed
-     * 
-     * SOLUTION:
-     * - Create Map of document_type_id + document period -> most recent document
-     * - For each document type, keep only the newest version (by created_at)
-     * - Return unique array: one document per type maximum
-     * 
-     * RESULT:
-     * - Tab shows correct count (actual unique types uploaded vs 16 required)
-     * - "Por Subir" always positive or zero
-     * - Onboarding checklist accurate
-     * - Resumen stats consistent
-     */
-    const uniqueDocuments = new Map()
-    documents?.forEach((doc) => {
-      const periodKey = getDocumentPeriodDate(doc).slice(0, 7) || 'no-period'
-      const uniqueKey = `${doc.document_type_id}:${periodKey}`
-      const existing = uniqueDocuments.get(uniqueKey)
-      if (!existing || new Date(doc.created_at) > new Date(existing.created_at)) {
-        uniqueDocuments.set(uniqueKey, doc)
-      }
-    })
-    const uniqueDocsArray = Array.from(uniqueDocuments.values())
-    
     const summary = {
-      totalDocumentsUploaded: uniqueDocsArray.length,
+      totalDocumentsUploaded: documentsWithVerification.length,
       totalRequirements: documentTypes?.length || 0,
-      approvedDocuments: uniqueDocsArray.filter((d) => d.status === 'approved').length,
-      pendingDocuments: uniqueDocsArray.filter((d) => d.status === 'pending').length,
-      expiredDocuments: uniqueDocsArray.filter((d) => d.status === 'expired').length,
-      rejectedDocuments: uniqueDocsArray.filter((d) => d.status === 'rejected').length,
+      approvedDocuments: documentsWithVerification.filter((document) => document.status === 'approved').length,
+      pendingDocuments: documentsWithVerification.filter((document) => document.status === 'pending').length,
+      expiredDocuments: documentsWithVerification.filter((document) => document.status === 'expired').length,
+      rejectedDocuments: documentsWithVerification.filter((document) => document.status === 'rejected').length,
+      advancedValidatedDocuments: documentsWithVerification.filter((document) => document.verification?.advanced === true).length,
     }
 
     return NextResponse.json({
       success: true,
       subcontractorId: id,
-      documents: uniqueDocsArray || [],  // Return only unique documents (one per document_type_id)
+      documents: documentsWithVerification,
       requirements: documentTypes || [],
       summary,
     })
-
   } catch (error) {
-    console.error('[v0] Error in subcontractor documents GET:', error)
+    console.error('[documents] GET error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Error interno del servidor' },
       { status: 500 }

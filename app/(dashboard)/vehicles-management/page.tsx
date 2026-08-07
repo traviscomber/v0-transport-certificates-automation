@@ -20,10 +20,8 @@ import {
   MoreHorizontal,
   FileText,
   CheckCircle,
-  AlertTriangle,
   Building2,
   ShieldCheck,
-  CircleDashed,
 } from 'lucide-react'
 
 type Vehicle = {
@@ -99,12 +97,7 @@ export default function VehiclesManagementPage() {
 
     const topOrganization = Array.from(byOrg.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Sin datos'
 
-    return {
-      total: vehicles.length,
-      active,
-      verified,
-      topOrganization,
-    }
+    return { total: vehicles.length, active, verified, topOrganization }
   }, [vehicles])
 
   const getStatusBadge = (vehicle: Vehicle) => {
@@ -116,31 +109,20 @@ export default function VehiclesManagementPage() {
   }
 
   const getVerificationBadge = (vehicle: Vehicle) => {
-    if (vehicle.verification?.advanced) {
-      const confidence = vehicle.verification.confidence
-      const title = confidence == null
-        ? 'Evidencia vehicular canónica coincidente'
-        : `Evidencia vehicular canónica coincidente · ${Math.round(confidence * 100)}%`
+    if (!vehicle.verification?.advanced) return null
 
-      return (
-        <Badge
-          title={title}
-          className="gap-1.5 bg-emerald-500/20 text-emerald-200 border-emerald-400/40 whitespace-nowrap"
-        >
-          <ShieldCheck className="h-3.5 w-3.5" />
-          Validación avanzada
-        </Badge>
-      )
-    }
+    const confidence = vehicle.verification.confidence
+    const title = confidence == null
+      ? 'Evidencia vehicular canónica coincidente'
+      : `Evidencia vehicular canónica coincidente · ${Math.round(confidence * 100)}%`
 
     return (
       <Badge
-        variant="outline"
-        title="El badge es opcional y su ausencia no invalida el vehículo ni al cliente"
-        className="gap-1.5 border-slate-600 text-slate-300 whitespace-nowrap"
+        title={title}
+        className="gap-1.5 bg-emerald-500/20 text-emerald-200 border-emerald-400/40 whitespace-nowrap"
       >
-        <CircleDashed className="h-3.5 w-3.5" />
-        Válido · sin badge
+        <ShieldCheck className="h-3.5 w-3.5" />
+        Validación avanzada
       </Badge>
     )
   }
@@ -173,150 +155,54 @@ export default function VehiclesManagementPage() {
           </p>
         </div>
         <Button className="btn-orange" asChild>
-          <a href="/admin/vehiculos/nuevo">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Vehículo
-          </a>
+          <a href="/admin/vehiculos/nuevo"><Plus className="h-4 w-4 mr-2" />Nuevo Vehículo</a>
         </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-4">
         <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-400">Total flota</p>
-                <p className="text-2xl font-bold text-white">{counts.total}</p>
-              </div>
-              <Truck className="h-8 w-8 text-slate-500" />
-            </div>
-          </CardContent>
+          <CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-sm text-slate-400">Total flota</p><p className="text-2xl font-bold text-white">{counts.total}</p></div><Truck className="h-8 w-8 text-slate-500" /></div></CardContent>
         </Card>
         <Card className="border-green-500/30 bg-gradient-to-br from-green-500/10 to-transparent">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-300">Activos</p>
-                <p className="text-2xl font-bold text-green-400">{counts.active}</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-500/50" />
-            </div>
-          </CardContent>
+          <CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-sm text-green-300">Activos</p><p className="text-2xl font-bold text-green-400">{counts.active}</p></div><CheckCircle className="h-8 w-8 text-green-500/50" /></div></CardContent>
         </Card>
         <Card className="border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-transparent">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-emerald-300">Con badge avanzado</p>
-                <p className="text-2xl font-bold text-emerald-300">{counts.verified}</p>
-              </div>
-              <ShieldCheck className="h-8 w-8 text-emerald-500/50" />
-            </div>
-          </CardContent>
+          <CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-sm text-emerald-300">Con badge avanzado</p><p className="text-2xl font-bold text-emerald-300">{counts.verified}</p></div><ShieldCheck className="h-8 w-8 text-emerald-500/50" /></div></CardContent>
         </Card>
         <Card className="border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-transparent">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-blue-300">Mayor presencia</p>
-                <p className="text-sm font-bold text-blue-200 mt-1">{counts.topOrganization}</p>
-              </div>
-              <Building2 className="h-8 w-8 text-blue-500/50" />
-            </div>
-          </CardContent>
+          <CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-sm text-blue-300">Mayor presencia</p><p className="text-sm font-bold text-blue-200 mt-1">{counts.topOrganization}</p></div><Building2 className="h-8 w-8 text-blue-500/50" /></div></CardContent>
         </Card>
       </div>
 
       <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900">
         <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                placeholder="Buscar por patente, marca, modelo u organización..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-slate-900 border-slate-700"
-              />
-            </div>
-          </div>
+          <div className="relative flex-1"><Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" /><Input placeholder="Buscar por patente, marca, modelo u organización..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 bg-slate-900 border-slate-700" /></div>
         </CardContent>
       </Card>
 
       <Card className="border-slate-700/50 bg-gradient-to-br from-slate-800 to-slate-900">
-        <CardHeader>
-          <CardTitle className="text-foreground">Lista de vehículos</CardTitle>
-          <CardDescription>
-            {loading ? 'Cargando datos reales...' : `${filteredVehicles.length} vehículos encontrados`}
-          </CardDescription>
-        </CardHeader>
+        <CardHeader><CardTitle className="text-foreground">Lista de vehículos</CardTitle><CardDescription>{loading ? 'Cargando datos reales...' : `${filteredVehicles.length} vehículos encontrados`}</CardDescription></CardHeader>
         <CardContent>
           {error ? (
             <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-red-200">{error}</div>
           ) : loading ? (
-            <div className="rounded-lg border border-slate-700/50 bg-slate-800/50 p-4 text-slate-400">
-              Consultando vehículos reales...
-            </div>
+            <div className="rounded-lg border border-slate-700/50 bg-slate-800/50 p-4 text-slate-400">Consultando vehículos reales...</div>
           ) : filteredVehicles.length === 0 ? (
-            <div className="rounded-lg border border-slate-700/50 bg-slate-800/50 p-4 text-slate-400">
-              No hay vehículos que coincidan con los filtros.
-            </div>
+            <div className="rounded-lg border border-slate-700/50 bg-slate-800/50 p-4 text-slate-400">No hay vehículos que coincidan con los filtros.</div>
           ) : (
             <Table>
-              <TableHeader>
-                <TableRow className="border-slate-700">
-                  <TableHead className="text-slate-400">Vehículo</TableHead>
-                  <TableHead className="text-slate-400">Patente</TableHead>
-                  <TableHead className="text-slate-400">Organización</TableHead>
-                  <TableHead className="text-slate-400">Tipo</TableHead>
-                  <TableHead className="text-slate-400">VIN</TableHead>
-                  <TableHead className="text-slate-400">Estado</TableHead>
-                  <TableHead className="text-slate-400">Validación</TableHead>
-                  <TableHead className="text-slate-400 text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
+              <TableHeader><TableRow className="border-slate-700"><TableHead className="text-slate-400">Vehículo</TableHead><TableHead className="text-slate-400">Patente</TableHead><TableHead className="text-slate-400">Organización</TableHead><TableHead className="text-slate-400">Tipo</TableHead><TableHead className="text-slate-400">VIN</TableHead><TableHead className="text-slate-400">Estado</TableHead><TableHead className="text-slate-400">Validación</TableHead><TableHead className="text-slate-400 text-right">Acciones</TableHead></TableRow></TableHeader>
               <TableBody>
                 {filteredVehicles.map((vehicle) => (
                   <TableRow key={vehicle.id} className="border-slate-700/50 hover:bg-slate-800/50">
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-slate-700 flex items-center justify-center">
-                          <Truck className="h-5 w-5 text-slate-300" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">
-                            {vehicle.brand || 'Sin marca'} {vehicle.model || ''}
-                          </p>
-                          <p className="text-xs text-slate-400">{vehicle.year || 'Año no informado'}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-mono text-lg font-bold text-foreground">{vehicle.plate || '-'}</span>
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {vehicle.organization?.name || 'Sin organización'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="border-slate-600 text-slate-300">
-                        {getTypeLabel(vehicle.type)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-slate-300 font-mono text-xs">
-                      {vehicle.vin || 'Sin VIN'}
-                    </TableCell>
+                    <TableCell><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-lg bg-slate-700 flex items-center justify-center"><Truck className="h-5 w-5 text-slate-300" /></div><div><p className="font-medium text-foreground">{vehicle.brand || 'Sin marca'} {vehicle.model || ''}</p><p className="text-xs text-slate-400">{vehicle.year || 'Año no informado'}</p></div></div></TableCell>
+                    <TableCell><span className="font-mono text-lg font-bold text-foreground">{vehicle.plate || '-'}</span></TableCell>
+                    <TableCell className="text-slate-300">{vehicle.organization?.name || 'Sin organización'}</TableCell>
+                    <TableCell><Badge variant="outline" className="border-slate-600 text-slate-300">{getTypeLabel(vehicle.type)}</Badge></TableCell>
+                    <TableCell className="text-slate-300 font-mono text-xs">{vehicle.vin || 'Sin VIN'}</TableCell>
                     <TableCell>{getStatusBadge(vehicle)}</TableCell>
                     <TableCell>{getVerificationBadge(vehicle)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+                    <TableCell className="text-right"><div className="flex justify-end gap-2"><Button variant="ghost" size="sm" className="text-slate-400 hover:text-white"><FileText className="h-4 w-4" /></Button><Button variant="ghost" size="sm" className="text-slate-400 hover:text-white"><MoreHorizontal className="h-4 w-4" /></Button></div></TableCell>
                   </TableRow>
                 ))}
               </TableBody>
