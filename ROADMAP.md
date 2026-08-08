@@ -1,8 +1,8 @@
 # TransportesLabbe — Product & Engineering Roadmap
 
-Last updated: 2026-08-08
+Last updated: 2026-08-08 11:30 CLT
 Canonical repository: `traviscomber/v0-transport-certificates-automation`
-Production baseline at roadmap creation: `621d2b979537f45d3df7cdeee76111b61364129f`
+Current Stage 9 production SHA: `65acfc31a445613258692d469a3849274f9b3f38`
 
 ## Operating rule
 
@@ -13,6 +13,8 @@ Release flow for every code stage:
 `implementation -> preview/CI -> Qalito PASS -> merge to main -> production READY -> runtime/data verification -> stage closure`
 
 Cronos owns operational supervision, synchronization health, queue recovery and production verification. Qalito is the mandatory release gate for code/release changes.
+
+**Documentation rule:** update this `ROADMAP.md` whenever a material stage milestone, production fix, gate decision, closure condition, or stage transition occurs. Live Supabase/Cronos state remains the source of truth for operational counters.
 
 ---
 
@@ -34,18 +36,22 @@ Finish the current operational hardening cycle and leave imports, reconciliation
 - Pending-document RUT search root cause reproduced and fixed.
 - Pending search now filters canonical `subcontractor_rut` in PostgreSQL before the result limit.
 - Production verification of a previously invisible RUT returns the expected pending documents.
-- Production baseline `621d2b979537f45d3df7cdeee76111b61364129f` is READY.
+- June 2026 RA1, RA2 and RB are fully `imported`.
+- PRT starvation root cause fixed: `prt_import_stream` now drains oldest eligible periods first instead of continually preferring newer periods.
+- PR #83 passed both Vercel previews and was merged to `main`.
+- Production SHA `65acfc31a445613258692d469a3849274f9b3f38` is executing `prt_import_stream` and `cronos_reconciliation` successfully with `failed_count = 0`.
+- Post-fix production behavior verified: May 2026 RA2 resumed from cursor 60,000 and advanced to 100,000 while July RB remained at 180,000, proving the oldest-first drain rule is active.
 
 ### Remaining work — hard stop list
 
 Only these items may keep Stage 9 open:
 
-1. **Drain remaining PRT imports**
-   - June 2026 RB -> EOF / imported.
-   - May 2026 RA2 -> EOF / imported.
-   - May 2026 RB -> EOF / imported.
+1. **Drain remaining Stage 9 PRT imports**
+   - May 2026 RA2 -> EOF / imported. Current verified cursor: 100,000.
+   - May 2026 RB -> EOF / imported. Current verified cursor: 0.
    - No failed `prt_import_stream` runs.
    - No unexpected batches left in `importing` / `processing`.
+   - July 2026 RB may continue only after the older May batches are drained; it does not extend the Stage 9 closure scope.
 
 2. **Final PRT canonical reconciliation**
    - Verify batch row counts against `prt_vehicle_records`.
@@ -68,6 +74,7 @@ The following findings are important but do not extend Stage 9 unless they becom
 - Full tenant-aware RLS redesign.
 - Broader index cleanup/performance refactoring.
 - UI redesign or new product features.
+- Full PRT Intelligence Layer beyond the Stage 9 reconciliation proof; this is prioritized for Stage 12.
 
 ### Stage 9 exit condition
 
@@ -133,18 +140,22 @@ Eliminate divergent definitions of documents and pending work across executive/s
 
 ---
 
-## Stage 12 — Compliance intelligence and automation
+## Stage 12 — Compliance intelligence and PRT operationalization
 
-**Status: PLANNED**
+**Status: PLANNED — PRIORITY AFTER CANONICAL FOUNDATIONS**
 
 ### Objective
 
-Turn the now-stable canonical document and PRT data into reliable operational decisions rather than additional disconnected dashboards.
+Turn the stable canonical document and PRT corpus into reliable operational decisions and a reusable vehicle-intelligence layer rather than leaving PRT as passive storage.
 
-### Scope
+### Priority scope
 
+- Build a canonical `latest PRT by plate` projection over the historical PRT corpus.
+- Enrich operational `vehiculos` from that projection without creating hundreds of thousands of fake operational vehicles.
 - Finalize PRT -> vehicle -> compliance matching contract.
 - Define confidence and no-match handling for vehicle evidence.
+- Make new operational vehicles immediately benefit from already-imported PRT history.
+- Expose traceable PRT status: latest revision, result, expiry, plant/class when present, and source provenance.
 - Consolidate worker/company reconciliation into decision-ready outputs.
 - Improve exception queues for human review.
 - Introduce safe auto-recovery only for proven reversible stale states.
@@ -152,6 +163,7 @@ Turn the now-stable canonical document and PRT data into reliable operational de
 
 ### Exit criteria
 
+- Operational vehicles are automatically enriched from canonical PRT evidence when a valid plate match exists.
 - Compliance decisions are traceable to canonical evidence.
 - No invented/simulated evidence is used.
 - Failed/uncertain matches enter an explicit review state.
@@ -190,18 +202,18 @@ Prepare a controlled client-facing release baseline after the architectural stag
 
 ## Current live closure snapshot
 
-Verified at roadmap creation:
+Verified 2026-08-08 11:30 CLT:
 
-- Production SHA: `621d2b979537f45d3df7cdeee76111b61364129f`.
-- `cronos_reconciliation`: completing successfully on the production SHA with `failed_count = 0`.
-- `sii_transportistas`: completing successfully with no current failures.
-- `prt_import_stream`: current runs completing with `failed_count = 0`.
-- June 2026 RA1: imported.
-- June 2026 RA2: imported.
-- June 2026 RB: still draining; cursor observed at 370,000.
-- May 2026 RA1: imported.
-- May 2026 RA2: still draining; cursor observed at 20,000.
-- May 2026 RB: profiled/queued at cursor 0.
+- Current Stage 9 production SHA: `65acfc31a445613258692d469a3849274f9b3f38`.
+- `cronos_reconciliation`: latest observed production runs `completed`, `failed_count = 0`.
+- `prt_import_stream`: latest observed production runs `completed`, `failed_count = 0`.
+- June 2026 RA1: `imported`, 13,895? No — June RA1 canonical batch is 12,118 rows read / 12,074 valid / 44 rejected.
+- June 2026 RA2: `imported`, 92,994 rows read / 92,534 valid / 460 rejected/duplicate-accounted.
+- June 2026 RB: `imported`, 554,795 rows read / 549,848 valid / 4,947 rejected/duplicate-accounted.
+- May 2026 RA1: `imported`, 13,895 rows read / 13,842 valid / 53 rejected.
+- May 2026 RA2: `profiled`, cursor 100,000 / 99,564 valid / 436 rejected/duplicate-accounted.
+- May 2026 RB: `profiled`, cursor 0.
+- July 2026 RB: `profiled`, cursor 180,000 and intentionally waiting behind older May work after the starvation fix.
 
 These counters are a snapshot, not a permanent specification. Cronos/Supabase live state is the source of truth for closure.
 
