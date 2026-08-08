@@ -1,8 +1,8 @@
 # TransportesLabbe — Product & Engineering Roadmap
 
-Last updated: 2026-08-08 11:30 CLT
+Last updated: 2026-08-08 11:46 CLT
 Canonical repository: `traviscomber/v0-transport-certificates-automation`
-Current Stage 9 production SHA: `65acfc31a445613258692d469a3849274f9b3f38`
+Current Stage 9 production SHA: `51e30a4d8580c5aa6f01b9ec422a65fa0bca6d85`
 
 ## Operating rule
 
@@ -20,7 +20,7 @@ Cronos owns operational supervision, synchronization health, queue recovery and 
 
 ## Stage 9 — Operational hardening and synchronization closure
 
-**Status: CLOSING**
+**Status: CLOSING — FINAL PRT BATCH REMAINS**
 
 ### Objective
 
@@ -39,19 +39,19 @@ Finish the current operational hardening cycle and leave imports, reconciliation
 - June 2026 RA1, RA2 and RB are fully `imported`.
 - PRT starvation root cause fixed: `prt_import_stream` now drains oldest eligible periods first instead of continually preferring newer periods.
 - PR #83 passed both Vercel previews and was merged to `main`.
-- Production SHA `65acfc31a445613258692d469a3849274f9b3f38` is executing `prt_import_stream` and `cronos_reconciliation` successfully with `failed_count = 0`.
-- Post-fix production behavior verified: May 2026 RA2 resumed from cursor 60,000 and advanced to 100,000 while July RB remained at 180,000, proving the oldest-first drain rule is active.
+- Post-fix production behavior verified: May 2026 RA2 resumed ahead of July RB, proving the oldest-first drain rule is active.
+- May 2026 RA2 is now fully `imported`: 103,279 rows read, 102,824 valid and 455 rejected/duplicate-accounted.
+- Latest observed `prt_import_stream` and `cronos_reconciliation` runs complete with `failed_count = 0` and no stale active PRT batch.
 
 ### Remaining work — hard stop list
 
 Only these items may keep Stage 9 open:
 
-1. **Drain remaining Stage 9 PRT imports**
-   - May 2026 RA2 -> EOF / imported. Current verified cursor: 100,000.
+1. **Drain final Stage 9 PRT import**
    - May 2026 RB -> EOF / imported. Current verified cursor: 0.
    - No failed `prt_import_stream` runs.
    - No unexpected batches left in `importing` / `processing`.
-   - July 2026 RB may continue only after the older May batches are drained; it does not extend the Stage 9 closure scope.
+   - July 2026 RB may continue only after May RB is drained; it does not extend the Stage 9 closure scope.
 
 2. **Final PRT canonical reconciliation**
    - Verify batch row counts against `prt_vehicle_records`.
@@ -202,18 +202,19 @@ Prepare a controlled client-facing release baseline after the architectural stag
 
 ## Current live closure snapshot
 
-Verified 2026-08-08 11:30 CLT:
+Verified 2026-08-08 11:46 CLT:
 
-- Current Stage 9 production SHA: `65acfc31a445613258692d469a3849274f9b3f38`.
+- Current Stage 9 production SHA observed in latest jobs: `51e30a4d8580c5aa6f01b9ec422a65fa0bca6d85`.
 - `cronos_reconciliation`: latest observed production runs `completed`, `failed_count = 0`.
-- `prt_import_stream`: latest observed production runs `completed`, `failed_count = 0`.
-- June 2026 RA1: `imported`, 13,895? No — June RA1 canonical batch is 12,118 rows read / 12,074 valid / 44 rejected.
+- `prt_import_stream`: latest observed production run `completed`, `failed_count = 0`.
+- Stale active PRT batches older than 30 minutes: `0`.
+- June 2026 RA1: `imported`, 12,118 rows read / 12,074 valid / 44 rejected.
 - June 2026 RA2: `imported`, 92,994 rows read / 92,534 valid / 460 rejected/duplicate-accounted.
 - June 2026 RB: `imported`, 554,795 rows read / 549,848 valid / 4,947 rejected/duplicate-accounted.
 - May 2026 RA1: `imported`, 13,895 rows read / 13,842 valid / 53 rejected.
-- May 2026 RA2: `profiled`, cursor 100,000 / 99,564 valid / 436 rejected/duplicate-accounted.
-- May 2026 RB: `profiled`, cursor 0.
-- July 2026 RB: `profiled`, cursor 180,000 and intentionally waiting behind older May work after the starvation fix.
+- May 2026 RA2: `imported`, 103,279 rows read / 102,824 valid / 455 rejected/duplicate-accounted.
+- May 2026 RB: `profiled`, cursor 0 — final Stage 9 PRT batch remaining.
+- July 2026 RB: `profiled`, cursor 180,000 and intentionally waiting behind May RB.
 
 These counters are a snapshot, not a permanent specification. Cronos/Supabase live state is the source of truth for closure.
 
