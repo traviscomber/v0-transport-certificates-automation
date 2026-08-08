@@ -6,6 +6,10 @@ It is not designed as a simple file repository. Its core principle is **evidence
 
 > **Current lifecycle:** Stage 9 is closing. Operational synchronization is stable while the remaining PRT batches drain. The controlled next stages are security boundary hardening, canonical document-workflow unification, compliance intelligence and client-release stabilization. See [`ROADMAP.md`](ROADMAP.md).
 
+## Documentation language policy
+
+English is the primary language for this README and for top-level product/engineering documentation. Spanish may be added as a secondary translation or localized companion section, but English must always appear first and remain the canonical documentation language unless a document is explicitly client-facing and requires another language.
+
 ## What LABBE does
 
 ### Transportista and subcontractor operations
