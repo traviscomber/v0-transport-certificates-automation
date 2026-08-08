@@ -10,6 +10,10 @@ It is not designed as a simple file repository. Its core principle is **evidence
 
 English is the primary language for this README and for top-level product/engineering documentation. Spanish may be added as a secondary translation or localized companion section, but English must always appear first and remain the canonical documentation language unless a document is explicitly client-facing and requires another language.
 
+## Product in one sentence
+
+**LABBE is an evidence-driven transport compliance operating system that combines document lifecycle management, high-volume PRT vehicle evidence, external verification, OCR/document intelligence, automated reconciliation and human review in one canonical operational model.**
+
 ## What LABBE does
 
 ### Transportista and subcontractor operations
@@ -21,6 +25,7 @@ English is the primary language for this README and for top-level product/engine
 - Pending-document search by canonical RUT.
 - Server-side pending search that filters before pagination/limits, preventing valid records from disappearing from executive searches.
 - Certification flags and operational status without inventing unsupported expiration dates.
+- Executive-facing workflows backed by server-side access rather than open client database reads.
 
 ### Driver operations
 
@@ -38,6 +43,7 @@ English is the primary language for this README and for top-level product/engine
 - Explicit valid, rejected and duplicate accounting.
 - Canonical PRT evidence retained in `prt_vehicle_records`.
 - Reconciliation designed to connect PRT evidence to operational vehicle/compliance decisions without silently overwriting source truth.
+- Large-file processing can continue safely across multiple scheduled executions instead of relying on one monolithic import.
 
 ### External verification and compliance
 
@@ -89,6 +95,8 @@ LABBE follows several strict invariants:
 6. **Operational health is reconciled.** Cronos checks database state and downstream effects, not only scheduler responses.
 7. **Releases have a gate.** Qalito validates changes before a stage or production fix is considered closed.
 8. **Stages end.** [`ROADMAP.md`](ROADMAP.md) defines hard exit criteria so new P2/P3 discoveries do not create endless development cycles.
+9. **Missing evidence is not failure.** External or OCR evidence that is absent or unavailable stays unknown until verified.
+10. **Canonical state is never silently rewritten.** Automation may enrich and reconcile, but source evidence remains traceable.
 
 ## Canonical data model
 
@@ -109,6 +117,34 @@ Core operational entities include:
 
 The complete domain rules are maintained in [`docs/LABBE_CANONICAL_SYSTEM.md`](docs/LABBE_CANONICAL_SYSTEM.md). That specification must be read before changing schema, APIs, dashboards, document semantics or bulk-import behavior.
 
+## Verified production snapshot
+
+The following numbers are a **dated operational snapshot**, not hardcoded product rules. Live production state in Supabase/Cronos remains the source of truth.
+
+Snapshot verified on **2026-08-08**:
+
+| Operational area | Verified count |
+|---|---:|
+| Transportistas | 246 |
+| Drivers | 316 |
+| Vehicles | 8 |
+| Subcontractor documents | 7,331 |
+| Driver documents | 66 |
+| Canonical PRT vehicle evidence rows | 604,959 |
+| External verification runs | 295 |
+| Recorded system job runs | 1,585 |
+
+Current Stage 9 PRT closure snapshot:
+
+- June 2026 RA1: `imported` — 12,074 valid rows.
+- June 2026 RA2: `imported` — 92,534 valid rows.
+- June 2026 RB: still draining — cursor 470,000; 466,683 valid; 3,317 duplicate/rejected accounting entries at the latest verified snapshot.
+- May 2026 RA1: `imported` — 13,842 valid rows.
+- May 2026 RA2: still draining — cursor 20,000.
+- May 2026 RB: queued/profiled — cursor 0.
+
+These figures are expected to change while imports continue.
+
 ## Current production capabilities
 
 The current production system has verified operational paths for:
@@ -128,8 +164,6 @@ The current production system has verified operational paths for:
 - stale-state detection and reconciliation;
 - Vercel production deployment with Supabase PostgreSQL as canonical storage.
 
-Live counts are intentionally **not hardcoded in this README**. They change with production operation and must be queried from Supabase/Cronos when needed.
-
 ## Architecture
 
 | Layer | Technology / responsibility |
@@ -143,6 +177,20 @@ Live counts are intentionally **not hardcoded in this README**. They change with
 | Production | Vercel |
 | Operational supervision | Cronos |
 | Release quality gate | Qalito |
+
+## Operational workflow
+
+At a high level, LABBE turns operational evidence into reviewed compliance state through a controlled pipeline:
+
+`upload / external source -> canonical evidence -> extraction / normalization -> verification -> reconciliation -> human review / operational status -> monitored production state`
+
+For PRT data:
+
+`PRT source -> RA1/RA2/RB batch -> resumable cursor import -> canonical prt_vehicle_records -> reconciliation -> vehicle/compliance intelligence`
+
+For customer documents:
+
+`portal upload -> canonical document row -> pending review -> optional OCR/verification -> executive review -> approved/rejected/history retained`
 
 ## Product roadmap
 
