@@ -191,7 +191,7 @@ export async function GET(request: NextRequest) {
     .select('id, period, record_type, source_url, status, source_cursor, rows_valid, rows_rejected, rows_duplicates')
     .in('status', eligibleStatuses)
     .in('record_type', ['RA2', 'RB'])
-    .order('period', { ascending: false })
+    .order('period', { ascending: true })
     .order('record_type', { ascending: true })
     .limit(1)
     .maybeSingle()
