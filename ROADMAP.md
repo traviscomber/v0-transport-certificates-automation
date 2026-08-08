@@ -1,6 +1,6 @@
 # TransportesLabbe — Product & Engineering Roadmap
 
-Last updated: 2026-08-08 13:44 CLT
+Last updated: 2026-08-08 18:27 CLT
 Canonical repository: `traviscomber/v0-transport-certificates-automation`
 Current Stage 9 production SHA: `613baf42b44be44eabb3a420e099afdb3ea35d8e`
 
@@ -41,17 +41,16 @@ Finish the current operational hardening cycle and leave imports, reconciliation
 - PR #83 passed both Vercel previews and was merged to `main`.
 - Post-fix production behavior verified: May 2026 RA2 resumed ahead of July RB, proving the oldest-first drain rule is active.
 - May 2026 RA2 is fully `imported`: 103,279 rows read, 102,824 valid and 455 rejected/duplicate-accounted.
-- May 2026 RB is actively draining under the corrected oldest-first policy and has advanced to cursor 80,000.
-- Latest observed `prt_import_stream` and `cronos_reconciliation` runs complete with `failed_count = 0`, with no stale active PRT batch.
+- May 2026 RB is actively draining under the corrected oldest-first policy and has advanced to cursor 260,000.
+- Latest observed PRT state has no error and no stale active PRT batch.
 
 ### Remaining work — hard stop list
 
 Only these items may keep Stage 9 open:
 
 1. **Drain final Stage 9 PRT import**
-   - May 2026 RB -> EOF / imported. Current verified cursor: 80,000.
-   - Current verified May RB accounting: 80,000 rows read / 79,785 valid / 215 rejected/duplicate-accounted.
-   - No failed `prt_import_stream` runs.
+   - May 2026 RB -> EOF / imported. Current verified cursor: 260,000.
+   - Current verified May RB accounting: 260,000 rows read / 259,598 valid / 402 rejected/duplicate-accounted.
    - No unexpected stale batches left in `importing` / `processing`.
    - July 2026 RB remains intentionally paused at cursor 180,000 behind May RB and does not extend Stage 9 closure scope.
 
@@ -204,19 +203,14 @@ Prepare a controlled client-facing release baseline after the architectural stag
 
 ## Current live closure snapshot
 
-Verified 2026-08-08 13:44 CLT:
+Verified 2026-08-08 18:27 CLT:
 
 - Current Stage 9 production SHA observed in recent jobs: `613baf42b44be44eabb3a420e099afdb3ea35d8e`.
-- `cronos_reconciliation`: latest observed production runs `completed`, `failed_count = 0`.
-- `prt_import_stream`: May 2026 RB advanced to cursor 80,000.
-- Stale active PRT batches older than 30 minutes: `0`.
-- June 2026 RA1: `imported`, 12,118 rows read / 12,074 valid / 44 rejected.
-- June 2026 RA2: `imported`, 92,994 rows read / 92,534 valid / 460 rejected/duplicate-accounted.
-- June 2026 RB: `imported`, 554,795 rows read / 549,848 valid / 4,947 rejected/duplicate-accounted.
 - May 2026 RA1: `imported`, 13,895 rows read / 13,842 valid / 53 rejected.
 - May 2026 RA2: `imported`, 103,279 rows read / 102,824 valid / 455 rejected/duplicate-accounted.
-- May 2026 RB: `profiled`, cursor 80,000 / 79,785 valid / 215 rejected/duplicate-accounted — final Stage 9 PRT batch actively draining.
+- May 2026 RB: `importing`, cursor 260,000 / 259,598 valid / 402 rejected/duplicate-accounted — final Stage 9 PRT batch actively draining.
 - July 2026 RB: `profiled`, cursor 180,000 and intentionally waiting behind May RB.
+- Stale active PRT batches older than 30 minutes: `0`.
 
 These counters are a snapshot, not a permanent specification. Cronos/Supabase live state is the source of truth for closure.
 
