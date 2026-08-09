@@ -1,128 +1,130 @@
-# TransportesLabbe — Product & Engineering Roadmap
+# ChileFlota — Product & Engineering Roadmap
 
-Last updated: 2026-08-09 10:39 CLT
+Last updated: 2026-08-09
 Canonical repository: `traviscomber/v0-transport-certificates-automation`
-Current observed production SHA: `284026acb72dacef1357a0270792547eb83a978b`
+Product: **ChileFlota**
+Current operational implementation: **LABBE**
+Software factory: **N3uralia** — https://n3uralia.com
 
 ## Operating rule
 
-This roadmap is the scope-control document for the platform. A stage closes when its explicit exit criteria are met. New discoveries that are not P0 data-loss/security incidents do **not** extend the active stage automatically; they are assigned to the next appropriate stage.
+This roadmap is the scope-control document for ChileFlota. A stage closes when its explicit exit criteria are met. New P2/P3 discoveries do not extend an active stage automatically.
 
-Release flow for every code stage:
+Release flow:
 
 `implementation -> preview/CI -> Qalito PASS -> merge to main -> production READY -> runtime/data verification -> stage closure`
 
-Cronos owns operational supervision, synchronization health, queue recovery and production verification. Qalito is the mandatory release gate for code/release changes.
+Cronos owns synchronization and operational health. Qalito is the mandatory release gate. Supabase/Cronos live state remains authoritative for operational counters.
 
-Documentation rule: update this file whenever a material production fix, closure milestone, public-discovery change or stage transition occurs. Live Supabase/Cronos state remains authoritative for operational counters.
+---
+
+## Product thesis
+
+ChileFlota should answer one operational question better than a generic document manager:
+
+> **Can this fleet, vehicle, driver or supplier operate today, and what evidence or action is missing before it becomes a problem?**
+
+The product moat is cumulative:
+
+`more canonical evidence -> better enrichment -> less manual work -> better decisions -> more operational usage -> better coverage`
+
+ChileFlota must not become a collection of dashboards. Every intelligence surface must lead to a decision, an action or evidence.
 
 ---
 
 ## Cross-cutting discovery layer — SEO / GEO / LLM discoverability
 
-**Status: IN REVIEW — branch `feat/seo-geo-n3uralia`**
+**Status: IN REVIEW — PR #84**
 
-This work does not extend Stage 9's PRT exit criteria, but it is a material public-product milestone and must pass Qalito before production.
+### Implemented
 
-### Implemented in review branch
-
-- Public product entity renamed/aligned to **LABBE** instead of legacy DocuFleet/Segur-ia metadata.
-- N3uralia identified as creator/publisher/software factory, with canonical reference to `https://n3uralia.com`.
-- Chile-focused metadata (`es-CL`, transport compliance, PRT, fleet/document intelligence).
+- **ChileFlota** established as the reusable public product brand.
+- `https://chileflota.app` set as canonical public product URL.
+- **LABBE** retained as the current operational implementation.
+- **N3uralia** identified as creator/publisher/software factory at `https://n3uralia.com`.
+- Chile-focused metadata, `es-CL`, OpenGraph and search terminology.
 - `Organization` + `SoftwareApplication` JSON-LD.
-- `robots.txt` metadata route with private/operational routes excluded from crawling.
-- `sitemap.xml` metadata route exposing selected public pages only.
-- Supplemental `public/llms.txt` for machine-readable product context and N3uralia attribution.
-- Public landing rewritten around evidence-backed product capabilities and Chilean transport use cases; unsupported legacy claims removed.
-- README refreshed with current product positioning, discovery architecture and PRT evidence layer.
+- `robots.txt` with private operational routes excluded.
+- `sitemap.xml` exposing selected public routes only.
+- Supplemental `llms.txt` with product/entity context.
+- Public landing aligned to ChileFlota and evidence-backed capabilities.
+- Unsupported legacy claims removed.
 
-### Discovery gate
+### Gate
 
-- Preview/CI build must pass.
-- `/robots.txt`, `/sitemap.xml` and `/llms.txt` must resolve on preview.
-- Structured data must be valid and match visible content.
-- Public pages must not expose private dashboard/API routes in the sitemap.
-- N3uralia attribution must remain factual and consistent.
-- Qalito verdict must be PASS before merge.
-
-### Canonical domain note
-
-Current public production host available in Vercel is `https://transn3uralia.vercel.app`. Metadata/sitemap use `NEXT_PUBLIC_SITE_URL` with that host as fallback. A future dedicated LABBE domain can replace the base without redesigning the SEO layer.
+- Vercel preview build: PASS.
+- Final preview deployment: READY.
+- Runtime crawl verification on the final public domain remains required for `/`, `/robots.txt`, `/sitemap.xml`, `/llms.txt` and structured data.
+- Qalito discovery verdict remains HOLD until that runtime verification is possible.
 
 ---
 
-## Stage 9 — Operational hardening and synchronization closure
+## Stage 9 — Operational hardening and national PRT closure
 
-**Status: CLOSING — FINAL NATIONAL PRT BATCH ACTIVE**
+**Status: CLOSED — QALITO PRT PASS**
 
-### Objective
+### Closure evidence
 
-Finish the current operational hardening cycle and leave imports, reconciliation and customer-visible pending-document search in a stable, observable production state.
+All May, June and July 2026 PRT batches are `imported`.
 
-### Completed
+| Period | Type | Rows read | Worker-valid | Canonical rows | Explained delta |
+|---|---|---:|---:|---:|---:|
+| May 2026 | RA1 | 13,895 | 13,842 | 13,842 | 0 |
+| May 2026 | RA2 | 103,279 | 102,824 | 102,824 | 0 |
+| May 2026 | RB | 531,180 | 526,158 | 526,157 | 1 |
+| June 2026 | RA1 | 12,118 | 12,074 | 12,074 | 0 |
+| June 2026 | RA2 | 92,994 | 92,534 | 92,534 | 0 |
+| June 2026 | RB | 554,795 | 549,848 | 549,848 | 0 |
+| July 2026 | RA1 | 13,385 | 13,358 | 13,358 | 0 |
+| July 2026 | RA2 | 96,328 | 96,009 | 96,009 | 0 |
+| July 2026 | RB | 598,130 | 594,805 | 594,804 | 1 |
 
-- Cronos control plane deployed and recurring reconciliation verified.
-- Critical reconciliation and worker/RPC defects repaired.
-- Pending-document RUT search defect fixed and production-verified.
-- PRT starvation fixed: oldest eligible large batch drains before newer work.
-- May 2026 RA1, RA2 and RB: `imported`.
-- June 2026 RA1, RA2 and RB: `imported`.
-- July 2026 RA1 and RA2: `imported`.
-- May RB one-row accounting drift isolated to an inter-block canonical upsert collision; evidence indicates no lost canonical record.
-- Recent Cronos reconciliation: `failed_count = 0`, `issues = []`, `staleCount = 0`.
+The May RB and July RB one-row deltas are consistent with the known inter-block `upsert` identity behavior: a later source row can match an already-canonical identity and update it rather than create another physical row. This is an accounting defect to fix in future imports, not evidence of broad data loss.
 
-### Remaining hard stop list
+Final PRT gate evidence:
 
-1. July 2026 RB -> EOF / `imported`.
-2. Reconcile May, June and July batch accounting against `prt_vehicle_records`.
-3. Verify known May one-row collision is recorded as explained accounting behavior, not missing evidence.
-4. Verify `prt_latest_vehicle_status` without unexplained drift.
-5. Zero unexpected stale/importing/processing rows.
-6. Clean `cronos_reconciliation` and no unexplained recent failed critical jobs.
-7. Qalito final PRT verdict = PASS.
+- active May/June/July import rows: `0`;
+- stale May/June/July import rows: `0`;
+- failed May/June/July batches: `0`;
+- latest observed `cronos_reconciliation`: `completed`, `failed_count = 0`, `issues = []`, `staleCount = 0`;
+- post-drain `prt_import_stream` returns `no_large_prt_batch`.
 
-### Current live PRT snapshot
+### Deferred accounting improvement
 
-Verified 2026-08-09 10:39 CLT:
+Future importer accounting must distinguish:
 
-- Canonical `prt_vehicle_records`: `1,983,332` rows.
-- May RB: `imported`, 531,180 rows read / 526,158 worker-valid / 5,022 duplicate/rejected-accounted.
-- June RB: `imported`, 554,795 rows read / 549,848 valid / 4,947 duplicate/rejected-accounted.
-- July RA1: `imported`, 13,358 valid.
-- July RA2: `imported`, 96,009 valid.
-- July RB: `profiled`, cursor `580,000`, 576,687 valid, 3,313 duplicate/rejected-accounted, no recorded error.
-- No stale PRT batch observed in the latest checks.
+- valid source row;
+- new canonical identity;
+- intra-block duplicate;
+- inter-block upsert collision.
 
-These counters are a dated snapshot. Supabase/Cronos live state remains the source of truth.
-
-### Explicitly deferred from Stage 9
-
-- General `/api/*` authorization hardening.
-- Legacy credential-table redesign.
-- Full tenant-aware RLS redesign.
-- Broad performance/index cleanup.
-- New transport-data sources (SII vehicle valuation, MTT registries, municipal circulation permits, CONASET, MOP) until the PRT closure gate is complete.
-- Full PRT Intelligence Layer implementation; prioritized for Stage 12.
-
-### Stage 9 exit condition
-
-July RB must be imported, May/June/July must reconcile with explained duplicate accounting, Cronos must be clean and Qalito must issue PASS. Record production SHA, final PRT counts, known explained exceptions and gate evidence at closure.
+Do not rewrite or delete existing canonical evidence merely to make counters match.
 
 ---
 
-## Stage 10 — Authentication, authorization and API security boundary
+## Stage 10 — Authentication, authorization and tenant security boundary
 
 **Status: NEXT**
 
 ### Objective
 
-Make privileged APIs and credential-bearing data server-authorized by design without breaking admin, executive, subcontractor or driver workflows.
+Make ChileFlota safe to operate as a reusable multi-company product, not only a single implementation.
+
+### Scope
+
+- Inventory privileged `/api/*` routes and service-role usage.
+- Define server-side actor contract for admin, executive, subcontractor and driver.
+- Protect credential-bearing tables and remove client access to password hashes/secrets.
+- Enforce tenant-aware authorization for productized ChileFlota deployments.
+- Normalize RLS around explicit ownership/tenant relationships.
+- Add positive and negative authorization regression tests.
 
 ### Exit criteria
 
 - No credential hash readable by `anon` or ordinary authenticated clients.
-- No privileged service-role API callable without an authorized server contract.
-- Positive and negative role/session regression coverage passes.
+- No privileged service-role route callable without authorized server context.
+- Wrong-role and wrong-tenant access is denied deterministically.
+- Primary LABBE flows continue to work.
 - Qalito authorization matrix = PASS.
 
 ---
@@ -133,76 +135,197 @@ Make privileged APIs and credential-bearing data server-authorized by design wit
 
 ### Objective
 
-Unify counts, pending lists, RUT search, detail views and validation actions around one canonical document lifecycle.
+Make every customer-visible document counter, list, search and validation action derive from one canonical lifecycle.
+
+### Scope
+
+- Declare canonical document lifecycle and source ownership.
+- Unify counters, pending lists, RUT search, detail views and validation actions.
+- Preserve valid document history and versions.
+- Normalize status transitions: `pending -> approved/rejected/expired/superseded` where supported by canonical evidence.
+- Eliminate client-side post-filtering that can hide valid records.
+- Build one server-side query contract reusable by executive and customer portals.
 
 ### Exit criteria
 
-- Pending counts reconcile exactly to pending lists for the same scope.
-- RUT search cannot lose valid records due to pagination or client-side post-filtering.
-- Legacy document sources are removed or explicitly adapted.
+- Pending counts equal the corresponding pending list for the same scope.
+- RUT search cannot lose records due to pagination or client-side filtering.
+- Legacy sources are removed or explicitly adapted.
 - Qalito workflow regression = PASS.
 
 ---
 
-## Stage 12 — Compliance intelligence and PRT operationalization
+## Stage 12 — ChileFlota Vehicle & Compliance Intelligence
 
-**Status: PLANNED — PRIORITY AFTER CANONICAL FOUNDATIONS**
+**Status: PLANNED — PRODUCT DIFFERENTIATION STAGE**
 
 ### Objective
 
-Turn the national-scale PRT corpus and canonical document evidence into traceable operational intelligence.
+Turn the national PRT corpus and canonical operational evidence into immediate, explainable decisions for fleet operators.
 
-### Priority scope
+### Release 12.1 — Latest PRT by plate
 
-- Canonical latest PRT by plate projection.
-- Automatic enrichment of operational `vehiculos` from PRT evidence.
-- PRT -> vehicle -> compliance matching contract.
-- Evidence-backed latest revision/result/expiry provenance.
-- Explicit no-match and uncertainty states.
-- Human-reviewable exceptions.
-- Safe rebuildable projections rather than second canonical sources.
+Build a rebuildable projection over `prt_vehicle_records` that exposes the latest trustworthy PRT evidence for each normalized plate.
 
-### Exit criteria
+Required outputs:
+
+- plate identity;
+- latest inspection date;
+- result/status when present;
+- expiry/next relevant date only when supported by source evidence;
+- plant/class/source fields when present;
+- source batch and provenance;
+- deterministic tie-breaking for multiple records.
+
+Success signal: a plate lookup resolves from the projection without scanning historical PRT rows.
+
+### Release 12.2 — Vehicle Intelligence Profile
+
+Create one operational view per vehicle:
+
+`plate -> latest PRT -> PRT history -> documents -> transportista -> assigned driver -> alerts -> evidence provenance`
+
+The profile must clearly separate:
+
+- verified evidence;
+- derived state;
+- missing/unknown evidence;
+- human-review exceptions.
+
+Success signal: an executive can understand what is known about one vehicle and what action is required without navigating multiple modules.
+
+### Release 12.3 — Compliance Snapshot
+
+Introduce explainable statuses for vehicle, driver, supplier and fleet scopes:
+
+- `OK`;
+- `Attention`;
+- `Blocking`;
+- `Insufficient evidence`.
+
+Every status must open to the evidence/rule that produced it. No opaque AI score may become an operational fact.
+
+Success signal: every snapshot status is traceable to canonical evidence and a deterministic rule or explicitly labeled AI interpretation.
+
+### Release 12.4 — Instant Fleet Enrichment
+
+Allow a customer to upload or register a list of plates and immediately discover which vehicles already have canonical PRT evidence.
+
+Requirements:
+
+- batch plate normalization;
+- exact/deterministic matching first;
+- no automatic creation of hundreds of thousands of operational vehicles;
+- match/no-match/ambiguous counts;
+- enrichment preview before operational acceptance;
+- provenance for every matched result.
+
+Success signal: onboarding a fleet produces useful evidence before the customer uploads individual documents.
+
+### Release 12.5 — Action-oriented fleet dashboard
+
+The main dashboard should prioritize actions rather than vanity metrics:
+
+- what can block operation;
+- what expires or requires attention soon;
+- what changed recently;
+- what requires human review;
+- which supplier/vehicle/driver concentrates unresolved exceptions.
+
+Success signal: a user can move from dashboard alert to resolution workflow in one navigation path.
+
+### Release 12.6 — Explainable ChileFlota Intelligence
+
+Add natural-language operational queries only after canonical projections exist.
+
+Example questions:
+
+- Which vehicles need attention this month?
+- Which suppliers have the most unresolved evidence gaps?
+- What changed for this transportista?
+- Why is this vehicle marked Attention?
+
+Rules:
+
+- retrieval must use canonical/derived evidence;
+- responses link back to evidence;
+- uncertainty is explicit;
+- AI cannot invent compliance facts.
+
+Success signal: generated answers cite the exact records/rules behind consequential claims.
+
+### Stage 12 exit criteria
 
 - Operational vehicles enrich automatically when canonical evidence exists.
-- Decisions remain traceable to source evidence.
-- No simulated facts.
-- Qalito end-to-end compliance gate = PASS.
+- Latest PRT lookup is fast and rebuildable.
+- Vehicle Intelligence Profile is usable end to end.
+- Compliance Snapshot is explainable and traceable.
+- Fleet enrichment handles match/no-match/ambiguous states safely.
+- No simulated operational facts.
+- Qalito end-to-end intelligence gate = PASS.
 
 ---
 
-## Stage 13 — Product stabilization and client release package
+## Stage 13 — Product stabilization and ChileFlota client release
 
 **Status: PLANNED**
 
-### Objective
-
-Prepare a controlled client-facing release baseline.
-
 ### Scope
 
-- Full role regression.
-- Responsive/accessibility checks.
-- Performance and observability baseline.
-- Public SEO/GEO regression after domain changes.
-- Search Console/sitemap verification when the final dedicated domain is connected.
-- Diagnostic/test-route cleanup from customer navigation.
-- Operator runbook, rollback notes and release notes.
+- Full role and tenant regression.
+- Responsive/mobile and accessibility checks.
+- Performance baseline for highest-volume queries.
+- Production observability and error budget.
+- Public SEO/GEO regression on `chileflota.app`.
+- Search Console and sitemap verification.
+- Diagnostic/test-route cleanup.
+- Operator runbook, rollback notes and client-facing release notes.
 
 ### Exit criteria
 
-- No P0/P1 open defects in primary client workflows.
-- Public discovery endpoints validate on the production domain.
+- No P0/P1 defects in primary client workflows.
+- Public discovery endpoints validate on `chileflota.app`.
 - Qalito release gate = PASS.
 - Cronos health = healthy.
 - Production SHA and schema baseline recorded.
 
 ---
 
+## Data expansion after PRT
+
+New transport datasets are intentionally sequenced one at a time after the canonical foundations above:
+
+1. SII vehicle valuation/taxonomy.
+2. MTT regulatory registries where legal/technical bulk access is appropriate.
+3. Municipal circulation-permit datasets with compatible reuse terms.
+4. CONASET contextual road-risk data.
+5. MOP toll/routing cost layers.
+
+Each source must enrich the existing vehicle identity graph. It must not become an isolated parallel database without product use.
+
+---
+
+## Product success metrics
+
+Metrics should validate operational value, not activity for its own sake:
+
+- percentage of operational vehicles enriched automatically from external evidence;
+- median time from vehicle onboarding to usable compliance state;
+- percentage of compliance states with direct evidence provenance;
+- manual review actions per 100 vehicles;
+- unresolved exceptions by age;
+- mismatch/ambiguous rate during fleet enrichment;
+- critical worker failure/stale-claim rate;
+- time from dashboard alert to resolution.
+
+Do not publish unsupported commercial performance claims.
+
+---
+
 ## Scope discipline
 
 - **P0** security/data corruption: interrupt and repair immediately.
-- **P1** primary-flow regression: repair in the active stage only when it blocks that stage's exit or was caused by it; otherwise place it at the top of the next stage.
-- **P2/P3** improvements: backlog; do not delay closure.
+- **P1** primary-flow regression: repair when it blocks the active stage or was caused by it.
+- **P2/P3** improvements: backlog unless promoted by measured product impact.
 
-The purpose is to finish stages, preserve production baselines and prevent development from becoming an undefined permanent phase.
+The goal is to finish stages, preserve trustworthy evidence and build a compounding ChileFlota data advantage rather than an endless feature list.
