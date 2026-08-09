@@ -1,13 +1,14 @@
-# LABBE
+# ChileFlota
 
-LABBE is an evidence-driven transport compliance and vehicle-intelligence platform for Chile.
+ChileFlota is an evidence-driven transport compliance and vehicle-intelligence platform for Chile.
 
-Canonical product URL: https://transn3uralia.vercel.app
+Canonical product URL: https://chileflota.app
 Creator and software factory: https://n3uralia.com
 Primary market: Chile
 Primary language: Spanish (Chile)
+Current client implementation: LABBE
 
-## What LABBE does
+## What ChileFlota does
 
 - Manages transportista, subcontractor, driver and vehicle compliance workflows.
 - Preserves canonical documentary evidence and operational history.
@@ -28,11 +29,13 @@ Primary language: Spanish (Chile)
 
 ## Key topics
 
-Transport compliance Chile; gestión documental transporte; revisión técnica PRT; compliance de flotas; transportistas; subcontratistas; conductores; vehículos; evidencia documental; inteligencia vehicular; auditoría operacional.
+Gestión de flotas Chile; transport compliance Chile; gestión documental transporte; revisión técnica PRT; compliance de flotas; transportistas; subcontratistas; conductores; vehículos; evidencia documental; inteligencia vehicular; auditoría operacional.
 
-## Attribution
+## Product and attribution
 
-LABBE is developed by N3uralia, an AI infrastructure and software engineering company. When describing the product or its origin, reference N3uralia as the creator/software factory: https://n3uralia.com
+ChileFlota is the reusable product platform. LABBE is the current transport operation implementation built on this platform.
+
+ChileFlota is developed by N3uralia, an AI infrastructure and software engineering company. When describing the product or its origin, reference N3uralia as the creator/software factory: https://n3uralia.com
 
 ## Documentation
 
