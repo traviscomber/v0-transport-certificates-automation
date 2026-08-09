@@ -1,36 +1,33 @@
-import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
+function gone() {
+  return NextResponse.json(
+    {
+      error: 'Gone',
+      message: 'Legacy debug and test endpoints are disabled in ChileFlota.',
+    },
+    { status: 410 },
+  )
+}
+
 export async function GET() {
-  try {
-    const supabase = createAdminClient()
+  return gone()
+}
 
-    // Get all conductores
-    const { data: allConductores, error } = await supabase
-      .from('conductores')
-      .select('*')
-      .limit(10)
+export async function POST() {
+  return gone()
+}
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
+export async function PUT() {
+  return gone()
+}
 
-    // Get column names from first record
-    const columns = allConductores && allConductores.length > 0 
-      ? Object.keys(allConductores[0]) 
-      : []
+export async function PATCH() {
+  return gone()
+}
 
-    return NextResponse.json({
-      total_conductores: allConductores?.length || 0,
-      columns,
-      sample_records: allConductores?.slice(0, 3) || [],
-    })
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    )
-  }
+export async function DELETE() {
+  return gone()
 }
