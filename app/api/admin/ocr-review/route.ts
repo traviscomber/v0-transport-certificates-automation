@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireServerActor } from '@/lib/auth/server-actor'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -12,6 +13,11 @@ function isVehicleRelated(fileName: string | null, documentType: string | null):
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requireServerActor(['admin', 'prevencionista'])
+  if (!auth.actor) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status })
+  }
+
   const body = await request.json().catch(() => ({})) as {
     documentId?: string
     action?: ReviewAction
@@ -58,6 +64,7 @@ export async function POST(request: NextRequest) {
   const now = new Date().toISOString()
   const originalText = String(document.ai_extracted_text ?? '')
   const originalStatus = String(extraction?.status ?? 'pending')
+  const auditNotes = [notes, `reviewer:${auth.actor.id}`, `role:${auth.actor.role}`].filter(Boolean).join(' | ')
 
   const { error: auditError } = await supabase.from('ocr_manual_reviews').insert({
     document_id: documentId,
@@ -65,7 +72,7 @@ export async function POST(request: NextRequest) {
     original_status: originalStatus,
     original_text: originalText || null,
     corrected_text: action === 'correct' ? correctedText : null,
-    notes: notes || null,
+    notes: auditNotes || null,
   })
   if (auditError) return NextResponse.json({ error: auditError.message }, { status: 500 })
 
