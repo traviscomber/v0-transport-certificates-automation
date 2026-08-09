@@ -1,6 +1,6 @@
 # TransportesLabbe — Product & Engineering Roadmap
 
-Last updated: 2026-08-09 10:11 CLT
+Last updated: 2026-08-09 10:39 CLT
 Canonical repository: `traviscomber/v0-transport-certificates-automation`
 Current observed production SHA: `284026acb72dacef1357a0270792547eb83a978b`
 
@@ -14,13 +14,46 @@ Release flow for every code stage:
 
 Cronos owns operational supervision, synchronization health, queue recovery and production verification. Qalito is the mandatory release gate for code/release changes.
 
-**Documentation rule:** update this `ROADMAP.md` whenever a material stage milestone, production fix, gate decision, closure condition, or stage transition occurs. Live Supabase/Cronos state remains the source of truth for operational counters.
+Documentation rule: update this file whenever a material production fix, closure milestone, public-discovery change or stage transition occurs. Live Supabase/Cronos state remains authoritative for operational counters.
+
+---
+
+## Cross-cutting discovery layer — SEO / GEO / LLM discoverability
+
+**Status: IN REVIEW — branch `feat/seo-geo-n3uralia`**
+
+This work does not extend Stage 9's PRT exit criteria, but it is a material public-product milestone and must pass Qalito before production.
+
+### Implemented in review branch
+
+- Public product entity renamed/aligned to **LABBE** instead of legacy DocuFleet/Segur-ia metadata.
+- N3uralia identified as creator/publisher/software factory, with canonical reference to `https://n3uralia.com`.
+- Chile-focused metadata (`es-CL`, transport compliance, PRT, fleet/document intelligence).
+- `Organization` + `SoftwareApplication` JSON-LD.
+- `robots.txt` metadata route with private/operational routes excluded from crawling.
+- `sitemap.xml` metadata route exposing selected public pages only.
+- Supplemental `public/llms.txt` for machine-readable product context and N3uralia attribution.
+- Public landing rewritten around evidence-backed product capabilities and Chilean transport use cases; unsupported legacy claims removed.
+- README refreshed with current product positioning, discovery architecture and PRT evidence layer.
+
+### Discovery gate
+
+- Preview/CI build must pass.
+- `/robots.txt`, `/sitemap.xml` and `/llms.txt` must resolve on preview.
+- Structured data must be valid and match visible content.
+- Public pages must not expose private dashboard/API routes in the sitemap.
+- N3uralia attribution must remain factual and consistent.
+- Qalito verdict must be PASS before merge.
+
+### Canonical domain note
+
+Current public production host available in Vercel is `https://transn3uralia.vercel.app`. Metadata/sitemap use `NEXT_PUBLIC_SITE_URL` with that host as fallback. A future dedicated LABBE domain can replace the base without redesigning the SEO layer.
 
 ---
 
 ## Stage 9 — Operational hardening and synchronization closure
 
-**Status: CLOSING — MAY COMPLETE; FINAL NATIONAL PRT BATCH ACTIVE**
+**Status: CLOSING — FINAL NATIONAL PRT BATCH ACTIVE**
 
 ### Objective
 
@@ -28,62 +61,52 @@ Finish the current operational hardening cycle and leave imports, reconciliation
 
 ### Completed
 
-- Cronos semantic control plane deployed.
-- `cronos_reconciliation` scheduled and verified in production.
-- Reconciliation schema bug fixed (`document_text_extractions.document_id`).
-- Production reconciliation repeatedly completes with `failed_count = 0`.
-- Critical worker/RPC exposure hardening blocks applied to internal service-role workflows.
-- Pending-document RUT search root cause reproduced and fixed.
-- Pending search now filters canonical `subcontractor_rut` in PostgreSQL before the result limit.
-- Production verification of a previously invisible RUT returns the expected pending documents.
-- PRT starvation root cause fixed: `prt_import_stream` drains oldest eligible periods first instead of continually preferring newer periods.
-- PR #83 passed both Vercel previews and was merged to `main`.
-- May 2026 RA1, RA2 and RB are fully `imported`.
-- June 2026 RA1, RA2 and RB are fully `imported`.
-- July 2026 RA1 and RA2 are fully `imported`.
-- May 2026 RB final source accounting: 531,180 rows read / 526,158 worker-valid / 5,022 duplicate/rejected-accounted.
-- May 2026 RB canonical reconciliation identified a one-row inter-block upsert collision: 526,157 physical canonical identities versus 526,158 worker-valid rows. Evidence indicates no missing canonical evidence; one source identity was counted as valid in a later block and upserted over an existing canonical identity.
-- The exact drift run was isolated to the block advancing May RB from cursor 460,000 to 470,000: 9,647 worker-valid rows versus 9,646 newly created canonical rows.
-- Latest observed Cronos reconciliation runs are clean (`failed_count = 0`, `issues = []`, `staleCount = 0`).
+- Cronos control plane deployed and recurring reconciliation verified.
+- Critical reconciliation and worker/RPC defects repaired.
+- Pending-document RUT search defect fixed and production-verified.
+- PRT starvation fixed: oldest eligible large batch drains before newer work.
+- May 2026 RA1, RA2 and RB: `imported`.
+- June 2026 RA1, RA2 and RB: `imported`.
+- July 2026 RA1 and RA2: `imported`.
+- May RB one-row accounting drift isolated to an inter-block canonical upsert collision; evidence indicates no lost canonical record.
+- Recent Cronos reconciliation: `failed_count = 0`, `issues = []`, `staleCount = 0`.
 
-### Remaining work — hard stop list
+### Remaining hard stop list
 
-Only these items may keep the current PRT closure open:
+1. July 2026 RB -> EOF / `imported`.
+2. Reconcile May, June and July batch accounting against `prt_vehicle_records`.
+3. Verify known May one-row collision is recorded as explained accounting behavior, not missing evidence.
+4. Verify `prt_latest_vehicle_status` without unexplained drift.
+5. Zero unexpected stale/importing/processing rows.
+6. Clean `cronos_reconciliation` and no unexplained recent failed critical jobs.
+7. Qalito final PRT verdict = PASS.
 
-1. **Drain final national PRT import**
-   - July 2026 RB -> EOF / imported.
-   - Current verified cursor before the active run: 530,000.
-   - Current verified accounting at cursor 530,000: 530,000 rows read / 526,835 valid / 3,165 duplicate/rejected-accounted.
-   - A `prt_import_stream` run is currently active against July RB.
-   - No unexpected stale PRT batches.
+### Current live PRT snapshot
 
-2. **Final PRT canonical reconciliation**
-   - Verify May, June and July batch row counts against `prt_vehicle_records`.
-   - Verify duplicate/rejected accounting, including the known May RB one-row inter-block upsert collision.
-   - Verify `prt_latest_vehicle_status` can be produced without unexplained drift.
-   - Record final canonical counts as closure evidence.
+Verified 2026-08-09 10:39 CLT:
 
-3. **Operational release gate**
-   - `cronos_reconciliation` clean after July RB drain.
-   - No stale claims in critical queues.
-   - No recent unexplained failed critical jobs.
-   - Qalito final PRT verdict = PASS.
+- Canonical `prt_vehicle_records`: `1,983,332` rows.
+- May RB: `imported`, 531,180 rows read / 526,158 worker-valid / 5,022 duplicate/rejected-accounted.
+- June RB: `imported`, 554,795 rows read / 549,848 valid / 4,947 duplicate/rejected-accounted.
+- July RA1: `imported`, 13,358 valid.
+- July RA2: `imported`, 96,009 valid.
+- July RB: `profiled`, cursor `580,000`, 576,687 valid, 3,313 duplicate/rejected-accounted, no recorded error.
+- No stale PRT batch observed in the latest checks.
+
+These counters are a dated snapshot. Supabase/Cronos live state remains the source of truth.
 
 ### Explicitly deferred from Stage 9
 
-The following findings are important but do not extend Stage 9 unless they become active P0 incidents:
-
-- General `/api/*` authentication boundary hardening.
-- Legacy credential-table redesign (`transportista_auth`, `conductor_auth`, `companies`, related login tables).
+- General `/api/*` authorization hardening.
+- Legacy credential-table redesign.
 - Full tenant-aware RLS redesign.
-- Broader index cleanup/performance refactoring.
-- UI redesign or new product features.
-- Full PRT Intelligence Layer beyond the reconciliation proof; this remains prioritized for Stage 12.
-- New external transport datasets (SII valuation, MTT registries, municipal circulation permits, CONASET, MOP) remain blocked until the current PRT closure gate is complete.
+- Broad performance/index cleanup.
+- New transport-data sources (SII vehicle valuation, MTT registries, municipal circulation permits, CONASET, MOP) until the PRT closure gate is complete.
+- Full PRT Intelligence Layer implementation; prioritized for Stage 12.
 
-### Stage 9 / PRT exit condition
+### Stage 9 exit condition
 
-The current closure cycle ends when July 2026 RB is fully imported, May/June/July reconcile canonically with explained duplicate accounting, Cronos is clean, and Qalito issues PASS. At closure, record production SHA, PRT counts, known explained accounting exceptions, Cronos health and Qalito verdict. Do not open the next transport-data source before this gate passes.
+July RB must be imported, May/June/July must reconcile with explained duplicate accounting, Cronos must be clean and Qalito must issue PASS. Record production SHA, final PRT counts, known explained exceptions and gate evidence at closure.
 
 ---
 
@@ -93,28 +116,14 @@ The current closure cycle ends when July 2026 RB is fully imported, May/June/Jul
 
 ### Objective
 
-Make every privileged API and credential-bearing table server-authorized by design without breaking executive, subcontractor or conductor workflows.
-
-### Scope
-
-- Inventory all `/api/*` routes by actor and privilege level.
-- Remove the current blanket API pass-through pattern where privileged routes rely only on obscurity or client behavior.
-- Define one server-side authorization contract for admin, ejecutiva, subcontractor and conductor roles.
-- Protect routes that use `SUPABASE_SERVICE_ROLE_KEY` from unauthenticated invocation.
-- Audit `transportista_auth`, `conductor_auth`, `companies`, `executive_staff` and any table containing password hashes or login secrets.
-- Remove public/client access to credential hashes.
-- Replace unsafe legacy credential access with server-only login verification.
-- Audit and normalize RLS policies for exposed business tables.
-- Add negative authorization tests: anonymous, wrong role, wrong tenant, expired/invalid session.
-- Add positive tests for each real portal role.
+Make privileged APIs and credential-bearing data server-authorized by design without breaking admin, executive, subcontractor or driver workflows.
 
 ### Exit criteria
 
-- No credential hash is readable by `anon` or normal `authenticated` clients.
-- No privileged service-role API can be invoked without an authorized server session/contract.
-- Executive, subcontractor and conductor login/primary flows pass regression.
+- No credential hash readable by `anon` or ordinary authenticated clients.
+- No privileged service-role API callable without an authorized server contract.
+- Positive and negative role/session regression coverage passes.
 - Qalito authorization matrix = PASS.
-- Production has no new auth-related 5xx/lockout regression after release.
 
 ---
 
@@ -124,23 +133,13 @@ Make every privileged API and credential-bearing table server-authorized by desi
 
 ### Objective
 
-Eliminate divergent definitions of documents and pending work across executive/subcontractor interfaces.
-
-### Scope
-
-- Declare the canonical source for subcontractor document lifecycle.
-- Reconcile or retire overlapping flows using `certificates`, `subcontractor_documents`, `uploaded_documents` and queue tables where appropriate.
-- Make counters, pending lists, RUT search, detail views and validation actions derive from the same canonical status semantics.
-- Enforce consistent RUT normalization at all trust boundaries.
-- Ensure executive assignment/scoping is server-side and deterministic.
-- Add canonical status transition/audit contract: pending -> approved/rejected/expired/superseded.
-- Add regression coverage for counts vs detail lists.
+Unify counts, pending lists, RUT search, detail views and validation actions around one canonical document lifecycle.
 
 ### Exit criteria
 
-- A pending count always reconciles to the pending list for the same actor/scope.
-- Searching a valid RUT cannot lose records because of pagination or client-side post-filtering.
-- No customer-visible screen depends on a parallel legacy document source without an explicit compatibility adapter.
+- Pending counts reconcile exactly to pending lists for the same scope.
+- RUT search cannot lose valid records due to pagination or client-side post-filtering.
+- Legacy document sources are removed or explicitly adapted.
 - Qalito workflow regression = PASS.
 
 ---
@@ -151,28 +150,23 @@ Eliminate divergent definitions of documents and pending work across executive/s
 
 ### Objective
 
-Turn the stable canonical document and PRT corpus into reliable operational decisions and a reusable vehicle-intelligence layer rather than leaving PRT as passive storage.
+Turn the national-scale PRT corpus and canonical document evidence into traceable operational intelligence.
 
 ### Priority scope
 
-- Build a canonical `latest PRT by plate` projection over the historical PRT corpus.
-- Enrich operational `vehiculos` from that projection without creating hundreds of thousands of fake operational vehicles.
-- Finalize PRT -> vehicle -> compliance matching contract.
-- Define confidence and no-match handling for vehicle evidence.
-- Make new operational vehicles immediately benefit from already-imported PRT history.
-- Expose traceable PRT status: latest revision, result, expiry, plant/class when present, and source provenance.
-- Consolidate worker/company reconciliation into decision-ready outputs.
-- Improve exception queues for human review.
-- Introduce safe auto-recovery only for proven reversible stale states.
-- Keep consequential business decisions human-reviewable unless explicitly approved for automation.
+- Canonical latest PRT by plate projection.
+- Automatic enrichment of operational `vehiculos` from PRT evidence.
+- PRT -> vehicle -> compliance matching contract.
+- Evidence-backed latest revision/result/expiry provenance.
+- Explicit no-match and uncertainty states.
+- Human-reviewable exceptions.
+- Safe rebuildable projections rather than second canonical sources.
 
 ### Exit criteria
 
-- Operational vehicles are automatically enriched from canonical PRT evidence when a valid plate match exists.
-- Compliance decisions are traceable to canonical evidence.
-- No invented/simulated evidence is used.
-- Failed/uncertain matches enter an explicit review state.
-- Automation is idempotent, observable and recoverable.
+- Operational vehicles enrich automatically when canonical evidence exists.
+- Decisions remain traceable to source evidence.
+- No simulated facts.
 - Qalito end-to-end compliance gate = PASS.
 
 ---
@@ -183,55 +177,32 @@ Turn the stable canonical document and PRT corpus into reliable operational deci
 
 ### Objective
 
-Prepare a controlled client-facing release baseline after the architectural stages above.
+Prepare a controlled client-facing release baseline.
 
 ### Scope
 
-- Full role-based regression suite.
-- Responsive/mobile checks for operational portals.
-- Accessibility and critical UX cleanup.
-- Performance review of highest-volume queries and routes.
-- Production observability/error budget baseline.
-- Remove dead diagnostic/test routes from customer navigation and evaluate removal from production where safe.
-- Final operator runbook and rollback notes.
+- Full role regression.
+- Responsive/accessibility checks.
+- Performance and observability baseline.
+- Public SEO/GEO regression after domain changes.
+- Search Console/sitemap verification when the final dedicated domain is connected.
+- Diagnostic/test-route cleanup from customer navigation.
+- Operator runbook, rollback notes and release notes.
 
 ### Exit criteria
 
 - No P0/P1 open defects in primary client workflows.
+- Public discovery endpoints validate on the production domain.
 - Qalito release gate = PASS.
 - Cronos health = healthy.
-- Production SHA and schema/migration baseline recorded.
-- Client-ready release notes produced.
-
----
-
-## Current live closure snapshot
-
-Verified 2026-08-09 10:11 CLT:
-
-- Current production SHA observed in PRT/Cronos jobs: `284026acb72dacef1357a0270792547eb83a978b`.
-- May 2026 RA1: `imported`, 13,895 rows read / 13,842 valid / 53 rejected.
-- May 2026 RA2: `imported`, 103,279 rows read / 102,824 valid / 455 rejected/duplicate-accounted.
-- May 2026 RB: `imported`, 531,180 rows read / 526,158 worker-valid / 5,022 duplicate/rejected-accounted; 526,157 canonical physical rows, with the one-row difference explained as an inter-block upsert identity collision.
-- June 2026 RA1: `imported`, 12,118 rows read / 12,074 valid / 44 rejected.
-- June 2026 RA2: `imported`, 92,994 rows read / 92,534 valid / 460 rejected/duplicate-accounted.
-- June 2026 RB: `imported`, 554,795 rows read / 549,848 valid / 4,947 rejected/duplicate-accounted.
-- July 2026 RA1: `imported`, 13,385 rows read / 13,358 valid / 27 rejected.
-- July 2026 RA2: `imported`, 96,328 rows read / 96,009 valid / 319 rejected/duplicate-accounted.
-- July 2026 RB: active at cursor 530,000 / 526,835 valid / 3,165 rejected/duplicate-accounted, with an import run currently in progress.
-- Stale active PRT batches older than 30 minutes: `0`.
-- Latest observed `cronos_reconciliation`: `completed`, `failed_count = 0`, `issues = []`, `staleCount = 0`.
-
-These counters are a snapshot, not a permanent specification. Cronos/Supabase live state is the source of truth for closure.
+- Production SHA and schema baseline recorded.
 
 ---
 
 ## Scope discipline
 
-When a new issue is found:
+- **P0** security/data corruption: interrupt and repair immediately.
+- **P1** primary-flow regression: repair in the active stage only when it blocks that stage's exit or was caused by it; otherwise place it at the top of the next stage.
+- **P2/P3** improvements: backlog; do not delay closure.
 
-- **P0** security/data corruption: interrupt the active stage and repair immediately.
-- **P1** primary-flow regression: repair within the active stage only if caused by that stage or blocking its exit criteria; otherwise place it at the top of the next stage.
-- **P2/P3** improvements: backlog only; do not delay stage closure.
-
-The purpose of this rule is to finish stages, preserve a known production baseline and prevent continuous development from becoming an undefined permanent phase.
+The purpose is to finish stages, preserve production baselines and prevent development from becoming an undefined permanent phase.
