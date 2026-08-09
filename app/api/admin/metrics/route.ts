@@ -1,25 +1,31 @@
 import { createClient } from '@supabase/supabase-js'
+import { requireServerActor } from '@/lib/auth/server-actor'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-// The 6 real Labbe executives — used to match profiles by RUT
 const EJECUTIVAS_LABBE = [
   { rut: '10574005-0', nombre: 'Olga Carrasco' },
   { rut: '15464094-0', nombre: 'Carolina Sepúlveda' },
   { rut: '17768246-2', nombre: 'Daniela Silva' },
-  { rut: '18450987-1',  nombre: 'Javiera Ayala' },
+  { rut: '18450987-1', nombre: 'Javiera Ayala' },
   { rut: '20114106-0', nombre: 'Diego González' },
   { rut: '18717311-6', nombre: 'Katherinne Canales' },
 ]
 
 export async function GET() {
   try {
+    const auth = await requireServerActor(['admin'])
+    if (!auth.actor) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status })
+    }
+
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       process.env.SUPABASE_SERVICE_ROLE_KEY || ''
     )
+
     const { data: allProfiles, error: profilesError } = await supabase
       .from('profiles')
       .select('id, email, rut, role, created_at')
@@ -33,7 +39,6 @@ export async function GET() {
       return true
     })
 
-    // 2. Global counts
     const [
       { count: totalConductores },
       { count: totalTransportistas },
@@ -46,10 +51,7 @@ export async function GET() {
       supabase.from('alerts').select('id', { count: 'exact', head: true }),
     ])
 
-    // 3. Alerts per user_id
-    const { data: alertsRaw } = await supabase
-      .from('alerts')
-      .select('user_id, priority, is_read')
+    const { data: alertsRaw } = await supabase.from('alerts').select('user_id, priority, is_read')
     const alertsByUser: Record<string, { total: number; criticas: number; no_leidas: number }> = {}
     for (const a of alertsRaw || []) {
       if (!a.user_id) continue
@@ -59,37 +61,26 @@ export async function GET() {
       if (!a.is_read) alertsByUser[a.user_id].no_leidas++
     }
 
-    // 4. Documents per transportista_id
-    const { data: docsRaw } = await supabase
-      .from('uploaded_documents')
-      .select('transportista_id, validation_status, created_at')
+    const { data: docsRaw } = await supabase.from('uploaded_documents').select('transportista_id, validation_status, created_at')
     const docsByTransportista: Record<string, { total: number; aprobados: number; pendientes: number; vencidos: number }> = {}
     for (const d of docsRaw || []) {
       if (!d.transportista_id) continue
-      if (!docsByTransportista[d.transportista_id]) {
-        docsByTransportista[d.transportista_id] = { total: 0, aprobados: 0, pendientes: 0, vencidos: 0 }
-      }
+      if (!docsByTransportista[d.transportista_id]) docsByTransportista[d.transportista_id] = { total: 0, aprobados: 0, pendientes: 0, vencidos: 0 }
       docsByTransportista[d.transportista_id].total++
       if (d.validation_status === 'approved') docsByTransportista[d.transportista_id].aprobados++
       if (d.validation_status === 'pending') docsByTransportista[d.transportista_id].pendientes++
       if (d.validation_status === 'rejected' || d.validation_status === 'expired') docsByTransportista[d.transportista_id].vencidos++
     }
 
-    // 5. Conductores per transportista_id
-    const { data: conductoresRaw } = await supabase
-      .from('conductores')
-      .select('transportista_id, is_active')
+    const { data: conductoresRaw } = await supabase.from('conductores').select('transportista_id, is_active')
     const conductoresByTransportista: Record<string, { total: number; activos: number }> = {}
     for (const c of conductoresRaw || []) {
       if (!c.transportista_id) continue
-      if (!conductoresByTransportista[c.transportista_id]) {
-        conductoresByTransportista[c.transportista_id] = { total: 0, activos: 0 }
-      }
+      if (!conductoresByTransportista[c.transportista_id]) conductoresByTransportista[c.transportista_id] = { total: 0, activos: 0 }
       conductoresByTransportista[c.transportista_id].total++
       if (c.is_active) conductoresByTransportista[c.transportista_id].activos++
     }
 
-    // 6. Transportistas with their conductores aggregated
     const { data: transportistasRaw } = await supabase
       .from('transportistas')
       .select('id, rut, razon_social, nombre_fantasia, is_active, created_at')
@@ -110,13 +101,10 @@ export async function GET() {
       documentos_vencidos: docsByTransportista[t.id]?.vencidos || 0,
     }))
 
-    // 7. Ejecutiva metrics — matched by RUT from profiles
     const ejecutivas = EJECUTIVAS_LABBE.map(ej => {
       const profile = profiles.find(p => p.rut === ej.rut)
       const alertas = profile ? (alertsByUser[profile.id] || { total: 0, criticas: 0, no_leidas: 0 }) : { total: 0, criticas: 0, no_leidas: 0 }
-      const diasEnPlataforma = profile
-        ? Math.floor((Date.now() - new Date(profile.created_at).getTime()) / (1000 * 60 * 60 * 24))
-        : 0
+      const diasEnPlataforma = profile ? Math.floor((Date.now() - new Date(profile.created_at).getTime()) / 86400000) : 0
       return {
         rut: ej.rut,
         nombre: profile?.email?.split('@')[0]?.toUpperCase() || ej.nombre,
@@ -130,7 +118,6 @@ export async function GET() {
       }
     })
 
-    // 8. All unique user metrics
     const usuarios = profiles.map(p => {
       const alertas = alertsByUser[p.id] || { total: 0, criticas: 0, no_leidas: 0 }
       return {
@@ -140,15 +127,14 @@ export async function GET() {
         rut: p.rut,
         role: p.role,
         created_at: p.created_at,
-        dias_en_plataforma: Math.floor(
-          (Date.now() - new Date(p.created_at).getTime()) / (1000 * 60 * 60 * 24)
-        ),
+        dias_en_plataforma: Math.floor((Date.now() - new Date(p.created_at).getTime()) / 86400000),
         alertas_total: alertas.total,
         alertas_criticas: alertas.criticas,
         alertas_no_leidas: alertas.no_leidas,
       }
     })
 
+    console.log('[metrics API] Verified admin fetched global metrics:', auth.actor.id)
     return NextResponse.json({
       resumen: {
         total_usuarios: profiles.length,
