@@ -68,13 +68,19 @@ Make every privileged API and credential-bearing table server-authorized by desi
 
 ### Block 3 — Admin/API perimeter reduction
 
-**Status: ACTIVE**
+**Status: ACTIVE — LARGE LEGACY SURFACE RETIRED**
 
 Completed in the current branch:
 
 - Retired `add-assigned-executive-column` runtime migration endpoint (`410 Gone`).
 - Retired `add-rejection-reason` runtime migration endpoint (`410 Gone`).
-- Retired `debug-transportista-auth` (`410 Gone`). This endpoint previously queried credential records with service-role privileges and was also the concrete source of a Vercel static-generation timeout.
+- Retired the full identified admin `debug-*` / `test-*` family from executable production behavior; 10 routes now return `410 Gone`.
+- Retired `debug-transportista-auth` specifically; it previously queried credential records with service-role privileges and was the concrete fatal route in Vercel static-generation timeouts.
+- Retired the runtime migration/schema family including `create-assigned-executive-column`, `migrate-*`, `run-migration` and `verify-and-create-columns`; 10 routes now return `410 Gone` and schema changes must use versioned Supabase migrations.
+- Retired the unauthenticated `set-superadmin` bootstrap endpoint, which could create a privileged SUPERADMIN record through service-role access.
+- Retired legacy credential bootstrap paths `ensure-conductor-auth`, `create-executives-auth` and `setup-transportista`.
+- `ensure-conductor-auth` had generated predictable conductor passwords from RUT digits; this pattern is prohibited for future provisioning.
+- Existing embedded-password/seed helpers inspected so far (`generate-hash`, `regenerate-passwords`, `create-javiera-user`, `create-all-executives`, `setup-ejecutivas-auth`, `seed-labbe-users`, `setup-subcontractor-auth`) were already disabled with `410 Gone` in the branch.
 - Hardened `audit-logs`:
   - GET requires verified admin;
   - POST requires a verified server actor;
@@ -82,12 +88,14 @@ Completed in the current branch:
 - Protected status/document diagnostic routes with verified admin authorization.
 - Reduced unnecessary document payload reads in diagnostics where counts are sufficient.
 
+Current security branch head after credential-bootstrap retirement: `9ac8b33da25bf62af4a43d0a5af823d7eff45662`.
+
 ### Remaining Stage 10 hard stop list
 
 1. **Complete privileged route inventory**
-   - Classify every remaining `/api/admin/*` route as operational, sensitive read, privileged mutation, migration/debug, or obsolete.
+   - Classify every remaining `/api/admin/*` route as operational, sensitive read, privileged mutation, bootstrap/seed, or obsolete.
    - Require `requireServerActor()` on every retained privileged route.
-   - Retire remaining one-off migration/debug HTTP routes.
+   - Retire remaining one-off setup/seed/bootstrap HTTP routes that are not legitimate ongoing product operations.
 
 2. **Service-role inventory outside `/api/admin`**
    - Identify all routes using `SUPABASE_SERVICE_ROLE_KEY`, `createAdminClient()` or the broad server client.
@@ -119,7 +127,7 @@ Completed in the current branch:
 
 - No credential hash is readable by `anon` or ordinary `authenticated` clients.
 - No retained privileged service-role API can execute without an authorized server actor and correct scope.
-- No runtime schema migration or credential-debug endpoint remains callable in production.
+- No runtime schema migration, credential debug, predictable credential bootstrap or unauthenticated privilege-escalation endpoint remains callable in production.
 - Executive, company/subcontractor and conductor primary login flows pass regression.
 - Wrong-role and wrong-tenant tests pass.
 - Qalito authorization matrix = **PASS**.
