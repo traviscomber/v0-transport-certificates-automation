@@ -1,34 +1,34 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireServerActor } from '@/lib/auth/server-actor'
 
 export const dynamic = 'force-dynamic'
 
-/**
- * GET /api/admin/check-status-values
- * Check all distinct status values in both tables
- */
 export async function GET() {
-  try {
-    const adminClient = await createAdminClient()
+  const auth = await requireServerActor(['admin'])
+  if (!auth.actor) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status })
+  }
 
-    // Get distinct status values from subcontractor_documents
+  try {
+    const adminClient = createAdminClient()
+
     const { data: subStatuses } = await adminClient
       .from('subcontractor_documents')
       .select('status')
 
     const subStatusCounts: Record<string, number> = {}
-    subStatuses?.forEach(doc => {
+    subStatuses?.forEach((doc) => {
       const status = doc.status || 'NULL'
       subStatusCounts[status] = (subStatusCounts[status] || 0) + 1
     })
 
-    // Get distinct status values from uploaded_documents
     const { data: conductorStatuses } = await adminClient
       .from('uploaded_documents')
       .select('validation_status')
 
     const conductorStatusCounts: Record<string, number> = {}
-    conductorStatuses?.forEach(doc => {
+    conductorStatuses?.forEach((doc) => {
       const status = doc.validation_status || 'NULL'
       conductorStatusCounts[status] = (conductorStatusCounts[status] || 0) + 1
     })
@@ -42,10 +42,10 @@ export async function GET() {
         distinct_statuses: conductorStatusCounts,
         total: conductorStatuses?.length || 0,
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     })
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error)
-    return NextResponse.json({ error: msg }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Internal server error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
