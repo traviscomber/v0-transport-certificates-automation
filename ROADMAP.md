@@ -1,8 +1,8 @@
 # TransportesLabbe — Product & Engineering Roadmap
 
-Last updated: 2026-08-08 18:27 CLT
+Last updated: 2026-08-09 10:11 CLT
 Canonical repository: `traviscomber/v0-transport-certificates-automation`
-Current Stage 9 production SHA: `613baf42b44be44eabb3a420e099afdb3ea35d8e`
+Current observed production SHA: `284026acb72dacef1357a0270792547eb83a978b`
 
 ## Operating rule
 
@@ -20,7 +20,7 @@ Cronos owns operational supervision, synchronization health, queue recovery and 
 
 ## Stage 9 — Operational hardening and synchronization closure
 
-**Status: CLOSING — FINAL PRT BATCH ACTIVE**
+**Status: CLOSING — MAY COMPLETE; FINAL NATIONAL PRT BATCH ACTIVE**
 
 ### Objective
 
@@ -36,35 +36,38 @@ Finish the current operational hardening cycle and leave imports, reconciliation
 - Pending-document RUT search root cause reproduced and fixed.
 - Pending search now filters canonical `subcontractor_rut` in PostgreSQL before the result limit.
 - Production verification of a previously invisible RUT returns the expected pending documents.
-- June 2026 RA1, RA2 and RB are fully `imported`.
-- PRT starvation root cause fixed: `prt_import_stream` now drains oldest eligible periods first instead of continually preferring newer periods.
+- PRT starvation root cause fixed: `prt_import_stream` drains oldest eligible periods first instead of continually preferring newer periods.
 - PR #83 passed both Vercel previews and was merged to `main`.
-- Post-fix production behavior verified: May 2026 RA2 resumed ahead of July RB, proving the oldest-first drain rule is active.
-- May 2026 RA2 is fully `imported`: 103,279 rows read, 102,824 valid and 455 rejected/duplicate-accounted.
-- May 2026 RB is actively draining under the corrected oldest-first policy and has advanced to cursor 260,000.
-- Latest observed PRT state has no error and no stale active PRT batch.
+- May 2026 RA1, RA2 and RB are fully `imported`.
+- June 2026 RA1, RA2 and RB are fully `imported`.
+- July 2026 RA1 and RA2 are fully `imported`.
+- May 2026 RB final source accounting: 531,180 rows read / 526,158 worker-valid / 5,022 duplicate/rejected-accounted.
+- May 2026 RB canonical reconciliation identified a one-row inter-block upsert collision: 526,157 physical canonical identities versus 526,158 worker-valid rows. Evidence indicates no missing canonical evidence; one source identity was counted as valid in a later block and upserted over an existing canonical identity.
+- The exact drift run was isolated to the block advancing May RB from cursor 460,000 to 470,000: 9,647 worker-valid rows versus 9,646 newly created canonical rows.
+- Latest observed Cronos reconciliation runs are clean (`failed_count = 0`, `issues = []`, `staleCount = 0`).
 
 ### Remaining work — hard stop list
 
-Only these items may keep Stage 9 open:
+Only these items may keep the current PRT closure open:
 
-1. **Drain final Stage 9 PRT import**
-   - May 2026 RB -> EOF / imported. Current verified cursor: 260,000.
-   - Current verified May RB accounting: 260,000 rows read / 259,598 valid / 402 rejected/duplicate-accounted.
-   - No unexpected stale batches left in `importing` / `processing`.
-   - July 2026 RB remains intentionally paused at cursor 180,000 behind May RB and does not extend Stage 9 closure scope.
+1. **Drain final national PRT import**
+   - July 2026 RB -> EOF / imported.
+   - Current verified cursor before the active run: 530,000.
+   - Current verified accounting at cursor 530,000: 530,000 rows read / 526,835 valid / 3,165 duplicate/rejected-accounted.
+   - A `prt_import_stream` run is currently active against July RB.
+   - No unexpected stale PRT batches.
 
 2. **Final PRT canonical reconciliation**
-   - Verify batch row counts against `prt_vehicle_records`.
-   - Verify duplicate/rejected accounting.
-   - Verify latest-vehicle projection can be produced without unexplained drift.
+   - Verify May, June and July batch row counts against `prt_vehicle_records`.
+   - Verify duplicate/rejected accounting, including the known May RB one-row inter-block upsert collision.
+   - Verify `prt_latest_vehicle_status` can be produced without unexplained drift.
    - Record final canonical counts as closure evidence.
 
 3. **Operational release gate**
-   - `cronos_reconciliation` clean after PRT drain.
+   - `cronos_reconciliation` clean after July RB drain.
    - No stale claims in critical queues.
    - No recent unexplained failed critical jobs.
-   - Qalito final Stage 9 verdict = PASS.
+   - Qalito final PRT verdict = PASS.
 
 ### Explicitly deferred from Stage 9
 
@@ -75,11 +78,12 @@ The following findings are important but do not extend Stage 9 unless they becom
 - Full tenant-aware RLS redesign.
 - Broader index cleanup/performance refactoring.
 - UI redesign or new product features.
-- Full PRT Intelligence Layer beyond the Stage 9 reconciliation proof; this is prioritized for Stage 12.
+- Full PRT Intelligence Layer beyond the reconciliation proof; this remains prioritized for Stage 12.
+- New external transport datasets (SII valuation, MTT registries, municipal circulation permits, CONASET, MOP) remain blocked until the current PRT closure gate is complete.
 
-### Stage 9 exit condition
+### Stage 9 / PRT exit condition
 
-Stage 9 closes immediately when the three remaining work groups above are PASS. At closure, create a short closure record with production SHA, PRT counts, Cronos health and Qalito verdict. Do not add additional backlog to Stage 9 after that point.
+The current closure cycle ends when July 2026 RB is fully imported, May/June/July reconcile canonically with explained duplicate accounting, Cronos is clean, and Qalito issues PASS. At closure, record production SHA, PRT counts, known explained accounting exceptions, Cronos health and Qalito verdict. Do not open the next transport-data source before this gate passes.
 
 ---
 
@@ -203,14 +207,20 @@ Prepare a controlled client-facing release baseline after the architectural stag
 
 ## Current live closure snapshot
 
-Verified 2026-08-08 18:27 CLT:
+Verified 2026-08-09 10:11 CLT:
 
-- Current Stage 9 production SHA observed in recent jobs: `613baf42b44be44eabb3a420e099afdb3ea35d8e`.
+- Current production SHA observed in PRT/Cronos jobs: `284026acb72dacef1357a0270792547eb83a978b`.
 - May 2026 RA1: `imported`, 13,895 rows read / 13,842 valid / 53 rejected.
 - May 2026 RA2: `imported`, 103,279 rows read / 102,824 valid / 455 rejected/duplicate-accounted.
-- May 2026 RB: `importing`, cursor 260,000 / 259,598 valid / 402 rejected/duplicate-accounted — final Stage 9 PRT batch actively draining.
-- July 2026 RB: `profiled`, cursor 180,000 and intentionally waiting behind May RB.
+- May 2026 RB: `imported`, 531,180 rows read / 526,158 worker-valid / 5,022 duplicate/rejected-accounted; 526,157 canonical physical rows, with the one-row difference explained as an inter-block upsert identity collision.
+- June 2026 RA1: `imported`, 12,118 rows read / 12,074 valid / 44 rejected.
+- June 2026 RA2: `imported`, 92,994 rows read / 92,534 valid / 460 rejected/duplicate-accounted.
+- June 2026 RB: `imported`, 554,795 rows read / 549,848 valid / 4,947 rejected/duplicate-accounted.
+- July 2026 RA1: `imported`, 13,385 rows read / 13,358 valid / 27 rejected.
+- July 2026 RA2: `imported`, 96,328 rows read / 96,009 valid / 319 rejected/duplicate-accounted.
+- July 2026 RB: active at cursor 530,000 / 526,835 valid / 3,165 rejected/duplicate-accounted, with an import run currently in progress.
 - Stale active PRT batches older than 30 minutes: `0`.
+- Latest observed `cronos_reconciliation`: `completed`, `failed_count = 0`, `issues = []`, `staleCount = 0`.
 
 These counters are a snapshot, not a permanent specification. Cronos/Supabase live state is the source of truth for closure.
 
