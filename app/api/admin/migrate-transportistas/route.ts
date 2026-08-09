@@ -1,11 +1,21 @@
 import { NextResponse } from 'next/server'
 
-export async function POST() {
+export const dynamic = 'force-dynamic'
+
+function gone() {
   return NextResponse.json(
     {
-      error: 'Endpoint disabled',
-      message: 'Transportista migrations that rewrite production data are disabled in production-safe builds.',
+      error: 'Gone',
+      message: 'Runtime migration endpoints are disabled in ChileFlota. Use versioned Supabase migrations instead.',
     },
-    { status: 410 }
+    { status: 410 },
   )
+}
+
+export async function GET() {
+  return gone()
+}
+
+export async function POST() {
+  return gone()
 }
