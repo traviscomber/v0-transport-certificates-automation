@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -16,7 +17,7 @@ export default function LoginPage() {
       const response = await fetch('/api/login-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.toLowerCase() }),
+        body: JSON.stringify({ email: email.toLowerCase(), password }),
         credentials: 'include',
       })
 
@@ -28,28 +29,13 @@ export default function LoginPage() {
         return
       }
 
-      // Manually set cookies via document.cookie - ensures they're available immediately
-      const expiryDate = new Date()
-      expiryDate.setTime(expiryDate.getTime() + 7 * 24 * 60 * 60 * 1000) // 7 days
-
-      document.cookie = `user_email=${encodeURIComponent(email.toLowerCase())}; path=/; expires=${expiryDate.toUTCString()}`
-      document.cookie = `user_name=${encodeURIComponent(data.user.full_name)}; path=/; expires=${expiryDate.toUTCString()}`
-      document.cookie = `user_role=${encodeURIComponent(data.user.role)}; path=/; expires=${expiryDate.toUTCString()}`
-      document.cookie = `user_organization_id=${encodeURIComponent(data.user.organization_id || '')}; path=/; expires=${expiryDate.toUTCString()}`
-
-      // Redirect based on role
-      setTimeout(() => {
-        const userRole = data.user.role
-        
-        // Prevencionistas go to their dashboard
-        if (userRole === 'prevencionista') {
-          window.location.href = '/prevencionista/dashboard'
-        } else {
-          // All other users go to /dashboard/company (Labbe company portal)
-          window.location.href = '/dashboard/company'
-        }
-      }, 300)
-    } catch (err) {
+      // Legacy presentation cookies are returned by the server for existing UI compatibility.
+      // Privileged API authorization uses the signed HTTP-only cf_session cookie.
+      const userRole = data.user.role
+      window.location.href = userRole === 'prevencionista'
+        ? '/prevencionista/dashboard'
+        : '/dashboard/company'
+    } catch {
       setError('Error al conectar con el servidor')
       setLoading(false)
     }
@@ -61,7 +47,7 @@ export default function LoginPage() {
         <div className="bg-slate-800 rounded-lg border border-slate-700 p-8 space-y-6">
           <div className="text-center space-y-2">
             <h1 className="text-2xl font-bold text-white">Iniciar Sesión</h1>
-            <p className="text-slate-400 text-sm">Transportes Labbe</p>
+            <p className="text-slate-400 text-sm">ChileFlota · LABBE</p>
           </div>
 
           {error && (
@@ -80,13 +66,28 @@ export default function LoginPage() {
                 placeholder="usuario@ejemplo.com"
                 className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 disabled={loading}
+                autoComplete="username"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-slate-200">Contraseña</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Tu contraseña"
+                className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                disabled={loading}
+                autoComplete="current-password"
                 required
               />
             </div>
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !email || !password}
               className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white font-medium rounded-lg transition-colors"
             >
               {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
