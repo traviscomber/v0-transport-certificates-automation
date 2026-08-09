@@ -1,47 +1,49 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireServerActor } from '@/lib/auth/server-actor'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
+  const auth = await requireServerActor(['admin'])
+  if (!auth.actor) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status })
+  }
+
   try {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
-    // Check total uploaded_documents
-    const { data: total, count: totalCount } = await supabase
+    const { count: totalCount } = await supabase
       .from('uploaded_documents')
-      .select('*', { count: 'exact', head: false })
+      .select('id', { count: 'exact', head: true })
 
-    // Check pending documents (no validation_status or validation_status = pending)
-    const { data: pending } = await supabase
+    const { data: pending, count: pendingCount } = await supabase
       .from('uploaded_documents')
-      .select('id, original_filename, validation_status')
+      .select('id, original_filename, validation_status', { count: 'exact' })
       .or('validation_status.eq.pending,validation_status.is.null')
       .limit(10)
 
-    // Check all statuses distribution
-    const { data: approved } = await supabase
+    const { count: approvedCount } = await supabase
       .from('uploaded_documents')
-      .select('id', { count: 'exact', head: false })
+      .select('id', { count: 'exact', head: true })
       .eq('validation_status', 'approved')
 
-    const { data: rejected } = await supabase
+    const { count: rejectedCount } = await supabase
       .from('uploaded_documents')
-      .select('id', { count: 'exact', head: false })
+      .select('id', { count: 'exact', head: true })
       .eq('validation_status', 'rejected')
 
     return NextResponse.json({
       summary: {
         total_documents: totalCount || 0,
-        pending_documents: pending?.length || 0,
-        approved_documents: approved?.length || 0,
-        rejected_documents: rejected?.length || 0,
-        other_status: (totalCount || 0) - (pending?.length || 0) - (approved?.length || 0) - (rejected?.length || 0)
+        pending_documents: pendingCount || 0,
+        approved_documents: approvedCount || 0,
+        rejected_documents: rejectedCount || 0,
       },
       pending_samples: pending || [],
-      message: (pending?.length || 0) === 0 ? '⚠️ NO PENDING DOCUMENTS FROM CONDUCTORS' : `${pending?.length} pending documents found`
     })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Internal server error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
