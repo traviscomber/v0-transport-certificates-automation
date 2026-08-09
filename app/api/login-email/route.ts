@@ -1,4 +1,8 @@
+import bcrypt from 'bcryptjs'
+import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { serverSessionCookie, signServerActor, type ServerActor } from '@/lib/auth/server-actor'
 
 function maskEmail(email?: string | null) {
   if (!email) return 'unknown'
@@ -9,227 +13,104 @@ function maskEmail(email?: string | null) {
 
 export async function POST(request: NextRequest) {
   try {
-    let email = ''
+    const body = await request.json().catch(() => null)
+    const email = String(body?.email || '').trim().toLowerCase()
+    const password = String(body?.password || '')
 
-    // Handle both JSON and FormData
-    const contentType = request.headers.get('content-type')
-    if (contentType?.includes('application/json')) {
-      const body = await request.json()
-      email = body.email
-    } else if (contentType?.includes('multipart/form-data')) {
-      const formData = await request.formData()
-      email = formData.get('email') as string
-    }
-
-    if (!email) {
-      return NextResponse.json(
-        { error: 'Email is required' },
-        { status: 400 }
-      )
+    if (!email || !password) {
+      return NextResponse.json({ error: 'Email y contraseña son requeridos' }, { status: 400 })
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('[v0] Missing Supabase credentials')
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
-      )
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    if (!supabaseUrl || !anonKey || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
     }
 
-    console.log('[v0] Login attempt for:', maskEmail(email))
-
-    // Try to get user from profiles table first (admins, executives)
-    const profileResponse = await fetch(
-      `${supabaseUrl}/rest/v1/profiles?email=eq.${encodeURIComponent(email)}`,
-      {
-        headers: {
-          apikey: supabaseServiceKey,
-          Authorization: `Bearer ${supabaseServiceKey}`,
-        },
-      }
-    )
-
-    const profiles = await profileResponse.json()
-    let user: any = null
-    let role = 'user'
+    const admin = createAdminClient()
+    let actor: ServerActor | null = null
     let fullName = ''
-    let organizationId = ''
 
-    if (profiles && profiles.length > 0) {
-      // Found in profiles table (admin, executive, etc)
-      user = profiles[0]
-      fullName = user.full_name
-      role = user.role || 'admin'
-      organizationId = user.organization_id
+    // Primary path: Supabase Auth user + server-side profile role.
+    const authClient = createClient(supabaseUrl, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+    const { data: authData, error: authError } = await authClient.auth.signInWithPassword({ email, password })
 
-      console.log('[v0] Found in profiles table:', { email: maskEmail(email), role, fullName })
-    } else {
-      // Not in profiles, try executive_staff table (ejecutivas)
-      console.log('[v0] Not in profiles, checking executive_staff table...')
-      
-      const executiveResponse = await fetch(
-        `${supabaseUrl}/rest/v1/executive_staff?email=eq.${encodeURIComponent(email)}&is_active=eq.true`,
-        {
-          headers: {
-            apikey: supabaseServiceKey,
-            Authorization: `Bearer ${supabaseServiceKey}`,
-          },
+    if (!authError && authData.user) {
+      const { data: profile } = await admin
+        .from('profiles')
+        .select('id, email, full_name, role, is_active')
+        .eq('id', authData.user.id)
+        .maybeSingle()
+
+      if (profile && profile.is_active !== false) {
+        actor = {
+          id: profile.id,
+          email: (profile.email || email).toLowerCase(),
+          role: profile.role || 'user',
+          organizationId: null,
+          source: 'profile',
         }
-      )
-
-      const executives = await executiveResponse.json()
-
-      if (executives && executives.length > 0) {
-        // Found in executive_staff table
-        const executive = executives[0]
-        user = executive
-        fullName = executive.full_name
-        role = 'ejecutiva'
-        organizationId = executive.transportista_id
-
-        console.log('[v0] Found in executive_staff table (ejecutiva):', { email: maskEmail(email), fullName, organizationId })
+        fullName = profile.full_name || email
       }
     }
 
-    if (!user) {
-      // Not in profiles, try conductores table (drivers)
-      console.log('[v0] Not in profiles, checking conductores table...')
-      
-      const conductoresResponse = await fetch(
-        `${supabaseUrl}/rest/v1/conductores?email=eq.${encodeURIComponent(email)}&select=*`,
-        {
-          headers: {
-            apikey: supabaseServiceKey,
-            Authorization: `Bearer ${supabaseServiceKey}`,
-          },
+    // Compatibility path for executive_staff until all staff use Supabase Auth.
+    if (!actor) {
+      const { data: executive } = await admin
+        .from('executive_staff')
+        .select('id, email, full_name, password_hash, transportista_id, is_active')
+        .eq('email', email)
+        .eq('is_active', true)
+        .maybeSingle()
+
+      if (executive?.password_hash && await bcrypt.compare(password, executive.password_hash)) {
+        actor = {
+          id: executive.id,
+          email: executive.email.toLowerCase(),
+          role: 'ejecutiva',
+          organizationId: executive.transportista_id || null,
+          source: 'executive_staff',
         }
-      )
-
-      const conductores = await conductoresResponse.json()
-
-      if (conductores && conductores.length > 0) {
-        // Found in conductores table (driver)
-        const conductor = conductores[0]
-        user = conductor
-        fullName = `${conductor.nombres} ${conductor.apellido_paterno} ${conductor.apellido_materno || ''}`.trim()
-        role = 'driver'
-        organizationId = conductor.transportista_id
-
-        console.log('[v0] Found in conductores table (driver):', { email: maskEmail(email), fullName, organizationId })
+        fullName = executive.full_name || email
       }
     }
 
-    if (!user) {
-      console.error('[v0] User not found in profiles or conductores:', email)
-      return NextResponse.json(
-        { error: 'Usuario no encontrado. Verifica tu email.' },
-        { status: 401 }
-      )
+    if (!actor) {
+      console.warn('[auth] Rejected login for', maskEmail(email))
+      return NextResponse.json({ error: 'Email o contraseña incorrectos' }, { status: 401 })
     }
 
-    // If organization_id is still missing, query it from conductores or transportistas table
-    if (!organizationId) {
-      console.log('[v0] organization_id not found, querying from database...')
-      
-      // Get the first conductor for this company to find their transportista_id
-      const conductoresResponse = await fetch(
-        `${supabaseUrl}/rest/v1/conductores?select=transportista_id&limit=1`,
-        {
-          headers: {
-            apikey: supabaseServiceKey,
-            Authorization: `Bearer ${supabaseServiceKey}`,
-          },
-        }
-      )
-
-      const conductores = await conductoresResponse.json()
-      
-      if (conductores && conductores.length > 0) {
-        organizationId = conductores[0].transportista_id
-        console.log('[v0] Found organizationId from conductor:', organizationId)
-      } else {
-        // Fallback: use first transportista
-        const transportistasResponse = await fetch(
-          `${supabaseUrl}/rest/v1/transportistas?select=id&limit=1`,
-          {
-            headers: {
-              apikey: supabaseServiceKey,
-              Authorization: `Bearer ${supabaseServiceKey}`,
-            },
-          }
-        )
-        const transportistas = await transportistasResponse.json()
-        if (transportistas && transportistas.length > 0) {
-          organizationId = transportistas[0].id
-          console.log('[v0] Found organizationId from transportista:', organizationId)
-        }
-      }
-    }
-
-    console.log('[v0] Login successful for:', maskEmail(email), 'Role:', role, 'Org:', organizationId)
-
-    // Return success JSON response
+    const token = signServerActor(actor)
     const response = NextResponse.json({
       success: true,
       user: {
-        email: email.toLowerCase(),
+        email: actor.email,
         full_name: fullName,
-        role: role,
-        organization_id: organizationId,
+        role: actor.role,
+        organization_id: actor.organizationId || '',
       },
     })
 
-    // Set cookies with permissive settings to ensure they stick
-    response.cookies.set({
-      name: 'user_email',
-      value: email.toLowerCase(),
-      httpOnly: false,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/',
-    })
+    response.cookies.set(serverSessionCookie(token))
 
-    response.cookies.set({
-      name: 'user_name',
-      value: fullName || email,
+    // Temporary compatibility cookies for existing UI only. Authorization must ignore them.
+    const legacyCookie = {
       httpOnly: false,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax' as const,
+      maxAge: 60 * 60 * 8,
       path: '/',
-    })
+    }
+    response.cookies.set('user_email', actor.email, legacyCookie)
+    response.cookies.set('user_name', fullName || actor.email, legacyCookie)
+    response.cookies.set('user_role', String(actor.role), legacyCookie)
+    response.cookies.set('user_organization_id', actor.organizationId || '', legacyCookie)
 
-    response.cookies.set({
-      name: 'user_role',
-      value: role,
-      httpOnly: false,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/',
-    })
-
-    response.cookies.set({
-      name: 'user_organization_id',
-      value: organizationId || '',
-      httpOnly: false,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/',
-    })
-
-    console.log('[v0] Cookies set with path=/, user org:', organizationId, 'role:', role)
     return response
-  } catch (error: any) {
-    console.error('[v0] Login error:', error)
-    return NextResponse.json(
-      { error: error.message || 'Login failed' },
-      { status: 500 }
-    )
+  } catch (error) {
+    console.error('[auth] Staff login failed:', error)
+    return NextResponse.json({ error: 'Error al iniciar sesión' }, { status: 500 })
   }
 }
