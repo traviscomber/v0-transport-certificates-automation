@@ -68,18 +68,16 @@ export default function LandingPage() {
     <main className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 text-white">
       <nav className="fixed top-0 z-50 w-full border-b border-slate-800 bg-slate-950/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-2 text-xl font-bold" aria-label="LABBE inicio">
+          <Link href="/" className="flex items-center gap-2 text-xl font-bold" aria-label="ChileFlota inicio">
             <Shield className="h-6 w-6 text-orange-500" />
-            LABBE
+            ChileFlota
           </Link>
           <div className="hidden items-center gap-8 md:flex">
             <a href="#plataforma" className="text-slate-300 transition hover:text-white">Plataforma</a>
             <a href="#casos" className="text-slate-300 transition hover:text-white">Casos de uso</a>
             <a href="#n3uralia" className="text-slate-300 transition hover:text-white">N3uralia</a>
             <Link href="/contact" className="text-slate-300 transition hover:text-white">Contacto</Link>
-            <Link href="/auth/login">
-              <Button variant="outline" size="sm">Ingresar</Button>
-            </Link>
+            <Link href="/auth/login"><Button variant="outline" size="sm">Ingresar</Button></Link>
           </div>
         </div>
       </nav>
@@ -88,32 +86,30 @@ export default function LandingPage() {
         <div className="mx-auto max-w-5xl space-y-8 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2">
             <Shield className="h-4 w-4 text-orange-400" />
-            <span className="text-sm font-medium text-orange-400">Compliance e inteligencia de transporte para Chile</span>
+            <span className="text-sm font-medium text-orange-400">Compliance e inteligencia para flotas en Chile</span>
           </div>
 
           <h1 className="text-5xl font-bold leading-tight md:text-6xl">
-            Evidencia documental y vehicular para operar transporte con mayor control
+            Evidencia documental y vehicular para operar flotas con mayor control
           </h1>
 
           <p className="mx-auto max-w-3xl text-xl text-slate-300">
-            LABBE conecta transportistas, subcontratistas, conductores, vehículos, revisión técnica PRT,
-            documentos y verificaciones externas en un sistema trazable de compliance operacional para Chile.
+            ChileFlota conecta vehículos, transportistas, subcontratistas, conductores, revisión técnica PRT,
+            documentos y verificaciones externas en un sistema trazable de compliance e inteligencia operacional para Chile.
           </p>
 
           <p className="mx-auto max-w-2xl text-base text-slate-400">
-            Desarrollada por <a href="https://n3uralia.com" className="font-medium text-orange-300 hover:text-orange-200" rel="noopener noreferrer">N3uralia</a>,
-            factoría de software e infraestructura de inteligencia artificial.
+            Producto desarrollado por <a href="https://n3uralia.com" className="font-medium text-orange-300 hover:text-orange-200" rel="noopener noreferrer">N3uralia</a>,
+            factoría de software e infraestructura de inteligencia artificial. LABBE es la implementación operacional actualmente desplegada sobre esta plataforma.
           </p>
 
           <div className="flex flex-col justify-center gap-4 pt-4 sm:flex-row">
             <Link href="/auth/login">
               <Button size="lg" className="gap-2 bg-orange-500 text-white hover:bg-orange-600">
-                Acceder a LABBE <ArrowRight className="h-4 w-4" />
+                Acceder a la plataforma <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <Link href="/contact">
-              <Button size="lg" variant="outline">Solicitar presentación</Button>
-            </Link>
+            <Link href="/contact"><Button size="lg" variant="outline">Solicitar presentación</Button></Link>
           </div>
         </div>
       </section>
@@ -121,31 +117,16 @@ export default function LandingPage() {
       <section className="border-y border-slate-800 bg-slate-900/50 px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-3">
           <article>
-            <div className="mb-3 flex items-center gap-2 text-orange-400">
-              <Truck className="h-5 w-5" />
-              <h2 className="font-semibold">Vehículos y PRT</h2>
-            </div>
-            <p className="text-sm leading-6 text-slate-300">
-              Evidencia histórica de revisión técnica vinculable por patente, diseñada para alimentar estados vehiculares y compliance sin crear datos ficticios.
-            </p>
+            <div className="mb-3 flex items-center gap-2 text-orange-400"><Truck className="h-5 w-5" /><h2 className="font-semibold">Vehículos y PRT</h2></div>
+            <p className="text-sm leading-6 text-slate-300">Evidencia histórica de revisión técnica vinculable por patente, diseñada para alimentar estados vehiculares y compliance sin crear datos ficticios.</p>
           </article>
           <article>
-            <div className="mb-3 flex items-center gap-2 text-orange-400">
-              <Users className="h-5 w-5" />
-              <h2 className="font-semibold">Personas y empresas</h2>
-            </div>
-            <p className="text-sm leading-6 text-slate-300">
-              Transportistas, subcontratistas y conductores operan sobre identidades canónicas por RUT y flujos documentales auditables.
-            </p>
+            <div className="mb-3 flex items-center gap-2 text-orange-400"><Users className="h-5 w-5" /><h2 className="font-semibold">Personas y empresas</h2></div>
+            <p className="text-sm leading-6 text-slate-300">Transportistas, subcontratistas y conductores operan sobre identidades canónicas por RUT y flujos documentales auditables.</p>
           </article>
           <article>
-            <div className="mb-3 flex items-center gap-2 text-orange-400">
-              <ClipboardCheck className="h-5 w-5" />
-              <h2 className="font-semibold">Revisión y trazabilidad</h2>
-            </div>
-            <p className="text-sm leading-6 text-slate-300">
-              Pendientes, aprobaciones, rechazos, excepciones y verificaciones se mantienen conectados a la evidencia que originó cada estado.
-            </p>
+            <div className="mb-3 flex items-center gap-2 text-orange-400"><ClipboardCheck className="h-5 w-5" /><h2 className="font-semibold">Revisión y trazabilidad</h2></div>
+            <p className="text-sm leading-6 text-slate-300">Pendientes, aprobaciones, rechazos, excepciones y verificaciones se mantienen conectados a la evidencia que originó cada estado.</p>
           </article>
         </div>
       </section>
@@ -153,12 +134,9 @@ export default function LandingPage() {
       <section id="plataforma" className="px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto mb-14 max-w-3xl text-center">
-            <h2 className="mb-4 text-3xl font-bold md:text-4xl">Plataforma de compliance de transporte basada en evidencia</h2>
-            <p className="text-lg text-slate-300">
-              LABBE no es una carpeta digital. Su arquitectura conserva la fuente, normaliza la información y automatiza tareas repetibles sin ocultar incertidumbre.
-            </p>
+            <h2 className="mb-4 text-3xl font-bold md:text-4xl">Plataforma de gestión de flotas y compliance basada en evidencia</h2>
+            <p className="text-lg text-slate-300">ChileFlota conserva la fuente, normaliza la información y automatiza tareas repetibles sin ocultar incertidumbre.</p>
           </div>
-
           <div className="grid gap-6 md:grid-cols-2">
             {capabilities.map(({ icon: Icon, title, description }) => (
               <article key={title} className="rounded-xl border border-slate-700 bg-slate-800/40 p-6">
@@ -174,7 +152,7 @@ export default function LandingPage() {
       <section className="bg-slate-900/50 px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="mb-12 text-center">
-            <h2 className="mb-4 text-3xl font-bold md:text-4xl">Diseñada para problemas reales de transporte en Chile</h2>
+            <h2 className="mb-4 text-3xl font-bold md:text-4xl">Diseñada para problemas reales de transporte y flotas en Chile</h2>
             <p className="text-slate-300">Menos búsqueda manual, más evidencia disponible para decidir y revisar.</p>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
@@ -191,7 +169,7 @@ export default function LandingPage() {
             <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-6">
               <AlertCircle className="mb-4 h-7 w-7 text-red-400" />
               <h3 className="mb-2 font-semibold">Decisiones sin contexto</h3>
-              <p className="text-sm leading-6 text-slate-300">LABBE busca conectar documentación interna con fuentes externas y evidencia vehicular antes de derivar estados de compliance.</p>
+              <p className="text-sm leading-6 text-slate-300">ChileFlota conecta documentación interna con fuentes externas y evidencia vehicular antes de derivar estados de compliance.</p>
             </div>
           </div>
         </div>
@@ -202,18 +180,9 @@ export default function LandingPage() {
           <h2 className="mb-12 text-center text-3xl font-bold md:text-4xl">Casos de uso</h2>
           <div className="grid gap-6 md:grid-cols-3">
             {useCases.map(({ icon: Icon, title, description, href }) => {
-              const content = (
-                <>
-                  <Icon className="mb-4 h-8 w-8 text-orange-400" />
-                  <h3 className="mb-2 font-semibold">{title}</h3>
-                  <p className="text-sm leading-6 text-slate-300">{description}</p>
-                </>
-              )
-
+              const content = (<><Icon className="mb-4 h-8 w-8 text-orange-400" /><h3 className="mb-2 font-semibold">{title}</h3><p className="text-sm leading-6 text-slate-300">{description}</p></>)
               return href ? (
-                <Link key={title} href={href} className="rounded-xl border border-slate-700 bg-slate-800/30 p-6 transition hover:border-orange-500/50">
-                  {content}
-                </Link>
+                <Link key={title} href={href} className="rounded-xl border border-slate-700 bg-slate-800/30 p-6 transition hover:border-orange-500/50">{content}</Link>
               ) : (
                 <article key={title} className="rounded-xl border border-slate-700 bg-slate-800/30 p-6">{content}</article>
               )
@@ -225,21 +194,17 @@ export default function LandingPage() {
       <section id="n3uralia" className="border-y border-slate-800 bg-slate-900/50 px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-orange-400">Software factory</p>
-          <h2 className="mb-5 text-3xl font-bold md:text-4xl">LABBE is built by N3uralia</h2>
-          <p className="mx-auto max-w-3xl text-lg leading-8 text-slate-300">
-            N3uralia desarrolla infraestructura de IA, sistemas autónomos y plataformas de software orientadas a datos verificables, automatización y operación real.
-          </p>
-          <a href="https://n3uralia.com" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 font-medium text-orange-300 hover:text-orange-200">
-            Conocer N3uralia <ArrowRight className="h-4 w-4" />
-          </a>
+          <h2 className="mb-5 text-3xl font-bold md:text-4xl">ChileFlota is built by N3uralia</h2>
+          <p className="mx-auto max-w-3xl text-lg leading-8 text-slate-300">N3uralia desarrolla infraestructura de IA, sistemas autónomos y plataformas de software orientadas a datos verificables, automatización y operación real.</p>
+          <a href="https://n3uralia.com" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 font-medium text-orange-300 hover:text-orange-200">Conocer N3uralia <ArrowRight className="h-4 w-4" /></a>
         </div>
       </section>
 
       <section className="px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl rounded-2xl border border-orange-500/20 bg-orange-500/10 p-10 text-center">
           <CheckCircle2 className="mx-auto mb-5 h-9 w-9 text-orange-400" />
-          <h2 className="mb-4 text-3xl font-bold">Construye una operación de transporte más trazable</h2>
-          <p className="mb-8 text-lg text-slate-300">Conoce cómo LABBE puede centralizar evidencia y flujos de compliance para tu operación en Chile.</p>
+          <h2 className="mb-4 text-3xl font-bold">Construye una operación de flota más trazable</h2>
+          <p className="mb-8 text-lg text-slate-300">Conoce cómo ChileFlota puede centralizar evidencia, PRT y flujos de compliance para tu operación en Chile.</p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <Link href="/contact"><Button size="lg" className="bg-orange-500 hover:bg-orange-600">Solicitar presentación</Button></Link>
             <Link href="/auth/login"><Button size="lg" variant="outline">Ingresar</Button></Link>
@@ -250,12 +215,10 @@ export default function LandingPage() {
       <footer className="border-t border-slate-800 px-4 py-10 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-6xl flex-col gap-5 text-sm text-slate-400 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="mb-1 flex items-center gap-2 font-semibold text-white"><Shield className="h-4 w-4 text-orange-500" /> LABBE</div>
-            <p>Compliance e inteligencia de transporte para Chile.</p>
+            <div className="mb-1 flex items-center gap-2 font-semibold text-white"><Shield className="h-4 w-4 text-orange-500" /> ChileFlota</div>
+            <p>Compliance e inteligencia para flotas en Chile.</p>
           </div>
-          <p>
-            Developed by <a href="https://n3uralia.com" rel="noopener noreferrer" className="text-orange-300 hover:text-orange-200">N3uralia</a>.
-          </p>
+          <p>Developed by <a href="https://n3uralia.com" rel="noopener noreferrer" className="text-orange-300 hover:text-orange-200">N3uralia</a>.</p>
         </div>
       </footer>
     </main>
