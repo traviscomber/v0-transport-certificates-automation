@@ -18,19 +18,20 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
 })
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://transn3uralia.vercel.app"
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://chileflota.app"
 const factoryUrl = "https://n3uralia.com"
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  applicationName: "LABBE",
+  applicationName: "ChileFlota",
   title: {
-    default: "LABBE | Compliance e inteligencia documental para transporte en Chile",
-    template: "%s | LABBE",
+    default: "ChileFlota | Compliance e inteligencia para flotas en Chile",
+    template: "%s | ChileFlota",
   },
   description:
-    "Plataforma chilena de compliance para transporte, flotas, transportistas, subcontratistas y conductores. Centraliza evidencia documental, revisión técnica PRT, validaciones externas, alertas y trazabilidad operacional. Desarrollada por N3uralia.",
+    "Plataforma chilena de compliance e inteligencia vehicular para flotas, transportistas, subcontratistas y conductores. Centraliza evidencia documental, revisión técnica PRT, validaciones externas, alertas y trazabilidad operacional. Desarrollada por N3uralia.",
   keywords: [
+    "gestión de flotas Chile",
     "compliance transporte Chile",
     "gestión documental transporte Chile",
     "revisión técnica PRT Chile",
@@ -40,12 +41,13 @@ export const metadata: Metadata = {
     "documentos conductores Chile",
     "inteligencia vehicular Chile",
     "control documental flotas",
+    "ChileFlota",
     "N3uralia",
   ],
   authors: [{ name: "N3uralia", url: factoryUrl }],
   creator: "N3uralia",
   publisher: "N3uralia",
-  category: "Transport compliance software",
+  category: "Fleet and transport compliance software",
   alternates: {
     canonical: "/",
     languages: {
@@ -56,16 +58,16 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_CL",
     url: siteUrl,
-    siteName: "LABBE",
-    title: "LABBE | Compliance e inteligencia de transporte en Chile",
+    siteName: "ChileFlota",
+    title: "ChileFlota | Compliance e inteligencia para flotas en Chile",
     description:
-      "Evidencia documental, PRT, transportistas, subcontratistas, conductores y compliance operacional en una plataforma trazable desarrollada por N3uralia.",
+      "Evidencia documental, PRT, vehículos, transportistas, subcontratistas, conductores y compliance operacional en una plataforma chilena desarrollada por N3uralia.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "LABBE | Compliance e inteligencia de transporte en Chile",
+    title: "ChileFlota | Compliance e inteligencia para flotas en Chile",
     description:
-      "Plataforma de compliance y evidencia operacional para transporte en Chile, desarrollada por N3uralia.",
+      "Plataforma chilena de compliance, evidencia e inteligencia vehicular desarrollada por N3uralia.",
   },
   robots: {
     index: true,
@@ -93,7 +95,8 @@ const softwareSchema = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "@id": `${siteUrl}/#software`,
-  name: "LABBE",
+  name: "ChileFlota",
+  alternateName: "LABBE",
   url: siteUrl,
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
@@ -103,7 +106,7 @@ const softwareSchema = {
     name: "Chile",
   },
   description:
-    "Plataforma de compliance e inteligencia documental para transporte, flotas, transportistas, subcontratistas y conductores en Chile.",
+    "Plataforma de compliance e inteligencia vehicular para flotas, transporte, transportistas, subcontratistas y conductores en Chile.",
   creator: {
     "@id": `${factoryUrl}/#organization`,
   },
