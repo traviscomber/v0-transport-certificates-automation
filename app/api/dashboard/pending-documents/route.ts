@@ -11,6 +11,20 @@ type Focus = {
   id: string
 }
 
+// Before the exact-supersession migration, these document types were incorrectly
+// versioned at company/type/period level even though a company can legitimately
+// upload several independent files (one per worker, vehicle or contribution
+// component). Keep legacy non-current pending rows visible for these types while
+// preserving current-only semantics for corporate documents such as F29/F30.
+const LEGACY_MULTI_INSTANCE_SUBCONTRACTOR_CODES = new Set([
+  'LIQUIDACION_SUELDO',
+  'HOJA_VIDA',
+  'CERT_ANTECEDENTES',
+  'COMPROBANTE_PAGO',
+  'PLANILLAS_IMPOSICIONES',
+  'FOTO_PATENTES',
+])
+
 function getFocus(request: Request): Focus | null {
   const url = new URL(request.url)
   const mode = url.searchParams.get('focus_mode')
@@ -75,7 +89,6 @@ export async function GET(request: Request) {
           version_number,
           is_current
         `)
-        .eq('is_current', true)
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
         .limit(10000),
@@ -91,7 +104,7 @@ export async function GET(request: Request) {
     if (executivesResult.error) throw executivesResult.error
 
     const conductorDocs = conductorResult.data || []
-    const subDocs = subResult.data || []
+    const rawSubDocs = subResult.data || []
 
     const conductorTypeMap = new Map(
       (conductorTypesResult.data || []).map((item) => [item.id, { code: item.code, nombre: item.name }]),
@@ -107,6 +120,12 @@ export async function GET(request: Request) {
     const executiveNameMap = new Map(
       (executivesResult.data || []).map((item) => [item.id, item.full_name]),
     )
+
+    const subDocs = rawSubDocs.filter((doc: any) => {
+      if (doc.is_current === true) return true
+      const typeCode = subTypeMap.get(doc.document_type_id)?.code
+      return Boolean(typeCode && LEGACY_MULTI_INSTANCE_SUBCONTRACTOR_CODES.has(typeCode))
+    })
 
     const providerRuts = [
       ...new Set(
@@ -190,7 +209,7 @@ export async function GET(request: Request) {
         document_period_year: doc.document_period_year,
         document_period_start: doc.document_period_start,
         version_number: doc.version_number,
-        is_current: true,
+        is_current: doc.is_current === true,
         transportistas: company || null,
         empresa_nombre: company?.razon_social || null,
         docType: subTypeMap.get(doc.document_type_id) || null,
@@ -215,7 +234,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       conductorDocs: filteredConductorDocs,
       subDocs: filteredSubDocs,
-      scope: 'current_documents_only',
+      scope: 'current_plus_legacy_multi_instance_pending',
       success: true,
     })
   } catch (error) {
