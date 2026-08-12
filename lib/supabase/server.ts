@@ -1,29 +1,38 @@
+import "server-only"
+
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
-import { cookies } from "next/headers"
 
 /**
- * Server-side Supabase client for use in Server Components and API routes.
- * Creates a new client on each request to avoid state issues with Fluid compute.
- * Uses SERVICE_ROLE_KEY for write operations on protected tables.
+ * Generic server-side Supabase client.
+ *
+ * This client intentionally uses the public anon key only. It must never
+ * acquire service-role privileges implicitly. Application-authorized
+ * privileged workflows must verify the server actor first and then use
+ * createAdminClient() explicitly.
+ *
+ * The application currently uses its own signed `cf_session` actor contract,
+ * so this client is not a substitute for that authorization layer.
  */
 export async function createServerClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!url) {
-    throw new Error("Missing Supabase URL. Please check your environment variables.")
+    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL environment variable")
   }
 
-  // Use service role key for server operations, fallback to anon key
-  const key = serviceKey || anonKey
-  
-  if (!key) {
-    throw new Error("Missing Supabase API key. Please check your environment variables.")
+  if (!anonKey) {
+    throw new Error("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable")
   }
 
-  return createSupabaseClient(url, key)
+  return createSupabaseClient(url, anonKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  })
 }
 
-// Re-export for compatibility with existing imports
+// Compatibility alias for existing server-only callers.
 export const createClient = createServerClient
