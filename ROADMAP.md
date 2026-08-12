@@ -1,6 +1,6 @@
 # ChileFlota — Product & Engineering Roadmap
 
-Last updated: 2026-08-09 CLT
+Last updated: 2026-08-12 CLT
 Canonical repository: `traviscomber/v0-transport-certificates-automation`
 Product architecture: **N3uralia -> ChileFlota -> LABBE**
 
@@ -13,6 +13,8 @@ Release flow:
 `implementation -> preview/CI -> Qalito PASS -> merge to main -> production READY -> runtime/data verification -> stage closure`
 
 Cronos owns operational supervision, synchronization health and recovery. Qalito is the mandatory release gate for code/release changes.
+
+**Data-integrity rule:** Stage 10 security work must not rewrite, delete, backfill, reclassify or otherwise mutate canonical production data as part of authorization testing. Destructive legacy routes are retired rather than exercised. Any future production-data mutation requires an explicit, reviewed workflow and separate authorization.
 
 ---
 
@@ -36,7 +38,7 @@ The worker historically counted a row as valid before knowing whether a later cr
 
 ## Stage 10 — Authentication, authorization and API security boundary
 
-**Status: ACTIVE — BLOCKS 1–3 IN PROGRESS**
+**Status: ACTIVE — BLOCKS 1–4 IN PROGRESS**
 
 ### Objective
 
@@ -68,43 +70,55 @@ Make every privileged API and credential-bearing table server-authorized by desi
 
 ### Block 3 — Admin/API perimeter reduction
 
-**Status: ACTIVE — LARGE LEGACY SURFACE RETIRED**
+**Status: MATERIAL ADMIN SURFACE HARDENED**
 
 Completed in the current branch:
 
-- Retired `add-assigned-executive-column` runtime migration endpoint (`410 Gone`).
-- Retired `add-rejection-reason` runtime migration endpoint (`410 Gone`).
-- Retired the full identified admin `debug-*` / `test-*` family from executable production behavior; 10 routes now return `410 Gone`.
-- Retired `debug-transportista-auth` specifically; it previously queried credential records with service-role privileges and was the concrete fatal route in Vercel static-generation timeouts.
-- Retired the runtime migration/schema family including `create-assigned-executive-column`, `migrate-*`, `run-migration` and `verify-and-create-columns`; 10 routes now return `410 Gone` and schema changes must use versioned Supabase migrations.
-- Retired the unauthenticated `set-superadmin` bootstrap endpoint, which could create a privileged SUPERADMIN record through service-role access.
-- Retired legacy credential bootstrap paths `ensure-conductor-auth`, `create-executives-auth` and `setup-transportista`.
+- Retired `add-assigned-executive-column` and `add-rejection-reason` runtime migration endpoints (`410 Gone`).
+- Retired the identified admin `debug-*` / `test-*` family from executable production behavior.
+- Retired the runtime migration/schema family including `create-assigned-executive-column`, `migrate-*`, `run-migration` and `verify-and-create-columns`; schema changes must use versioned Supabase migrations.
+- Retired unauthenticated privilege/credential bootstrap endpoints including `set-superadmin`, `ensure-conductor-auth`, `create-executives-auth` and `setup-transportista`.
 - `ensure-conductor-auth` had generated predictable conductor passwords from RUT digits; this pattern is prohibited for future provisioning.
-- Existing embedded-password/seed helpers inspected so far (`generate-hash`, `regenerate-passwords`, `create-javiera-user`, `create-all-executives`, `setup-ejecutivas-auth`, `seed-labbe-users`, `setup-subcontractor-auth`) were already disabled with `410 Gone` in the branch.
-- Hardened `audit-logs`:
-  - GET requires verified admin;
-  - POST requires a verified server actor;
-  - `user_id`, IP and user-agent are derived server-side instead of trusting client-supplied identity metadata.
-- Protected status/document diagnostic routes with verified admin authorization.
-- Reduced unnecessary document payload reads in diagnostics where counts are sufficient.
+- Hardened `audit-logs`: GET requires verified admin; POST requires a verified server actor; actor/IP/user-agent are derived server-side.
+- Protected admin company directory, user management, executive directory, document-type mutations, global metrics, OCR review and role assignment with the signed server-actor contract.
+- User provisioning now uses cryptographically strong temporary credentials instead of `Math.random()`.
 
-Current security branch head after credential-bootstrap retirement: `9ac8b33da25bf62af4a43d0a5af823d7eff45662`.
+### Block 4 — Service-role perimeter outside `/api/admin`
+
+**Status: ACTIVE — COMPANY DOCUMENT BOUNDARY STARTED**
+
+Completed without mutating production data:
+
+- Retired direct company-document deletion endpoints (`410 Gone`) so they cannot delete database rows or Storage objects from HTTP routes.
+- Protected company document reads by ID with `requireServerActor()`.
+- Protected document metadata/code mutations with verified roles and replaced random code suffix generation with cryptographic randomness.
+- Replaced legacy cookie-based authorization on document status changes with the signed/revalidated server actor contract.
+- Confirmed `lib/auth-middleware.ts::verifyAuth()` is not an acceptable authorization boundary: it trusts browser-writable `user_email`, `user_role` and `user_organization_id` cookies and historically elevated `@labbe.cl` addresses to super-admin. Retained routes must migrate away from it before Stage 10 closure.
+- Identified `/api/company/data` as a P0 exposure candidate because it uses service-role access to return broad company/driver data without the new authorization contract. It remains unchanged until its real consumer/scope is confirmed to avoid breaking the client portal.
+- Identified `/api/company/documents/[id]/reprocess` as a privileged mutation path using `createAdminClient()` without the new actor contract. It requires caller/scope verification before hardening because it is an active product workflow.
+
+Verified previews:
+
+- `28361a4125aa722b10fc384567cf93536737c7ce` — READY.
+- `2d3e4e9cb1ab895af3740ec57fd7627d708612c8` — READY.
+- Newer Block 4 commits remain Qalito-gated until their latest preview is READY.
 
 ### Remaining Stage 10 hard stop list
 
-1. **Complete privileged route inventory**
-   - Classify every remaining `/api/admin/*` route as operational, sensitive read, privileged mutation, bootstrap/seed, or obsolete.
-   - Require `requireServerActor()` on every retained privileged route.
-   - Retire remaining one-off setup/seed/bootstrap HTTP routes that are not legitimate ongoing product operations.
-
-2. **Service-role inventory outside `/api/admin`**
-   - Identify all routes using `SUPABASE_SERVICE_ROLE_KEY`, `createAdminClient()` or the broad server client.
-   - Apply actor/tenant authorization before privileged database operations.
+1. **Complete service-role inventory outside `/api/admin`**
+   - Classify retained routes by actor, tenant and read/write privilege.
+   - Apply `requireServerActor()` plus tenant scope before privileged database operations.
+   - Resolve `/api/company/data` without breaking the portal.
+   - Secure the active document reprocess workflow without disabling legitimate OCR/F30 operations.
    - Replace `lib/supabase/server.ts` default service-role behavior with explicit least-privilege clients.
+
+2. **Retire legacy authorization contract**
+   - Remove privileged route dependence on `verifyAuth()` browser cookies.
+   - Preserve legacy cookies only for temporary UI compatibility until every consuming page uses the verified session contract.
 
 3. **Middleware boundary**
    - Remove blanket `/api` public treatment only after retained routes have explicit route-level authorization.
-   - Keep explicitly public auth/health endpoints allowlisted rather than using broad prefixes.
+   - Keep explicitly public auth/health/cron endpoints allowlisted rather than using broad prefixes.
 
 4. **Tenant isolation and authorization matrix**
    - Anonymous -> denied on privileged routes.
@@ -128,6 +142,7 @@ Current security branch head after credential-bootstrap retirement: `9ac8b33da25
 - No credential hash is readable by `anon` or ordinary `authenticated` clients.
 - No retained privileged service-role API can execute without an authorized server actor and correct scope.
 - No runtime schema migration, credential debug, predictable credential bootstrap or unauthenticated privilege-escalation endpoint remains callable in production.
+- No privileged route authorizes from browser-writable identity/role cookies.
 - Executive, company/subcontractor and conductor primary login flows pass regression.
 - Wrong-role and wrong-tenant tests pass.
 - Qalito authorization matrix = **PASS**.
