@@ -37,10 +37,17 @@ export default function LoginPage() {
       document.cookie = `user_role=${encodeURIComponent(data.user.role)}; path=/; expires=${expiryDate.toUTCString()}`
       document.cookie = `user_organization_id=${encodeURIComponent(data.user.organization_id || '')}; path=/; expires=${expiryDate.toUTCString()}`
 
-      // Ejecutivas and prevencionistas share the company portal.
-      // Server-side authorization keeps prevencionistas strictly read-only.
+      // Redirect based on role
       setTimeout(() => {
-        window.location.href = '/dashboard/company'
+        const userRole = data.user.role
+        
+        // Prevencionistas go to their dashboard
+        if (userRole === 'prevencionista') {
+          window.location.href = '/prevencionista/dashboard'
+        } else {
+          // All other users go to /dashboard/company (Labbe company portal)
+          window.location.href = '/dashboard/company'
+        }
       }, 300)
     } catch (err) {
       setError('Error al conectar con el servidor')
