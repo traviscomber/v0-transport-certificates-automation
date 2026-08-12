@@ -20,9 +20,6 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.71.2(react@18.3.1))
-      '@napi-rs/canvas':
-        specifier: ^0.1.80
-        version: 0.1.100
       '@radix-ui/react-accordion':
         specifier: 1.2.2
         version: 1.2.2(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -185,9 +182,6 @@ importers:
       openai:
         specifier: ^6.35.0
         version: 6.35.0(ws@8.19.0)(zod@3.25.76)
-      pdfjs-dist:
-        specifier: ^4.10.38
-        version: 4.10.38
       react:
         specifier: ^18
         version: 18.3.1
@@ -227,9 +221,6 @@ importers:
       tailwindcss-animate:
         specifier: 1.0.7
         version: 1.0.7(tailwindcss@4.2.2)
-      tesseract.js:
-        specifier: ^6.0.1
-        version: 6.0.1
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
@@ -3096,9 +3087,6 @@ packages:
   bluebird@3.7.2:
     resolution: {integrity: sha512-XpNj6GDQzdfW+r2Wnn7xiSAd7TM3jzkxGXBGTtWKuSXv1xUV+azxAm8jdWZN06QTQk+2N2XB9jRDkvbmQmcRtg==}
 
-  bmp-js@0.1.0:
-    resolution: {integrity: sha512-vHdS19CnY3hwiNdkaqk93DvjVLfbEcI8mys4UjuWrlX1haDmroo8o4xCzh4wD6DGV6HxRCyauwhHRqMTfERtjw==}
-
   bowser@2.14.1:
     resolution: {integrity: sha512-tzPjzCxygAKWFOJP011oxFHs57HzIhOEracIgAePE4pqB3LikALKnSzUyU4MGs9/iCEUuHlAJTjTc5M+u7YEGg==}
 
@@ -3705,9 +3693,6 @@ packages:
     resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
     engines: {node: '>=0.10.0'}
 
-  idb-keyval@6.3.0:
-    resolution: {integrity: sha512-um+2dgAWmYsu615EXpWVwSmapJhON0G43t3Ka/EVaohzPQXSMqKEqeDK/oIW3Ow+BXaF2PvSc+oBTFp793A5Ow==}
-
   ieee754@1.2.1:
     resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
 
@@ -3783,9 +3768,6 @@ packages:
   is-stream@2.0.1:
     resolution: {integrity: sha512-hFoiJiTl63nn+kstHGBtewWSKnQLpyb155KHheA1l39uvtO9nWIop1p3udqPcUd/xbF1VLMO4n7OI6p7RbngDg==}
     engines: {node: '>=8'}
-
-  is-url@1.2.4:
-    resolution: {integrity: sha512-ITvGim8FhRiYe4IQ5uHSkj7pVaPDrCTkNd3yq3cV7iZAcJdHTUMPMEHcqSOy9xZ9qFenQCvi+2wjH9a1nXqHww==}
 
   isarray@1.0.0:
     resolution: {integrity: sha512-VLghIWNM6ELQzo7zwmcg0NmTVyWKYjvIeM83yjp0wRDTmUnrM678fQbcKBo6n2CJEF0szoG//ytg+TKla89ALQ==}
@@ -4394,10 +4376,6 @@ packages:
       zod:
         optional: true
 
-  opencollective-postinstall@2.0.3:
-    resolution: {integrity: sha512-8AV/sCtuzUeTo8gQK5qDZzARrulB3egtLzFgteqB2tcT4Mw7B8Kt7JcDHmltjz6FOAHsvTevk70gZEbhM4ZS9Q==}
-    hasBin: true
-
   p-limit@2.3.0:
     resolution: {integrity: sha512-//88mFWSJx8lxCzwdAABTJL2MyWB12+eIY7MDL2SqLmAkeKU9qxRvWuSyTjm3FUmpBEMuFfckAIqEaVGUDxb6w==}
     engines: {node: '>=6'}
@@ -4453,10 +4431,6 @@ packages:
   path-scurry@2.0.2:
     resolution: {integrity: sha512-3O/iVVsJAPsOnpwWIeD+d6z/7PmqApyQePUtCndjatj/9I5LylHvt5qluFaBT3I5h3r1ejfR056c+FCv+NnNXg==}
     engines: {node: 18 || 20 || >=22}
-
-  pdfjs-dist@4.10.38:
-    resolution: {integrity: sha512-/Y3fcFrXEAsMjJXeL9J8+ZG9U01LbuWaYypvDW2ycW1jL269L3js3DVBjDJ0Up9Np1uqDXsDrRihHANhZOlwdQ==}
-    engines: {node: '>=20'}
 
   pdfjs-dist@5.4.296:
     resolution: {integrity: sha512-DlOzet0HO7OEnmUmB6wWGJrrdvbyJKftI1bhMitK7O2N8W2gc757yyYBbINy9IDafXAV9wmKr9t7xsTaNKRG5Q==}
@@ -4972,12 +4946,6 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
-  tesseract.js-core@6.1.2:
-    resolution: {integrity: sha512-pv4GjmramjdObhDyR1q85Td8X60Puu/lGQn7Kw2id05LLgHhAcWgnz6xSdMCSxBMWjQDmMyDXPTC2aqADdpiow==}
-
-  tesseract.js@6.0.1:
-    resolution: {integrity: sha512-/sPvMvrCtgxnNRCjbTYbr7BRu0yfWDsMZQ2a/T5aN/L1t8wUQN6tTWv6p6FwzpoEBA0jrN2UD2SX4QQFRdoDbA==}
-
   test-exclude@6.0.0:
     resolution: {integrity: sha512-cAGWPIyOHU6zlmg88jwm7VRyXnMN7iV68OGAbYDk/Mh/xC/pzVPlQtY6ngoIH/5/tciuhGfvESU8GrHrcxD56w==}
     engines: {node: '>=8'}
@@ -5174,9 +5142,6 @@ packages:
   warning@4.0.3:
     resolution: {integrity: sha512-rpJyN222KWIvHJ/F53XSZv0Zl/accqHR8et1kpaMTD/fLCRxtV8iX8czMzY7sVZupTI3zcUTg8eycS2kNF9l6w==}
 
-  wasm-feature-detect@1.8.0:
-    resolution: {integrity: sha512-zksaLKM2fVlnB5jQQDqKXXwYHLQUVH9es+5TOOHwGOVJOCeRBCiPjwSg+3tN2AdTCzjgli4jijCH290kXb/zWQ==}
-
   watchpack@2.5.1:
     resolution: {integrity: sha512-Zn5uXdcFNIA1+1Ei5McRd+iRzfhENPCe7LeABkJtNulSxjma+l7ltNx55BWZkRlwRnpOgHqxnjyaDgJnNXnqzg==}
     engines: {node: '>=10.13.0'}
@@ -5299,9 +5264,6 @@ packages:
   zip-stream@4.1.1:
     resolution: {integrity: sha512-9qv4rlDiopXg4E69k+vMHjNN63YFMe9sZMrdlvKnCjlCRWeCBswPPMPUfx+ipsAWq1LXHe70RcbaHdJJpS6hyQ==}
     engines: {node: '>= 10'}
-
-  zlibjs@0.3.1:
-    resolution: {integrity: sha512-+J9RrgTKOmlxFSDHo0pI1xM6BLVUv+o0ZT9ANtCxGkjIVCCUdx9alUF8Gm+dGLKbkkkidWIHFDZHDMpfITt4+w==}
 
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
@@ -6073,6 +6035,7 @@ snapshots:
       '@napi-rs/canvas-linux-x64-musl': 0.1.100
       '@napi-rs/canvas-win32-arm64-msvc': 0.1.100
       '@napi-rs/canvas-win32-x64-msvc': 0.1.100
+    optional: true
 
   '@napi-rs/wasm-runtime@0.2.12':
     dependencies:
@@ -8381,8 +8344,6 @@ snapshots:
 
   bluebird@3.7.2: {}
 
-  bmp-js@0.1.0: {}
-
   bowser@2.14.1: {}
 
   brace-expansion@1.1.14:
@@ -8948,8 +8909,6 @@ snapshots:
     dependencies:
       safer-buffer: 2.1.2
 
-  idb-keyval@6.3.0: {}
-
   ieee754@1.2.1: {}
 
   immediate@3.0.6: {}
@@ -9013,8 +8972,6 @@ snapshots:
       '@types/estree': 1.0.8
 
   is-stream@2.0.1: {}
-
-  is-url@1.2.4: {}
 
   isarray@1.0.0: {}
 
@@ -9766,8 +9723,6 @@ snapshots:
       ws: 8.19.0
       zod: 3.25.76
 
-  opencollective-postinstall@2.0.3: {}
-
   p-limit@2.3.0:
     dependencies:
       p-try: 2.2.0
@@ -9818,10 +9773,6 @@ snapshots:
     dependencies:
       lru-cache: 11.3.6
       minipass: 7.1.3
-
-  pdfjs-dist@4.10.38:
-    optionalDependencies:
-      '@napi-rs/canvas': 0.1.100
 
   pdfjs-dist@5.4.296:
     optionalDependencies:
@@ -10087,7 +10038,8 @@ snapshots:
 
   redux@5.0.1: {}
 
-  regenerator-runtime@0.13.11: {}
+  regenerator-runtime@0.13.11:
+    optional: true
 
   require-directory@2.1.1: {}
 
@@ -10358,22 +10310,6 @@ snapshots:
       commander: 2.20.3
       source-map-support: 0.5.21
 
-  tesseract.js-core@6.1.2: {}
-
-  tesseract.js@6.0.1:
-    dependencies:
-      bmp-js: 0.1.0
-      idb-keyval: 6.3.0
-      is-url: 1.2.4
-      node-fetch: 2.7.0
-      opencollective-postinstall: 2.0.3
-      regenerator-runtime: 0.13.11
-      tesseract.js-core: 6.1.2
-      wasm-feature-detect: 1.8.0
-      zlibjs: 0.3.1
-    transitivePeerDependencies:
-      - encoding
-
   test-exclude@6.0.0:
     dependencies:
       '@istanbuljs/schema': 0.1.6
@@ -10586,8 +10522,6 @@ snapshots:
     dependencies:
       loose-envify: 1.4.0
 
-  wasm-feature-detect@1.8.0: {}
-
   watchpack@2.5.1:
     dependencies:
       glob-to-regexp: 0.4.1
@@ -10716,7 +10650,5 @@ snapshots:
       archiver-utils: 3.0.4
       compress-commons: 4.1.2
       readable-stream: 3.6.2
-
-  zlibjs@0.3.1: {}
 
   zod@3.25.76: {}
