@@ -26,5 +26,6 @@ export type GTrackEvent = {
 
 export type GTrackConfig = {
   baseUrl: string
-  apiToken: string
+  authHeader: string
+  authValue: string
 }
