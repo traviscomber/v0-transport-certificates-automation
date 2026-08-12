@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { NextRequest, NextResponse } from "next/server"
 
 export type UserRole =
@@ -41,25 +41,23 @@ export function isSuperAdmin(email?: string | null, role?: UserRole | string | n
 export async function verifyAuth(request: NextRequest): Promise<{ user: AuthUser | null; error?: string }> {
   try {
     console.log('[v0] verifyAuth: START - Attempting to verify authentication')
-    
-    // For simple login, read cookies first
+
+    // Legacy compatibility only. Privileged Stage 10 routes must use
+    // requireServerActor() and must not trust these browser-readable roles.
     const userEmail = request.cookies.get('user_email')?.value
     const userRole = request.cookies.get('user_role')?.value
     const userOrgId = request.cookies.get('user_organization_id')?.value
-    
-    console.log('[v0] verifyAuth: Cookie check:', { 
+
+    console.log('[v0] verifyAuth: Cookie check:', {
       hasEmail: !!userEmail,
       hasRole: !!userRole,
       hasOrgId: !!userOrgId,
       email: userEmail
     })
 
-    // If simple login cookies exist, use them
     if (userEmail && userRole) {
       console.log('[v0] verifyAuth: Found simple login cookies for:', userEmail)
-      
-      // Legacy helper only. Privileged Stage 10 routes use requireServerActor()
-      // and do not trust browser-written role cookies.
+
       const effectiveRole: UserRole = isSuperAdmin(userEmail, userRole)
         ? 'super_admin'
         : (userRole as UserRole)
@@ -139,8 +137,10 @@ export async function logAudit(
   details?: Record<string, any>
 ) {
   try {
-    const supabase = await createClient()
-    
+    // Audit logging is an intentional privileged server workflow. Do not
+    // depend on the generic anon/RLS client for this append-only record.
+    const supabase = createAdminClient()
+
     await supabase.from('audit_logs').insert({
       user_id: userId,
       action,
