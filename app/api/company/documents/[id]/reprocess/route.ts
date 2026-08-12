@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireServerActor } from '@/lib/auth/server-actor'
 import {
   extractDocumentMetadata,
   extractDocumentFromPdfBuffer,
@@ -16,6 +17,11 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } },
 ) {
+  const auth = await requireServerActor(['admin', 'ejecutiva', 'prevencionista'])
+  if (!auth.actor) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status })
+  }
+
   try {
     const documentId = params.id
     const requestBody = await request.json().catch(() => ({}))
@@ -204,6 +210,8 @@ export async function POST(
       aiConfidence: aiExtraction.confidence || 0.5,
       fileName,
     })
+
+    console.log('[security] Verified actor reprocessed document:', auth.actor.id, documentId)
 
     return NextResponse.json({
       success: true,
