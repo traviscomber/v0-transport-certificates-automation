@@ -97,9 +97,17 @@ export async function POST(
     let usedOcrFallback = false
 
     if (isPdf) {
-      const pdfBuffer = new Uint8Array(buffer)
+      // PDF.js/unpdf may transfer or detach the typed array passed to it. Keep an
+      // immutable Node Buffer and give each extraction stage its own Uint8Array
+      // copy so OCR never receives a detached/zero-length view of a valid PDF.
+      const pdfBytes = Buffer.from(buffer)
+      if (pdfBytes.byteLength === 0) {
+        throw new Error('Document PDF is empty')
+      }
+
       try {
-        const { text: textArray } = await extractText(pdfBuffer)
+        const nativePdfBytes = Uint8Array.from(pdfBytes)
+        const { text: textArray } = await extractText(nativePdfBytes)
         rawDocumentText = Array.isArray(textArray) ? textArray.join('\n') : String(textArray)
       } catch (error) {
         console.warn('[v0] Native PDF text extraction failed, using OCR fallback', error)
@@ -109,7 +117,8 @@ export async function POST(
         aiExtraction = await extractDocumentFromText(rawDocumentText, doc.document_type || 'documento')
       } else {
         usedOcrFallback = true
-        aiExtraction = await extractDocumentFromPdfBuffer(pdfBuffer, doc.document_type || 'documento')
+        const ocrPdfBytes = Uint8Array.from(pdfBytes)
+        aiExtraction = await extractDocumentFromPdfBuffer(ocrPdfBytes, doc.document_type || 'documento')
         rawDocumentText = aiExtraction.extractedText || ''
       }
     } else {
