@@ -59,7 +59,7 @@ export async function checkGTrackHealth(
       method: 'GET',
       headers: {
         Accept: 'application/json',
-        Authorization: `Bearer ${token}`,
+        'x-api-key': token,
       },
       cache: 'no-store',
       signal: controller.signal,
