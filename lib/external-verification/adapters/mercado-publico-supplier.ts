@@ -7,7 +7,7 @@ import type {
 
 const API_BASE_URL = 'https://api.mercadopublico.cl'
 const LOOKUP_URL = `${API_BASE_URL}/servicios/v1/Publico/Empresas/BuscarProveedor`
-const OPEN_DATA_URL = 'https://datos-abiertos.chilecompra.cl/'
+const OPEN_DATA_SUPPLIERS_URL = 'https://datos-abiertos.chilecompra.cl/organismos-proveedores'
 const API_DOCS_URL = 'https://www.chilecompra.cl/api/'
 const REQUEST_TIMEOUT_MS = 12_000
 const OFFICIAL_TEST_TICKET = 'F8537A18-6766-4DEF-9E59-426B4FEE2844'
@@ -44,6 +44,10 @@ function formatRut(raw: string): string {
   const [body, verifier] = normalized.split('-')
   const dotted = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
   return `${dotted}-${verifier === 'K' ? 'k' : verifier}`
+}
+
+function supplierProfileUrl(formattedRut: string): string {
+  return `${OPEN_DATA_SUPPLIERS_URL}/${encodeURIComponent(formattedRut)}`
 }
 
 function isRecord(value: unknown): value is JsonRecord {
@@ -176,6 +180,7 @@ export class MercadoPublicoSupplierAdapter implements VerificationSourceAdapter 
     }
 
     const formattedRut = formatRut(rut)
+    const publicProfileUrl = supplierProfileUrl(formattedRut)
     const url = new URL(LOOKUP_URL)
     url.searchParams.set('rutempresaproveedor', formattedRut)
     url.searchParams.set('ticket', ticket)
@@ -223,9 +228,9 @@ export class MercadoPublicoSupplierAdapter implements VerificationSourceAdapter 
           rut,
           formattedRut,
           registeredInMercadoPublico: false,
-          evidencePortalUrl: OPEN_DATA_URL,
+          publicProfileUrl,
         },
-        evidence: [evidence('RUT consultado', formattedRut, API_DOCS_URL)],
+        evidence: [evidence('Ficha publica ChileCompra', formattedRut, publicProfileUrl)],
       }
     }
 
@@ -257,9 +262,9 @@ export class MercadoPublicoSupplierAdapter implements VerificationSourceAdapter 
             rut,
             formattedRut,
             registeredInMercadoPublico: false,
-            evidencePortalUrl: OPEN_DATA_URL,
+            publicProfileUrl,
           },
-          evidence: [evidence('RUT consultado', formattedRut, API_DOCS_URL)],
+          evidence: [evidence('Ficha publica ChileCompra', formattedRut, publicProfileUrl)],
         }
       }
 
@@ -281,14 +286,14 @@ export class MercadoPublicoSupplierAdapter implements VerificationSourceAdapter 
         registeredInMercadoPublico: true,
         providerCode: supplier.code,
         providerName: supplier.name,
-        evidencePortalUrl: OPEN_DATA_URL,
+        publicProfileUrl,
         capability: 'supplier_registry_presence',
         note: 'La presencia en Mercado Publico no equivale por si sola a habilidad vigente para contratar con el Estado.',
       },
       evidence: [
         evidence('Proveedor Mercado Publico', supplier.name, API_DOCS_URL),
         evidence('Codigo interno proveedor', supplier.code, API_DOCS_URL),
-        evidence('Portal oficial de Datos Abiertos', formattedRut, OPEN_DATA_URL),
+        evidence('Ficha publica ChileCompra', formattedRut, publicProfileUrl),
       ],
     }
   }
