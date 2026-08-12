@@ -16,7 +16,7 @@ export type CanChangeDocumentStatusResult = {
 export async function canChangeDocumentStatus(
   userId: string,
   documentId: string,
-  userRole: AuthUserRole,
+  userRole: string,
   userCompanyId?: string,
   userEmail?: string,
   documentType: 'conductor' | 'subcontractor' = 'conductor'
@@ -197,4 +197,3 @@ export async function getCompanyExecutives(
 export function isExecutive(userRole: AuthUserRole): boolean {
   return userRole === 'admin'
 }
-
