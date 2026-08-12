@@ -25,7 +25,7 @@ interface SessionPayload extends jwt.JwtPayload {
 const SESSION_COOKIE = 'cf_session'
 
 function getSessionSecret() {
-  const secret = process.env.APP_SESSION_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY
+  const secret = process.env.APP_SESSION_SECRET
   if (!secret) throw new Error('Missing APP_SESSION_SECRET')
   return secret
 }
