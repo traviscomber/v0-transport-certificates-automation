@@ -1,7 +1,16 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 
-export type UserRole = 'super_admin' | 'admin' | 'dispatcher' | 'driver' | 'mandante' | 'transportista'
+export type UserRole =
+  | 'super_admin'
+  | 'admin'
+  | 'ejecutiva'
+  | 'prevencionista'
+  | 'dispatcher'
+  | 'driver'
+  | 'conductor'
+  | 'mandante'
+  | 'transportista'
 
 interface AuthUser {
   id: string
@@ -49,14 +58,14 @@ export async function verifyAuth(request: NextRequest): Promise<{ user: AuthUser
     if (userEmail && userRole) {
       console.log('[v0] verifyAuth: Found simple login cookies for:', userEmail)
       
-      // For simple login users, we trust the cookies and don't require Supabase profile lookup
-      // This allows the system to work without requiring profiles table to be populated
+      // Legacy helper only. Privileged Stage 10 routes use requireServerActor()
+      // and do not trust browser-written role cookies.
       const effectiveRole: UserRole = isSuperAdmin(userEmail, userRole)
         ? 'super_admin'
         : (userRole as UserRole)
 
       const authUser: AuthUser = {
-        id: userEmail, // Use email as ID for simple login users
+        id: userEmail,
         email: userEmail,
         role: effectiveRole,
         organization_id: userOrgId,
@@ -73,7 +82,6 @@ export async function verifyAuth(request: NextRequest): Promise<{ user: AuthUser
       return { user: authUser }
     }
 
-    // No cookies found
     console.log('[v0] verifyAuth: FAIL - No authentication cookies found')
     return { user: null, error: 'Unauthorized' }
   } catch (error) {
@@ -82,21 +90,15 @@ export async function verifyAuth(request: NextRequest): Promise<{ user: AuthUser
   }
 }
 
-// Middleware para verificar permisos por rol
 export function checkRolePermission(userRole: UserRole, requiredRoles: UserRole[]): boolean {
   return requiredRoles.includes(userRole)
 }
 
-// Middleware para verificar acceso a organización
 export function checkOrganizationAccess(userOrgId: string | undefined, targetOrgId: string | undefined): boolean {
-  // Admin puede acceder a cualquier organización
   if (!userOrgId) return true
-  
-  // Otros roles solo pueden acceder su propia organización
   return userOrgId === targetOrgId
 }
 
-// Wrapper para proteger endpoints
 export async function protectedEndpoint(
   request: NextRequest,
   handler: (user: AuthUser, request: NextRequest) => Promise<NextResponse>,
@@ -112,7 +114,6 @@ export async function protectedEndpoint(
       )
     }
 
-    // Check role permission if specified
     if (allowedRoles && !checkRolePermission(user.role, allowedRoles)) {
       return NextResponse.json(
         { error: `Forbidden: ${user.role} role not allowed`, success: false },
@@ -120,7 +121,6 @@ export async function protectedEndpoint(
       )
     }
 
-    // Call the handler with authenticated user
     return await handler(user, request)
   } catch (error) {
     console.error('Protected endpoint error:', error)
@@ -131,7 +131,6 @@ export async function protectedEndpoint(
   }
 }
 
-// Middleware para logging de auditoría
 export async function logAudit(
   userId: string,
   action: string,
@@ -155,7 +154,6 @@ export async function logAudit(
   }
 }
 
-// Response helper para estandarizar respuestas
 export function successResponse(data: any, message?: string, status: number = 200) {
   return NextResponse.json(
     {
