@@ -1,11 +1,12 @@
+import { randomBytes } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireServerActor } from '@/lib/auth/server-actor'
 
-// Generador de código automático
 function generateDocumentCode(
   companyCode: string,
   driverRut: string,
-  documentType: string
+  documentType: string,
 ): string {
   const typeMap: Record<string, string> = {
     'Licencia de Conducir': 'LIC',
@@ -14,31 +15,37 @@ function generateDocumentCode(
     'Revisión Técnica': 'REV',
     'Antecedentes': 'ANT',
     'Permiso Especial': 'PER',
-    'Documento': 'DOC'
+    'Documento': 'DOC',
   }
 
   const typeCode = typeMap[documentType] || 'DOC'
   const date = new Date().toISOString().split('T')[0].replace(/-/g, '')
-  const random = Math.random().toString(36).substring(2, 5).toUpperCase()
+  const random = randomBytes(3).toString('hex').toUpperCase()
 
   return `${companyCode}_${driverRut}_${typeCode}_${date}_${random}`
 }
 
+async function requireDocumentActor() {
+  return requireServerActor(['admin', 'ejecutiva', 'prevencionista', 'transportista'])
+}
+
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
+  const auth = await requireDocumentActor()
+  if (!auth.actor) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status })
+  }
+
   try {
     const { custom_code, expiration_date } = await request.json()
     const adminClient = createAdminClient()
     const documentId = params.id
 
-    console.log('[v0] Updating document metadata:', { documentId, custom_code, expiration_date })
-
-    // Obtener documento actual
     const { data: doc, error: getError } = await adminClient
       .from('documents')
-      .select('*')
+      .select('id')
       .eq('id', documentId)
       .single()
 
@@ -46,25 +53,20 @@ export async function PATCH(
       return NextResponse.json({ error: 'Document not found' }, { status: 404 })
     }
 
-    const updates: any = {
-      updated_at: new Date().toISOString()
+    const updates: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
     }
 
-    // Si envían custom_code, usar ese
-    if (custom_code) {
-      updates.custom_code = custom_code
-    }
+    if (custom_code) updates.custom_code = custom_code
 
-    // Si envían expiration_date, validar y guardar
     if (expiration_date) {
       const expDate = new Date(expiration_date)
-      if (isNaN(expDate.getTime())) {
+      if (Number.isNaN(expDate.getTime())) {
         return NextResponse.json({ error: 'Invalid expiration date' }, { status: 400 })
       }
       updates.expiration_date = expiration_date
     }
 
-    // Actualizar documento
     const { data: updated, error: updateError } = await adminClient
       .from('documents')
       .update(updates)
@@ -73,31 +75,29 @@ export async function PATCH(
       .single()
 
     if (updateError) {
-      console.error('[v0] Error updating document:', updateError)
       return NextResponse.json({ error: 'Failed to update document' }, { status: 500 })
     }
 
-    console.log('[v0] Document updated:', updated.id)
-
-    return NextResponse.json({
-      success: true,
-      document: updated,
-      message: 'Document updated successfully'
-    })
+    console.log('[company] Verified actor updated document metadata:', auth.actor.id, documentId)
+    return NextResponse.json({ success: true, document: updated, message: 'Document updated successfully' })
   } catch (error) {
-    console.error('[v0] Error in PATCH /api/company/documents/[id]/rename:', error)
+    console.error('[company] Error updating document metadata:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Server error' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
 
-// POST para generar código automático
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
+  const auth = await requireDocumentActor()
+  if (!auth.actor) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status })
+  }
+
   try {
     const { company_code, driver_rut, document_type } = await request.json()
     const adminClient = createAdminClient()
@@ -106,28 +106,18 @@ export async function POST(
     if (!company_code || !driver_rut || !document_type) {
       return NextResponse.json(
         { error: 'Missing required fields: company_code, driver_rut, document_type' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
-    // Generar código
     const generatedCode = generateDocumentCode(company_code, driver_rut, document_type)
-    console.log('[v0] Generated document code:', generatedCode)
-
-    // Verificar que no exista
     const { data: existing } = await adminClient
       .from('documents')
       .select('id')
       .eq('custom_code', generatedCode)
       .maybeSingle()
 
-    let code = generatedCode
-    if (existing) {
-      // Si existe, agregar sufijo
-      code = `${generatedCode}_DUP`
-    }
-
-    // Actualizar documento con el código
+    const code = existing ? `${generatedCode}_DUP` : generatedCode
     const { data: updated, error: updateError } = await adminClient
       .from('documents')
       .update({ custom_code: code })
@@ -139,16 +129,13 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to generate code' }, { status: 500 })
     }
 
-    return NextResponse.json({
-      success: true,
-      document: updated,
-      generated_code: code
-    })
+    console.log('[company] Verified actor generated document code:', auth.actor.id, documentId)
+    return NextResponse.json({ success: true, document: updated, generated_code: code })
   } catch (error) {
-    console.error('[v0] Error generating code:', error)
+    console.error('[company] Error generating document code:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Server error' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

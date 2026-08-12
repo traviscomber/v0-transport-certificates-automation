@@ -1,120 +1,152 @@
-# TransportesLabbe — Product & Engineering Roadmap
+# ChileFlota — Product & Engineering Roadmap
 
-Last updated: 2026-08-09 10:11 CLT
+Last updated: 2026-08-12 CLT
 Canonical repository: `traviscomber/v0-transport-certificates-automation`
-Current observed production SHA: `284026acb72dacef1357a0270792547eb83a978b`
+Product architecture: **N3uralia -> ChileFlota -> LABBE**
 
 ## Operating rule
 
-This roadmap is the scope-control document for the platform. A stage closes when its explicit exit criteria are met. New discoveries that are not P0 data-loss/security incidents do **not** extend the active stage automatically; they are assigned to the next appropriate stage.
+This roadmap is the scope-control document for ChileFlota. A stage closes only when its explicit exit criteria are met. New discoveries that are not active P0 security/data-loss incidents are assigned to the appropriate next stage instead of extending the current stage indefinitely.
 
-Release flow for every code stage:
+Release flow:
 
 `implementation -> preview/CI -> Qalito PASS -> merge to main -> production READY -> runtime/data verification -> stage closure`
 
-Cronos owns operational supervision, synchronization health, queue recovery and production verification. Qalito is the mandatory release gate for code/release changes.
+Cronos owns operational supervision, synchronization health and recovery. Qalito is the mandatory release gate for code/release changes.
 
-**Documentation rule:** update this `ROADMAP.md` whenever a material stage milestone, production fix, gate decision, closure condition, or stage transition occurs. Live Supabase/Cronos state remains the source of truth for operational counters.
+**Data-integrity rule:** Stage 10 security work must not rewrite, delete, backfill, reclassify or otherwise mutate canonical production data as part of authorization testing. Destructive legacy routes are retired rather than exercised. Any future production-data mutation requires an explicit, reviewed workflow and separate authorization.
 
 ---
 
-## Stage 9 — Operational hardening and synchronization closure
+## Stage 9 — PRT operational hardening and national import closure
 
-**Status: CLOSING — MAY COMPLETE; FINAL NATIONAL PRT BATCH ACTIVE**
+**Status: CLOSED — QALITO PASS**
 
-### Objective
+### Closure evidence
 
-Finish the current operational hardening cycle and leave imports, reconciliation and customer-visible pending-document search in a stable, observable production state.
+- May, June and July 2026 RA1, RA2 and RB batches reached `imported` / EOF.
+- No stale active PRT batches remained at closure.
+- Cronos reconciliation was clean with no unexplained critical failures.
+- May RB and July RB each contain a one-row canonical delta explained by an inter-block upsert identity collision, not missing canonical evidence.
+- Qalito final PRT verdict: **PASS**.
 
-### Completed
+### Accounting note
 
-- Cronos semantic control plane deployed.
-- `cronos_reconciliation` scheduled and verified in production.
-- Reconciliation schema bug fixed (`document_text_extractions.document_id`).
-- Production reconciliation repeatedly completes with `failed_count = 0`.
-- Critical worker/RPC exposure hardening blocks applied to internal service-role workflows.
-- Pending-document RUT search root cause reproduced and fixed.
-- Pending search now filters canonical `subcontractor_rut` in PostgreSQL before the result limit.
-- Production verification of a previously invisible RUT returns the expected pending documents.
-- PRT starvation root cause fixed: `prt_import_stream` drains oldest eligible periods first instead of continually preferring newer periods.
-- PR #83 passed both Vercel previews and was merged to `main`.
-- May 2026 RA1, RA2 and RB are fully `imported`.
-- June 2026 RA1, RA2 and RB are fully `imported`.
-- July 2026 RA1 and RA2 are fully `imported`.
-- May 2026 RB final source accounting: 531,180 rows read / 526,158 worker-valid / 5,022 duplicate/rejected-accounted.
-- May 2026 RB canonical reconciliation identified a one-row inter-block upsert collision: 526,157 physical canonical identities versus 526,158 worker-valid rows. Evidence indicates no missing canonical evidence; one source identity was counted as valid in a later block and upserted over an existing canonical identity.
-- The exact drift run was isolated to the block advancing May RB from cursor 460,000 to 470,000: 9,647 worker-valid rows versus 9,646 newly created canonical rows.
-- Latest observed Cronos reconciliation runs are clean (`failed_count = 0`, `issues = []`, `staleCount = 0`).
-
-### Remaining work — hard stop list
-
-Only these items may keep the current PRT closure open:
-
-1. **Drain final national PRT import**
-   - July 2026 RB -> EOF / imported.
-   - Current verified cursor before the active run: 530,000.
-   - Current verified accounting at cursor 530,000: 530,000 rows read / 526,835 valid / 3,165 duplicate/rejected-accounted.
-   - A `prt_import_stream` run is currently active against July RB.
-   - No unexpected stale PRT batches.
-
-2. **Final PRT canonical reconciliation**
-   - Verify May, June and July batch row counts against `prt_vehicle_records`.
-   - Verify duplicate/rejected accounting, including the known May RB one-row inter-block upsert collision.
-   - Verify `prt_latest_vehicle_status` can be produced without unexplained drift.
-   - Record final canonical counts as closure evidence.
-
-3. **Operational release gate**
-   - `cronos_reconciliation` clean after July RB drain.
-   - No stale claims in critical queues.
-   - No recent unexplained failed critical jobs.
-   - Qalito final PRT verdict = PASS.
-
-### Explicitly deferred from Stage 9
-
-The following findings are important but do not extend Stage 9 unless they become active P0 incidents:
-
-- General `/api/*` authentication boundary hardening.
-- Legacy credential-table redesign (`transportista_auth`, `conductor_auth`, `companies`, related login tables).
-- Full tenant-aware RLS redesign.
-- Broader index cleanup/performance refactoring.
-- UI redesign or new product features.
-- Full PRT Intelligence Layer beyond the reconciliation proof; this remains prioritized for Stage 12.
-- New external transport datasets (SII valuation, MTT registries, municipal circulation permits, CONASET, MOP) remain blocked until the current PRT closure gate is complete.
-
-### Stage 9 / PRT exit condition
-
-The current closure cycle ends when July 2026 RB is fully imported, May/June/July reconcile canonically with explained duplicate accounting, Cronos is clean, and Qalito issues PASS. At closure, record production SHA, PRT counts, known explained accounting exceptions, Cronos health and Qalito verdict. Do not open the next transport-data source before this gate passes.
+The worker historically counted a row as valid before knowing whether a later cross-block upsert would create a new physical canonical identity or update an existing one. This is an accounting distinction to improve, not evidence of bulk data loss.
 
 ---
 
 ## Stage 10 — Authentication, authorization and API security boundary
 
-**Status: NEXT**
+**Status: ACTIVE — BLOCKS 1–4 IN PROGRESS**
 
 ### Objective
 
-Make every privileged API and credential-bearing table server-authorized by design without breaking executive, subcontractor or conductor workflows.
+Make every privileged API and credential-bearing table server-authorized by design without breaking executive, subcontractor, company or conductor workflows.
 
-### Scope
+### Block 1 — Credential-table boundary
 
-- Inventory all `/api/*` routes by actor and privilege level.
-- Remove the current blanket API pass-through pattern where privileged routes rely only on obscurity or client behavior.
-- Define one server-side authorization contract for admin, ejecutiva, subcontractor and conductor roles.
-- Protect routes that use `SUPABASE_SERVICE_ROLE_KEY` from unauthenticated invocation.
-- Audit `transportista_auth`, `conductor_auth`, `companies`, `executive_staff` and any table containing password hashes or login secrets.
-- Remove public/client access to credential hashes.
-- Replace unsafe legacy credential access with server-only login verification.
-- Audit and normalize RLS policies for exposed business tables.
-- Add negative authorization tests: anonymous, wrong role, wrong tenant, expired/invalid session.
-- Add positive tests for each real portal role.
+**Status: MATERIAL FIX COMPLETE / RELEASE GATE PENDING**
 
-### Exit criteria
+- Replaced RUT-as-password company login with real password verification using bcrypt server-side.
+- Removed public SELECT access from `transportista_auth`.
+- Verified `anon` and normal `authenticated` roles cannot read credential rows from the sensitive auth tables audited in this block.
+- Company-auth PR remains gated until a controlled positive login can be reproduced without inventing or changing production credentials.
 
-- No credential hash is readable by `anon` or normal `authenticated` clients.
-- No privileged service-role API can be invoked without an authorized server session/contract.
-- Executive, subcontractor and conductor login/primary flows pass regression.
-- Qalito authorization matrix = PASS.
-- Production has no new auth-related 5xx/lockout regression after release.
+### Block 2 — Verified server actor contract
+
+**Status: IMPLEMENTED IN PR #86 / QALITO HOLD**
+
+- Removed email-only staff authentication.
+- `/login` now requires a password.
+- Supabase Auth users are validated with `signInWithPassword` and roles are sourced from server-side profile data.
+- Legacy executive staff compatibility uses bcrypt against `executive_staff.password_hash` on the server.
+- Added signed HTTP-only `cf_session` with an 8-hour lifetime.
+- Added `requireServerActor()` to revalidate actor identity, active status, role and organization server-side.
+- Browser-writable compatibility cookies remain presentation-only and are not sufficient for privileged authorization.
+- Protected destructive admin routes including user, profile and document cleanup.
+- Protected transportista auto-assignment with verified admin authorization.
+- Retired hardcoded one-off executive assignment and runtime schema mutation routes.
+
+### Block 3 — Admin/API perimeter reduction
+
+**Status: MATERIAL ADMIN SURFACE HARDENED**
+
+Completed in the current branch:
+
+- Retired `add-assigned-executive-column` and `add-rejection-reason` runtime migration endpoints (`410 Gone`).
+- Retired the identified admin `debug-*` / `test-*` family from executable production behavior.
+- Retired the runtime migration/schema family including `create-assigned-executive-column`, `migrate-*`, `run-migration` and `verify-and-create-columns`; schema changes must use versioned Supabase migrations.
+- Retired unauthenticated privilege/credential bootstrap endpoints including `set-superadmin`, `ensure-conductor-auth`, `create-executives-auth` and `setup-transportista`.
+- `ensure-conductor-auth` had generated predictable conductor passwords from RUT digits; this pattern is prohibited for future provisioning.
+- Hardened `audit-logs`: GET requires verified admin; POST requires a verified server actor; actor/IP/user-agent are derived server-side.
+- Protected admin company directory, user management, executive directory, document-type mutations, global metrics, OCR review and role assignment with the signed server-actor contract.
+- User provisioning now uses cryptographically strong temporary credentials instead of `Math.random()`.
+
+### Block 4 — Service-role perimeter outside `/api/admin`
+
+**Status: ACTIVE — COMPANY DOCUMENT BOUNDARY STARTED**
+
+Completed without mutating production data:
+
+- Retired direct company-document deletion endpoints (`410 Gone`) so they cannot delete database rows or Storage objects from HTTP routes.
+- Protected company document reads by ID with `requireServerActor()`.
+- Protected document metadata/code mutations with verified roles and replaced random code suffix generation with cryptographic randomness.
+- Replaced legacy cookie-based authorization on document status changes with the signed/revalidated server actor contract.
+- Confirmed `lib/auth-middleware.ts::verifyAuth()` is not an acceptable authorization boundary: it trusts browser-writable `user_email`, `user_role` and `user_organization_id` cookies and historically elevated `@labbe.cl` addresses to super-admin. Retained routes must migrate away from it before Stage 10 closure.
+- Identified `/api/company/data` as a P0 exposure candidate because it uses service-role access to return broad company/driver data without the new authorization contract. It remains unchanged until its real consumer/scope is confirmed to avoid breaking the client portal.
+- Identified `/api/company/documents/[id]/reprocess` as a privileged mutation path using `createAdminClient()` without the new actor contract. It requires caller/scope verification before hardening because it is an active product workflow.
+
+Verified previews:
+
+- `28361a4125aa722b10fc384567cf93536737c7ce` — READY.
+- `2d3e4e9cb1ab895af3740ec57fd7627d708612c8` — READY.
+- Newer Block 4 commits remain Qalito-gated until their latest preview is READY.
+
+### Remaining Stage 10 hard stop list
+
+1. **Complete service-role inventory outside `/api/admin`**
+   - Classify retained routes by actor, tenant and read/write privilege.
+   - Apply `requireServerActor()` plus tenant scope before privileged database operations.
+   - Resolve `/api/company/data` without breaking the portal.
+   - Secure the active document reprocess workflow without disabling legitimate OCR/F30 operations.
+   - Replace `lib/supabase/server.ts` default service-role behavior with explicit least-privilege clients.
+
+2. **Retire legacy authorization contract**
+   - Remove privileged route dependence on `verifyAuth()` browser cookies.
+   - Preserve legacy cookies only for temporary UI compatibility until every consuming page uses the verified session contract.
+
+3. **Middleware boundary**
+   - Remove blanket `/api` public treatment only after retained routes have explicit route-level authorization.
+   - Keep explicitly public auth/health/cron endpoints allowlisted rather than using broad prefixes.
+
+4. **Tenant isolation and authorization matrix**
+   - Anonymous -> denied on privileged routes.
+   - Wrong role -> 403.
+   - Wrong tenant -> denied/no cross-tenant data.
+   - Invalid/expired session -> 401.
+   - Valid role/tenant -> expected operation succeeds.
+
+5. **Session secret**
+   - Configure a dedicated `APP_SESSION_SECRET` in Vercel and remove the temporary signing fallback to `SUPABASE_SERVICE_ROLE_KEY`.
+   - Secret creation/rotation must follow the controlled infrastructure change process.
+
+6. **Release gate**
+   - Latest Vercel preview must be READY.
+   - Qalito authorization matrix must PASS.
+   - Merge PR #86 only after the above checks.
+   - Verify production for auth-related 401/403 behavior and absence of new 5xx/lockout regressions.
+
+### Stage 10 exit criteria
+
+- No credential hash is readable by `anon` or ordinary `authenticated` clients.
+- No retained privileged service-role API can execute without an authorized server actor and correct scope.
+- No runtime schema migration, credential debug, predictable credential bootstrap or unauthenticated privilege-escalation endpoint remains callable in production.
+- No privileged route authorizes from browser-writable identity/role cookies.
+- Executive, company/subcontractor and conductor primary login flows pass regression.
+- Wrong-role and wrong-tenant tests pass.
+- Qalito authorization matrix = **PASS**.
+- Production has no new auth-related 5xx or lockout regression after release.
 
 ---
 
@@ -133,47 +165,70 @@ Eliminate divergent definitions of documents and pending work across executive/s
 - Make counters, pending lists, RUT search, detail views and validation actions derive from the same canonical status semantics.
 - Enforce consistent RUT normalization at all trust boundaries.
 - Ensure executive assignment/scoping is server-side and deterministic.
-- Add canonical status transition/audit contract: pending -> approved/rejected/expired/superseded.
-- Add regression coverage for counts vs detail lists.
+- Add canonical status transitions and audit: `pending -> approved/rejected/expired/superseded`.
+- Add regression coverage for counts versus detail lists.
 
 ### Exit criteria
 
-- A pending count always reconciles to the pending list for the same actor/scope.
+- Pending counts reconcile to pending lists for the same actor/scope.
 - Searching a valid RUT cannot lose records because of pagination or client-side post-filtering.
 - No customer-visible screen depends on a parallel legacy document source without an explicit compatibility adapter.
-- Qalito workflow regression = PASS.
+- Qalito workflow regression = **PASS**.
 
 ---
 
-## Stage 12 — Compliance intelligence and PRT operationalization
+## Stage 12 — ChileFlota Vehicle & Compliance Intelligence
 
 **Status: PLANNED — PRIORITY AFTER CANONICAL FOUNDATIONS**
 
 ### Objective
 
-Turn the stable canonical document and PRT corpus into reliable operational decisions and a reusable vehicle-intelligence layer rather than leaving PRT as passive storage.
+Turn the canonical document and PRT corpus into decision-ready fleet intelligence rather than leaving evidence as passive storage.
 
-### Priority scope
+### Delivery sequence
 
-- Build a canonical `latest PRT by plate` projection over the historical PRT corpus.
-- Enrich operational `vehiculos` from that projection without creating hundreds of thousands of fake operational vehicles.
-- Finalize PRT -> vehicle -> compliance matching contract.
-- Define confidence and no-match handling for vehicle evidence.
-- Make new operational vehicles immediately benefit from already-imported PRT history.
-- Expose traceable PRT status: latest revision, result, expiry, plant/class when present, and source provenance.
-- Consolidate worker/company reconciliation into decision-ready outputs.
-- Improve exception queues for human review.
-- Introduce safe auto-recovery only for proven reversible stale states.
-- Keep consequential business decisions human-reviewable unless explicitly approved for automation.
+1. **Latest PRT by plate**
+   - Canonical latest-status projection from historical PRT evidence.
+   - Provenance, revision date, result, expiry, plant/class when present.
+
+2. **Vehicle Intelligence Profile**
+   - `plate -> PRT history -> documents -> company -> driver -> alerts -> provenance`.
+   - No fake operational vehicles created from the national corpus.
+
+3. **Compliance Snapshot**
+   - Explainable states such as OK / Attention / Blocking / Insufficient evidence.
+   - Every state links back to canonical evidence.
+
+4. **Instant Fleet Enrichment**
+   - Upload or provide a fleet of plates and immediately enrich them from the existing national evidence corpus.
+
+5. **Action-oriented dashboard**
+   - What expires soon.
+   - What blocks operation.
+   - What requires human review.
+   - Which supplier/transportista concentrates exceptions.
+   - What changed since the previous operating period.
+
+6. **Explainable intelligence**
+   - Operational questions over canonical data with evidence links.
+   - No opaque consequential score or unsupported AI claim.
+
+### External transport data sequence after the foundation
+
+Integrate one source at a time into the same canonical vehicle identity:
+
+`SII vehicle valuation -> MTT registries -> municipal circulation permits -> CONASET contextual risk -> MOP route/toll data`
+
+Each source requires provenance, reuse/licensing review and a clear product decision before ingestion.
 
 ### Exit criteria
 
 - Operational vehicles are automatically enriched from canonical PRT evidence when a valid plate match exists.
 - Compliance decisions are traceable to canonical evidence.
-- No invented/simulated evidence is used.
-- Failed/uncertain matches enter an explicit review state.
+- No invented or simulated evidence is used.
+- Failed/uncertain matches enter explicit review states.
 - Automation is idempotent, observable and recoverable.
-- Qalito end-to-end compliance gate = PASS.
+- Qalito end-to-end compliance gate = **PASS**.
 
 ---
 
@@ -183,46 +238,25 @@ Turn the stable canonical document and PRT corpus into reliable operational deci
 
 ### Objective
 
-Prepare a controlled client-facing release baseline after the architectural stages above.
+Prepare a controlled client-facing ChileFlota baseline after the architectural stages above.
 
 ### Scope
 
 - Full role-based regression suite.
 - Responsive/mobile checks for operational portals.
 - Accessibility and critical UX cleanup.
-- Performance review of highest-volume queries and routes.
-- Production observability/error budget baseline.
-- Remove dead diagnostic/test routes from customer navigation and evaluate removal from production where safe.
+- Performance review of highest-volume queries/routes.
+- Production observability/error-budget baseline.
+- Remove remaining dead diagnostic/test routes from customer-facing production.
 - Final operator runbook and rollback notes.
 
 ### Exit criteria
 
-- No P0/P1 open defects in primary client workflows.
-- Qalito release gate = PASS.
+- No P0/P1 defects in primary client workflows.
+- Qalito release gate = **PASS**.
 - Cronos health = healthy.
 - Production SHA and schema/migration baseline recorded.
 - Client-ready release notes produced.
-
----
-
-## Current live closure snapshot
-
-Verified 2026-08-09 10:11 CLT:
-
-- Current production SHA observed in PRT/Cronos jobs: `284026acb72dacef1357a0270792547eb83a978b`.
-- May 2026 RA1: `imported`, 13,895 rows read / 13,842 valid / 53 rejected.
-- May 2026 RA2: `imported`, 103,279 rows read / 102,824 valid / 455 rejected/duplicate-accounted.
-- May 2026 RB: `imported`, 531,180 rows read / 526,158 worker-valid / 5,022 duplicate/rejected-accounted; 526,157 canonical physical rows, with the one-row difference explained as an inter-block upsert identity collision.
-- June 2026 RA1: `imported`, 12,118 rows read / 12,074 valid / 44 rejected.
-- June 2026 RA2: `imported`, 92,994 rows read / 92,534 valid / 460 rejected/duplicate-accounted.
-- June 2026 RB: `imported`, 554,795 rows read / 549,848 valid / 4,947 rejected/duplicate-accounted.
-- July 2026 RA1: `imported`, 13,385 rows read / 13,358 valid / 27 rejected.
-- July 2026 RA2: `imported`, 96,328 rows read / 96,009 valid / 319 rejected/duplicate-accounted.
-- July 2026 RB: active at cursor 530,000 / 526,835 valid / 3,165 rejected/duplicate-accounted, with an import run currently in progress.
-- Stale active PRT batches older than 30 minutes: `0`.
-- Latest observed `cronos_reconciliation`: `completed`, `failed_count = 0`, `issues = []`, `staleCount = 0`.
-
-These counters are a snapshot, not a permanent specification. Cronos/Supabase live state is the source of truth for closure.
 
 ---
 
@@ -234,4 +268,4 @@ When a new issue is found:
 - **P1** primary-flow regression: repair within the active stage only if caused by that stage or blocking its exit criteria; otherwise place it at the top of the next stage.
 - **P2/P3** improvements: backlog only; do not delay stage closure.
 
-The purpose of this rule is to finish stages, preserve a known production baseline and prevent continuous development from becoming an undefined permanent phase.
+The goal is to finish stages, preserve a known production baseline and prevent continuous development from becoming an undefined permanent phase.

@@ -1,23 +1,15 @@
 export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/client'
-import { cookies } from 'next/headers'
+import { requireServerActor } from '@/lib/auth/server-actor'
 
 export async function GET() {
   try {
-    const cookieStore = await cookies()
-    const companyId = cookieStore.get('company_id')?.value
-    const isLabbeAdmin = cookieStore.get('is_labbe_admin')?.value
-
-    // Verificar que sea admin de Labbe
-    if (isLabbeAdmin !== 'true') {
-      return Response.json(
-        { error: 'No autorizado' },
-        { status: 403 }
-      )
+    const auth = await requireServerActor(['admin'])
+    if (!auth.actor) {
+      return Response.json({ error: auth.error }, { status: auth.status })
     }
 
-    // Obtener todas las empresas
     const supabase = createClient()
     if (!supabase) {
       return Response.json(
@@ -25,16 +17,15 @@ export async function GET() {
         { status: 500 }
       )
     }
+
     const { data: companies, error } = await supabase
       .from('companies')
       .select('id, rut, name, representative, email, phone, region, is_labbe_admin')
       .order('name', { ascending: true })
 
-    if (error) {
-      throw error
-    }
+    if (error) throw error
 
-    console.log(`[v0] Admin fetched ${companies?.length || 0} companies`)
+    console.log(`[v0] Verified admin ${auth.actor.id} fetched ${companies?.length || 0} companies`)
 
     return Response.json({
       success: true,

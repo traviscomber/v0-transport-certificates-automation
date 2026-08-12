@@ -1,51 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { NextResponse } from 'next/server'
 
-export async function GET(request: NextRequest) {
-  try {
-    const supabase = createAdminClient()
+export const dynamic = 'force-dynamic'
 
-    // Get all records from transportista_auth
-    const { data: allRecords, error: allError } = await supabase
-      .from('transportista_auth')
-      .select('*')
-      .limit(10)
+function gone() {
+  return NextResponse.json(
+    {
+      error: 'Gone',
+      message: 'Legacy debug and test endpoints are disabled in ChileFlota.',
+    },
+    { status: 410 },
+  )
+}
 
-    if (allError) {
-      return NextResponse.json(
-        { error: 'Error fetching records', details: allError.message },
-        { status: 500 }
-      )
-    }
+export async function GET() {
+  return gone()
+}
 
-    // Specifically search for the test RUT
-    const { data: testRecord, error: testError } = await supabase
-      .from('transportista_auth')
-      .select('*')
-      .eq('rut', '77653071-9')
-      .single()
+export async function POST() {
+  return gone()
+}
 
-    // Get count of all records
-    const { count, error: countError } = await supabase
-      .from('transportista_auth')
-      .select('*', { count: 'exact', head: true })
+export async function PUT() {
+  return gone()
+}
 
-    return NextResponse.json({
-      success: true,
-      totalRecords: count,
-      testRutFound: !testError && testRecord,
-      testRecord: testRecord || null,
-      testError: testError?.message || null,
-      sampleRecords: allRecords || [],
-    })
+export async function PATCH() {
+  return gone()
+}
 
-  } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'Debug error',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    )
-  }
+export async function DELETE() {
+  return gone()
 }
