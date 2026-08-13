@@ -13,9 +13,10 @@ function encode(value: string | Uint8Array): string {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
 }
 
-function decode(value: string): Uint8Array {
+function decode(value: string): ArrayBuffer {
   const padded = value.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(value.length / 4) * 4, '=')
-  return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0))
+  const bytes = Uint8Array.from(atob(padded), (character) => character.charCodeAt(0))
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
 }
 
 async function key(secret: string) {
