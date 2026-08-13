@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getEmailSessionSecret, signEmailSession } from '@/lib/email-session'
 
 function maskEmail(email?: string | null) {
   if (!email) return 'unknown'
@@ -130,46 +131,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // If organization_id is still missing, query it from conductores or transportistas table
-    if (!organizationId) {
-      console.log('[v0] organization_id not found, querying from database...')
-      
-      // Get the first conductor for this company to find their transportista_id
-      const conductoresResponse = await fetch(
-        `${supabaseUrl}/rest/v1/conductores?select=transportista_id&limit=1`,
-        {
-          headers: {
-            apikey: supabaseServiceKey,
-            Authorization: `Bearer ${supabaseServiceKey}`,
-          },
-        }
+    // Executive and prevention access must have an explicit company assignment.
+    // Never fall back to the first company in the database.
+    if (!organizationId && ['ejecutiva', 'prevencionista'].includes(role)) {
+      return NextResponse.json(
+        { error: 'La cuenta no tiene una empresa asignada. Contacta al administrador.' },
+        { status: 403 }
       )
-
-      const conductores = await conductoresResponse.json()
-      
-      if (conductores && conductores.length > 0) {
-        organizationId = conductores[0].transportista_id
-        console.log('[v0] Found organizationId from conductor:', organizationId)
-      } else {
-        // Fallback: use first transportista
-        const transportistasResponse = await fetch(
-          `${supabaseUrl}/rest/v1/transportistas?select=id&limit=1`,
-          {
-            headers: {
-              apikey: supabaseServiceKey,
-              Authorization: `Bearer ${supabaseServiceKey}`,
-            },
-          }
-        )
-        const transportistas = await transportistasResponse.json()
-        if (transportistas && transportistas.length > 0) {
-          organizationId = transportistas[0].id
-          console.log('[v0] Found organizationId from transportista:', organizationId)
-        }
-      }
     }
 
     console.log('[v0] Login successful for:', maskEmail(email), 'Role:', role, 'Org:', organizationId)
+
+    const sessionSecret = getEmailSessionSecret()
+    if (!sessionSecret) {
+      return NextResponse.json({ error: 'Server session configuration error' }, { status: 500 })
+    }
+
+    const appSession = await signEmailSession({
+      email: email.toLowerCase(),
+      fullName: fullName || email,
+      role,
+      organizationId: organizationId || '',
+    }, sessionSecret)
 
     // Return success JSON response
     const response = NextResponse.json({
@@ -182,7 +165,17 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Set cookies with permissive settings to ensure they stick
+    response.cookies.set({
+      name: 'app_session',
+      value: appSession,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 8 * 60 * 60,
+      path: '/',
+    })
+
+    // Legacy cookies are display-only. Authorization uses app_session.
     response.cookies.set({
       name: 'user_email',
       value: email.toLowerCase(),
