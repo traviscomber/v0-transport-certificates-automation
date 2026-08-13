@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { normalizeDocumentPeriod } from '@/lib/document-period'
+import { isMultiInstanceDocumentCode } from '@/lib/subcontractor-document-versioning'
 
 export const maxDuration = 60
 
@@ -38,6 +39,41 @@ export async function POST(
 
     if (docTypeError || !docType) {
       return NextResponse.json({ error: 'Tipo de documento no encontrado' }, { status: 404 })
+    }
+
+    let supersedesDocumentId: string | null = null
+    const shouldResolveExactPriorVersion = Boolean(
+      documentPeriod && !isMultiInstanceDocumentCode(docType.code)
+    )
+
+    if (shouldResolveExactPriorVersion && documentPeriod) {
+      const { data: currentDocument, error: currentDocumentError } = await supabase
+        .from('subcontractor_documents')
+        .select('id')
+        .eq('subcontractor_id', id)
+        .eq('document_type_id', documentTypeId)
+        .eq('document_period_year', documentPeriod.document_period_year)
+        .eq('document_period_month', documentPeriod.document_period_month)
+        .eq('is_current', true)
+        .order('uploaded_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (currentDocumentError) {
+        console.error('[documents] exact supersession lookup failed', {
+          subcontractorId: id,
+          documentTypeId,
+          periodYear: documentPeriod.document_period_year,
+          periodMonth: documentPeriod.document_period_month,
+          error: currentDocumentError.message,
+        })
+        return NextResponse.json(
+          { error: 'No fue posible verificar la versión vigente del documento' },
+          { status: 500 }
+        )
+      }
+
+      supersedesDocumentId = currentDocument?.id ?? null
     }
 
     const fileExtension = file.name.split('.').pop() || 'pdf'
@@ -98,6 +134,7 @@ export async function POST(
       uploaded_at: new Date().toISOString(),
       expires_at: expiresAt.toISOString(),
       ...(documentPeriod || {}),
+      ...(supersedesDocumentId ? { supersedes_document_id: supersedesDocumentId } : {}),
     }
 
     const { data: newDocument, error: saveError } = await supabase
@@ -114,6 +151,12 @@ export async function POST(
     }
 
     if (saveError) {
+      console.error('[documents] save error', {
+        subcontractorId: id,
+        documentTypeId,
+        supersedesDocumentId,
+        error: saveError.message,
+      })
       return NextResponse.json({ error: 'Error al guardar el documento' }, { status: 500 })
     }
 
@@ -131,6 +174,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       document: newDocument,
+      supersededDocumentId: supersedesDocumentId,
       message: `Documento subido exitosamente. Se vencerá el ${expiresAt.toLocaleDateString('es-CL')}`,
     })
   } catch (error) {
