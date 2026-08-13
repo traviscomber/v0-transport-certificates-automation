@@ -39,7 +39,12 @@ export async function middleware(request: NextRequest) {
   )
   const isPrevencionista = appSession?.role === 'prevencionista'
 
-  if (isPrevencionista && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+  if (
+    isPrevencionista &&
+    path !== '/api/logout' &&
+    path !== '/api/auth/logout' &&
+    !['GET', 'HEAD', 'OPTIONS'].includes(method)
+  ) {
     return NextResponse.json(
       { error: 'El perfil prevencionista tiene acceso de solo lectura.' },
       { status: 403 }
