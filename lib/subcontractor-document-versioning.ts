@@ -9,8 +9,22 @@ export const MULTI_INSTANCE_DOCUMENT_CODES = new Set([
   'FOTO_PATENTES',
 ])
 
+export const EXACT_SINGLE_INSTANCE_DOCUMENT_CODES = new Set([
+  'F30-1_CLIENTE',
+  'F30-1_DOÑA_ISIDORA',
+  'CERT_COTIZACIONES',
+  'CERT_AFIL_MUTUAL',
+  'F30',
+  'CERT_TASAS_MUTUAL',
+  'F29',
+])
+
 export function isMultiInstanceDocumentCode(code: string | null | undefined): boolean {
   return Boolean(code && MULTI_INSTANCE_DOCUMENT_CODES.has(code))
+}
+
+export function shouldSupersedeByExactPeriod(code: string | null | undefined): boolean {
+  return Boolean(code && EXACT_SINGLE_INSTANCE_DOCUMENT_CODES.has(code))
 }
 
 export function buildExactDocumentSlotKey(input: {
