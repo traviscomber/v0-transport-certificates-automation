@@ -1,6 +1,7 @@
 import { updateSession } from "@/lib/supabase/middleware"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { getEmailSessionSecret, verifyEmailSession } from '@/lib/email-session'
 
 const uuidSegment = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
 
@@ -32,6 +33,24 @@ const destructiveApiPatterns = [
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
   const method = request.method.toUpperCase()
+  const appSession = await verifyEmailSession(
+    request.cookies.get('app_session')?.value,
+    getEmailSessionSecret(),
+  )
+  const isPrevencionista = appSession?.role === 'prevencionista'
+
+  if (
+    isPrevencionista &&
+    path !== '/api/logout' &&
+    path !== '/api/auth/logout' &&
+    !['GET', 'HEAD', 'OPTIONS'].includes(method)
+  ) {
+    return NextResponse.json(
+      { error: 'El perfil prevencionista tiene acceso de solo lectura.' },
+      { status: 403 }
+    )
+  }
+
 
   if (
     process.env.NODE_ENV === 'production' &&
@@ -79,21 +98,14 @@ export async function middleware(request: NextRequest) {
   }
 
   if (path.startsWith('/prevencionista')) {
-    const userEmail = request.cookies.get('user_email')?.value
-    if (!userEmail) {
+    if (!appSession) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
-
-    if (path === '/prevencionista' || path === '/prevencionista/') {
-      return NextResponse.redirect(new URL('/prevencionista/dashboard', request.url))
-    }
-
-    return NextResponse.next()
+    return NextResponse.redirect(new URL('/dashboard/company', request.url))
   }
 
   if (path.startsWith('/dashboard')) {
-    const userEmail = request.cookies.get('user_email')?.value
-    if (!userEmail) {
+    if (!appSession) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
