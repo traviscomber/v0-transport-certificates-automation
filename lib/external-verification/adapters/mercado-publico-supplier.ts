@@ -287,6 +287,7 @@ export class MercadoPublicoSupplierAdapter implements VerificationSourceAdapter 
         providerCode: supplier.code,
         providerName: supplier.name,
         publicProfileUrl,
+        evidencePortalUrl: 'https://datos-abiertos.chilecompra.cl/',
         capability: 'supplier_registry_presence',
         note: 'La presencia en Mercado Publico no equivale por si sola a habilidad vigente para contratar con el Estado.',
       },
