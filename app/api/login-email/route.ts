@@ -12,7 +12,6 @@ export async function POST(request: NextRequest) {
   try {
     let email = ''
 
-    // Handle both JSON and FormData
     const contentType = request.headers.get('content-type')
     if (contentType?.includes('application/json')) {
       const body = await request.json()
@@ -22,11 +21,10 @@ export async function POST(request: NextRequest) {
       email = formData.get('email') as string
     }
 
+    email = email?.trim().toLowerCase()
+
     if (!email) {
-      return NextResponse.json(
-        { error: 'Email is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -34,23 +32,19 @@ export async function POST(request: NextRequest) {
 
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error('[v0] Missing Supabase credentials')
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
+
+    const headers = {
+      apikey: supabaseServiceKey,
+      Authorization: `Bearer ${supabaseServiceKey}`,
     }
 
     console.log('[v0] Login attempt for:', maskEmail(email))
 
-    // Try to get user from profiles table first (admins, executives)
     const profileResponse = await fetch(
       `${supabaseUrl}/rest/v1/profiles?email=eq.${encodeURIComponent(email)}`,
-      {
-        headers: {
-          apikey: supabaseServiceKey,
-          Authorization: `Bearer ${supabaseServiceKey}`,
-        },
-      }
+      { headers, cache: 'no-store' },
     )
 
     const profiles = await profileResponse.json()
@@ -59,111 +53,77 @@ export async function POST(request: NextRequest) {
     let fullName = ''
     let organizationId = ''
 
-    if (profiles && profiles.length > 0) {
-      // Found in profiles table (admin, executive, etc)
+    if (Array.isArray(profiles) && profiles.length > 0) {
       user = profiles[0]
-      fullName = user.full_name
+      fullName = user.full_name || ''
       role = user.role || 'admin'
-      organizationId = user.organization_id
-
+      organizationId = user.organization_id || ''
       console.log('[v0] Found in profiles table:', { email: maskEmail(email), role, fullName })
-    } else {
-      // Not in profiles, try executive_staff table (ejecutivas)
-      console.log('[v0] Not in profiles, checking executive_staff table...')
-      
-      const executiveResponse = await fetch(
-        `${supabaseUrl}/rest/v1/executive_staff?email=eq.${encodeURIComponent(email)}&is_active=eq.true`,
-        {
-          headers: {
-            apikey: supabaseServiceKey,
-            Authorization: `Bearer ${supabaseServiceKey}`,
-          },
-        }
-      )
+    }
 
-      const executives = await executiveResponse.json()
+    // executive_staff is the canonical company assignment for active executives.
+    // Resolve it even when a matching profile exists but has no organization scope.
+    const executiveResponse = await fetch(
+      `${supabaseUrl}/rest/v1/executive_staff?email=eq.${encodeURIComponent(email)}&is_active=eq.true`,
+      { headers, cache: 'no-store' },
+    )
+    const executives = await executiveResponse.json()
 
-      if (executives && executives.length > 0) {
-        // Found in executive_staff table
-        const executive = executives[0]
-        user = executive
-        fullName = executive.full_name
-        role = 'ejecutiva'
-        organizationId = executive.transportista_id
-
-        console.log('[v0] Found in executive_staff table (ejecutiva):', { email: maskEmail(email), fullName, organizationId })
-      }
+    if (Array.isArray(executives) && executives.length > 0) {
+      const executive = executives[0]
+      user = user || executive
+      fullName = executive.full_name || fullName || email
+      role = 'ejecutiva'
+      organizationId = executive.transportista_id || organizationId
+      console.log('[v0] Resolved executive_staff scope:', {
+        email: maskEmail(email),
+        role,
+        organizationId,
+      })
     }
 
     if (!user) {
-      // Not in profiles, try conductores table (drivers)
-      console.log('[v0] Not in profiles, checking conductores table...')
-      
       const conductoresResponse = await fetch(
         `${supabaseUrl}/rest/v1/conductores?email=eq.${encodeURIComponent(email)}&select=*`,
-        {
-          headers: {
-            apikey: supabaseServiceKey,
-            Authorization: `Bearer ${supabaseServiceKey}`,
-          },
-        }
+        { headers, cache: 'no-store' },
       )
-
       const conductores = await conductoresResponse.json()
 
-      if (conductores && conductores.length > 0) {
-        // Found in conductores table (driver)
+      if (Array.isArray(conductores) && conductores.length > 0) {
         const conductor = conductores[0]
         user = conductor
         fullName = `${conductor.nombres} ${conductor.apellido_paterno} ${conductor.apellido_materno || ''}`.trim()
         role = 'driver'
-        organizationId = conductor.transportista_id
-
-        console.log('[v0] Found in conductores table (driver):', { email: maskEmail(email), fullName, organizationId })
+        organizationId = conductor.transportista_id || ''
       }
     }
 
     if (!user) {
-      console.error('[v0] User not found in profiles or conductores:', email)
-      return NextResponse.json(
-        { error: 'Usuario no encontrado. Verifica tu email.' },
-        { status: 401 }
-      )
+      console.error('[v0] User not found:', maskEmail(email))
+      return NextResponse.json({ error: 'Usuario no encontrado. Verifica tu email.' }, { status: 401 })
     }
 
-    // Prevencionistas belong to the same Labbé company scope as active executive staff.
-    // Resolve only when every active executive assignment points to one unambiguous company.
-    if (!organizationId && role === 'prevencionista' && email.toLowerCase().endsWith('@labbe.cl')) {
+    if (!organizationId && role === 'prevencionista' && email.endsWith('@labbe.cl')) {
       const staffResponse = await fetch(
         `${supabaseUrl}/rest/v1/executive_staff?select=transportista_id&is_active=eq.true`,
-        {
-          headers: {
-            apikey: supabaseServiceKey,
-            Authorization: `Bearer ${supabaseServiceKey}`,
-          },
-        }
+        { headers, cache: 'no-store' },
       )
       const staff = await staffResponse.json()
       const organizationIds = Array.from(new Set(
         Array.isArray(staff)
           ? staff.map((item: { transportista_id?: string }) => item.transportista_id).filter(Boolean)
-          : []
+          : [],
       ))
 
-      if (organizationIds.length === 1) {
-        organizationId = String(organizationIds[0])
-      }
+      if (organizationIds.length === 1) organizationId = String(organizationIds[0])
     }
 
-    // Never fall back to the first company in the database.
     if (!organizationId && ['ejecutiva', 'prevencionista'].includes(role)) {
       return NextResponse.json(
         { error: 'La cuenta no tiene una empresa asignada. Contacta al administrador.' },
-        { status: 403 }
+        { status: 403 },
       )
     }
-
-    console.log('[v0] Login successful for:', maskEmail(email), 'Role:', role, 'Org:', organizationId)
 
     const sessionSecret = getEmailSessionSecret()
     if (!sessionSecret) {
@@ -171,19 +131,18 @@ export async function POST(request: NextRequest) {
     }
 
     const appSession = await signEmailSession({
-      email: email.toLowerCase(),
+      email,
       fullName: fullName || email,
       role,
       organizationId: organizationId || '',
     }, sessionSecret)
 
-    // Return success JSON response
     const response = NextResponse.json({
       success: true,
       user: {
-        email: email.toLowerCase(),
+        email,
         full_name: fullName,
-        role: role,
+        role,
         organization_id: organizationId,
       },
     })
@@ -198,54 +157,31 @@ export async function POST(request: NextRequest) {
       path: '/',
     })
 
-    // Legacy cookies are display-only. Authorization uses app_session.
-    response.cookies.set({
-      name: 'user_email',
-      value: email.toLowerCase(),
-      httpOnly: false,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/',
-    })
+    for (const [name, value] of [
+      ['user_email', email],
+      ['user_name', fullName || email],
+      ['user_role', role],
+      ['user_organization_id', organizationId || ''],
+    ] as const) {
+      response.cookies.set({
+        name,
+        value,
+        httpOnly: false,
+        secure: false,
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7,
+        path: '/',
+      })
+    }
 
-    response.cookies.set({
-      name: 'user_name',
-      value: fullName || email,
-      httpOnly: false,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/',
+    console.log('[v0] Login successful:', {
+      email: maskEmail(email),
+      role,
+      organizationId,
     })
-
-    response.cookies.set({
-      name: 'user_role',
-      value: role,
-      httpOnly: false,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/',
-    })
-
-    response.cookies.set({
-      name: 'user_organization_id',
-      value: organizationId || '',
-      httpOnly: false,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/',
-    })
-
-    console.log('[v0] Cookies set with path=/, user org:', organizationId, 'role:', role)
     return response
   } catch (error: any) {
     console.error('[v0] Login error:', error)
-    return NextResponse.json(
-      { error: error.message || 'Login failed' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: error.message || 'Login failed' }, { status: 500 })
   }
 }
