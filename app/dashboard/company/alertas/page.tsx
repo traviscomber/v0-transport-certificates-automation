@@ -6,7 +6,6 @@ import { HelpBox } from '@/components/ui/help-box'
 import { Button } from '@/components/ui/button'
 import { AlertActionCard } from '@/components/alert-action-card'
 import { RefreshCw } from 'lucide-react'
-import { AlertTriangle, AlertCircle, Info } from 'lucide-react'
 
 export default function AlertasPage() {
   const [alerts, setAlerts] = useState<Alert[]>([])
@@ -37,36 +36,32 @@ export default function AlertasPage() {
   }, [])
 
   useEffect(() => {
-    if (!profileResolved || !ejecutiva) {
-      if (profileResolved) setIsLoading(false)
-      return
-    }
+    if (!profileResolved) return
     loadAlerts()
-  }, [profileResolved, ejecutiva, selectedStatus])
+  }, [profileResolved, selectedStatus])
 
   const loadAlerts = async () => {
-    if (!ejecutiva) return
-
     setIsLoading(true)
     try {
+      // Keep this view aligned with the dashboard alert preview.
+      // Alerts are currently generic because alerts_log.ejecutiva_nombre is not populated.
+      // The authenticated profile is used for display/audit actions, not as a list filter.
       const params = new URLSearchParams({
         limit: '100',
         sort: 'created_at.desc',
-        ejecutiva,
         ...(selectedStatus && { status: selectedStatus }),
       })
 
       const response = await fetch(`/api/alerts?${params.toString()}`, { cache: 'no-store' })
-      if (!response.ok) throw new Error('Failed to fetch alerts')
+      if (!response.ok) throw new Error(`Failed to fetch alerts (${response.status})`)
 
       const data = await response.json()
-      if (data.alerts) {
-        setAlerts(data.alerts.map((alert: any) => ({
-          ...alert,
-          status: alert.status || 'pendiente',
-        })))
-      }
-      console.log('[v0] Loaded alerts for current user:', ejecutiva, 'Count:', data.alerts?.length)
+      const alertList = Array.isArray(data) ? data : (data.alerts || [])
+      setAlerts(alertList.map((alert: any) => ({
+        ...alert,
+        status: alert.status || 'pendiente',
+      })))
+      console.log('[v0] Loaded generic alerts for portal:', alertList.length)
     } catch (error) {
       console.error('[v0] Error loading alerts:', error)
       setAlerts([])
@@ -124,10 +119,10 @@ export default function AlertasPage() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Alertas y Notificaciones</h1>
           <p className="text-foreground/80">
-            Alertas para <span className="font-semibold text-orange-400">{displayName}</span>
+            Centro de alertas · <span className="font-semibold text-orange-400">{displayName}</span>
           </p>
         </div>
-        <Button onClick={loadAlerts} disabled={isLoading || !ejecutiva} variant="outline" size="sm">
+        <Button onClick={loadAlerts} disabled={isLoading} variant="outline" size="sm">
           <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
           Actualizar
         </Button>
@@ -135,8 +130,8 @@ export default function AlertasPage() {
 
       <HelpBox
         variant="info"
-        title="Centro de Alertas Personalizadas"
-        description="Ves solo tus alertas. Usa los botones de acción para aprobar, rechazar o solicitar información sobre documentos."
+        title="Centro de Alertas"
+        description="Vista consolidada de alertas operacionales. Usa los botones de acción para aprobar, rechazar o solicitar información cuando corresponda."
         tips={[
           "Haz clic en 'Actualizar' para cargar nuevas alertas",
           "Usa 'Aprobar', 'Rechazar' o 'Solicitar Info' directamente en cada alerta",
@@ -167,7 +162,7 @@ export default function AlertasPage() {
 
       <div>
         {isLoading ? (
-          <div className="text-center py-12"><p className="text-muted-foreground">Cargando alertas para {displayName}...</p></div>
+          <div className="text-center py-12"><p className="text-muted-foreground">Cargando alertas...</p></div>
         ) : filteredAlerts.length === 0 ? (
           <div className="text-center py-12"><p className="text-muted-foreground">{alerts.length === 0 ? 'No hay alertas en este momento' : 'No hay alertas que coincidan con los filtros'}</p></div>
         ) : (
