@@ -83,6 +83,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [userProfile, setUserProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [isMounted, setIsMounted] = useState(false)
+  const [isReadOnly, setIsReadOnly] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     "Panel Principal": true,
     "Funciones IA": true,
@@ -95,6 +96,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   // Mark component as mounted to prevent hydration mismatch
   useEffect(() => {
     setIsMounted(true)
+    const role = document.cookie
+      .split('; ')
+      .find((cookie) => cookie.startsWith('user_role='))
+      ?.split('=')[1]
+    setIsReadOnly(decodeURIComponent(role || '') === 'prevencionista')
   }, [])
 
   useEffect(() => {
@@ -215,7 +221,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <h1 className="text-lg font-bold text-white">Transportes Labbé</h1>
       </div>
       <nav className="flex-1 space-y-2 px-3 py-4 overflow-y-auto">
-        {navigationGroups.map((group) => (
+        {navigationGroups
+          .map((group) => ({
+            ...group,
+            items: group.items.filter((item) => !isReadOnly || ![
+              '/ai-scanner',
+              '/mobile-capture',
+              '/dashboard/upload',
+              '/dashboard/verification',
+              '/dashboard/settings',
+            ].includes(item.href)),
+          }))
+          .filter((group) => group.items.length > 0)
+          .map((group) => (
           <div key={group.name} className="space-y-1">
             <Collapsible open={expandedGroups[group.name]} onOpenChange={() => toggleGroup(group.name)}>
               <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors">
