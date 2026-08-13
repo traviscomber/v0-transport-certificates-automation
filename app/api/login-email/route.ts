@@ -131,7 +131,30 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Executive and prevention access must have an explicit company assignment.
+    // Prevencionistas belong to the same Labbé company scope as active executive staff.
+    // Resolve only when every active executive assignment points to one unambiguous company.
+    if (!organizationId && role === 'prevencionista' && email.toLowerCase().endsWith('@labbe.cl')) {
+      const staffResponse = await fetch(
+        `${supabaseUrl}/rest/v1/executive_staff?select=transportista_id&is_active=eq.true`,
+        {
+          headers: {
+            apikey: supabaseServiceKey,
+            Authorization: `Bearer ${supabaseServiceKey}`,
+          },
+        }
+      )
+      const staff = await staffResponse.json()
+      const organizationIds = Array.from(new Set(
+        Array.isArray(staff)
+          ? staff.map((item: { transportista_id?: string }) => item.transportista_id).filter(Boolean)
+          : []
+      ))
+
+      if (organizationIds.length === 1) {
+        organizationId = String(organizationIds[0])
+      }
+    }
+
     // Never fall back to the first company in the database.
     if (!organizationId && ['ejecutiva', 'prevencionista'].includes(role)) {
       return NextResponse.json(
