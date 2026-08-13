@@ -33,7 +33,6 @@ async function resolveProfileIdentity() {
     }
   }
 
-  // Temporary backwards-compatible fallback for users still carrying the old token.
   const legacySession = cookieStore.get('auth_token')?.value
   if (!legacySession) return null
 
@@ -48,6 +47,10 @@ async function resolveProfileIdentity() {
   }
 }
 
+function withProfileCompatibility<T extends Record<string, unknown>>(data: T) {
+  return { ...data, avatar_url: null }
+}
+
 export async function GET() {
   try {
     const supabase = getSupabaseClient()
@@ -60,15 +63,20 @@ export async function GET() {
     if (identity.type === 'app_session') {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, full_name, phone, avatar_url, role, rut')
+        .select('id, email, full_name, phone, role, rut')
         .eq('email', identity.email)
         .maybeSingle()
 
       if (error) throw error
 
-      // Some valid portal users are represented primarily by executive_staff/conductores.
-      // Return the signed identity rather than failing if there is no profile row.
-      return NextResponse.json(data || {
+      if (data) {
+        return NextResponse.json(withProfileCompatibility({
+          ...data,
+          organization_id: identity.organizationId || null,
+        }))
+      }
+
+      return NextResponse.json({
         id: identity.email,
         email: identity.email,
         full_name: identity.fullName || identity.email,
@@ -82,12 +90,12 @@ export async function GET() {
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, email, full_name, phone, avatar_url, role, rut')
+      .select('id, email, full_name, phone, role, rut')
       .eq('id', identity.userId)
       .single()
 
     if (error) throw error
-    return NextResponse.json(data)
+    return NextResponse.json(withProfileCompatibility(data))
   } catch (error) {
     console.error('Error fetching profile:', error)
     return NextResponse.json({ error: 'Error al obtener perfil' }, { status: 500 })
@@ -119,11 +127,11 @@ export async function PUT(request: Request) {
       : query.eq('id', identity.userId)
 
     const { data, error } = await scopedQuery
-      .select('id, email, full_name, phone, avatar_url, role, rut')
+      .select('id, email, full_name, phone, role, rut')
       .single()
 
     if (error) throw error
-    return NextResponse.json(data)
+    return NextResponse.json(withProfileCompatibility(data))
   } catch (error) {
     console.error('Error updating profile:', error)
     return NextResponse.json({ error: 'Error al actualizar perfil' }, { status: 500 })
