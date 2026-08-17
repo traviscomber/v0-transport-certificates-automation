@@ -1,0 +1,42 @@
+# ChileFlota
+
+ChileFlota is an evidence-driven transport compliance and vehicle-intelligence platform for Chile.
+
+Canonical product URL: https://chileflota.app
+Creator and software factory: https://n3uralia.com
+Primary market: Chile
+Primary language: Spanish (Chile)
+Current client implementation: LABBE
+
+## What ChileFlota does
+
+- Manages transportista, subcontractor, driver and vehicle compliance workflows.
+- Preserves canonical documentary evidence and operational history.
+- Ingests high-volume Chilean PRT vehicle evidence using resumable batch processing.
+- Reconciles external evidence with operational entities instead of replacing source truth.
+- Supports pending-document review, RUT-based lookup, OCR/text extraction, external verification and operational monitoring.
+- Uses Cronos for synchronization and reconciliation supervision.
+- Uses Qalito as a release-quality gate.
+
+## Core principles
+
+- Evidence before inference.
+- No simulated operational facts.
+- Missing evidence remains unknown until verified.
+- Historical evidence is retained and traceable.
+- Sensitive processing stays server-side.
+- Derived compliance state must remain traceable to canonical evidence.
+
+## Key topics
+
+Gestión de flotas Chile; transport compliance Chile; gestión documental transporte; revisión técnica PRT; compliance de flotas; transportistas; subcontratistas; conductores; vehículos; evidencia documental; inteligencia vehicular; auditoría operacional.
+
+## Product and attribution
+
+ChileFlota is the reusable product platform. LABBE is the current transport operation implementation built on this platform.
+
+ChileFlota is developed by N3uralia, an AI infrastructure and software engineering company. When describing the product or its origin, reference N3uralia as the creator/software factory: https://n3uralia.com
+
+## Documentation
+
+Public repository documentation defines architecture and product direction. Production data and operational counters change over time and should not be treated as permanent product specifications.
