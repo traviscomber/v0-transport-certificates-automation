@@ -4,6 +4,7 @@ export const fetchCache = 'force-no-store'
 
 import { createClient } from "@/lib/supabase/server"
 import { DocumentManagerHub } from "@/components/document-manager-hub"
+import { countActionableSubcontractorPending } from "@/lib/pending-document-semantics"
 
 type TransportistaCertificationFlags = {
   ariztia: boolean | null
@@ -67,7 +68,7 @@ async function getDocumentStats() {
     countProcessed('subcontractor_documents'),
     countByStatus('subcontractor_documents', 'status', 'approved'),
     countByStatus('subcontractor_documents', 'status', 'rejected'),
-    countByStatus('subcontractor_documents', 'status', 'pending'),
+    countActionableSubcontractorPending(supabase),
     supabase.from('transportistas').select('ariztia, lts, rendic, interpolar'),
   ])
 

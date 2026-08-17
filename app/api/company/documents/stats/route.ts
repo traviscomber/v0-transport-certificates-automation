@@ -4,6 +4,7 @@ export const revalidate = 0
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAuth } from '@/lib/auth-middleware'
+import { countActionableSubcontractorPending } from '@/lib/pending-document-semantics'
 
 type TransportistaCertificationFlags = {
   ariztia: boolean | null
@@ -73,7 +74,7 @@ export async function GET(request: NextRequest) {
       countProcessed('subcontractor_documents'),
       countByStatus('subcontractor_documents', 'status', 'approved'),
       countByStatus('subcontractor_documents', 'status', 'rejected'),
-      countByStatus('subcontractor_documents', 'status', 'pending'),
+      countActionableSubcontractorPending(supabase),
       supabase.from('transportistas').select('ariztia, lts, rendic, interpolar'),
     ])
 
