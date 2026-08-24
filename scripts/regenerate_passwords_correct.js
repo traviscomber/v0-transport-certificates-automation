@@ -6,6 +6,15 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+function getLast4BeforeVerifier(rut) {
+  const digitsOnly = String(rut ?? '').replace(/[^0-9]/g, '');
+  if (digitsOnly.length < 5) {
+    throw new Error(`Invalid RUT: ${rut}`);
+  }
+
+  return digitsOnly.slice(0, -1).slice(-4);
+}
+
 async function regeneratePasswords() {
   console.log('[v0] Starting password regeneration with correct digit extraction...');
 
@@ -28,16 +37,10 @@ async function regeneratePasswords() {
 
   for (const transportista of transportistas) {
     const rut = transportista.rut;
-    
-    // Extract only digits from RUT
-    const digitsOnly = rut.replace(/[^0-9]/g, '');
-    
-    // Get the last 4 digits BEFORE the check digit
-    // If RUT is "776530719" (9 digits), take digits 4-7 (0-indexed)
-    const last4Digits = digitsOnly.slice(4, 8);
+    const last4Digits = getLast4BeforeVerifier(rut);
     const password = `labbe${last4Digits}`;
 
-    console.log(`[v0] RUT: ${rut} → Digits: ${digitsOnly} → Last4: ${last4Digits} → Password: ${password}`);
+    console.log(`[v0] RUT: ${rut} → credentials regenerated`);
 
     try {
       // Generate hash

@@ -18,6 +18,15 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey)
 
+function getLast4BeforeVerifier(rut) {
+  const digitsOnly = String(rut ?? '').replace(/[^0-9]/g, '')
+  if (digitsOnly.length < 5) {
+    throw new Error(`Invalid RUT: ${rut}`)
+  }
+
+  return digitsOnly.slice(0, -1).slice(-4)
+}
+
 async function regeneratePasswordsFixed() {
   console.log('[v0] Starting VERIFIED password hash regeneration...\n')
 
@@ -50,7 +59,7 @@ async function regeneratePasswordsFixed() {
       // Generate AND VERIFY hashes for this batch
       const updates = []
       for (const t of batch) {
-        const last4 = t.rut.slice(-4).replace(/[^0-9]/g, '')
+        const last4 = getLast4BeforeVerifier(t.rut)
         const password = `labbe${last4}`
         const passwordHash = await bcrypt.hash(password, 10)
 
@@ -88,12 +97,11 @@ async function regeneratePasswordsFixed() {
         console.log(`[v0] ✅ Batch ${batchNum}: ${updates.length}/${batch.length} saved`)
         successCount += updates.length
 
-        // Show sample for first batch
+        // Show sample for first batch without exposing generated credentials
         if (batchNum === 1) {
-          console.log('[v0] Sample hashes:')
+          console.log('[v0] Sample updates:')
           updates.slice(0, 2).forEach((u) => {
-            const last4 = u.rut.slice(-4).replace(/[^0-9]/g, '')
-            console.log(`[v0]   RUT: ${u.rut} → Password: labbe${last4}`)
+            console.log(`[v0]   RUT: ${u.rut} → credentials regenerated`)
           })
         }
       }
