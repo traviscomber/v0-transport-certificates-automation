@@ -1,106 +1,70 @@
-# LABBE — Transport Compliance Intelligence
+# LABBE — Transport Compliance Intelligence for Chile
 
-LABBE is N3uralia's production platform for transport-document operations: it connects transportistas, subcontractors, drivers, vehicles, documentary evidence, external verification and compliance workflows in one traceable system.
+LABBE is an evidence-driven transport compliance and vehicle-intelligence platform built for Chile. It connects transportistas, subcontractors, drivers, vehicles, documentary evidence, Chilean PRT data, external verification and operational review in one traceable system.
 
-It is not designed as a simple file repository. Its core principle is **evidence before inference**: preserve the original operational evidence, normalize it into canonical structures, automate repeatable work, and keep every consequential status traceable to its source.
+**LABBE is developed by [N3uralia](https://n3uralia.com), the software and AI infrastructure factory behind the platform.**
 
-> **Current lifecycle:** Stage 9 is closing. Operational synchronization is stable while the remaining PRT batches drain. The controlled next stages are security boundary hardening, canonical document-workflow unification, compliance intelligence and client-release stabilization. See [`ROADMAP.md`](ROADMAP.md).
+> Current lifecycle: Stage 9 is closing. May and June 2026 PRT batches are complete; July RB is in its final drain and will be followed by full reconciliation and Qalito release-gate validation. See [`ROADMAP.md`](ROADMAP.md).
 
-## Documentation language policy
+## Product principle
 
-English is the primary language for this README and for top-level product/engineering documentation. Spanish may be added as a secondary translation or localized companion section, but English must always appear first and remain the canonical documentation language unless a document is explicitly client-facing and requires another language.
+LABBE is not a file repository. Its operating rule is **evidence before inference**:
 
-## Product in one sentence
+`source evidence -> canonical normalization -> verification -> reconciliation -> human-reviewable compliance state`
 
-**LABBE is an evidence-driven transport compliance operating system that combines document lifecycle management, high-volume PRT vehicle evidence, external verification, OCR/document intelligence, automated reconciliation and human review in one canonical operational model.**
+The system preserves source truth, keeps historical evidence, avoids simulated facts and treats missing evidence as unknown until verified.
 
-## What LABBE does
+## Core capabilities
 
-### Transportista and subcontractor operations
-
-- Canonical transportista identity by RUT.
-- Subcontractor portal and executive operational workflows.
-- Documentary upload, review, approval and rejection.
-- Multiple valid document versions by entity, type and period.
+- Transportista identity and workflows by canonical RUT.
+- Subcontractor portal and executive review flows.
+- Driver identity, documentation and validation.
+- Vehicle and fleet records.
+- High-volume Chilean PRT ingestion with resumable cursors.
+- Canonical PRT evidence in `prt_vehicle_records`.
 - Pending-document search by canonical RUT.
-- Server-side pending search that filters before pagination/limits, preventing valid records from disappearing from executive searches.
-- Certification flags and operational status without inventing unsupported expiration dates.
-- Executive-facing workflows backed by server-side access rather than open client database reads.
+- OCR and text-extraction workers.
+- SII/external verification infrastructure.
+- Compliance and reconciliation workers.
+- Cronos operational supervision.
+- Qalito release-quality gates.
 
-### Driver operations
+## PRT vehicle evidence layer
 
-- Canonical driver identity by RUT.
-- Driver authentication relationship.
-- Driver-document upload and validation.
-- Pending, approved and rejected states with review timestamps.
-- Historical evidence retained instead of collapsing versions into one row.
+LABBE is building a national-scale vehicle evidence layer around Chilean PRT data.
 
-### Vehicle and PRT evidence pipeline
+Current verified production facts as of **2026-08-09**:
 
-- Streaming ingestion of large PRT datasets in controlled batches.
-- Separate RA1, RA2 and RB batch tracking by period.
-- Cursor-based progress and resumable processing.
-- Explicit valid, rejected and duplicate accounting.
-- Canonical PRT evidence retained in `prt_vehicle_records`.
-- Reconciliation designed to connect PRT evidence to operational vehicle/compliance decisions without silently overwriting source truth.
-- Large-file processing can continue safely across multiple scheduled executions instead of relying on one monolithic import.
+- `1,983,332` canonical PRT evidence rows stored in `prt_vehicle_records`.
+- May 2026 RA1, RA2 and RB: `imported`.
+- June 2026 RA1, RA2 and RB: `imported`.
+- July 2026 RA1 and RA2: `imported`.
+- July 2026 RB: actively draining; latest verified cursor `580,000`, with `576,687` valid source rows and no recorded batch error.
+- No stale PRT batch was observed at the latest closure checks.
 
-### External verification and compliance
+These counts are a dated operational snapshot, not permanent product specifications. Live Supabase/Cronos state remains authoritative.
 
-- SII transportista verification worker.
-- External-verification run history and provenance.
-- Compliance-processing and reconciliation infrastructure.
-- Company/worker reconciliation structures for backend intelligence.
-- Unknown or unavailable external evidence remains unknown; it is not converted into a false negative.
+The long-term model is:
 
-### Document intelligence
+`PRT historical evidence -> latest status by plate -> operational vehicle enrichment -> compliance intelligence -> alerts / review / reporting`
 
-- Text extraction/OCR processing infrastructure.
-- Claim/recovery patterns for asynchronous workers.
-- Exact `document_id` identity for processing and deduplication of the same record.
-- OCR/source evidence is preserved for auditability.
-- Internal worker functions are isolated from public/client execution.
+The PRT corpus is deliberately kept separate from operational fleet entities: hundreds of thousands of external vehicle identities must not be inserted as fake operational vehicles.
 
-### Automation and operational control
+## Why this creates product value
 
-LABBE includes an operational control plane rather than relying only on HTTP success codes.
+When a customer introduces a vehicle or fleet, LABBE can reuse evidence already present in the platform instead of starting from zero. This supports future capabilities such as:
 
-**Cronos** supervises:
+- latest PRT status by plate;
+- revision and expiry history;
+- rejected/approved revision evidence;
+- vehicle onboarding enrichment;
+- fleet compliance views;
+- exception queues;
+- evidence-backed risk and renewal alerts.
 
-- PRT imports and cursor advancement;
-- reconciliation health;
-- SII verification;
-- compliance processing;
-- OCR/text-extraction queues;
-- stale or stuck claims;
-- failed critical jobs;
-- schema/API drift;
-- deployment and canonical-data health.
+All derived intelligence must remain traceable to canonical evidence.
 
-**Qalito** is the mandatory release gate for relevant code/release changes:
-
-`implementation -> preview/CI -> Qalito PASS -> main -> production READY -> runtime/data verification`
-
-A job is not considered healthy merely because it returns HTTP 200. Downstream state, canonical counts and open claims must also reconcile.
-
-## Why the architecture is different
-
-LABBE follows several strict invariants:
-
-1. **Evidence is canonical.** Simulated data, placeholders and unsupported assumptions cannot become operational facts.
-2. **History is not a duplicate.** Two documents for the same entity/type/period can represent valid versions, corrections or renewals.
-3. **Identity is explicit.** Document processing is protected by exact `document_id`; broad filename/plate/content heuristics do not silently erase evidence.
-4. **Large datasets are streamed.** PRT ingestion uses resumable batches and explicit accounting rather than monolithic imports.
-5. **Sensitive processing stays server-side.** `service_role` is backend-only and internal worker/RPC surfaces are not intended for browser execution.
-6. **Operational health is reconciled.** Cronos checks database state and downstream effects, not only scheduler responses.
-7. **Releases have a gate.** Qalito validates changes before a stage or production fix is considered closed.
-8. **Stages end.** [`ROADMAP.md`](ROADMAP.md) defines hard exit criteria so new P2/P3 discoveries do not create endless development cycles.
-9. **Missing evidence is not failure.** External or OCR evidence that is absent or unavailable stays unknown until verified.
-10. **Canonical state is never silently rewritten.** Automation may enrich and reconcile, but source evidence remains traceable.
-
-## Canonical data model
-
-Core operational entities include:
+## Canonical architecture
 
 | Domain | Primary structures |
 |---|---|
@@ -108,135 +72,80 @@ Core operational entities include:
 | Drivers | `conductores`, `conductor_auth` |
 | Driver documents | `uploaded_documents`, `document_types` |
 | Subcontractor documents | `subcontractor_documents`, `subcontractor_document_types` |
-| Vehicles / PRT evidence | `vehiculos`, `prt_vehicle_records`, PRT batch state |
-| Verification | `external_verification_runs` |
-| Document intelligence | `document_text_extractions` and worker functions |
-| Worker/company intelligence | `worker_document_facts`, `company_worker_reconciliation` |
-| Operations | `system_job_runs`, `system_job_locks` and reconciliation workers |
+| Operational vehicles | `vehiculos` |
+| PRT evidence | `prt_import_batches`, `prt_vehicle_records`, `prt_latest_vehicle_status` |
+| External verification | `external_verification_runs` |
+| Document intelligence | `document_text_extractions` |
+| Operations | `system_job_runs`, reconciliation workers and locks |
 | Alerts | `alerts`, `alerts_log` |
 
-The complete domain rules are maintained in [`docs/LABBE_CANONICAL_SYSTEM.md`](docs/LABBE_CANONICAL_SYSTEM.md). That specification must be read before changing schema, APIs, dashboards, document semantics or bulk-import behavior.
+Canonical domain rules live in [`docs/LABBE_CANONICAL_SYSTEM.md`](docs/LABBE_CANONICAL_SYSTEM.md).
 
-## Verified production snapshot
+## Cronos and Qalito
 
-The following numbers are a **dated operational snapshot**, not hardcoded product rules. Live production state in Supabase/Cronos remains the source of truth.
+**Cronos** supervises synchronization health, cursor advancement, stale claims, failed jobs, reconciliation and production-state coherence.
 
-Snapshot verified on **2026-08-08**:
+**Qalito** is the release gate:
 
-| Operational area | Verified count |
-|---|---:|
-| Transportistas | 246 |
-| Drivers | 316 |
-| Vehicles | 8 |
-| Subcontractor documents | 7,331 |
-| Driver documents | 66 |
-| Canonical PRT vehicle evidence rows | 604,959 |
-| External verification runs | 295 |
-| Recorded system job runs | 1,585 |
+`implementation -> preview/CI -> Qalito PASS -> main -> production READY -> runtime/data verification`
 
-Current Stage 9 PRT closure snapshot:
+HTTP success alone is never treated as proof of operational health.
 
-- June 2026 RA1: `imported` — 12,074 valid rows.
-- June 2026 RA2: `imported` — 92,534 valid rows.
-- June 2026 RB: still draining — cursor 470,000; 466,683 valid; 3,317 duplicate/rejected accounting entries at the latest verified snapshot.
-- May 2026 RA1: `imported` — 13,842 valid rows.
-- May 2026 RA2: still draining — cursor 20,000.
-- May 2026 RB: queued/profiled — cursor 0.
+## Search, GEO and machine discoverability
 
-These figures are expected to change while imports continue.
+LABBE's public discovery layer is optimized around factual, indexable product content rather than unsupported marketing claims.
 
-## Current production capabilities
+- Primary market and language: Chile / `es-CL`.
+- Public metadata positions LABBE around transport compliance, PRT, fleet evidence, transportistas, subcontractors and drivers.
+- `Organization` and `SoftwareApplication` structured data identify N3uralia as creator/publisher.
+- `robots.txt` protects operational/private routes from public crawling.
+- `sitemap.xml` exposes only selected public pages.
+- `llms.txt` provides concise machine-readable product context and attribution.
+- Public content references [n3uralia.com](https://n3uralia.com) as the software factory behind LABBE.
 
-The current production system has verified operational paths for:
+Google's generative-search guidance does not require a special AI file; standard SEO fundamentals, useful public text and structured data remain the primary discovery mechanisms. `llms.txt` is therefore supplemental rather than canonical.
 
-- transportista and driver identity;
-- application authentication relationships;
-- subcontractor and driver document management;
-- executive pending-document workflows;
-- canonical RUT search;
-- historical document preservation;
-- exact status statistics beyond Supabase's common row-return limits;
-- SII verification automation;
-- PRT streaming ingestion and batch accounting;
-- asynchronous text/OCR infrastructure;
-- compliance/reconciliation workers;
-- operational job history and locking;
-- stale-state detection and reconciliation;
-- Vercel production deployment with Supabase PostgreSQL as canonical storage.
+## Public discovery URL
 
-## Architecture
+Current production host available in Vercel:
 
-| Layer | Technology / responsibility |
-|---|---|
-| Web application | Next.js App Router, React, TypeScript |
-| Server/API | Next.js server routes and server-side domain logic |
-| Canonical database | Supabase PostgreSQL |
-| Security | Application authentication, RLS, backend-only `service_role` |
-| Document evidence | Persistent document URLs + canonical metadata/history |
-| Automation | Scheduled workers, claims, locks, retries and reconciliation |
-| Production | Vercel |
-| Operational supervision | Cronos |
-| Release quality gate | Qalito |
+`https://transn3uralia.vercel.app`
 
-## Operational workflow
+SEO routes are implemented so the canonical base can later move to a dedicated LABBE domain through `NEXT_PUBLIC_SITE_URL` without rewriting the metadata architecture.
 
-At a high level, LABBE turns operational evidence into reviewed compliance state through a controlled pipeline:
+## Roadmap
 
-`upload / external source -> canonical evidence -> extraction / normalization -> verification -> reconciliation -> human review / operational status -> monitored production state`
+### Stage 9 — Operational hardening and PRT closure — `CLOSING`
 
-For PRT data:
-
-`PRT source -> RA1/RA2/RB batch -> resumable cursor import -> canonical prt_vehicle_records -> reconciliation -> vehicle/compliance intelligence`
-
-For customer documents:
-
-`portal upload -> canonical document row -> pending review -> optional OCR/verification -> executive review -> approved/rejected/history retained`
-
-## Product roadmap
-
-The roadmap is deliberately finite and stage-gated.
-
-### Stage 9 — Operational hardening and synchronization closure — `CLOSING`
-
-Finish remaining PRT imports, perform final canonical reconciliation and obtain Qalito PASS. No new features are added to this stage.
+Finish July 2026 RB, reconcile May/June/July PRT counts and obtain Qalito PASS.
 
 ### Stage 10 — Authentication, authorization and API security — `NEXT`
 
-Create one explicit server-side authorization boundary for admin, executive, subcontractor and driver roles; protect credential-bearing tables and privileged service-role APIs.
+Harden privileged routes, credential-bearing tables, sessions and service-role boundaries.
 
 ### Stage 11 — Canonical document workflow — `PLANNED`
 
-Unify counters, pending lists, RUT search, detail views and validation actions around one canonical document-status contract.
+Unify customer-facing pending lists, counters, RUT search and validation semantics.
 
-### Stage 12 — Compliance intelligence — `PLANNED`
+### Stage 12 — Compliance and Vehicle Intelligence — `PLANNED`
 
-Connect PRT, vehicles, documents and external verification into traceable compliance decisions and explicit human-review exceptions.
+Operationalize the PRT corpus through latest-by-plate projections, vehicle enrichment and evidence-backed compliance decisions.
 
 ### Stage 13 — Client release stabilization — `PLANNED`
 
-Full role regression, responsive/accessibility checks, performance, observability, runbooks and controlled client release.
+Full role regression, accessibility, performance, observability, runbooks and controlled release packaging.
 
 Detailed scope and exit criteria: [`ROADMAP.md`](ROADMAP.md).
 
-## Security model
+## Technology
 
-- RLS is enabled on relevant public operational tables.
-- Sensitive worker tables and internal `SECURITY DEFINER` functions are intended for backend/service-role execution only.
-- `SUPABASE_SERVICE_ROLE_KEY` must never be sent to the browser, logged or committed.
-- Sensitive operations should pass through authenticated server APIs.
-- Open RLS policies must not be introduced merely to make a frontend query work.
-- Credential/API-boundary hardening is explicitly tracked as Stage 10 rather than being mixed into unrelated operational fixes.
-
-## Canonical rules developers must preserve
-
-- Never invent expiration dates or statuses without a canonical source.
-- Never delete documentary history merely because entity, type and period match.
-- Do not treat different URLs as proof of different binary content.
-- Future true-file deduplication should use content hashes and preserve provenance.
-- User-selected document period outranks filename/metadata inference where the canonical model specifies it.
-- Statistics must use exact database counts rather than truncated client result sets.
-- Missing external evidence means unknown/unavailable, not false.
-- Changes to domain semantics must update [`docs/LABBE_CANONICAL_SYSTEM.md`](docs/LABBE_CANONICAL_SYSTEM.md).
+- Next.js App Router
+- React / TypeScript
+- Supabase PostgreSQL
+- Vercel
+- scheduled workers and reconciliation
+- Cronos operational control
+- Qalito QA/release gates
 
 ## Local development
 
@@ -251,6 +160,7 @@ Minimum server environment:
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_SITE_URL=
 ```
 
 Before publishing:
@@ -259,24 +169,8 @@ Before publishing:
 npm run build
 ```
 
-A build alone is not sufficient. Relevant changes must also be checked against real Supabase schema/data, RLS/role behavior, Vercel deployment/runtime and the affected end-to-end operational flow.
-
-## Source-of-truth hierarchy
-
-When documentation, legacy code and UI behavior disagree, use this order:
-
-1. verified production schema and canonical data in Supabase;
-2. [`docs/LABBE_CANONICAL_SYSTEM.md`](docs/LABBE_CANONICAL_SYSTEM.md);
-3. versioned migrations;
-4. server APIs/shared domain rules;
-5. UI components;
-6. legacy comments or assumptions.
-
-## Documentation
-
-- [`ROADMAP.md`](ROADMAP.md) — finite product/engineering stages and closure criteria.
-- [`docs/LABBE_CANONICAL_SYSTEM.md`](docs/LABBE_CANONICAL_SYSTEM.md) — canonical domain and data rules.
+A successful build is necessary but not sufficient. Relevant changes must also pass preview/runtime/data verification and Qalito.
 
 ---
 
-**LABBE is being built as an evidence-driven transport compliance operating system: documentary history, external verification, high-volume PRT evidence, automation and human review coordinated through one canonical operational model.**
+**LABBE is being built as Chilean transport compliance infrastructure: documentary evidence, national-scale PRT data, external verification, automation and human review connected through one canonical operational model — developed by [N3uralia](https://n3uralia.com).**
