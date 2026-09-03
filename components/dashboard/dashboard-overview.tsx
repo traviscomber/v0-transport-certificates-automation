@@ -34,6 +34,12 @@ interface Stat {
   color?: "blue" | "green" | "orange" | "red"
 }
 
+interface LifetimeStats {
+  registered: number
+  processed: number
+  awaitingProcessing: number
+}
+
 export function DashboardOverview() {
   const [stats, setStats] = useState<Stat[]>([
     {
@@ -73,7 +79,11 @@ export function DashboardOverview() {
       color: "red",
     },
   ])
-  const [managedDocuments, setManagedDocuments] = useState(0)
+  const [lifetimeStats, setLifetimeStats] = useState<LifetimeStats>({
+    registered: 0,
+    processed: 0,
+    awaitingProcessing: 0,
+  })
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [loading, setLoading] = useState(true)
   const { onSync } = useDocumentSync()
@@ -82,7 +92,6 @@ export function DashboardOverview() {
   const approvedDocuments = Number(stats[1]?.value || 0)
   const pendingDocuments = Number(stats[2]?.value || 0)
   const rejectedDocuments = Number(stats[3]?.value || 0)
-  const historicalVersions = Math.max(managedDocuments - totalDocuments, 0)
   const activeAlerts = alerts.length
   const openRiskItems = pendingDocuments + rejectedDocuments
   const completionRate = totalDocuments > 0 ? Math.round((approvedDocuments / totalDocuments) * 100) : 0
@@ -90,8 +99,6 @@ export function DashboardOverview() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Use the SAME endpoint as DocumentManagerHub - /api/company/documents/stats
-        // so Control Operacional and Gestor de Documentos share the same source of truth.
         const timestamp = Date.now()
         const alertsRes = await fetch(`/api/alerts?limit=50&_t=${timestamp}`, {
           cache: "no-store",
@@ -123,17 +130,23 @@ export function DashboardOverview() {
           
           const conductorStats = stats.conductores || {}
           const subStats = stats.subcontratistas || {}
+          const lifetime = stats.lifetime || {}
           
           const totalDocs = (conductorStats.total || 0) + (subStats.total || 0)
-          const managedDocs = (conductorStats.processed || 0) + (subStats.processed || 0)
           const pendingDocs = (conductorStats.pendientes || 0) + (subStats.pendientes || 0)
           const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
           const rejectedDocs = (conductorStats.rechazados || 0) + (subStats.rechazados || 0)
 
-          setManagedDocuments(managedDocs)
+          setLifetimeStats({
+            registered: lifetime.registered || 0,
+            processed: lifetime.processed || 0,
+            awaitingProcessing: lifetime.awaitingProcessing || 0,
+          })
 
           console.log('[v0] Dashboard Stats from /api/company/documents/stats:', {
-            managed: managedDocs,
+            lifetimeRegistered: lifetime.registered || 0,
+            lifetimeProcessed: lifetime.processed || 0,
+            awaitingProcessing: lifetime.awaitingProcessing || 0,
             current: totalDocs,
             pending: pendingDocs,
             approved: approvedDocs,
@@ -211,14 +224,18 @@ export function DashboardOverview() {
               
               const conductorStats = stats.conductores || {}
               const subStats = stats.subcontratistas || {}
+              const lifetime = stats.lifetime || {}
               
               const totalDocs = (conductorStats.total || 0) + (subStats.total || 0)
-              const managedDocs = (conductorStats.processed || 0) + (subStats.processed || 0)
               const pendingDocs = (conductorStats.pendientes || 0) + (subStats.pendientes || 0)
               const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
               const rejectedDocs = (conductorStats.rechazados || 0) + (subStats.rechazados || 0)
 
-              setManagedDocuments(managedDocs)
+              setLifetimeStats({
+                registered: lifetime.registered || 0,
+                processed: lifetime.processed || 0,
+                awaitingProcessing: lifetime.awaitingProcessing || 0,
+              })
 
               setStats([
                   {
@@ -305,10 +322,10 @@ export function DashboardOverview() {
               className="rounded-2xl border border-slate-700/80 bg-slate-950/50 px-4 py-5 hover:bg-slate-900/70 hover:border-slate-500 transition-all text-left group"
             >
               <FileText className="h-4 w-4 text-slate-500 mb-3 group-hover:text-slate-300 transition-colors" />
-              <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500">Gestionados</p>
-              <p className="mt-1 text-3xl font-bold text-white">{managedDocuments.toLocaleString('es-CL')}</p>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500">Procesados</p>
+              <p className="mt-1 text-3xl font-bold text-white">{lifetimeStats.processed.toLocaleString('es-CL')}</p>
               <p className="mt-1 text-xs text-slate-500">
-                {totalDocuments.toLocaleString('es-CL')} actuales · {historicalVersions.toLocaleString('es-CL')} versiones anteriores
+                Desde el inicio de ChileFlota
               </p>
             </button>
             <button
