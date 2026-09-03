@@ -66,6 +66,18 @@ describe('AI feedback safety contract', () => {
     })
   })
 
+  it('normalizes the DD/MM/YYYY format used by the current review UI', () => {
+    const parsed = parseAiFeedbackRequest({
+      documentId: DOCUMENT_ID,
+      documentTable: 'subcontractor_documents',
+      actualDocumentType: 'F30',
+      actualExpirationDate: '03/09/2026',
+      isAccurate: false,
+    })
+
+    expect(parsed.actualExpirationDate).toBe('2026-09-03')
+  })
+
   it('does not allow an inaccurate claim with no correction', () => {
     expect(() => parseAiFeedbackRequest({
       documentId: DOCUMENT_ID,
@@ -78,7 +90,7 @@ describe('AI feedback safety contract', () => {
     expect(() => parseAiFeedbackRequest({
       documentId: DOCUMENT_ID,
       documentTable: 'subcontractor_documents',
-      actualExpirationDate: '2026-02-31',
+      actualExpirationDate: '31/02/2026',
       isAccurate: false,
     })).toThrow()
   })
