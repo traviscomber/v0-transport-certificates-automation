@@ -2,7 +2,7 @@
 
 @theme inline {
   --font-sans: var(--font-montserrat);
-  --font-mono: var(--font-mono);
+  --font-mono: var(--font-jetbrains);
 
   --color-background: #111214;
   --color-foreground: #f2f0eb;
