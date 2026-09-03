@@ -131,13 +131,15 @@ export async function authenticateSubcontractorRequest(
     return { ok: false, status: 401, error: 'Unauthorized' }
   }
 
-  const canonicalRut = normalizeSubcontractorRut(transportista.rut)
+  // transportista_auth is the credential-to-organization authority. Some legacy
+  // rows have a RUT representation that differs from transportistas, so ownership
+  // is proven by the active transportista_id mapping plus the signed auth RUT.
   const hasActiveMapping = (authRows || []).some((row: any) =>
     row.transportista_id === claims.transportista_id &&
     normalizeSubcontractorRut(row.rut) === claims.rut,
   )
 
-  if (!hasActiveMapping || !canonicalRut || canonicalRut !== claims.rut) {
+  if (!hasActiveMapping || !normalizeSubcontractorRut(transportista.rut)) {
     return { ok: false, status: 401, error: 'Unauthorized' }
   }
 
@@ -145,6 +147,7 @@ export async function authenticateSubcontractorRequest(
     ok: true,
     identity: {
       transportistaId: transportista.id,
+      // Downstream canonical document state keeps using transportistas.rut.
       rut: transportista.rut,
     },
   }
