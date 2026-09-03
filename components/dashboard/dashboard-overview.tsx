@@ -34,12 +34,6 @@ interface Stat {
   color?: "blue" | "green" | "orange" | "red"
 }
 
-interface LifetimeStats {
-  registered: number
-  processed: number
-  awaitingProcessing: number
-}
-
 export function DashboardOverview() {
   const [stats, setStats] = useState<Stat[]>([
     {
@@ -79,11 +73,7 @@ export function DashboardOverview() {
       color: "red",
     },
   ])
-  const [lifetimeStats, setLifetimeStats] = useState<LifetimeStats>({
-    registered: 0,
-    processed: 0,
-    awaitingProcessing: 0,
-  })
+  const [managedDocuments, setManagedDocuments] = useState(0)
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [loading, setLoading] = useState(true)
   const { onSync } = useDocumentSync()
@@ -92,6 +82,7 @@ export function DashboardOverview() {
   const approvedDocuments = Number(stats[1]?.value || 0)
   const pendingDocuments = Number(stats[2]?.value || 0)
   const rejectedDocuments = Number(stats[3]?.value || 0)
+  const historicalVersions = Math.max(managedDocuments - totalDocuments, 0)
   const activeAlerts = alerts.length
   const openRiskItems = pendingDocuments + rejectedDocuments
   const completionRate = totalDocuments > 0 ? Math.round((approvedDocuments / totalDocuments) * 100) : 0
@@ -100,8 +91,7 @@ export function DashboardOverview() {
     const fetchData = async () => {
       try {
         // Use the SAME endpoint as DocumentManagerHub - /api/company/documents/stats
-        // This ensures Control Operacional shows EXACT same current numbers as Gestor de Documentos
-        // while also exposing a deduplicated lifetime processed total for the executive KPI.
+        // so Control Operacional and Gestor de Documentos share the same source of truth.
         const timestamp = Date.now()
         const alertsRes = await fetch(`/api/alerts?limit=50&_t=${timestamp}`, {
           cache: "no-store",
@@ -112,7 +102,6 @@ export function DashboardOverview() {
           }
         })
         
-        // Use the SAME stats endpoint as the Gestor de Documentos
         const statsRes = await fetch(`/api/company/documents/stats?_t=${timestamp}`, {
           cache: "no-store",
           headers: {
@@ -132,28 +121,23 @@ export function DashboardOverview() {
           const statsData = await statsRes.json()
           const stats = statsData.stats || {}
           
-          // Current operational totals from conductor + subcontractor stats.
           const conductorStats = stats.conductores || {}
           const subStats = stats.subcontratistas || {}
-          const lifetime = stats.lifetime || {}
           
           const totalDocs = (conductorStats.total || 0) + (subStats.total || 0)
+          const managedDocs = (conductorStats.processed || 0) + (subStats.processed || 0)
           const pendingDocs = (conductorStats.pendientes || 0) + (subStats.pendientes || 0)
           const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
           const rejectedDocs = (conductorStats.rechazados || 0) + (subStats.rechazados || 0)
 
-          setLifetimeStats({
-            registered: lifetime.registered || 0,
-            processed: lifetime.processed || 0,
-            awaitingProcessing: lifetime.awaitingProcessing || 0,
-          })
+          setManagedDocuments(managedDocs)
 
           console.log('[v0] Dashboard Stats from /api/company/documents/stats:', {
-            total: totalDocs,
+            managed: managedDocs,
+            current: totalDocs,
             pending: pendingDocs,
             approved: approvedDocs,
-            rejected: rejectedDocs,
-            lifetimeProcessed: lifetime.processed || 0,
+            rejected: rejectedDocs
           })
 
           setStats([
@@ -202,24 +186,18 @@ export function DashboardOverview() {
       }
     }
 
-    // Fetch data immediately
     fetchData()
 
-    // Set interval to refresh every 10 seconds
     const interval = setInterval(fetchData, 10000)
 
     return () => clearInterval(interval)
   }, [])
 
-  // Listen for document sync events and refetch dashboard stats
   useEffect(() => {
     const unsubscribe = onSync((event) => {
-      // Only refetch on actual document changes, not on every event
       if (event.type === 'document_uploaded' || event.type === 'document_status_changed') {
-        
         const fetchUpdatedStats = async () => {
           try {
-            // Use the SAME stats endpoint as initial fetch
             const statsRes = await fetch(`/api/company/documents/stats?_t=${Date.now()}`, {
               cache: "no-store",
               headers: {
@@ -233,18 +211,14 @@ export function DashboardOverview() {
               
               const conductorStats = stats.conductores || {}
               const subStats = stats.subcontratistas || {}
-              const lifetime = stats.lifetime || {}
               
               const totalDocs = (conductorStats.total || 0) + (subStats.total || 0)
+              const managedDocs = (conductorStats.processed || 0) + (subStats.processed || 0)
               const pendingDocs = (conductorStats.pendientes || 0) + (subStats.pendientes || 0)
               const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
               const rejectedDocs = (conductorStats.rechazados || 0) + (subStats.rechazados || 0)
 
-              setLifetimeStats({
-                registered: lifetime.registered || 0,
-                processed: lifetime.processed || 0,
-                awaitingProcessing: lifetime.awaitingProcessing || 0,
-              })
+              setManagedDocuments(managedDocs)
 
               setStats([
                   {
@@ -299,10 +273,8 @@ export function DashboardOverview() {
 
   return (
     <div className="space-y-5">
-      {/* Hero ejecutivo - KPIs + barra de cumplimiento */}
       <Card className="overflow-hidden border-slate-700/60 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 shadow-2xl">
         <CardContent className="p-6 md:p-8">
-          {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
             <div className="space-y-1">
               <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-300 mb-2">
@@ -327,17 +299,16 @@ export function DashboardOverview() {
             </div>
           </div>
 
-          {/* KPI cards - una sola vez, 4 métricas */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <button
               onClick={() => router.push("/dashboard/company/documentos")}
               className="rounded-2xl border border-slate-700/80 bg-slate-950/50 px-4 py-5 hover:bg-slate-900/70 hover:border-slate-500 transition-all text-left group"
             >
               <FileText className="h-4 w-4 text-slate-500 mb-3 group-hover:text-slate-300 transition-colors" />
-              <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500">Procesados</p>
-              <p className="mt-1 text-3xl font-bold text-white">{lifetimeStats.processed.toLocaleString('es-CL')}</p>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500">Gestionados</p>
+              <p className="mt-1 text-3xl font-bold text-white">{managedDocuments.toLocaleString('es-CL')}</p>
               <p className="mt-1 text-xs text-slate-500">
-                {lifetimeStats.registered.toLocaleString('es-CL')} históricos · {lifetimeStats.awaitingProcessing.toLocaleString('es-CL')} por procesar
+                {totalDocuments.toLocaleString('es-CL')} actuales · {historicalVersions.toLocaleString('es-CL')} versiones anteriores
               </p>
             </button>
             <button
@@ -369,7 +340,6 @@ export function DashboardOverview() {
             </button>
           </div>
 
-          {/* Riesgo total y acciones rápidas */}
           <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-slate-700/50 bg-slate-950/40 px-5 py-4">
             <p className="text-sm text-slate-300">
               {openRiskItems > 0 ? (
@@ -408,7 +378,6 @@ export function DashboardOverview() {
         </CardContent>
       </Card>
 
-      {/* Recent Alerts - Organized by category */}
       {alerts.length > 0 && (
         <Card className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-700 col-span-full">
           <CardHeader className="pb-3">
@@ -420,7 +389,6 @@ export function DashboardOverview() {
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                {/* Quick stats badges */}
                 {(() => {
                   const approved = alerts.filter(a => a.type?.toUpperCase().includes('APPROVED')).length
                   const rejected = alerts.filter(a => a.type?.toUpperCase().includes('REJECTED')).length
