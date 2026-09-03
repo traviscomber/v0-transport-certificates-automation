@@ -1,8 +1,16 @@
-import { NextRequest } from 'next/server'
+import type { NextRequest } from 'next/server'
 import {
   authenticateReprocessRequest,
   authorizeReprocessDocument,
 } from '@/lib/reprocess-authorization'
+
+function requestWithAuthorization(value?: string): NextRequest {
+  return {
+    headers: {
+      get: (name: string) => (name.toLowerCase() === 'authorization' ? value ?? null : null),
+    },
+  } as unknown as NextRequest
+}
 
 describe('reprocess authorization boundary', () => {
   const originalCronSecret = process.env.CRON_SECRET
@@ -17,10 +25,7 @@ describe('reprocess authorization boundary', () => {
   })
 
   it('accepts the F30 cron actor only with the configured bearer secret', async () => {
-    const request = new NextRequest('http://localhost/api/company/documents/doc-1/reprocess', {
-      method: 'POST',
-      headers: { Authorization: 'Bearer test-cron-secret' },
-    })
+    const request = requestWithAuthorization('Bearer test-cron-secret')
 
     await expect(authenticateReprocessRequest(request, 'f30_backfill')).resolves.toEqual({
       ok: true,
@@ -29,10 +34,7 @@ describe('reprocess authorization boundary', () => {
   })
 
   it('rejects a forged F30 source without the configured bearer secret', async () => {
-    const request = new NextRequest('http://localhost/api/company/documents/doc-1/reprocess', {
-      method: 'POST',
-      headers: { Authorization: 'Bearer wrong-secret' },
-    })
+    const request = requestWithAuthorization('Bearer wrong-secret')
 
     await expect(authenticateReprocessRequest(request, 'f30_backfill')).resolves.toEqual({
       ok: false,
