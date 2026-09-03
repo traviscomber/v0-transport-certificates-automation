@@ -7,11 +7,34 @@ export const AI_FEEDBACK_TABLES = [
 
 export type AiFeedbackTable = (typeof AI_FEEDBACK_TABLES)[number]
 
-const yyyyMmDd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD')
-  .refine((value) => {
-    const date = new Date(`${value}T00:00:00.000Z`)
-    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
-  }, 'Invalid calendar date')
+function canonicalDate(value: string): string | null {
+  const text = value.trim()
+  const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  const dmy = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+
+  const candidate = iso
+    ? `${iso[1]}-${iso[2]}-${iso[3]}`
+    : dmy
+      ? `${dmy[3]}-${dmy[2]}-${dmy[1]}`
+      : null
+
+  if (!candidate) return null
+  const date = new Date(`${candidate}T00:00:00.000Z`)
+  if (Number.isNaN(date.getTime())) return null
+  return date.toISOString().slice(0, 10) === candidate ? candidate : null
+}
+
+const correctionDate = z.string().trim().min(1).transform((value, ctx) => {
+  const normalized = canonicalDate(value)
+  if (!normalized) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Expected a valid YYYY-MM-DD or DD/MM/YYYY date',
+    })
+    return z.NEVER
+  }
+  return normalized
+})
 
 // Unknown legacy fields are stripped. In particular, client-supplied AI prediction
 // values/confidence are ignored and later reconstructed from the trusted document row.
@@ -19,7 +42,7 @@ const AiFeedbackRequestSchema = z.object({
   documentId: z.string().uuid(),
   documentTable: z.enum(AI_FEEDBACK_TABLES),
   actualDocumentType: z.string().trim().min(1).max(200).nullable().optional(),
-  actualExpirationDate: yyyyMmDd.nullable().optional(),
+  actualExpirationDate: correctionDate.nullable().optional(),
   feedback: z.string().trim().max(2000).nullable().optional(),
   isAccurate: z.boolean(),
 }).superRefine((value, ctx) => {
