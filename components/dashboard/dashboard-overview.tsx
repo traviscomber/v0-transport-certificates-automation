@@ -34,6 +34,12 @@ interface Stat {
   color?: "blue" | "green" | "orange" | "red"
 }
 
+interface LifetimeStats {
+  registered: number
+  processed: number
+  awaitingProcessing: number
+}
+
 export function DashboardOverview() {
   const [stats, setStats] = useState<Stat[]>([
     {
@@ -73,6 +79,11 @@ export function DashboardOverview() {
       color: "red",
     },
   ])
+  const [lifetimeStats, setLifetimeStats] = useState<LifetimeStats>({
+    registered: 0,
+    processed: 0,
+    awaitingProcessing: 0,
+  })
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [loading, setLoading] = useState(true)
   const { onSync } = useDocumentSync()
@@ -89,7 +100,8 @@ export function DashboardOverview() {
     const fetchData = async () => {
       try {
         // Use the SAME endpoint as DocumentManagerHub - /api/company/documents/stats
-        // This ensures Control Operacional shows EXACT same numbers as Gestor de Documentos
+        // This ensures Control Operacional shows EXACT same current numbers as Gestor de Documentos
+        // while also exposing a deduplicated lifetime processed total for the executive KPI.
         const timestamp = Date.now()
         const alertsRes = await fetch(`/api/alerts?limit=50&_t=${timestamp}`, {
           cache: "no-store",
@@ -120,20 +132,28 @@ export function DashboardOverview() {
           const statsData = await statsRes.json()
           const stats = statsData.stats || {}
           
-          // Calculate totals from conductor + subcontractor stats (same logic as Gestor)
+          // Current operational totals from conductor + subcontractor stats.
           const conductorStats = stats.conductores || {}
           const subStats = stats.subcontratistas || {}
+          const lifetime = stats.lifetime || {}
           
           const totalDocs = (conductorStats.total || 0) + (subStats.total || 0)
           const pendingDocs = (conductorStats.pendientes || 0) + (subStats.pendientes || 0)
           const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
           const rejectedDocs = (conductorStats.rechazados || 0) + (subStats.rechazados || 0)
 
+          setLifetimeStats({
+            registered: lifetime.registered || 0,
+            processed: lifetime.processed || 0,
+            awaitingProcessing: lifetime.awaitingProcessing || 0,
+          })
+
           console.log('[v0] Dashboard Stats from /api/company/documents/stats:', {
             total: totalDocs,
             pending: pendingDocs,
             approved: approvedDocs,
-            rejected: rejectedDocs
+            rejected: rejectedDocs,
+            lifetimeProcessed: lifetime.processed || 0,
           })
 
           setStats([
@@ -213,11 +233,18 @@ export function DashboardOverview() {
               
               const conductorStats = stats.conductores || {}
               const subStats = stats.subcontratistas || {}
+              const lifetime = stats.lifetime || {}
               
               const totalDocs = (conductorStats.total || 0) + (subStats.total || 0)
               const pendingDocs = (conductorStats.pendientes || 0) + (subStats.pendientes || 0)
               const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
               const rejectedDocs = (conductorStats.rechazados || 0) + (subStats.rechazados || 0)
+
+              setLifetimeStats({
+                registered: lifetime.registered || 0,
+                processed: lifetime.processed || 0,
+                awaitingProcessing: lifetime.awaitingProcessing || 0,
+              })
 
               setStats([
                   {
@@ -307,9 +334,11 @@ export function DashboardOverview() {
               className="rounded-2xl border border-slate-700/80 bg-slate-950/50 px-4 py-5 hover:bg-slate-900/70 hover:border-slate-500 transition-all text-left group"
             >
               <FileText className="h-4 w-4 text-slate-500 mb-3 group-hover:text-slate-300 transition-colors" />
-              <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500">Total</p>
-              <p className="mt-1 text-3xl font-bold text-white">{totalDocuments.toLocaleString('es-CL')}</p>
-              <p className="mt-1 text-xs text-slate-500">Todos los documentos</p>
+              <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500">Procesados</p>
+              <p className="mt-1 text-3xl font-bold text-white">{lifetimeStats.processed.toLocaleString('es-CL')}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                {lifetimeStats.registered.toLocaleString('es-CL')} históricos · {lifetimeStats.awaitingProcessing.toLocaleString('es-CL')} por procesar
+              </p>
             </button>
             <button
               onClick={() => router.push("/dashboard/company/documentos/aprobados")}
