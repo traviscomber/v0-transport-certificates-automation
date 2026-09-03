@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isSuperAdmin, verifyAuth } from '@/lib/auth-middleware'
 
 export async function GET(
   request: NextRequest,
@@ -18,7 +19,6 @@ export async function GET(
     if (error) throw error
     if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-    // Resolve assigned_executive_id to ejecutivo_nombre
     let ejecutivo_nombre = data.ejecutivo_nombre || 'Sin asignar'
     if (data.assigned_executive_id) {
       const { data: exec } = await supabase
@@ -26,9 +26,7 @@ export async function GET(
         .select('full_name')
         .eq('id', data.assigned_executive_id)
         .single()
-      if (exec) {
-        ejecutivo_nombre = exec.full_name
-      }
+      if (exec) ejecutivo_nombre = exec.full_name
     }
 
     return NextResponse.json({ success: true, transportista: { ...data, ejecutivo_nombre } })
@@ -42,20 +40,28 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    const { user, error: authError } = await verifyAuth(request)
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { id } = params
     const body = await request.json()
 
-    console.log('[v0] PATCH transportistas - ID:', id)
-    console.log('[v0] PATCH transportistas - Body:', JSON.stringify(body))
+    // Assignment ownership is security-critical because it gates document approvals.
+    // Only the explicitly persisted super_admin may change or clear it.
+    if (body.assigned_executive_id !== undefined && !isSuperAdmin(user.email, user.role)) {
+      return NextResponse.json(
+        { error: 'Only super_admin can change executive assignments' },
+        { status: 403 }
+      )
+    }
 
     const supabase = createAdminClient()
-
-    // Build update object with all fields that now exist in transportistas table
     const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     }
 
-    // Add fields only if they are provided in the body and defined
     if (body.razon_social !== undefined) updateData.razon_social = body.razon_social
     if (body.nombre !== undefined) updateData.nombre = body.nombre || null
     if (body.rut !== undefined) updateData.rut = body.rut
@@ -63,21 +69,15 @@ export async function PATCH(
     if (body.comuna !== undefined) updateData.comuna = body.comuna || null
     if (body.telefono !== undefined) updateData.telefono = body.telefono || null
     if (body.email !== undefined) updateData.email = body.email || null
-    // Map nombre_contacto to representante_legal (the actual column name)
     if (body.nombre_contacto !== undefined) updateData.representante_legal = body.nombre_contacto || null
     if (body.is_active !== undefined) updateData.is_active = body.is_active
-    
-    // Handle assigned executive - allow null/empty to clear assignment
     if (body.assigned_executive_id !== undefined) {
       updateData.assigned_executive_id = body.assigned_executive_id || null
     }
 
-    // Validate that at least razon_social is provided
     if (!updateData.razon_social) {
       return NextResponse.json({ error: 'razon_social is required' }, { status: 400 })
     }
-
-    console.log('[v0] PATCH transportistas - UpdateData:', JSON.stringify(updateData))
 
     const { data, error } = await supabase
       .from('transportistas')
@@ -90,29 +90,20 @@ export async function PATCH(
         message: error.message,
         details: error.details,
         hint: error.hint,
-        code: error.code
+        code: error.code,
       })
       throw new Error(`Database error: ${error.message}`)
     }
 
-    console.log('[v0] PATCH transportistas - Success:', data?.[0]?.id)
-
     return NextResponse.json({
       success: true,
       transportista: data?.[0],
-      message: 'Subcontratista actualizado exitosamente'
+      message: 'Subcontratista actualizado exitosamente',
     }, { status: 200 })
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error)
     console.error('[v0] PATCH transportistas - Exception:', errorMsg, error)
-    
-    return NextResponse.json(
-      { 
-        error: errorMsg,
-        success: false
-      },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: errorMsg, success: false }, { status: 500 })
   }
 }
 
@@ -121,10 +112,17 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const { user, error: authError } = await verifyAuth(request)
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!isSuperAdmin(user.email, user.role)) {
+      return NextResponse.json({ error: 'Only super_admin can delete transportistas' }, { status: 403 })
+    }
+
     const { id } = params
     const supabase = createAdminClient()
 
-    // Check if transportista has active conductores
     const { data: conductores } = await supabase
       .from('conductores')
       .select('id', { count: 'exact' })
@@ -137,7 +135,6 @@ export async function DELETE(
       )
     }
 
-    // Delete transportista
     const { error } = await supabase
       .from('transportistas')
       .delete()
@@ -147,7 +144,7 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: 'Subcontratista eliminado exitosamente'
+      message: 'Subcontratista eliminado exitosamente',
     })
   } catch (error) {
     return NextResponse.json(
