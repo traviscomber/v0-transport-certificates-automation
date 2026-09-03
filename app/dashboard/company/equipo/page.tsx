@@ -1,29 +1,19 @@
 'use client'
 
-import { HelpBox } from '@/components/ui/help-box'
 import { TeamSearch } from '@/components/team-search'
 
 export default function EquipoPage() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Gestión de Equipo</h1>
-        <p className="text-muted-foreground">
-          Visualiza y contacta a los 6 ejecutivos del equipo LABBE
+    <div className="mx-auto max-w-7xl space-y-6">
+      <header className="border-b border-[#303238] pb-5">
+        <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#A9ADB3]">Equipo</p>
+        <h1 className="mt-2 text-2xl font-medium tracking-tight text-[#F2F0EB] sm:text-3xl">
+          Gestión de Equipo
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[#A9ADB3]">
+          Busca y contacta a las personas responsables de la operación de Transportes Labbé.
         </p>
-      </div>
-
-      <HelpBox
-        variant="info"
-        title="Equipo LABBE Transportes"
-        description="Accede a la información de contacto completa del equipo de LABBE. Puedes comunicarte directamente mediante email o WhatsApp con cada miembro."
-        tips={[
-          "Haz clic en el icono de email para enviar correos directamente",
-          "Usa WhatsApp para comunicarte de forma inmediata",
-          "Busca por nombre, email, cargo o teléfono",
-          "Todos los miembros son ejecutivos y personal administrativo clave"
-        ]}
-      />
+      </header>
 
       <TeamSearch />
     </div>
