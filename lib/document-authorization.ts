@@ -16,8 +16,12 @@ function normalizePersonName(value?: string | null): string {
     .toLowerCase()
 }
 
+function normalizeEmail(value?: string | null): string {
+  return (value || '').trim().toLowerCase()
+}
+
 /**
- * Transportista assignments currently store a short executive name (for example
+ * Transportista assignments may contain a short executive name (for example
  * "Olga", "Daniela" or "Cecilia"). Profiles store the person's full name.
  * Match on the first normalized token so accents/case do not create false denies.
  */
@@ -36,6 +40,7 @@ export function reviewerMatchesAssignment(fullName?: string | null, assignedName
  * deliberately stricter than read access:
  * - only an explicitly stored `super_admin` profile can bypass assignment;
  * - normal Labbe reviewers may mutate only transportistas assigned to them;
+ * - canonical assignment IDs take precedence over display names;
  * - a @labbe.cl email by itself is NOT an approval bypass.
  *
  * Conductor-document behaviour is preserved for compatibility.
@@ -87,13 +92,13 @@ export async function canChangeDocumentStatus(
         .eq('id', documentId)
         .single()
 
-      if (documentError || !document) {
-        return { allowed: false, reason: 'Documento no encontrado' }
+      if (documentError || !document?.subcontractor_id) {
+        return { allowed: false, reason: 'Documento no encontrado o sin transportista asociado' }
       }
 
       const { data: transportista, error: transportistaError } = await adminClient
         .from('transportistas')
-        .select('id,ejecutivo_nombre')
+        .select('id,ejecutivo_nombre,assigned_executive_id,ejecutivo_asignado')
         .eq('id', document.subcontractor_id)
         .single()
 
@@ -101,6 +106,39 @@ export async function canChangeDocumentStatus(
         return { allowed: false, reason: 'No se pudo verificar la asignación del transportista' }
       }
 
+      const assignedExecutiveId = transportista.assigned_executive_id || transportista.ejecutivo_asignado
+
+      // Canonical ID assignment wins over the optional display-name field.
+      // This closes the case where ejecutivo_nombre is null but the transportista
+      // is still assigned to a specific executive_staff row.
+      if (assignedExecutiveId) {
+        const { data: assignedExecutive, error: assignedError } = await adminClient
+          .from('executive_staff')
+          .select('id,email,full_name,is_active')
+          .eq('id', assignedExecutiveId)
+          .maybeSingle()
+
+        if (assignedError || !assignedExecutive || assignedExecutive.is_active === false) {
+          return { allowed: false, reason: 'No se pudo validar la ejecutiva asignada al transportista' }
+        }
+
+        const actorEmail = normalizeEmail(actorProfile.email || userEmail)
+        const assignedEmail = normalizeEmail(assignedExecutive.email)
+        const sameExecutive =
+          (actorEmail && assignedEmail && actorEmail === assignedEmail) ||
+          reviewerMatchesAssignment(actorProfile.full_name, assignedExecutive.full_name)
+
+        if (!sameExecutive) {
+          return {
+            allowed: false,
+            reason: `Documento asignado a ${assignedExecutive.full_name || assignedExecutive.email}; no puedes aprobar o rechazar documentos de otra ejecutiva`,
+          }
+        }
+
+        return { allowed: true }
+      }
+
+      // Legacy fallback for rows that genuinely have only the short display name.
       if (
         transportista.ejecutivo_nombre &&
         !reviewerMatchesAssignment(actorProfile.full_name, transportista.ejecutivo_nombre)
