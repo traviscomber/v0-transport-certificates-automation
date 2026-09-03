@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getEmailSessionSecret, signEmailSession } from '@/lib/email-session'
+import { resolveExecutiveAssignment } from '@/lib/executive-login-resolution'
 
 function maskEmail(email?: string | null) {
   if (!email) return 'unknown'
@@ -62,15 +63,18 @@ export async function POST(request: NextRequest) {
     }
 
     // executive_staff is the canonical company assignment for active executives.
-    // Resolve it even when a matching profile exists but has no organization scope.
+    // First prefer an exact email match. When profiles contains a known alias,
+    // fall back to one unambiguous active staff row with the same normalized full name.
     const executiveResponse = await fetch(
-      `${supabaseUrl}/rest/v1/executive_staff?email=eq.${encodeURIComponent(email)}&is_active=eq.true`,
+      `${supabaseUrl}/rest/v1/executive_staff?select=email,full_name,transportista_id,is_active&is_active=eq.true`,
       { headers, cache: 'no-store' },
     )
     const executives = await executiveResponse.json()
+    const executive = Array.isArray(executives)
+      ? resolveExecutiveAssignment(email, fullName, executives)
+      : null
 
-    if (Array.isArray(executives) && executives.length > 0) {
-      const executive = executives[0]
+    if (executive) {
       user = user || executive
       fullName = executive.full_name || fullName || email
       role = 'ejecutiva'
@@ -79,6 +83,7 @@ export async function POST(request: NextRequest) {
         email: maskEmail(email),
         role,
         organizationId,
+        resolution: executive.email?.toLowerCase() === email ? 'email' : 'profile_alias',
       })
     }
 
@@ -104,15 +109,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (!organizationId && role === 'prevencionista' && email.endsWith('@labbe.cl')) {
-      const staffResponse = await fetch(
-        `${supabaseUrl}/rest/v1/executive_staff?select=transportista_id&is_active=eq.true`,
-        { headers, cache: 'no-store' },
-      )
-      const staff = await staffResponse.json()
+      const staff = Array.isArray(executives) ? executives : []
       const organizationIds = Array.from(new Set(
-        Array.isArray(staff)
-          ? staff.map((item: { transportista_id?: string }) => item.transportista_id).filter(Boolean)
-          : [],
+        staff.map((item: { transportista_id?: string }) => item.transportista_id).filter(Boolean),
       ))
 
       if (organizationIds.length === 1) organizationId = String(organizationIds[0])
