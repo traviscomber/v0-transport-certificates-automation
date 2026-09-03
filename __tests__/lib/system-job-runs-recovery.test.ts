@@ -16,11 +16,11 @@ describe('recoverStaleSystemJobRuns', () => {
   })
 
   it('does nothing when there are no stale runs', async () => {
-    await expect(recoverStaleSystemJobRuns([], 'reconcile-1')).resolves.toBe(0)
+    await expect(recoverStaleSystemJobRuns([], 'reconcile-1')).resolves.toEqual([])
     expect(fromMock).not.toHaveBeenCalled()
   })
 
-  it('only terminalizes rows that are still running and returns the actual updated count', async () => {
+  it('only terminalizes rows that are still running and returns the ids actually updated', async () => {
     selectMock.mockResolvedValueOnce({
       data: [{ id: 'run-1' }],
       error: null,
@@ -31,7 +31,7 @@ describe('recoverStaleSystemJobRuns', () => {
       { id: 'run-2', job_name: 'f30_backfill', started_at: '2026-08-09T20:13:21.270Z' },
     ], 'reconcile-1')
 
-    expect(recovered).toBe(1)
+    expect(recovered).toEqual(['run-1'])
     expect(fromMock).toHaveBeenCalledWith('system_job_runs')
     expect(inMock).toHaveBeenCalledWith('id', ['run-1', 'run-2'])
     expect(eqStatusMock).toHaveBeenCalledWith('status', 'running')
