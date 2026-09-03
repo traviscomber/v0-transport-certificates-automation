@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import {
   AlertTriangle,
   ArrowRight,
@@ -40,37 +41,45 @@ type ActionCenterResponse = {
     rejected: number
     pending: number
     expiring: number
+    selectedState: ActionKind | null
     generatedAt: string
   }
   items: ActionItem[]
 }
 
+const actionKinds: ActionKind[] = ['expired', 'rejected', 'pending', 'expiring']
+
 const stateMeta: Record<ActionKind, {
   label: string
+  pluralLabel: string
   icon: typeof AlertTriangle
   classes: string
   dot: string
 }> = {
   expired: {
     label: 'Vencido',
+    pluralLabel: 'vencidos',
     icon: XCircle,
     classes: 'border-red-500/25 bg-red-500/10 text-red-200',
     dot: 'bg-red-400',
   },
   rejected: {
     label: 'Rechazado',
+    pluralLabel: 'rechazados',
     icon: AlertTriangle,
     classes: 'border-rose-500/25 bg-rose-500/10 text-rose-200',
     dot: 'bg-rose-400',
   },
   pending: {
     label: 'Pendiente',
+    pluralLabel: 'pendientes',
     icon: Clock3,
     classes: 'border-amber-500/25 bg-amber-500/10 text-amber-100',
     dot: 'bg-amber-400',
   },
   expiring: {
     label: 'Por vencer',
+    pluralLabel: 'por vencer',
     icon: RotateCcw,
     classes: 'border-yellow-500/25 bg-yellow-500/10 text-yellow-100',
     dot: 'bg-yellow-300',
@@ -89,26 +98,35 @@ function Metric({
   label,
   value,
   kind,
+  href,
 }: {
   label: string
   value: number
   kind: ActionKind
+  href: string
 }) {
   const meta = stateMeta[kind]
   const Icon = meta.icon
 
   return (
-    <div className="rounded-[5px] border border-[#303238] bg-[#181A1D] px-4 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[10px] uppercase tracking-[0.18em] text-[#8F949C]">{label}</p>
-        <Icon className="h-4 w-4 text-[#8F949C]" />
+    <Link href={href} className="block">
+      <div className="rounded-[5px] border border-[#303238] bg-[#181A1D] px-4 py-3 transition-colors hover:border-[#464950] hover:bg-[#1D1F23]">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-[#8F949C]">{label}</p>
+          <Icon className="h-4 w-4 text-[#8F949C]" />
+        </div>
+        <p className="mt-2 text-2xl font-medium text-[#F2F0EB]">{value.toLocaleString('es-CL')}</p>
       </div>
-      <p className="mt-2 text-2xl font-medium text-[#F2F0EB]">{value.toLocaleString('es-CL')}</p>
-    </div>
+    </Link>
   )
 }
 
 export function OperationalActionCenter({ compact = false }: { compact?: boolean }) {
+  const searchParams = useSearchParams()
+  const requestedState = compact ? null : searchParams.get('state')
+  const selectedState = actionKinds.includes(requestedState as ActionKind)
+    ? (requestedState as ActionKind)
+    : null
   const [data, setData] = useState<ActionCenterResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -119,7 +137,13 @@ export function OperationalActionCenter({ compact = false }: { compact?: boolean
     setError(null)
 
     try {
-      const response = await fetch(`/api/company/action-center?limit=${compact ? 8 : 30}&_t=${Date.now()}`, {
+      const params = new URLSearchParams({
+        limit: String(compact ? 8 : 30),
+        _t: String(Date.now()),
+      })
+      if (selectedState) params.set('state', selectedState)
+
+      const response = await fetch(`/api/company/action-center?${params.toString()}`, {
         cache: 'no-store',
         credentials: 'same-origin',
         headers: {
@@ -137,9 +161,10 @@ export function OperationalActionCenter({ compact = false }: { compact?: boolean
       setLoading(false)
       setRefreshing(false)
     }
-  }, [compact])
+  }, [compact, selectedState])
 
   useEffect(() => {
+    setLoading(true)
     void load()
     const interval = window.setInterval(() => void load(), 60000)
     return () => window.clearInterval(interval)
@@ -178,6 +203,8 @@ export function OperationalActionCenter({ compact = false }: { compact?: boolean
   }
 
   const { summary, items } = data
+  const activeState = summary.selectedState
+  const activeCount = activeState ? summary[activeState] : summary.totalActionable
 
   return (
     <section className="rounded-[5px] border border-[#303238] bg-[#15171A] text-[#F2F0EB]">
@@ -189,11 +216,24 @@ export function OperationalActionCenter({ compact = false }: { compact?: boolean
           </div>
           <h2 className="mt-2 text-xl font-medium tracking-tight">Qué requiere atención hoy</h2>
           <p className="mt-1 text-sm text-[#A9ADB3]">
-            {summary.totalActionable.toLocaleString('es-CL')} documentos requieren una acción operacional.
+            {activeState
+              ? `${activeCount.toLocaleString('es-CL')} documentos ${stateMeta[activeState].pluralLabel}. Mostrando los ${items.length} más prioritarios.`
+              : `${summary.totalActionable.toLocaleString('es-CL')} documentos requieren una acción operacional.`}
           </p>
         </div>
 
         <div className="flex items-center gap-2">
+          {activeState && !compact && (
+            <Link href="/dashboard/company/action-center">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-[#303238] bg-transparent text-[#C6C8CC] hover:bg-[#202226] hover:text-[#F2F0EB]"
+              >
+                Ver todas
+              </Button>
+            </Link>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -215,10 +255,10 @@ export function OperationalActionCenter({ compact = false }: { compact?: boolean
       </div>
 
       <div className="grid grid-cols-2 gap-3 p-5 lg:grid-cols-4">
-        <Metric label="Vencidos" value={summary.expired} kind="expired" />
-        <Metric label="Rechazados" value={summary.rejected} kind="rejected" />
-        <Metric label="Pendientes" value={summary.pending} kind="pending" />
-        <Metric label="Vencen ≤30 días" value={summary.expiring} kind="expiring" />
+        <Metric label="Vencidos" value={summary.expired} kind="expired" href="/dashboard/company/action-center?state=expired" />
+        <Metric label="Rechazados" value={summary.rejected} kind="rejected" href="/dashboard/company/documentos/rechazados" />
+        <Metric label="Pendientes" value={summary.pending} kind="pending" href="/dashboard/company/documentos/pendientes" />
+        <Metric label="Vencen ≤30 días" value={summary.expiring} kind="expiring" href="/dashboard/company/action-center?state=expiring" />
       </div>
 
       <div className="border-t border-[#303238]">
