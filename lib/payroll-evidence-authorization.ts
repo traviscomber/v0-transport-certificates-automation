@@ -31,10 +31,15 @@ export async function canReadPayrollEvidence(
 ): Promise<PayrollEvidenceAuthorizationResult> {
   if (isSuperAdmin(actor.email, actor.role)) return { allowed: true }
 
+  // `verifyAuth` currently carries organization_id from a cookie. Do not use
+  // that client-carried value as a payroll authorization boundary. Transportista
+  // self-service remains disabled until organization identity is resolved from a
+  // canonical server-side relation (for example transportista_auth).
   if (actor.role === 'transportista') {
-    return actor.organization_id === transportistaId
-      ? { allowed: true }
-      : { allowed: false, reason: 'Transportista fuera de la organizacion autenticada' }
+    return {
+      allowed: false,
+      reason: 'Payroll self-service requiere identidad organizacional server-side',
+    }
   }
 
   if (!INTERNAL_READ_ROLES.has(actor.role)) {
