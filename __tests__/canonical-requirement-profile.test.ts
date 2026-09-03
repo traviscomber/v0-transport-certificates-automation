@@ -53,7 +53,7 @@ describe('canonical requirement profile', () => {
     expect(analysis.unknownMandatoryCodes).toEqual([])
   })
 
-  it('fails closed when duplicate aliases disagree on cadence', () => {
+  it('keeps requirement coverage usable while failing closed on conflicting expiry derivation', () => {
     const analysis = analyzeCanonicalRequirementProfile('conductor', [
       ...cleanConductorCatalog,
       { code: 'LIC_CONDUCIR', mandatory: true, active: true, cadence: 365 },
@@ -63,8 +63,10 @@ describe('canonical requirement profile', () => {
     expect(analysis.cadenceConflictRequirements).toEqual(
       expect.arrayContaining(['conductor_license', 'conductor_driving_record']),
     )
-    expect(analysis.canCertifyCoverage).toBe(false)
-    expect(analysis.blockers).toEqual(
+    expect(analysis.canCertifyRequirementSet).toBe(true)
+    expect(analysis.canCertifyCoverage).toBe(true)
+    expect(analysis.canDeriveAllExpiryPolicies).toBe(false)
+    expect(analysis.expiryPolicyBlockers).toEqual(
       expect.arrayContaining([
         'cadence_conflict:conductor_license',
         'cadence_conflict:conductor_driving_record',
@@ -79,7 +81,9 @@ describe('canonical requirement profile', () => {
     expect(analysis.unknownMandatoryCodes).toEqual([])
     expect(analysis.cadenceConflictRequirements).toEqual([])
     expect(analysis.unresolvedCoverageRequirements).toEqual([])
+    expect(analysis.canCertifyRequirementSet).toBe(true)
     expect(analysis.canCertifyCoverage).toBe(true)
+    expect(analysis.canDeriveAllExpiryPolicies).toBe(true)
   })
 
   it('keeps transportista multi-instance and conditional requirements unresolved', () => {
@@ -87,6 +91,7 @@ describe('canonical requirement profile', () => {
 
     expect(analysis.missingCanonicalRequirements).toEqual([])
     expect(analysis.unknownMandatoryCodes).toEqual([])
+    expect(analysis.canCertifyRequirementSet).toBe(true)
     expect(analysis.unresolvedCoverageRequirements).toEqual(
       expect.arrayContaining([
         'transportista_cert_antecedentes',
@@ -103,14 +108,16 @@ describe('canonical requirement profile', () => {
     expect(analysis.canCertifyCoverage).toBe(false)
   })
 
-  it('treats an unknown active mandatory code as a blocker', () => {
+  it('treats an unknown active mandatory code as a coverage blocker', () => {
     const analysis = analyzeCanonicalRequirementProfile('conductor', [
       ...cleanConductorCatalog,
       { code: 'NEW-MANDATORY-RULE', mandatory: true, active: true, cadence: 30 },
     ])
 
     expect(analysis.unknownMandatoryCodes).toEqual(['NEW-MANDATORY-RULE'])
+    expect(analysis.canCertifyRequirementSet).toBe(false)
     expect(analysis.canCertifyCoverage).toBe(false)
+    expect(analysis.coverageBlockers).toContain('unknown_mandatory_code:NEW-MANDATORY-RULE')
   })
 
   it('authenticates before privileged catalog reads and contains no writes', () => {
