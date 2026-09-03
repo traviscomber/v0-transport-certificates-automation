@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { ALL_VALUE, getMonthYearRange } from '@/lib/date-filters'
 
-const ACCESS_ROLES = new Set(['admin', 'executive', 'ejecutiva', 'superadmin'])
+const ACCESS_ROLES = new Set(['admin', 'executive', 'ejecutiva', 'superadmin', 'super_admin'])
 
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
