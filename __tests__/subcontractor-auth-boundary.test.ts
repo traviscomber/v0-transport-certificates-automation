@@ -97,7 +97,7 @@ describe('subcontractor auth boundary', () => {
     expect(route).toContain(".eq('rut_proveedor', auth.identity.rut)")
   })
 
-  it('revalidates a token against active auth mapping and canonical transportista', () => {
+  it('revalidates a token against active auth mapping and canonical transportista ownership', () => {
     const helper = fs.readFileSync(
       path.join(process.cwd(), 'lib/subcontractor-auth.ts'),
       'utf8',
@@ -106,7 +106,19 @@ describe('subcontractor auth boundary', () => {
     expect(helper).toContain(".from('transportista_auth')")
     expect(helper).toContain(".eq('is_active', true)")
     expect(helper).toContain(".from('transportistas')")
-    expect(helper).toContain('canonicalRut !== claims.rut')
+    expect(helper).toContain('normalizeSubcontractorRut(row.rut) === claims.rut')
     expect(helper).toContain('claims.transportista_id !== expectedTransportistaId')
+    expect(helper).not.toContain('canonicalRut !== claims.rut')
+  })
+
+  it('signs the login session from transportista_auth while returning canonical transportista data', () => {
+    const login = fs.readFileSync(
+      path.join(process.cwd(), 'app/api/auth/subcontractors/login/route.ts'),
+      'utf8',
+    )
+
+    expect(login).toContain('rut: authRecord.rut')
+    expect(login).toContain('rut: transportista.rut')
+    expect(login).not.toContain('RUT mapping mismatch')
   })
 })
