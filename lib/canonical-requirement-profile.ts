@@ -28,6 +28,7 @@ export interface CanonicalRequirementState {
   coverageRule: CoverageRule
   cadenceValues: string[]
   cadenceConflict: boolean
+  canDeriveExpiryFromCatalog: boolean
 }
 
 export interface CanonicalRequirementProfileAnalysis {
@@ -37,8 +38,11 @@ export interface CanonicalRequirementProfileAnalysis {
   missingCanonicalRequirements: string[]
   cadenceConflictRequirements: string[]
   unresolvedCoverageRequirements: string[]
+  canCertifyRequirementSet: boolean
   canCertifyCoverage: boolean
-  blockers: string[]
+  canDeriveAllExpiryPolicies: boolean
+  coverageBlockers: string[]
+  expiryPolicyBlockers: string[]
 }
 
 const CONDUCTOR_REQUIREMENTS: readonly CanonicalRequirementDefinition[] = [
@@ -200,6 +204,7 @@ export function analyzeCanonicalRequirementProfile(
     const aliases = new Set(definition.aliases.map(normalizeCode))
     const matched = activeMandatoryRows.filter((row) => aliases.has(row.code))
     const cadenceValues = [...new Set(matched.map((row) => normalizeCadence(row.cadence)))].sort()
+    const cadenceConflict = matched.length > 1 && cadenceValues.length > 1
 
     return {
       id: definition.id,
@@ -208,7 +213,11 @@ export function analyzeCanonicalRequirementProfile(
       presentAliases: [...new Set(matched.map((row) => row.code))].sort(),
       coverageRule: definition.coverageRule,
       cadenceValues,
-      cadenceConflict: matched.length > 1 && cadenceValues.length > 1,
+      cadenceConflict,
+      // A conflicting catalog cadence does not make the requirement identity
+      // ambiguous. It only forbids deriving expiry from catalog metadata. A
+      // document-provided canonical expiry can still be evaluated downstream.
+      canDeriveExpiryFromCatalog: !cadenceConflict,
     }
   })
 
@@ -224,12 +233,18 @@ export function analyzeCanonicalRequirementProfile(
     .filter((requirement) => requirement.coverageRule !== 'singleton')
     .map((requirement) => requirement.id)
 
-  const blockers = [
+  const requirementSetBlockers = [
     ...unknownMandatoryCodes.map((code) => `unknown_mandatory_code:${code}`),
     ...missingCanonicalRequirements.map((id) => `missing_requirement:${id}`),
-    ...cadenceConflictRequirements.map((id) => `cadence_conflict:${id}`),
+  ]
+
+  const coverageBlockers = [
+    ...requirementSetBlockers,
     ...unresolvedCoverageRequirements.map((id) => `coverage_rule_unresolved:${id}`),
   ]
+
+  const expiryPolicyBlockers = cadenceConflictRequirements
+    .map((id) => `cadence_conflict:${id}`)
 
   return {
     entity,
@@ -238,7 +253,10 @@ export function analyzeCanonicalRequirementProfile(
     missingCanonicalRequirements,
     cadenceConflictRequirements,
     unresolvedCoverageRequirements,
-    canCertifyCoverage: blockers.length === 0,
-    blockers,
+    canCertifyRequirementSet: requirementSetBlockers.length === 0,
+    canCertifyCoverage: coverageBlockers.length === 0,
+    canDeriveAllExpiryPolicies: expiryPolicyBlockers.length === 0,
+    coverageBlockers,
+    expiryPolicyBlockers,
   }
 }
