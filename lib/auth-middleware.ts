@@ -1,7 +1,19 @@
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { NextRequest, NextResponse } from "next/server"
 
-export type UserRole = 'super_admin' | 'admin' | 'dispatcher' | 'driver' | 'mandante' | 'transportista'
+export type UserRole =
+  | 'super_admin'
+  | 'admin'
+  | 'administrador'
+  | 'ejecutiva'
+  | 'dispatcher'
+  | 'despachador'
+  | 'driver'
+  | 'conductor'
+  | 'mandante'
+  | 'transportista'
+  | 'prevencionista'
 
 interface AuthUser {
   id: string
@@ -11,52 +23,60 @@ interface AuthUser {
 }
 
 /**
- * Super-admin domains - users from these domains have full CRUD access
- * to ALL data across all transportistas/companies.
- * Labbe is the mandante (principal company) that manages all subcontractors.
+ * Super-admin privileges must be explicit in the persisted role. Membership
+ * in the Labbe email domain is never sufficient to elevate a user.
  */
-const SUPER_ADMIN_DOMAINS = ['labbe.cl']
-
-/**
- * Check if a user has super-admin privileges based on email domain or role.
- * Super-admins can manage ALL data across all companies.
- */
-export function isSuperAdmin(email?: string | null, role?: UserRole | string | null): boolean {
-  if (role === 'super_admin') return true
-  if (!email) return false
-  const domain = email.toLowerCase().split('@')[1]
-  return SUPER_ADMIN_DOMAINS.includes(domain)
+export function isSuperAdmin(_email?: string | null, role?: UserRole | string | null): boolean {
+  return role === 'super_admin'
 }
 
-// Middleware para verificar autenticación
+// Middleware para verificar autenticacion
 export async function verifyAuth(request: NextRequest): Promise<{ user: AuthUser | null; error?: string }> {
   try {
     console.log('[v0] verifyAuth: START - Attempting to verify authentication')
-    
-    // For simple login, read cookies first
+
     const userEmail = request.cookies.get('user_email')?.value
     const userRole = request.cookies.get('user_role')?.value
     const userOrgId = request.cookies.get('user_organization_id')?.value
-    
-    console.log('[v0] verifyAuth: Cookie check:', { 
+
+    console.log('[v0] verifyAuth: Cookie check:', {
       hasEmail: !!userEmail,
       hasRole: !!userRole,
       hasOrgId: !!userOrgId,
-      email: userEmail
+      email: userEmail,
     })
 
-    // If simple login cookies exist, use them
     if (userEmail && userRole) {
       console.log('[v0] verifyAuth: Found simple login cookies for:', userEmail)
-      
-      // For simple login users, we trust the cookies and don't require Supabase profile lookup
-      // This allows the system to work without requiring profiles table to be populated
-      const effectiveRole: UserRole = isSuperAdmin(userEmail, userRole)
-        ? 'super_admin'
-        : (userRole as UserRole)
 
+      // The database profile is authoritative for permissions. This makes role
+      // changes effective even when a browser still carries an old role cookie.
+      const adminClient = createAdminClient()
+      const { data: profile, error: profileError } = await adminClient
+        .from('profiles')
+        .select('id,email,role,is_active')
+        .ilike('email', userEmail)
+        .limit(1)
+        .maybeSingle()
+
+      if (profileError) {
+        console.error('[v0] verifyAuth: Profile lookup failed:', profileError.message)
+        return { user: null, error: 'No se pudo verificar el rol del usuario' }
+      }
+
+      if (profile?.is_active === false) {
+        return { user: null, error: 'Usuario desactivado' }
+      }
+
+      // Preserve legacy cookie-only users for non-privileged roles, but never
+      // grant super_admin from a cookie without a persisted profile.
+      if (!profile && userRole === 'super_admin') {
+        return { user: null, error: 'Perfil requerido para privilegios administrativos' }
+      }
+
+      const effectiveRole = (profile?.role || userRole) as UserRole
       const authUser: AuthUser = {
-        id: userEmail, // Use email as ID for simple login users
+        id: profile?.id || userEmail,
         email: userEmail,
         role: effectiveRole,
         organization_id: userOrgId,
@@ -67,13 +87,13 @@ export async function verifyAuth(request: NextRequest): Promise<{ user: AuthUser
         email: authUser.email,
         role: authUser.role,
         is_super_admin: isSuperAdmin(authUser.email, authUser.role),
-        org_id: authUser.organization_id
+        role_source: profile ? 'profiles' : 'cookie_fallback',
+        org_id: authUser.organization_id,
       })
 
       return { user: authUser }
     }
 
-    // No cookies found
     console.log('[v0] verifyAuth: FAIL - No authentication cookies found')
     return { user: null, error: 'Unauthorized' }
   } catch (error) {
@@ -82,21 +102,15 @@ export async function verifyAuth(request: NextRequest): Promise<{ user: AuthUser
   }
 }
 
-// Middleware para verificar permisos por rol
 export function checkRolePermission(userRole: UserRole, requiredRoles: UserRole[]): boolean {
   return requiredRoles.includes(userRole)
 }
 
-// Middleware para verificar acceso a organización
 export function checkOrganizationAccess(userOrgId: string | undefined, targetOrgId: string | undefined): boolean {
-  // Admin puede acceder a cualquier organización
   if (!userOrgId) return true
-  
-  // Otros roles solo pueden acceder su propia organización
   return userOrgId === targetOrgId
 }
 
-// Wrapper para proteger endpoints
 export async function protectedEndpoint(
   request: NextRequest,
   handler: (user: AuthUser, request: NextRequest) => Promise<NextResponse>,
@@ -112,7 +126,6 @@ export async function protectedEndpoint(
       )
     }
 
-    // Check role permission if specified
     if (allowedRoles && !checkRolePermission(user.role, allowedRoles)) {
       return NextResponse.json(
         { error: `Forbidden: ${user.role} role not allowed`, success: false },
@@ -120,7 +133,6 @@ export async function protectedEndpoint(
       )
     }
 
-    // Call the handler with authenticated user
     return await handler(user, request)
   } catch (error) {
     console.error('Protected endpoint error:', error)
@@ -131,7 +143,6 @@ export async function protectedEndpoint(
   }
 }
 
-// Middleware para logging de auditoría
 export async function logAudit(
   userId: string,
   action: string,
@@ -141,7 +152,7 @@ export async function logAudit(
 ) {
   try {
     const supabase = await createClient()
-    
+
     await supabase.from('audit_logs').insert({
       user_id: userId,
       action,
@@ -155,7 +166,6 @@ export async function logAudit(
   }
 }
 
-// Response helper para estandarizar respuestas
 export function successResponse(data: any, message?: string, status: number = 200) {
   return NextResponse.json(
     {
