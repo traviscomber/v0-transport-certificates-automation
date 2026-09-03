@@ -271,7 +271,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       // LIFETIME / PERIOD DOCUMENT ACCOUNTING
-      totalDocumentsProcessed: totalDocuments,
+      totalDocumentsLifetime: totalDocuments,
+      totalDocumentsProcessed: processingCompletedDocuments,
       documentsProcessingCompleted: processingCompletedDocuments,
       documentsAwaitingProcessing: processingPendingDocuments,
       documentsCurrent: currentDocuments,
