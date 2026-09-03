@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import bcrypt from 'bcryptjs'
-import {
-  normalizeSubcontractorRut,
-  signSubcontractorSession,
-} from '@/lib/subcontractor-auth'
+import { signSubcontractorSession } from '@/lib/subcontractor-auth'
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,7 +60,7 @@ export async function POST(request: NextRequest) {
       .eq('id', authRecord.transportista_id)
       .maybeSingle()
 
-    if (transpError || !transportista || transportista.is_active === false) {
+    if (transpError || !transportista) {
       console.error('[subcontractor-login] Canonical transportista mapping unavailable', transpError)
       return NextResponse.json(
         { error: 'Error al cargar datos de la empresa' },
@@ -71,13 +68,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (
-      normalizeSubcontractorRut(authRecord.rut) !==
-      normalizeSubcontractorRut(transportista.rut)
-    ) {
-      console.error('[subcontractor-login] RUT mapping mismatch for auth record', authRecord.id)
+    if (transportista.is_active === false) {
       return NextResponse.json(
-        { error: 'No fue posible validar la identidad de la empresa' },
+        { error: 'Esta empresa está inactiva' },
         { status: 403 },
       )
     }
@@ -85,7 +78,9 @@ export async function POST(request: NextRequest) {
     let token: string
     try {
       token = signSubcontractorSession({
-        rut: transportista.rut,
+        // transportista_auth is the credential authority. The active mapping to
+        // transportista_id is revalidated on every authenticated request.
+        rut: authRecord.rut,
         transportistaId: transportista.id,
       })
     } catch (error) {
