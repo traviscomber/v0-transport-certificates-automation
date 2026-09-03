@@ -87,8 +87,8 @@ export async function finishSystemJobRun(
 export async function recoverStaleSystemJobRuns(
   staleRuns: StaleSystemJobRun[],
   recoveredByRunId: string | null,
-): Promise<number> {
-  if (staleRuns.length === 0) return 0
+): Promise<string[]> {
+  if (staleRuns.length === 0) return []
 
   const staleIds = staleRuns.map((run) => run.id)
   const completedAt = new Date().toISOString()
@@ -114,7 +114,7 @@ export async function recoverStaleSystemJobRuns(
       .select('id')
 
     if (error) throw error
-    return data?.length ?? 0
+    return (data ?? []).map((row) => String(row.id))
   } catch (error) {
     console.error('[system-job-runs] Failed to recover stale system job runs:', error)
     throw error
