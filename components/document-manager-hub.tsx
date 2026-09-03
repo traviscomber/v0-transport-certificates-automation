@@ -107,17 +107,14 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       title: 'Documentos de Conductores',
       description: 'Licencias, antecedentes y documentos personales',
       icon: Users,
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-500/10',
-      borderColor: 'border-blue-500/30',
       href: '/dashboard/company/documentos/aprobados',
       current: stats.conductores.total,
       processed: stats.conductores.processed,
       statItems: [
-        { label: 'Pendientes actuales', value: stats.conductores.pendientes, icon: Clock, color: 'text-amber-500' },
-        { label: 'Aprobados actuales', value: stats.conductores.aprobados, icon: CheckCircle, color: 'text-green-500' },
-        { label: 'Rechazados actuales', value: stats.conductores.rechazados, icon: XCircle, color: 'text-red-500' },
-        { label: 'Versiones anteriores', value: stats.conductores.processed - stats.conductores.total, icon: FileStack, color: 'text-slate-400' },
+        { label: 'Pendientes actuales', value: stats.conductores.pendientes, icon: Clock, color: 'text-[#C79B5B]' },
+        { label: 'Aprobados actuales', value: stats.conductores.aprobados, icon: CheckCircle, color: 'text-[#6FA48A]' },
+        { label: 'Rechazados actuales', value: stats.conductores.rechazados, icon: XCircle, color: 'text-[#D07A88]' },
+        { label: 'Versiones anteriores', value: stats.conductores.processed - stats.conductores.total, icon: FileStack, color: 'text-[#A9ADB3]' },
       ],
     },
     {
@@ -125,17 +122,14 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       title: 'Documentos de Subcontratistas',
       description: 'F30, F30-1, contratos y documentos legales',
       icon: Truck,
-      color: 'text-orange-500',
-      bgColor: 'bg-orange-500/10',
-      borderColor: 'border-orange-500/30',
       href: '/dashboard/company/documentos/aprobados',
       current: stats.subcontratistas.total,
       processed: stats.subcontratistas.processed,
       statItems: [
-        { label: 'Pendientes actuales', value: stats.subcontratistas.pendientes, icon: Clock, color: 'text-amber-500' },
-        { label: 'Aprobados actuales', value: stats.subcontratistas.aprobados, icon: CheckCircle, color: 'text-green-500' },
-        { label: 'Rechazados actuales', value: stats.subcontratistas.rechazados, icon: XCircle, color: 'text-red-500' },
-        { label: 'Versiones anteriores', value: stats.subcontratistas.processed - stats.subcontratistas.total, icon: FileStack, color: 'text-slate-400' },
+        { label: 'Pendientes actuales', value: stats.subcontratistas.pendientes, icon: Clock, color: 'text-[#C79B5B]' },
+        { label: 'Aprobados actuales', value: stats.subcontratistas.aprobados, icon: CheckCircle, color: 'text-[#6FA48A]' },
+        { label: 'Rechazados actuales', value: stats.subcontratistas.rechazados, icon: XCircle, color: 'text-[#D07A88]' },
+        { label: 'Versiones anteriores', value: stats.subcontratistas.processed - stats.subcontratistas.total, icon: FileStack, color: 'text-[#A9ADB3]' },
       ],
     },
     {
@@ -143,108 +137,116 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
       title: 'Certificaciones',
       description: 'Ariztia, LTS, Rendic e Interpolar',
       icon: Award,
-      color: 'text-purple-500',
-      bgColor: 'bg-purple-500/10',
-      borderColor: 'border-purple-500/30',
       href: '/dashboard/company/documentos',
       current: stats.certificaciones.total,
       processed: null,
       statItems: [
-        { label: 'Asignadas', value: stats.certificaciones.vigentes, icon: CheckCircle, color: 'text-green-500' },
-        { label: 'Por vencer', value: stats.certificaciones.porVencer, icon: AlertTriangle, color: 'text-amber-500' },
-        { label: 'Vencidas', value: stats.certificaciones.vencidas, icon: XCircle, color: 'text-red-500' },
+        { label: 'Asignadas', value: stats.certificaciones.vigentes, icon: CheckCircle, color: 'text-[#6FA48A]' },
+        { label: 'Por vencer', value: stats.certificaciones.porVencer, icon: AlertTriangle, color: 'text-[#C79B5B]' },
+        { label: 'Vencidas', value: stats.certificaciones.vencidas, icon: XCircle, color: 'text-[#D07A88]' },
       ],
     },
   ]
 
   return (
-    <div className="space-y-2 sm:space-y-4">
-      <div className="flex flex-col gap-2 sm:gap-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
-          <div className="min-w-0">
-            <h1 className="text-lg sm:text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-1 sm:gap-2">
-              <FolderOpen className="h-5 sm:h-7 w-5 sm:w-7 text-primary flex-shrink-0" />
-              <span className="truncate">Gestor de Documentos</span>
-            </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
-              {totalGestionados.toLocaleString('es-CL')} documentos gestionados en total. {totalActuales.toLocaleString('es-CL')} corresponden a la versión actual de cada requisito.
-            </p>
+    <div className="mx-auto max-w-7xl space-y-5">
+      <header className="flex flex-col gap-4 border-b border-[#303238] pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0 max-w-3xl">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[#A9ADB3]">
+            <FolderOpen className="h-4 w-4" />
+            Documentos
           </div>
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 w-full sm:w-auto">
-            <Badge variant="outline" className="text-xs px-2 py-1">
-              <BarChart3 className="h-3 w-3 mr-1" />
-              <span className="hidden sm:inline">{totalGestionados.toLocaleString('es-CL')} gestionados</span>
-              <span className="sm:hidden">{totalGestionados.toLocaleString('es-CL')}</span>
-            </Badge>
-            <Button variant="outline" size="sm" onClick={handleManualRefresh} disabled={isRefreshing} className="gap-1 text-xs h-8 px-2">
-              <RotateCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">{isRefreshing ? 'Actualizando...' : 'Actualizar'}</span>
-            </Button>
-          </div>
+          <h1 className="mt-2 text-2xl font-medium tracking-tight text-[#F2F0EB] sm:text-3xl">
+            Gestor de Documentos
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-[#A9ADB3]">
+            {totalGestionados.toLocaleString('es-CL')} documentos gestionados en total. {totalActuales.toLocaleString('es-CL')} corresponden a la versión actual de cada requisito.
+          </p>
         </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="outline" className="h-8 rounded-[5px] border-[#303238] px-2.5 text-xs font-normal text-[#C6C8CC]">
+            <BarChart3 className="mr-1.5 h-3.5 w-3.5" />
+            {totalGestionados.toLocaleString('es-CL')} gestionados
+          </Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            className="h-8 rounded-[5px] border-[#303238] bg-transparent px-2.5 text-xs font-normal text-[#C6C8CC] hover:bg-[#202226] hover:text-[#F2F0EB]"
+          >
+            <RotateCw className={`mr-1.5 h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Actualizando...' : 'Actualizar'}
+          </Button>
+        </div>
+      </header>
+
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[5px] bg-[#303238] md:grid-cols-5">
+        <MetricCard label="Gestionados" value={totalGestionados} detail="Todas las cargas y versiones" icon={FileStack} tone="neutral" />
+        <MetricCard label="Actuales" value={totalActuales} detail="Una versión activa por requisito" icon={FileText} tone="neutral" />
+        <Link href="/dashboard/company/documentos/pendientes" className="contents">
+          <MetricCard label="Pendientes" value={totalPendientes} icon={Clock} tone="warning" />
+        </Link>
+        <Link href="/dashboard/company/documentos/aprobados" className="contents">
+          <MetricCard label="Aprobados" value={totalAprobados} icon={CheckCircle} tone="success" />
+        </Link>
+        <Link href="/dashboard/company/documentos/rechazados" className="contents">
+          <MetricCard label="Rechazados" value={totalRechazados} icon={XCircle} tone="danger" />
+        </Link>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-3">
-        <MetricCard label="Documentos gestionados" value={totalGestionados} detail="Incluye todas las cargas y versiones" icon={FileStack} tone="blue" />
-        <MetricCard label="Documentos actuales" value={totalActuales} detail="Una versión activa por requisito" icon={FileText} tone="slate" />
-        <Link href="/dashboard/company/documentos/pendientes">
-          <MetricCard label="Pendientes actuales" value={totalPendientes} icon={Clock} tone="amber" />
-        </Link>
-        <Link href="/dashboard/company/documentos/aprobados">
-          <MetricCard label="Aprobados actuales" value={totalAprobados} icon={CheckCircle} tone="green" />
-        </Link>
-        <Link href="/dashboard/company/documentos/rechazados">
-          <MetricCard label="Rechazados actuales" value={totalRechazados} icon={XCircle} tone="red" />
-        </Link>
-      </div>
-
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-xs leading-5 text-[#777C84]">
         Las {totalVersionesAnteriores.toLocaleString('es-CL')} versiones anteriores se conservan como trazabilidad y no representan documentos faltantes.
       </p>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
         {modules.map((module) => {
           const Icon = module.icon
           return (
-            <Card key={module.id} className={`${module.bgColor} ${module.borderColor} border hover:shadow-lg transition-all duration-200 flex flex-col`}>
-              <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className={`p-1.5 sm:p-2 rounded-lg ${module.bgColor}`}>
-                    <Icon className={`h-4 sm:h-5 w-4 sm:w-5 ${module.color}`} />
+            <Card key={module.id} className="flex flex-col rounded-[5px] border-0 bg-[#181A1D] shadow-none">
+              <CardHeader className="p-4 pb-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-[5px] bg-[#202226]">
+                    <Icon className="h-4 w-4 text-[#A9ADB3]" />
                   </div>
-                  <div className="flex flex-col items-end gap-1">
+                  <div className="flex flex-col items-end gap-1 text-right">
                     {module.processed !== null ? (
                       <>
-                        <Badge variant="secondary" className="text-xs">{module.processed.toLocaleString('es-CL')} gestionados</Badge>
-                        <span className="text-[10px] text-muted-foreground">{module.current.toLocaleString('es-CL')} documentos actuales</span>
+                        <span className="text-xs tabular-nums text-[#C6C8CC]">{module.processed.toLocaleString('es-CL')} gestionados</span>
+                        <span className="text-[11px] tabular-nums text-[#777C84]">{module.current.toLocaleString('es-CL')} actuales</span>
                       </>
                     ) : (
-                      <Badge variant="secondary" className="text-xs">{module.current.toLocaleString('es-CL')} asignadas</Badge>
+                      <span className="text-xs tabular-nums text-[#C6C8CC]">{module.current.toLocaleString('es-CL')} asignadas</span>
                     )}
                   </div>
                 </div>
-                <CardTitle className="text-sm sm:text-base mt-1 sm:mt-2 truncate">{module.title}</CardTitle>
-                <CardDescription className="text-xs line-clamp-2">{module.description}</CardDescription>
+                <CardTitle className="mt-3 text-base font-medium text-[#F2F0EB]">{module.title}</CardTitle>
+                <CardDescription className="text-xs leading-5 text-[#A9ADB3]">{module.description}</CardDescription>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col p-2 sm:p-3 md:p-4 pt-1 sm:pt-2">
-                <div className="space-y-1 sm:space-y-2 flex-1">
+              <CardContent className="flex flex-1 flex-col p-4 pt-2">
+                <div className="flex-1 space-y-2">
                   {module.statItems.map((stat) => {
                     const StatIcon = stat.icon
                     return (
-                      <div key={stat.label} className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-1 min-w-0">
-                          <StatIcon className={`h-3 w-3 ${stat.color} flex-shrink-0`} />
-                          <span className="text-slate-300 truncate">{stat.label}</span>
+                      <div key={stat.label} className="flex min-h-8 items-center justify-between gap-3 text-xs">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <StatIcon className={`h-3.5 w-3.5 flex-shrink-0 ${stat.color}`} />
+                          <span className="truncate text-[#A9ADB3]">{stat.label}</span>
                         </div>
-                        <span className={`font-semibold ${stat.color}`}>{stat.value.toLocaleString('es-CL')}</span>
+                        <span className={`font-medium tabular-nums ${stat.color}`}>{stat.value.toLocaleString('es-CL')}</span>
                       </div>
                     )
                   })}
                 </div>
-                <Link href={module.href} className="w-full mt-2 sm:mt-3">
-                  <Button variant="outline" className="w-full group text-xs h-7 sm:h-8">
+
+                <Link href={module.href} className="mt-4 w-full">
+                  <Button
+                    variant="ghost"
+                    className="h-9 w-full justify-between rounded-[5px] px-3 text-xs font-normal text-[#C6C8CC] hover:bg-[#202226] hover:text-[#F2F0EB]"
+                  >
                     Ver detalles
-                    <ArrowRight className="h-3 w-3 ml-1 group-hover:translate-x-0.5 transition-transform" />
+                    <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
                 </Link>
               </CardContent>
@@ -256,28 +258,27 @@ export function DocumentManagerHub({ stats: initialStats }: DocumentManagerHubPr
   )
 }
 
-type MetricTone = 'amber' | 'slate' | 'blue' | 'green' | 'red'
+type MetricTone = 'neutral' | 'warning' | 'success' | 'danger'
 
-const metricToneClasses: Record<MetricTone, { card: string; label: string; value: string; icon: string }> = {
-  amber: { card: 'from-amber-900/50 to-amber-950/50 border-amber-700/50', label: 'text-amber-300/80', value: 'text-amber-400', icon: 'text-amber-500/50' },
-  slate: { card: 'from-slate-800 to-slate-900 border-slate-700', label: 'text-slate-400', value: 'text-white', icon: 'text-slate-500' },
-  blue: { card: 'from-blue-900/50 to-blue-950/50 border-blue-700/50', label: 'text-blue-300/80', value: 'text-blue-400', icon: 'text-blue-500/50' },
-  green: { card: 'from-green-900/50 to-green-950/50 border-green-700/50', label: 'text-green-300/80', value: 'text-green-400', icon: 'text-green-500/50' },
-  red: { card: 'from-red-900/50 to-red-950/50 border-red-700/50', label: 'text-red-300/80', value: 'text-red-400', icon: 'text-red-500/50' },
+const metricToneClasses: Record<MetricTone, { label: string; value: string; icon: string }> = {
+  neutral: { label: 'text-[#A9ADB3]', value: 'text-[#F2F0EB]', icon: 'text-[#777C84]' },
+  warning: { label: 'text-[#BFA16E]', value: 'text-[#D6B678]', icon: 'text-[#A06E32]' },
+  success: { label: 'text-[#86B09A]', value: 'text-[#9CC5B1]', icon: 'text-[#39765B]' },
+  danger: { label: 'text-[#C98B96]', value: 'text-[#D8A0AA]', icon: 'text-[#994550]' },
 }
 
 function MetricCard({ label, value, detail, icon: Icon, tone }: { label: string; value: number; detail?: string; icon: typeof FileText; tone: MetricTone }) {
   const classes = metricToneClasses[tone]
   return (
-    <Card className={`bg-gradient-to-br ${classes.card} h-full`}>
-      <CardContent className="p-2 sm:p-3">
-        <div className="flex flex-col gap-1">
+    <div className="min-h-[118px] bg-[#181A1D] p-4 transition-colors hover:bg-[#202226]">
+      <div className="flex h-full flex-col gap-1">
+        <div className="flex items-center justify-between gap-2">
           <p className={`text-xs ${classes.label}`}>{label}</p>
-          <p className={`text-lg sm:text-xl md:text-2xl font-bold ${classes.value}`}>{value.toLocaleString('es-CL')}</p>
-          {detail && <p className="text-[10px] text-muted-foreground">{detail}</p>}
-          <Icon className={`h-4 sm:h-5 w-4 sm:w-5 ${classes.icon} mt-1`} />
+          <Icon className={`h-4 w-4 ${classes.icon}`} />
         </div>
-      </CardContent>
-    </Card>
+        <p className={`mt-2 text-2xl font-medium tabular-nums ${classes.value}`}>{value.toLocaleString('es-CL')}</p>
+        {detail && <p className="mt-auto pt-2 text-[11px] leading-4 text-[#777C84]">{detail}</p>}
+      </div>
+    </div>
   )
 }
