@@ -1,5 +1,5 @@
 -- ChileFlota RBAC hardening.
--- Keep legacy roles while adding explicit Labbe operational roles.
+-- Keep all legacy roles while adding explicit Labbe operational roles.
 -- Super-admin privileges must never be inferred from an email domain.
 
 ALTER TABLE public.profiles
@@ -10,11 +10,15 @@ ALTER TABLE public.profiles
   CHECK (
     role = ANY (
       ARRAY[
+        'admin'::text,
         'administrador'::text,
+        'dispatcher'::text,
         'despachador'::text,
+        'driver'::text,
+        'conductor'::text,
+        'executive'::text,
         'mandante'::text,
         'transportista'::text,
-        'conductor'::text,
         'prevencionista'::text,
         'ejecutiva'::text,
         'super_admin'::text
