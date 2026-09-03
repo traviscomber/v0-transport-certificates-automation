@@ -1,6 +1,5 @@
 import type { NextRequest } from 'next/server'
-import { verifyAuth, type UserRole } from '@/lib/auth-middleware'
-import { canChangeDocumentStatus } from '@/lib/document-authorization'
+import type { UserRole } from '@/lib/auth-middleware'
 
 export type ReprocessDocumentTable = 'subcontractor_documents' | 'uploaded_documents'
 
@@ -46,6 +45,9 @@ export async function authenticateReprocessRequest(
     return { ok: true, actor: { kind: 'cron' } }
   }
 
+  // Keep the pure cron path free of Next.js request runtime dependencies so the
+  // fail-closed contract can be exercised in isolated safety tests.
+  const { verifyAuth } = await import('@/lib/auth-middleware')
   const { user, error } = await verifyAuth(request)
   if (error || !user) {
     return { ok: false, status: 401, error: 'Unauthorized' }
@@ -70,6 +72,7 @@ export async function authorizeReprocessDocument(
       : { allowed: false, reason: 'F30 backfill cannot reprocess uploaded documents' }
   }
 
+  const { canChangeDocumentStatus } = await import('@/lib/document-authorization')
   const documentType = documentTable === 'subcontractor_documents' ? 'subcontractor' : 'conductor'
   return canChangeDocumentStatus(
     actor.user.id,
