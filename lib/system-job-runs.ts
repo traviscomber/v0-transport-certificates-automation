@@ -95,7 +95,7 @@ export async function recoverStaleSystemJobRuns(
 
   try {
     const supabase = createAdminClient()
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('system_job_runs')
       .update({
         status: 'failed',
@@ -111,9 +111,10 @@ export async function recoverStaleSystemJobRuns(
       })
       .in('id', staleIds)
       .eq('status', 'running')
+      .select('id')
 
     if (error) throw error
-    return staleIds.length
+    return data?.length ?? 0
   } catch (error) {
     console.error('[system-job-runs] Failed to recover stale system job runs:', error)
     throw error
