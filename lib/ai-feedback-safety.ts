@@ -13,6 +13,8 @@ const yyyyMmDd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD')
     return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
   }, 'Invalid calendar date')
 
+// Unknown legacy fields are stripped. In particular, client-supplied AI prediction
+// values/confidence are ignored and later reconstructed from the trusted document row.
 const AiFeedbackRequestSchema = z.object({
   documentId: z.string().uuid(),
   documentTable: z.enum(AI_FEEDBACK_TABLES),
@@ -20,7 +22,7 @@ const AiFeedbackRequestSchema = z.object({
   actualExpirationDate: yyyyMmDd.nullable().optional(),
   feedback: z.string().trim().max(2000).nullable().optional(),
   isAccurate: z.boolean(),
-}).strict().superRefine((value, ctx) => {
+}).superRefine((value, ctx) => {
   if (!value.isAccurate && value.actualDocumentType === undefined && value.actualExpirationDate === undefined) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
