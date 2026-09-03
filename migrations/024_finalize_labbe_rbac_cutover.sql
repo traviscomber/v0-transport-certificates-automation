@@ -1,13 +1,23 @@
 -- Final production cutover after the authorization code is deployed.
--- Cecilia's canonical identity is the sole global administrator. All named
--- operational identities become normal executives.
+-- Katherine Canales' canonical identity is the sole global administrator.
+-- Cecilia Farias has left the company and all of her known identities are disabled.
+-- All other named operational identities become normal executives.
 
 update public.profiles
 set role = case
-  when lower(trim(email)) = 'cfarias@labbe.cl' then 'super_admin'
+  when lower(trim(email)) = 'kcanales@labbe.cl' then 'super_admin'
   else 'ejecutiva'
+end,
+is_active = case
+  when lower(trim(email)) in (
+    'cfarias@labbe.cl',
+    'cecilia.farias@labbe.cl',
+    'cecilia.farias@transporteslabbe.cl'
+  ) then false
+  else coalesce(is_active, true)
 end
 where lower(trim(email)) in (
+  'kcanales@labbe.cl',
   'cfarias@labbe.cl',
   'cecilia.farias@labbe.cl',
   'cecilia.farias@transporteslabbe.cl',
@@ -24,14 +34,31 @@ alter table public.profiles
   drop constraint if exists profiles_cecilia_canonical_admin_check;
 
 alter table public.profiles
-  add constraint profiles_cecilia_canonical_admin_check
+  drop constraint if exists profiles_katherine_canonical_admin_check;
+
+alter table public.profiles
+  add constraint profiles_katherine_canonical_admin_check
   check (
-    lower(trim(email)) <> 'cfarias@labbe.cl'
+    lower(trim(email)) <> 'kcanales@labbe.cl'
     or (role = 'super_admin' and coalesce(is_active, true) = true)
   );
 
+alter table public.profiles
+  drop constraint if exists profiles_departed_cecilia_disabled_check;
+
+alter table public.profiles
+  add constraint profiles_departed_cecilia_disabled_check
+  check (
+    lower(trim(email)) not in (
+      'cfarias@labbe.cl',
+      'cecilia.farias@labbe.cl',
+      'cecilia.farias@transporteslabbe.cl'
+    )
+    or coalesce(is_active, true) = false
+  );
+
 -- After the cutover, legacy admin/mandante labels no longer authorize
--- subcontractor approval. Only normal executives and Cecilia may decide.
+-- subcontractor approval. Only normal executives and Katherine may decide.
 create or replace function public.enforce_subcontractor_review_assignment()
 returns trigger
 language plpgsql
