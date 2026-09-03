@@ -13,6 +13,30 @@ type TransportistaCertificationFlags = {
   interpolar: boolean | null
 }
 
+type LegacyDocumentRow = {
+  original_filename: string | null
+  validation_status: string | null
+  processed_at: string | null
+  ai_processed_at: string | null
+  ai_analyzed_at: string | null
+  vision_processed_at: string | null
+}
+
+function normalizeFilename(value: string | null | undefined) {
+  return value?.trim().toLowerCase() || ''
+}
+
+function legacyWasProcessed(doc: LegacyDocumentRow) {
+  return Boolean(
+    doc.validation_status === 'approved' ||
+      doc.validation_status === 'rejected' ||
+      doc.processed_at ||
+      doc.ai_processed_at ||
+      doc.ai_analyzed_at ||
+      doc.vision_processed_at,
+  )
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { user, error: authError } = await verifyAuth(request)
@@ -43,10 +67,20 @@ export async function GET(request: NextRequest) {
       return count || 0
     }
 
-    const countProcessed = async (table: string) => {
+    const countAll = async (table: string) => {
       const { count, error } = await supabase
         .from(table)
         .select('id', { count: 'exact', head: true })
+
+      if (error) throw error
+      return count || 0
+    }
+
+    const countCanonicalProcessed = async () => {
+      const { count, error } = await supabase
+        .from('subcontractor_documents')
+        .select('id', { count: 'exact', head: true })
+        .or('status.eq.approved,status.eq.rejected,ai_analyzed_at.not.is.null,reviewed_at.not.is.null,f30_validated_at.not.is.null')
 
       if (error) throw error
       return count || 0
@@ -63,22 +97,60 @@ export async function GET(request: NextRequest) {
       subcontractorApproved,
       subcontractorRejected,
       subcontractorPending,
+      canonicalProcessed,
+      legacyDocumentsResult,
       transportistasResult,
     ] = await Promise.all([
       countCurrent('uploaded_documents'),
-      countProcessed('uploaded_documents'),
+      countAll('uploaded_documents'),
       countByStatus('uploaded_documents', 'validation_status', 'approved'),
       countByStatus('uploaded_documents', 'validation_status', 'rejected'),
       countByStatus('uploaded_documents', 'validation_status', 'pending'),
       countCurrent('subcontractor_documents'),
-      countProcessed('subcontractor_documents'),
+      countAll('subcontractor_documents'),
       countByStatus('subcontractor_documents', 'status', 'approved'),
       countByStatus('subcontractor_documents', 'status', 'rejected'),
       countActionableSubcontractorPending(supabase),
+      countCanonicalProcessed(),
+      supabase
+        .from('uploaded_documents')
+        .select('original_filename,validation_status,processed_at,ai_processed_at,ai_analyzed_at,vision_processed_at'),
       supabase.from('transportistas').select('ariztia, lts, rendic, interpolar'),
     ])
 
+    if (legacyDocumentsResult.error) throw legacyDocumentsResult.error
     if (transportistasResult.error) throw transportistasResult.error
+
+    const legacyDocuments = (legacyDocumentsResult.data || []) as LegacyDocumentRow[]
+    const legacyFilenames = Array.from(
+      new Set(legacyDocuments.map((doc) => doc.original_filename).filter((name): name is string => Boolean(name))),
+    )
+
+    let canonicalLegacyFilenameKeys = new Set<string>()
+    if (legacyFilenames.length > 0) {
+      const { data: canonicalMatches, error: canonicalMatchesError } = await supabase
+        .from('subcontractor_documents')
+        .select('file_name')
+        .in('file_name', legacyFilenames)
+
+      if (canonicalMatchesError) throw canonicalMatchesError
+      canonicalLegacyFilenameKeys = new Set(
+        (canonicalMatches || [])
+          .map((row) => normalizeFilename(row.file_name))
+          .filter(Boolean),
+      )
+    }
+
+    const uniqueLegacyDocuments = legacyDocuments.filter((doc) => {
+      const key = normalizeFilename(doc.original_filename)
+      return !key || !canonicalLegacyFilenameKeys.has(key)
+    })
+    const uniqueLegacyProcessed = uniqueLegacyDocuments.filter(legacyWasProcessed).length
+
+    const lifetimeRegistered = subcontractorProcessed + uniqueLegacyDocuments.length
+    const lifetimeProcessed = canonicalProcessed + uniqueLegacyProcessed
+    const lifetimeAwaitingProcessing = Math.max(lifetimeRegistered - lifetimeProcessed, 0)
+    const canonicalHistorical = Math.max(subcontractorProcessed - subcontractorTotal, 0)
 
     const certificationFlags = (transportistasResult.data || []) as TransportistaCertificationFlags[]
     const totalCertifications = certificationFlags.reduce((total, transportista) => {
@@ -102,6 +174,14 @@ export async function GET(request: NextRequest) {
         aprobados: subcontractorApproved,
         rechazados: subcontractorRejected,
         vencidos: 0,
+      },
+      lifetime: {
+        registered: lifetimeRegistered,
+        processed: lifetimeProcessed,
+        awaitingProcessing: lifetimeAwaitingProcessing,
+        historical: canonicalHistorical,
+        legacyUnique: uniqueLegacyDocuments.length,
+        legacyMigrationDuplicatesExcluded: legacyDocuments.length - uniqueLegacyDocuments.length,
       },
       certificaciones: {
         total: totalCertifications,
