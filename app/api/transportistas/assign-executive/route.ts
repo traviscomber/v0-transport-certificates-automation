@@ -1,11 +1,20 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { isSuperAdmin, verifyAuth } from '@/lib/auth-middleware'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export async function POST(request: NextRequest) {
   try {
+    const { user, error: authError } = await verifyAuth(request)
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!isSuperAdmin(user.email, user.role)) {
+      return NextResponse.json({ error: 'Only super_admin can change executive assignments' }, { status: 403 })
+    }
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
@@ -26,11 +35,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify that the executive exists
     const { data: executive, error: execError } = await supabase
       .from('executive_staff')
       .select('id, full_name')
       .eq('id', ejecutiva_id)
+      .eq('is_active', true)
       .single()
 
     if (execError || !executive) {
@@ -40,7 +49,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Update transportista with the assigned executive
     const { data, error } = await supabase
       .from('transportistas')
       .update({ assigned_executive_id: ejecutiva_id })
