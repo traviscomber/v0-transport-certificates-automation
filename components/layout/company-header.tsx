@@ -1,27 +1,30 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, LogOut, User, ChevronDown, Settings } from 'lucide-react'
+import { Search, LogOut, User, ChevronDown, Settings, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useUserProfile } from '@/hooks/use-user-profile'
 
-export function CompanyHeader() {
+interface CompanyHeaderProps {
+  onMenuClick?: () => void
+}
+
+export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
   const router = useRouter()
-  const { profile, loading } = useUserProfile()
+  const { profile } = useUserProfile()
   const [userEmail, setUserEmail] = useState<string>('')
   const [searchValue, setSearchValue] = useState('')
   const [profileOpen, setProfileOpen] = useState(false)
 
   useEffect(() => {
-    // Get user email from cookie as fallback
     const email = document.cookie
       .split('; ')
       .find(row => row.startsWith('user_email='))
       ?.split('=')[1]
-    
+
     if (email) {
       setUserEmail(decodeURIComponent(email))
     }
@@ -39,110 +42,106 @@ export function CompanyHeader() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchValue.trim()) {
-      // Navigate to documents with search query
       router.push(`/dashboard/company/documentos?search=${encodeURIComponent(searchValue)}`)
     }
   }
 
   return (
-    <header className="h-14 sm:h-16 bg-primary text-white shadow-md border-b border-primary/20 sticky top-0 z-40">
-      <div className="h-full px-2 sm:px-4 lg:px-8 flex items-center justify-between gap-2 sm:gap-4">
-        {/* Left: Logo and Company Name */}
-        <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
-          <div className="h-9 sm:h-10 w-9 sm:w-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-            <span className="text-xs sm:text-sm font-bold">TL</span>
-          </div>
-          <div className="hidden sm:block min-w-0">
-            <h1 className="text-sm sm:text-base font-semibold truncate">Transportes Labbé</h1>
-            <p className="text-xs text-white/70">Portal de Empresa</p>
-          </div>
+    <header className="sticky top-0 z-40 h-14 border-b border-[#303238] bg-[#181A1D] text-[#F2F0EB] sm:h-16">
+      <div className="flex h-full items-center gap-3 px-3 sm:px-5 lg:px-7">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Abrir navegación"
+          className="h-10 w-10 flex-shrink-0 rounded-[5px] text-[#F2F0EB] hover:bg-[#202226] md:hidden"
+          onClick={onMenuClick}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+
+        <div className="hidden min-w-0 flex-shrink-0 sm:block md:hidden lg:block">
+          <p className="truncate text-sm font-medium text-[#F2F0EB]">ChileFlota</p>
+          <p className="text-xs text-[#A9ADB3]">Transportes Labbé</p>
         </div>
 
-        {/* Center: Search Bar - Mobile optimized */}
-        <form onSubmit={handleSearch} className="flex-1 max-w-full sm:max-w-md mx-1 sm:mx-0">
-          <div className="w-full relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 sm:h-4 w-3 sm:w-4 text-white/60" />
+        <form onSubmit={handleSearch} className="mx-auto flex-1 sm:max-w-lg">
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#777C84]" />
             <Input
               type="text"
-              placeholder="Buscar..."
+              aria-label="Buscar documentos"
+              placeholder="Buscar documentos, RUT o empresa..."
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              className="pl-7 sm:pl-9 h-8 sm:h-9 text-xs sm:text-sm bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:bg-white/15 focus:border-white/40"
+              className="h-9 rounded-[5px] border-[#303238] bg-[#202226] pl-9 text-sm text-[#F2F0EB] placeholder:text-[#777C84] focus-visible:border-[#742D3D] focus-visible:ring-[#742D3D]/30"
             />
           </div>
         </form>
 
-        {/* Right: Profile Dropdown */}
         <div className="relative flex-shrink-0">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setProfileOpen(!profileOpen)}
-            className="text-white hover:bg-white/10 gap-1 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
+            className="h-9 rounded-[5px] px-2 text-[#D8D6D1] hover:bg-[#202226] hover:text-[#F2F0EB] sm:px-3"
           >
-            <User className="h-3 sm:h-4 w-3 sm:w-4 flex-shrink-0" />
-            <span className="hidden sm:inline truncate max-w-xs text-xs">
+            <User className="h-4 w-4 flex-shrink-0" />
+            <span className="hidden max-w-[220px] truncate text-xs font-normal sm:inline">
               {profile?.full_name || userEmail?.split('@')[0] || 'Perfil'}
             </span>
-            <ChevronDown className="h-3 sm:h-4 w-3 sm:w-4 flex-shrink-0" />
+            <ChevronDown className="h-4 w-4 flex-shrink-0" />
           </Button>
 
-          {/* Profile Dropdown Menu */}
           {profileOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden">
-              {/* Profile Header Section */}
-              <div className="bg-gradient-to-r from-primary to-primary/80 px-4 py-4 text-white">
+            <div className="absolute right-0 mt-2 w-64 overflow-hidden rounded-[5px] border border-[#303238] bg-[#181A1D] shadow-xl shadow-black/20">
+              <div className="border-b border-[#303238] px-4 py-4">
                 <div className="flex items-center gap-3">
-                  {/* Avatar */}
-                  <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 border-2 border-white/30">
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[5px] bg-[#742D3D] text-[#F2F0EB]">
                     {profile?.avatar_url ? (
-                      <img 
-                        src={profile.avatar_url} 
+                      <img
+                        src={profile.avatar_url}
                         alt={profile.full_name || 'Avatar'}
-                        className="h-12 w-12 rounded-full object-cover"
+                        className="h-10 w-10 rounded-[5px] object-cover"
                       />
                     ) : (
-                      <User className="h-6 w-6" />
+                      <User className="h-5 w-5" />
                     )}
                   </div>
-                  
-                  {/* User Info */}
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-sm truncate">
+                    <p className="truncate text-sm font-medium text-[#F2F0EB]">
                       {profile?.full_name || 'Usuario'}
                     </p>
-                    <p className="text-xs text-white/80 truncate">
+                    <p className="truncate text-xs text-[#A9ADB3]">
                       {profile?.email || userEmail}
                     </p>
                   </div>
                 </div>
               </div>
-              
-              {/* Phone (if available) */}
+
               {profile?.phone && (
-                <div className="px-4 py-2 border-b border-gray-100 bg-gray-50">
-                  <p className="text-xs text-gray-600">Teléfono</p>
-                  <p className="text-sm font-medium text-foreground">{profile.phone}</p>
+                <div className="border-b border-[#303238] px-4 py-3">
+                  <p className="text-xs text-[#777C84]">Teléfono</p>
+                  <p className="mt-1 text-sm text-[#D8D6D1]">{profile.phone}</p>
                 </div>
               )}
-              
-              {/* Actions */}
-              <div className="py-1">
+
+              <div className="p-1.5">
                 <Link href="/dashboard/company/perfil" className="block">
                   <button
                     onClick={() => setProfileOpen(false)}
-                    className="w-full px-4 py-2 text-left text-foreground hover:bg-gray-50 flex items-center gap-3 text-sm font-medium transition-colors"
+                    className="flex min-h-10 w-full items-center gap-3 rounded-[5px] px-3 py-2 text-left text-sm text-[#D8D6D1] transition-colors hover:bg-[#202226] hover:text-[#F2F0EB]"
                   >
-                    <Settings className="h-4 w-4 text-primary" />
+                    <Settings className="h-4 w-4 text-[#A9ADB3]" />
                     <span>Mi Perfil</span>
                   </button>
                 </Link>
-                
+
                 <button
                   onClick={handleLogout}
-                  className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 flex items-center gap-3 text-sm font-medium transition-colors"
+                  className="flex min-h-10 w-full items-center gap-3 rounded-[5px] px-3 py-2 text-left text-sm text-[#D8D6D1] transition-colors hover:bg-[#202226] hover:text-[#F2F0EB]"
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className="h-4 w-4 text-[#994550]" />
                   <span>Cerrar Sesión</span>
                 </button>
               </div>
@@ -153,4 +152,3 @@ export function CompanyHeader() {
     </header>
   )
 }
-
