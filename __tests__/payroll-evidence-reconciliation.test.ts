@@ -74,4 +74,16 @@ describe('payroll evidence reconciliation', () => {
     expect(source).not.toContain('.delete(')
     expect(source).not.toContain('.upsert(')
   })
+
+  it('does not authorize transportista payroll reads from cookie-carried organization_id', () => {
+    const authorizationPath = path.join(
+      process.cwd(),
+      'lib/payroll-evidence-authorization.ts',
+    )
+    const source = fs.readFileSync(authorizationPath, 'utf8')
+
+    expect(source).toContain("actor.role === 'transportista'")
+    expect(source).toContain('Payroll self-service requiere identidad organizacional server-side')
+    expect(source).not.toContain('actor.organization_id === transportistaId')
+  })
 })
