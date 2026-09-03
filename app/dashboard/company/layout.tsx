@@ -2,12 +2,24 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Users, FileText, BarChart3, LogOut, Zap, Users2, Lock, TrendingUp, Menu, Bell, X, Settings, TrendingDown, Shield } from 'lucide-react'
+import {
+  LayoutDashboard,
+  Users,
+  FileText,
+  BarChart3,
+  LogOut,
+  Zap,
+  Users2,
+  Lock,
+  TrendingUp,
+  Settings,
+  TrendingDown,
+  Shield,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { NotificationCenter } from '@/components/notification-center'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { CompanyHeader } from '@/components/layout/company-header'
 
 const navItems = [
@@ -18,9 +30,9 @@ const navItems = [
   { href: '/dashboard/company/documentos', label: 'Documentos', icon: FileText },
   { href: '/dashboard/company/analytics/conductores', label: 'Analytics', icon: TrendingUp },
   { href: '/dashboard/company/reportes', label: 'Reportes', icon: BarChart3 },
-  { href: '/compliance', label: 'Compliance Matrix', icon: Shield },
+  { href: '/dashboard/company/compliance', label: 'Compliance Matrix', icon: Shield },
   { href: '/dashboard/company/roi-metrics', label: 'ROI Metrics', icon: TrendingDown },
-  { href: '/admin/metrics', label: 'Métricas de Usuarios', icon: Lock },
+  { href: '/dashboard/company/metrics', label: 'Métricas de Usuarios', icon: Lock },
 ]
 
 const accountItems = [
@@ -30,17 +42,17 @@ const accountItems = [
 export default function CompanyLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
+  const mainRef = useRef<HTMLElement>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [hasAccess, setHasAccess] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check if user has a simple email login (ejecutivas, subcontratistas, conductores via /login)
     const userEmail = document.cookie
       .split('; ')
       .find(row => row.startsWith('user_email='))
       ?.split('=')[1]
-    
+
     if (userEmail) {
       setHasAccess(true)
     }
@@ -52,6 +64,11 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
       router.push('/login')
     }
   }, [isLoading, hasAccess, router])
+
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    setSidebarOpen(false)
+  }, [pathname])
 
   if (isLoading || !hasAccess) {
     return null
@@ -68,67 +85,68 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
 
   const SidebarContent = () => (
     <>
-      <div className="p-2 sm:p-3 md:p-6 border-b bg-slate-900/80 shadow-sm">
-        <h2 className="text-base sm:text-lg md:text-xl font-bold text-white">Transportes Labbé</h2>
-        <p className="text-xs text-slate-300 mt-0.5 md:mt-1">Portal de Empresa</p>
+      <div className="border-b border-[#303238] px-4 py-5 md:px-5">
+        <p className="text-lg font-medium tracking-tight text-[#F2F0EB]">ChileFlota</p>
+        <p className="mt-1 text-xs text-[#A9ADB3]">Transportes Labbé</p>
       </div>
 
-      <nav className="p-2 sm:p-3 md:p-4 space-y-0.5 md:space-y-1 flex-1 overflow-y-auto bg-slate-900/60">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {navItems.map(item => {
           const Icon = item.icon
-          // Exact match only - no prefix matching to avoid Dashboard being highlighted for all /dashboard/company/* routes
-          const isActive = pathname === item.href
-          
+          const isActive =
+            pathname === item.href ||
+            (item.href !== '/dashboard/company' && pathname.startsWith(`${item.href}/`))
+
           return (
             <Link key={item.href} href={item.href}>
               <button
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  'w-full flex items-center gap-2 sm:gap-3 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors',
+                  'flex min-h-10 w-full items-center gap-3 rounded-[5px] px-3 py-2 text-left text-sm font-normal transition-colors',
                   isActive
-                    ? 'bg-orange-500 text-white'
-                    : 'text-white hover:bg-slate-800/50 hover:text-white'
+                    ? 'bg-[#742D3D] text-[#F2F0EB]'
+                    : 'text-[#C6C8CC] hover:bg-[#202226] hover:text-[#F2F0EB]'
                 )}
               >
                 <Icon className="h-4 w-4 flex-shrink-0" />
-                <span className="hidden sm:inline text-white">{item.label}</span>
+                <span>{item.label}</span>
               </button>
             </Link>
           )
         })}
       </nav>
 
-      <div className="p-2 sm:p-3 md:p-4 border-t border-slate-700 bg-slate-900/60 space-y-2">
+      <div className="space-y-2 border-t border-[#303238] p-3">
         {accountItems.map(item => {
           const Icon = item.icon
           const isActive = pathname === item.href
-          
+
           return (
             <Link key={item.href} href={item.href}>
               <button
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  'w-full flex items-center gap-2 sm:gap-3 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors',
+                  'flex min-h-10 w-full items-center gap-3 rounded-[5px] px-3 py-2 text-sm font-normal transition-colors',
                   isActive
-                    ? 'bg-slate-700/50 text-white'
-                    : 'text-white hover:bg-slate-800/50 hover:text-white'
+                    ? 'bg-[#202226] text-[#F2F0EB]'
+                    : 'text-[#C6C8CC] hover:bg-[#202226] hover:text-[#F2F0EB]'
                 )}
               >
                 <Icon className="h-4 w-4 flex-shrink-0" />
-                <span className="hidden sm:inline text-white">{item.label}</span>
+                <span>{item.label}</span>
               </button>
             </Link>
           )
         })}
-        
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="w-full justify-start text-white border-slate-600 hover:bg-slate-800 hover:text-white text-xs sm:text-sm h-8 sm:h-9"
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="min-h-10 w-full justify-start rounded-[5px] px-3 text-[#C6C8CC] hover:bg-[#202226] hover:text-[#F2F0EB]"
           onClick={handleLogout}
         >
-          <LogOut className="mr-1 sm:mr-2 h-3 sm:h-4 w-3 sm:w-4 flex-shrink-0" />
-          <span className="hidden sm:inline">Cerrar Sesión</span>
+          <LogOut className="mr-3 h-4 w-4 flex-shrink-0" />
+          Cerrar Sesión
         </Button>
       </div>
     </>
@@ -136,24 +154,28 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
 
   return (
     <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-      <div className="flex h-screen bg-background flex-col md:flex-row">
-        {/* Desktop Sidebar - Fixed on md and up */}
-        <div className="hidden md:flex md:w-64 md:flex-col border-r bg-card">
+      <div className="flex h-screen flex-col bg-[#111214] md:flex-row">
+        <aside className="hidden w-64 flex-col border-r border-[#303238] bg-[#181A1D] md:flex">
           <SidebarContent />
-        </div>
+        </aside>
 
-        {/* Mobile Sidebar - Drawer */}
-        <SheetContent side="left" className="w-56 sm:w-64 p-0 flex flex-col">
-          <SidebarContent />
+        <SheetContent
+          side="left"
+          className="w-[min(82vw,288px)] border-r border-[#303238] bg-[#181A1D] p-0 text-[#F2F0EB]"
+        >
+          <div className="flex h-full flex-col">
+            <SidebarContent />
+          </div>
         </SheetContent>
 
-        {/* Main Content Area */}
-        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-          {/* Header - New Naranja Header */}
-          <CompanyHeader />
-          
-          {/* Main content */}
-          <main className="flex-1 min-w-0 overflow-auto p-2 sm:p-3 md:p-6 lg:p-8">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <CompanyHeader onMenuClick={() => setSidebarOpen(true)} />
+
+          <main
+            ref={mainRef}
+            data-company-main
+            className="min-w-0 flex-1 overflow-auto bg-[#111214] p-4 sm:p-5 lg:p-7"
+          >
             {children}
           </main>
         </div>
