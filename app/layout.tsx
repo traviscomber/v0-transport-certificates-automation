@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter, JetBrains_Mono } from "next/font/google"
+import { Montserrat, JetBrains_Mono } from "next/font/google"
 import { Suspense } from "react"
 import "./globals.css"
 import { RoleProvider } from "./providers"
@@ -8,9 +8,10 @@ import { ToastProvider } from "@/lib/toast-context"
 import { ToastContainer } from "@/components/toast-container"
 import { DocumentSyncProvider } from "@/contexts/document-sync-context"
 
-const inter = Inter({
+const montserrat = Montserrat({
   subsets: ["latin"],
-  variable: "--font-sans",
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-montserrat",
 })
 
 const jetbrainsMono = JetBrains_Mono({
@@ -19,10 +20,10 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "DocuFleet by Segur-ia - Compliance Documental con IA para Transporte",
+  title: "ChileFlota | Control operacional y compliance documental",
   description:
-    "Automatiza la gestion de 35+ documentos de transporte con IA. Validacion instantanea, 99% accuracy, cero multas. La solucion de Segur-ia para flotas de transporte.",
-  generator: "DocuFleet by Segur-ia",
+    "Plataforma operacional para gestionar documentación, cumplimiento, conductores, transportistas y alertas de flota.",
+  generator: "ChileFlota",
 }
 
 export default function RootLayout({
@@ -32,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className="dark bg-background">
-      <body className={`font-sans ${inter.variable} ${jetbrainsMono.variable} antialiased text-foreground`}>
+      <body className={`font-sans ${montserrat.variable} ${jetbrainsMono.variable} antialiased text-foreground`}>
         <DocumentSyncProvider>
           <RoleProvider>
             <ToastProvider>
