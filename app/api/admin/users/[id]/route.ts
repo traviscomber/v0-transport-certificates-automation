@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
+import { isSuperAdmin, verifyAuth } from '@/lib/auth-middleware'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface RouteParams {
@@ -10,15 +10,21 @@ interface RouteParams {
   }
 }
 
-// GET - Get single user
+async function requireSuperAdmin(request: NextRequest): Promise<NextResponse | null> {
+  const { user, error: authError } = await verifyAuth(request)
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  if (!isSuperAdmin(user.email, user.role)) {
+    return NextResponse.json({ error: 'Forbidden: super_admin required' }, { status: 403 })
+  }
+  return null
+}
+
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const denied = await requireSuperAdmin(request)
+    if (denied) return denied
 
     const adminClient = createAdminClient()
     const { data: userData, error } = await adminClient
@@ -28,7 +34,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .single()
 
     if (error) throw error
-
     return NextResponse.json({ success: true, user: userData })
   } catch (error) {
     console.error('[v0] Error fetching user:', error)
@@ -39,35 +44,62 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// PUT - Update user
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const denied = await requireSuperAdmin(request)
+    if (denied) return denied
 
     const body = await request.json()
     const { full_name, role, phone, is_active } = body
-
     const adminClient = createAdminClient()
+
+    const { data: target, error: targetError } = await adminClient
+      .from('profiles')
+      .select('id,email,role,is_active')
+      .eq('id', params.id)
+      .single()
+
+    if (targetError || !target) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    const canonicalEmail = String(target.email || '').trim().toLowerCase()
+    if (role === 'super_admin' && canonicalEmail !== 'cfarias@labbe.cl') {
+      return NextResponse.json(
+        { error: 'super_admin is reserved for the canonical Cecilia account' },
+        { status: 403 }
+      )
+    }
+
+    if (canonicalEmail === 'cfarias@labbe.cl') {
+      if (role !== undefined && role !== 'super_admin') {
+        return NextResponse.json(
+          { error: 'The canonical Cecilia account cannot be demoted' },
+          { status: 403 }
+        )
+      }
+      if (is_active === false) {
+        return NextResponse.json(
+          { error: 'The canonical Cecilia account cannot be deactivated' },
+          { status: 403 }
+        )
+      }
+    }
+
+    const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() }
+    if (full_name !== undefined) updateData.full_name = full_name
+    if (role !== undefined) updateData.role = role
+    if (phone !== undefined) updateData.phone = phone
+    if (is_active !== undefined) updateData.is_active = is_active
+
     const { data: updatedUser, error } = await adminClient
       .from('profiles')
-      .update({
-        full_name,
-        role,
-        phone,
-        is_active,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', params.id)
       .select()
       .single()
 
     if (error) throw error
-
     return NextResponse.json({ success: true, user: updatedUser })
   } catch (error) {
     console.error('[v0] Error updating user:', error)
@@ -78,27 +110,35 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// DELETE - Delete user
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const denied = await requireSuperAdmin(request)
+    if (denied) return denied
 
     const adminClient = createAdminClient()
+    const { data: target, error: targetError } = await adminClient
+      .from('profiles')
+      .select('id,email')
+      .eq('id', params.id)
+      .single()
 
-    // Delete profile (auth user will be deleted via cascade)
+    if (targetError || !target) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    if (String(target.email || '').trim().toLowerCase() === 'cfarias@labbe.cl') {
+      return NextResponse.json(
+        { error: 'The canonical Cecilia account cannot be deleted' },
+        { status: 403 }
+      )
+    }
+
     const { error: profileError } = await adminClient
       .from('profiles')
       .delete()
       .eq('id', params.id)
 
     if (profileError) throw profileError
-
-    // Delete auth user
     await adminClient.auth.admin.deleteUser(params.id)
 
     return NextResponse.json({ success: true, message: 'User deleted successfully' })
