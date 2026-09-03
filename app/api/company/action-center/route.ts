@@ -54,8 +54,9 @@ type ActionItem = {
   href: string
 }
 
-const bucketFetchLimit = 12
+const defaultBucketFetchLimit = 12
 const fullQueueLimit = 50
+const actionKinds: ActionKind[] = ['expired', 'rejected', 'pending', 'expiring']
 
 function dateOnly(date: Date) {
   return date.toISOString().slice(0, 10)
@@ -84,26 +85,26 @@ function confidenceValue(value: number | string | null | undefined) {
 function nextActionFor(kind: ActionKind) {
   switch (kind) {
     case 'expired':
-      return 'Renovar documento'
+      return 'Ver vencidos'
     case 'rejected':
       return 'Corregir y volver a cargar'
     case 'pending':
       return 'Revisar documento'
     case 'expiring':
-      return 'Solicitar renovación'
+      return 'Ver renovaciones'
   }
 }
 
 function hrefFor(kind: ActionKind) {
   switch (kind) {
     case 'expired':
-      return '/dashboard/company/documentos/vencidos'
+      return '/dashboard/company/action-center?state=expired'
     case 'rejected':
       return '/dashboard/company/documentos/rechazados'
     case 'pending':
       return '/dashboard/company/documentos/pendientes'
     case 'expiring':
-      return '/dashboard/company/documentos/renovar'
+      return '/dashboard/company/action-center?state=expiring'
   }
 }
 
@@ -136,7 +137,7 @@ function balancedQueue(items: ActionItem[], limit: number) {
   const selected: ActionItem[] = []
   const selectedIds = new Set<string>()
 
-  ;(['expired', 'rejected', 'pending', 'expiring'] as ActionKind[]).forEach((kind) => {
+  actionKinds.forEach((kind) => {
     items
       .filter((item) => item.state === kind)
       .sort(compareItems)
@@ -173,6 +174,11 @@ export async function GET(request: NextRequest) {
     const in30DaysValue = dateOnly(addDays(today, 30))
     const requestedLimit = Number(request.nextUrl.searchParams.get('limit') || 12)
     const limit = Math.min(Math.max(requestedLimit, 4), fullQueueLimit)
+    const requestedState = request.nextUrl.searchParams.get('state')
+    const selectedState = actionKinds.includes(requestedState as ActionKind)
+      ? (requestedState as ActionKind)
+      : null
+    const bucketFetchLimit = selectedState ? fullQueueLimit : defaultBucketFetchLimit
 
     const subBase = () => supabase
       .from('subcontractor_documents')
@@ -311,7 +317,7 @@ export async function GET(request: NextRequest) {
           id: `driver:${row.id}`,
           entityType: 'driver',
           entityId: row.conductor_id,
-          entityName: driverName || 'Conductor sin nombre',
+          entityName: driverName || row.original_filename || 'Conductor sin identificar',
           entityRut: driver?.rut || null,
           documentType: row.document_type || 'Documento de conductor',
           fileName: row.original_filename,
@@ -334,14 +340,18 @@ export async function GET(request: NextRequest) {
       expiring: subExpiringCount + driverExpiringCount,
     }
     const totalActionable = counts.expired + counts.rejected + counts.pending + counts.expiring
+    const visibleItems = selectedState
+      ? items.filter((item) => item.state === selectedState).sort(compareItems).slice(0, limit)
+      : balancedQueue(items, limit)
 
     const response = NextResponse.json({
       summary: {
         totalActionable,
         ...counts,
+        selectedState,
         generatedAt: new Date().toISOString(),
       },
-      items: balancedQueue(items, limit),
+      items: visibleItems,
     })
     response.headers.set('Cache-Control', 'no-store, must-revalidate')
     return response
