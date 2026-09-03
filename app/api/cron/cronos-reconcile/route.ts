@@ -56,9 +56,10 @@ export async function GET() {
         started_at: row.started_at,
       }))
 
-    const recoveredSystemJobRuns = await recoverStaleSystemJobRuns(staleSystemJobs, jobRun.id)
+    const recoveredSystemJobRunIds = await recoverStaleSystemJobRuns(staleSystemJobs, jobRun.id)
+    const recoveredSystemJobIds = new Set(recoveredSystemJobRunIds)
     const postRecoveryClaims = claims.filter(
-      (claim) => !(claim.source === 'system_job_runs' && staleSystemJobIds.has(claim.id)),
+      (claim) => !(claim.source === 'system_job_runs' && recoveredSystemJobIds.has(claim.id)),
     )
     const summary = reconcileClaims(postRecoveryClaims)
     const status = summary.staleCount > 0 ? 'partial' : 'completed'
@@ -66,13 +67,13 @@ export async function GET() {
     await finishSystemJobRun(jobRun, {
       status,
       processedCount: observedSummary.activeCount,
-      succeededCount: summary.healthyCount + recoveredSystemJobRuns,
+      succeededCount: summary.healthyCount + recoveredSystemJobRunIds.length,
       failedCount: summary.staleCount,
       result: {
         staleCount: summary.staleCount,
         activeCount: summary.activeCount,
         observedStaleCount: observedSummary.staleCount,
-        recoveredSystemJobRuns,
+        recoveredSystemJobRuns: recoveredSystemJobRunIds.length,
         issues: summary.issues.slice(0, 25),
         recoveryMode: 'system_job_runs_only',
       },
@@ -83,7 +84,7 @@ export async function GET() {
       status,
       ...summary,
       observedStaleCount: observedSummary.staleCount,
-      recoveredSystemJobRuns,
+      recoveredSystemJobRuns: recoveredSystemJobRunIds.length,
       recoveryMode: 'system_job_runs_only',
     })
   } catch (error) {
