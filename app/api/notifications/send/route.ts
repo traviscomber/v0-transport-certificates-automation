@@ -5,74 +5,145 @@ import {
   createNotificationJob,
   NOTIFICATION_TEMPLATES,
 } from '@/lib/notifications-service'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { protectedEndpoint, type UserRole } from '@/lib/auth-middleware'
+
+const NOTIFICATION_ROLES: UserRole[] = [
+  'super_admin',
+  'admin',
+  'administrador',
+  'ejecutiva',
+]
+
+const NOTIFICATION_TYPES = new Set(['email', 'sms', 'both'])
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const {
-      user_id,
-      type, // 'email' | 'sms' | 'both'
-      template_id,
-      variables,
-      contact,
-    } = body
+  return protectedEndpoint(
+    request,
+    async (_user, protectedRequest) => {
+      try {
+        const body = await protectedRequest.json()
+        const {
+          user_id,
+          type,
+          template_id,
+          variables,
+          contact,
+        } = body ?? {}
 
-    // Validar template
-    if (!NOTIFICATION_TEMPLATES[template_id]) {
-      return NextResponse.json(
-        { error: 'Template not found' },
-        { status: 400 }
-      )
-    }
+        if (!user_id || typeof user_id !== 'string') {
+          return NextResponse.json(
+            { error: 'user_id is required', success: false },
+            { status: 400 }
+          )
+        }
 
-    const template = NOTIFICATION_TEMPLATES[template_id]
+        if (!NOTIFICATION_TYPES.has(type)) {
+          return NextResponse.json(
+            { error: 'Invalid notification type', success: false },
+            { status: 400 }
+          )
+        }
 
-    // Crear job de notificación
-    const job = await createNotificationJob(user_id, template_id, variables, contact)
+        if (!template_id || !NOTIFICATION_TEMPLATES[template_id]) {
+          return NextResponse.json(
+            { error: 'Template not found', success: false },
+            { status: 400 }
+          )
+        }
 
-    // Enviar notificación
-    if ((type === 'email' || type === 'both') && contact.email && template.type === 'email') {
-      await sendEmailNotification(contact.email, template_id, variables)
-    }
+        if (!variables || typeof variables !== 'object' || Array.isArray(variables)) {
+          return NextResponse.json(
+            { error: 'variables must be an object', success: false },
+            { status: 400 }
+          )
+        }
 
-    if ((type === 'sms' || type === 'both') && contact.phone && template.type === 'sms') {
-      await sendSmsNotification(contact.phone, template_id, variables)
-    }
+        if (!contact || typeof contact !== 'object' || Array.isArray(contact)) {
+          return NextResponse.json(
+            { error: 'contact must be an object', success: false },
+            { status: 400 }
+          )
+        }
 
-    return NextResponse.json({
-      success: true,
-      job_id: job.id,
-      message: 'Notificación enviada',
-    })
-  } catch (error) {
-    console.error('Error sending notification:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
+        const template = NOTIFICATION_TEMPLATES[template_id]
+        const hasEmail = typeof contact.email === 'string' && contact.email.trim().length > 0
+        const hasPhone = typeof contact.phone === 'string' && contact.phone.trim().length > 0
+
+        if ((type === 'email' || type === 'both') && template.type === 'email' && !hasEmail) {
+          return NextResponse.json(
+            { error: 'Email contact is required for this notification', success: false },
+            { status: 400 }
+          )
+        }
+
+        if ((type === 'sms' || type === 'both') && template.type === 'sms' && !hasPhone) {
+          return NextResponse.json(
+            { error: 'Phone contact is required for this notification', success: false },
+            { status: 400 }
+          )
+        }
+
+        // Persist the job only after authentication, role authorization and
+        // request validation have succeeded.
+        const job = await createNotificationJob(user_id, template_id, variables, contact)
+
+        if ((type === 'email' || type === 'both') && hasEmail && template.type === 'email') {
+          await sendEmailNotification(contact.email, template_id, variables)
+        }
+
+        if ((type === 'sms' || type === 'both') && hasPhone && template.type === 'sms') {
+          await sendSmsNotification(contact.phone, template_id, variables)
+        }
+
+        return NextResponse.json({
+          success: true,
+          job_id: job.id,
+          message: 'Notificación enviada',
+        })
+      } catch (error) {
+        console.error('Error sending notification:', error)
+        return NextResponse.json(
+          { error: error instanceof Error ? error.message : 'Unknown error', success: false },
+          { status: 500 }
+        )
+      }
+    },
+    NOTIFICATION_ROLES
+  )
 }
 
-// GET: Obtener plantillas disponibles
+// GET: Obtener plantillas disponibles para roles autorizados.
 export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams
-    const type = searchParams.get('type') // 'email' | 'sms'
+  return protectedEndpoint(
+    request,
+    async (_user, protectedRequest) => {
+      try {
+        const searchParams = protectedRequest.nextUrl.searchParams
+        const type = searchParams.get('type')
 
-    const templates = Object.values(NOTIFICATION_TEMPLATES).filter(
-      (t) => !type || t.type === type
-    )
+        if (type && type !== 'email' && type !== 'sms') {
+          return NextResponse.json(
+            { error: 'Invalid template type', success: false },
+            { status: 400 }
+          )
+        }
 
-    return NextResponse.json({
-      success: true,
-      templates,
-    })
-  } catch (error) {
-    console.error('Error fetching templates:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
+        const templates = Object.values(NOTIFICATION_TEMPLATES).filter(
+          (template) => !type || template.type === type
+        )
+
+        return NextResponse.json({
+          success: true,
+          templates,
+        })
+      } catch (error) {
+        console.error('Error fetching templates:', error)
+        return NextResponse.json(
+          { error: error instanceof Error ? error.message : 'Unknown error', success: false },
+          { status: 500 }
+        )
+      }
+    },
+    NOTIFICATION_ROLES
+  )
 }
