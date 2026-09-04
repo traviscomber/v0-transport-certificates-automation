@@ -90,11 +90,11 @@ export default function RenewalAutopilotPage() {
             Simula la cadencia de renovación sobre documentos canónicos vigentes. Este modo no envía mensajes ni modifica datos.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-2 rounded-[4px] border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
-            <ShieldCheck className="h-4 w-4" /> DRY-RUN · ENVÍO DESACTIVADO
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <span className="inline-flex w-full items-center justify-center gap-2 rounded-[4px] border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-center text-xs text-emerald-200 sm:w-auto">
+            <ShieldCheck className="h-4 w-4 shrink-0" /> DRY-RUN · ENVÍO DESACTIVADO
           </span>
-          <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
+          <Button className="w-full sm:w-auto" variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
             <RefreshCw className={`mr-2 h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> Actualizar
           </Button>
         </div>
@@ -110,7 +110,7 @@ export default function RenewalAutopilotPage() {
         <div className="h-40 animate-pulse rounded-[5px] border border-[#303238] bg-[#181A1D]" />
       ) : data ? (
         <>
-          <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-[5px] border border-[#303238] bg-[#181A1D] p-4">
               <p className="text-[10px] uppercase tracking-[0.16em] text-[#8F949C]">Documentos en ventana</p>
               <p className="mt-2 text-3xl font-medium text-[#F2F0EB]">{data.summary.documentsInRenewalWindow.toLocaleString('es-CL')}</p>
@@ -133,11 +133,11 @@ export default function RenewalAutopilotPage() {
           </section>
 
           <section className="rounded-[5px] border border-[#303238] bg-[#15171A]">
-            <div className="border-b border-[#303238] p-5">
+            <div className="border-b border-[#303238] p-4 sm:p-5">
               <h2 className="text-lg font-medium text-[#F2F0EB]">Cadencia propuesta</h2>
               <p className="mt-1 text-sm text-[#8F949C]">Agrupa cada documento por el siguiente nivel de urgencia. No representa mensajes ya enviados.</p>
             </div>
-            <div className="grid grid-cols-2 gap-px bg-[#303238] sm:grid-cols-5">
+            <div className="grid grid-cols-1 gap-px bg-[#303238] sm:grid-cols-2 lg:grid-cols-5">
               {(['expired', 'd3', 'd7', 'd15', 'd30'] as Stage[]).map((stage) => (
                 <div key={stage} className="bg-[#181A1D] p-4">
                   <p className="text-[10px] uppercase tracking-[0.16em] text-[#8F949C]">{stageNames[stage]}</p>
@@ -149,17 +149,17 @@ export default function RenewalAutopilotPage() {
           </section>
 
           <section className="overflow-hidden rounded-[5px] border border-[#303238] bg-[#15171A]">
-            <div className="flex items-center justify-between border-b border-[#303238] p-5">
-              <div>
+            <div className="flex flex-col gap-2 border-b border-[#303238] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+              <div className="min-w-0">
                 <h2 className="text-lg font-medium text-[#F2F0EB]">Próximas acciones simuladas</h2>
                 <p className="mt-1 text-sm text-[#8F949C]">Muestra hasta 75 casos priorizados. Ningún botón de envío está habilitado.</p>
               </div>
-              <span className="text-xs text-[#777C84]">{new Date(data.generatedAt).toLocaleString('es-CL')}</span>
+              <span className="shrink-0 text-xs text-[#777C84]">{new Date(data.generatedAt).toLocaleString('es-CL')}</span>
             </div>
 
             <div className="divide-y divide-[#303238]">
               {data.items.map((item) => (
-                <div key={item.documentId} className="grid gap-3 px-5 py-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.9fr)_minmax(0,0.8fr)_auto] lg:items-center">
+                <div key={item.documentId} className="grid gap-3 px-4 py-4 sm:px-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.9fr)_minmax(0,0.8fr)_auto] lg:items-center">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-[#F2F0EB]">{item.companyName}</p>
                     <p className="mt-1 truncate text-xs text-[#8F949C]">{item.rut || 'Sin RUT'} · {item.documentType}</p>
@@ -174,7 +174,7 @@ export default function RenewalAutopilotPage() {
                   </div>
                   <Channel channel={item.suggestedChannel} />
                   <div className="flex items-center gap-2 text-xs text-[#A9ADB3]">
-                    {item.stage === 'expired' ? <AlertTriangle className="h-4 w-4 text-red-300" /> : item.contact.ready ? <CheckCircle2 className="h-4 w-4 text-emerald-300" /> : <Clock3 className="h-4 w-4 text-amber-300" />}
+                    {item.stage === 'expired' ? <AlertTriangle className="h-4 w-4 shrink-0 text-red-300" /> : item.contact.ready ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-300" /> : <Clock3 className="h-4 w-4 shrink-0 text-amber-300" />}
                     {item.suggestedAction}
                   </div>
                 </div>
