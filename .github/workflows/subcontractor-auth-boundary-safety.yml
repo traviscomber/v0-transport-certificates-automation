@@ -1,3 +1,4 @@
+# QA refresh after JWT_SECRET configuration; no runtime behavior change.
 name: Subcontractor Auth Boundary Safety
 
 on:
