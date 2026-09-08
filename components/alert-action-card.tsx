@@ -19,6 +19,7 @@ export function AlertActionCard({ alert, onAction }: AlertActionCardProps) {
   const [actionComplete, setActionComplete] = useState(false)
   const transportistaNombre = alert.metadata?.transportista_nombre || alert.metadata?.transportista_razon_social
   const transportistaRut = alert.metadata?.transportista_rut
+  const processedAt = alert.actioned_at || alert.created_at
 
   const handleAction = async (action: 'approve' | 'reject' | 'request_info') => {
     setIsLoading(true)
@@ -76,7 +77,7 @@ export function AlertActionCard({ alert, onAction }: AlertActionCardProps) {
             </div>
           )}
           <div className="flex items-center gap-2 mt-3 text-xs text-foreground/70 dark:text-slate-400">
-            <span>Procesada el {new Date(alert.actioned_at || '').toLocaleString('es-CL')}</span>
+            <span>Procesada el {new Date(processedAt).toLocaleString('es-CL')}</span>
           </div>
         </div>
       </div>
