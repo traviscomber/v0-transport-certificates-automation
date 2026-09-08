@@ -2,61 +2,72 @@
 
 import { useState } from 'react'
 import useSWR from 'swr'
+import { Activity, Bot, CheckCircle2, Clock3, UploadCloud } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, CheckCircle2, Clock, FileCheck, Users } from 'lucide-react'
 import { DatePeriodFilter } from '@/components/date-period-filter'
 import { ALL_VALUE, getMonthLabel, type DateFilterValue } from '@/lib/date-filters'
 
-interface ExecutiveMetrics {
-  executive_id: string
-  executive_name: string
-  documents_processed: number
-  avg_validation_time: number
-  approval_rate: number
-  avg_ai_confidence: number
-  validation_date: string
-  validated_count: number
-  rejected_count: number
-  pending_count: number
-  performance_score?: number
-}
-
-interface MetricsSummary {
-  total_documents: number
-  total_validados: number
-  total_conductores: number
-  total_subcontratistas: number
-  total_rechazados: number
-  total_pendientes: number
+interface ImpactSummary {
+  total_observed: number
+  subcontractor_documents: number
+  delegated_uploads: number
+  ai_analyzed: number
+  human_reviewed: number
+  decisions_recorded: number
+  legacy_processed: number
+  processed_observed: number
+  median_upload_to_ai_seconds: number | null
+  ai_timing_samples: number
   period_month: string
   period_year: string
 }
 
-export default function MetricsPage() {
+interface ImpactResponse {
+  summary?: ImpactSummary
+  methodology?: {
+    time_saved_hours: number | null
+    time_saved_status: string
+    note: string
+  }
+  error?: string
+}
+
+function formatDuration(seconds: number | null | undefined) {
+  if (seconds == null) return 'N/D'
+  if (seconds < 60) return `${seconds}s`
+  const minutes = Math.round(seconds / 60)
+  if (minutes < 60) return `${minutes} min`
+  const hours = Math.floor(minutes / 60)
+  const rest = minutes % 60
+  return rest > 0 ? `${hours}h ${rest}m` : `${hours}h`
+}
+
+function formatNumber(value: number | undefined) {
+  return new Intl.NumberFormat('es-CL').format(value || 0)
+}
+
+export default function OperationalImpactPage() {
   const [period, setPeriod] = useState<DateFilterValue>({
     month: ALL_VALUE,
     year: ALL_VALUE,
   })
 
-  const { data: metricsData, isLoading } = useSWR(
+  const { data, isLoading } = useSWR<ImpactResponse>(
     `/api/company/metrics?month=${period.month}&year=${period.year}`,
-    (url) => fetch(url).then((r) => r.json())
+    (url: string) => fetch(url).then(async (response) => {
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload?.error || 'No fue posible cargar las métricas')
+      return payload
+    })
   )
 
-  const executives: ExecutiveMetrics[] = metricsData?.executives || []
-  const summary: MetricsSummary = metricsData?.summary || {
-    total_documents: 0,
-    total_validados: 0,
-    total_conductores: 0,
-    total_subcontratistas: 0,
-    total_rechazados: 0,
-    total_pendientes: 0,
-    period_month: period.month,
-    period_year: period.year,
-  }
+  const summary = data?.summary
   const periodLabel = getMonthLabel(period.month, period.year)
-  const approvalRate = summary.total_documents > 0
-    ? Math.round((summary.total_validados / summary.total_documents) * 100)
+  const aiCoverage = summary?.subcontractor_documents
+    ? Math.round((summary.ai_analyzed / summary.subcontractor_documents) * 100)
+    : 0
+  const reviewCoverage = summary?.subcontractor_documents
+    ? Math.round((summary.human_reviewed / summary.subcontractor_documents) * 100)
     : 0
 
   return (
@@ -64,13 +75,13 @@ export default function MetricsPage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-3xl">
           <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">
-            Desempeño operacional
+            Evidencia operacional
           </p>
           <h1 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--cf-text)] md:text-[28px]">
-            Métricas de ejecutivas
+            Impacto Operacional
           </h1>
           <p className="mt-2 text-sm leading-6 text-[var(--cf-text-secondary)]">
-            Volumen, revisión y tiempos observados sobre documentos reales del período seleccionado.
+            Volumen real del flujo digital: el subcontratista carga, ChileFlota preanaliza y Labbé revisa la evidencia.
           </p>
         </div>
         <div className="lg:min-w-[320px]">
@@ -84,11 +95,11 @@ export default function MetricsPage() {
 
       <div className="flex flex-col gap-2 border-l-2 border-[var(--cf-accent)] bg-[var(--cf-surface)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">Período activo</p>
+          <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">Período</p>
           <p className="mt-1 text-base font-semibold text-[var(--cf-text)]">{periodLabel}</p>
         </div>
         <p className="max-w-2xl text-sm text-[var(--cf-text-secondary)]">
-          La vista usa la base operacional disponible; no completa períodos sin evidencia ni simula rendimiento.
+          No se muestran ahorros de horas estimados: ChileFlota todavía no dispone de una línea base observada de tiempo activo del proceso manual anterior.
         </p>
       </div>
 
@@ -96,13 +107,32 @@ export default function MetricsPage() {
         <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
-              <FileCheck className="h-4 w-4 text-[var(--cf-text-muted)]" />
-              Documentos
+              <UploadCloud className="h-4 w-4 text-[var(--cf-text-muted)]" />
+              Documentos recibidos
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{summary.total_documents}</div>
-            <p className="mt-1 text-xs text-[var(--cf-text-muted)]">base observada en el período</p>
+            <div className="text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">
+              {isLoading ? '—' : `${formatNumber(summary?.subcontractor_documents)}+`}
+            </div>
+            <p className="mt-1 text-xs text-[var(--cf-text-muted)]">
+              cargas del flujo de subcontratistas
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
+              <Bot className="h-4 w-4 text-[var(--cf-text-muted)]" />
+              Preanálisis IA
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">
+              {isLoading ? '—' : formatNumber(summary?.ai_analyzed)}
+            </div>
+            <p className="mt-1 text-xs text-[var(--cf-text-muted)]">{aiCoverage}% del flujo observado</p>
           </CardContent>
         </Card>
 
@@ -110,103 +140,58 @@ export default function MetricsPage() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
               <CheckCircle2 className="h-4 w-4 text-[#67C18D]" />
-              Aprobación
+              Revisados por Labbé
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{approvalRate}%</div>
-            <p className="mt-1 text-xs text-[var(--cf-text-muted)]">{summary.total_validados} validados</p>
+            <div className="text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">
+              {isLoading ? '—' : formatNumber(summary?.human_reviewed)}
+            </div>
+            <p className="mt-1 text-xs text-[var(--cf-text-muted)]">{reviewCoverage}% con revisión humana registrada</p>
           </CardContent>
         </Card>
 
         <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
-              <Clock className="h-4 w-4 text-[#D9B65C]" />
-              Pendientes
+              <Clock3 className="h-4 w-4 text-[#D9B65C]" />
+              Tiempo a preanálisis
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{summary.total_pendientes}</div>
-            <p className="mt-1 text-xs text-[var(--cf-text-muted)]">requieren revisión humana</p>
+            <div className="text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">
+              {isLoading ? '—' : formatDuration(summary?.median_upload_to_ai_seconds)}
+            </div>
+            <p className="mt-1 text-xs text-[var(--cf-text-muted)]">
+              mediana real · {formatNumber(summary?.ai_timing_samples)} muestras
+            </p>
           </CardContent>
         </Card>
-
-        <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
-              <AlertTriangle className="h-4 w-4 text-[#E17B8C]" />
-              Rechazados
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{summary.total_rechazados}</div>
-            <p className="mt-1 text-xs text-[var(--cf-text-muted)]">requieren corrección o nueva evidencia</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="flex items-center justify-between rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Users className="h-4 w-4 text-[var(--cf-text-muted)]" />
-            <span className="text-sm text-[var(--cf-text-secondary)]">Conductores</span>
-          </div>
-          <span className="text-xl font-semibold tabular-nums text-[var(--cf-text)]">{summary.total_conductores}</span>
-        </div>
-        <div className="flex items-center justify-between rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Users className="h-4 w-4 text-[var(--cf-text-muted)]" />
-            <span className="text-sm text-[var(--cf-text-secondary)]">Subcontratistas</span>
-          </div>
-          <span className="text-xl font-semibold tabular-nums text-[var(--cf-text)]">{summary.total_subcontratistas}</span>
-        </div>
       </div>
 
       <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
         <CardHeader className="border-b border-[var(--cf-border)]">
-          <CardTitle className="text-lg font-semibold text-[var(--cf-text)]">Desempeño por ejecutiva</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-[var(--cf-text)]">
+            <Activity className="h-5 w-5 text-[var(--cf-text-muted)]" />
+            Flujo operacional observado
+          </CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="px-6 py-10 text-center text-sm text-[var(--cf-text-muted)]">Cargando métricas…</div>
-          ) : executives.length === 0 ? (
-            <div className="px-6 py-10 text-center text-sm text-[var(--cf-text-muted)]">No hay datos disponibles para este período.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-sm">
-                <thead className="bg-[var(--cf-canvas)]">
-                  <tr className="border-b border-[var(--cf-border)] text-[var(--cf-text-muted)]">
-                    <th className="px-4 py-3 text-left font-medium">Ejecutiva</th>
-                    <th className="px-4 py-3 text-right font-medium">Documentos</th>
-                    <th className="px-4 py-3 text-right font-medium">Validados</th>
-                    <th className="px-4 py-3 text-right font-medium">Rechazados</th>
-                    <th className="px-4 py-3 text-right font-medium">Pendientes</th>
-                    <th className="px-4 py-3 text-right font-medium">Aprobación</th>
-                    <th className="px-4 py-3 text-right font-medium">Tiempo prom.</th>
-                    <th className="px-4 py-3 text-right font-medium">Score</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {executives.map((exec) => (
-                    <tr key={exec.executive_id} className="border-b border-[var(--cf-border)] last:border-b-0 hover:bg-[var(--cf-surface-raised)]">
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-[var(--cf-text)]">{exec.executive_name}</div>
-                        <div className="mt-1 text-xs text-[var(--cf-text-muted)]">{exec.executive_id}</div>
-                      </td>
-                      <td className="px-4 py-3 text-right tabular-nums text-[var(--cf-text-secondary)]">{exec.documents_processed}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-[#67C18D]">{exec.validated_count}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-[#E17B8C]">{exec.rejected_count}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-[#D9B65C]">{exec.pending_count}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-[var(--cf-text)]">{exec.approval_rate}%</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-[var(--cf-text-secondary)]">{exec.avg_validation_time}s</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-[var(--cf-text-secondary)]">{exec.performance_score ?? 'N/D'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        <CardContent className="grid gap-4 p-5 md:grid-cols-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">Carga delegada</p>
+            <p className="mt-2 text-2xl font-semibold text-[var(--cf-text)]">{formatNumber(summary?.delegated_uploads)}</p>
+            <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">documentos cargados sin ejecutiva registrada como uploader</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">Decisiones registradas</p>
+            <p className="mt-2 text-2xl font-semibold text-[var(--cf-text)]">{formatNumber(summary?.decisions_recorded)}</p>
+            <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">aprobaciones o rechazos en el flujo de subcontratistas</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">Ahorro de tiempo</p>
+            <p className="mt-2 text-2xl font-semibold text-[var(--cf-text)]">Por medir</p>
+            <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">requiere duración activa del proceso manual para calcular horas evitadas sin inventar supuestos</p>
+          </div>
         </CardContent>
       </Card>
     </div>

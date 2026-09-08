@@ -12,10 +12,9 @@ import {
   LogOut,
   Zap,
   Users2,
-  Lock,
+  Activity,
   TrendingUp,
   Settings,
-  TrendingDown,
   Shield,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -31,8 +30,7 @@ const navItems = [
   { href: '/dashboard/company/analytics/conductores', label: 'Analytics', icon: TrendingUp },
   { href: '/dashboard/company/reportes', label: 'Reportes', icon: BarChart3 },
   { href: '/dashboard/company/compliance', label: 'Compliance Matrix', icon: Shield },
-  { href: '/dashboard/company/roi-metrics', label: 'ROI Metrics', icon: TrendingDown },
-  { href: '/dashboard/company/metrics', label: 'Métricas de Usuarios', icon: Lock },
+  { href: '/dashboard/company/metrics', label: 'Impacto Operacional', icon: Activity },
 ]
 
 const accountItems = [
