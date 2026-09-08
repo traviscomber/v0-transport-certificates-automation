@@ -250,7 +250,6 @@
   }
 }
 
-
 /* Compatibility layer: legacy dashboard pages inherit the approved system while
    they are progressively converted from one-off Tailwind colour literals. */
 [data-company-main] [class*="bg-white"],
@@ -265,3 +264,42 @@
 [data-company-main] [class*="placeholder:text-"] { color: var(--cf-text-secondary) !important; }
 [data-company-main] [class*="border-gray-"],
 [data-company-main] [class*="border-slate-"] { border-color: var(--cf-line) !important; }
+
+/* Dense operational lists: keep card shells neutral and defer off-screen paint. */
+[data-company-main] [data-slot="card"] {
+  background-color: var(--cf-surface) !important;
+  border-color: var(--cf-line) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  content-visibility: auto;
+  contain-intrinsic-size: 280px;
+}
+
+[data-company-main] [data-slot="card"]:hover {
+  background-color: var(--cf-surface-2) !important;
+  border-color: #45454C !important;
+  box-shadow: none !important;
+}
+
+/* Non-semantic legacy accents inside cards become neutral. Green/red/amber stay
+   available for real operational states. */
+[data-company-main] [data-slot="card"] [class*="bg-blue-"],
+[data-company-main] [data-slot="card"] [class*="bg-cyan-"],
+[data-company-main] [data-slot="card"] [class*="bg-orange-"],
+[data-company-main] [data-slot="card"] [class*="bg-purple-"] {
+  background-color: var(--cf-surface-2) !important;
+}
+
+[data-company-main] [data-slot="card"] [class*="border-blue-"],
+[data-company-main] [data-slot="card"] [class*="border-cyan-"],
+[data-company-main] [data-slot="card"] [class*="border-orange-"],
+[data-company-main] [data-slot="card"] [class*="border-purple-"] {
+  border-color: var(--cf-line) !important;
+}
+
+[data-company-main] [data-slot="card"] [class*="text-blue-"],
+[data-company-main] [data-slot="card"] [class*="text-cyan-"],
+[data-company-main] [data-slot="card"] [class*="text-orange-"],
+[data-company-main] [data-slot="card"] [class*="text-purple-"] {
+  color: var(--cf-text-secondary) !important;
+}

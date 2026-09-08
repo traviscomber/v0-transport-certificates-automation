@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams, usePathname, useRouter } from 'next/navigation'
@@ -13,10 +13,8 @@ import { ALL_VALUE, filterByMonthYear, getMonthLabel, type DateFilterValue } fro
 
 const fetcher = (url: string) =>
   fetch(url, {
-    cache: 'no-store',
     headers: {
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      Pragma: 'no-cache',
+      'Cache-Control': 'no-cache',
     },
   })
     .then(async (response) => {
@@ -51,11 +49,12 @@ export default function ConductoresPage() {
   })
 
   const { data, error, isLoading, mutate } = useSWR('/api/dashboard/data', fetcher, {
-    revalidateOnFocus: true,
+    revalidateOnFocus: false,
     revalidateOnReconnect: true,
-    dedupingInterval: 0,
-    focusThrottleInterval: 0,
+    dedupingInterval: 30_000,
+    focusThrottleInterval: 30_000,
     refreshInterval: 0,
+    keepPreviousData: true,
   })
 
   const drivers = data?.dashboard?.conductores || []
@@ -78,7 +77,10 @@ export default function ConductoresPage() {
     router.replace(query ? `${pathname}?${query}` : pathname)
   }
 
-  const ejecutivas = Array.from(new Set(drivers.map((driver: any) => driver.ejecutivo_nombre).filter(Boolean))).sort() as string[]
+  const ejecutivas = useMemo(
+    () => Array.from(new Set(drivers.map((driver: any) => driver.ejecutivo_nombre).filter(Boolean))).sort() as string[],
+    [drivers],
+  )
 
   const driversByDate = useMemo(() => {
     return filterByMonthYear(
@@ -89,12 +91,27 @@ export default function ConductoresPage() {
     )
   }, [drivers, dateFilters.month, dateFilters.year])
 
-  const filteredDrivers = selectedEjecutiva
-    ? driversByDate.filter((driver: any) => driver.ejecutivo_nombre === selectedEjecutiva)
-    : driversByDate
+  const ejecutivaCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    driversByDate.forEach((driver: any) => {
+      if (!driver.ejecutivo_nombre) return
+      counts.set(driver.ejecutivo_nombre, (counts.get(driver.ejecutivo_nombre) || 0) + 1)
+    })
+    return counts
+  }, [driversByDate])
+
+  const filteredDrivers = useMemo(
+    () => selectedEjecutiva
+      ? driversByDate.filter((driver: any) => driver.ejecutivo_nombre === selectedEjecutiva)
+      : driversByDate,
+    [driversByDate, selectedEjecutiva],
+  )
 
   const periodLabel = getMonthLabel(dateFilters.month, dateFilters.year)
-  const activeDrivers = filteredDrivers.filter((driver: any) => driver.is_active !== false).length
+  const activeDrivers = useMemo(
+    () => filteredDrivers.filter((driver: any) => driver.is_active !== false).length,
+    [filteredDrivers],
+  )
   const inactiveDrivers = filteredDrivers.length - activeDrivers
 
   return (
@@ -156,7 +173,7 @@ export default function ConductoresPage() {
               Todos ({driversByDate.length})
             </Badge>
             {ejecutivas.map((ejecutiva) => {
-              const count = driversByDate.filter((driver: any) => driver.ejecutivo_nombre === ejecutiva).length
+              const count = ejecutivaCounts.get(ejecutiva) || 0
               const selected = selectedEjecutiva === ejecutiva
               return (
                 <Badge
