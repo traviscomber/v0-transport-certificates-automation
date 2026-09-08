@@ -12,25 +12,21 @@ export default function AlertasPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPriority, setSelectedPriority] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('')
-  const [ejecutiva, setEjecutiva] = useState<string | null>(null)
   const [profileResolved, setProfileResolved] = useState(false)
 
   useEffect(() => {
-    const loadProfile = async () => {
+    const resolveProfile = async () => {
       try {
         const response = await fetch('/api/profile', { cache: 'no-store' })
         if (!response.ok) throw new Error(`Profile request failed (${response.status})`)
-        const profile = await response.json()
-        setEjecutiva(profile.full_name || profile.email || null)
       } catch (error) {
-        console.error('[alerts] Error loading profile:', error)
-        setEjecutiva(null)
+        console.error('[alerts] Error resolving profile:', error)
       } finally {
         setProfileResolved(true)
       }
     }
 
-    void loadProfile()
+    void resolveProfile()
   }, [])
 
   useEffect(() => {
@@ -64,17 +60,12 @@ export default function AlertasPage() {
 
   const handleAlertAction = async (
     alertId: string,
-    action: 'approve' | 'reject' | 'request_info',
+    action: 'resolve' | 'request_info',
     notes?: string,
   ) => {
-    if (!ejecutiva) throw new Error('No authenticated alert user')
-
     const response = await fetch(`/api/alerts/${alertId}/action`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-ejecutiva-name': ejecutiva,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, notes }),
     })
 
@@ -108,14 +99,10 @@ export default function AlertasPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-3xl">
-          <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">
-            Centro de atención
-          </p>
-          <h1 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--cf-text)] md:text-[28px]">
-            Alertas operacionales
-          </h1>
+          <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Centro de atención</p>
+          <h1 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--cf-text)] md:text-[28px]">Alertas operacionales</h1>
           <p className="mt-2 text-sm leading-6 text-[var(--cf-text-secondary)]">
-            Prioriza excepciones, identifica al subcontratista afectado y registra la siguiente acción sobre evidencia trazable.
+            Prioriza excepciones, identifica al subcontratista afectado y deriva cualquier decisión documental al flujo canónico de Documentos.
           </p>
         </div>
 
@@ -180,16 +167,12 @@ export default function AlertasPage() {
         </Button>
       </div>
 
-      <div className="text-xs text-[var(--cf-text-muted)]">
-        {ejecutiva ? `Sesión: ${ejecutiva}` : 'Sesión autenticada'} · {filteredAlerts.length} alertas visibles
-      </div>
+      <div className="text-xs text-[var(--cf-text-muted)]">{filteredAlerts.length} alertas visibles</div>
 
       {isLoading ? (
         <StatePanel>Cargando alertas…</StatePanel>
       ) : filteredAlerts.length === 0 ? (
-        <StatePanel>
-          {alerts.length === 0 ? 'No hay alertas en este momento.' : 'No hay alertas que coincidan con los filtros.'}
-        </StatePanel>
+        <StatePanel>{alerts.length === 0 ? 'No hay alertas en este momento.' : 'No hay alertas que coincidan con los filtros.'}</StatePanel>
       ) : (
         <div className="space-y-2">
           {filteredAlerts.map((alert) => (
@@ -201,15 +184,7 @@ export default function AlertasPage() {
   )
 }
 
-function Metric({
-  label,
-  value,
-  tone,
-}: {
-  label: string
-  value: number
-  tone?: 'danger' | 'warning' | 'attention'
-}) {
+function Metric({ label, value, tone }: { label: string; value: number; tone?: 'danger' | 'warning' | 'attention' }) {
   const indicator = tone === 'danger'
     ? 'bg-[#E17B8C]'
     : tone === 'warning'
