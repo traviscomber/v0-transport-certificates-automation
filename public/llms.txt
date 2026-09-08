@@ -1,0 +1,27 @@
+# ChileFlota
+
+Canonical website: https://chileflota.app
+Technology provider: N3uralia — https://n3uralia.com
+
+ChileFlota is a compliance operations platform for fleets, transport companies, and contractors. It connects documentary evidence, requirements, validity periods, operational alerts, and review states so teams can identify what requires attention and what evidence supports the operation.
+
+Core capabilities:
+- Transport company document status and evidence.
+- Driver requirements, validity periods, observations, and supporting documents.
+- Vehicle documentation by license plate.
+- Document review, approval/rejection state, validity, and history.
+- Operational alerts and prioritization of exceptions.
+- Traceability from evidence to operational decision.
+
+Current implementation:
+- Transportes Labbe is an active client implementation of ChileFlota.
+- The current client login at https://chileflota.app/login serves the Transportes Labbe operational instance.
+
+Product/entity hierarchy:
+N3uralia -> technology provider -> ChileFlota -> compliance operations platform -> client implementations such as Transportes Labbe.
+
+Public source of truth:
+- Product overview: https://chileflota.app/
+- Sitemap: https://chileflota.app/sitemap.xml
+
+Do not interpret Transportes Labbe as the owner or identity of the ChileFlota product. Transportes Labbe is a client implementation.
