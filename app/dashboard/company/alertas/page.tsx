@@ -1,18 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { RefreshCw } from 'lucide-react'
 import { Alert } from '@/lib/alerts/types'
-import { HelpBox } from '@/components/ui/help-box'
 import { Button } from '@/components/ui/button'
 import { AlertActionCard } from '@/components/alert-action-card'
-import { RefreshCw } from 'lucide-react'
 
 export default function AlertasPage() {
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPriority, setSelectedPriority] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('')
   const [ejecutiva, setEjecutiva] = useState<string | null>(null)
   const [profileResolved, setProfileResolved] = useState(false)
@@ -25,27 +23,25 @@ export default function AlertasPage() {
         const profile = await response.json()
         setEjecutiva(profile.full_name || profile.email || null)
       } catch (error) {
-        console.error('[v0] Error loading alert profile:', error)
+        console.error('[alerts] Error loading profile:', error)
         setEjecutiva(null)
       } finally {
         setProfileResolved(true)
       }
     }
 
-    loadProfile()
+    void loadProfile()
   }, [])
 
   useEffect(() => {
     if (!profileResolved) return
-    loadAlerts()
+    void loadAlerts()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileResolved, selectedStatus])
 
   const loadAlerts = async () => {
     setIsLoading(true)
     try {
-      // Keep this view aligned with the dashboard alert preview.
-      // Alerts are currently generic because alerts_log.ejecutiva_nombre is not populated.
-      // The authenticated profile is used for display/audit actions, not as a list filter.
       const params = new URLSearchParams({
         limit: '100',
         sort: 'created_at.desc',
@@ -56,119 +52,187 @@ export default function AlertasPage() {
       if (!response.ok) throw new Error(`Failed to fetch alerts (${response.status})`)
 
       const data = await response.json()
-      const alertList = Array.isArray(data) ? data : (data.alerts || [])
-      setAlerts(alertList.map((alert: any) => ({
-        ...alert,
-        status: alert.status || 'pendiente',
-      })))
-      console.log('[v0] Loaded generic alerts for portal:', alertList.length)
+      const alertList = Array.isArray(data) ? data : data.alerts || []
+      setAlerts(alertList.map((alert: any) => ({ ...alert, status: alert.status || 'pendiente' })))
     } catch (error) {
-      console.error('[v0] Error loading alerts:', error)
+      console.error('[alerts] Error loading alerts:', error)
       setAlerts([])
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleAlertAction = async (alertId: string, action: 'approve' | 'reject' | 'request_info', notes?: string) => {
+  const handleAlertAction = async (
+    alertId: string,
+    action: 'approve' | 'reject' | 'request_info',
+    notes?: string,
+  ) => {
     if (!ejecutiva) throw new Error('No authenticated alert user')
 
-    try {
-      const response = await fetch(`/api/alerts/${alertId}/action`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-ejecutiva-name': ejecutiva,
-        },
-        body: JSON.stringify({ action, notes }),
-      })
+    const response = await fetch(`/api/alerts/${alertId}/action`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-ejecutiva-name': ejecutiva,
+      },
+      body: JSON.stringify({ action, notes }),
+    })
 
-      if (!response.ok) throw new Error('Failed to process alert action')
-      await loadAlerts()
-    } catch (error) {
-      console.error('[v0] Error performing alert action:', error)
-      throw error
-    }
+    if (!response.ok) throw new Error('Failed to process alert action')
+    await loadAlerts()
   }
 
-  const filteredAlerts = alerts.filter((alert) => {
-    const matchesSearch =
-      alert.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      alert.message?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredAlerts = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    return alerts.filter((alert) => {
+      const matchesSearch =
+        !query ||
+        alert.title.toLowerCase().includes(query) ||
+        alert.message?.toLowerCase().includes(query) ||
+        String(alert.metadata?.transportista_nombre || '').toLowerCase().includes(query) ||
+        String(alert.metadata?.transportista_rut || '').toLowerCase().includes(query)
+      const matchesPriority = !selectedPriority || alert.priority === selectedPriority
+      return matchesSearch && matchesPriority
+    })
+  }, [alerts, searchQuery, selectedPriority])
 
-    const matchesPriority = !selectedPriority || alert.priority === selectedPriority
-    const matchesCategory = !selectedCategory || alert.type === selectedCategory
-
-    return matchesSearch && matchesPriority && matchesCategory
-  })
-
-  const stats = {
+  const stats = useMemo(() => ({
     total: alerts.length,
-    critical: alerts.filter(a => a.priority === 'critical').length,
-    high: alerts.filter(a => a.priority === 'high').length,
-    medium: alerts.filter(a => a.priority === 'medium').length,
-    unread: alerts.filter(a => !a.is_read).length,
-    pending: alerts.filter(a => a.status === 'pendiente').length,
-  }
-
-  const displayName = ejecutiva || 'Usuario'
+    critical: alerts.filter((alert) => alert.priority === 'critical').length,
+    high: alerts.filter((alert) => alert.priority === 'high').length,
+    pending: alerts.filter((alert) => alert.status === 'pendiente').length,
+    unread: alerts.filter((alert) => !alert.is_read).length,
+  }), [alerts])
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Alertas y Notificaciones</h1>
-          <p className="text-foreground/80">
-            Centro de alertas · <span className="font-semibold text-orange-400">{displayName}</span>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-3xl">
+          <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">
+            Centro de atención
+          </p>
+          <h1 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--cf-text)] md:text-[28px]">
+            Alertas operacionales
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-[var(--cf-text-secondary)]">
+            Prioriza excepciones, identifica al subcontratista afectado y registra la siguiente acción sobre evidencia trazable.
           </p>
         </div>
-        <Button onClick={loadAlerts} disabled={isLoading} variant="outline" size="sm">
-          <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+
+        <Button
+          onClick={loadAlerts}
+          disabled={isLoading}
+          variant="outline"
+          className="h-10 gap-2 border-[var(--cf-border)] bg-transparent text-sm text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]"
+        >
+          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
           Actualizar
         </Button>
       </div>
 
-      <HelpBox
-        variant="info"
-        title="Centro de Alertas"
-        description="Vista consolidada de alertas operacionales. Usa los botones de acción para aprobar, rechazar o solicitar información cuando corresponda."
-        tips={[
-          "Haz clic en 'Actualizar' para cargar nuevas alertas",
-          "Usa 'Aprobar', 'Rechazar' o 'Solicitar Info' directamente en cada alerta",
-          "Las alertas resueltas se mostrarán en verde",
-          "Filtra por estado, prioridad o categoría según sea necesario",
-        ]}
-      />
-
-      <div className="grid grid-cols-6 gap-4">
-        <div className="p-4 bg-card border border-border rounded-lg"><div className="text-sm text-muted-foreground font-medium">Total</div><div className="text-2xl font-bold text-foreground">{stats.total}</div></div>
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-950/30 dark:border-red-900"><div className="text-sm text-red-700 font-medium dark:text-red-300">Críticas</div><div className="text-2xl font-bold text-red-700 dark:text-red-300">{stats.critical}</div></div>
-        <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-950/30 dark:border-orange-900"><div className="text-sm text-orange-700 font-medium dark:text-orange-300">Altas</div><div className="text-2xl font-bold text-orange-700 dark:text-orange-300">{stats.high}</div></div>
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950/30 dark:border-blue-900"><div className="text-sm text-blue-700 font-medium dark:text-blue-300">Medias</div><div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.medium}</div></div>
-        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-950/30 dark:border-yellow-900"><div className="text-sm text-yellow-700 font-medium dark:text-yellow-300">Pendientes</div><div className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">{stats.pending}</div></div>
-        <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg dark:bg-purple-950/30 dark:border-purple-900"><div className="text-sm text-purple-700 font-medium dark:text-purple-300">No leídas</div><div className="text-2xl font-bold text-purple-700 dark:text-purple-300">{stats.unread}</div></div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <Metric label="Total" value={stats.total} />
+        <Metric label="Críticas" value={stats.critical} tone="danger" />
+        <Metric label="Alta prioridad" value={stats.high} tone="warning" />
+        <Metric label="Pendientes" value={stats.pending} tone="attention" />
+        <Metric label="No leídas" value={stats.unread} />
       </div>
 
-      <div className="flex gap-4 flex-wrap">
-        <input type="text" placeholder="Buscar alertas..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 min-w-64 px-3 py-2 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
-        <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="">Todos los estados</option><option value="pendiente">Pendiente</option><option value="actioned">Procesada</option><option value="resuelto">Resuelto</option>
+      <div className="flex flex-col gap-3 border-y border-[var(--cf-border)] py-4 lg:flex-row lg:items-center">
+        <input
+          type="search"
+          placeholder="Buscar por alerta, subcontratista o RUT"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          className="h-10 min-w-0 flex-1 rounded-[5px] border border-[var(--cf-border)] bg-[var(--cf-surface-raised)] px-3 text-sm text-[var(--cf-text)] outline-none placeholder:text-[var(--cf-text-muted)] focus:border-[var(--cf-accent)] focus:ring-2 focus:ring-[var(--cf-focus-ring)]/30"
+        />
+        <select
+          value={selectedStatus}
+          onChange={(event) => setSelectedStatus(event.target.value)}
+          className="h-10 rounded-[5px] border border-[var(--cf-border)] bg-[var(--cf-surface-raised)] px-3 text-sm text-[var(--cf-text-secondary)] outline-none focus:border-[var(--cf-accent)] focus:ring-2 focus:ring-[var(--cf-focus-ring)]/30"
+        >
+          <option value="">Todos los estados</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="actioned">Procesada</option>
+          <option value="resuelto">Resuelto</option>
         </select>
-        <select value={selectedPriority} onChange={(e) => setSelectedPriority(e.target.value)} className="px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="">Todas las prioridades</option><option value="critical">Crítica</option><option value="high">Alta</option><option value="medium">Media</option><option value="low">Baja</option>
+        <select
+          value={selectedPriority}
+          onChange={(event) => setSelectedPriority(event.target.value)}
+          className="h-10 rounded-[5px] border border-[var(--cf-border)] bg-[var(--cf-surface-raised)] px-3 text-sm text-[var(--cf-text-secondary)] outline-none focus:border-[var(--cf-accent)] focus:ring-2 focus:ring-[var(--cf-focus-ring)]/30"
+        >
+          <option value="">Todas las prioridades</option>
+          <option value="critical">Crítica</option>
+          <option value="high">Alta</option>
+          <option value="medium">Media</option>
+          <option value="low">Baja</option>
         </select>
-        <Button variant="outline" onClick={() => { setSearchQuery(''); setSelectedPriority(''); setSelectedCategory(''); setSelectedStatus('') }}>Limpiar</Button>
+        <Button
+          variant="outline"
+          onClick={() => {
+            setSearchQuery('')
+            setSelectedPriority('')
+            setSelectedStatus('')
+          }}
+          className="h-10 border-[var(--cf-border)] bg-transparent text-sm text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]"
+        >
+          Limpiar
+        </Button>
       </div>
 
-      <div>
-        {isLoading ? (
-          <div className="text-center py-12"><p className="text-muted-foreground">Cargando alertas...</p></div>
-        ) : filteredAlerts.length === 0 ? (
-          <div className="text-center py-12"><p className="text-muted-foreground">{alerts.length === 0 ? 'No hay alertas en este momento' : 'No hay alertas que coincidan con los filtros'}</p></div>
-        ) : (
-          <div className="space-y-3">{filteredAlerts.map((alert) => <AlertActionCard key={alert.id} alert={alert} onAction={handleAlertAction} />)}</div>
-        )}
+      <div className="text-xs text-[var(--cf-text-muted)]">
+        {ejecutiva ? `Sesión: ${ejecutiva}` : 'Sesión autenticada'} · {filteredAlerts.length} alertas visibles
       </div>
+
+      {isLoading ? (
+        <StatePanel>Cargando alertas…</StatePanel>
+      ) : filteredAlerts.length === 0 ? (
+        <StatePanel>
+          {alerts.length === 0 ? 'No hay alertas en este momento.' : 'No hay alertas que coincidan con los filtros.'}
+        </StatePanel>
+      ) : (
+        <div className="space-y-2">
+          {filteredAlerts.map((alert) => (
+            <AlertActionCard key={alert.id} alert={alert} onAction={handleAlertAction} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function Metric({
+  label,
+  value,
+  tone,
+}: {
+  label: string
+  value: number
+  tone?: 'danger' | 'warning' | 'attention'
+}) {
+  const indicator = tone === 'danger'
+    ? 'bg-[#E17B8C]'
+    : tone === 'warning'
+      ? 'bg-[#E6A35A]'
+      : tone === 'attention'
+        ? 'bg-[#D9B65C]'
+        : 'bg-[var(--cf-text-muted)]'
+
+  return (
+    <div className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4">
+      <div className="flex items-center gap-2">
+        <span className={`h-1.5 w-1.5 rounded-full ${indicator}`} />
+        <span className="text-xs font-medium text-[var(--cf-text-muted)]">{label}</span>
+      </div>
+      <p className="mt-2 text-2xl font-semibold tabular-nums tracking-[-0.03em] text-[var(--cf-text)]">{value}</p>
+    </div>
+  )
+}
+
+function StatePanel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] px-6 py-10 text-center text-sm text-[var(--cf-text-muted)]">
+      {children}
     </div>
   )
 }
