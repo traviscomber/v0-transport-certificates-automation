@@ -28,16 +28,14 @@ export default function LoginPage() {
         return
       }
 
-      // Manually set cookies via document.cookie - ensures they're available immediately
       const expiryDate = new Date()
-      expiryDate.setTime(expiryDate.getTime() + 7 * 24 * 60 * 60 * 1000) // 7 days
+      expiryDate.setTime(expiryDate.getTime() + 7 * 24 * 60 * 60 * 1000)
 
       document.cookie = `user_email=${encodeURIComponent(email.toLowerCase())}; path=/; expires=${expiryDate.toUTCString()}`
       document.cookie = `user_name=${encodeURIComponent(data.user.full_name)}; path=/; expires=${expiryDate.toUTCString()}`
       document.cookie = `user_role=${encodeURIComponent(data.user.role)}; path=/; expires=${expiryDate.toUTCString()}`
       document.cookie = `user_organization_id=${encodeURIComponent(data.user.organization_id || '')}; path=/; expires=${expiryDate.toUTCString()}`
 
-      // Ejecutivas and prevencionistas share the company portal.
       setTimeout(() => {
         window.location.href = '/dashboard/company'
       }, 300)
@@ -48,30 +46,46 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-slate-800 rounded-lg border border-slate-700 p-8 space-y-6">
-          <div className="text-center space-y-2">
-            <h1 className="text-2xl font-bold text-white">Iniciar Sesión</h1>
-            <p className="text-slate-400 text-sm">Transportes Labbe</p>
+    <main className="flex min-h-screen items-center justify-center bg-[#171719] px-4 py-10 text-[#E7E7E9]">
+      <section className="w-full max-w-[420px]">
+        <div className="mb-8">
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#7D7D84]">
+            Plataforma de compliance operacional
+          </p>
+          <h1 className="mt-3 text-[28px] font-semibold tracking-[-0.035em] text-[#E7E7E9]">
+            ChileFlota
+          </h1>
+          <p className="mt-2 text-sm text-[#B1B1B6]">Transportes Labbé</p>
+        </div>
+
+        <div className="rounded-[8px] border border-[#36363B] bg-[#232326] p-6 sm:p-7">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold tracking-[-0.02em] text-[#E7E7E9]">Iniciar sesión</h2>
+            <p className="mt-1 text-sm leading-6 text-[#B1B1B6]">
+              Acceso al workspace operacional de ChileFlota.
+            </p>
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500 rounded-md p-3">
-              <p className="text-red-500 text-sm font-medium">{error}</p>
+            <div className="mb-4 rounded-[6px] border border-[#6D3341] bg-[#3B2029] px-3 py-2.5">
+              <p className="text-sm font-medium text-[#E9A4B4]">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-200">Email</label>
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label htmlFor="email" className="mb-2 block text-sm font-medium text-[#D2D2D5]">
+                Correo electrónico
+              </label>
               <input
+                id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="usuario@ejemplo.com"
-                className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="nombre@empresa.cl"
+                className="h-11 w-full rounded-[6px] border border-[#36363B] bg-[#1D1D1F] px-3.5 text-sm text-[#E7E7E9] outline-none transition-colors placeholder:text-[#7D7D84] focus:border-[#C86A82] focus:ring-1 focus:ring-[#C86A82] disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={loading}
+                autoComplete="email"
                 required
               />
             </div>
@@ -79,13 +93,17 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white font-medium rounded-lg transition-colors"
+              className="flex h-11 w-full items-center justify-center rounded-[6px] bg-[#873146] px-4 text-sm font-medium text-[#E7E7E9] transition-colors hover:bg-[#9B3A52] focus:outline-none focus:ring-2 focus:ring-[#C86A82] focus:ring-offset-2 focus:ring-offset-[#232326] disabled:cursor-not-allowed disabled:bg-[#3B2029] disabled:text-[#7D7D84]"
             >
-              {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+              {loading ? 'Ingresando…' : 'Ingresar'}
             </button>
           </form>
         </div>
-      </div>
-    </div>
+
+        <p className="mt-5 text-center text-xs text-[#7D7D84]">
+          Tecnología provista por N3uralia
+        </p>
+      </section>
+    </main>
   )
 }
