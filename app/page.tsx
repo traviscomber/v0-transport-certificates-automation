@@ -2,7 +2,6 @@ import Link from "next/link"
 import {
   ArrowRight,
   BellRing,
-  CheckCircle2,
   FileCheck2,
   FileClock,
   FolderSearch2,
@@ -91,12 +90,12 @@ export default function LandingPage() {
             </div>
             <div className="leading-none">
               <span className="block text-sm font-semibold tracking-[-0.02em]">ChileFlota</span>
-              <span className="mt-1 block text-[10px] uppercase tracking-[0.18em] text-[#777C84]">Transportes Labbe</span>
+              <span className="mt-1 block text-[10px] uppercase tracking-[0.18em] text-[#777C84]">Compliance operacional</span>
             </div>
           </Link>
 
           <div className="flex items-center gap-3">
-            <span className="hidden text-xs text-[#777C84] sm:inline">Acceso exclusivo equipo Labbe</span>
+            <span className="hidden text-xs text-[#777C84] sm:inline">Acceso clientes</span>
             <Link
               href="/login"
               className="inline-flex h-9 items-center justify-center gap-2 rounded-[5px] bg-[#742D3D] px-4 text-sm font-medium text-[#F2F0EB] transition-colors hover:bg-[#87364A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#87364A]"
@@ -118,11 +117,11 @@ export default function LandingPage() {
             </div>
 
             <h1 className="max-w-4xl text-5xl font-medium leading-[0.98] tracking-[-0.055em] sm:text-6xl lg:text-[78px]">
-              La operación documental de Labbe, en una sola lectura.
+              La operación documental de flota, en una sola lectura.
             </h1>
 
             <p className="mt-7 max-w-2xl text-base leading-7 text-[#A9ADB3] sm:text-lg sm:leading-8">
-              Transportistas, conductores, vehículos, requisitos, vigencias y evidencia conectados para que el equipo pueda revisar, priorizar y actuar sin reconstruir la información entre planillas, correos y mensajes.
+              ChileFlota conecta transportistas, conductores, vehículos, requisitos, vigencias y evidencia para que cada operación pueda revisar, priorizar y actuar sin reconstruir información entre planillas, correos y mensajes.
             </p>
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -130,7 +129,7 @@ export default function LandingPage() {
                 href="/login"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-[5px] bg-[#742D3D] px-5 text-sm font-semibold text-[#F2F0EB] transition-colors hover:bg-[#87364A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#87364A]"
               >
-                Ingresar al sistema
+                Acceso clientes
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <a
@@ -182,12 +181,12 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
             <div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#777C84]">01 / Alcance real</p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#777C84]">01 / Plataforma</p>
               <h2 className="mt-4 max-w-md text-3xl font-medium leading-tight tracking-[-0.035em] sm:text-4xl">
-                ChileFlota ya no es una promesa genérica. Es la capa operativa de Labbe.
+                Una capa común de cumplimiento para operaciones de transporte.
               </h2>
               <p className="mt-5 max-w-md text-sm leading-6 text-[#A9ADB3]">
-                La landing refleja el sistema que el equipo usa: entidades reales, requisitos reales, estados documentales y trazabilidad para resolver trabajo concreto.
+                ChileFlota organiza entidades, requisitos, estados documentales y trazabilidad en un modelo operativo que puede adaptarse a distintas flotas, transportistas y contratistas.
               </p>
             </div>
 
@@ -261,14 +260,32 @@ export default function LandingPage() {
       </section>
 
       <section className="px-5 py-20 sm:px-6 lg:px-8 lg:py-28">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#777C84]">04 / Implementación activa</p>
+            <h2 className="mt-4 max-w-md text-3xl font-medium leading-tight tracking-[-0.035em] sm:text-4xl">
+              Transportes Labbe es una implementación de ChileFlota.
+            </h2>
+          </div>
+          <div className="border-l-2 border-[#742D3D] bg-[#181A1D] p-6 sm:p-8">
+            <p className="text-sm font-medium text-[#E4E1DC]">Cliente actual</p>
+            <p className="mt-3 text-2xl font-medium tracking-[-0.03em]">Transportes Labbe</p>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-[#A9ADB3]">
+              La instancia operativa disponible hoy está configurada para el equipo Labbe. La plataforma y su arquitectura permanecen preparadas para incorporar nuevas operaciones sin convertir al cliente en la identidad del producto.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-[#303238] px-5 py-20 sm:px-6 lg:px-8 lg:py-24">
         <div className="mx-auto grid max-w-7xl gap-10 border-l-2 border-[#742D3D] pl-6 sm:pl-8 lg:grid-cols-[1fr_auto] lg:items-end lg:gap-16">
           <div className="max-w-3xl">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#777C84]">ChileFlota / Transportes Labbe</p>
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#777C84]">Acceso clientes</p>
             <h2 className="mt-4 text-3xl font-medium leading-tight tracking-[-0.035em] sm:text-5xl">
               Una sola entrada. Una sola lectura operacional.
             </h2>
             <p className="mt-5 max-w-xl text-sm leading-6 text-[#A9ADB3]">
-              El acceso queda reservado al equipo Labbe y conduce directamente al entorno de trabajo.
+              El acceso disponible actualmente conduce a la instancia operativa de Transportes Labbe.
             </p>
           </div>
 
@@ -276,21 +293,16 @@ export default function LandingPage() {
             href="/login"
             className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[5px] bg-[#742D3D] px-5 text-sm font-semibold text-[#F2F0EB] transition-colors hover:bg-[#87364A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#87364A] sm:w-auto"
           >
-            Ingresar equipo Labbe
+            Ingresar a Transportes Labbe
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
       </section>
 
       <footer className="border-t border-[#303238] px-5 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 text-xs text-[#777C84] sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <ShieldCheck className="h-4 w-4 text-[#B36A79]" aria-hidden="true" />
-            <span className="text-[#C6C8CC]">ChileFlota</span>
-            <span className="text-[#454850]">/</span>
-            <span>Transportes Labbe</span>
-          </div>
-          <p>Control documental y trazabilidad operacional.</p>
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 text-xs text-[#777C84] sm:flex-row sm:items-center sm:justify-between">
+          <span>ChileFlota · Compliance documental y control operacional</span>
+          <span>Implementación activa: Transportes Labbe</span>
         </div>
       </footer>
     </main>
