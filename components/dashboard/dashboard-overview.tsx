@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { FileText, AlertTriangle, CheckCircle, Clock, LucideIcon, ArrowRight, Shield } from "lucide-react"
 import { useDocumentSync } from "@/contexts/document-sync-context"
-import { StatCard } from "./stat-card"
 import { AlertItem } from "./alert-item"
 
 interface Alert {
@@ -92,7 +91,6 @@ export function DashboardOverview() {
   const approvedDocuments = Number(stats[1]?.value || 0)
   const pendingDocuments = Number(stats[2]?.value || 0)
   const rejectedDocuments = Number(stats[3]?.value || 0)
-  const activeAlerts = alerts.length
   const openRiskItems = pendingDocuments + rejectedDocuments
   const completionRate = totalDocuments > 0 ? Math.round((approvedDocuments / totalDocuments) * 100) : 0
 
@@ -108,7 +106,7 @@ export function DashboardOverview() {
             'Expires': '0',
           }
         })
-        
+
         const statsRes = await fetch(`/api/company/documents/stats?_t=${timestamp}`, {
           cache: "no-store",
           headers: {
@@ -127,11 +125,11 @@ export function DashboardOverview() {
         if (statsRes.ok) {
           const statsData = await statsRes.json()
           const stats = statsData.stats || {}
-          
+
           const conductorStats = stats.conductores || {}
           const subStats = stats.subcontratistas || {}
           const lifetime = stats.lifetime || {}
-          
+
           const totalDocs = (conductorStats.total || 0) + (subStats.total || 0)
           const pendingDocs = (conductorStats.pendientes || 0) + (subStats.pendientes || 0)
           const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
@@ -221,11 +219,11 @@ export function DashboardOverview() {
             if (statsRes.ok) {
               const statsData = await statsRes.json()
               const stats = statsData.stats || {}
-              
+
               const conductorStats = stats.conductores || {}
               const subStats = stats.subcontratistas || {}
               const lifetime = stats.lifetime || {}
-              
+
               const totalDocs = (conductorStats.total || 0) + (subStats.total || 0)
               const pendingDocs = (conductorStats.pendientes || 0) + (subStats.pendientes || 0)
               const approvedDocs = (conductorStats.aprobados || 0) + (subStats.aprobados || 0)
@@ -238,155 +236,158 @@ export function DashboardOverview() {
               })
 
               setStats([
-                  {
-                    title: "Total de Documentos",
-                    value: totalDocs.toString(),
-                    description: "En el sistema",
-                    icon: FileText,
-                    status: "active",
-                    href: "/dashboard/company/documentos",
-                    color: "blue",
-                  },
-                  {
-                    title: "Documentos Aprobados",
-                    value: approvedDocs.toString(),
-                    description: "Validados",
-                    icon: CheckCircle,
-                    status: "active",
-                    href: "/dashboard/company/documentos/aprobados",
-                    color: "green",
-                  },
-                  {
-                    title: "Documentos Pendientes",
-                    value: pendingDocs.toString(),
-                    description: "En revisión",
-                    icon: Clock,
-                    status: "active",
-                    href: "/dashboard/company/documentos/pendientes",
-                    color: "orange",
-                  },
-                  {
-                    title: "Documentos Rechazados",
-                    value: rejectedDocs.toString(),
-                    description: "No validados",
-                    icon: AlertTriangle,
-                    status: "warning",
-                    href: "/dashboard/company/documentos/rechazados",
-                    color: "red",
-                  },
-                ])
+                {
+                  title: "Total de Documentos",
+                  value: totalDocs.toString(),
+                  description: "En el sistema",
+                  icon: FileText,
+                  status: "active",
+                  href: "/dashboard/company/documentos",
+                  color: "blue",
+                },
+                {
+                  title: "Documentos Aprobados",
+                  value: approvedDocs.toString(),
+                  description: "Validados",
+                  icon: CheckCircle,
+                  status: "active",
+                  href: "/dashboard/company/documentos/aprobados",
+                  color: "green",
+                },
+                {
+                  title: "Documentos Pendientes",
+                  value: pendingDocs.toString(),
+                  description: "En revisión",
+                  icon: Clock,
+                  status: "active",
+                  href: "/dashboard/company/documentos/pendientes",
+                  color: "orange",
+                },
+                {
+                  title: "Documentos Rechazados",
+                  value: rejectedDocs.toString(),
+                  description: "No validados",
+                  icon: AlertTriangle,
+                  status: "warning",
+                  href: "/dashboard/company/documentos/rechazados",
+                  color: "red",
+                },
+              ])
             }
           } catch (error) {
             console.error('[v0] Error refetching stats:', error)
           }
         }
-        
+
         fetchUpdatedStats()
       }
     })
-    
+
     return () => unsubscribe()
   }, [onSync])
 
   return (
-    <div className="space-y-5">
-      <Card className="overflow-hidden border-slate-700/60 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 shadow-2xl">
-        <CardContent className="p-6 md:p-8">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-            <div className="space-y-1">
-              <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-300 mb-2">
-                Panel ejecutivo
-              </div>
-              <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white leading-tight">
-                Control Operacional
+    <div className="space-y-6">
+      <Card className="overflow-hidden border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
+        <CardContent className="p-5 md:p-6">
+          <div className="mb-6 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+            <div className="max-w-2xl">
+              <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">
+                Control operacional
+              </p>
+              <h1 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--cf-text)] md:text-[28px]">
+                Estado documental
               </h1>
-              <p className="text-sm text-slate-400 max-w-xl">
-                Vista ejecutiva para priorizar documentos, alertas y seguimiento operativo con foco en decisiones rápidas.
+              <p className="mt-2 text-sm leading-6 text-[var(--cf-text-secondary)]">
+                Prioriza revisiones, incumplimientos y evidencia pendiente sin salir del flujo operativo de Transportes Labbé.
               </p>
             </div>
-            <div className="flex flex-col items-end gap-1 shrink-0">
-              <span className="text-3xl font-bold text-white">{completionRate}%</span>
-              <span className="text-xs uppercase tracking-widest text-slate-400">cumplimiento</span>
-              <div className="w-32 h-2 rounded-full bg-slate-800 mt-1">
+
+            <div className="min-w-[180px] border-l-2 border-[var(--cf-accent)] pl-4 sm:text-right">
+              <div className="text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{completionRate}%</div>
+              <div className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">aprobación actual</div>
+              <div className="mt-3 h-1.5 w-full overflow-hidden rounded-[3px] bg-[var(--cf-surface-raised)] sm:ml-auto sm:w-36">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-300 transition-all duration-700"
+                  className="h-full bg-[var(--cf-accent)] transition-[width] duration-500"
                   style={{ width: `${completionRate}%` }}
                 />
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <button
               onClick={() => router.push("/dashboard/company/documentos")}
-              className="rounded-2xl border border-slate-700/80 bg-slate-950/50 px-4 py-5 hover:bg-slate-900/70 hover:border-slate-500 transition-all text-left group"
+              className="group rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] p-4 text-left transition-colors hover:bg-[var(--cf-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-focus-ring)]"
             >
-              <FileText className="h-4 w-4 text-slate-500 mb-3 group-hover:text-slate-300 transition-colors" />
-              <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500">Procesados</p>
-              <p className="mt-1 text-3xl font-bold text-white">{lifetimeStats.processed.toLocaleString('es-CL')}</p>
-              <p className="mt-1 text-xs text-slate-500">
-                Desde el inicio de ChileFlota
-              </p>
+              <FileText className="mb-4 h-4 w-4 text-[var(--cf-text-muted)] transition-colors group-hover:text-[var(--cf-text-secondary)]" />
+              <p className="text-xs font-medium text-[var(--cf-text-muted)]">Procesados</p>
+              <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{lifetimeStats.processed.toLocaleString('es-CL')}</p>
+              <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">Histórico procesado por ChileFlota</p>
             </button>
+
             <button
               onClick={() => router.push("/dashboard/company/documentos/aprobados")}
-              className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-5 hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-all text-left group"
+              className="group rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] p-4 text-left transition-colors hover:bg-[var(--cf-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-focus-ring)]"
             >
-              <CheckCircle className="h-4 w-4 text-emerald-500/60 mb-3 group-hover:text-emerald-400 transition-colors" />
-              <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-300/70">Aprobados</p>
-              <p className="mt-1 text-3xl font-bold text-emerald-200">{approvedDocuments.toLocaleString('es-CL')}</p>
-              <p className="mt-1 text-xs text-emerald-300/50">Validados y listos</p>
+              <CheckCircle className="mb-4 h-4 w-4 text-[#67C18D]" />
+              <p className="text-xs font-medium text-[var(--cf-text-muted)]">Aprobados</p>
+              <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{approvedDocuments.toLocaleString('es-CL')}</p>
+              <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">Validados en el período actual</p>
             </button>
+
             <button
               onClick={() => router.push("/dashboard/company/documentos/pendientes")}
-              className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-5 hover:bg-amber-500/20 hover:border-amber-500/40 transition-all text-left group"
+              className="group rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] p-4 text-left transition-colors hover:bg-[var(--cf-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-focus-ring)]"
             >
-              <Clock className="h-4 w-4 text-amber-500/60 mb-3 group-hover:text-amber-400 transition-colors" />
-              <p className="text-[10px] uppercase tracking-[0.25em] text-amber-300/70">Pendientes</p>
-              <p className="mt-1 text-3xl font-bold text-amber-200">{pendingDocuments.toLocaleString('es-CL')}</p>
-              <p className="mt-1 text-xs text-amber-300/50">En revisión activa</p>
+              <Clock className="mb-4 h-4 w-4 text-[#D9B65C]" />
+              <p className="text-xs font-medium text-[var(--cf-text-muted)]">Pendientes</p>
+              <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{pendingDocuments.toLocaleString('es-CL')}</p>
+              <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">Esperan revisión humana</p>
             </button>
+
             <button
               onClick={() => router.push("/dashboard/company/documentos/rechazados")}
-              className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-5 hover:bg-red-500/20 hover:border-red-500/40 transition-all text-left group"
+              className="group rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-canvas)] p-4 text-left transition-colors hover:bg-[var(--cf-surface-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-focus-ring)]"
             >
-              <AlertTriangle className="h-4 w-4 text-red-500/60 mb-3 group-hover:text-red-400 transition-colors" />
-              <p className="text-[10px] uppercase tracking-[0.25em] text-red-300/70">Rechazados</p>
-              <p className="mt-1 text-3xl font-bold text-red-200">{rejectedDocuments.toLocaleString('es-CL')}</p>
-              <p className="mt-1 text-xs text-red-300/50">No validados</p>
+              <AlertTriangle className="mb-4 h-4 w-4 text-[#E17B8C]" />
+              <p className="text-xs font-medium text-[var(--cf-text-muted)]">Rechazados</p>
+              <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{rejectedDocuments.toLocaleString('es-CL')}</p>
+              <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">Requieren corrección o nueva evidencia</p>
             </button>
           </div>
 
-          <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-slate-700/50 bg-slate-950/40 px-5 py-4">
-            <p className="text-sm text-slate-300">
+          <div className="mt-4 flex flex-col gap-4 border-t border-[var(--cf-border)] pt-4 lg:flex-row lg:items-center lg:justify-between">
+            <p className="text-sm text-[var(--cf-text-secondary)]">
               {openRiskItems > 0 ? (
                 <>
-                  <span className="font-semibold text-orange-300">{openRiskItems.toLocaleString('es-CL')} documentos en riesgo</span>
-                  <span className="text-slate-400"> — {rejectedDocuments} rechazados + {pendingDocuments} pendientes</span>
+                  <span className="font-medium text-[#E6A35A]">{openRiskItems.toLocaleString('es-CL')} documentos requieren atención</span>
+                  <span className="text-[var(--cf-text-muted)]"> · {rejectedDocuments} rechazados · {pendingDocuments} pendientes</span>
                 </>
               ) : (
-                <span className="text-emerald-400 font-medium">Sin riesgos abiertos en el periodo actual.</span>
+                <span className="font-medium text-[#67C18D]">Sin revisiones críticas abiertas en el período actual.</span>
               )}
             </p>
-            <div className="flex gap-2 flex-wrap shrink-0">
+
+            <div className="flex flex-wrap gap-2">
               <Link href="/dashboard/company/documentos/vencidos">
-                <Button variant="outline" size="sm" className="border-red-500/30 text-red-300 hover:bg-red-500/10 h-8 text-xs">
-                  Ver vencidos <ArrowRight className="w-3 h-3 ml-1.5" />
+                <Button variant="outline" size="sm" className="h-9 border-[var(--cf-border)] bg-transparent text-xs text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]">
+                  Ver vencidos <ArrowRight className="ml-1.5 h-3 w-3" />
                 </Button>
               </Link>
               <Link href="/dashboard/company/documentos/renovar">
-                <Button variant="outline" size="sm" className="border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/10 h-8 text-xs">
-                  Renovaciones <ArrowRight className="w-3 h-3 ml-1.5" />
+                <Button variant="outline" size="sm" className="h-9 border-[var(--cf-border)] bg-transparent text-xs text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]">
+                  Renovaciones <ArrowRight className="ml-1.5 h-3 w-3" />
                 </Button>
               </Link>
               <Link href="/dashboard/company/reportes">
-                <Button variant="outline" size="sm" className="border-slate-600 text-slate-200 hover:bg-slate-800 h-8 text-xs">
-                  Reportes <ArrowRight className="w-3 h-3 ml-1.5" />
+                <Button variant="outline" size="sm" className="h-9 border-[var(--cf-border)] bg-transparent text-xs text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]">
+                  Reportes <ArrowRight className="ml-1.5 h-3 w-3" />
                 </Button>
               </Link>
-              <Link href="/compliance">
-                <Button variant="outline" size="sm" className="border-cyan-500/30 text-cyan-200 hover:bg-cyan-500/10 h-8 text-xs">
-                  <Shield className="w-3 h-3 mr-1.5" />
+              <Link href="/dashboard/company/compliance">
+                <Button size="sm" className="h-9 bg-[var(--cf-accent)] text-xs text-[var(--cf-text)] hover:bg-[var(--cf-accent-hover)]">
+                  <Shield className="mr-1.5 h-3 w-3" />
                   Matriz
                 </Button>
               </Link>
@@ -396,16 +397,16 @@ export function DashboardOverview() {
       </Card>
 
       {alerts.length > 0 && (
-        <Card className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-700 col-span-full">
+        <Card className="col-span-full border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
           <CardHeader className="pb-3">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <CardTitle className="text-xl">Alertas Prioritarias</CardTitle>
-                <CardDescription className="text-muted-foreground">
-                  Lo más importante del período - {alerts.length} alertas
+                <CardTitle className="text-lg font-semibold text-[var(--cf-text)]">Alertas prioritarias</CardTitle>
+                <CardDescription className="mt-1 text-[var(--cf-text-muted)]">
+                  Evidencia que requiere lectura o seguimiento · {alerts.length} alertas
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex flex-wrap items-center gap-2">
                 {(() => {
                   const approved = alerts.filter(a => a.type?.toUpperCase().includes('APPROVED')).length
                   const rejected = alerts.filter(a => a.type?.toUpperCase().includes('REJECTED')).length
@@ -414,22 +415,22 @@ export function DashboardOverview() {
                   return (
                     <>
                       {approved > 0 && (
-                        <span className="px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-medium">
+                        <span className="rounded-[4px] bg-[#173B2C] px-2 py-1 text-xs font-medium text-[#67C18D]">
                           {approved} aprobados
                         </span>
                       )}
                       {rejected > 0 && (
-                        <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-400 text-xs font-medium">
+                        <span className="rounded-[4px] bg-[#45242B] px-2 py-1 text-xs font-medium text-[#E17B8C]">
                           {rejected} rechazados
                         </span>
                       )}
                       {pending > 0 && (
-                        <span className="px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs font-medium">
-                          {pending} nuevos
+                        <span className="rounded-[4px] bg-[#40341B] px-2 py-1 text-xs font-medium text-[#D9B65C]">
+                          {pending} en revisión
                         </span>
                       )}
                       {expiring > 0 && (
-                        <span className="px-2 py-1 rounded-full bg-orange-500/20 text-orange-400 text-xs font-medium">
+                        <span className="rounded-[4px] bg-[#4A2F18] px-2 py-1 text-xs font-medium text-[#E6A35A]">
                           {expiring} por vencer
                         </span>
                       )}
@@ -439,6 +440,7 @@ export function DashboardOverview() {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="h-9 border-[var(--cf-border)] bg-transparent text-xs text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]"
                   onClick={() => router.push('/dashboard/company/alertas')}
                 >
                   Ver todas
@@ -447,7 +449,7 @@ export function DashboardOverview() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+            <div className="max-h-[500px] space-y-2 overflow-y-auto pr-1">
               {alerts.slice(0, 20).map((alert) => (
                 <AlertItem
                   key={alert.id}
@@ -463,12 +465,16 @@ export function DashboardOverview() {
               ))}
             </div>
             {alerts.length > 20 && (
-              <p className="text-xs text-muted-foreground text-center mt-4 py-2 border-t border-slate-700">
-                + {alerts.length - 20} alertas más - <button onClick={() => router.push('/dashboard/company/alertas')} className="text-orange-400 hover:underline">Abrir panel completo</button>
+              <p className="mt-4 border-t border-[var(--cf-border)] py-3 text-center text-xs text-[var(--cf-text-muted)]">
+                + {alerts.length - 20} alertas más · <button onClick={() => router.push('/dashboard/company/alertas')} className="font-medium text-[var(--cf-accent-hover)] hover:underline">Abrir panel completo</button>
               </p>
             )}
           </CardContent>
         </Card>
+      )}
+
+      {loading && alerts.length === 0 && (
+        <p className="text-xs text-[var(--cf-text-muted)]">Actualizando estado operacional…</p>
       )}
     </div>
   )
