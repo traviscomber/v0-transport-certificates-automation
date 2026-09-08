@@ -33,6 +33,20 @@ const destructiveApiPatterns = [
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
   const method = request.method.toUpperCase()
+
+  // Authentication endpoints must stay reachable even when the browser still
+  // carries an older restricted session. Otherwise a stale prevencionista
+  // cookie blocks POST /api/login-email before the user can re-authenticate.
+  if (
+    path.startsWith('/api/auth') ||
+    path.startsWith('/auth/login') ||
+    path === '/login' ||
+    path === '/api/login-email' ||
+    path === '/api/logout'
+  ) {
+    return NextResponse.next()
+  }
+
   const appSession = await verifyEmailSession(
     request.cookies.get('app_session')?.value,
     getEmailSessionSecret(),
@@ -63,16 +77,6 @@ export async function middleware(request: NextRequest) {
       },
       { status: 403 }
     )
-  }
-
-  if (
-    path.startsWith('/api/auth') ||
-    path.startsWith('/auth/login') ||
-    path === '/login' ||
-    path === '/api/login-email' ||
-    path === '/api/logout'
-  ) {
-    return NextResponse.next()
   }
 
   if (path.startsWith('/conductor')) {
