@@ -155,7 +155,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
   return (
     <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <div className="flex h-screen flex-col bg-[var(--cf-bg)] md:flex-row">
-        <aside className="hidden w-64 flex-col border-r border-[var(--cf-line)] bg-[var(--cf-sidebar)] md:flex">
+        <aside className="hidden w-48 flex-col border-r border-[var(--cf-line)] bg-[var(--cf-sidebar)] md:flex">
           <SidebarContent />
         </aside>
 
@@ -174,7 +174,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
           <main
             ref={mainRef}
             data-company-main
-            className="min-w-0 flex-1 overflow-auto bg-[var(--cf-bg)] p-4 sm:p-5 lg:p-7"
+            className="min-w-0 flex-1 overflow-auto bg-[var(--cf-bg)] p-4 sm:p-5 lg:p-5"
           >
             {children}
           </main>
