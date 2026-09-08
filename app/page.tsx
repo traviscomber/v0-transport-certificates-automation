@@ -1,154 +1,234 @@
-"use client"
-
-import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import {
   ArrowRight,
+  BellRing,
   CheckCircle2,
-  AlertCircle,
-  Shield,
-  Zap,
+  FileCheck2,
+  FileClock,
+  FolderSearch2,
+  ShieldCheck,
   Truck,
-  HardHat,
-  Wrench,
-  Package,
-  Building2,
-  ClipboardCheck,
+  UserRoundCheck,
+  UsersRound,
 } from "lucide-react"
-import Link from "next/link"
 
-const surface = "rounded-[5px] bg-[#181A1D]"
-const muted = "text-[#A9ADB3]"
+const operations = [
+  {
+    icon: UsersRound,
+    index: "01",
+    title: "Transportistas",
+    description: "Estado documental consolidado por empresa, responsable y periodo exigible.",
+  },
+  {
+    icon: UserRoundCheck,
+    index: "02",
+    title: "Conductores",
+    description: "Carpeta individual con requisitos, vigencias, observaciones y evidencia disponible.",
+  },
+  {
+    icon: Truck,
+    index: "03",
+    title: "Vehículos",
+    description: "Documentación por patente para revisar rápidamente si una unidad está operativamente respaldada.",
+  },
+  {
+    icon: FileCheck2,
+    index: "04",
+    title: "Documentos",
+    description: "Una lectura común para carga, revisión, aprobación, rechazo, vigencia e historial.",
+  },
+]
+
+const workflow = [
+  {
+    number: "01",
+    title: "Recibir",
+    text: "La evidencia entra desde el flujo operativo y queda vinculada a la entidad correspondiente.",
+  },
+  {
+    number: "02",
+    title: "Ordenar",
+    text: "ChileFlota estructura tipo documental, periodo, responsable, estado y vigencia en un mismo modelo.",
+  },
+  {
+    number: "03",
+    title: "Revisar",
+    text: "El equipo identifica qué requiere validación, qué está observado y qué ya cuenta con respaldo aprobado.",
+  },
+  {
+    number: "04",
+    title: "Resolver",
+    text: "Alertas, prioridades y trazabilidad convierten la información documental en acción operacional.",
+  },
+]
+
+const questions = [
+  {
+    icon: FolderSearch2,
+    label: "Qué falta",
+    text: "Requisitos pendientes o sin evidencia suficiente para la operación actual.",
+  },
+  {
+    icon: FileClock,
+    label: "Qué vence",
+    text: "Vigencias que necesitan atención antes de transformarse en una detención o bloqueo.",
+  },
+  {
+    icon: ShieldCheck,
+    label: "Qué está respaldado",
+    text: "Documentos aprobados, historial y evidencia disponible para auditoría y mandantes.",
+  },
+]
 
 export default function LandingPage() {
-  const steps = [
-    { num: "01", title: "Subir documentos", desc: "Conductores y empresas cargan documentos desde su flujo operativo." },
-    { num: "02", title: "Clasificar", desc: "La IA identifica el tipo documental y organiza la evidencia." },
-    { num: "03", title: "Validar", desc: "El sistema extrae fechas, vigencia y señales que requieren revisión." },
-    { num: "04", title: "Actuar", desc: "Alertas y estados priorizan renovaciones, observaciones y vencimientos." },
-  ]
-
-  const modules = [
-    ["Gestión de vehículos", "Matriz por patente con requisitos y estado documental."],
-    ["Gestión de conductores", "Carpeta digital por conductor con documentación y vigencia."],
-    ["Alertas operacionales", "Señales anticipadas para vencimientos y casos que requieren acción."],
-    ["Carpetas auditables", "Evidencia centralizada para mandantes, inspecciones y auditorías."],
-    ["Reportes", "Lectura ejecutiva de cumplimiento, riesgo y actividad operacional."],
-    ["Subcontratistas", "Control documental de empresas externas, conductores y responsables."],
-  ]
-
-  const useCases = [
-    { icon: Truck, title: "Transporte de carga", desc: "Control de flota, vigencias y carpetas para mandantes." },
-    { icon: HardHat, title: "Contratistas", desc: "Documentación laboral, seguridad y cumplimiento operacional.", href: "/mining/landing" },
-    { icon: Wrench, title: "Servicios técnicos", desc: "Vehículos y técnicos con documentación centralizada." },
-    { icon: Package, title: "Operadores logísticos", desc: "Conductores propios y subcontratados en una sola operación." },
-    { icon: Building2, title: "Construcción", desc: "Control de equipos, vehículos, empresas y personal de obra." },
-    { icon: ClipboardCheck, title: "Mandantes", desc: "Revisión de compliance de contratistas y proveedores." },
-  ]
-
   return (
-    <div className="min-h-screen bg-[#111214] text-[#F2F0EB]">
-      <nav className="fixed top-0 z-50 w-full border-b border-[#303238] bg-[#111214]/95 backdrop-blur-sm">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2 text-base font-medium tracking-tight">
-            <Shield className="h-5 w-5 text-[#9A5968]" />
-            ChileFlota
-          </div>
-          <div className="hidden items-center gap-7 md:flex">
-            <a href="#features" className="text-sm text-[#A9ADB3] transition-colors hover:text-[#F2F0EB]">Producto</a>
-            <a href="#cases" className="text-sm text-[#A9ADB3] transition-colors hover:text-[#F2F0EB]">Casos de uso</a>
-            <a href="#pricing" className="text-sm text-[#A9ADB3] transition-colors hover:text-[#F2F0EB]">Planes</a>
-            <Link href="/login">
-              <Button variant="outline" size="sm" className="rounded-[5px] border-[#454850] bg-transparent text-[#F2F0EB] hover:bg-[#202226]">
-                Ingresar
-              </Button>
+    <main className="min-h-screen overflow-x-hidden bg-[#111214] text-[#F2F0EB]">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-[#303238] bg-[#111214]/95 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-6 lg:px-8">
+          <Link href="/" className="flex items-center gap-3" aria-label="ChileFlota inicio">
+            <div className="flex h-8 w-8 items-center justify-center border border-[#454850] bg-[#181A1D]">
+              <ShieldCheck className="h-4 w-4 text-[#B36A79]" aria-hidden="true" />
+            </div>
+            <div className="leading-none">
+              <span className="block text-sm font-semibold tracking-[-0.02em]">ChileFlota</span>
+              <span className="mt-1 block text-[10px] uppercase tracking-[0.18em] text-[#777C84]">Transportes Labbe</span>
+            </div>
+          </Link>
+
+          <div className="flex items-center gap-3">
+            <span className="hidden text-xs text-[#777C84] sm:inline">Acceso exclusivo equipo Labbe</span>
+            <Link
+              href="/login"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-[5px] bg-[#742D3D] px-4 text-sm font-medium text-[#F2F0EB] transition-colors hover:bg-[#87364A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#87364A]"
+            >
+              Ingresar
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
         </div>
-      </nav>
+      </header>
 
-      <section className="px-4 pb-24 pt-36 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl">
-          <div className="max-w-4xl">
-            <div className="inline-flex items-center gap-2 rounded-[5px] bg-[#181A1D] px-3 py-2 text-xs text-[#CBB8BD]">
-              <Shield className="h-4 w-4 text-[#9A5968]" />
-              Compliance documental y control operacional
+      <section className="relative px-5 pb-24 pt-32 sm:px-6 sm:pb-28 sm:pt-40 lg:px-8 lg:pb-32">
+        <div className="pointer-events-none absolute inset-0 bg-grid opacity-70" aria-hidden="true" />
+        <div className="relative mx-auto grid max-w-7xl gap-14 lg:grid-cols-[1.08fr_0.92fr] lg:items-end lg:gap-20">
+          <div>
+            <div className="mb-7 flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.2em] text-[#A9ADB3]">
+              <span className="h-px w-8 bg-[#742D3D]" />
+              Control documental operacional
             </div>
-            <h1 className="mt-7 text-4xl font-medium leading-[1.04] tracking-[-0.04em] sm:text-6xl lg:text-7xl">
-              Documentación de flota bajo control, antes de que se convierta en una detención.
+
+            <h1 className="max-w-4xl text-5xl font-medium leading-[0.98] tracking-[-0.055em] sm:text-6xl lg:text-[78px]">
+              La operación documental de Labbe, en una sola lectura.
             </h1>
-            <p className="mt-7 max-w-2xl text-base leading-7 text-[#A9ADB3] sm:text-lg">
-              ChileFlota centraliza documentos, vigencias, responsables y evidencia para que flotas, transportistas y contratistas operen con una lectura común del cumplimiento.
+
+            <p className="mt-7 max-w-2xl text-base leading-7 text-[#A9ADB3] sm:text-lg sm:leading-8">
+              Transportistas, conductores, vehículos, requisitos, vigencias y evidencia conectados para que el equipo pueda revisar, priorizar y actuar sin reconstruir la información entre planillas, correos y mensajes.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/login">
-                <Button size="lg" className="rounded-[5px] bg-[#742D3D] px-5 text-[#F2F0EB] hover:bg-[#87364A]">
-                  Acceder al sistema <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link
+                href="/login"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-[5px] bg-[#742D3D] px-5 text-sm font-semibold text-[#F2F0EB] transition-colors hover:bg-[#87364A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#87364A]"
+              >
+                Ingresar al sistema
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
-              <a href="#features">
-                <Button size="lg" variant="ghost" className="rounded-[5px] px-5 text-[#C6C8CC] hover:bg-[#202226] hover:text-[#F2F0EB]">
-                  Ver cómo funciona
-                </Button>
+              <a
+                href="#alcance"
+                className="inline-flex h-12 items-center justify-center px-5 text-sm font-medium text-[#C6C8CC] transition-colors hover:text-[#F2F0EB]"
+              >
+                Ver alcance operacional
               </a>
             </div>
           </div>
-        </div>
-      </section>
 
-      <section className="border-y border-[#303238] px-4 py-20 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="grid gap-10 md:grid-cols-[0.8fr_1.2fr]">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#A9ADB3]">Problema operacional</p>
-              <h2 className="mt-3 text-3xl font-medium tracking-tight">El costo aparece cuando la información llega tarde.</h2>
+          <div className="border-t border-[#454850] pt-5 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+            <div className="mb-7 flex items-center justify-between">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#777C84]">Vista operacional</p>
+              <span className="flex items-center gap-2 text-[11px] text-[#9CC5B1]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#39765B]" />
+                Sistema activo
+              </span>
             </div>
-            <div className="grid gap-px overflow-hidden rounded-[5px] bg-[#303238] md:grid-cols-3">
+
+            <div className="space-y-px bg-[#303238]">
               {[
-                ["Vencimientos", "Una vigencia perdida puede detener un vehículo o bloquear una operación."],
-                ["Exigencia documental", "Mandantes y auditorías requieren evidencia actualizada y trazable."],
-                ["Fragmentación", "Excel, correo y WhatsApp dificultan saber qué está aprobado, pendiente o vencido."],
-              ].map(([title, desc]) => (
-                <div key={title} className="bg-[#181A1D] p-5">
-                  <AlertCircle className="h-5 w-5 text-[#994550]" />
-                  <h3 className="mt-4 text-sm font-medium">{title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#A9ADB3]">{desc}</p>
+                ["Transportistas", "Estado consolidado", "Empresa + periodo"],
+                ["Conductores", "Carpeta individual", "Persona + requisito"],
+                ["Documentación", "Evidencia trazable", "Tipo + vigencia"],
+                ["Alertas", "Acción priorizada", "Riesgo + responsable"],
+              ].map(([name, value, meta]) => (
+                <div key={name} className="grid grid-cols-[1fr_auto] gap-5 bg-[#181A1D] px-5 py-4">
+                  <div>
+                    <p className="text-sm font-medium text-[#E4E1DC]">{name}</p>
+                    <p className="mt-1 text-xs text-[#777C84]">{meta}</p>
+                  </div>
+                  <p className="self-center text-right text-xs text-[#A9ADB3]">{value}</p>
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
 
-      <section id="features" className="px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="max-w-2xl">
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#A9ADB3]">Flujo ChileFlota</p>
-            <h2 className="mt-3 text-3xl font-medium tracking-tight sm:text-4xl">Un flujo único desde la carga hasta la decisión.</h2>
-          </div>
-
-          <div className="mt-10 grid gap-px overflow-hidden rounded-[5px] bg-[#303238] md:grid-cols-4">
-            {steps.map((step) => (
-              <div key={step.num} className="bg-[#181A1D] p-5">
-                <span className="font-mono text-xs text-[#9A5968]">{step.num}</span>
-                <h3 className="mt-7 text-base font-medium">{step.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-[#A9ADB3]">{step.desc}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-16 grid gap-8 md:grid-cols-[0.75fr_1.25fr]">
-            <div>
-              <h2 className="text-2xl font-medium tracking-tight">Módulos operacionales</h2>
-              <p className="mt-3 text-sm leading-6 text-[#A9ADB3]">
-                Cada módulo comparte estados, navegación y evidencia para evitar que el cumplimiento se fragmente entre herramientas.
+            <div className="mt-5 flex items-start gap-3 border-l-2 border-[#742D3D] bg-[#181A1D] px-4 py-3">
+              <BellRing className="mt-0.5 h-4 w-4 flex-none text-[#CBB8BD]" aria-hidden="true" />
+              <p className="text-xs leading-5 text-[#A9ADB3]">
+                La prioridad no es acumular documentos. Es saber qué requiere acción y qué evidencia respalda la operación.
               </p>
             </div>
-            <div className="grid gap-x-8 gap-y-7 sm:grid-cols-2">
-              {modules.map(([title, desc]) => (
-                <div key={title} className="border-t border-[#303238] pt-4">
-                  <Zap className="h-4 w-4 text-[#9A5968]" />
-                  <h3 className="mt-3 text-sm font-medium">{title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#A9ADB3]">{desc}</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="alcance" className="border-y border-[#303238] bg-[#151618] px-5 py-20 sm:px-6 lg:px-8 lg:py-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#777C84]">01 / Alcance real</p>
+              <h2 className="mt-4 max-w-md text-3xl font-medium leading-tight tracking-[-0.035em] sm:text-4xl">
+                ChileFlota ya no es una promesa genérica. Es la capa operativa de Labbe.
+              </h2>
+              <p className="mt-5 max-w-md text-sm leading-6 text-[#A9ADB3]">
+                La landing refleja el sistema que el equipo usa: entidades reales, requisitos reales, estados documentales y trazabilidad para resolver trabajo concreto.
+              </p>
+            </div>
+
+            <div className="grid gap-px bg-[#303238] sm:grid-cols-2">
+              {operations.map((item) => {
+                const Icon = item.icon
+                return (
+                  <article key={item.title} className="min-h-52 bg-[#181A1D] p-6 sm:p-7">
+                    <div className="flex items-start justify-between gap-4">
+                      <Icon className="h-5 w-5 text-[#B36A79]" aria-hidden="true" />
+                      <span className="font-mono text-[10px] tracking-[0.14em] text-[#5F636A]">{item.index}</span>
+                    </div>
+                    <h3 className="mt-10 text-lg font-medium tracking-[-0.02em]">{item.title}</h3>
+                    <p className="mt-3 max-w-sm text-sm leading-6 text-[#A9ADB3]">{item.description}</p>
+                  </article>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-5 py-20 sm:px-6 lg:px-8 lg:py-28">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#777C84]">02 / Flujo común</p>
+              <h2 className="mt-4 max-w-md text-3xl font-medium leading-tight tracking-[-0.035em] sm:text-4xl">
+                Desde la evidencia hasta la decisión.
+              </h2>
+              <p className="mt-5 max-w-md text-sm leading-6 text-[#A9ADB3]">
+                El valor está en mantener una misma lógica de estado a través de toda la operación, no en sumar más pantallas.
+              </p>
+            </div>
+
+            <div className="divide-y divide-[#303238] border-y border-[#303238]">
+              {workflow.map((item) => (
+                <div key={item.number} className="grid gap-4 py-6 sm:grid-cols-[64px_160px_1fr] sm:items-start sm:gap-6">
+                  <span className="font-mono text-xs text-[#B36A79]">{item.number}</span>
+                  <h3 className="text-base font-medium">{item.title}</h3>
+                  <p className="max-w-xl text-sm leading-6 text-[#A9ADB3]">{item.text}</p>
                 </div>
               ))}
             </div>
@@ -156,118 +236,63 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="cases" className="border-y border-[#303238] bg-[#181A1D] px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#A9ADB3]">Casos de uso</p>
-              <h2 className="mt-3 text-3xl font-medium tracking-tight">Una misma disciplina documental para operaciones distintas.</h2>
-            </div>
+      <section className="border-y border-[#303238] bg-[#181A1D] px-5 py-20 sm:px-6 lg:px-8 lg:py-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-3xl">
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#777C84]">03 / Lectura ejecutiva</p>
+            <h2 className="mt-4 text-3xl font-medium leading-tight tracking-[-0.035em] sm:text-4xl">
+              Tres preguntas que el sistema debe responder sin buscar en Excel.
+            </h2>
           </div>
 
-          <div className="mt-10 grid gap-3 md:grid-cols-3">
-            {useCases.map((useCase) => {
-              const Icon = useCase.icon
-              const content = (
-                <div className={`${surface} h-full p-5 transition-colors hover:bg-[#202226]`}>
-                  <Icon className="h-5 w-5 text-[#9A5968]" />
-                  <h3 className="mt-5 text-sm font-medium">{useCase.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#A9ADB3]">{useCase.desc}</p>
-                </div>
+          <div className="mt-12 grid gap-px bg-[#303238] lg:grid-cols-3">
+            {questions.map((item) => {
+              const Icon = item.icon
+              return (
+                <article key={item.label} className="bg-[#151618] p-7 lg:min-h-64">
+                  <Icon className="h-5 w-5 text-[#B36A79]" aria-hidden="true" />
+                  <h3 className="mt-12 text-2xl font-medium tracking-[-0.03em]">{item.label}</h3>
+                  <p className="mt-4 max-w-sm text-sm leading-6 text-[#A9ADB3]">{item.text}</p>
+                </article>
               )
-              return useCase.href ? <Link key={useCase.title} href={useCase.href}>{content}</Link> : <div key={useCase.title}>{content}</div>
             })}
           </div>
         </div>
       </section>
 
-      <section className="px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl">
-          <div className="grid gap-10 md:grid-cols-2">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#A9ADB3]">Sin sistema común</p>
-              <h2 className="mt-3 text-2xl font-medium">Excel + correo + mensajería</h2>
-              <ul className="mt-6 space-y-3 text-sm text-[#A9ADB3]">
-                {[
-                  "Vencimientos dependen de seguimiento manual",
-                  "Documentos quedan dispersos entre canales",
-                  "Auditar requiere reconstruir la historia",
-                  "El estado real depende de quién tenga la última copia",
-                ].map((item) => <li key={item} className="flex gap-3"><span className="text-[#994550]">—</span>{item}</li>)}
-              </ul>
-            </div>
-            <div>
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#A9ADB3]">Con ChileFlota</p>
-              <h2 className="mt-3 text-2xl font-medium">Una fuente operacional</h2>
-              <ul className="mt-6 space-y-3 text-sm text-[#A9ADB3]">
-                {[
-                  "Alertas vinculadas a vigencias y responsables",
-                  "Documentos y estados en una sola operación",
-                  "Historial disponible para auditoría",
-                  "Búsqueda y lectura común por empresa, conductor y requisito",
-                ].map((item) => <li key={item} className="flex gap-3"><CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#39765B]" />{item}</li>)}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="pricing" className="border-y border-[#303238] px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="max-w-2xl">
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#A9ADB3]">Planes</p>
-            <h2 className="mt-3 text-3xl font-medium tracking-tight">Escala según la operación.</h2>
+      <section className="px-5 py-20 sm:px-6 lg:px-8 lg:py-28">
+        <div className="mx-auto grid max-w-7xl gap-10 border-l-2 border-[#742D3D] pl-6 sm:pl-8 lg:grid-cols-[1fr_auto] lg:items-end lg:gap-16">
+          <div className="max-w-3xl">
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#777C84]">ChileFlota / Transportes Labbe</p>
+            <h2 className="mt-4 text-3xl font-medium leading-tight tracking-[-0.035em] sm:text-5xl">
+              Una sola entrada. Una sola lectura operacional.
+            </h2>
+            <p className="mt-5 max-w-xl text-sm leading-6 text-[#A9ADB3]">
+              El acceso queda reservado al equipo Labbe y conduce directamente al entorno de trabajo.
+            </p>
           </div>
 
-          <div className="mt-10 grid gap-3 md:grid-cols-3">
-            {[
-              { name: "Starter", features: ["Hasta 10 vehículos", "Hasta 5 conductores", "Alertas básicas", "1 usuario"] },
-              { name: "Professional", features: ["Hasta 50 vehículos", "Hasta 20 conductores", "Alertas avanzadas", "5 usuarios", "Reportes"], highlighted: true },
-              { name: "Enterprise", features: ["Flotas ilimitadas", "Usuarios ilimitados", "Integración API", "Soporte dedicado", "Configuración avanzada"] },
-            ].map((plan) => (
-              <div key={plan.name} className={`${surface} p-6 ${plan.highlighted ? "outline outline-1 outline-[#742D3D]" : ""}`}>
-                <h3 className="text-xl font-medium">{plan.name}</h3>
-                <ul className="my-7 space-y-3 text-sm text-[#A9ADB3]">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#6FA48A]" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <Button className={`w-full rounded-[5px] ${plan.highlighted ? "bg-[#742D3D] hover:bg-[#87364A]" : "bg-[#202226] hover:bg-[#25282D]"}`}>
-                  Consultar
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-5xl flex-col gap-8 md:flex-row md:items-end md:justify-between">
-          <div className="max-w-2xl">
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#A9ADB3]">ChileFlota</p>
-            <h2 className="mt-3 text-3xl font-medium tracking-tight sm:text-4xl">El próximo documento crítico debe aparecer antes de convertirse en un problema.</h2>
-            <p className="mt-4 text-sm leading-6 text-[#A9ADB3]">Accede al sistema o solicita una presentación del flujo operacional.</p>
-          </div>
-          <Link href="/login">
-            <Button size="lg" className="rounded-[5px] bg-[#742D3D] hover:bg-[#87364A]">
-              Acceder <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+          <Link
+            href="/login"
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[5px] bg-[#742D3D] px-5 text-sm font-semibold text-[#F2F0EB] transition-colors hover:bg-[#87364A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#87364A] sm:w-auto"
+          >
+            Ingresar equipo Labbe
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
       </section>
 
-      <footer className="border-t border-[#303238] px-4 py-10 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-6xl flex-col gap-5 text-sm text-[#777C84] md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2 text-[#C6C8CC]">
-            <Shield className="h-4 w-4 text-[#9A5968]" />
-            ChileFlota
+      <footer className="border-t border-[#303238] px-5 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 text-xs text-[#777C84] sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <ShieldCheck className="h-4 w-4 text-[#B36A79]" aria-hidden="true" />
+            <span className="text-[#C6C8CC]">ChileFlota</span>
+            <span className="text-[#454850]">/</span>
+            <span>Transportes Labbe</span>
           </div>
-          <p>Compliance documental y control operacional para flotas en Chile.</p>
+          <p>Control documental y trazabilidad operacional.</p>
         </div>
       </footer>
-    </div>
+    </main>
   )
 }
