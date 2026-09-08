@@ -85,9 +85,9 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
 
   const SidebarContent = () => (
     <>
-      <div className="border-b border-[#303238] px-4 py-5 md:px-5">
-        <p className="text-lg font-medium tracking-tight text-[#F2F0EB]">ChileFlota</p>
-        <p className="mt-1 text-xs text-[#A9ADB3]">Transportes Labbé</p>
+      <div className="border-b border-[var(--cf-line)] px-4 py-5 md:px-5">
+        <p className="text-lg font-medium tracking-tight text-[var(--cf-text)]">ChileFlota</p>
+        <p className="mt-1 text-xs text-[var(--cf-text-muted)]">Transportes Labbé</p>
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
@@ -104,8 +104,8 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
                 className={cn(
                   'flex min-h-10 w-full items-center gap-3 rounded-[5px] px-3 py-2 text-left text-sm font-normal transition-colors',
                   isActive
-                    ? 'bg-[#742D3D] text-[#F2F0EB]'
-                    : 'text-[#C6C8CC] hover:bg-[#202226] hover:text-[#F2F0EB]'
+                    ? 'bg-[var(--cf-burgundy)] text-[var(--cf-text)]'
+                    : 'text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)]'
                 )}
               >
                 <Icon className="h-4 w-4 flex-shrink-0" />
@@ -116,7 +116,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
         })}
       </nav>
 
-      <div className="space-y-2 border-t border-[#303238] p-3">
+      <div className="space-y-2 border-t border-[var(--cf-line)] p-3">
         {accountItems.map(item => {
           const Icon = item.icon
           const isActive = pathname === item.href
@@ -128,8 +128,8 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
                 className={cn(
                   'flex min-h-10 w-full items-center gap-3 rounded-[5px] px-3 py-2 text-sm font-normal transition-colors',
                   isActive
-                    ? 'bg-[#202226] text-[#F2F0EB]'
-                    : 'text-[#C6C8CC] hover:bg-[#202226] hover:text-[#F2F0EB]'
+                    ? 'bg-[var(--cf-burgundy)] text-[var(--cf-text)]'
+                    : 'text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)]'
                 )}
               >
                 <Icon className="h-4 w-4 flex-shrink-0" />
@@ -142,7 +142,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
         <Button
           variant="ghost"
           size="sm"
-          className="min-h-10 w-full justify-start rounded-[5px] px-3 text-[#C6C8CC] hover:bg-[#202226] hover:text-[#F2F0EB]"
+          className="min-h-10 w-full justify-start rounded-[5px] px-3 text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)]"
           onClick={handleLogout}
         >
           <LogOut className="mr-3 h-4 w-4 flex-shrink-0" />
@@ -154,14 +154,14 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
 
   return (
     <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-      <div className="flex h-screen flex-col bg-[#111214] md:flex-row">
-        <aside className="hidden w-64 flex-col border-r border-[#303238] bg-[#181A1D] md:flex">
+      <div className="flex h-screen flex-col bg-[var(--cf-bg)] md:flex-row">
+        <aside className="hidden w-64 flex-col border-r border-[var(--cf-line)] bg-[var(--cf-sidebar)] md:flex">
           <SidebarContent />
         </aside>
 
         <SheetContent
           side="left"
-          className="w-[min(82vw,288px)] border-r border-[#303238] bg-[#181A1D] p-0 text-[#F2F0EB]"
+          className="w-[min(82vw,288px)] border-r border-[var(--cf-line)] bg-[var(--cf-sidebar)] p-0 text-[var(--cf-text)]"
         >
           <div className="flex h-full flex-col">
             <SidebarContent />
@@ -174,7 +174,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
           <main
             ref={mainRef}
             data-company-main
-            className="min-w-0 flex-1 overflow-auto bg-[#111214] p-4 sm:p-5 lg:p-7"
+            className="min-w-0 flex-1 overflow-auto bg-[var(--cf-bg)] p-4 sm:p-5 lg:p-7"
           >
             {children}
           </main>
