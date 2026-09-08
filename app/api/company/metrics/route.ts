@@ -42,8 +42,8 @@ function median(values: number[]) {
 export async function GET(request: NextRequest) {
   try {
     const auth = await verifyAuth(request)
-    if (!auth.authenticated) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    if (!auth.user) {
+      return NextResponse.json({ error: auth.error || 'No autenticado' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
