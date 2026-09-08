@@ -2,14 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { HelpBox } from '@/components/ui/help-box'
 import { DatePeriodFilter } from '@/components/date-period-filter'
 import { AIAnalysisPanel } from '@/components/reports/ai-analysis-panel'
-import { Download, FileText, BarChart3, TrendingUp, AlertCircle, CheckCircle2, ArrowRight, ShieldAlert, RefreshCw, Lock, Eye, EyeOff } from 'lucide-react'
+import { ArrowRight, RefreshCw, ShieldAlert } from 'lucide-react'
 import { ALL_VALUE, filterByMonthYear, getMonthLabel, type DateFilterValue } from '@/lib/date-filters'
 
 type EntityRecord = {
@@ -19,7 +16,6 @@ type EntityRecord = {
   is_active?: boolean
   type: 'driver' | 'subcontractor'
   status?: string
-  documentos?: unknown[]
 }
 
 type DocumentRecord = {
@@ -32,80 +28,43 @@ type DocumentRecord = {
   type?: 'driver_document' | 'subcontractor_document'
 }
 
-const AUTHORIZED_KEY = 'labbe2026'
-
 export default function ReportesPage() {
-  const [period, setPeriod] = useState<DateFilterValue>({
-    month: ALL_VALUE,
-    year: ALL_VALUE,
-  })
+  const [period, setPeriod] = useState<DateFilterValue>({ month: ALL_VALUE, year: ALL_VALUE })
   const [analysis, setAnalysis] = useState<Record<string, string>>({})
-  const [loading, setLoading] = useState(false)
+  const [analysisLoading, setAnalysisLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [entities, setEntities] = useState<EntityRecord[]>([])
   const [documents, setDocuments] = useState<DocumentRecord[]>([])
-  const [isAuthorized, setIsAuthorized] = useState(false)
-  const [keyInput, setKeyInput] = useState('')
-  const [showKey, setShowKey] = useState(false)
-  const [keyError, setKeyError] = useState('')
-
-  useEffect(() => {
-    const authorized = sessionStorage.getItem('company-reportes-authorized') === 'true'
-    const cookieRole =
-      typeof document !== 'undefined'
-        ? document.cookie
-            .split('; ')
-            .find((item) => item.startsWith('user_role='))
-            ?.split('=')[1]
-        : undefined
-
-    if (authorized || cookieRole === 'ejecutiva' || cookieRole === 'admin' || cookieRole === 'mandante') {
-      setIsAuthorized(true)
-    }
-  }, [])
-
-  const handleKeySubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setKeyError('')
-
-    if (keyInput === AUTHORIZED_KEY) {
-      setIsAuthorized(true)
-      sessionStorage.setItem('company-reportes-authorized', 'true')
-      setKeyInput('')
-      setShowKey(false)
-    } else {
-      setKeyError('Clave incorrecta. Por favor intenta de nuevo.')
-      setKeyInput('')
-    }
-  }
+  const [loadError, setLoadError] = useState('')
 
   const loadData = async () => {
     setRefreshing(true)
+    setLoadError('')
     try {
       const [dashboardRes, documentsRes] = await Promise.all([
         fetch('/api/dashboard/data', { cache: 'no-store' }),
         fetch('/api/company/documents/all', { cache: 'no-store' }),
       ])
 
-      if (dashboardRes.ok) {
-        const dashboardData = await dashboardRes.json()
-        const drivers = (dashboardData.dashboard?.conductores || []).map((driver: any) => ({
-          ...driver,
-          type: 'driver' as const,
-        }))
-        const subcontractors = (dashboardData.dashboard?.transportistas || []).map((sub: any) => ({
-          ...sub,
-          type: 'subcontractor' as const,
-        }))
-        setEntities([...drivers, ...subcontractors])
-      }
+      if (!dashboardRes.ok || !documentsRes.ok) throw new Error('No fue posible cargar la base de reportes')
 
-      if (documentsRes.ok) {
-        const documentsData = await documentsRes.json()
-        setDocuments(Array.isArray(documentsData.documents) ? documentsData.documents : [])
-      }
+      const dashboardData = await dashboardRes.json()
+      const documentsData = await documentsRes.json()
+
+      const drivers = (dashboardData.dashboard?.conductores || []).map((driver: any) => ({
+        ...driver,
+        type: 'driver' as const,
+      }))
+      const subcontractors = (dashboardData.dashboard?.transportistas || []).map((subcontractor: any) => ({
+        ...subcontractor,
+        type: 'subcontractor' as const,
+      }))
+
+      setEntities([...drivers, ...subcontractors])
+      setDocuments(Array.isArray(documentsData.documents) ? documentsData.documents : [])
     } catch (error) {
       console.error('[v0] Error loading report data:', error)
+      setLoadError(error instanceof Error ? error.message : 'Error al cargar reportes')
     } finally {
       setRefreshing(false)
     }
@@ -120,62 +79,50 @@ export default function ReportesPage() {
       entities,
       (item) => item.updated_at || item.created_at,
       period.month,
-      period.year
+      period.year,
     )
   }, [entities, period.month, period.year])
 
   const filteredDocuments = useMemo(() => {
-    return filterByMonthYear(
-      documents,
-      (doc) => doc.created_at,
-      period.month,
-      period.year
-    )
+    return filterByMonthYear(documents, (document) => document.created_at, period.month, period.year)
   }, [documents, period.month, period.year])
 
   const periodLabel = getMonthLabel(period.month, period.year)
 
   const stats = useMemo(() => {
-    const totalEntities = filteredEntities.length
-    const activeEntities = filteredEntities.filter((item) => item.is_active !== false).length
-    const inactiveEntities = totalEntities - activeEntities
-    const approvedDocuments = filteredDocuments.filter((doc) => doc.validation_status === 'approved' || doc.validation_status === 'validated').length
-    const pendingDocuments = filteredDocuments.filter((doc) => doc.validation_status === 'pending').length
-    const rejectedDocuments = filteredDocuments.filter((doc) => doc.validation_status === 'rejected').length
-    const expiringSoon = filteredDocuments.filter((doc) => {
-      if (!doc.expiration_date) return false
-      const exp = new Date(doc.expiration_date)
-      const now = new Date()
-      const days = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    const approved = filteredDocuments.filter((document) => document.validation_status === 'approved' || document.validation_status === 'validated').length
+    const pending = filteredDocuments.filter((document) => document.validation_status === 'pending').length
+    const rejected = filteredDocuments.filter((document) => document.validation_status === 'rejected').length
+    const expired = filteredDocuments.filter((document) => {
+      if (!document.expiration_date) return false
+      return new Date(document.expiration_date).getTime() < Date.now()
+    }).length
+    const expiring = filteredDocuments.filter((document) => {
+      if (!document.expiration_date) return false
+      const expiration = new Date(document.expiration_date)
+      const days = Math.ceil((expiration.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
       return days >= 0 && days <= 30
     }).length
     const oldestPending = filteredDocuments
-      .filter((doc) => doc.validation_status === 'pending')
+      .filter((document) => document.validation_status === 'pending')
       .sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime())[0]
 
     return {
       total: filteredDocuments.length,
-      activos: activeEntities,
-      inactivos: inactiveEntities,
-      conDocumentos: approvedDocuments,
-      sinDocumentos: Math.max(filteredDocuments.length - approvedDocuments, 0),
-      approved: approvedDocuments,
-      pending: pendingDocuments,
-      rejected: rejectedDocuments,
-      expiring: expiringSoon,
+      approved,
+      pending,
+      rejected,
+      expired,
+      expiring,
+      entities: filteredEntities.length,
       oldestPending,
     }
-  }, [filteredEntities, filteredDocuments])
+  }, [filteredDocuments, filteredEntities])
 
   const completionRate = stats.total > 0 ? Math.round((stats.approved / stats.total) * 100) : 0
-  const riskRate = stats.total > 0 ? Math.round(((stats.sinDocumentos + stats.expiring) / stats.total) * 100) : 0
-  const expiredCount = filteredDocuments.filter((doc) => {
-    if (!doc.expiration_date) return false
-    return new Date(doc.expiration_date).getTime() < Date.now()
-  }).length
 
   const handleAnalysisRequest = async (type: string) => {
-    setLoading(true)
+    setAnalysisLoading(true)
     try {
       const response = await fetch('/api/reports/analyze', {
         method: 'POST',
@@ -183,370 +130,163 @@ export default function ReportesPage() {
         body: JSON.stringify({
           data: [
             ...filteredEntities,
-            ...filteredDocuments.map((doc) => ({
-              ...doc,
-              type: 'document',
-            })),
+            ...filteredDocuments.map((document) => ({ ...document, type: 'document' })),
           ],
-          stats: {
-            ...stats,
-            period: period,
-          },
+          stats: { ...stats, period },
           periodLabel,
           reportType: type,
         }),
       })
 
-      if (!response.ok) throw new Error('Failed to generate analysis')
+      if (!response.ok) throw new Error('No fue posible generar el análisis')
       const result = await response.json()
-      setAnalysis((prev) => ({ ...prev, [type]: result.analysis }))
+      setAnalysis((previous) => ({ ...previous, [type]: result.analysis }))
     } catch (error) {
       console.error('[v0] Error generating analysis:', error)
     } finally {
-      setLoading(false)
+      setAnalysisLoading(false)
     }
-  }
-
-  const reportTypes = [
-    {
-      id: 'summary',
-      label: 'Resumen Ejecutivo',
-      icon: FileText,
-      description: 'Visión general del período seleccionado',
-      color: 'from-blue-600/20 to-blue-500/10',
-      borderColor: 'border-blue-500/30',
-      textColor: 'text-blue-400',
-    },
-    {
-      id: 'compliance',
-      label: 'Cumplimiento',
-      icon: CheckCircle2,
-      description: 'Análisis detallado del cumplimiento del período',
-      color: 'from-green-600/20 to-green-500/10',
-      borderColor: 'border-green-500/30',
-      textColor: 'text-green-400',
-    },
-    {
-      id: 'risk',
-      label: 'Análisis de Riesgos',
-      icon: AlertCircle,
-      description: 'Riesgos visibles dentro del mes/año filtrado',
-      color: 'from-orange-600/20 to-orange-500/10',
-      borderColor: 'border-orange-500/30',
-      textColor: 'text-orange-400',
-    },
-    {
-      id: 'alerts',
-      label: 'Alertas Críticas',
-      icon: TrendingUp,
-      description: 'Alertas operacionales del período',
-      color: 'from-red-600/20 to-red-500/10',
-      borderColor: 'border-red-500/30',
-      textColor: 'text-red-400',
-    },
-  ]
-
-  if (!isAuthorized) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 p-4">
-        <Card className="w-full max-w-md shadow-2xl border-primary/20">
-          <CardHeader className="bg-gradient-to-r from-primary to-primary/80 text-white rounded-t-lg border-b-2 border-primary">
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <Lock className="h-6 w-6" />
-              Acceso Restringido
-            </CardTitle>
-            <CardDescription className="text-white/80">
-              Ingresa la clave para ver los reportes ejecutivos
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-8">
-            <div className="mb-4 rounded-md border border-cyan-500/30 bg-cyan-500/10 p-3 text-xs text-cyan-100">
-              Si ya iniciastes sesión como ejecutiva, este acceso debería desbloquearse automáticamente.
-            </div>
-            <form onSubmit={handleKeySubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="key-input" className="block text-sm font-medium text-gray-700">
-                  Clave de Acceso
-                </label>
-                <div className="relative">
-                  <Input
-                    id="key-input"
-                    type={showKey ? 'text' : 'password'}
-                    value={keyInput}
-                    onChange={(e) => setKeyInput(e.target.value)}
-                    placeholder="Ingresa la clave"
-                    className="pr-10 border-gray-300 focus:border-primary"
-                    autoFocus
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowKey(!showKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                  >
-                    {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {keyError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 font-medium">
-                  {keyError}
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                className="w-full bg-primary hover:bg-primary/90 text-white font-medium h-10"
-              >
-                Acceder
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    )
   }
 
   return (
     <div className="space-y-6">
-      <Card className="overflow-hidden border-slate-700/60 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
-        <CardContent className="p-6 md:p-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div className="space-y-4 max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-300">
-              Reportes ejecutivos mensuales
-            </div>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-3xl">
+          <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Lectura ejecutiva</p>
+          <h1 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--cf-text)] md:text-[28px]">Reportes</h1>
+          <p className="mt-2 text-sm leading-6 text-[var(--cf-text-secondary)]">
+            Resume evidencia del período, prioriza excepciones y genera análisis asistido por IA sobre la base operacional disponible.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => void loadData()}
+          disabled={refreshing}
+          className="h-10 gap-2 border-[var(--cf-border)] bg-transparent text-sm text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]"
+        >
+          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          Actualizar
+        </Button>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+        <DatePeriodFilter value={period} onChange={setPeriod} onClear={() => setPeriod({ month: ALL_VALUE, year: ALL_VALUE })} />
+        <div className="text-sm text-[var(--cf-text-muted)] lg:text-right">
+          Período: <span className="font-medium text-[var(--cf-text-secondary)]">{periodLabel}</span>
+        </div>
+      </div>
+
+      {loadError && (
+        <div className="rounded-[6px] border border-[#45242B] bg-[var(--cf-surface)] px-5 py-4 text-sm text-[#E17B8C]">{loadError}</div>
+      )}
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Metric label="Documentos" value={stats.total} note="base del período" />
+        <Metric label="Aprobados" value={stats.approved} note={`${completionRate}% de la base`} tone="success" />
+        <Metric label="Pendientes" value={stats.pending} note="requieren revisión" tone="warning" />
+        <Metric label="Vencidos / por vencer" value={stats.expired + stats.expiring} note={`${stats.expired} vencidos · ${stats.expiring} próximos`} tone="danger" />
+      </div>
+
+      <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
+        <CardContent className="p-4 sm:p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-white">Filtra por mes y año para ver la foto real del negocio</h2>
-              <p className="text-sm md:text-base text-slate-300 mt-2">
-                Usa un período puntual para comparar cumplimiento, riesgos y actividad operativa sin ruido de rangos fijos.
+              <div className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text)]">
+                <ShieldAlert className="h-4 w-4 text-[#E6A35A]" />
+                Siguiente mejor acción
+              </div>
+              <p className="mt-2 text-sm leading-6 text-[var(--cf-text-secondary)]">
+                {stats.expired > 0
+                  ? `${stats.expired} documentos vencidos requieren resolución prioritaria.`
+                  : stats.expiring > 0
+                    ? `${stats.expiring} documentos vencen dentro de 30 días.`
+                    : stats.pending > 0
+                      ? `${stats.pending} documentos esperan revisión humana.`
+                      : 'No se observan excepciones documentales prioritarias en el período.'}
               </p>
+              {stats.oldestPending && (
+                <p className="mt-1 text-xs text-[var(--cf-text-muted)]">
+                  Pendiente más antiguo: {stats.oldestPending.original_filename || stats.oldestPending.document_type || 'Documento'}
+                </p>
+              )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl">
-              <div className="min-h-[98px] rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-4">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500">Total filtrado</p>
-                <p className="mt-2 text-3xl font-bold text-white">{stats.total}</p>
-                <p className="mt-1 text-xs text-slate-400">Registros dentro del período</p>
-              </div>
-              <div className="min-h-[98px] rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-4">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-300/80">Cumplimiento</p>
-                <p className="mt-2 text-3xl font-bold text-emerald-200">{completionRate}%</p>
-                <p className="mt-1 text-xs text-emerald-200/70">{stats.approved} aprobados</p>
-              </div>
-              <div className="min-h-[98px] rounded-2xl border border-orange-500/20 bg-orange-500/10 px-4 py-4">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-orange-300/80">Riesgo activo</p>
-                <p className="mt-2 text-3xl font-bold text-orange-200">{riskRate}%</p>
-                <p className="mt-1 text-xs text-orange-200/70">{stats.sinDocumentos + stats.expiring} requieren atención</p>
-              </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3 w-full max-w-xl lg:max-w-none lg:w-auto">
-            <div className="min-h-[96px] rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-4">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Datos</p>
-              <p className="text-sm font-semibold text-white mt-1">Documentos y ejecutivas reales</p>
-            </div>
-            <div className="min-h-[96px] rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-4">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Enfoque</p>
-              <p className="text-sm font-semibold text-white mt-1">Acciones priorizadas</p>
-            </div>
-            <div className="min-h-[96px] rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-4">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Lectura</p>
-              <p className="text-sm font-semibold text-white mt-1">Cumplimiento y riesgo</p>
-            </div>
-            <div className="min-h-[96px] rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-4">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Filtro</p>
-              <p className="text-sm font-semibold text-white mt-1">Mes / año</p>
+
+            <div className="flex flex-wrap gap-2">
+              <ActionLink href="/dashboard/company/documentos/vencidos" label="Ver vencidos" />
+              <ActionLink href="/dashboard/company/documentos/renovar" label="Renovaciones" />
+              <ActionLink href="/dashboard/company/documentos/pendientes" label="Pendientes" primary />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <div className="flex flex-wrap gap-2">
-        <Link href="/dashboard/company/documentos/vencidos">
-          <Button variant="outline" size="sm" className="gap-2 border-red-500/30 text-red-300 hover:bg-red-500/10">
-            Ver vencidos
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </Link>
-        <Link href="/dashboard/company/documentos/renovar">
-          <Button variant="outline" size="sm" className="gap-2 border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/10">
-            Planificar renovaciones
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </Link>
-        <Link href="/dashboard/company/documentos/pendientes">
-          <Button variant="outline" size="sm" className="gap-2 border-blue-500/30 text-blue-300 hover:bg-blue-500/10">
-            Revisar pendientes
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </Link>
-      </div>
-
-      <HelpBox
-        title="Reportes y Análisis"
-        description="Genera reportes profesionales impulsados por IA. Obtén insights sobre cumplimiento, riesgos y alertas críticas."
-        variant="info"
-      />
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 rounded-2xl border border-slate-700 bg-slate-900/70 p-4">
-        <div className="rounded-xl border border-slate-700/80 bg-slate-950/50 px-3 py-3">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Periodo activo</p>
-          <p className="text-lg font-semibold text-white mt-1">{periodLabel}</p>
-        </div>
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-3">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-300/80">Cumplimiento</p>
-          <p className="text-lg font-semibold text-emerald-200 mt-1">{completionRate}%</p>
-        </div>
-        <div className="rounded-xl border border-orange-500/20 bg-orange-500/10 px-3 py-3">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-orange-300/80">Riesgo</p>
-          <p className="text-lg font-semibold text-orange-200 mt-1">{riskRate}%</p>
-        </div>
-      </div>
-
-      <Card className="border-slate-700/60 bg-slate-900/70 shadow-lg shadow-slate-950/10">
-        <CardContent className="p-4 md:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Estado actual</p>
-            <p className="text-lg font-semibold text-white">{periodLabel}</p>
-            <p className="text-sm text-slate-400">
-              {stats.total} documentos filtrados, {stats.expiring} por vencer y {stats.pending} pendientes.
+      <div className="grid gap-4 lg:grid-cols-[0.72fr_1.28fr]">
+        <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
+          <CardContent className="space-y-4 p-5">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">Contexto del reporte</p>
+              <p className="mt-2 text-lg font-semibold text-[var(--cf-text)]">{periodLabel}</p>
+            </div>
+            <div className="divide-y divide-[var(--cf-border)]">
+              <SummaryRow label="Entidades observadas" value={stats.entities} />
+              <SummaryRow label="Rechazados" value={stats.rejected} tone="danger" />
+              <SummaryRow label="Por vencer" value={stats.expiring} tone="warning" />
+              <SummaryRow label="Vencidos" value={stats.expired} tone="danger" />
+            </div>
+            <p className="text-xs leading-5 text-[var(--cf-text-muted)]">
+              Los análisis IA se generan con los datos filtrados en esta pantalla y deben interpretarse como apoyo a la revisión humana.
             </p>
-            <div className="mt-4 grid grid-cols-3 gap-3">
-              <div className="rounded-xl border border-slate-700 bg-slate-950/50 px-3 py-3">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Total</p>
-                <p className="text-2xl font-semibold text-white mt-1">{stats.total}</p>
-              </div>
-              <div className="rounded-xl border border-orange-500/20 bg-orange-500/10 px-3 py-3">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-orange-300/80">Por vencer</p>
-                <p className="text-2xl font-semibold text-orange-200 mt-1">{stats.expiring}</p>
-              </div>
-              <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-3">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-amber-300/80">Pendientes</p>
-                <p className="text-2xl font-semibold text-amber-200 mt-1">{stats.pending}</p>
-              </div>
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => void loadData()}
-            disabled={refreshing || loading}
-            className="gap-2 border-slate-600 text-slate-200 hover:bg-slate-800"
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            Actualizar datos
-          </Button>
-        </CardContent>
-      </Card>
-
-      <DatePeriodFilter value={period} onChange={setPeriod} onClear={() => setPeriod({ month: ALL_VALUE, year: ALL_VALUE })} />
-      <Card className="p-5 bg-slate-900/80 border-slate-700/50">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-orange-400" />
-              <p className="text-sm font-semibold text-white">Siguiente mejor acción</p>
-            </div>
-            <p className="text-sm text-slate-300">
-              {stats.expiring > 0
-                ? `Hay ${stats.expiring} documentos por vencer y ${stats.pending} pendientes de revisión.`
-                : `No hay vencimientos inmediatos; revisa los pendientes y el historial del período.`}
-            </p>
-            {stats.oldestPending && (
-              <Badge variant="outline" className="w-fit border-orange-500/30 text-orange-300 bg-orange-500/10">
-                Más antiguo pendiente: {stats.oldestPending.original_filename || stats.oldestPending.document_type || 'Documento'}
-              </Badge>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link href="/dashboard/company/documentos/vencidos">
-              <Button variant="outline" className="gap-2 border-red-500/30 text-red-300 hover:bg-red-500/10">
-                Ver vencidos
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
-            <Link href="/dashboard/company/documentos/renovar">
-              <Button variant="outline" className="gap-2 border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/10">
-                Planificar renovaciones
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
-            <Link href="/dashboard/company/documentos/pendientes">
-              <Button variant="outline" className="gap-2 border-blue-500/30 text-blue-300 hover:bg-blue-500/10">
-                Revisar pendientes
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        {reportTypes.map((type) => {
-          const Icon = type.icon
-          return (
-            <button
-              key={type.id}
-              onClick={() => handleAnalysisRequest(type.id)}
-              disabled={loading}
-              className={`p-4 rounded-lg border transition-all text-left group ${
-                loading ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.01]'
-              } ${type.borderColor} bg-gradient-to-br ${type.color}`}
-            >
-              <div className="flex items-start gap-3">
-                <Icon className={`w-5 h-5 mt-1 flex-shrink-0 ${type.textColor}`} />
-                <div>
-                  <p className="font-semibold text-sm text-white">{type.label}</p>
-                  <p className="text-xs text-slate-400 mt-1">{type.description}</p>
-                </div>
-              </div>
-            </button>
-          )
-        })}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <AIAnalysisPanel
-            analysis={analysis}
-            onAnalysisRequest={handleAnalysisRequest}
-            loading={loading}
-            hasData={filteredDocuments.length > 0 || filteredEntities.length > 0}
-          />
-        </div>
-
-        <Card className="p-6 bg-gradient-to-br from-slate-900/80 via-slate-900/50 to-slate-800/30 border-slate-700/50">
-          <h3 className="font-bold text-white mb-4 flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-orange-500" />
-            Tareas sugeridas
-          </h3>
-          <div className="space-y-3">
-            <div className="p-3 rounded-lg bg-slate-800/50 border border-slate-700/30">
-              <p className="text-xs text-slate-400">Revisar vencidos</p>
-              <p className="text-xl font-bold text-red-400 mt-1">{stats.expiring}</p>
-            </div>
-            <div className="p-3 rounded-lg bg-slate-800/50 border border-slate-700/30">
-              <p className="text-xs text-slate-400">Pendientes críticos</p>
-              <p className="text-xl font-bold text-blue-400 mt-1">{stats.pending}</p>
-            </div>
-            <div className="p-3 rounded-lg bg-slate-800/50 border border-slate-700/30">
-              <p className="text-xs text-slate-400">Documentos aprobados</p>
-              <p className="text-xl font-bold text-green-400 mt-1">{stats.approved}</p>
-            </div>
-            <div className="p-3 rounded-lg bg-slate-800/50 border border-slate-700/30">
-              <p className="text-xs text-slate-400">Ver historial</p>
-              <p className="text-xl font-bold text-slate-300 mt-1">{periodLabel}</p>
-            </div>
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full mt-4 border-orange-500/30 hover:border-orange-500/60 hover:bg-orange-500/10 text-slate-300 gap-2"
-          >
-            <Download className="w-3 h-3 mr-2" />
-            Descargar PDF
-          </Button>
+          </CardContent>
         </Card>
+
+        <AIAnalysisPanel
+          analysis={analysis}
+          onAnalysisRequest={handleAnalysisRequest}
+          loading={analysisLoading}
+          hasData={stats.total > 0 || stats.entities > 0}
+        />
       </div>
     </div>
+  )
+}
+
+function Metric({ label, value, note, tone }: { label: string; value: number; note: string; tone?: 'success' | 'warning' | 'danger' }) {
+  const dot = tone === 'success' ? 'bg-[#67C18D]' : tone === 'warning' ? 'bg-[#E6A35A]' : tone === 'danger' ? 'bg-[#E17B8C]' : 'bg-[var(--cf-text-muted)]'
+  return (
+    <div className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4">
+      <div className="flex items-center gap-2">
+        <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+        <p className="text-xs font-medium text-[var(--cf-text-muted)]">{label}</p>
+      </div>
+      <p className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{value}</p>
+      <p className="mt-1 text-xs text-[var(--cf-text-muted)]">{note}</p>
+    </div>
+  )
+}
+
+function SummaryRow({ label, value, tone }: { label: string; value: number; tone?: 'warning' | 'danger' }) {
+  const text = tone === 'warning' ? 'text-[#E6A35A]' : tone === 'danger' ? 'text-[#E17B8C]' : 'text-[var(--cf-text)]'
+  return (
+    <div className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+      <span className="text-sm text-[var(--cf-text-secondary)]">{label}</span>
+      <span className={`text-sm font-semibold tabular-nums ${text}`}>{value}</span>
+    </div>
+  )
+}
+
+function ActionLink({ href, label, primary = false }: { href: string; label: string; primary?: boolean }) {
+  return (
+    <Link href={href}>
+      <Button
+        variant={primary ? 'default' : 'outline'}
+        size="sm"
+        className={primary
+          ? 'h-9 gap-2 bg-[var(--cf-accent)] text-xs text-[var(--cf-text)] hover:bg-[var(--cf-accent-hover)]'
+          : 'h-9 gap-2 border-[var(--cf-border)] bg-transparent text-xs text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)] hover:text-[var(--cf-text)]'}
+      >
+        {label}
+        <ArrowRight className="h-3 w-3" />
+      </Button>
+    </Link>
   )
 }
