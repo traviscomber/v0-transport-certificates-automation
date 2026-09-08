@@ -2,20 +2,16 @@
 
 import { useState } from 'react'
 import useSWR from 'swr'
-import { Activity, Bot, CheckCircle2, Clock3, UploadCloud } from 'lucide-react'
+import { Bot, CheckCircle2, Clock3, FileText } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DatePeriodFilter } from '@/components/date-period-filter'
 import { ALL_VALUE, getMonthLabel, type DateFilterValue } from '@/lib/date-filters'
 
 interface ImpactSummary {
-  total_observed: number
-  subcontractor_documents: number
-  delegated_uploads: number
+  documents_registered: number
   ai_analyzed: number
   human_reviewed: number
   decisions_recorded: number
-  legacy_processed: number
-  processed_observed: number
   median_upload_to_ai_seconds: number | null
   ai_timing_samples: number
   period_month: string
@@ -24,11 +20,6 @@ interface ImpactSummary {
 
 interface ImpactResponse {
   summary?: ImpactSummary
-  methodology?: {
-    time_saved_hours: number | null
-    time_saved_status: string
-    note: string
-  }
   error?: string
 }
 
@@ -63,12 +54,6 @@ export default function OperationalImpactPage() {
 
   const summary = data?.summary
   const periodLabel = getMonthLabel(period.month, period.year)
-  const aiCoverage = summary?.subcontractor_documents
-    ? Math.round((summary.ai_analyzed / summary.subcontractor_documents) * 100)
-    : 0
-  const reviewCoverage = summary?.subcontractor_documents
-    ? Math.round((summary.human_reviewed / summary.subcontractor_documents) * 100)
-    : 0
 
   return (
     <div className="space-y-6">
@@ -81,7 +66,7 @@ export default function OperationalImpactPage() {
             Impacto Operacional
           </h1>
           <p className="mt-2 text-sm leading-6 text-[var(--cf-text-secondary)]">
-            Volumen real del flujo digital: el subcontratista carga, ChileFlota preanaliza y Labbé revisa la evidencia.
+            Sólo datos observados directamente en el flujo documental de subcontratistas.
           </p>
         </div>
         <div className="lg:min-w-[320px]">
@@ -99,25 +84,22 @@ export default function OperationalImpactPage() {
           <p className="mt-1 text-base font-semibold text-[var(--cf-text)]">{periodLabel}</p>
         </div>
         <p className="max-w-2xl text-sm text-[var(--cf-text-secondary)]">
-          No se muestran ahorros de horas estimados: ChileFlota todavía no dispone de una línea base observada de tiempo activo del proceso manual anterior.
+          Los valores provienen de registros existentes; no se estiman ahorros, productividad ni ROI.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
-              <UploadCloud className="h-4 w-4 text-[var(--cf-text-muted)]" />
-              Documentos recibidos
+              <FileText className="h-4 w-4 text-[var(--cf-text-muted)]" />
+              Documentos registrados
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">
-              {isLoading ? '—' : `${formatNumber(summary?.subcontractor_documents)}+`}
+              {isLoading ? '—' : formatNumber(summary?.documents_registered)}
             </div>
-            <p className="mt-1 text-xs text-[var(--cf-text-muted)]">
-              cargas del flujo de subcontratistas
-            </p>
           </CardContent>
         </Card>
 
@@ -125,14 +107,13 @@ export default function OperationalImpactPage() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
               <Bot className="h-4 w-4 text-[var(--cf-text-muted)]" />
-              Preanálisis IA
+              Analizados por IA
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">
               {isLoading ? '—' : formatNumber(summary?.ai_analyzed)}
             </div>
-            <p className="mt-1 text-xs text-[var(--cf-text-muted)]">{aiCoverage}% del flujo observado</p>
           </CardContent>
         </Card>
 
@@ -147,7 +128,20 @@ export default function OperationalImpactPage() {
             <div className="text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">
               {isLoading ? '—' : formatNumber(summary?.human_reviewed)}
             </div>
-            <p className="mt-1 text-xs text-[var(--cf-text-muted)]">{reviewCoverage}% con revisión humana registrada</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
+              <CheckCircle2 className="h-4 w-4 text-[var(--cf-text-muted)]" />
+              Decisiones registradas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">
+              {isLoading ? '—' : formatNumber(summary?.decisions_recorded)}
+            </div>
           </CardContent>
         </Card>
 
@@ -155,7 +149,7 @@ export default function OperationalImpactPage() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
               <Clock3 className="h-4 w-4 text-[#D9B65C]" />
-              Tiempo a preanálisis
+              Mediana carga → IA
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -163,37 +157,11 @@ export default function OperationalImpactPage() {
               {isLoading ? '—' : formatDuration(summary?.median_upload_to_ai_seconds)}
             </div>
             <p className="mt-1 text-xs text-[var(--cf-text-muted)]">
-              mediana real · {formatNumber(summary?.ai_timing_samples)} muestras
+              {formatNumber(summary?.ai_timing_samples)} registros con ambos timestamps
             </p>
           </CardContent>
         </Card>
       </div>
-
-      <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
-        <CardHeader className="border-b border-[var(--cf-border)]">
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-[var(--cf-text)]">
-            <Activity className="h-5 w-5 text-[var(--cf-text-muted)]" />
-            Flujo operacional observado
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 p-5 md:grid-cols-3">
-          <div>
-            <p className="text-xs uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">Carga delegada</p>
-            <p className="mt-2 text-2xl font-semibold text-[var(--cf-text)]">{formatNumber(summary?.delegated_uploads)}</p>
-            <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">documentos cargados sin ejecutiva registrada como uploader</p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">Decisiones registradas</p>
-            <p className="mt-2 text-2xl font-semibold text-[var(--cf-text)]">{formatNumber(summary?.decisions_recorded)}</p>
-            <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">aprobaciones o rechazos en el flujo de subcontratistas</p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">Ahorro de tiempo</p>
-            <p className="mt-2 text-2xl font-semibold text-[var(--cf-text)]">Por medir</p>
-            <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">requiere duración activa del proceso manual para calcular horas evitadas sin inventar supuestos</p>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }
