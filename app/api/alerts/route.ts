@@ -25,6 +25,9 @@ interface AlertLog {
   document_type?: string
   entity_name?: string
   metadata?: Record<string, unknown>
+  action_notes?: string | null
+  actioned_by?: string | null
+  actioned_at?: string | null
   created_at: string
 }
 
@@ -40,6 +43,9 @@ interface LegacyAlert {
   action_url?: string
   status?: string
   metadata?: Record<string, unknown>
+  action_notes?: string | null
+  actioned_by?: string | null
+  actioned_at?: string | null
   created_at: string
 }
 
@@ -179,6 +185,9 @@ export async function GET(request: NextRequest) {
         document_id: alert.document_id,
         document_type: alert.document_type,
         entity_name: alert.entity_name,
+        action_notes: alert.action_notes,
+        actioned_by: alert.actioned_by,
+        actioned_at: alert.actioned_at,
         metadata,
         created_at: alert.created_at,
         source: 'alerts_log',
@@ -203,6 +212,9 @@ export async function GET(request: NextRequest) {
             is_dismissed: alert.is_dismissed ?? false,
             action_url: alert.action_url,
             status: alert.status || 'pendiente',
+            action_notes: alert.action_notes,
+            actioned_by: alert.actioned_by,
+            actioned_at: alert.actioned_at,
             transportista_id: transportistaId,
             transportista_nombre: metadata.transportista_nombre,
             transportista_rut: metadata.transportista_rut,
