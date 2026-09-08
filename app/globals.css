@@ -4,46 +4,48 @@
   --font-sans: var(--font-montserrat);
   --font-mono: var(--font-jetbrains);
 
-  --color-background: #111214;
-  --color-foreground: #f2f0eb;
-  --color-card: #181a1d;
-  --color-card-foreground: #f2f0eb;
-  --color-popover: #181a1d;
-  --color-popover-foreground: #f2f0eb;
-  --color-primary: #742d3d;
-  --color-primary-foreground: #f2f0eb;
-  --color-secondary: #202226;
-  --color-secondary-foreground: #f2f0eb;
-  --color-muted: #202226;
-  --color-muted-foreground: #a9adb3;
-  --color-accent: #303238;
-  --color-accent-foreground: #f2f0eb;
-  --color-destructive: #994550;
-  --color-destructive-foreground: #f2f0eb;
-  --color-border: #303238;
-  --color-input: #303238;
-  --color-ring: #87364a;
-  --color-success: #39765b;
-  --color-success-foreground: #f2f0eb;
-  --color-warning: #a06e32;
-  --color-warning-foreground: #f2f0eb;
+  --color-background: #171719;
+  --color-foreground: #E7E7E9;
+  --color-card: #232326;
+  --color-card-foreground: #E7E7E9;
+  --color-popover: #232326;
+  --color-popover-foreground: #E7E7E9;
+  --color-primary: #873146;
+  --color-primary-foreground: #E7E7E9;
+  --color-secondary: #2A2A2E;
+  --color-secondary-foreground: #E7E7E9;
+  --color-muted: #2A2A2E;
+  --color-muted-foreground: #B1B1B6;
+  --color-accent: #36363B;
+  --color-accent-foreground: #E7E7E9;
+  --color-destructive: #E17B8C;
+  --color-destructive-foreground: #E7E7E9;
+  --color-border: #36363B;
+  --color-input: #36363B;
+  --color-ring: #9B3A52;
+  --color-success: #67C18D;
+  --color-success-foreground: #E7E7E9;
+  --color-warning: #D9B65C;
+  --color-warning-foreground: #E7E7E9;
 
   --radius: 0.3125rem;
 }
 
 :root {
-  --cf-bg: #111214;
-  --cf-surface: #181a1d;
-  --cf-surface-2: #202226;
-  --cf-text: #f2f0eb;
-  --cf-text-muted: #a9adb3;
-  --cf-line: #303238;
-  --cf-burgundy: #742d3d;
-  --cf-burgundy-hover: #87364a;
-  --cf-success: #39765b;
-  --cf-warning: #a06e32;
-  --cf-danger: #994550;
-  --cf-radius: 5px;
+  --cf-bg: #171719;
+  --cf-sidebar: #1D1D1F;
+  --cf-surface: #232326;
+  --cf-surface-2: #2A2A2E;
+  --cf-text: #E7E7E9;
+  --cf-text-secondary: #B1B1B6;
+  --cf-text-muted: #7D7D84;
+  --cf-line: #36363B;
+  --cf-burgundy: #873146;
+  --cf-burgundy-hover: #9B3A52;
+  --cf-success: #67C18D;
+  --cf-warning: #D9B65C;
+  --cf-danger: #E17B8C;
+  --cf-radius: 6px;
 }
 
 @layer base {
@@ -246,3 +248,19 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* Compatibility layer: legacy dashboard pages inherit the approved system while
+   they are progressively converted from one-off Tailwind colour literals. */
+[data-company-main] [class*="bg-white"],
+[data-company-main] [class*="bg-gray-"],
+[data-company-main] [class*="bg-slate-"] { background-color: var(--cf-surface) !important; }
+[data-company-main] [class*="text-white"],
+[data-company-main] [class*="text-gray-7"],
+[data-company-main] [class*="text-gray-8"],
+[data-company-main] [class*="text-slate-1"] { color: var(--cf-text) !important; }
+[data-company-main] [class*="text-gray-"],
+[data-company-main] [class*="text-slate-"],
+[data-company-main] [class*="placeholder:text-"] { color: var(--cf-text-secondary) !important; }
+[data-company-main] [class*="border-gray-"],
+[data-company-main] [class*="border-slate-"] { border-color: var(--cf-line) !important; }
