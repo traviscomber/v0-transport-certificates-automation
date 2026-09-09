@@ -1,0 +1,34 @@
+name: Intelligence Core Safety
+
+on:
+  pull_request:
+    paths:
+      - 'app/api/company/intelligence/**'
+      - 'lib/intelligence-core.ts'
+      - 'lib/intelligence-tools.ts'
+      - '__tests__/lib/intelligence-core.test.ts'
+      - '.github/workflows/intelligence-core-safety.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'app/api/company/intelligence/**'
+      - 'lib/intelligence-core.ts'
+      - 'lib/intelligence-tools.ts'
+      - '__tests__/lib/intelligence-core.test.ts'
+      - '.github/workflows/intelligence-core-safety.yml'
+
+jobs:
+  intelligence-core-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm jest __tests__/lib/intelligence-core.test.ts --runInBand
