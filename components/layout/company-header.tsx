@@ -41,8 +41,9 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    if (searchValue.trim()) {
-      router.push(`/dashboard/company/documentos?search=${encodeURIComponent(searchValue)}`)
+    const query = searchValue.trim()
+    if (query) {
+      router.push(`/dashboard/company/documentos/aprobados?search=${encodeURIComponent(query)}`)
     }
   }
 
@@ -60,7 +61,7 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
           <Menu className="h-5 w-5" />
         </Button>
 
-        <div className="hidden min-w-0 flex-shrink-0 sm:block md:hidden lg:block">
+        <div className="hidden min-w-0 flex-shrink-0 sm:block md:hidden">
           <p className="truncate text-sm font-medium text-[var(--cf-text)]">ChileFlota</p>
           <p className="text-xs text-[var(--cf-text-muted)]">Transportes Labbé</p>
         </div>
@@ -69,7 +70,7 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--cf-text-muted)]" />
             <Input
-              type="text"
+              type="search"
               aria-label="Buscar documentos"
               placeholder="Buscar documentos, RUT o empresa..."
               value={searchValue}
