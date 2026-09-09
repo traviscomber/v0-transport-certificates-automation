@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Search, LogOut, User, ChevronDown, Settings, Menu, FileText, Building2 } from 'lucide-react'
+import { Search, LogOut, User, ChevronDown, Settings, Menu, FileText, Building2, Sparkles, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useRouter } from 'next/navigation'
@@ -21,6 +21,46 @@ type SearchSuggestion = {
   href: string
 }
 
+type IntelligenceAnswer = {
+  status: string
+  summary: string
+  facts?: Record<string, unknown>
+  interpretation?: string
+  unknowns?: string[]
+  nextActions?: Array<{ label: string; href: string }>
+}
+
+type IntelligenceResponse = {
+  mode?: 'fast_path' | 'operational_agent'
+  intent?: string
+  answer?: IntelligenceAnswer
+  evidence?: unknown[]
+  candidates?: Array<{ id: string; rut: string | null; razon_social: string | null; nombre_fantasia: string | null }>
+}
+
+const OPERATIONAL_PREFIXES = [
+  'que ', 'qué ', 'cual ', 'cuál ', 'como ', 'cómo ', 'por que ', 'por qué ', 'quien ', 'quién ', 'dime ', 'muestrame ', 'muéstrame ',
+]
+
+const OPERATIONAL_TERMS = [
+  'cumplimiento', 'compliance', 'riesgo', 'puede operar', 'puede trabajar', 'documentos de ', 'documentos del ', 'documentos para ',
+  'pendientes de ', 'rechazados de ', 'aprobados de ',
+]
+
+function isOperationalQuestion(raw: string) {
+  const query = raw.trim().toLowerCase()
+  if (query.length < 2) return false
+  return OPERATIONAL_PREFIXES.some((prefix) => query.startsWith(prefix)) || OPERATIONAL_TERMS.some((term) => query.includes(term))
+}
+
+function formatFacts(facts?: Record<string, unknown>) {
+  if (!facts) return []
+  return Object.entries(facts)
+    .filter(([, value]) => typeof value === 'number' || typeof value === 'string')
+    .slice(0, 4)
+    .map(([key, value]) => ({ key, value: String(value) }))
+}
+
 export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
   const router = useRouter()
   const { profile } = useUserProfile()
@@ -31,6 +71,8 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
   const [activeSuggestion, setActiveSuggestion] = useState(-1)
+  const [intelligenceLoading, setIntelligenceLoading] = useState(false)
+  const [intelligenceResult, setIntelligenceResult] = useState<IntelligenceResponse | null>(null)
   const [profileOpen, setProfileOpen] = useState(false)
 
   useEffect(() => {
@@ -58,10 +100,13 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
 
   useEffect(() => {
     const query = searchValue.trim()
-    if (query.length < 2) {
+    setIntelligenceResult(null)
+
+    if (query.length < 2 || isOperationalQuestion(query)) {
       setSuggestions([])
       setSearchLoading(false)
       setActiveSuggestion(-1)
+      if (query.length >= 2 && isOperationalQuestion(query)) setSearchOpen(true)
       return
     }
 
@@ -107,10 +152,41 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
     setSearchValue(suggestion.value)
     setSearchOpen(false)
     setActiveSuggestion(-1)
+    setIntelligenceResult(null)
     router.push(suggestion.href)
   }
 
-  const handleSearch = (e: React.FormEvent) => {
+  const runIntelligenceQuery = async (query: string) => {
+    setIntelligenceLoading(true)
+    setSuggestions([])
+    setActiveSuggestion(-1)
+    setSearchOpen(true)
+    try {
+      const response = await fetch('/api/company/intelligence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+        cache: 'no-store',
+      })
+      if (!response.ok) throw new Error(`Intelligence Core ${response.status}`)
+      const data = await response.json()
+      setIntelligenceResult(data)
+    } catch (error) {
+      console.error('Intelligence Core search error:', error)
+      setIntelligenceResult({
+        answer: {
+          status: 'error',
+          summary: 'No se pudo resolver esta consulta operacional en este momento.',
+          unknowns: ['La búsqueda exacta sigue disponible escribiendo RUT, empresa o documento.'],
+          nextActions: [],
+        },
+      })
+    } finally {
+      setIntelligenceLoading(false)
+    }
+  }
+
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
     if (activeSuggestion >= 0 && suggestions[activeSuggestion]) {
       navigateToSuggestion(suggestions[activeSuggestion])
@@ -118,15 +194,24 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
     }
 
     const query = searchValue.trim()
-    if (query) {
-      setSearchOpen(false)
-      router.push(`/dashboard/company/documentos/aprobados?search=${encodeURIComponent(query)}`)
+    if (!query) return
+
+    if (isOperationalQuestion(query)) {
+      await runIntelligenceQuery(query)
+      return
     }
+
+    setSearchOpen(false)
+    setIntelligenceResult(null)
+    router.push(`/dashboard/company/documentos/aprobados?search=${encodeURIComponent(query)}`)
   }
 
   const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (!searchOpen || suggestions.length === 0) {
-      if (event.key === 'Escape') setSearchOpen(false)
+      if (event.key === 'Escape') {
+        setSearchOpen(false)
+        setIntelligenceResult(null)
+      }
       return
     }
 
@@ -139,8 +224,13 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
     } else if (event.key === 'Escape') {
       setSearchOpen(false)
       setActiveSuggestion(-1)
+      setIntelligenceResult(null)
     }
   }
+
+  const operationalQuestion = isOperationalQuestion(searchValue)
+  const answer = intelligenceResult?.answer
+  const facts = formatFacts(answer?.facts)
 
   return (
     <header className="sticky top-0 z-40 h-14 border-b border-[var(--cf-line)] bg-[var(--cf-sidebar)] text-[var(--cf-text)] sm:h-16">
@@ -166,10 +256,10 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
             <Search className="absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-[var(--cf-text-muted)]" />
             <Input
               type="search"
-              aria-label="Buscar documentos"
+              aria-label="Buscar o consultar ChileFlota"
               aria-autocomplete="list"
               aria-expanded={searchOpen}
-              placeholder="Buscar documentos, RUT o empresa..."
+              placeholder="Buscar documentos, RUT, empresa o preguntar..."
               value={searchValue}
               onFocus={() => searchValue.trim().length >= 2 && setSearchOpen(true)}
               onChange={(e) => setSearchValue(e.target.value)}
@@ -182,7 +272,58 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
                 role="listbox"
                 className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-[6px] border border-[var(--cf-line)] bg-[var(--cf-sidebar)] shadow-xl shadow-black/25"
               >
-                {searchLoading && suggestions.length === 0 ? (
+                {operationalQuestion ? (
+                  <div className="p-2">
+                    {intelligenceLoading ? (
+                      <div className="flex items-center gap-2 px-2 py-3 text-xs text-[var(--cf-text-muted)]">
+                        <Sparkles className="h-4 w-4" />
+                        Consultando evidencia operacional…
+                      </div>
+                    ) : answer ? (
+                      <div className="px-2 py-2">
+                        <div className="flex items-start gap-2">
+                          <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--cf-burgundy-hover)]" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm leading-5 text-[var(--cf-text)]">{answer.summary}</p>
+                            {answer.interpretation && (
+                              <p className="mt-1 text-xs leading-4 text-[var(--cf-text-secondary)]">{answer.interpretation}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {facts.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 border-t border-[var(--cf-line)] pt-2">
+                            {facts.map((fact) => (
+                              <span key={fact.key} className="text-xs text-[var(--cf-text-muted)]">
+                                {fact.key}: <span className="text-[var(--cf-text-secondary)]">{fact.value}</span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {answer.unknowns?.[0] && (
+                          <p className="mt-2 text-xs leading-4 text-[var(--cf-text-muted)]">{answer.unknowns[0]}</p>
+                        )}
+
+                        {answer.nextActions?.[0] && (
+                          <button
+                            type="button"
+                            onClick={() => router.push(answer.nextActions![0].href)}
+                            className="mt-2 flex w-full items-center justify-between rounded-[5px] border border-[var(--cf-line)] px-2.5 py-2 text-left text-xs text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)]"
+                          >
+                            <span>{answer.nextActions[0].label}</span>
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 px-2 py-3 text-xs text-[var(--cf-text-muted)]">
+                        <Sparkles className="h-4 w-4" />
+                        Presiona Enter para consultar la evidencia operacional.
+                      </div>
+                    )}
+                  </div>
+                ) : searchLoading && suggestions.length === 0 ? (
                   <div className="px-3 py-3 text-xs text-[var(--cf-text-muted)]">Buscando coincidencias…</div>
                 ) : suggestions.length > 0 ? (
                   <div className="py-1.5">
