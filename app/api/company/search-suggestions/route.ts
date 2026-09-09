@@ -22,8 +22,38 @@ type SearchSuggestion = {
   href: string
 }
 
+type CompanyRow = {
+  id: string
+  rut: string | null
+  razon_social: string | null
+  nombre_fantasia: string | null
+}
+
 function sanitize(raw: string) {
   return raw.trim().replace(/[%_]/g, '').replace(/\s+/g, ' ').slice(0, 80)
+}
+
+function normalizeText(value: string | null | undefined) {
+  return (value || '').trim().toLowerCase().replace(/\s+/g, ' ')
+}
+
+function normalizeRut(value: string | null | undefined) {
+  return (value || '').toLowerCase().replace(/[^0-9k]/g, '')
+}
+
+function companyRank(company: CompanyRow, query: string) {
+  const normalizedQuery = normalizeText(query)
+  const normalizedQueryRut = normalizeRut(query)
+  const rut = normalizeRut(company.rut)
+  const legalName = normalizeText(company.razon_social)
+  const fantasyName = normalizeText(company.nombre_fantasia)
+
+  if (normalizedQueryRut.length >= 7 && rut && rut === normalizedQueryRut) return 0
+  if (legalName && legalName === normalizedQuery) return 1
+  if (fantasyName && fantasyName === normalizedQuery) return 1
+  if (normalizedQueryRut && rut.startsWith(normalizedQueryRut)) return 2
+  if (legalName.startsWith(normalizedQuery) || fantasyName.startsWith(normalizedQuery)) return 2
+  return 3
 }
 
 function toHref(value: string) {
@@ -89,18 +119,31 @@ export async function GET(request: NextRequest) {
 
     const suggestions: SearchSuggestion[] = []
     const seen = new Set<string>()
+    const normalizedQueryRut = normalizeRut(query)
 
     const companies = [
-      ...(companyByName.data || []),
-      ...(companyByRut.data || []),
-      ...(companyByFantasy.data || []),
+      ...((companyByName.data || []) as CompanyRow[]),
+      ...((companyByRut.data || []) as CompanyRow[]),
+      ...((companyByFantasy.data || []) as CompanyRow[]),
     ]
+      .filter((company, index, rows) => rows.findIndex((row) => row.id === company.id) === index)
+      .sort((a, b) => {
+        const rankDiff = companyRank(a, query) - companyRank(b, query)
+        if (rankDiff !== 0) return rankDiff
+        return (a.razon_social || a.nombre_fantasia || a.rut || '').localeCompare(
+          b.razon_social || b.nombre_fantasia || b.rut || '',
+          'es',
+        )
+      })
 
     for (const company of companies) {
       if (seen.has(`company:${company.id}`)) continue
       seen.add(`company:${company.id}`)
       const label = company.razon_social || company.nombre_fantasia || company.rut || 'Empresa'
-      const value = company.razon_social || company.nombre_fantasia || company.rut || query
+      const exactRut = normalizedQueryRut.length >= 7 && normalizeRut(company.rut) === normalizedQueryRut
+      const value = exactRut
+        ? company.rut || query
+        : company.razon_social || company.nombre_fantasia || company.rut || query
       suggestions.push({
         id: `company:${company.id}`,
         type: 'company',
