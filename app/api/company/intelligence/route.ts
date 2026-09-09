@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAuth, type UserRole } from '@/lib/auth-middleware'
-import { classifyIntelligenceQuery } from '@/lib/intelligence-core'
+import { classifyIntelligenceQuery, extractCompanyQuery } from '@/lib/intelligence-core'
 import {
   getCompanyCompliance,
   getCompanyDocuments,
@@ -13,17 +13,8 @@ import {
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-const requestSchema = z.object({
-  query: z.string().trim().min(2).max(160),
-})
-
-const ALLOWED_ROLES = new Set<UserRole>([
-  'super_admin',
-  'admin',
-  'administrador',
-  'ejecutiva',
-  'prevencionista',
-])
+const requestSchema = z.object({ query: z.string().trim().min(2).max(160) })
+const ALLOWED_ROLES = new Set<UserRole>(['super_admin', 'admin', 'administrador', 'ejecutiva', 'prevencionista'])
 
 function companyLabel(company: CompanySearchResult) {
   return company.razon_social || company.nombre_fantasia || company.rut || 'Empresa'
@@ -53,25 +44,17 @@ function companyEvidence(company: CompanySearchResult) {
 export async function POST(request: NextRequest) {
   try {
     const auth = await verifyAuth(request)
-    if (!auth.user) {
-      return NextResponse.json({ error: auth.error || 'No autenticado' }, { status: 401 })
-    }
-
+    if (!auth.user) return NextResponse.json({ error: auth.error || 'No autenticado' }, { status: 401 })
     if (!ALLOWED_ROLES.has(auth.user.role)) {
       return NextResponse.json({ error: 'No autorizado para Intelligence Core' }, { status: 403 })
     }
 
     const parsed = requestSchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'Consulta inválida', details: parsed.error.flatten() },
-        { status: 400 },
-      )
+      return NextResponse.json({ error: 'Consulta inválida', details: parsed.error.flatten() }, { status: 400 })
     }
 
     const route = classifyIntelligenceQuery(parsed.data.query)
-    const supabase = createAdminClient()
-
     if (route.intent === 'unsupported') {
       return NextResponse.json({
         ...baseResponse(route),
@@ -85,11 +68,27 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    const candidates = await searchCompany(supabase, route.normalizedQuery)
+    const entityQuery = extractCompanyQuery(route)
+    if (!entityQuery) {
+      return NextResponse.json({
+        ...baseResponse(route),
+        answer: {
+          status: 'needs_entity',
+          summary: 'Indica una empresa o RUT de forma explícita para analizar evidencia operacional.',
+          unknowns: ['No pude separar de forma segura la intención y la entidad de la consulta.'],
+          nextActions: [{ label: 'Abrir Subcontratistas', href: '/dashboard/company/subcontratistas' }],
+        },
+        evidence: [],
+      })
+    }
+
+    const supabase = createAdminClient()
+    const candidates = await searchCompany(supabase, entityQuery)
 
     if (candidates.length === 0) {
       return NextResponse.json({
         ...baseResponse(route),
+        entityQuery,
         answer: {
           status: 'no_data',
           summary: 'No encontré una empresa que coincida con la consulta.',
@@ -103,6 +102,7 @@ export async function POST(request: NextRequest) {
     if (candidates.length > 1) {
       return NextResponse.json({
         ...baseResponse(route),
+        entityQuery,
         answer: {
           status: 'ambiguous_entity',
           summary: 'La consulta coincide con más de una empresa. Selecciona la entidad correcta antes de analizar evidencia operacional.',
@@ -115,10 +115,10 @@ export async function POST(request: NextRequest) {
     }
 
     const company = candidates[0]
-
     if (route.intent === 'entity_search') {
       return NextResponse.json({
         ...baseResponse(route),
+        entityQuery,
         answer: {
           status: 'resolved',
           summary: `${companyLabel(company)}${company.rut ? ` · ${company.rut}` : ''}`,
@@ -137,9 +137,9 @@ export async function POST(request: NextRequest) {
         acc[status] = (acc[status] || 0) + 1
         return acc
       }, {})
-
       return NextResponse.json({
         ...baseResponse(route),
+        entityQuery,
         answer: {
           status: documents.length > 0 ? 'resolved' : 'no_evidence',
           summary: `${companyLabel(company)} tiene ${documents.length} documentos actuales observados en la capa de subcontratistas.`,
@@ -151,13 +151,7 @@ export async function POST(request: NextRequest) {
         documents,
         evidence: [
           companyEvidence(company),
-          {
-            kind: 'document_set',
-            source: 'subcontractor_documents',
-            entityId: company.id,
-            currentOnly: true,
-            count: documents.length,
-          },
+          { kind: 'document_set', source: 'subcontractor_documents', entityId: company.id, currentOnly: true, count: documents.length },
         ],
       })
     }
@@ -180,6 +174,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       ...baseResponse(route),
+      entityQuery,
       answer: {
         status: compliance.status,
         summary: `${companyLabel(company)}: ${summaryByStatus[compliance.status]}`,
@@ -192,14 +187,7 @@ export async function POST(request: NextRequest) {
       compliance,
       evidence: [
         companyEvidence(company),
-        {
-          kind: 'compliance_observation',
-          source: 'subcontractor_documents',
-          entityId: company.id,
-          scope: compliance.scope,
-          currentOnly: true,
-          counts: compliance.counts,
-        },
+        { kind: 'compliance_observation', source: 'subcontractor_documents', entityId: company.id, scope: compliance.scope, currentOnly: true, counts: compliance.counts },
       ],
     })
   } catch (error) {
