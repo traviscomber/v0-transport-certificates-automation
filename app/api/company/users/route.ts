@@ -5,27 +5,52 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
-// GET - List all users (company_id column doesn't exist in profiles table)
-export async function GET(request: NextRequest) {
-  try {
-    const adminClient = createAdminClient()
+async function resolveInternalLabbeUser() {
+  const cookieStore = await cookies()
+  const token = cookieStore.get('supabase_token')?.value
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    console.log('[v0] Fetching all users from profiles')
-    
-    // Get all users - use admin client to bypass RLS and ensure fresh data
+  if (!token || !supabaseUrl || !supabaseAnonKey) return null
+
+  const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+    cache: 'no-store',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      apikey: supabaseAnonKey,
+    },
+  })
+
+  if (!response.ok) return null
+
+  const user = await response.json()
+  const email = String(user?.email || '').trim().toLowerCase()
+  if (!email.endsWith('@labbe.cl')) return null
+
+  return { id: String(user.id), email }
+}
+
+// GET - Read-only internal Labbe directory.
+export async function GET() {
+  try {
+    const actor = await resolveInternalLabbeUser()
+    if (!actor) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const adminClient = createAdminClient()
     const { data: users, error } = await adminClient
       .from('profiles')
       .select('id, email, full_name, role, phone, is_active, created_at')
+      .eq('is_active', true)
+      .ilike('email', '%@labbe.cl')
       .order('full_name', { ascending: true })
 
     if (error) {
-      console.error('[v0] Database error:', error)
+      console.error('[company-users] Database error:', error)
       throw error
     }
 
-    console.log('[v0] Users fetched:', users?.length || 0)
-
-    // Return with no-cache headers to ensure fresh data
     return new NextResponse(JSON.stringify(users || []), {
       status: 200,
       headers: {
@@ -34,9 +59,9 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('[v0] Error fetching users:', error)
+    console.error('[company-users] Error fetching users:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Error fetching users' },
+      { error: 'Error fetching users' },
       { status: 500 }
     )
   }
