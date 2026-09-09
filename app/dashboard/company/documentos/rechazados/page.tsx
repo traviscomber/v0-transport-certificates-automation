@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { ArrowLeft, Loader2, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
+import { ArrowLeft, Loader2, RefreshCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { RejectedDocumentsList } from '@/components/rejected-documents-list'
 
 export default function RechazadosPage() {
@@ -27,8 +27,6 @@ export default function RechazadosPage() {
     }
 
     fetchData()
-
-    return () => {}
   }, [])
 
   const handleRefresh = async () => {
@@ -48,10 +46,10 @@ export default function RechazadosPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 text-red-500 animate-spin" />
-          <p className="text-slate-400">Cargando documentos...</p>
+          <Loader2 className="h-7 w-7 animate-spin text-[var(--cf-accent)]" />
+          <p className="text-sm text-[var(--cf-text-muted)]">Cargando documentos rechazados...</p>
         </div>
       </div>
     )
@@ -60,36 +58,46 @@ export default function RechazadosPage() {
   const totalRejected = (allData?.conductorDocs?.length || 0) + (allData?.subDocs?.length || 0)
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <div className="space-y-5">
+      <header className="flex flex-col gap-3 border-b border-[var(--cf-line)] pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
           <Link href="/dashboard/company/documentos">
-            <Button variant="ghost" size="sm" className="text-slate-400 hover:text-slate-200">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
+            <Button
+              variant="ghost"
+              size="sm"
+              className="-ml-2 mb-2 h-8 rounded-[5px] px-2 text-xs text-[var(--cf-text-muted)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)]"
+            >
+              <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+              Documentos
             </Button>
           </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-100">Documentos Rechazados</h1>
-            <p className="text-sm text-slate-400">
-              {totalRejected} documentos para revisar
-            </p>
-          </div>
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Requieren corrección</p>
+          <h1 className="mt-2 text-2xl font-medium tracking-tight text-[var(--cf-text)]">Documentos Rechazados</h1>
+          <p className="mt-2 text-sm text-[var(--cf-text-muted)]">
+            {totalRejected.toLocaleString('es-CL')} documentos requieren corrección o nueva evidencia.
+          </p>
         </div>
 
-        <Button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="bg-red-600 hover:bg-red-700 text-white"
-          size="sm"
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-          Actualizar
-        </Button>
-      </div>
+        <div className="flex items-center gap-2">
+          <div className="rounded-[5px] border border-[var(--cf-line)] bg-[var(--cf-surface)] px-3 py-2 text-right">
+            <p className="text-lg font-medium tabular-nums text-[var(--cf-danger)]">{totalRejected.toLocaleString('es-CL')}</p>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">Rechazados actuales</p>
+          </div>
+          <Button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            size="sm"
+            variant="outline"
+            className="h-9 rounded-[5px] border-[var(--cf-line)] bg-transparent px-3 text-xs text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-2)] hover:text-[var(--cf-text)]"
+          >
+            <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            Actualizar
+          </Button>
+        </div>
+      </header>
 
-      <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4 text-sm text-slate-300">
-        Filtra por ejecutiva, empresa, tipo de documento y período desde el listado.
+      <div className="border-l-2 border-[var(--cf-danger)]/60 px-3 py-1 text-xs leading-5 text-[var(--cf-text-muted)]">
+        Filtra por ejecutiva, empresa, tipo de documento y período desde el listado. El color rojo se reserva sólo para el estado rechazado.
       </div>
 
       <RejectedDocumentsList
