@@ -25,6 +25,9 @@ interface AlertLog {
   document_type?: string
   entity_name?: string
   metadata?: Record<string, unknown>
+  action_notes?: string | null
+  actioned_by?: string | null
+  actioned_at?: string | null
   created_at: string
 }
 
@@ -40,7 +43,17 @@ interface LegacyAlert {
   action_url?: string
   status?: string
   metadata?: Record<string, unknown>
+  action_notes?: string | null
+  actioned_by?: string | null
+  actioned_at?: string | null
   created_at: string
+}
+
+interface TransportistaIdentity {
+  id: string
+  rut?: string | null
+  razon_social?: string | null
+  nombre_fantasia?: string | null
 }
 
 interface NormalizedAlert {
@@ -60,6 +73,28 @@ interface NormalizedAlert {
   created_at: string
   source: string
   [key: string]: unknown
+}
+
+function getMetadataTransportistaId(metadata?: Record<string, unknown>) {
+  const value = metadata?.transportista_id || metadata?.subcontractor_id
+  return typeof value === 'string' && value ? value : undefined
+}
+
+function buildIdentityMetadata(
+  metadata: Record<string, unknown> | undefined,
+  transportistaId: string | undefined,
+  transportistaMap: Map<string, TransportistaIdentity>,
+) {
+  const identity = transportistaId ? transportistaMap.get(transportistaId) : undefined
+  const transportistaNombre = identity?.nombre_fantasia || identity?.razon_social || undefined
+
+  return {
+    ...(metadata || {}),
+    ...(transportistaId ? { transportista_id: transportistaId } : {}),
+    ...(transportistaNombre ? { transportista_nombre: transportistaNombre } : {}),
+    ...(identity?.razon_social ? { transportista_razon_social: identity.razon_social } : {}),
+    ...(identity?.rut ? { transportista_rut: identity.rut } : {}),
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -104,47 +139,90 @@ export async function GET(request: NextRequest) {
 
     if (legacyError) console.warn('legacy alerts query skipped:', legacyError.message)
 
-    const alerts: NormalizedAlert[] = (logAlerts as AlertLog[]).map((alert) => ({
-      id: `log_${alert.id}`,
-      type: alert.alert_type || 'info',
-      title: alert.title,
-      message: alert.message || alert.description || '',
-      description: alert.description || alert.message || '',
-      priority: alert.priority || 'medium',
-      category: alert.entity_type || 'general',
-      is_read: alert.is_read ?? false,
-      is_dismissed: alert.is_resolved ?? false,
-      action_url: alert.action_url,
-      ejecutiva_asignada: alert.ejecutiva_nombre,
-      status: alert.status || 'pendiente',
-      transportista_id: alert.transportista_id,
-      driver_id: alert.driver_id,
-      document_id: alert.document_id,
-      document_type: alert.document_type,
-      entity_name: alert.entity_name,
-      metadata: alert.metadata || {},
-      created_at: alert.created_at,
-      source: 'alerts_log',
-    }))
+    const transportistaIds = Array.from(new Set([
+      ...(logAlerts as AlertLog[]).map((alert) => alert.transportista_id).filter(Boolean),
+      ...(rawLegacyAlerts as LegacyAlert[]).map((alert) => getMetadataTransportistaId(alert.metadata)).filter(Boolean),
+    ])) as string[]
+
+    const transportistaMap = new Map<string, TransportistaIdentity>()
+    if (transportistaIds.length > 0) {
+      const { data: transportistas = [], error: transportistaError } = await supabase
+        .from('transportistas')
+        .select('id, rut, razon_social, nombre_fantasia')
+        .in('id', transportistaIds)
+
+      if (transportistaError) {
+        console.warn('alerts transportista enrichment skipped:', transportistaError.message)
+      } else {
+        for (const transportista of transportistas as TransportistaIdentity[]) {
+          transportistaMap.set(transportista.id, transportista)
+        }
+      }
+    }
+
+    const alerts: NormalizedAlert[] = (logAlerts as AlertLog[]).map((alert) => {
+      const metadata = buildIdentityMetadata(alert.metadata, alert.transportista_id, transportistaMap)
+      const transportistaNombre = metadata.transportista_nombre as string | undefined
+      const transportistaRut = metadata.transportista_rut as string | undefined
+
+      return {
+        id: `log_${alert.id}`,
+        type: alert.alert_type || 'info',
+        title: alert.title,
+        message: alert.message || alert.description || '',
+        description: alert.description || alert.message || '',
+        priority: alert.priority || 'medium',
+        category: alert.entity_type || 'general',
+        is_read: alert.is_read ?? false,
+        is_dismissed: alert.is_resolved ?? false,
+        action_url: alert.action_url,
+        ejecutiva_asignada: alert.ejecutiva_nombre,
+        status: alert.status || 'pendiente',
+        transportista_id: alert.transportista_id,
+        transportista_nombre: transportistaNombre,
+        transportista_rut: transportistaRut,
+        driver_id: alert.driver_id,
+        document_id: alert.document_id,
+        document_type: alert.document_type,
+        entity_name: alert.entity_name,
+        action_notes: alert.action_notes,
+        actioned_by: alert.actioned_by,
+        actioned_at: alert.actioned_at,
+        metadata,
+        created_at: alert.created_at,
+        source: 'alerts_log',
+      }
+    })
 
     const legacyAlerts: NormalizedAlert[] = legacyError
       ? []
-      : (rawLegacyAlerts as LegacyAlert[]).map((alert) => ({
-          id: alert.id,
-          type: alert.type || 'info',
-          title: alert.title,
-          message: alert.message || '',
-          description: alert.message || '',
-          priority: alert.priority || 'normal',
-          category: alert.category || 'system',
-          is_read: alert.is_read ?? false,
-          is_dismissed: alert.is_dismissed ?? false,
-          action_url: alert.action_url,
-          status: alert.status || 'pendiente',
-          metadata: alert.metadata || {},
-          created_at: alert.created_at,
-          source: 'alerts_legacy',
-        }))
+      : (rawLegacyAlerts as LegacyAlert[]).map((alert) => {
+          const transportistaId = getMetadataTransportistaId(alert.metadata)
+          const metadata = buildIdentityMetadata(alert.metadata, transportistaId, transportistaMap)
+
+          return {
+            id: alert.id,
+            type: alert.type || 'info',
+            title: alert.title,
+            message: alert.message || '',
+            description: alert.message || '',
+            priority: alert.priority || 'normal',
+            category: alert.category || 'system',
+            is_read: alert.is_read ?? false,
+            is_dismissed: alert.is_dismissed ?? false,
+            action_url: alert.action_url,
+            status: alert.status || 'pendiente',
+            action_notes: alert.action_notes,
+            actioned_by: alert.actioned_by,
+            actioned_at: alert.actioned_at,
+            transportista_id: transportistaId,
+            transportista_nombre: metadata.transportista_nombre,
+            transportista_rut: metadata.transportista_rut,
+            metadata,
+            created_at: alert.created_at,
+            source: 'alerts_legacy',
+          }
+        })
 
     const combined = [...alerts, ...legacyAlerts]
       .filter((alert) => !ejecutiva || alert.ejecutiva_asignada === ejecutiva)

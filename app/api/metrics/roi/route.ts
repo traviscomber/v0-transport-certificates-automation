@@ -37,11 +37,7 @@ type LegacyDocument = {
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!url || !key) {
-    throw new Error('Missing Supabase configuration')
-  }
-
+  if (!url || !key) throw new Error('Missing Supabase configuration')
   return createClient(url, key)
 }
 
@@ -49,22 +45,20 @@ function hasAccess(request: NextRequest) {
   const userEmail = request.cookies.get('user_email')?.value
   const userRole = request.cookies.get('user_role')?.value?.toLowerCase()
 
-  if (userEmail && userRole && ACCESS_ROLES.has(userRole)) {
-    return true
-  }
+  if (userEmail && userRole && ACCESS_ROLES.has(userRole)) return true
 
   const bearerToken = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
   const accessKey = process.env.ROI_METRICS_ACCESS_KEY
-
-  if (accessKey && bearerToken === accessKey) {
-    return true
-  }
-
-  return false
+  return Boolean(accessKey && bearerToken === accessKey)
 }
 
 function normalizeFilename(value: string | null | undefined) {
   return value?.trim().toLowerCase() || ''
+}
+
+function positiveNumber(value: string | undefined, fallback: number) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
 }
 
 async function fetchCanonicalDocuments(
@@ -81,17 +75,13 @@ async function fetchCanonicalDocuments(
       .range(from, from + PAGE_SIZE - 1)
 
     if (range) {
-      query = query
-        .gte('created_at', range.start.toISOString())
-        .lte('created_at', range.end.toISOString())
+      query = query.gte('created_at', range.start.toISOString()).lte('created_at', range.end.toISOString())
     }
 
     const { data, error } = await query
     if (error) throw error
-
     const page = (data || []) as CanonicalDocument[]
     rows.push(...page)
-
     if (page.length < PAGE_SIZE) break
   }
 
@@ -112,17 +102,13 @@ async function fetchLegacyDocuments(
       .range(from, from + PAGE_SIZE - 1)
 
     if (range) {
-      query = query
-        .gte('created_at', range.start.toISOString())
-        .lte('created_at', range.end.toISOString())
+      query = query.gte('created_at', range.start.toISOString()).lte('created_at', range.end.toISOString())
     }
 
     const { data, error } = await query
     if (error) throw error
-
     const page = (data || []) as LegacyDocument[]
     rows.push(...page)
-
     if (page.length < PAGE_SIZE) break
   }
 
@@ -166,9 +152,7 @@ function legacyWasProcessed(doc: LegacyDocument) {
 
 export async function GET(request: NextRequest) {
   try {
-    if (!hasAccess(request)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!hasAccess(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const supabase = getSupabaseClient()
     const url = new URL(request.url)
@@ -176,34 +160,31 @@ export async function GET(request: NextRequest) {
     const year = url.searchParams.get('year') || ALL_VALUE
     const range = getMonthYearRange(month, year)
 
-    const [canonicalDocs, legacyDocs, driversResult, organizationsResult, executivesResult] = await Promise.all([
+    const [canonicalDocs, legacyDocs, driversResult, transportistasResult, executivesResult] = await Promise.all([
       fetchCanonicalDocuments(supabase, range),
       fetchLegacyDocuments(supabase, range),
       supabase.from('drivers').select('id'),
-      supabase.from('organizations').select('id'),
+      supabase.from('transportistas').select('id'),
       supabase.from('executive_staff').select('id, full_name').eq('is_active', true),
     ])
 
-    // `subcontractor_documents` is the canonical operational store. `uploaded_documents`
-    // is the legacy store used at the beginning of the application. Exact filename
-    // matches are migration duplicates, so keep only legacy rows that are not already
-    // represented in the canonical store.
-    const canonicalFilenameKeys = new Set(
-      canonicalDocs.map((doc) => normalizeFilename(doc.file_name)).filter(Boolean),
-    )
+    if (driversResult.error) throw driversResult.error
+    if (transportistasResult.error) throw transportistasResult.error
+    if (executivesResult.error) throw executivesResult.error
+
+    const canonicalFilenameKeys = new Set(canonicalDocs.map((doc) => normalizeFilename(doc.file_name)).filter(Boolean))
     const uniqueLegacyDocs = legacyDocs.filter((doc) => {
       const key = normalizeFilename(doc.original_filename)
       return !key || !canonicalFilenameKeys.has(key)
     })
 
     const totalDocuments = canonicalDocs.length + uniqueLegacyDocs.length
-    const canonicalHistoricalDocuments = canonicalDocs.filter((doc) => doc.is_current === false).length
     const currentDocuments = canonicalDocs.filter((doc) => doc.is_current === true).length
+    const canonicalHistoricalDocuments = canonicalDocs.filter((doc) => doc.is_current === false).length
     const legacyDocuments = uniqueLegacyDocs.length
 
-    const processedCanonical = canonicalDocs.filter(canonicalWasProcessed).length
-    const processedLegacy = uniqueLegacyDocs.filter(legacyWasProcessed).length
-    const processingCompletedDocuments = processedCanonical + processedLegacy
+    const processingCompletedDocuments =
+      canonicalDocs.filter(canonicalWasProcessed).length + uniqueLegacyDocs.filter(legacyWasProcessed).length
     const processingPendingDocuments = Math.max(totalDocuments - processingCompletedDocuments, 0)
 
     const canonicalWithAI = canonicalDocs.filter(canonicalHasAI)
@@ -223,54 +204,40 @@ export async function GET(request: NextRequest) {
       canonicalWithAI.filter((doc) => doc.status === 'rejected').length +
       legacyWithAI.filter((doc) => doc.validation_status === 'rejected').length
 
-    const driversData = driversResult.data || []
-    const orgsData = organizationsResult.data || []
-    const executives = executivesResult.data || []
-
-    const AVG_MANUAL_REVIEW_MINUTES = 13.5
-    const AVG_AI_ANALYSIS_MINUTES = 1.5
-    const AVG_VALIDATION_MINUTES = 9
-    const TOTAL_MANUAL_PER_DOC = AVG_MANUAL_REVIEW_MINUTES
-    const TOTAL_WITH_AI_PER_DOC = AVG_AI_ANALYSIS_MINUTES + AVG_VALIDATION_MINUTES
-
-    const timeSavedPerDocMinutes = TOTAL_MANUAL_PER_DOC - TOTAL_WITH_AI_PER_DOC
+    const manualReviewMinutes = positiveNumber(process.env.ROI_MANUAL_REVIEW_MINUTES, 13.5)
+    const aiAnalysisMinutes = positiveNumber(process.env.ROI_AI_ANALYSIS_MINUTES, 1.5)
+    const humanValidationMinutes = positiveNumber(process.env.ROI_HUMAN_VALIDATION_MINUTES, 9)
+    const withAiMinutes = aiAnalysisMinutes + humanValidationMinutes
+    const timeSavedPerDocMinutes = Math.max(manualReviewMinutes - withAiMinutes, 0)
     const totalTimeSavedMinutes = docsWithAI * timeSavedPerDocMinutes
     const totalTimeSavedHours = totalTimeSavedMinutes / 60
-    const totalTimeSavedDays = totalTimeSavedHours / 8
 
-    const WORKING_HOURS_DAILY = 8
-    const WORKING_DAYS_MONTHLY = 20
-    const WORKING_HOURS_MONTHLY = WORKING_HOURS_DAILY * WORKING_DAYS_MONTHLY
-    const WORKING_HOURS_YEARLY = WORKING_HOURS_MONTHLY * 12
+    const workingHoursMonthly = 8 * 20
+    const executivesEquivalent = totalTimeSavedHours / workingHoursMonthly
+    const actualExecutiveCount = (executivesResult.data || []).length
 
-    const docsPerExecutiveMonthly = (WORKING_HOURS_MONTHLY * 60) / TOTAL_MANUAL_PER_DOC
-    const docsPerExecutiveYearly = (WORKING_HOURS_YEARLY * 60) / TOTAL_MANUAL_PER_DOC
-    const executivesEquivalent = Math.round((totalTimeSavedHours / WORKING_HOURS_MONTHLY) * 100) / 100
+    const configuredMonthlyCost = Number(process.env.ROI_EXECUTIVE_MONTHLY_COST_CLP)
+    const financialEstimateAvailable = Number.isFinite(configuredMonthlyCost) && configuredMonthlyCost > 0
+    const estimatedMonthlySavings = financialEstimateAvailable ? executivesEquivalent * configuredMonthlyCost : null
+    const estimatedAnnualSavings = estimatedMonthlySavings === null ? null : estimatedMonthlySavings * 12
+    const actualPayroll = financialEstimateAvailable ? actualExecutiveCount * configuredMonthlyCost : null
+    const payrollPercentage =
+      estimatedMonthlySavings !== null && actualPayroll && actualPayroll > 0
+        ? Math.round((estimatedMonthlySavings / actualPayroll) * 100)
+        : null
 
-    const EXECUTIVE_MONTHLY_SALARY = 2500000
-    const EXECUTIVE_ANNUAL_SALARY = EXECUTIVE_MONTHLY_SALARY * 12
-    const TOTAL_EXECUTIVE_PAYROLL = (executives.length || 5) * EXECUTIVE_MONTHLY_SALARY
-    const monthlySavingsFromAI = executivesEquivalent * EXECUTIVE_MONTHLY_SALARY
-    const yearlySavingsFromAI = executivesEquivalent * EXECUTIVE_ANNUAL_SALARY
-
-    const systemAccuracy = totalDocuments > 0 ? Math.round((approvedDocs / totalDocuments) * 100) : 0
+    const approvalRate = totalDocuments > 0 ? Math.round((approvedDocs / totalDocuments) * 100) : 0
     const rejectionRate = totalDocuments > 0 ? Math.round((rejectedDocs / totalDocuments) * 100) : 0
-    const approvalRate = systemAccuracy
+    const aiNonRejectionRate = docsWithAI > 0 ? Math.round(((docsWithAI - aiRejectedDocs) / docsWithAI) * 100) : null
 
-    const processingSpeedAI = Math.round((60 / AVG_AI_ANALYSIS_MINUTES) * 10) / 10
-    const processingSpeedManual = Math.round((60 / TOTAL_MANUAL_PER_DOC) * 10) / 10
-    const speedMultiplier = Math.round((processingSpeedAI / processingSpeedManual) * 10) / 10
+    const processingSpeedAI = Math.round((60 / aiAnalysisMinutes) * 10) / 10
+    const processingSpeedManual = Math.round((60 / manualReviewMinutes) * 10) / 10
+    const speedMultiplier = processingSpeedManual > 0 ? Math.round((processingSpeedAI / processingSpeedManual) * 10) / 10 : 0
 
-    const totalConductores = driversData.length || 235
-    const totalTransportistas = orgsData.length || 235
-    const avgDocsPerConductor = totalConductores > 0 ? totalDocuments / totalConductores : 0
-    const avgDocsPerTransportista = totalTransportistas > 0 ? totalDocuments / totalTransportistas : 0
-
-    const aiProcessedSuccessfully = Math.max(docsWithAI - aiRejectedDocs, 0)
-    const aiSuccessRate = docsWithAI > 0 ? Math.round((aiProcessedSuccessfully / docsWithAI) * 100) : 100
+    const totalConductores = (driversResult.data || []).length
+    const totalTransportistas = (transportistasResult.data || []).length
 
     return NextResponse.json({
-      // LIFETIME / PERIOD DOCUMENT ACCOUNTING
       totalDocumentsLifetime: totalDocuments,
       totalDocumentsProcessed: processingCompletedDocuments,
       documentsProcessingCompleted: processingCompletedDocuments,
@@ -281,58 +248,56 @@ export async function GET(request: NextRequest) {
       canonicalDocuments: canonicalDocs.length,
       legacyMigrationDuplicatesExcluded: legacyDocs.length - uniqueLegacyDocs.length,
 
-      // DOCUMENT MIX
       documentsWithAI: docsWithAI,
       documentsManual: docsManual,
       documentsPending: pendingDocs,
       documentsApproved: approvedDocs,
       documentsRejected: rejectedDocs,
 
-      // TIME SAVINGS
       totalTimeSavedMinutes,
       totalTimeSavedHours: Math.round(totalTimeSavedHours * 100) / 100,
-      totalTimeSavedDays: Math.round(totalTimeSavedDays * 100) / 100,
+      totalTimeSavedDays: Math.round((totalTimeSavedHours / 8) * 100) / 100,
       timeSavedPerDocumentMinutes: timeSavedPerDocMinutes,
-      averageTimePerDocumentMinutesManual: TOTAL_MANUAL_PER_DOC,
-      averageTimePerDocumentMinutesWithAI: TOTAL_WITH_AI_PER_DOC,
+      averageTimePerDocumentMinutesManual: manualReviewMinutes,
+      averageTimePerDocumentMinutesWithAI: withAiMinutes,
 
-      // EXECUTIVE CAPACITY
-      totalExecutives: executives.length || 5,
-      executiveNames: executives.map((e) => e.full_name),
-      docsPerExecutiveMonthly: Math.round(docsPerExecutiveMonthly),
-      docsPerExecutiveYearly: Math.round(docsPerExecutiveYearly),
-
-      // COST SAVINGS
+      totalExecutives: actualExecutiveCount,
+      executiveNames: (executivesResult.data || []).map((executive) => executive.full_name),
       executivesEquivalent: Math.round(executivesEquivalent * 100) / 100,
-      executiveMonthlysalary: EXECUTIVE_MONTHLY_SALARY,
-      executiveAnnualSalary: EXECUTIVE_ANNUAL_SALARY,
-      totalExecutivePayroll: TOTAL_EXECUTIVE_PAYROLL,
-      costSavingMonthly: Math.round(monthlySavingsFromAI),
-      costSavingAnnual: Math.round(yearlySavingsFromAI),
-      costSavingAsPercentageOfPayroll:
-        TOTAL_EXECUTIVE_PAYROLL > 0 ? Math.round((monthlySavingsFromAI / TOTAL_EXECUTIVE_PAYROLL) * 100) : 0,
+      docsPerExecutiveMonthly: Math.round((workingHoursMonthly * 60) / manualReviewMinutes),
 
-      // PERFORMANCE METRICS
-      systemAccuracy,
-      aiSuccessRate,
+      financialEstimateAvailable,
+      configuredExecutiveMonthlyCostCLP: financialEstimateAvailable ? configuredMonthlyCost : null,
+      costSavingMonthly: estimatedMonthlySavings === null ? null : Math.round(estimatedMonthlySavings),
+      costSavingAnnual: estimatedAnnualSavings === null ? null : Math.round(estimatedAnnualSavings),
+      costSavingAsPercentageOfPayroll: payrollPercentage,
+
+      systemAccuracy: null,
+      aiSuccessRate: aiNonRejectionRate,
       rejectionRate,
       approvalRate,
       processingSpeedAI,
       processingSpeedManual,
       speedMultiplier,
 
-      // VOLUME CONTEXT
       totalConductores,
       totalTransportistas,
-      averageDocsPerConductor: Math.round(avgDocsPerConductor * 100) / 100,
-      averageDocsPerTransportista: Math.round(avgDocsPerTransportista * 100) / 100,
+      averageDocsPerConductor: totalConductores > 0 ? Math.round((totalDocuments / totalConductores) * 100) / 100 : 0,
+      averageDocsPerTransportista: totalTransportistas > 0 ? Math.round((totalDocuments / totalTransportistas) * 100) / 100 : 0,
 
-      // ROI SUMMARY
+      scenarioAssumptions: {
+        manualReviewMinutes,
+        aiAnalysisMinutes,
+        humanValidationMinutes,
+        source: 'configured-or-default-scenario',
+        realizedSavingsClaim: false,
+      },
+
       roi: {
-        message: `Labbe puede prescindir de ${Math.round(executivesEquivalent)} ejecutivas y ahorrar CLP $${Math.round(yearlySavingsFromAI).toLocaleString('es-CL')} anualmente.`,
+        message: `Escenario: ${Math.round(totalTimeSavedHours).toLocaleString('es-CL')} horas de capacidad estimada liberada con ${docsWithAI.toLocaleString('es-CL')} documentos asistidos por IA.`,
         equivalentExecutives: Math.round(executivesEquivalent * 100) / 100,
-        monthlySavingsCLP: Math.round(monthlySavingsFromAI),
-        yearlySavingsCLP: Math.round(yearlySavingsFromAI),
+        monthlySavingsCLP: estimatedMonthlySavings === null ? null : Math.round(estimatedMonthlySavings),
+        yearlySavingsCLP: estimatedAnnualSavings === null ? null : Math.round(estimatedAnnualSavings),
         documentsProcessedPerDay: Math.round(docsWithAI / 30),
         hoursPerMonthSaved: Math.round(totalTimeSavedHours),
       },

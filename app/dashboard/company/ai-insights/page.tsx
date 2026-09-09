@@ -2,21 +2,26 @@ import { Metadata } from 'next'
 import { AIInsightsDashboard } from '@/components/ai-insights-dashboard'
 
 export const metadata: Metadata = {
-  title: 'AI Insights - Document Analysis',
-  description: 'Analyze document recognition patterns and model accuracy',
+  title: 'Inteligencia IA | ChileFlota',
+  description: 'Evidencia operativa del análisis documental asistido por IA',
 }
 
 export default function AIInsightsPage() {
   return (
-    <div className="min-h-screen bg-slate-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">AI Model Insights</h1>
-          <p className="text-slate-400">Analyze document recognition patterns and improve model accuracy</p>
-        </div>
-        
-        <AIInsightsDashboard />
+    <div className="space-y-6">
+      <div className="max-w-3xl">
+        <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">
+          Inteligencia documental
+        </p>
+        <h1 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--cf-text)] md:text-[28px]">
+          Evidencia del análisis IA
+        </h1>
+        <p className="mt-2 text-sm leading-6 text-[var(--cf-text-secondary)]">
+          Cobertura, confianza reportada y señales observadas del procesamiento documental. Estas métricas no sustituyen la revisión humana ni se presentan como exactitud certificada.
+        </p>
       </div>
+
+      <AIInsightsDashboard />
     </div>
   )
 }

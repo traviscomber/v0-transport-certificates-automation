@@ -2,7 +2,7 @@
 
 import React from "react"
 import { Badge } from "@/components/ui/badge"
-import { AlertTriangle, CheckCircle, Clock, Info, XCircle, FileUp, Brain, FileCheck, FileX } from "lucide-react"
+import { AlertTriangle, CheckCircle, Clock, Info, XCircle, FileUp, Brain, Building2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 interface AlertItemProps {
@@ -16,7 +16,6 @@ interface AlertItemProps {
   onNavigate?: () => void
 }
 
-// Memoized alert item to prevent re-renders when parent updates
 const AlertItem = React.memo<AlertItemProps>(({
   id,
   type,
@@ -28,13 +27,12 @@ const AlertItem = React.memo<AlertItemProps>(({
   onNavigate
 }) => {
   const router = useRouter()
-  
-  // Normalize type for matching (handle both upper and lower case)
-  const normalizedType = type?.toUpperCase() || ''
-  
+  const transportistaNombre = metadata?.transportista_nombre || metadata?.transportista_razon_social
+  const transportistaRut = metadata?.transportista_rut
+
   const getStatusIcon = (alertType: string) => {
     const t = alertType?.toUpperCase() || ''
-    
+
     if (t.includes('APPROVED') || t.includes('APROBADO')) {
       return <CheckCircle className="h-5 w-5 text-green-500" />
     }
@@ -61,7 +59,7 @@ const AlertItem = React.memo<AlertItemProps>(({
 
   const getStatusBadge = (alertType: string) => {
     const t = alertType?.toUpperCase() || ''
-    
+
     if (t.includes('APPROVED') || t.includes('APROBADO')) {
       return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Aprobado</Badge>
     }
@@ -98,7 +96,7 @@ const AlertItem = React.memo<AlertItemProps>(({
   }
 
   return (
-    <div 
+    <div
       className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 p-4 border border-slate-700 rounded-lg hover:bg-slate-800/50 hover:border-orange-500/30 transition-all cursor-pointer"
       onClick={handleClick}
     >
@@ -106,10 +104,19 @@ const AlertItem = React.memo<AlertItemProps>(({
         <div className="mt-0.5 flex-shrink-0">{getStatusIcon(type)}</div>
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm text-foreground">{title}</p>
+          {transportistaNombre && (
+            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-300">
+              <span className="inline-flex items-center gap-1.5 font-medium">
+                <Building2 className="h-3.5 w-3.5 text-slate-500" />
+                Subcontratista: {transportistaNombre}
+              </span>
+              {transportistaRut && <span className="text-slate-500">RUT {transportistaRut}</span>}
+            </div>
+          )}
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{message}</p>
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
             <p className="text-xs text-muted-foreground">
-              {new Date(created_at).toLocaleDateString("es-ES", {
+              {new Date(created_at).toLocaleDateString("es-CL", {
                 year: "numeric",
                 month: "short",
                 day: "numeric",
@@ -117,7 +124,7 @@ const AlertItem = React.memo<AlertItemProps>(({
                 minute: "2-digit",
               })}
             </p>
-            {source === 'document_upload' && metadata?.document_type && (
+            {metadata?.document_type && (
               <Badge variant="secondary" className="text-xs">
                 {metadata.document_type}
               </Badge>

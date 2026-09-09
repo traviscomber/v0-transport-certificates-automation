@@ -1,4 +1,4 @@
-// Enhanced Alert Types for Ejecutiva-based Filtering
+// Canonical alert contracts for the authenticated company workspace.
 
 export interface Alert {
   id: string
@@ -14,8 +14,15 @@ export interface Alert {
   is_read: boolean
   is_dismissed: boolean
   action_url?: string
+  document_id?: string
+  document_type?: string
+  driver_id?: string
+  entity_name?: string
+  source?: 'alerts_log' | 'alerts_legacy' | string
   metadata?: Record<string, any>
-  action_type?: 'approve' | 'reject' | 'request_info'
+  // Legacy values remain readable for historical rows; new alert actions use
+  // resolve/request_info and never mutate document approval state.
+  action_type?: 'approve' | 'reject' | 'request_info' | 'resolve'
   action_notes?: string
   actioned_by?: string
   actioned_at?: string
@@ -26,7 +33,7 @@ export interface Alert {
 export interface AlertAction {
   id: string
   alertId: string
-  type: 'approve' | 'reject' | 'request_info'
+  type: 'request_info' | 'resolve'
   notes: string
   executivaName: string
   createdAt: string
