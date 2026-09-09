@@ -14,7 +14,7 @@ interface CompanyHeaderProps {
 
 type SearchSuggestion = {
   id: string
-  type: 'company' | 'document'
+  type: 'company' | 'driver' | 'document'
   label: string
   secondary: string | null
   value: string
@@ -177,7 +177,7 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
         answer: {
           status: 'error',
           summary: 'No se pudo resolver esta consulta operacional en este momento.',
-          unknowns: ['La búsqueda exacta sigue disponible escribiendo RUT, empresa o documento.'],
+          unknowns: ['La búsqueda exacta sigue disponible escribiendo RUT, empresa, conductor o documento.'],
           nextActions: [],
         },
       })
@@ -259,7 +259,7 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
               aria-label="Buscar o consultar ChileFlota"
               aria-autocomplete="list"
               aria-expanded={searchOpen}
-              placeholder="Buscar documentos, RUT, empresa o preguntar..."
+              placeholder="Buscar documentos, RUT, empresa, conductor o preguntar..."
               value={searchValue}
               onFocus={() => searchValue.trim().length >= 2 && setSearchOpen(true)}
               onChange={(e) => setSearchValue(e.target.value)}
@@ -328,7 +328,7 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
                 ) : suggestions.length > 0 ? (
                   <div className="py-1.5">
                     {suggestions.map((suggestion, index) => {
-                      const Icon = suggestion.type === 'company' ? Building2 : FileText
+                      const Icon = suggestion.type === 'company' ? Building2 : suggestion.type === 'driver' ? User : FileText
                       return (
                         <button
                           key={suggestion.id}
@@ -354,7 +354,7 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
                             )}
                           </span>
                           <span className="text-[10px] uppercase tracking-wide text-[var(--cf-text-muted)]">
-                            {suggestion.type === 'company' ? 'Empresa' : 'Documento'}
+                            {suggestion.type === 'company' ? 'Empresa' : suggestion.type === 'driver' ? 'Conductor' : 'Documento'}
                           </span>
                         </button>
                       )
