@@ -60,7 +60,7 @@ export function CompanyHeader({ onMenuClick }: CompanyHeaderProps) {
           <Menu className="h-5 w-5" />
         </Button>
 
-        <div className="hidden min-w-0 flex-shrink-0 sm:block md:hidden lg:block">
+        <div className="hidden min-w-0 flex-shrink-0 sm:block md:hidden">
           <p className="truncate text-sm font-medium text-[var(--cf-text)]">ChileFlota</p>
           <p className="text-xs text-[var(--cf-text-muted)]">Transportes Labbé</p>
         </div>
