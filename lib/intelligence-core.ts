@@ -4,6 +4,8 @@ export type IntelligenceIntent =
   | 'entity_search'
   | 'company_documents'
   | 'company_compliance'
+  | 'driver_documents'
+  | 'driver_status'
   | 'unsupported'
 
 export type IntelligenceRoute = {
@@ -37,6 +39,9 @@ const COMPLIANCE_TERMS = [
   'compliance', 'cumplimiento', 'cumple', 'cumplir', 'operar', 'operativo', 'operativa', 'bloqueado', 'bloqueada', 'riesgo',
 ]
 
+const DRIVER_TERMS = ['conductor', 'conductora', 'chofer', 'licencia']
+const DRIVER_STATUS_TERMS = ['puede trabajar', 'puede operar', 'estado', 'bloqueado', 'bloqueada', 'riesgo', 'le falta', 'falta']
+
 const QUESTION_PREFIXES = [
   'que ', 'qué ', 'cual ', 'cuál ', 'como ', 'cómo ', 'por que ', 'por qué ', 'quien ', 'quién ', 'muestrame ', 'muéstrame ', 'dime ',
 ]
@@ -49,6 +54,10 @@ export function normalizeCompanySearchTerm(rawQuery: string): string {
   return normalizeIntelligenceQuery(rawQuery).replace(/[%_]/g, '').trim()
 }
 
+export function normalizeDriverSearchTerm(rawQuery: string): string {
+  return normalizeIntelligenceQuery(rawQuery).replace(/[%_,()]/g, '').trim()
+}
+
 function containsAny(query: string, terms: string[]): boolean {
   return terms.some((term) => query.includes(term))
 }
@@ -58,6 +67,14 @@ export function classifyIntelligenceQuery(rawQuery: string): IntelligenceRoute {
   const lower = normalizedQuery.toLowerCase()
 
   if (!normalizedQuery) return { mode: 'fast_path', intent: 'unsupported', normalizedQuery }
+
+  const driverQuery = containsAny(lower, DRIVER_TERMS)
+  if (driverQuery && containsAny(lower, DRIVER_STATUS_TERMS)) {
+    return { mode: 'operational_agent', intent: 'driver_status', normalizedQuery }
+  }
+  if (driverQuery && (containsAny(lower, DOCUMENT_TERMS) || lower.includes('licencia'))) {
+    return { mode: 'operational_agent', intent: 'driver_documents', normalizedQuery }
+  }
   if (containsAny(lower, COMPLIANCE_TERMS)) {
     return { mode: 'operational_agent', intent: 'company_compliance', normalizedQuery }
   }
@@ -88,6 +105,24 @@ export function extractCompanyQuery(route: IntelligenceRoute): string | null {
   for (const pattern of patterns) {
     const match = query.match(pattern)
     const candidate = normalizeCompanySearchTerm(match?.[1] || '')
+    if (candidate.length >= 2) return candidate
+  }
+  return null
+}
+
+export function extractDriverQuery(route: IntelligenceRoute): string | null {
+  if (route.intent !== 'driver_documents' && route.intent !== 'driver_status') return null
+
+  const query = route.normalizedQuery
+  const patterns = [
+    /^(?:que|qué|muestrame|muéstrame|dime)?\s*(?:documentos?|licencia)(?:\s+(?:del|de la|de))?\s+(?:conductor|conductora|chofer)\s+(.+)$/i,
+    /^(?:puede\s+(?:trabajar|operar)|estado\s+de|qué\s+le\s+falta|que\s+le\s+falta|riesgo\s+de)\s+(?:(?:al|a\s+la|a\s+el|el|la)\s+)?(?:conductor|conductora|chofer)\s+(.+)$/i,
+    /^(?:conductor|conductora|chofer)\s+(.+?)(?:\s+puede\s+(?:trabajar|operar))?$/i,
+  ]
+
+  for (const pattern of patterns) {
+    const match = query.match(pattern)
+    const candidate = normalizeDriverSearchTerm(match?.[1] || '')
     if (candidate.length >= 2) return candidate
   }
   return null

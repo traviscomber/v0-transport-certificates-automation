@@ -1,7 +1,9 @@
 import {
   classifyIntelligenceQuery,
   extractCompanyQuery,
+  extractDriverQuery,
   normalizeCompanySearchTerm,
+  normalizeDriverSearchTerm,
   summarizeObservedCompanyCompliance,
 } from '@/lib/intelligence-core'
 
@@ -24,10 +26,37 @@ describe('ChileFlota Intelligence Core v1', () => {
     expect(extractCompanyQuery(route)).toBe('Transportes Norte')
   })
 
+  test('routes explicit driver document questions without stealing generic company queries', () => {
+    const route = classifyIntelligenceQuery('documentos del conductor Juan Pérez')
+    expect(route).toMatchObject({ mode: 'operational_agent', intent: 'driver_documents' })
+    expect(extractDriverQuery(route)).toBe('Juan Pérez')
+
+    const companyRoute = classifyIntelligenceQuery('documentos de Transportes Norte')
+    expect(companyRoute.intent).toBe('company_documents')
+  })
+
+  test('routes driver readiness questions conservatively', () => {
+    const route = classifyIntelligenceQuery('qué le falta al conductor Juan Pérez')
+    expect(route).toMatchObject({ mode: 'operational_agent', intent: 'driver_status' })
+    expect(extractDriverQuery(route)).toBe('Juan Pérez')
+  })
+
+  test('routes driver license questions to current driver evidence', () => {
+    const route = classifyIntelligenceQuery('licencia del conductor Juan Pérez')
+    expect(route).toMatchObject({ mode: 'operational_agent', intent: 'driver_documents' })
+    expect(extractDriverQuery(route)).toBe('Juan Pérez')
+  })
+
   test('fails closed when operational entity cannot be safely extracted', () => {
     const route = classifyIntelligenceQuery('documentos pendientes')
     expect(route.intent).toBe('company_documents')
     expect(extractCompanyQuery(route)).toBeNull()
+  })
+
+  test('fails closed when driver intent lacks a driver entity', () => {
+    const route = classifyIntelligenceQuery('licencia de conductor')
+    expect(route.intent).toBe('driver_documents')
+    expect(extractDriverQuery(route)).toBeNull()
   })
 
   test('does not pretend unsupported conversational requests are implemented', () => {
@@ -37,8 +66,9 @@ describe('ChileFlota Intelligence Core v1', () => {
     })
   })
 
-  test('sanitizes wildcard characters from company search', () => {
+  test('sanitizes wildcard characters from company and driver search', () => {
     expect(normalizeCompanySearchTerm('  Transportes%_Norte  ')).toBe('TransportesNorte')
+    expect(normalizeDriverSearchTerm(' Juan%_(Pérez) ')).toBe('JuanPérez')
   })
 
   test('excludes stale legacy evidence from compliance summary', () => {
