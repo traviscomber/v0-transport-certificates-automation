@@ -15,7 +15,7 @@ const ALLOWED_ROLES = new Set<UserRole>([
 
 type SearchSuggestion = {
   id: string
-  type: 'company' | 'document'
+  type: 'company' | 'driver' | 'document'
   label: string
   secondary: string | null
   value: string
@@ -29,12 +29,25 @@ type CompanyRow = {
   nombre_fantasia: string | null
 }
 
+type DriverRow = {
+  id: string
+  rut: string | null
+  nombres: string | null
+  apellido_paterno: string | null
+  apellido_materno: string | null
+}
+
 function sanitize(raw: string) {
   return raw.trim().replace(/[%_]/g, '').replace(/\s+/g, ' ').slice(0, 80)
 }
 
 function normalizeText(value: string | null | undefined) {
-  return (value || '').trim().toLowerCase().replace(/\s+/g, ' ')
+  return (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
 }
 
 function normalizeRut(value: string | null | undefined) {
@@ -56,8 +69,31 @@ function companyRank(company: CompanyRow, query: string) {
   return 3
 }
 
+function driverLabel(driver: DriverRow) {
+  return [driver.nombres, driver.apellido_paterno, driver.apellido_materno].filter(Boolean).join(' ').trim() || driver.rut || 'Conductor'
+}
+
+function driverRank(driver: DriverRow, query: string) {
+  const normalizedQuery = normalizeText(query)
+  const normalizedQueryRut = normalizeRut(query)
+  const rut = normalizeRut(driver.rut)
+  const name = normalizeText(driverLabel(driver))
+
+  if (normalizedQueryRut.length >= 7 && rut && rut === normalizedQueryRut) return 0
+  if (name && name === normalizedQuery) return 1
+  if (normalizedQueryRut && rut.startsWith(normalizedQueryRut)) return 2
+  if (name.startsWith(normalizedQuery)) return 2
+  return 3
+}
+
 function toHref(value: string) {
   return `/dashboard/company/documentos/aprobados?search=${encodeURIComponent(value)}`
+}
+
+function toDriverHref(driver: DriverRow) {
+  return driver.rut
+    ? `/dashboard/company/conductores?rut=${encodeURIComponent(driver.rut)}`
+    : '/dashboard/company/conductores'
 }
 
 export async function GET(request: NextRequest) {
@@ -78,8 +114,22 @@ export async function GET(request: NextRequest) {
 
     const supabase = createAdminClient()
     const pattern = `%${query}%`
+    const normalizedQuery = normalizeText(query)
+    const driverTokens = normalizedQuery.split(' ').filter((token) => token.length >= 2)
+    const driverSeed = driverTokens[0] || normalizedQuery
+    const driverPattern = `%${driverSeed}%`
 
-    const [companyByName, companyByRut, companyByFantasy, subcontractorDocs, driverDocs] = await Promise.all([
+    const [
+      companyByName,
+      companyByRut,
+      companyByFantasy,
+      driverByRut,
+      driverByNames,
+      driverByPaternal,
+      driverByMaternal,
+      subcontractorDocs,
+      driverDocs,
+    ] = await Promise.all([
       supabase
         .from('transportistas')
         .select('id,rut,razon_social,nombre_fantasia')
@@ -95,6 +145,26 @@ export async function GET(request: NextRequest) {
         .select('id,rut,razon_social,nombre_fantasia')
         .ilike('nombre_fantasia', pattern)
         .limit(4),
+      supabase
+        .from('conductores')
+        .select('id,rut,nombres,apellido_paterno,apellido_materno')
+        .ilike('rut', pattern)
+        .limit(8),
+      supabase
+        .from('conductores')
+        .select('id,rut,nombres,apellido_paterno,apellido_materno')
+        .ilike('nombres', driverPattern)
+        .limit(8),
+      supabase
+        .from('conductores')
+        .select('id,rut,nombres,apellido_paterno,apellido_materno')
+        .ilike('apellido_paterno', driverPattern)
+        .limit(8),
+      supabase
+        .from('conductores')
+        .select('id,rut,nombres,apellido_paterno,apellido_materno')
+        .ilike('apellido_materno', driverPattern)
+        .limit(8),
       supabase
         .from('subcontractor_documents')
         .select('id,file_name,subcontractor_rut')
@@ -113,7 +183,17 @@ export async function GET(request: NextRequest) {
         .limit(4),
     ])
 
-    for (const result of [companyByName, companyByRut, companyByFantasy, subcontractorDocs, driverDocs]) {
+    for (const result of [
+      companyByName,
+      companyByRut,
+      companyByFantasy,
+      driverByRut,
+      driverByNames,
+      driverByPaternal,
+      driverByMaternal,
+      subcontractorDocs,
+      driverDocs,
+    ]) {
       if (result.error) throw result.error
     }
 
@@ -155,7 +235,41 @@ export async function GET(request: NextRequest) {
       if (suggestions.length >= 5) break
     }
 
+    const drivers = [
+      ...((driverByRut.data || []) as DriverRow[]),
+      ...((driverByNames.data || []) as DriverRow[]),
+      ...((driverByPaternal.data || []) as DriverRow[]),
+      ...((driverByMaternal.data || []) as DriverRow[]),
+    ]
+      .filter((driver, index, rows) => rows.findIndex((row) => row.id === driver.id) === index)
+      .filter((driver) => {
+        if (normalizedQueryRut.length >= 7 && normalizeRut(driver.rut).includes(normalizedQueryRut)) return true
+        const haystack = normalizeText(`${driverLabel(driver)} ${driver.rut || ''}`)
+        return driverTokens.length > 0 && driverTokens.every((token) => haystack.includes(token))
+      })
+      .sort((a, b) => {
+        const rankDiff = driverRank(a, query) - driverRank(b, query)
+        if (rankDiff !== 0) return rankDiff
+        return driverLabel(a).localeCompare(driverLabel(b), 'es')
+      })
+
+    for (const driver of drivers) {
+      if (suggestions.length >= 8 || seen.has(`driver:${driver.id}`)) break
+      seen.add(`driver:${driver.id}`)
+      const label = driverLabel(driver)
+      const exactRut = normalizedQueryRut.length >= 7 && normalizeRut(driver.rut) === normalizedQueryRut
+      suggestions.push({
+        id: `driver:${driver.id}`,
+        type: 'driver',
+        label,
+        secondary: driver.rut || 'Conductor',
+        value: exactRut ? driver.rut || query : label,
+        href: toDriverHref(driver),
+      })
+    }
+
     for (const doc of subcontractorDocs.data || []) {
+      if (suggestions.length >= 8) break
       if (!doc.file_name || seen.has(`document:${doc.id}`)) continue
       seen.add(`document:${doc.id}`)
       suggestions.push({
@@ -166,7 +280,6 @@ export async function GET(request: NextRequest) {
         value: doc.file_name,
         href: toHref(doc.file_name),
       })
-      if (suggestions.length >= 8) break
     }
 
     if (suggestions.length < 8) {
