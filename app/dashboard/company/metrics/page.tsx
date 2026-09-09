@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import useSWR from 'swr'
 import { Bot, CheckCircle2, Clock3, FileText } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DatePeriodFilter } from '@/components/date-period-filter'
 import { ALL_VALUE, getMonthLabel, type DateFilterValue } from '@/lib/date-filters'
 
@@ -43,20 +42,21 @@ export default function OperationalImpactPage() {
     year: ALL_VALUE,
   })
 
-  const { data, isLoading } = useSWR<ImpactResponse>(
+  const { data, error, isLoading } = useSWR<ImpactResponse>(
     `/api/company/metrics?month=${period.month}&year=${period.year}`,
-    (url: string) => fetch(url).then(async (response) => {
+    (url: string) => fetch(url, { cache: 'no-store' }).then(async (response) => {
       const payload = await response.json()
       if (!response.ok) throw new Error(payload?.error || 'No fue posible cargar las métricas')
       return payload
-    })
+    }),
+    { revalidateOnFocus: false, dedupingInterval: 30000 },
   )
 
   const summary = data?.summary
   const periodLabel = getMonthLabel(period.month, period.year)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-3xl">
           <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">
@@ -88,80 +88,53 @@ export default function OperationalImpactPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
-              <FileText className="h-4 w-4 text-[var(--cf-text-muted)]" />
-              Documentos registrados
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">
-              {isLoading ? '—' : formatNumber(summary?.documents_registered)}
+      {error ? (
+        <div className="rounded-[6px] border border-[#45242B] bg-[var(--cf-surface)] px-6 py-8 text-sm text-[var(--cf-text-secondary)]">
+          <p className="font-medium text-[#E17B8C]">No fue posible cargar Impacto Operacional.</p>
+          <p className="mt-2 text-xs text-[var(--cf-text-muted)]">No se muestran ceros cuando la fuente no respondió.</p>
+        </div>
+      ) : (
+        <section className="space-y-3" aria-labelledby="impact-summary-title">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Lectura rápida</p>
+              <h2 id="impact-summary-title" className="mt-1 text-base font-semibold text-[var(--cf-text)]">Eventos observados</h2>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
-              <Bot className="h-4 w-4 text-[var(--cf-text-muted)]" />
-              Analizados por IA
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">
-              {isLoading ? '—' : formatNumber(summary?.ai_analyzed)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
-              <CheckCircle2 className="h-4 w-4 text-[#67C18D]" />
-              Revisados por Labbé
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">
-              {isLoading ? '—' : formatNumber(summary?.human_reviewed)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
-              <CheckCircle2 className="h-4 w-4 text-[var(--cf-text-muted)]" />
-              Decisiones registradas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">
-              {isLoading ? '—' : formatNumber(summary?.decisions_recorded)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
-              <Clock3 className="h-4 w-4 text-[#D9B65C]" />
-              Mediana carga → IA
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">
-              {isLoading ? '—' : formatDuration(summary?.median_upload_to_ai_seconds)}
-            </div>
-            <p className="mt-1 text-xs text-[var(--cf-text-muted)]">
-              {formatNumber(summary?.ai_timing_samples)} registros con ambos timestamps
+            <p className="max-w-xl text-xs leading-5 text-[var(--cf-text-muted)] sm:text-right">
+              Conteos y tiempo mediano respaldados por el endpoint de métricas del período seleccionado.
             </p>
-          </CardContent>
-        </Card>
+          </div>
+
+          <div className="overflow-hidden rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)]">
+            <div className="grid grid-cols-2 xl:grid-cols-5">
+              <Metric icon={FileText} label="Registrados" value={isLoading ? '—' : formatNumber(summary?.documents_registered)} />
+              <Metric icon={Bot} label="Analizados IA" value={isLoading ? '—' : formatNumber(summary?.ai_analyzed)} divided />
+              <Metric icon={CheckCircle2} label="Revisión Labbé" value={isLoading ? '—' : formatNumber(summary?.human_reviewed)} divided />
+              <Metric icon={CheckCircle2} label="Decisiones" value={isLoading ? '—' : formatNumber(summary?.decisions_recorded)} divided />
+              <Metric
+                icon={Clock3}
+                label="Mediana carga → IA"
+                value={isLoading ? '—' : formatDuration(summary?.median_upload_to_ai_seconds)}
+                note={isLoading ? undefined : `${formatNumber(summary?.ai_timing_samples)} muestras válidas`}
+                divided
+              />
+            </div>
+          </div>
+        </section>
+      )}
+    </div>
+  )
+}
+
+function Metric({ icon: Icon, label, value, note, divided }: { icon: typeof FileText; label: string; value: string; note?: string; divided?: boolean }) {
+  return (
+    <div className={`min-w-0 p-4 ${divided ? 'border-l border-[var(--cf-border)]' : ''}`}>
+      <div className="flex items-center gap-2 text-xs font-medium text-[var(--cf-text-muted)]">
+        <Icon className="h-3.5 w-3.5" />
+        <span>{label}</span>
       </div>
+      <p className="mt-2 text-2xl font-semibold tabular-nums tracking-[-0.03em] text-[var(--cf-text)]">{value}</p>
+      {note && <p className="mt-1 text-xs text-[var(--cf-text-muted)]">{note}</p>}
     </div>
   )
 }

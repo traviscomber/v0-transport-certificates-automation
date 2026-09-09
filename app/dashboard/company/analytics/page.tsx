@@ -48,7 +48,7 @@ export default function AnalyticsPage() {
   const periodLabel = getMonthLabel(period.month, period.year)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-3xl">
           <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Analytics operacional</p>
@@ -73,27 +73,48 @@ export default function AnalyticsPage() {
         <StatePanel>Cargando analytics…</StatePanel>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Metric icon={FileText} label="Documentos registrados" value={summary.documents_registered} note="registros del período" />
-            <Metric icon={BrainCircuit} label="Preanálisis IA" value={summary.ai_analyzed} note={`${ratio(summary.ai_analyzed, total)}% de los registrados`} />
-            <Metric icon={Activity} label="Revisión humana" value={summary.human_reviewed} note={`${ratio(summary.human_reviewed, total)}% de los registrados`} />
-            <Metric icon={CheckCircle2} label="Decisiones registradas" value={summary.decisions_recorded} note={`${ratio(summary.decisions_recorded, total)}% de los registrados`} />
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <section className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-5">
-              <div className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
-                <Clock3 className="h-4 w-4 text-[var(--cf-text-muted)]" /> Tiempo observado carga → IA
+          <section className="space-y-3" aria-labelledby="analytics-summary-title">
+            <SectionHeading
+              eyebrow="Cobertura"
+              title="Estado del flujo"
+              description="Cada porcentaje se calcula contra los documentos registrados del período; no se infieren etapas faltantes."
+              id="analytics-summary-title"
+            />
+            <div className="overflow-hidden rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)]">
+              <div className="grid grid-cols-2 xl:grid-cols-4">
+                <Metric icon={FileText} label="Registrados" value={summary.documents_registered} note="base factual" />
+                <Metric icon={BrainCircuit} label="Preanálisis IA" value={summary.ai_analyzed} note={`${ratio(summary.ai_analyzed, total)}% de cobertura`} divided />
+                <Metric icon={Activity} label="Revisión humana" value={summary.human_reviewed} note={`${ratio(summary.human_reviewed, total)}% de cobertura`} divided />
+                <Metric icon={CheckCircle2} label="Decisiones" value={summary.decisions_recorded} note={`${ratio(summary.decisions_recorded, total)}% de cobertura`} divided />
               </div>
-              <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{formatDuration(summary.median_upload_to_ai_seconds)}</p>
-              <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">Mediana calculada sólo sobre registros con `uploaded_at` y `ai_analyzed_at` válidos.</p>
-            </section>
+            </div>
+          </section>
 
-            <section className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-5">
-              <p className="text-sm font-medium text-[var(--cf-text-secondary)]">Muestras con timestamps</p>
-              <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{summary.ai_timing_samples.toLocaleString('es-CL')}</p>
-              <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">Base efectiva utilizada para el tiempo observado. No equivale a horas de trabajo ni a tiempo ahorrado.</p>
-            </section>
+          <section className="space-y-3" aria-labelledby="analytics-evidence-title">
+            <SectionHeading
+              eyebrow="Evidencia temporal"
+              title="Carga → preanálisis IA"
+              description="La mediana usa exclusivamente registros con timestamps válidos y no equivale a productividad ni tiempo ahorrado."
+              id="analytics-evidence-title"
+            />
+            <div className="divide-y divide-[var(--cf-border)] rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] lg:grid lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+              <div className="p-5">
+                <div className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
+                  <Clock3 className="h-4 w-4 text-[var(--cf-text-muted)]" /> Mediana observada
+                </div>
+                <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{formatDuration(summary.median_upload_to_ai_seconds)}</p>
+                <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">Calculada sobre eventos con `uploaded_at` y `ai_analyzed_at` válidos.</p>
+              </div>
+              <div className="p-5">
+                <p className="text-sm font-medium text-[var(--cf-text-secondary)]">Muestras utilizables</p>
+                <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{summary.ai_timing_samples.toLocaleString('es-CL')}</p>
+                <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">Base efectiva del cálculo temporal; se mantiene separada del total documental.</p>
+              </div>
+            </div>
+          </section>
+
+          <div className="border-t border-[var(--cf-border)] pt-4 text-xs leading-5 text-[var(--cf-text-muted)]">
+            Fuente operacional: eventos del flujo documental de subcontratistas. Esta vista describe lo observado y no crea KPIs sin respaldo.
           </div>
         </>
       )}
@@ -101,13 +122,25 @@ export default function AnalyticsPage() {
   )
 }
 
-function Metric({ icon: Icon, label, value, note }: { icon: typeof FileText; label: string; value: number; note: string }) {
+function SectionHeading({ eyebrow, title, description, id }: { eyebrow: string; title: string; description: string; id: string }) {
   return (
-    <div className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4">
-      <div className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
-        <Icon className="h-4 w-4 text-[var(--cf-text-muted)]" /> {label}
+    <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+      <div>
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">{eyebrow}</p>
+        <h2 id={id} className="mt-1 text-base font-semibold text-[var(--cf-text)]">{title}</h2>
       </div>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{value.toLocaleString('es-CL')}</p>
+      <p className="max-w-xl text-xs leading-5 text-[var(--cf-text-muted)] sm:text-right">{description}</p>
+    </div>
+  )
+}
+
+function Metric({ icon: Icon, label, value, note, divided }: { icon: typeof FileText; label: string; value: number; note: string; divided?: boolean }) {
+  return (
+    <div className={`min-w-0 p-4 ${divided ? 'border-l border-[var(--cf-border)]' : ''}`}>
+      <div className="flex items-center gap-2 text-xs font-medium text-[var(--cf-text-muted)]">
+        <Icon className="h-3.5 w-3.5" /> {label}
+      </div>
+      <p className="mt-2 text-2xl font-semibold tabular-nums tracking-[-0.03em] text-[var(--cf-text)]">{value.toLocaleString('es-CL')}</p>
       <p className="mt-1 text-xs text-[var(--cf-text-muted)]">{note}</p>
     </div>
   )

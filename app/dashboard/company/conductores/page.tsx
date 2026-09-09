@@ -115,7 +115,7 @@ export default function ConductoresPage() {
   const inactiveDrivers = filteredDrivers.length - activeDrivers
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-3xl">
           <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">
@@ -138,83 +138,116 @@ export default function ConductoresPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric label="Período" value={periodLabel} description="Filtro activo" />
-        <Metric label="Conductores" value={filteredDrivers.length.toLocaleString('es-CL')} description="En la vista actual" />
-        <Metric label="Activos" value={activeDrivers.toLocaleString('es-CL')} description="Disponibles en el filtro" tone="success" />
-        <Metric label="Inactivos" value={inactiveDrivers.toLocaleString('es-CL')} description="Requieren revisión de estado" tone="warning" />
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-        <DatePeriodFilter
-          value={dateFilters}
-          onChange={updateDateFilters}
-          onClear={() => updateDateFilters({ month: ALL_VALUE, year: ALL_VALUE })}
+      <section className="space-y-3" aria-labelledby="driver-summary-title">
+        <SectionHeading
+          eyebrow="Lectura rápida"
+          title="Resumen del período"
+          description="Volumen y estado general antes de revisar conductores individuales."
+          id="driver-summary-title"
         />
-
-        <div className="text-sm text-[var(--cf-text-muted)] lg:text-right">
-          Ejecutiva: <span className="font-medium text-[var(--cf-text-secondary)]">{selectedEjecutiva || 'Todas'}</span>
-        </div>
-      </div>
-
-      {ejecutivas.length > 0 && (
-        <div className="space-y-3 border-y border-[var(--cf-border)] py-4">
-          <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">Filtrar por ejecutiva</p>
-          <div className="flex flex-wrap gap-2">
-            <Badge
-              variant="outline"
-              className={`cursor-pointer rounded-[4px] border-[var(--cf-border)] px-3 py-1.5 text-xs transition-colors ${
-                selectedEjecutiva === null
-                  ? 'bg-[var(--cf-accent)] text-[var(--cf-text)]'
-                  : 'bg-transparent text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)]'
-              }`}
-              onClick={() => setSelectedEjecutiva(null)}
-            >
-              Todos ({driversByDate.length})
-            </Badge>
-            {ejecutivas.map((ejecutiva) => {
-              const count = ejecutivaCounts.get(ejecutiva) || 0
-              const selected = selectedEjecutiva === ejecutiva
-              return (
-                <Badge
-                  key={ejecutiva}
-                  variant="outline"
-                  className={`cursor-pointer rounded-[4px] border-[var(--cf-border)] px-3 py-1.5 text-xs transition-colors ${
-                    selected
-                      ? 'bg-[var(--cf-accent)] text-[var(--cf-text)]'
-                      : 'bg-transparent text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)]'
-                  }`}
-                  onClick={() => setSelectedEjecutiva(ejecutiva)}
-                >
-                  {ejecutiva} ({count})
-                </Badge>
-              )
-            })}
+        <div className="overflow-hidden rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)]">
+          <div className="grid grid-cols-2 lg:grid-cols-4">
+            <Metric label="Período" value={periodLabel} description="Filtro activo" />
+            <Metric label="Conductores" value={filteredDrivers.length.toLocaleString('es-CL')} description="En la vista actual" divided />
+            <Metric label="Activos" value={activeDrivers.toLocaleString('es-CL')} description="Disponibles en el filtro" tone="success" divided />
+            <Metric label="Inactivos" value={inactiveDrivers.toLocaleString('es-CL')} description="Requieren revisión de estado" tone="warning" divided />
           </div>
         </div>
-      )}
+      </section>
 
-      {isLoading ? (
-        <StatePanel>Cargando conductores…</StatePanel>
-      ) : error ? (
-        <div className="rounded-[6px] border border-[#45242B] bg-[var(--cf-surface)] px-5 py-6 text-sm text-[var(--cf-text-secondary)]">
-          <p className="font-medium text-[#E17B8C]">No fue posible cargar los conductores.</p>
-          <p className="mt-2 text-xs text-[var(--cf-text-muted)]">{error?.message || 'Error desconocido'}</p>
-          <Button
-            variant="outline"
-            onClick={() => mutate()}
-            className="mt-4 h-9 border-[var(--cf-border)] bg-transparent text-xs text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)]"
-          >
-            Reintentar
-          </Button>
+      <section className="space-y-3" aria-labelledby="driver-filters-title">
+        <SectionHeading
+          eyebrow="Vista"
+          title="Filtros"
+          description="Ajusta período y ejecutiva sin cambiar las acciones ni el flujo actual."
+          id="driver-filters-title"
+        />
+
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <DatePeriodFilter
+            value={dateFilters}
+            onChange={updateDateFilters}
+            onClear={() => updateDateFilters({ month: ALL_VALUE, year: ALL_VALUE })}
+          />
+
+          <div className="text-sm text-[var(--cf-text-muted)] lg:text-right">
+            Ejecutiva: <span className="font-medium text-[var(--cf-text-secondary)]">{selectedEjecutiva || 'Todas'}</span>
+          </div>
         </div>
-      ) : filteredDrivers.length === 0 ? (
-        <StatePanel>
-          {selectedEjecutiva ? `No hay conductores para ${selectedEjecutiva}.` : 'No hay conductores disponibles para este filtro.'}
-        </StatePanel>
-      ) : (
-        <DriversList drivers={filteredDrivers} highlightedRut={highlightedRut} />
-      )}
+
+        {ejecutivas.length > 0 && (
+          <div className="space-y-3 border-t border-[var(--cf-border)] pt-4">
+            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Filtrar por ejecutiva</p>
+            <div className="flex flex-wrap gap-2">
+              <Badge
+                variant="outline"
+                className={`cursor-pointer rounded-[4px] border-[var(--cf-border)] px-3 py-1.5 text-xs transition-colors ${
+                  selectedEjecutiva === null
+                    ? 'bg-[var(--cf-accent)] text-[var(--cf-text)]'
+                    : 'bg-transparent text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)]'
+                }`}
+                onClick={() => setSelectedEjecutiva(null)}
+              >
+                Todos ({driversByDate.length})
+              </Badge>
+              {ejecutivas.map((ejecutiva) => {
+                const count = ejecutivaCounts.get(ejecutiva) || 0
+                const selected = selectedEjecutiva === ejecutiva
+                return (
+                  <Badge
+                    key={ejecutiva}
+                    variant="outline"
+                    className={`cursor-pointer rounded-[4px] border-[var(--cf-border)] px-3 py-1.5 text-xs transition-colors ${
+                      selected
+                        ? 'bg-[var(--cf-accent)] text-[var(--cf-text)]'
+                        : 'bg-transparent text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)]'
+                    }`}
+                    onClick={() => setSelectedEjecutiva(ejecutiva)}
+                  >
+                    {ejecutiva} ({count})
+                  </Badge>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-3" aria-labelledby="driver-directory-title">
+        <div className="flex flex-col gap-2 border-b border-[var(--cf-border)] pb-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Directorio operacional</p>
+            <h2 id="driver-directory-title" className="mt-1 text-base font-semibold text-[var(--cf-text)]">
+              {filteredDrivers.length.toLocaleString('es-CL')} conductores
+            </h2>
+          </div>
+          <p className="text-xs text-[var(--cf-text-muted)]">
+            {selectedEjecutiva ? `Vista filtrada por ${selectedEjecutiva}.` : 'Vista consolidada de todas las ejecutivas.'}
+          </p>
+        </div>
+
+        {isLoading ? (
+          <StatePanel>Cargando conductores…</StatePanel>
+        ) : error ? (
+          <div className="rounded-[6px] border border-[#45242B] bg-[var(--cf-surface)] px-5 py-6 text-sm text-[var(--cf-text-secondary)]">
+            <p className="font-medium text-[#E17B8C]">No fue posible cargar los conductores.</p>
+            <p className="mt-2 text-xs text-[var(--cf-text-muted)]">{error?.message || 'Error desconocido'}</p>
+            <Button
+              variant="outline"
+              onClick={() => mutate()}
+              className="mt-4 h-9 border-[var(--cf-border)] bg-transparent text-xs text-[var(--cf-text-secondary)] hover:bg-[var(--cf-surface-raised)]"
+            >
+              Reintentar
+            </Button>
+          </div>
+        ) : filteredDrivers.length === 0 ? (
+          <StatePanel>
+            {selectedEjecutiva ? `No hay conductores para ${selectedEjecutiva}.` : 'No hay conductores disponibles para este filtro.'}
+          </StatePanel>
+        ) : (
+          <DriversList drivers={filteredDrivers} highlightedRut={highlightedRut} />
+        )}
+      </section>
 
       <AddConductorModal
         isOpen={isAddModalOpen}
@@ -226,26 +259,40 @@ export default function ConductoresPage() {
   )
 }
 
+function SectionHeading({ eyebrow, title, description, id }: { eyebrow: string; title: string; description: string; id: string }) {
+  return (
+    <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+      <div>
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">{eyebrow}</p>
+        <h2 id={id} className="mt-1 text-base font-semibold text-[var(--cf-text)]">{title}</h2>
+      </div>
+      <p className="max-w-xl text-xs leading-5 text-[var(--cf-text-muted)] sm:text-right">{description}</p>
+    </div>
+  )
+}
+
 function Metric({
   label,
   value,
   description,
   tone,
+  divided,
 }: {
   label: string
   value: string
   description: string
   tone?: 'success' | 'warning'
+  divided?: boolean
 }) {
   const indicator = tone === 'success' ? 'bg-[#67C18D]' : tone === 'warning' ? 'bg-[#E6A35A]' : 'bg-[var(--cf-text-muted)]'
 
   return (
-    <div className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4">
+    <div className={`min-w-0 p-4 ${divided ? 'border-l border-[var(--cf-border)]' : ''}`}>
       <div className="flex items-center gap-2">
-        <span className={`h-1.5 w-1.5 rounded-full ${indicator}`} />
-        <p className="text-xs font-medium text-[var(--cf-text-muted)]">{label}</p>
+        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${indicator}`} />
+        <p className="truncate text-xs font-medium text-[var(--cf-text-muted)]">{label}</p>
       </div>
-      <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[var(--cf-text)]">{value}</p>
+      <p className="mt-2 truncate text-xl font-semibold tracking-[-0.03em] text-[var(--cf-text)] sm:text-2xl">{value}</p>
       <p className="mt-1 text-xs text-[var(--cf-text-muted)]">{description}</p>
     </div>
   )

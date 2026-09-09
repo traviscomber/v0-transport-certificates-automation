@@ -200,35 +200,63 @@ export default function SubcontratistasPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       <PageHeader onAdd={() => setIsAddModalOpen(true)} />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric label="Período" value={periodLabel} description="Filtro activo" />
-        <Metric label="Subcontratistas" value={filteredSubcontractors.length.toLocaleString('es-CL')} description="En la vista actual" />
-        <Metric label="Activos" value={activeSubcontractors.toLocaleString('es-CL')} description="Subcontratistas vigentes" tone="success" />
-        <Metric label="Inactivos" value={inactiveSubcontractors.toLocaleString('es-CL')} description="Requieren revisión de estado" tone="warning" />
-      </div>
-
-      <div className="flex flex-col gap-3 border-l-2 border-[var(--cf-accent)] bg-[var(--cf-surface)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">Cobertura vinculada</p>
-          <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">{activeDrivers} conductores activos asociados a la lectura del período.</p>
+      <section className="space-y-3" aria-labelledby="subcontractor-summary-title">
+        <SectionHeading
+          eyebrow="Lectura rápida"
+          title="Resumen del período"
+          description="Volumen y estado general antes de entrar al detalle operacional."
+          id="subcontractor-summary-title"
+        />
+        <div className="overflow-hidden rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)]">
+          <div className="grid grid-cols-2 lg:grid-cols-4">
+            <Metric label="Período" value={periodLabel} description="Filtro activo" />
+            <Metric label="Subcontratistas" value={filteredSubcontractors.length.toLocaleString('es-CL')} description="En la vista actual" divided />
+            <Metric label="Activos" value={activeSubcontractors.toLocaleString('es-CL')} description="Subcontratistas vigentes" tone="success" divided />
+            <Metric label="Inactivos" value={inactiveSubcontractors.toLocaleString('es-CL')} description="Requieren revisión de estado" tone="warning" divided />
+          </div>
         </div>
-        <p className="text-xs text-[var(--cf-text-muted)]">Base total: {subcontractors.length} subcontratistas</p>
-      </div>
+        <div className="flex flex-col gap-2 border-l-2 border-[var(--cf-accent)] px-4 py-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-[var(--cf-text-secondary)]">
+            <span className="font-medium text-[var(--cf-text)]">{activeDrivers}</span> conductores activos asociados a la lectura del período.
+          </p>
+          <p className="text-xs text-[var(--cf-text-muted)]">Base total: {subcontractors.length} subcontratistas</p>
+        </div>
+      </section>
 
-      <DatePeriodFilter
-        value={dateFilters}
-        onChange={updateDateFilters}
-        onClear={() => updateDateFilters({ month: ALL_VALUE, year: ALL_VALUE })}
-      />
+      <section className="space-y-3" aria-labelledby="subcontractor-filters-title">
+        <SectionHeading
+          eyebrow="Vista"
+          title="Filtros"
+          description="Ajusta el período sin cambiar el flujo de trabajo ni la fuente de datos."
+          id="subcontractor-filters-title"
+        />
+        <DatePeriodFilter
+          value={dateFilters}
+          onChange={updateDateFilters}
+          onClear={() => updateDateFilters({ month: ALL_VALUE, year: ALL_VALUE })}
+        />
+      </section>
 
-      {filteredSubcontractors.length === 0 ? (
-        <StatePanel>No hay subcontratistas disponibles para este filtro.</StatePanel>
-      ) : (
-        <SubcontractorsList subcontractors={filteredSubcontractors as any} drivers={filteredDrivers as any} />
-      )}
+      <section className="space-y-3" aria-labelledby="subcontractor-directory-title">
+        <div className="flex flex-col gap-2 border-b border-[var(--cf-border)] pb-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Directorio operacional</p>
+            <h2 id="subcontractor-directory-title" className="mt-1 text-base font-semibold text-[var(--cf-text)]">
+              {filteredSubcontractors.length.toLocaleString('es-CL')} subcontratistas
+            </h2>
+          </div>
+          <p className="text-xs text-[var(--cf-text-muted)]">Busca, filtra y abre el detalle sin salir de esta sección.</p>
+        </div>
+
+        {filteredSubcontractors.length === 0 ? (
+          <StatePanel>No hay subcontratistas disponibles para este filtro.</StatePanel>
+        ) : (
+          <SubcontractorsList subcontractors={filteredSubcontractors as any} drivers={filteredDrivers as any} />
+        )}
+      </section>
 
       <AddSubcontractorModal
         isOpen={isAddModalOpen}
@@ -260,26 +288,40 @@ function PageHeader({ onAdd }: { onAdd: () => void }) {
   )
 }
 
+function SectionHeading({ eyebrow, title, description, id }: { eyebrow: string; title: string; description: string; id: string }) {
+  return (
+    <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+      <div>
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">{eyebrow}</p>
+        <h2 id={id} className="mt-1 text-base font-semibold text-[var(--cf-text)]">{title}</h2>
+      </div>
+      <p className="max-w-xl text-xs leading-5 text-[var(--cf-text-muted)] sm:text-right">{description}</p>
+    </div>
+  )
+}
+
 function Metric({
   label,
   value,
   description,
   tone,
+  divided,
 }: {
   label: string
   value: string
   description: string
   tone?: 'success' | 'warning'
+  divided?: boolean
 }) {
   const indicator = tone === 'success' ? 'bg-[#67C18D]' : tone === 'warning' ? 'bg-[#E6A35A]' : 'bg-[var(--cf-text-muted)]'
 
   return (
-    <div className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4">
+    <div className={`min-w-0 p-4 ${divided ? 'border-l border-[var(--cf-border)]' : ''}`}>
       <div className="flex items-center gap-2">
-        <span className={`h-1.5 w-1.5 rounded-full ${indicator}`} />
-        <p className="text-xs font-medium text-[var(--cf-text-muted)]">{label}</p>
+        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${indicator}`} />
+        <p className="truncate text-xs font-medium text-[var(--cf-text-muted)]">{label}</p>
       </div>
-      <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[var(--cf-text)]">{value}</p>
+      <p className="mt-2 truncate text-xl font-semibold tracking-[-0.03em] text-[var(--cf-text)] sm:text-2xl">{value}</p>
       <p className="mt-1 text-xs text-[var(--cf-text-muted)]">{description}</p>
     </div>
   )

@@ -48,13 +48,13 @@ export default function ReportesPage() {
   const periodLabel = getMonthLabel(period.month, period.year)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-3xl">
           <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">Lectura ejecutiva</p>
           <h1 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--cf-text)] md:text-[28px]">Reportes</h1>
           <p className="mt-2 text-sm leading-6 text-[var(--cf-text-secondary)]">
-            Resumen factual del flujo documental registrado. Esta vista ya no usa la base legacy de documentos ni supuestos de vencimiento o productividad.
+            Resumen factual del flujo documental registrado. Esta vista no usa supuestos de vencimiento, productividad ni tiempo ahorrado.
           </p>
         </div>
         <div className="lg:min-w-[320px]">
@@ -73,34 +73,54 @@ export default function ReportesPage() {
         <StatePanel>Cargando reporte…</StatePanel>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Metric icon={FileText} label="Documentos registrados" value={summary.documents_registered} note="base factual del período" />
-            <Metric icon={BrainCircuit} label="Preanálisis IA" value={summary.ai_analyzed} note={`${ratio(summary.ai_analyzed, total)}% de cobertura observada`} />
-            <Metric icon={Activity} label="Revisados por Labbé" value={summary.human_reviewed} note={`${ratio(summary.human_reviewed, total)}% de cobertura observada`} />
-            <Metric icon={CheckCircle2} label="Decisiones registradas" value={summary.decisions_recorded} note={`${ratio(summary.decisions_recorded, total)}% de la base`} />
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-            <section className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-5">
-              <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">Cobertura observada</p>
-              <div className="mt-4 divide-y divide-[var(--cf-border)]">
-                <CoverageRow label="Documentos con preanálisis IA" value={summary.ai_analyzed} percentage={ratio(summary.ai_analyzed, total)} />
-                <CoverageRow label="Documentos con revisión humana" value={summary.human_reviewed} percentage={ratio(summary.human_reviewed, total)} />
-                <CoverageRow label="Documentos con decisión registrada" value={summary.decisions_recorded} percentage={ratio(summary.decisions_recorded, total)} />
+          <section className="space-y-3" aria-labelledby="report-summary-title">
+            <SectionHeading
+              eyebrow="Resumen factual"
+              title="Cobertura registrada"
+              description="Volumen y cobertura observada sobre la base documental del período seleccionado."
+              id="report-summary-title"
+            />
+            <div className="overflow-hidden rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)]">
+              <div className="grid grid-cols-2 xl:grid-cols-4">
+                <Metric icon={FileText} label="Registrados" value={summary.documents_registered} note="base del período" />
+                <Metric icon={BrainCircuit} label="Preanálisis IA" value={summary.ai_analyzed} note={`${ratio(summary.ai_analyzed, total)}% cobertura`} divided />
+                <Metric icon={Activity} label="Revisión Labbé" value={summary.human_reviewed} note={`${ratio(summary.human_reviewed, total)}% cobertura`} divided />
+                <Metric icon={CheckCircle2} label="Decisiones" value={summary.decisions_recorded} note={`${ratio(summary.decisions_recorded, total)}% cobertura`} divided />
               </div>
-            </section>
+            </div>
+          </section>
 
-            <section className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-5">
-              <div className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
-                <Clock3 className="h-4 w-4 text-[var(--cf-text-muted)]" /> Tiempo observado carga → IA
+          <section className="space-y-3" aria-labelledby="report-detail-title">
+            <SectionHeading
+              eyebrow="Detalle"
+              title="Qué está respaldado en la fuente"
+              description="Separa cobertura documental de la única métrica temporal disponible para evitar lecturas engañosas."
+              id="report-detail-title"
+            />
+            <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+              <div className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-5">
+                <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--cf-text-muted)]">Cobertura observada</p>
+                <div className="mt-4 divide-y divide-[var(--cf-border)]">
+                  <CoverageRow label="Con preanálisis IA" value={summary.ai_analyzed} percentage={ratio(summary.ai_analyzed, total)} />
+                  <CoverageRow label="Con revisión humana" value={summary.human_reviewed} percentage={ratio(summary.human_reviewed, total)} />
+                  <CoverageRow label="Con decisión registrada" value={summary.decisions_recorded} percentage={ratio(summary.decisions_recorded, total)} />
+                </div>
               </div>
-              <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{formatDuration(summary.median_upload_to_ai_seconds)}</p>
-              <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">Mediana sobre {summary.ai_timing_samples.toLocaleString('es-CL')} registros con timestamps válidos. No representa tiempo ahorrado.</p>
-            </section>
-          </div>
 
-          <div className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] px-5 py-4 text-xs leading-5 text-[var(--cf-text-muted)]">
-            Fuente: eventos registrados en `subcontractor_documents`. No se muestran métricas sin respaldo en esa fuente operacional.
+              <div className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-5">
+                <div className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
+                  <Clock3 className="h-4 w-4 text-[var(--cf-text-muted)]" /> Carga → preanálisis IA
+                </div>
+                <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{formatDuration(summary.median_upload_to_ai_seconds)}</p>
+                <p className="mt-2 text-xs leading-5 text-[var(--cf-text-muted)]">
+                  Mediana sobre {summary.ai_timing_samples.toLocaleString('es-CL')} registros con timestamps válidos. No representa ahorro ni duración total del trámite.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <div className="border-t border-[var(--cf-border)] pt-4 text-xs leading-5 text-[var(--cf-text-muted)]">
+            Fuente: eventos registrados en `subcontractor_documents`. Si una métrica no está respaldada por esa evidencia, no se presenta como resultado.
           </div>
         </>
       )}
@@ -108,13 +128,25 @@ export default function ReportesPage() {
   )
 }
 
-function Metric({ icon: Icon, label, value, note }: { icon: typeof FileText; label: string; value: number; note: string }) {
+function SectionHeading({ eyebrow, title, description, id }: { eyebrow: string; title: string; description: string; id: string }) {
   return (
-    <div className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4">
-      <div className="flex items-center gap-2 text-sm font-medium text-[var(--cf-text-secondary)]">
-        <Icon className="h-4 w-4 text-[var(--cf-text-muted)]" /> {label}
+    <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+      <div>
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--cf-text-muted)]">{eyebrow}</p>
+        <h2 id={id} className="mt-1 text-base font-semibold text-[var(--cf-text)]">{title}</h2>
       </div>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[var(--cf-text)]">{value.toLocaleString('es-CL')}</p>
+      <p className="max-w-xl text-xs leading-5 text-[var(--cf-text-muted)] sm:text-right">{description}</p>
+    </div>
+  )
+}
+
+function Metric({ icon: Icon, label, value, note, divided }: { icon: typeof FileText; label: string; value: number; note: string; divided?: boolean }) {
+  return (
+    <div className={`min-w-0 p-4 ${divided ? 'border-l border-[var(--cf-border)]' : ''}`}>
+      <div className="flex items-center gap-2 text-xs font-medium text-[var(--cf-text-muted)]">
+        <Icon className="h-3.5 w-3.5" /> {label}
+      </div>
+      <p className="mt-2 text-2xl font-semibold tabular-nums tracking-[-0.03em] text-[var(--cf-text)]">{value.toLocaleString('es-CL')}</p>
       <p className="mt-1 text-xs text-[var(--cf-text-muted)]">{note}</p>
     </div>
   )
