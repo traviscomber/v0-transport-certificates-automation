@@ -51,58 +51,57 @@ export function SiiVerificationProgress() {
 
   if (isLoading || !summary) {
     return (
-      <Card className="border-slate-700/60 bg-slate-950/70">
-        <CardContent className="flex items-center gap-3 p-5 text-sm text-slate-300">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Cargando avance de validación SII...
+      <Card className="border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
+        <CardContent className="flex items-center gap-3 p-5 text-sm text-[var(--cf-text-secondary)]">
+          <Loader2 className="h-4 w-4 animate-spin text-[var(--cf-text-muted)]" />
+          Cargando avance de validación SII…
         </CardContent>
       </Card>
     )
   }
 
   return (
-    <Card className="overflow-hidden border-slate-700/60 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 shadow-lg">
+    <Card className="overflow-hidden rounded-[6px] border-[var(--cf-border)] bg-[var(--cf-surface)] shadow-none">
       <CardContent className="p-5 md:p-6">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-300">Validación tributaria SII</p>
-              <h2 className="mt-1 text-xl font-bold text-white">{summary.processed} de {summary.total} procesados</h2>
-              <p className="mt-1 text-sm text-slate-400">Actualización automática cada 30 segundos</p>
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--cf-text-muted)]">Validación tributaria SII</p>
+              <h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[var(--cf-text)]">{summary.processed} de {summary.total} procesados</h2>
+              <p className="mt-1 text-sm text-[var(--cf-text-secondary)]">Actualización automática cada 30 segundos</p>
             </div>
             <div className="text-left sm:text-right">
-              <p className="text-4xl font-bold tabular-nums text-white">{summary.percentage}%</p>
-              <p className="text-xs text-slate-500">{summary.pending} pendientes</p>
+              <p className="text-3xl font-semibold tabular-nums tracking-[-0.04em] text-[var(--cf-text)]">{summary.percentage}%</p>
+              <p className="text-xs text-[var(--cf-text-muted)]">{summary.pending} pendientes</p>
             </div>
           </div>
 
-          <div className="h-4 overflow-hidden rounded-full border border-slate-700 bg-slate-800" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={summary.percentage}>
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 transition-[width] duration-700 ease-out"
-              style={{ width: `${summary.percentage}%` }}
-            />
+          <div className="h-1.5 overflow-hidden rounded-[3px] bg-[var(--cf-canvas)]" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={summary.percentage}>
+            <div className="h-full bg-[var(--cf-accent)] transition-[width] duration-500 ease-out" style={{ width: `${summary.percentage}%` }} />
           </div>
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3">
-              <div className="flex items-center gap-2 text-emerald-300"><CheckCircle2 className="h-4 w-4" /><span className="text-xs font-semibold">Con respuesta</span></div>
-              <p className="mt-2 text-2xl font-bold text-emerald-100">{summary.successful + summary.warnings}</p>
-            </div>
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
-              <div className="flex items-center gap-2 text-amber-300"><AlertTriangle className="h-4 w-4" /><span className="text-xs font-semibold">Con alertas</span></div>
-              <p className="mt-2 text-2xl font-bold text-amber-100">{summary.warnings}</p>
-            </div>
-            <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3">
-              <div className="flex items-center gap-2 text-rose-300"><AlertTriangle className="h-4 w-4" /><span className="text-xs font-semibold">Fallidos</span></div>
-              <p className="mt-2 text-2xl font-bold text-rose-100">{summary.failed + summary.notFound + summary.blocked}</p>
-            </div>
-            <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 p-3">
-              <div className="flex items-center gap-2 text-blue-300"><Clock3 className="h-4 w-4" /><span className="text-xs font-semibold">En curso</span></div>
-              <p className="mt-2 text-2xl font-bold text-blue-100">{summary.running}</p>
-            </div>
+            <StatusCard icon={CheckCircle2} label="Con respuesta" value={summary.successful + summary.warnings} tone="success" />
+            <StatusCard icon={AlertTriangle} label="Con alertas" value={summary.warnings} tone="warning" />
+            <StatusCard icon={AlertTriangle} label="Fallidos" value={summary.failed + summary.notFound + summary.blocked} tone="danger" />
+            <StatusCard icon={Clock3} label="En curso" value={summary.running} />
           </div>
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+function StatusCard({ icon: Icon, label, value, tone }: { icon: typeof Clock3; label: string; value: number; tone?: 'success' | 'warning' | 'danger' }) {
+  const indicator = tone === 'success' ? 'text-[#67C18D]' : tone === 'warning' ? 'text-[#E6A35A]' : tone === 'danger' ? 'text-[#E17B8C]' : 'text-[var(--cf-text-muted)]'
+
+  return (
+    <div className="rounded-[6px] border border-[var(--cf-border)] bg-[var(--cf-surface-raised)] p-3">
+      <div className={`flex items-center gap-2 text-xs font-medium ${indicator}`}>
+        <Icon className="h-4 w-4" />
+        <span>{label}</span>
+      </div>
+      <p className="mt-2 text-2xl font-semibold tabular-nums tracking-[-0.03em] text-[var(--cf-text)]">{value}</p>
+    </div>
   )
 }
